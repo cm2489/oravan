@@ -49,6 +49,21 @@ const SEVERAL = RENDERED.find((m) => openOf(m).length > 1) ?? null;
 const WITH_SETTLED =
   RENDERED.find((m) => questionVehicles(m).some((v) => !v.open && v.kind === 'bill')) ?? null;
 
+/** The panel's words, minus its desk-only "↓ More" scroll hint. That hint is
+ *  decorative (aria-hidden) and depends on scroll geometry and timing, not on
+ *  the panel's props: ActionPanel measures it one frame after the content
+ *  changes and retires it on the first scroll of its body, which a click can
+ *  cause. So two loads of the same panel may differ on it and nothing else. */
+async function panelText(page: Page, hint: string): Promise<string> {
+  const text = await page.locator('[data-call-cta]').innerText();
+  const hintLine = `↓ ${hint}`.toLowerCase();
+  return text
+    .split('\n')
+    .filter((line) => line.trim().toLowerCase() !== hintLine)
+    .join('\n')
+    .trimEnd();
+}
+
 /** The page has hydrated: a page with a call panel claims the header's Call
  *  tab for it in an effect (components/CallTabTarget.tsx), so the tab's href
  *  turns from the server's "/call" to "#act" only once React is running. */
@@ -75,16 +90,14 @@ for (const { locale, prefix, messages } of LOCALES) {
 
       await page.goto(`${prefix}/bills/${slug}`);
       await hydrated(page);
-      const onBill = page.locator('[data-call-cta]');
-      await expect(onBill).toHaveCount(1);
-      const billText = await onBill.innerText();
+      await expect(page.locator('[data-call-cta]')).toHaveCount(1);
+      const billText = await panelText(page, messages.bill.railMoreHint);
 
       await page.goto(`${prefix}/questions/${ONE_BILL!.id}`);
       await hydrated(page);
-      const onQuestion = page.locator('[data-call-cta]');
-      await expect(onQuestion).toHaveCount(1);
+      await expect(page.locator('[data-call-cta]')).toHaveCount(1);
       await expect(page.locator('#act')).toHaveText(messages.bill.actTitle);
-      expect(await onQuestion.innerText()).toBe(billText);
+      expect(await panelText(page, messages.bill.railMoreHint)).toBe(billText);
     });
 
     test('with a saved ZIP and a stance, the members, their order and the routing line match the bill page too', async ({
@@ -101,7 +114,7 @@ for (const { locale, prefix, messages } of LOCALES) {
         await declareStance(page, messages.bill.stance.support);
         await expect(page.getByRole('textbox', { name: messages.bill.scriptTitle })).toBeVisible();
         await expect(page.locator('[data-call-cta] a[href^="tel:"]').first()).toBeVisible();
-        return page.locator('[data-call-cta]').innerText();
+        return panelText(page, messages.bill.railMoreHint);
       };
       await page.goto(`${prefix}/bills/${slug}`);
       await seedZip(page, ZIP);
