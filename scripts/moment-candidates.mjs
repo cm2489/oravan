@@ -108,12 +108,27 @@ export function normalizeSource(source) {
     .replace(/^www\./, '');
 }
 
-/** AllSides lean keyed by bare outlet domain (data/media-bias.json). */
-const LEAN_BY_DOMAIN = read('data/media-bias.json').outlets;
+/**
+ * AllSides lean keyed by bare outlet domain (data/media-bias.json), read on
+ * FIRST USE and kept for the rest of the run.
+ *
+ * LAZY SINCE 2026-09-29, so that importing this file performs no I/O at all.
+ * It used to be read at module scope, which made every importer depend on the
+ * working directory holding data/media-bias.json — including
+ * scripts/newsdesk-match.mjs once it began importing statusKeyFor from here,
+ * and through it lib/votes-core.mjs, whose back-fill tests run from a
+ * temporary directory. scripts/moment-updates.mjs already relied on "no I/O on
+ * import" (its header says so); now it is true. The value and every caller
+ * are unchanged: leanFor is the only reader, and it reads the same file from
+ * the same working directory.
+ * @type {Record<string, string> | null}
+ */
+let leanByDomain = null;
 
 /** Outlet lean from the AllSides table, or null when the outlet is unrated. */
 export function leanFor(source) {
-  return LEAN_BY_DOMAIN[normalizeSource(source)] ?? null;
+  leanByDomain ??= read('data/media-bias.json').outlets;
+  return leanByDomain[normalizeSource(source)] ?? null;
 }
 
 /**
@@ -197,10 +212,13 @@ export function floorCalendarChamber(actionText) {
  * second chamber passed it without amendment, `passageState` 'both'). Both
  * readers need the bill type and the status basis, which the positional
  * arguments do not carry, so this copy reads them only off `record`. Without
- * it a `passed_chamber` record keeps `passed_chamber`, exactly as before:
- * scripts/moment-draft.mjs and scripts/moment-updates.mjs do not pass it yet
- * (both were in open PR #362 when this landed), so the phrase they hand the
- * model for H.Con.Res. 86 is still "passed one chamber" until they do.
+ * it a `passed_chamber` record keeps `passed_chamber`, exactly as before.
+ * Every script caller passes it (2026-09-29): scripts/moment-updates.mjs
+ * (recordStatusKey, for the "Where it stands" prompt), scripts/moment-draft.mjs
+ * (groundFor, the draft's record block) and scripts/newsdesk-match.mjs
+ * (buildBillIndex, the t3 candidate line). Until then all three told the model
+ * H.Con.Res. 86 "passed one chamber"; tests/writers-status-record.unit.spec.ts
+ * pins each of them.
  *
  * @param {string} status                bill.status
  * @param {string | null} lastActionText bill.last_action_text

@@ -68,6 +68,11 @@
  * same rolling window, almost immediately).
  */
 import { createHash } from 'node:crypto';
+// The status-label gate, from the one script-side copy (lib/journey.ts's
+// statusKeyFor, carried import-free in scripts/moment-candidates.mjs and pinned
+// against the original by tests/journey.unit.spec.ts). That module does no I/O
+// on import and pulls in only pure lib/*.mjs, so this file stays import-clean.
+import { statusKeyFor } from './moment-candidates.mjs';
 
 // Duplicated from congress-fetch.mjs's CONGRESS constant (not imported) so
 // this module stays import-clean for unit tests — see the header comment.
@@ -203,7 +208,7 @@ export function attachDf(index) {
 }
 
 /**
- * @typedef {{ slug: string, title: string, tokens: Set<string>, titleTokens: Set<string>, lastActionDate: string | null, status: string | null }} IndexEntry
+ * @typedef {{ slug: string, title: string, tokens: Set<string>, titleTokens: Set<string>, lastActionDate: string | null, status: string | null, statusKey: string | null }} IndexEntry
  * @typedef {IndexEntry[] & { df?: Map<string, number>, bySlug?: Map<string, IndexEntry> }} BillIndex
  * @typedef {{ kind: 'floor' | 'scheduled' | 'announced', chamber: 'senate' | 'house' | null, date: string | null, source: string, certainty?: string | null }} FloorEntry
  * @typedef {Record<string, { source: string, last_seen: string }>} FloorMemory
@@ -222,6 +227,14 @@ export function attachDf(index) {
  *  floor-record family test compares — press_names/news_query are search
  *  phrasing, not what the measure is. `bySlug` is a non-serialized lookup,
  *  like `df`.
+ *
+ *  `statusKey` (2026-09-29) is what t3's prompt prints the status from:
+ *  statusKeyFor handed the bill as its 5th argument, so a measure both
+ *  chambers passed reads "passed both chambers" and H.Con.Res. 86, which both
+ *  chambers agreed to, reads "adopted by both chambers", as its own page says.
+ *  The raw `status` stays beside it untouched. The key's clock (fresh vs aged
+ *  calendar placement) is read at index time, and STATUS_WORDS prints all
+ *  three floor keys the same way, so it cannot change a word of the prompt.
  *  @param {any[]} bills
  *  @returns {BillIndex} */
 export function buildBillIndex(bills) {
@@ -237,6 +250,16 @@ export function buildBillIndex(bills) {
       titleTokens: new Set(tokenize(b.title)),
       lastActionDate: typeof b.last_action_date === 'string' ? b.last_action_date : null,
       status: typeof b.status === 'string' ? b.status : null,
+      statusKey:
+        typeof b.status === 'string'
+          ? statusKeyFor(
+              b.status,
+              typeof b.last_action_text === 'string' ? b.last_action_text : null,
+              typeof b.last_action_date === 'string' ? b.last_action_date : null,
+              Date.now(),
+              b,
+            )
+          : null,
     });
   }
   const built = /** @type {BillIndex} */ (attachDf(index));
@@ -305,6 +328,7 @@ function scoreEntry(entry, hTokens, df) {
     matched,
     lastActionDate: entry.lastActionDate ?? null,
     status: entry.status ?? null,
+    statusKey: entry.statusKey ?? null,
   };
 }
 
@@ -688,11 +712,21 @@ export function rollFloorRecord(prev, observations = [], nowMs = Date.now()) {
 }
 
 // ---- the t3 prompt (pure, so the tests can read exactly what Haiku reads) ----
+// Keyed by the STATUS KEY (buildBillIndex's `statusKey`), with the raw status
+// as the fallback for a candidate built without one. The three floor keys
+// print the same tenseless words the raw `floor_vote` always printed here,
+// and `passed_both` / `adopted` are the two passage readings (2026-09-29):
+// before them, every `passed_chamber` measure read "passed one chamber",
+// H.Con.Res. 86 included, after both chambers had agreed to it.
 const STATUS_WORDS = {
   committee: 'in committee',
   markup: 'committee markup',
   floor_vote: 'floor action on record',
+  floor_vote_stale: 'floor action on record',
+  floor_activity: 'floor action on record',
   passed_chamber: 'passed one chamber',
+  passed_both: 'passed both chambers',
+  adopted: 'adopted by both chambers',
   signed: 'signed into law',
 };
 
@@ -719,7 +753,7 @@ export function floorNote(floor) {
 export function formatT3Candidate(c) {
   const facts = [
     `latest action ${c.lastActionDate ?? 'unknown'}`,
-    `status: ${STATUS_WORDS[c.status] ?? c.status ?? 'unknown'}`,
+    `status: ${STATUS_WORDS[c.statusKey ?? c.status] ?? c.status ?? 'unknown'}`,
   ];
   const note = floorNote(c.floor);
   if (note) facts.push(`FLOOR RECORD: ${note}`);
