@@ -136,8 +136,15 @@ test.describe('SY-03 · decisionState, the MCP envelope\'s decision_state', () =
     expect(decisionState(b)).toEqual({ state: 'settled', reason: HOUSE_RESOLUTION_FAILED });
   });
 
-  test('a failed motion is settled too — the same predicate that keeps it out of the act-now pool', () => {
-    expect(decisionState({ status: 'floor_vote', last_action_text: MOTION_TO_PROCEED_REJECTED }).state).toBe('settled');
+  test('a failed motion is pending (pick (a), 2026-09-29): out of the act-now pool, but not the chamber\'s final answer', () => {
+    // The owner's pick (a): "Only a law or a failed final vote counts as
+    // finished. Procedural failures keep the call panel". The act-now pool
+    // still drops these (isSettledFloor); the API offers the call again.
+    for (const text of [MOTION_TO_PROCEED_REJECTED, DISCHARGE_REJECTED, CLOTURE_NOT_INVOKED, SUSPENSION_FAILED]) {
+      const b = { status: 'floor_vote', last_action_text: text };
+      expect(isSettledFloor(b), text).toBe(true);
+      expect(decisionState(b), text).toEqual({ state: 'pending', reason: null });
+    }
   });
 
   test('a failed vote with a motion to reconsider ENTERED is pending — the Big Questions line and the API say the same thing', () => {
@@ -150,20 +157,21 @@ test.describe('SY-03 · decisionState, the MCP envelope\'s decision_state', () =
     expect(isSettledFloor(b)).toBe(true);
     expect(billStatusLine(b)).toMatchObject({ key: 'failedReconsider', terminal: false });
     expect(decisionState(b)).toEqual({ state: 'pending', reason: null });
-    // …and once the motion is disposed of, the failure stands again.
+    // …and once the motion is disposed of, the failure stands again — as a
+    // procedural failure, which is still pending under pick (a).
     const tabled = 'Motion to reconsider laid on the table Agreed to without objection.';
     expect(decisionState({ status: 'floor_vote', last_action_text: tabled, status_basis_text: CLOTURE_NOT_INVOKED })).toEqual({
-      state: 'settled',
-      reason: CLOTURE_NOT_INVOKED,
+      state: 'pending',
+      reason: null,
     });
   });
 
-  test('a law is enacted; a veto is settled', () => {
+  test('a law is enacted; a veto is pending — Congress can still vote to override it (pick (a))', () => {
     expect(decisionState({ status: 'signed', last_action_text: 'Became Public Law No: 119-103.' })).toEqual({
       state: 'enacted',
       reason: 'Became Public Law No: 119-103.',
     });
-    expect(decisionState({ status: 'vetoed', last_action_text: 'Vetoed by President.' }).state).toBe('settled');
+    expect(decisionState({ status: 'vetoed', last_action_text: 'Vetoed by President.' })).toEqual({ state: 'pending', reason: null });
   });
 
   test('everything else is pending, with no reason — including a calendar placement and a live cloture vote', () => {
@@ -286,9 +294,19 @@ test.describe('SY-01 · the stepper says a rejected passage vote was a rejected 
   test('a failed MOTION keeps the failed-motion sentence, and its trailer', () => {
     const j = deriveJourney({ bill_type: 'sjres', status: 'floor_vote', last_action_text: MOTION_TO_PROCEED_REJECTED, last_action_date: '2026-09-24' });
     expect(j).toMatchObject({ nowKey: 'nowFloorMotionFailed', nowChamber: 'senate', showTrailer: true, tally: null });
-    expect(deriveJourney({ bill_type: 's', status: 'floor_vote', last_action_text: SUSPENSION_FAILED, last_action_date: '2026-09-24' }).nowKey).toBe(
-      'nowFloorMotionFailed',
-    );
+  });
+
+  test('a failed two-thirds suspension vote says what the vote was, with the record\'s numbers, and keeps its trailer (pick (a), 2026-09-29)', () => {
+    // "has not agreed to take it up" was false here: the House took it up and
+    // a majority voted yes. Its own sentence, with the record's tally.
+    const j = deriveJourney({ bill_type: 's', status: 'floor_vote', last_action_text: SUSPENSION_FAILED, last_action_date: '2026-09-24' });
+    expect(j).toMatchObject({ nowKey: 'nowFloorSuspensionFailed', nowChamber: 'house', showTrailer: true, tally: { yeas: 264, nays: 133 } });
+    expectSentenceFacts(stepperSentence(en, j), 'en', 'house', { yeas: 264, nays: 133 });
+    expectSentenceFacts(stepperSentence(es, j), 'es', 'house', { yeas: 264, nays: 133 });
+    expect(stepperSentence(en, j)).toMatch(/two-thirds/);
+    expect(stepperSentence(es, j)).toMatch(/dos tercios/);
+    expect(stepperSentence(en, j)).not.toMatch(/take it up|motion/i);
+    expect(stepperSentence(es, j)).not.toMatch(/considerarlo|moción/i);
   });
 });
 

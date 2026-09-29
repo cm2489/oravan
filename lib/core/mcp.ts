@@ -371,8 +371,12 @@ export interface BillSignalOut {
  * IS A DECISION STILL AHEAD (2026-09-27, the 2026-09-27 audit SY-03) — see
  * lib/docket.mjs `decisionState` for the three values and what each is read
  * from. ADDITIVE: `status` and `status_label` are unchanged for every existing
- * client; this is the field that says what they could not — that the floor
- * already answered, or that the measure is law.
+ * client; this is the field that says what they could not — that a vote to
+ * pass the measure failed, or that the measure is law. Since 2026-09-29 (the
+ * owner's pick (a): "Only a law or a failed final vote counts as finished")
+ * a failed procedural vote, a failed two-thirds suspension vote and a veto
+ * all read `pending`, and `get_bill` offers `act_url` on them, exactly as the
+ * bill page keeps its call panel on them.
  */
 export type DecisionStateOut = 'pending' | 'settled' | 'enacted';
 

@@ -433,7 +433,7 @@ test.describe('the nomination page', () => {
       await expect(page.getByRole('textbox', { name: en.bill.fallbackTitle })).toHaveCount(0);
       await expect(page.getByText(en.bill.fallbackTitle)).toHaveCount(0);
       await expect(page.locator('a[href^="tel:"]')).toHaveCount(0);
-      await expect(page.getByRole('button', { name: en.bill.startCall })).toHaveCount(0);
+      await expect(page.locator('[data-call-cta]')).toHaveCount(0);
 
       // The routing copy stays absent too — the original assertion, kept.
       for (const copy of [
@@ -479,7 +479,7 @@ test.describe('the nomination page', () => {
     await expect(page.getByRole('textbox', { name: en.bill.scriptTitle })).toHaveCount(0);
     await expect(page.getByRole('textbox', { name: en.bill.fallbackTitle })).toHaveCount(0);
     await expect(page.locator('a[href^="tel:"]')).toHaveCount(0);
-    await expect(page.getByRole('button', { name: en.bill.startCall })).toHaveCount(0);
+    await expect(page.locator('[data-call-cta]')).toHaveCount(0);
 
     // Live, not closed: the Senate's own record still stands on the left, and
     // none of the finished-record sentences may appear.
