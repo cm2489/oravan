@@ -157,8 +157,9 @@ export function briefDate(): string {
 
 /**
  * A ZIP that spans two or more House districts, each with a sitting member —
- * the one input on the site that renders the street-address refinement form
- * (AddressForm) on /reps. First in the Census table's own key order.
+ * the input that renders the street-address refinement form (AddressForm) on
+ * /reps (and, saved as the ZIP, the settled panel's House finder on a bill
+ * page). First in the Census table's own key order.
  */
 export function splitZip(): string {
   const zips = Object.keys(zipDistricts as Record<string, unknown>);

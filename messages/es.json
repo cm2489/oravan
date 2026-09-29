@@ -334,6 +334,19 @@
       "multiDistrict": "Tu código postal abarca más de un distrito de la Cámara, así que no se puede saber qué representante es el tuyo.",
       "noRollCalls": "El registro de votaciones nominales de Oravan, que empieza el {floor}, no tiene ninguna votación registrada sobre este proyecto."
     },
+    "houseFinder": {
+      "split": "Tu código postal abarca {count} distritos de la Cámara, así que tu dirección decide cuál es tu representante.",
+      "open": "Busca cómo votó tu representante",
+      "cancel": "Cancelar",
+      "showAll": "Mostrar a todos los representantes de este código postal",
+      "notFound": "No pudimos encontrar esa dirección. Revisa el número y la ortografía, o muestra a todos los representantes de este código postal.",
+      "found": "Tu distrito es {district}, según la dirección que escribiste. La dirección se usó una sola vez y nunca se guardó.",
+      "change": "Cambiar la dirección",
+      "outside": "Esa dirección está en {district}, que nuestro mapa de códigos postales no incluye para {zip}, así que su representante no aparece aquí.",
+      "outsideLink": "Ver quién representa a {district}",
+      "fallback": "{reason, select, unavailable {No pudimos revisar la dirección en este momento, así que aquí está} rateLimited {Has revisado varias direcciones en poco tiempo, así que aquí está} other {Aquí está}} el representante de cada uno de los {count} distritos que abarca el código postal {zip}.",
+      "tryAgain": "Volver a intentar con la dirección"
+    },
     "liveSenateFloor": "Este proyecto está ahora en manos del Senado — tus senadores son la llamada que cuenta ahora.",
     "liveHouseFloor": "Este proyecto está ahora en manos de la Cámara — tu representante es la llamada que cuenta ahora.",
     "liveSenateAfterHouse": "La Cámara ya votó este proyecto — el Senado decide ahora. Tus senadores son la llamada que cuenta.",

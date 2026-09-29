@@ -4,9 +4,11 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from '
 import { RotateCcw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
+import { houseSeats } from '@/lib/house-finder';
 import { usePrefs } from '@/lib/local';
 import type { SettledVoteGroup } from '@/lib/settled-votes';
-import type { Legislator } from '@/lib/types';
+import type { District, Legislator } from '@/lib/types';
+import { SettledHouseFinder } from './SettledHouseFinder';
 import { VacantSeatCard } from './VacantSeatCard';
 import { ZipForm } from './ZipForm';
 
@@ -50,6 +52,15 @@ import { ZipForm } from './ZipForm';
  * same-origin GET /api/reps for the saved ZIP (disclosed on /privacy). The
  * answer is joined here, in the browser, against the positions the server
  * rendered into the page for every visitor alike, and kept only in memory.
+ *
+ * A ZIP THAT SPANS MORE THAN ONE HOUSE DISTRICT (owner, 2026-09-29, reviewing
+ * this box on /bills/hconres-89-119: "there should be a way for them to find
+ * those votes in this box here"). When the House group is a roll call the
+ * vote file holds, it carries components/SettledHouseFinder.tsx — version B,
+ * the street-address finder — in place of the line that said this panel could
+ * not tell which member is yours. A House vote with no positions to show (a
+ * voice vote, or one the file does not hold) keeps that line: an address
+ * could name the member but not a position.
  */
 
 /** The call panel's title-bar geometry (components/ActionPanel.tsx). */
@@ -71,14 +82,16 @@ const useHydrated = () =>
     () => false
   );
 
-/** Only what the panel prints about a member — never phones, offices or party. */
-type Member = Pick<Legislator, 'bioguide' | 'name' | 'state' | 'type'>;
+/** Only what the panel prints about a member — never phones, offices or
+ *  party. The district is kept so a split ZIP's House finder can tell one
+ *  seat from another. */
+type Member = Pick<Legislator, 'bioguide' | 'name' | 'state' | 'type' | 'district'>;
 
 type Lookup =
   | { status: 'idle' }
   | { status: 'loading' }
   | { status: 'error' }
-  | { status: 'ready'; members: Member[]; multiDistrict: boolean; vacancies: number };
+  | { status: 'ready'; members: Member[]; multiDistrict: boolean; vacancies: District[] };
 
 /** A vote group as the page hands it over: the record's date (YYYY-MM-DD) and
  *  the same date already formatted for the page's locale. */
@@ -119,12 +132,18 @@ export function SettledPanel({
     setLookup({ status: 'loading' });
     fetch(`/api/reps?zip=${zip}`)
       .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((d: { reps: Legislator[]; vacancies?: unknown[]; multiDistrict?: boolean }) => {
+      .then((d: { reps: Legislator[]; vacancies?: District[]; multiDistrict?: boolean }) => {
         setLookup({
           status: 'ready',
-          members: d.reps.map(({ bioguide, name, state, type }) => ({ bioguide, name, state, type })),
+          members: d.reps.map(({ bioguide, name, state, type, district }) => ({
+            bioguide,
+            name,
+            state,
+            type,
+            district,
+          })),
           multiDistrict: d.multiDistrict ?? false,
-          vacancies: d.vacancies?.length ?? 0,
+          vacancies: (d.vacancies ?? []).map(({ state, district }) => ({ state, district })),
         });
       })
       .catch(() => setLookup({ status: 'error' }));
@@ -147,13 +166,13 @@ export function SettledPanel({
     if (lookup.status === 'idle' || lookup.status === 'loading') return;
     zipJustSaved.current = false;
     const el =
-      lookup.status === 'ready' && (lookup.members.length > 0 || lookup.vacancies > 0)
+      lookup.status === 'ready' && (lookup.members.length > 0 || lookup.vacancies.length > 0)
         ? membersRef.current
         : document.querySelector<HTMLElement>('[data-reps-alert]');
     el?.focus();
   }, [lookup]);
 
-  const notFound = lookup.status === 'ready' && lookup.members.length === 0 && lookup.vacancies === 0;
+  const notFound = lookup.status === 'ready' && lookup.members.length === 0 && lookup.vacancies.length === 0;
 
   return (
     <section
@@ -270,10 +289,18 @@ export function SettledPanel({
                         )}
                         {g.tally && ` · ${g.tally.yeas}–${g.tally.nays}`}
                       </h4>
-                      {g.chamber === 'house' && lookup.multiDistrict ? (
+                      {g.chamber === 'house' && lookup.multiDistrict && zip && g.source === 'rollCall' ? (
+                        // Keyed by the ZIP, so a new ZIP starts the finder over.
+                        <SettledHouseFinder
+                          key={zip}
+                          zip={zip}
+                          seats={houseSeats(lookup.members, lookup.vacancies)}
+                          positions={g.positions}
+                        />
+                      ) : g.chamber === 'house' && lookup.multiDistrict ? (
                         <p className="mt-1 text-sm text-ink-2">{t('settled.multiDistrict')}</p>
                       ) : members.length === 0 ? (
-                        g.chamber === 'house' && lookup.vacancies > 0 ? (
+                        g.chamber === 'house' && lookup.vacancies.length > 0 ? (
                           // A vacant House seat is why no House member is
                           // listed: the same card the call panel and /reps show.
                           <div className="mt-2">

@@ -18,6 +18,15 @@
      `urgent` (#ffc845, amber) is spent on exactly ONE fact: a bill standing on
      the floor calendar. Always with ink text. The date is always printed
      beside it. No date, no amber.
+       ONE SCOPED EXCEPTION, on the owner's words of 2026-09-29 about the
+       settled panel's split-ZIP House vote finder: "This would be a use of a
+       subtle yellow button (I know color comes later)". That button
+       (components/SettledHouseFinder.tsx) is a light `urgent` FILL on a
+       control that keeps its own line-strong edge and ink text; it makes no
+       floor claim and is found by its edge and words, never by its hue.
+       Page 2 (docs/current-direction.md, 2026-09-26) already reads "yellow
+       … marks only what you can act on"; this law is rewritten with the
+       new tokens, not here.
      `alert` means failure, and only failure.
      `ink` carries everything else — including every topic tag in every state.
 

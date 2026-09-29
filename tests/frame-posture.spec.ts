@@ -168,9 +168,11 @@ test.describe('F2: street-address refinement is unreachable inside an iframe', (
    * The embed widget itself is ZIP-only by construction (no address field
    * exists in components/embed/RepLookupWidget.tsx at all - pinned in
    * tests/embed-rep-lookup.spec.ts). This test covers the other half of F2:
-   * even the real, address-capable /reps page - the one place AddressForm
-   * actually renders - cannot be embedded in a third-party iframe in the
+   * even the real, address-capable /reps page - where AddressForm renders
+   * from the URL alone - cannot be embedded in a third-party iframe in the
    * first place, because F1's site-wide lock refuses the framing outright.
+   * (The settled bill panel's House finder renders it too, but only for a ZIP
+   * saved in this origin's storage, and F1 locks every bill page the same.)
    * Real cross-origin host, not page.setContent(): see helpers.ts's
    * startCrossOriginHost comment for why that distinction matters under
    * WebKit specifically (the only browser this suite runs, per
@@ -186,7 +188,7 @@ test.describe('F2: street-address refinement is unreachable inside an iframe', (
     baseURL,
   }) => {
     // A real split ZIP from the committed Census table (tests/corpus-samples.ts)
-    // - the one input on the whole site that renders AddressForm.
+    // - the one URL on the site that renders AddressForm by itself.
     const zip = splitZip();
     const target = `${baseURL}/reps?zip=${zip}`;
     const host = await startCrossOriginHost(

@@ -334,6 +334,19 @@
       "multiDistrict": "Your ZIP spans more than one House district, so this can't say which House member is yours.",
       "noRollCalls": "Oravan's roll-call record, which begins {floor}, holds no recorded vote on this bill."
     },
+    "houseFinder": {
+      "split": "Your ZIP spans {count} House districts, so your street address decides which House member is yours.",
+      "open": "Find your House member's vote",
+      "cancel": "Cancel",
+      "showAll": "Show every member for this ZIP instead",
+      "notFound": "We couldn't find that address. Check the street number and spelling, or show every member for this ZIP instead.",
+      "found": "Your district is {district}, found from the street address you entered. The address was used once and never stored.",
+      "change": "Change address",
+      "outside": "That address is in {district}, which our ZIP map doesn't list for {zip}, so its member isn't shown here.",
+      "outsideLink": "See who represents {district}",
+      "fallback": "{reason, select, unavailable {We couldn't check the address right now, so here is} rateLimited {You've checked several addresses in a short time, so here is} other {Here is}} the House member for each of the {count} districts ZIP {zip} spans.",
+      "tryAgain": "Try the address again"
+    },
     "liveSenateFloor": "This bill is in the Senate's hands right now — your senators are the live call.",
     "liveHouseFloor": "This bill is in the House's hands right now — your House member is the live call.",
     "liveSenateAfterHouse": "The House has already voted on this bill — the Senate decides next. Your senators are the live call.",
