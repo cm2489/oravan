@@ -10,9 +10,12 @@ import { callerIp, createRateLimiter, readOravanKey } from '@/lib/ratelimit';
  * POST, not GET, on purpose: GET query strings are routinely written to
  * server/CDN/proxy access logs, and POST bodies are not. A street address
  * must never land in any log - ours or a host's - so it travels only in
- * the body. For the same reason the catch paths below log NOTHING, not
- * even the error object: upstream fetch errors can embed the request URL,
- * which contains the address.
+ * the body, on BOTH hops: the visitor's browser POSTs it here, and this
+ * route POSTs it on to the Census geocoder as a form body (owner,
+ * 2026-09-29: "POST yes"; before that the upstream hop was a GET with the
+ * address in its query string). The address never appears in any URL. For
+ * the same reason the catch paths below log NOTHING, not even the error
+ * object: an upstream fetch error can still describe the request.
  *
  * We proxy the U.S. Census Bureau's public geocoder (no API key, no new
  * secrets) rather than calling it from the browser, so the visitor's own
@@ -86,8 +89,14 @@ export async function POST(req: NextRequest) {
 
   let payload: unknown;
   try {
+    // A form body, not a query string: the geocoder answers a POST exactly as
+    // it answers the GET (checked live with landmark addresses, 2026-09-28/29),
+    // and the address stays out of every URL on this hop too.
     const params = new URLSearchParams({ address: `${address}, ${zip}`, ...CENSUS_QUERY });
-    const res = await fetch(`${CENSUS_URL}?${params}`, {
+    const res = await fetch(CENSUS_URL, {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body: params,
       signal: AbortSignal.timeout(8000),
       cache: 'no-store',
     });

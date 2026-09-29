@@ -874,7 +874,10 @@ test.describe('in-place wiring', () => {
     expect(en.nominations.status.reported).toBe('Reported by committee');
     expect(en.nominations.status.exec_calendar).toBe('On the Executive Calendar');
     expect(en.nominations.status.confirmed).toBe('Confirmed by the Senate');
-    expect(en.nominations.status.returned).toBe('Returned to the President');
+    // Lowercase "president" since 2026-09-29 (owner; docs/copy-style.md): the
+    // label is Oravan's name for the procedure, not a quote. Where the record
+    // itself is printed, its own "Returned to the President under …" stands.
+    expect(en.nominations.status.returned).toBe('Returned to the president');
   });
 });
 

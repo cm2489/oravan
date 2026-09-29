@@ -7,6 +7,7 @@
  */
 import Anthropic from '@anthropic-ai/sdk';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { PRESIDENT_STYLE_RULE, presidentStyle } from '../lib/president-style.mjs';
 
 const anthropic = new Anthropic({ maxRetries: 8 });
 const OUT = 'data/headlines-v2.json';
@@ -34,6 +35,7 @@ Rules:
 - VARY the construction: do NOT use the "Topic — Consequence" em-dash template, and avoid colons as a crutch. A plain declarative sentence or a strong noun phrase both work.
 - Strictly nonpartisan. No alarm words, no spin, no "Congress" as the first word.
 - The Spanish headline is a natural headline in its own right, not a word-for-word translation.
+${PRESIDENT_STYLE_RULE}
 
 Output exactly two lines, nothing else:
 line 1: the English headline
@@ -48,8 +50,11 @@ line 2: the Spanish headline`;
   const text = msg.content[0].type === 'text' ? msg.content[0].text.trim() : '';
   const lines = text.split('\n').map((l) => l.trim()).filter(Boolean);
   if (lines.length < 2) throw new Error('bad shape');
-  const enH = clean(lines[0]);
-  const esH = clean(lines[1]);
+  // "The president" (docs/copy-style.md), after the wrapping quotes come off
+  // (a headline still inside them would read as a quotation and be skipped).
+  const titles = [b.title, b.short_title].filter((x) => typeof x === 'string');
+  const enH = presidentStyle(clean(lines[0]), 'en', { titles }).slice(0, 110);
+  const esH = presidentStyle(clean(lines[1]), 'es').slice(0, 110);
   if (enH.length < 20 || esH.length < 20 || /^congress/i.test(enH)) throw new Error('rejected');
   return { en: enH, es: esH };
 }
