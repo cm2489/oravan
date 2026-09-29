@@ -5,7 +5,7 @@ import { getBill } from '@/lib/core';
 // forbids the barrel so no bundle pays for data/nominations.json (~520 KB)
 // by accident. This route is one of the few that genuinely needs it.
 import { getNomination } from '@/lib/core/nominations';
-import { liveCallTargetForNomination } from '@/lib/journey';
+import { liveCallTargetForNomination, settledDecision } from '@/lib/journey';
 import {
   buildNominationScriptPrompt,
   NOMINATION_AUDIENCES,
@@ -27,13 +27,15 @@ import { noteScriptGeneration, noteScriptRefusal } from '@/lib/usage';
  * an in-memory fallback when unconfigured).
  *
  * TWO VEHICLE KINDS, ONE ENDPOINT (2026-08-06). A `pn-…` slug is a Senate
- * nomination and takes the fork below: a different corpus, a liveness check
- * the bill path does not need, an `audience` the bill path does not have, and
+ * nomination and takes the fork below: a different corpus, its own liveness
+ * check, an `audience` the bill path does not have, and
  * lib/nomination-script.ts's prompt instead of lib/scriptprompt.ts's. Every
  * shared concern — the two limiters, the tenant gate, the cache, the spend
  * counter, the response shape — stays shared, because a second route would be
  * a second place for a rate limit or a cache key to drift. The bill path runs
- * first and is byte-for-byte what it was.
+ * first and was byte-for-byte what it had been, until 2026-09-29 gave it a
+ * liveness check of its own: a settled bill is refused (409 `settled`, in the
+ * bill path below).
  *
  * Rate limiting (S11; resized 2026-09-18): 20 requests / 10 min per caller —
  * it was 8 from S11 until the spend-guards change; SCRIPT_IP_MAX below states
@@ -103,6 +105,22 @@ import { noteScriptGeneration, noteScriptRefusal } from '@/lib/usage';
  * Numbers (60/10min, 800/24h per tenant) are disclosed as tunable, not
  * derived from real per-tenant demand — S18 is dark-shipped, zero live
  * tenant traffic exists yet. See the S19 PR body for the full reasoning.
+ *
+ * Error taxonomy (uniform `{error}` bodies, nothing caller-specific ever
+ * echoed; only the citizen-path 429 adds a field, as described above):
+ *   400 bad_request        — malformed body, a missing slug, an unknown
+ *                            stance, or an unknown nomination audience
+ *   403 unauthorized       — a bad, revoked or inactive X-Oravan-Key
+ *   403 tos_required       — a valid tenant with no ToS on file
+ *   404 not_found          — the slug is in neither corpus
+ *   409 settled            — a BILL with no decision left (settledDecision:
+ *                            a law, a failed final vote, or a concurrent
+ *                            resolution both chambers adopted). Refused
+ *                            before the cache and before any spend.
+ *   422 not_callable       — a NOMINATION with no call to make (past advice
+ *                            and consent, unclassified, or no description)
+ *   429 rate_limited       — any limiter or the daily breaker tripped
+ *   502 generation_failed  — the model call failed or came back empty
  */
 
 // 60s: the largest function duration valid on every Vercel plan tier, and
@@ -258,13 +276,44 @@ export async function POST(req: NextRequest) {
    * disjoint from every bill slug (lib/moments.ts VEHICLE_KINDS), so the two
    * lookups can never both hit and the order below is not load-bearing — but
    * the bill lookup stays FIRST anyway, so the citizen path this route shipped
-   * with is byte-for-byte the first thing that runs for every bill request.
+   * with is the first thing that runs for every bill request — byte-for-byte,
+   * except for the settled-bill refusal added at its top on 2026-09-29.
    *
    * Before 2026-08-06 a `pn-…` slug fell straight through getBill() into the
    * 404 below, which is why a nomination had no call to make at all.
    */
   const bill = getBill(slug);
   if (bill) {
+    /*
+     * A SETTLED BILL HAS NO CALL TO MAKE, and this route says so rather than
+     * spending a model call to write one (page 1, rule 6: "a settled decision
+     * shows no call apparatus"). The predicate is settledDecision — the SAME
+     * one the bill page reads to swap its call panel for the record-only
+     * panel, pinned over the corpus by tests/settled-panel.unit.spec.ts — so
+     * the route and the page can never disagree about which bills are
+     * finished. Non-null for exactly three kinds of record: a signed law, a
+     * failed final vote, and a concurrent resolution both chambers adopted
+     * (H.Con.Res. 86). A failed MOTION, a failed suspension vote and a veto
+     * all return null and keep their script (owner's pick (a), 2026-09-29).
+     *
+     * FIRST in the bill path, before the content version is computed and
+     * before serveScript: nothing below this line may run for a settled bill.
+     * A cache read would serve any script already stored under the bill's
+     * current record (the key's version tracks the record's fields, not
+     * whether a decision is left), and a miss would spend. Like the
+     * nomination refusal below, it is not a 429 and consumes no daily-breaker
+     * unit.
+     *
+     * 409, not 404: the record exists and this endpoint found it; what
+     * conflicts with the record's state is the request itself, a call
+     * script. And not the nomination path's 422, so a client can tell "this
+     * bill is decided" apart from "this nomination cannot be called"
+     * (components/ActionPanel.tsx reads 422 as that refusal and nothing
+     * else). The bill page never asks: it renders no call panel here.
+     */
+    if (settledDecision(bill)) {
+      return NextResponse.json({ error: 'settled' }, { status: 409 });
+    }
     // Content-version key component (§9.1(d)): a corrected ai_summary — or a
     // status move, which reaches the generated prompt as `Current status:` —
     // changes the version, so a stale script can never be served against it.

@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { getTopActions } from './core/bills';
+import { settledDecision } from './journey';
 import {
   buildBatchRequest,
   customId,
@@ -117,7 +118,13 @@ export async function main({
   maxWaitMs = Number(process.env.PREGEN_BATCH_MAX_WAIT_MS ?? DEFAULT_MAX_WAIT_MS),
 }: PregenDeps = {}): Promise<PregenResult> {
   const bills = (getBills ?? (() => getTopActions(topN)))();
+  // planCombos plans nothing for a bill with no decision left (the refusal
+  // app/api/script makes). Said in the log, so "10 top bills, 54 combos" reads
+  // as a skip rather than a planning fault. A suffix, never a new field in
+  // the middle: lib/pipeline-health.mjs parses this line's prefix.
   const allCombos = planCombos(bills, STANCES, LOCALES);
+  const settledCount = bills.filter((b) => settledDecision(b) !== null).length;
+  const settledNote = settledCount > 0 ? ` (${settledCount} settled bill(s) skipped: no decision left)` : '';
 
   // --dry-run short-circuits BEFORE any I/O — not even an Upstash cache
   // read — so "zero API calls" is literal, not just "zero Anthropic
@@ -126,7 +133,7 @@ export async function main({
   if (dryRun) {
     const estimate = estimateCost(allCombos.length);
     console.log(
-      `pregen: --dry-run — zero API calls. ${bills.length} top bill(s), ${allCombos.length} combo(s):`
+      `pregen: --dry-run — zero API calls. ${bills.length} top bill(s), ${allCombos.length} combo(s)${settledNote}:`
     );
     for (const combo of allCombos) {
       console.log(`  - ${combo.slug} / ${combo.stance} / ${combo.lang} (version ${combo.version})`);
@@ -226,7 +233,7 @@ export async function main({
   const estimate = estimateCost(todo.length);
   console.log(
     `pregen: ${bills.length} top bill(s), ${allCombos.length} combo(s) total, ` +
-      `${allCombos.length - todo.length} already cached, ${todo.length} to generate`
+      `${allCombos.length - todo.length} already cached, ${todo.length} to generate${settledNote}`
   );
   console.log(
     `pregen: estimated cost — batch ~$${estimate.perNightBatch.intro}-$${estimate.perNightBatch.standard}/night ` +
