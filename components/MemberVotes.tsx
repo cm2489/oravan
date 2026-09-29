@@ -215,12 +215,13 @@ export async function MemberVotes({
           <dt className="inline font-semibold">{tVotes('result')}: </dt>
           <dd lang="en" className="inline">
             {glossify(r.result, 'en', seen)}
+            {/* The record's own tally, as the settled box prints it. Inside
+                the <dd>: a <dl>'s <div> group holds only <dt> and <dd>. */}
+            <span className="tabular-nums" data-member-vote-tally={dup ? undefined : ''}>
+              {' '}
+              · {r.totals.yea}–{r.totals.nay}
+            </span>
           </dd>
-          {/* The record's own tally, as the settled box prints it. */}
-          <span className="tabular-nums" data-member-vote-tally={dup ? undefined : ''}>
-            {' '}
-            · {r.totals.yea}–{r.totals.nay}
-          </span>
         </div>
       </dl>
       <p className="mt-1 flex flex-wrap items-center gap-x-1 text-sm text-ink-2 tabular-nums">

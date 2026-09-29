@@ -105,13 +105,27 @@ export function YourRecord({ standalone = false }: { standalone?: boolean }) {
                 { icon: MessageCircle, label: t('contacts', { count: contacts }), value: contacts },
                 { icon: Voicemail, label: t('voicemails', { count: voicemails }), value: voicemails },
               ].map(({ icon: Icon, label, value }) => (
+                // THE LABEL STAYS INSIDE ITS BOX (rule 7, 320px reflow;
+                // found 2026-09-29 verifying #387). Three boxes to a row
+                // leave "Conversations" / "Conversaciones" wider than the
+                // box at 320 and 360, and "Conversaciones" crossing the
+                // border at 390, where the next box painted over its last
+                // letters. So the one long word may hyphenate — only at a
+                // break with four letters each side, so "Llamadas hechas"
+                // and "Mensajes de voz" still wrap at their spaces — and
+                // below 360px the box gives up half its side padding.
+                // overflow-wrap: anywhere is the last resort for a browser
+                // with no hyphenation dictionary for the page's language.
                 <div
                   key={label}
-                  className="rounded-control border border-line-strong bg-paper p-4 text-center"
+                  className="rounded-control border border-line-strong bg-paper px-2 py-4 text-center min-[22.5rem]:px-4"
+                  data-record-stat=""
                 >
                   <Icon className="mx-auto h-5 w-5 text-ink-2" aria-hidden />
                   <dd className="mt-1 text-h3 font-extrabold tabular-nums">{value}</dd>
-                  <dt className="text-xs font-medium text-ink-2">{label}</dt>
+                  <dt className="text-xs font-medium text-ink-2 hyphens-auto [-webkit-hyphenate-limit-after:4] [-webkit-hyphenate-limit-before:4] [hyphenate-limit-chars:auto_4_4] [overflow-wrap:anywhere]">
+                    {label}
+                  </dt>
                 </div>
               ))}
             </dl>

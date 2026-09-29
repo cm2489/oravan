@@ -137,6 +137,39 @@ for (const [prefix, m] of [
       await expect(page.locator('[data-zip-kept]')).toHaveCount(0);
     });
 
+    test('the call counts keep every label inside its box @reflow', async ({ page }) => {
+      // Plural counts: "Conversations" / "Conversaciones" are the longest
+      // single words the three boxes hold, and at 320px they used to run
+      // past the box's border, under the next box (found verifying #387).
+      const call = (outcome: string, day: number) => ({ ...CALL, outcome, at: `2026-09-2${day}T15:00:00.000Z` });
+      await seed(page, {
+        'oravan.prefs': JSON.stringify({ zip: ZIP }),
+        'oravan.calls': JSON.stringify([call('contact', 1), call('contact', 2), call('voicemail', 3), call('voicemail', 4)]),
+      });
+      await page.goto(`${prefix}/reps?zip=${ZIP}`);
+      const stats = page.locator('#your-calls [data-record-stat]');
+      await expect(stats).toHaveCount(3);
+      await expect(stats.nth(1).locator('dt')).toHaveText(tImpact('contacts', { count: 2 }));
+      const escapes = await stats.evaluateAll((boxes) =>
+        boxes.flatMap((box) => {
+          const b = box.getBoundingClientRect();
+          const cs = getComputedStyle(box);
+          const left = b.left + parseFloat(cs.borderLeftWidth);
+          const right = b.right - parseFloat(cs.borderRightWidth);
+          const range = document.createRange();
+          range.selectNodeContents(box.querySelector('dt')!);
+          return [...range.getClientRects()]
+            .filter((r) => r.left < left - 0.5 || r.right > right + 0.5)
+            .map(() => box.querySelector('dt')!.textContent);
+        })
+      );
+      expect(escapes, 'a call-count label runs past its box').toEqual([]);
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth
+      );
+      expect(overflow).toBeLessThanOrEqual(0);
+    });
+
     test('a ZIP that matches nothing still leaves a number: the Capitol switchboard', async ({ page }) => {
       await page.goto(`${prefix}/reps?zip=00000`);
       await expect(page.getByRole('alert').filter({ hasText: m.reps.zipNotFound })).toBeVisible();
