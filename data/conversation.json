@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-09-29T20:21:21.825Z",
+    "fetched_at": "2026-09-29T20:42:55.966Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-09-29T20:21:21.825Z"
+        "checked_at": "2026-09-29T20:42:55.966Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-27",
         "week_label": "Most-Viewed Bills - Week of September 27, 2026",
         "entries": 8,
-        "checked_at": "2026-09-29T20:21:21.825Z"
+        "checked_at": "2026-09-29T20:42:55.966Z"
       },
       "leans": {
         "center": {
@@ -238,6 +238,12 @@
           "firstSeen": "2026-09-29",
           "lastSeen": "2026-09-29",
           "url": "https://news.google.com/rss/articles/CBMi2AFBVV95cUxOeGxDTWU5LTBGMjhTVWk5R1NTcU53TlJpOHRZcEZDdGVUdm1EM1F4UmVCb1hYRUlyNFE2cEg2LUI0RTE3UFdrS21XSzhoRWNaUXJKV01BVWVTS194ckFRZXFzTFdKWVlyTU9kWFh0NW5iRTEyZXM0dlBFdUZuYVUtNUJuMTdmMkRIV2JPeUlzbGd4QzFtVWdLWUt4azhud19xNUZXT1FBMGtKWTR4MDduemRmdHphT1pxWkl1dk9lOHMyUWU4ay1OYUtJTFNHbHBOMjVyUkV4dTU?oc=5"
+        },
+        {
+          "domain": "suaragarut.id",
+          "firstSeen": "2026-09-29",
+          "lastSeen": "2026-09-29",
+          "url": "https://news.google.com/rss/articles/CBMieEFVX3lxTE13SU05cVNMVlpISFZaWVUwMFRhM2EzQXNycHF5eDh3d0lvYzlZTm1UX0RMN05GanY0bFZhb3lGMGFXN3V0bmN0YzhITDkxRzZXZ21jNDY1VF8ySlZJeENmcFJ5UHVEWmx3Z09PM3BsZlFveTNHRFNRbw?oc=5"
         }
       ],
       "mostViewed": null
