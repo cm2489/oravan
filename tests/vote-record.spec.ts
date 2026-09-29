@@ -151,7 +151,8 @@ for (const { locale, prefix, m } of LOCALES) {
       const fold = page.locator('[data-vote-record] [data-vote-roll]').first().locator('[data-vote-members]');
       const summary = fold.locator('summary');
       expect(await height(summary), '44px touch target on the fold-out control').toBeGreaterThanOrEqual(44);
-      await expect(summary).toHaveText(m.votes.membersToggle);
+      // Contains, not equals: the +/– glyphs sit inside the summary, aria-hidden.
+      await expect(summary).toContainText(m.votes.membersToggle);
 
       // Nothing is fetched, and no list is in the page, until it opens.
       await page.waitForLoadState('networkidle');
@@ -221,7 +222,10 @@ for (const { locale, prefix, m } of LOCALES) {
       await page.keyboard.press('Enter');
       await expect(fold).toHaveAttribute('data-vote-members-state', 'ready');
       const firstGroup = POSITIONS.find((p) => r.votes[p].length > 0)!;
-      await page.keyboard.press('Tab');
+      // Every project here is WebKit, which (like Safari by default) leaves
+      // links out of the plain Tab order; Option+Tab is how a Safari keyboard
+      // user reaches a link, so that is the key this walk presses.
+      await page.keyboard.press('Alt+Tab');
       const first = fold.locator(`[data-vote-group="${firstGroup}"] a`).first();
       await expect(first).toBeFocused();
       expect(await height(first)).toBeGreaterThanOrEqual(44);
