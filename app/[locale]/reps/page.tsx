@@ -311,6 +311,23 @@ export default async function RepsPage({
           </Link>
         </section>
       )}
+
+      {/* THE RECORD'S WAY IN, now that it is off the tab bar (owner,
+          2026-09-29, "nav 1"). The wireframe folds the record into this page
+          under the members (Q4 b+c); until that rebuild lands, this link is
+          how a reader reaches their calls and "Erase all my data" from
+          anywhere but a call panel. Same words and destination as the call
+          panel's own link (`bill.viewImpact`). */}
+      <p className="mt-12 border-t border-line pt-4">
+        <Link
+          href="/record"
+          data-record-link=""
+          className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-ink underline underline-offset-4"
+        >
+          {tBill('viewImpact')}
+          <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
+        </Link>
+      </p>
     </div>
   );
 }

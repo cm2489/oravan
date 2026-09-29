@@ -6,8 +6,8 @@
     "nav": {
       "home": "Home",
       "bills": "Bills",
+      "call": "Call",
       "reps": "My reps",
-      "impact": "My record",
       "whyCall": "Why call?",
       "primaryLabel": "Primary",
       "moments": "Big Questions"
@@ -41,8 +41,8 @@
     "navShort": {
       "home": "Home",
       "bills": "Bills",
+      "call": "Call",
       "reps": "Reps",
-      "impact": "Record",
       "moments": "Questions"
     },
     "aiMarker": "AI",
@@ -538,6 +538,20 @@
       "center": "center",
       "right": "right"
     }
+  },
+  "call": {
+    "title": "Make a call",
+    "lede": "Pick a bill. You get a script you can edit, and the numbers.",
+    "metaDescription": "The bills in Congress worth a call this week, each with a script you can edit and your members' numbers.",
+    "weekTitle": "This week",
+    "aiNote": "Headlines decoded by AI, checked against the record",
+    "floorFor": "for {date}",
+    "readSource": "Read the source",
+    "routingSenate": "Your senators are the live call: {names}",
+    "routingHouse": "Your House member is the live call: {names}",
+    "reachTitle": "Who you'll reach",
+    "reachNote": "Their numbers are in each bill's call panel, under your script.",
+    "reachFailed": "Your members couldn't be looked up just now. Each bill's call panel will try again."
   },
   "why": {
     "title": "Why calling works",
