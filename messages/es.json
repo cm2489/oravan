@@ -52,7 +52,7 @@
   },
   "home": {
     "heroTitle": "Entiéndelo en palabras claras.",
-    "heroSub": "Oravan descifra en palabras claras cada proyecto de ley activo del Congreso, lo coteja con el registro oficial y te da un guion de llamada de 30 segundos.",
+    "heroSub": "Oravan descifra en palabras claras proyectos de ley activos del Congreso, los coteja con el registro oficial y te da un guion de llamada de 30 segundos.",
     "heroLocaleLink": "View in English",
     "zipLabel": "Tu código postal",
     "zipPlaceholder": "p. ej. 20002",
@@ -73,7 +73,7 @@
     "how4Title": "Llama — o deja un mensaje de voz",
     "how4Body": "Las oficinas cuentan los mensajes de voz igual que las llamadas en vivo. Fuera de horario también funciona. Después registra cómo te fue.",
     "whyTitle": "¿De verdad funciona llamar?",
-    "whyBody": "Sí — y mejor que los correos, las peticiones o las redes. El personal del Congreso cuenta las llamadas a diario y reporta los números al congresista.",
+    "whyBody": "Sí — y mejor que los correos de plantilla, las peticiones o las redes. El personal del Congreso cuenta las llamadas a diario y reporta los números al congresista.",
     "whyCta": "Lee por qué llamar funciona",
     "privacyTitle": "Tu privacidad, por diseño",
     "privacyBody": "Sin cookies que te sigan, sin perfiles políticos guardados en ningún servidor — todo lo personal vive en tu navegador.",
@@ -540,7 +540,7 @@
     "scenes": {
       "decode": {
         "title": "Un proyecto de ley, en claro",
-        "body": "Oravan traduce cada proyecto de ley a lenguaje claro — siempre marcado como redactado por IA, con el texto oficial a un toque de distancia."
+        "body": "Oravan traduce proyectos de ley a lenguaje claro — siempre marcado como redactado por IA, con el texto oficial a un toque de distancia."
       },
       "stance": {
         "title": "Di cuál es tu postura",
@@ -1549,7 +1549,7 @@
       },
       "mandatory-spending": {
         "term": "Gasto obligatorio",
-        "body": "El gasto obligatorio, también llamado gasto directo, es el dinero que las leyes vigentes obligan al gobierno a pagar, como los beneficios del Seguro Social y de Medicare. No necesita un nuevo voto del Congreso cada año y representa casi dos tercios del gasto federal."
+        "body": "El gasto obligatorio, también llamado gasto directo, es el dinero que las leyes vigentes obligan al gobierno a pagar, como los beneficios del Seguro Social y de Medicare. No necesita un nuevo voto del Congreso cada año y representa alrededor del 60 por ciento del gasto federal."
       },
       "discretionary-spending": {
         "term": "Gasto discrecional",
@@ -1581,7 +1581,7 @@
       },
       "sequestration": {
         "term": "Secuestro presupuestario (sequestration)",
-        "body": "El secuestro presupuestario es un recorte automático y general del gasto federal, que exige una ley presupuestaria cuando no se cumple un límite o una meta de gasto. Cada cuenta afectada se recorta en el mismo porcentaje."
+        "body": "El secuestro presupuestario es un recorte automático y general del gasto federal, que exige una ley presupuestaria cuando no se cumple un límite o una meta de gasto. Las cuentas de una misma categoría, como defensa o no defensa, se recortan en el mismo porcentaje, aunque algunos programas están exentos o tienen un recorte máximo."
       },
       "earmark": {
         "term": "Asignación dirigida (earmark)",
