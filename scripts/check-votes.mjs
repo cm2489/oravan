@@ -18,6 +18,10 @@
  *   - a roll call's totals disagree with its per-member positions — the
  *     totals come from the record's own tally (the House detail's party totals,
  *     the Senate's <count>), independently of the member list
+ *   - a roll call has no `totalsByParty` (2026-09-29), or its count by party
+ *     is keyed by something other than a party letter as the record writes
+ *     it, lists a party that counts no member, or does not add up to the
+ *     tally position by position
  *   - a roll call names a bill that is not in data/bills.json, has no question
  *     or result text, no official source URL, a date before the file's floor or
  *     in the future, a duplicate id, or a member recorded twice
@@ -54,12 +58,14 @@ if (process.argv.includes('--self-test')) {
         id: 's-119-2-234', chamber: 'senate', congress: 119, session: 2, roll: 234, date: '2026-09-15',
         question: 'On Cloture on the Motion to Proceed H.R. 3633', result: 'Cloture on the Motion to Proceed Rejected',
         bill: 'hr-3633-119', totals: { yea: 1, nay: 1, present: 0, notVoting: 1 },
+        totalsByParty: { D: { yea: 0, nay: 1, present: 0, notVoting: 1 }, R: { yea: 1, nay: 0, present: 0, notVoting: 0 } },
         source: 'https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00234.xml',
         votes: { yea: ['B000002'], nay: ['A000001'], present: [], notVoting: ['G000359'] },
       },
       {
         id: 'h-119-2-300', chamber: 'house', congress: 119, session: 2, roll: 300, date: '2026-09-15',
         question: 'On Passage', result: 'Passed', bill: 'hr-3633-119', totals: { yea: 1, nay: 0, present: 1, notVoting: 0 },
+        totalsByParty: { I: { yea: 0, nay: 0, present: 1, notVoting: 0 }, R: { yea: 1, nay: 0, present: 0, notVoting: 0 } },
         source: 'https://clerk.house.gov/evs/2026/roll300.xml',
         votes: { yea: ['C000003'], nay: [], present: ['D000004'], notVoting: [] },
       },
@@ -88,6 +94,12 @@ if (process.argv.includes('--self-test')) {
     ['a non-official source URL', mutate((d) => { d.rollCalls[0].source = 'https://example.com/vote.xml'; })],
     ['an unknown schema', mutate((d) => { d._meta.schema = 99; })],
     ['a senate roster entry voting in the house', mutate((d) => { d.rollCalls[1].votes.yea = ['A000001']; })],
+    ['a roll call with no count by party', mutate((d) => { delete d.rollCalls[0].totalsByParty; })],
+    ['an empty count by party', mutate((d) => { d.rollCalls[0].totalsByParty = {}; })],
+    ['a count by party that does not add up to the tally', mutate((d) => { d.rollCalls[0].totalsByParty.R.yea = 2; })],
+    ['a party key that is a name, not the record\'s letter', mutate((d) => { d.rollCalls[0].totalsByParty.Republican = d.rollCalls[0].totalsByParty.R; delete d.rollCalls[0].totalsByParty.R; })],
+    ['a party that counts no member', mutate((d) => { d.rollCalls[1].totalsByParty.D = { yea: 0, nay: 0, present: 0, notVoting: 0 }; })],
+    ['a negative party count', mutate((d) => { d.rollCalls[0].totalsByParty.D.nay = -1; d.rollCalls[0].totalsByParty.R.nay = 2; })],
   ];
   let ok = true;
   for (const [name, data] of cases) {

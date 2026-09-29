@@ -6,8 +6,8 @@
  *   node --env-file=.env.local scripts/sync-votes.mjs [--dry-run]
  *
  * Needs CONGRESS_API_KEY (House). NO Anthropic key, no AI, no spend: this is
- * the government's own record — question text, result, tally, and every
- * member's position — and nothing else. The parsing and the gate live in
+ * the government's own record — question text, result, tally, the tally by
+ * party, and every member's position — and nothing else. The parsing and the gate live in
  * lib/votes-core.mjs; this file is only the I/O around them.
  *
  * ── WHY A SEPARATE SCRIPT AND A SEPARATE STEP ──────────────────────────────
@@ -46,6 +46,12 @@
  * resumable, and it is what catches a bill that joined the corpus AFTER its
  * vote: sync-bills.mjs runs before this, so tonight's new corpus bills get
  * tonight's votes, including older ones inside the window.
+ *
+ * "Holds" means holds WITH `totalsByParty` (2026-09-29): a roll call on file
+ * without its count by party is fetched again like a missing one (isHeld,
+ * below). The 2026-09-29 back-fill re-read all of them from the record, so a
+ * nightly finds none; the rule is there so a file written by older code can
+ * never leave one without it.
  *
  * ── COST ───────────────────────────────────────────────────────────────────
  * Per session in the window: 2 Congress.gov list requests (250 roll calls a
@@ -94,6 +100,7 @@ import {
   VoteParseError,
   compareRollCalls,
   congressFirstYear,
+  hasPartyTotals,
   legislationText,
   parseHouseApi,
   parseHouseClerkXml,
@@ -203,6 +210,17 @@ try {
 }
 const rollCalls = new Map((existing?.rollCalls ?? []).map((r) => [r.id, r]));
 const roster = new Map((existing?.members ?? []).map((m) => [m.id, m]));
+/**
+ * HELD means stored WITH its count by party. A roll call the file holds
+ * without `totalsByParty` (every one written before 2026-09-29) is fetched
+ * again and replaced, exactly as a missing one is fetched: that is how the
+ * field reaches the roll calls already on file, through the same parsers and
+ * the same gate, and it makes a run over an older file self-healing rather
+ * than a gate failure nobody can fix without a back-fill.
+ */
+const isHeld = (id) => hasPartyTotals(rollCalls.get(id));
+/** The walker's view of the same rule (lib/votes-backfill.mjs reads has/get). */
+const heldView = { has: isHeld, get: (id) => rollCalls.get(id) };
 const cursor = { house: existing?._meta?.cursor?.house ?? null, senate: existing?._meta?.cursor?.senate ?? null };
 
 // Sessions whose calendar year overlaps [floor, today]. A year outside the
@@ -278,12 +296,15 @@ async function getRoll(url) {
 }
 
 const stats = {
-  house: { listed: 0, inWindow: 0, corpus: 0, stored: 0, viaClerk: 0, failed: 0 },
-  senate: { listed: 0, inWindow: 0, corpus: 0, stored: 0, failed: 0 },
+  house: { listed: 0, inWindow: 0, corpus: 0, stored: 0, refreshed: 0, viaClerk: 0, failed: 0 },
+  senate: { listed: 0, inWindow: 0, corpus: 0, stored: 0, refreshed: 0, failed: 0 },
 };
 
 function store(parsed, chamber) {
   const { roll, members } = parsed;
+  // Already on file (without its count by party, or it would have been held
+  // and never fetched): re-read from the record and replaced.
+  if (rollCalls.has(roll.id)) stats[chamber].refreshed++;
   rollCalls.set(roll.id, roll);
   for (const m of members) {
     const cur = currentById.get(m.id);
@@ -324,7 +345,7 @@ async function syncHouseClerk(session) {
     session,
     floor,
     corpus,
-    held: rollCalls,
+    held: heldView,
     getText,
     getRoll,
     log: (line) => console.log(line),
@@ -360,7 +381,7 @@ async function syncHouse(session) {
     const bill = resolveBillId([legislationText(it.legislationType, it.legislationNumber)], corpus, CONGRESS);
     if (!bill) { examined.push({ roll: it.rollCallNumber }); continue; }
     stats.house.corpus++;
-    if (rollCalls.has(id)) { examined.push({ roll: it.rollCallNumber }); continue; }
+    if (isHeld(id)) { examined.push({ roll: it.rollCallNumber }); continue; }
     try {
       let parsed;
       try {
@@ -400,7 +421,7 @@ async function syncSenate(session) {
     const menuBill = resolveBillId([v.issue, v.question], corpus, CONGRESS);
     if (!menuBill) { examined.push({ roll: v.roll, date: v.date }); continue; }
     stats.senate.corpus++;
-    if (rollCalls.has(id)) { examined.push({ roll: v.roll, date: v.date }); continue; }
+    if (isHeld(id)) { examined.push({ roll: v.roll, date: v.date }); continue; }
     const nnnnn = String(v.roll).padStart(5, '0');
     const url = `https://www.senate.gov/legislative/LIS/roll_call_votes/vote${CONGRESS}${session}/vote_${CONGRESS}_${session}_${nnnnn}.xml`;
     try {
@@ -523,8 +544,8 @@ else if (ONLY_NEW_ROLLS && h.stored + s.stored === 0) {
 } else writeAtomic(VOTES_PATH, text);
 console.log(verdict.notes.join('\n'));
 console.log(
-  `DONE: House ${h.stored} stored (${h.listed} listed, ${h.inWindow} in window, ${h.corpus} on corpus bills, ${h.viaClerk} via Clerk fallback, ${h.failed} failed); ` +
-    `Senate ${s.stored} stored (${s.listed} listed, ${s.inWindow} in window, ${s.corpus} on corpus bills, ${s.failed} failed); ` +
+  `DONE: House ${h.stored} stored (${h.refreshed} of them re-read to add the count by party; ${h.listed} listed, ${h.inWindow} in window, ${h.corpus} on corpus bills, ${h.viaClerk} via Clerk fallback, ${h.failed} failed); ` +
+    `Senate ${s.stored} stored (${s.refreshed} of them re-read to add the count by party; ${s.listed} listed, ${s.inWindow} in window, ${s.corpus} on corpus bills, ${s.failed} failed); ` +
     `file ${list.length} roll call(s) across ${new Set(list.map((r) => r.bill)).size} bill(s), ${members.length} members; ` +
     `cursor house -> ${cursor.house}, senate -> ${cursor.senate}; floor ${floor}`
 );
