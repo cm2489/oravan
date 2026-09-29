@@ -155,10 +155,12 @@ test.describe('the cache key did not move', () => {
     // Deliberate (lib/scriptcache.ts, "THE STAGE LINE READS MORE THAN THIS KEY
     // HOLDS"): the key holds the status and the last-action date, not the
     // stage. Two records that differ ONLY in what statusKeyFor reads beyond
-    // those share a key, and PROMPT_VERSION was not bumped, so every script
-    // cached before this change stays keyed where it was and expires on the
-    // 24-hour TTL. If the stage is ever added to the key, this assertion is
-    // where that decision (and its one-day full regeneration) gets made.
+    // those share a key, and this change did not bump PROMPT_VERSION, so every
+    // script cached before it stayed keyed where it was and expired on the
+    // 24-hour TTL. (PROMPT_VERSION moved to '3' later the same day for a
+    // different change, owner's pick 7 (a); tests/script-passed-both.unit.spec.ts
+    // pins that bump.) If the stage is ever added to the key, this assertion
+    // is where that decision (and its one-day full regeneration) gets made.
     const asOneChamber: Fixture = { ...HR_4467, status_basis_text: null, last_action_text: 'Received in the Senate.' };
     expect(statusKeyFor(asOneChamber)).toBe('passed_chamber');
     expect(contentVersion(HR_4467)).toBe(contentVersion(asOneChamber));
