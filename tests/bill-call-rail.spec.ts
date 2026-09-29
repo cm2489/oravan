@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { billSlug, getAllBills } from '../lib/core';
+import { settledDecision } from '../lib/journey';
 
 /*
  * B2 — THE MOBILE CALL RAIL (2026-09-24).
@@ -33,10 +34,14 @@ import { billSlug, getAllBills } from '../lib/core';
  *   3. It never sits over the read — swept every 96px through the read's
  *      whole extent.
  *
- * Any decoded bill works; the first one in the corpus is used so the test
- * never pins a slug the nightly sync can drop.
+ * Any decoded bill with a decision still open works; the first one in the
+ * corpus is used so the test never pins a slug the nightly sync can drop. A
+ * settled bill has no call to keep on screen — its page shows the record and
+ * no call apparatus at all (owner, 2026-09-28, Q9 "a"; rule 8 is scoped to a
+ * decision still open, docs/constitution-log.md#settled-panel-2026-09-28), and
+ * tests/settled-panel.spec.ts pins that side.
  */
-const decoded = getAllBills().find((b) => b.ai_sections);
+const decoded = getAllBills().find((b) => b.ai_sections && settledDecision(b) === null);
 const SLUG = decoded ? billSlug(decoded) : null;
 
 type Sample = {

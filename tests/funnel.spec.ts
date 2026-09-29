@@ -2,7 +2,8 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
 import { getLiveMoments } from '../lib/moments';
-import { getAllLegislators, getBillsSponsoredBy } from '../lib/core';
+import { billSlug, getAllBills, getAllLegislators, getBillsSponsoredBy } from '../lib/core';
+import { settledDecision } from '../lib/journey';
 import { anyTopAt, stableAcross } from './corpus';
 import { mockScriptApi } from './helpers';
 
@@ -30,11 +31,22 @@ import { mockScriptApi } from './helpers';
  *        `bill.aiChip` is the string the MOMENT page reuses. Both are asserted
  *        below, each on the page that renders it.)
  *
- *   I2 - CALL PATH (preserved). From any decoded answer, a completed,
- *        editable script is within BUDGET.callInteractions (stance radio -> a
- *        visible `bill.scriptTitle` textbox), and the ZIP-first route stays
- *        within BUDGET.zipFirstClicks end to end through the /reps
- *        continuation. Demote the call apparatus, never bury it.
+ *   I2 - CALL PATH (preserved). From any decoded answer FOR A DECISION STILL
+ *        OPEN, a completed, editable script is within BUDGET.callInteractions
+ *        (stance radio -> a visible `bill.scriptTitle` textbox), and the
+ *        ZIP-first route stays within BUDGET.zipFirstClicks end to end through
+ *        the /reps continuation. Demote the call apparatus, never bury it.
+ *        SCOPED 2026-09-28 (rule 8; docs/constitution-log.md
+ *        #settled-panel-2026-09-28): a settled decision — a law or a rejected
+ *        vote to pass it (lib/journey.ts `settledDecision`; owner's pick (a),
+ *        2026-09-29: "Only a law or a failed final vote counts as finished",
+ *        so a failed motion, a failed two-thirds suspension vote and a veto
+ *        all keep the call) — shows the record and no call at all (owner, Q9
+ *        answered "a"; rule 6), so there is no script to reach and I2 does not
+ *        measure from it. The week and the /reps continuation are the act-now
+ *        pool, which never holds one, so those paths still take the FIRST
+ *        link; the member page and the quiet-week escape hatch pick an open
+ *        one.
  *
  *   MEMBER PAGES (/reps/[bioguide], added 2026-09-24 with plan item C2) are a
  *        truth surface too, so both invariants are asserted there as well:
@@ -97,10 +109,25 @@ const CORPUS_STABLE = stableAcross((at) => anyTopAt(at));
  *  corpus-gated the same way its first one is. */
 const anyLiveMoment = getLiveMoments().length > 0;
 
+/** Every bill whose decision is still open — the only ones I2 measures from
+ *  (rule 8, as amended 2026-09-28). */
+const OPEN_SLUGS = new Set(
+  getAllBills()
+    .filter((b) => settledDecision(b) === null)
+    .map(billSlug)
+);
+
 /** A member with sponsored, decoded bills - the one with the most, so a
- *  nightly sync can't empty the list out from under this file. */
+ *  nightly sync can't empty the list out from under this file - among those
+ *  whose newest sponsored bill (the first link on their page) is still an
+ *  open decision, so the member-page I2 path starts from a bill with a call
+ *  to make. */
 const SPONSOR = getAllLegislators()
-  .map((l) => ({ id: l.bioguide, n: getBillsSponsoredBy(l.bioguide).length }))
+  .map((l) => {
+    const sponsored = getBillsSponsoredBy(l.bioguide);
+    return { id: l.bioguide, n: sponsored.length, first: sponsored[0] };
+  })
+  .filter((m) => m.first && OPEN_SLUGS.has(billSlug(m.first)))
   .sort((a, b) => b.n - a.n)[0];
 /** A member Oravan tracks no sponsored bill for, if the roster has one. */
 const NON_SPONSOR = getAllLegislators().find((l) => getBillsSponsoredBy(l.bioguide).length === 0);
@@ -109,6 +136,17 @@ const ZIP = '78501'; // single district + two senators, no address-refinement de
 
 function firstBillLinkIn(page: Page, surface: string): Locator {
   return page.locator(`${surface} a[href*="/bills/"]`).first();
+}
+
+/** The first VISIBLE link in `surface` to a bill whose decision is still
+ *  open, for a path that starts from a list which can also hold settled bills
+ *  (/bills). Reading the hrefs spends no interaction. */
+async function firstOpenBillLinkIn(page: Page, surface: string): Promise<Locator> {
+  const links = page.locator(`${surface} a[href*="/bills/"]`).filter({ visible: true });
+  const hrefs = await links.evaluateAll((els) => els.map((e) => e.getAttribute('href') ?? ''));
+  const i = hrefs.findIndex((h) => OPEN_SLUGS.has(h.split('/bills/')[1]?.split(/[?#/]/)[0] ?? ''));
+  expect(i, `no link to an open decision in ${surface}`).toBeGreaterThanOrEqual(0);
+  return links.nth(i);
 }
 
 // Declare a stance robust against the click-before-hydration race (same
@@ -338,7 +376,9 @@ for (const { locale, prefix, messages } of LOCALES) {
       await expect(page.locator(SURFACE.week).getByRole('status')).toBeVisible();
       await page.getByRole('link', { name: messageRegex(messages.home.seeAll) }).click();
       await expect(page).toHaveURL(/\/bills$/);
-      await page.locator('a[href*="/bills/"]').first().click();
+      // A bill with a decision still open (I2 is scoped to those since
+      // 2026-09-28; /bills also lists laws and settled votes).
+      await (await firstOpenBillLinkIn(page, 'main')).click();
       await expect(page).toHaveURL(/\/bills\//);
       await declareStance(page, messages.bill.stance.support);
       await expectCompletedScript(page, messages.bill.scriptTitle);

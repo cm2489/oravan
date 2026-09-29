@@ -88,22 +88,21 @@ test('ES call moment: dial mode and outcome logging speak Spanish end to end', a
   await page.getByRole('radio', { name: es.bill.stance.support }).click();
   await expect(page.getByRole('textbox', { name: es.bill.scriptTitle })).toBeVisible();
 
-  // Call mode opens as an ES-labeled dialog with the script and tel: links.
-  await page.getByRole('button', { name: es.bill.startCall }).click();
-  const dialog = page.getByRole('dialog', { name: es.bill.callTitle });
-  await expect(dialog).toBeVisible();
-  await expect(dialog.getByText(/GUION SIMULADO/)).toBeVisible();
+  // The call lives in the panel — one route since 2026-09-28 (Q5 "a"): the
+  // step heading, the script and the tel: links, all in Spanish.
+  const panel = page.locator('section[aria-labelledby="act"]');
+  await expect(panel.getByRole('heading', { name: es.bill.callTitle })).toBeVisible();
+  await expect(page.getByRole('textbox', { name: es.bill.scriptTitle })).toHaveValue(/GUION SIMULADO/);
   // Fresh profile: the first-call voicemail nudge shows, localized. exact:
-  // the dialog's why-call link (2026-07 critique round 2) starts with this
+  // the panel's why-call link (2026-07 critique round 2) starts with this
   // same phrase in Spanish, so substring matching is ambiguous.
-  await expect(dialog.getByText(es.bill.firstCallTitle, { exact: true })).toBeVisible();
+  await expect(panel.getByText(es.bill.firstCallTitle, { exact: true })).toBeVisible();
   // Auto-waiting assertion: the dial buttons appear once /api/reps resolves.
-  await expect(dialog.locator('a[href^="tel:"]').first()).toBeVisible();
-  await page.keyboard.press('Escape');
-  await expect(dialog).toBeHidden();
+  await expect(panel.locator('a[href^="tel:"]').first()).toBeVisible();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
 
   // The voicemail-legitimizing beats render in Spanish.
-  await expect(page.getByText(es.bill.afterHoursTitle)).toBeVisible();
+  await expect(page.getByText(es.bill.firstCallBody)).toBeVisible();
   await expect(page.getByText(es.bill.staffNote)).toBeVisible();
 
   // Outcome chips log in Spanish and the milestone lands localized.
@@ -153,13 +152,11 @@ test.describe('3-stance × 2-locale matrix', () => {
       'ghostSummary',
       'railMoreHint',
       'callTitle',
-      'startCall',
-      'editScript',
       'copyScript',
       'scriptCopied',
-      'afterHoursTitle',
-      'afterHoursBody',
       'staffNote',
+      'switchboardNote',
+      'alsoYours',
       'firstCallTitle',
       'firstCallBody',
       'preDialTitle',

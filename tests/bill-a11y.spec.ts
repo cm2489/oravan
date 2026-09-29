@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import en from '../messages/en.json';
 import { billSlug, getAllBills } from '../lib/core';
+import { settledDecision } from '../lib/journey';
 import { mockScriptApi, seedZip } from './helpers';
 
 /*
@@ -20,9 +21,17 @@ import { mockScriptApi, seedZip } from './helpers';
  *
  * Scoped to <main>: the site header and footer are shared chrome with their
  * own owners and specs.
+ *
+ * Two pages since 2026-09-28: a bill with a decision still open (the call
+ * panel), and a settled one (the record-only panel that stands in its place —
+ * owner, Q9 "a"), swept with and without a saved ZIP.
  */
-const decoded = getAllBills().find((b) => b.ai_sections && b.congress_gov_url);
+const decoded = getAllBills().find(
+  (b) => b.ai_sections && b.congress_gov_url && settledDecision(b) === null
+);
 const SLUG = decoded ? billSlug(decoded) : null;
+const settled = getAllBills().find((b) => b.ai_sections && settledDecision(b) !== null);
+const SETTLED_SLUG = settled ? billSlug(settled) : null;
 
 async function smallTargets(page: Page) {
   return page.evaluate(() => {
@@ -103,5 +112,24 @@ test.describe('bill page accessibility floor', () => {
       seen.push(ring.name);
     }
     expect(new Set(seen).size).toBe(3);
+  });
+});
+
+test.describe('settled bill page accessibility floor', () => {
+  test.beforeEach(({}, testInfo) => {
+    test.skip(testInfo.project.name !== 'webkit-mobile', 'the 390px phone layout is where targets shrink');
+    test.skip(!SETTLED_SLUG, 'no decoded settled bill in the corpus');
+  });
+
+  test('the record-only panel\'s controls have a 44px hit box, with and without a ZIP', async ({ page }) => {
+    await page.goto(`/bills/${SETTLED_SLUG}`);
+    await expect(page.locator('[data-settled-panel]')).toBeVisible();
+    await page.locator('main header details summary').click();
+    expect(await smallTargets(page), 'controls under 44px, no ZIP').toEqual([]);
+
+    await seedZip(page, '78501');
+    await page.reload();
+    await expect(page.locator('[data-settled-panel] [data-settled-votes]')).toBeVisible();
+    expect(await smallTargets(page), 'controls under 44px, members shown').toEqual([]);
   });
 });

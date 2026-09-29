@@ -30,7 +30,9 @@ mechanism.
 5. **The gates re-run**, on the entry as you approved it: schema, EN/ES parity,
    the vehicle resolving in the real corpus, qualifying-signal shape, the dates,
    the eight-live cap, the forbidden-vocabulary lint in both languages, and the
-   new-vehicle terminality rule against `main`. Plus two questions only the
+   new-vehicle terminality rule against `main` (since 2026-09-28 a new bill
+   vehicle must also still have a decision open: a failed floor vote is refused
+   like a signed law, because its page shows the record, not a call). Plus two questions only the
    approve step can ask: has the record moved since the draft was written, and
    is the signal still inside the 45-day window the site publishes as its
    criterion.

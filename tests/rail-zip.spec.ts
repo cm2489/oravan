@@ -7,23 +7,19 @@ import { floorActivityBill, referenceBill } from './corpus-fixtures';
 
 /*
  * "The panel scrolls · the call stays" — and so does a ZIP submit (2026-08,
- * panel-navigation fix). The ZipForm instances INSIDE the bill page's call
- * panel (the rail's no-ZIP block and the call dialog's never-a-dead-end
- * block) resolve in place: submit saves the ZIP, the reps load into the
- * panel, and the freshly generated script — which lives only in component
- * state — survives. Navigation to /reps remains the home hero's and the
- * /reps page's own behavior (funnel I2 pins it), never this panel's.
+ * panel-navigation fix). The ZipForm INSIDE the bill page's call panel
+ * resolves in place: submit saves the ZIP, the reps load into the panel, and
+ * the freshly generated script — which lives only in component state —
+ * survives. Navigation to /reps remains the home hero's and the /reps page's
+ * own behavior (funnel I2 pins it), never this panel's.
  *
  * Fixtures proven by tests/reps.spec.ts: 78501 = a normal single-district
  * TX ZIP (Monica De La Cruz), 00000 = valid shape but unmatched, 33313 =
  * FL-20, a genuinely vacant House seat.
  *
- * LOCATOR SCOPING: while the dialog is open, the rail and the dialog each
- * mount a ZipForm and (in the new states) duplicate loading/not-found copy —
- * the exact e2e trap ActionPanel's own dialog comment documents. Every
- * locator here is scoped to the dialog or left rail-only (dialog closed).
- * The rail's member names carry `data-rep-name`; the dialog's dial links do
- * not, so that hook is rail-only by construction.
+ * Since 2026-09-28 (owner, Q5 "a") there is one call route: the "Start the
+ * call" dialog, with its second ZipForm, is gone, so every locator here reads
+ * the one panel.
  */
 
 // Any bill with a call panel — asked of the corpus by property
@@ -43,7 +39,7 @@ for (const locale of ['en', 'es'] as const) {
     const textarea = page.getByRole('textbox', { name: messages.bill.scriptTitle });
     await expect(textarea).toHaveValue(/MOCKED SCRIPT BODY/);
 
-    // Submit a ZIP in the rail's own form (dialog closed: single instance).
+    // Submit a ZIP in the rail's own form (the only one on the page).
     await page.getByLabel(messages.home.zipLabel).fill('78501');
     await page.getByRole('button', { name: messages.home.zipCta }).click();
 
@@ -55,31 +51,6 @@ for (const locale of ['en', 'es'] as const) {
     await expect(textarea).toHaveValue(/MOCKED SCRIPT BODY/);
   });
 }
-
-test('dialog ZIP submit (the P0): the mode stays open, script visible, dial links appear in-dialog', async ({
-  page,
-}) => {
-  await mockScriptApi(page);
-  await page.goto(BILL); // NO seedZip
-  await page.getByRole('radio', { name: en.bill.stance.support }).click();
-  await expect(page.getByRole('textbox', { name: en.bill.scriptTitle })).toBeVisible();
-  await page.getByRole('button', { name: en.bill.startCall }).click();
-
-  const dialog = page.getByRole('dialog', { name: en.bill.callTitle });
-  await expect(dialog).toBeVisible();
-  await expect(dialog.getByLabel(en.home.zipLabel)).toBeVisible();
-
-  // Fix the missing ZIP without leaving the mode.
-  await dialog.getByLabel(en.home.zipLabel).fill('78501');
-  await dialog.getByRole('button', { name: en.home.zipCta }).click();
-
-  // The mode survives its own ZIP submit: still open, still on the bill
-  // page, script still there, and the dial links land inside the dialog.
-  await expect(dialog).toBeVisible();
-  await expect(dialog.locator('a[href^="tel:"]').first()).toBeVisible();
-  await expect(dialog.getByText(/MOCKED SCRIPT BODY/)).toBeVisible();
-  await expect(page).toHaveURL(new RegExp(BILL.replace(/\//g, '\\/')));
-});
 
 test('unmatched ZIP in the rail: the /reps failure register in-panel, recoverable in place', async ({
   page,
@@ -96,6 +67,11 @@ test('unmatched ZIP in the rail: the /reps failure register in-panel, recoverabl
   // role=alert with the /reps copy, still on the bill page, form re-shown.
   await expect(page.getByRole('alert').filter({ hasText: en.reps.zipNotFound })).toBeVisible();
   await expect(page).toHaveURL(new RegExp(BILL.replace(/\//g, '\\/')));
+  // …and a number that works anyway: the Capitol switchboard, in the panel
+  // (it lived only inside the retired call dialog — the 2026-09-27 audit,
+  // SY-12: on 2026-09-28 no Guam, Virgin Islands, American Samoa or Northern
+  // Mariana Islands ZIP is mapped, so every one of them lands here).
+  await expect(page.locator('[data-switchboard] a[href="tel:+12022243121"]')).toBeVisible();
 
   // Recovery proven: correct the ZIP right there.
   await page.getByLabel(en.home.zipLabel).fill('78501');
@@ -163,14 +139,6 @@ test('split ZIP (10001): honest multi-district copy, senators lead, refinement o
   const refine = page.getByRole('link', { name: en.bill.refineDistrictCta }).first();
   await expect(refine).toBeVisible();
   await expect(refine).toHaveAttribute('href', /\/reps\?zip=10001/);
-
-  // The dial moment carries the same disambiguation: the dialog's first
-  // dial link is a senator, and the note + refinement render in-mode.
-  await page.getByRole('button', { name: en.bill.startCall }).click();
-  const dialog = page.getByRole('dialog', { name: en.bill.callTitle });
-  await expect(dialog.getByText(en.bill.callWhoMulti)).toBeVisible();
-  await expect(dialog.getByRole('link', { name: en.bill.refineDistrictCta })).toBeVisible();
-  await expect(dialog.locator('a[href^="tel:"]').first()).not.toContainText(/Goldman|Nadler/);
 });
 
 test('vacant seat (FL-20) via the rail: vacancy named, senators still dialable, no departed member', async ({

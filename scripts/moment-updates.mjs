@@ -1088,8 +1088,9 @@ const NAMES_RECORDED_VOTE = /\b(?:roll(?:[- ]call)?\s+(?:no\.|number\b|votes?\b)
  * NULL — no exemption — when an action sentence this collector holds for the
  * measures (their retained updates, each bill's last action) names a recorded
  * vote and the vote file holds none on these measures. That is the vote
- * file's own blind spot showing: it starts at its `_meta.floor` (2026-05-27),
- * and a recorded vote before that is not in it. A roll call before the floor
+ * file's own blind spot showing: it starts at its `_meta.floor` (2026-05-27
+ * when this was written; 2025-01-03 since the 2026-09-29 back-fill), and a
+ * recorded vote before that is not in it. A roll call before the floor
  * that no held sentence mentions stays invisible; that residue is stated in
  * the gate's section note, not hidden.
  *
