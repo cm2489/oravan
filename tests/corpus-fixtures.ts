@@ -178,7 +178,7 @@ export function floorActivityBill(): BillFixture | null {
     (b) =>
       Boolean(b.ai_sections) &&
       !SCHEDULED.has(billSlug(b)) &&
-      statusKeyFor(b.status, b.last_action_text, b.last_action_date) === 'floor_activity' &&
+      statusKeyFor(b) === 'floor_activity' &&
       billFloorBand(b, null, early) === null
   );
   return hit ? fixture(hit) : null;
@@ -324,7 +324,7 @@ export function esDecodedFloorActivityBill(): BillFixture | null {
       b.ai_headline &&
       ES[billSlug(b)]?.headline &&
       b.status === 'floor_vote' &&
-      statusKeyFor(b.status, b.last_action_text, b.last_action_date) === 'floor_activity'
+      statusKeyFor(b) === 'floor_activity'
   );
   return bill ? fixture(bill) : null;
 }

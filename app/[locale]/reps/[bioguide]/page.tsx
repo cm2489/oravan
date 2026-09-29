@@ -104,7 +104,7 @@ function teaser(b: Bill): BillTeaser {
     identifier: formatCitation(b.bill_type, b.bill_number),
     headline: b.ai_headline,
     title: b.short_title ?? b.title,
-    statusKey: statusKeyFor(b.status, b.last_action_text, b.last_action_date),
+    statusKey: statusKeyFor(b),
     status: b.status,
     tags: b.issue_tags ?? [],
     lastActionDate: b.last_action_date,

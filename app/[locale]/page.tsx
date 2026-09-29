@@ -188,7 +188,7 @@ async function SpecimenAside({ bill, dateLabel }: { bill: Bill; dateLabel: strin
         <p className="text-2xs font-extrabold tracking-[0.1em] text-ink-2 uppercase tabular-nums">
           {formatCitation(bill.bill_type, bill.bill_number)} ·{' '}
           {tShared(
-            `bills.status.${statusKeyFor(bill.status, bill.last_action_text, bill.last_action_date)}`
+            `bills.status.${statusKeyFor(bill)}`
           )}
         </p>
         <p className="mt-2 font-reading text-base text-ink-2">{official}</p>
@@ -899,7 +899,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                       )}
                       <span>
                         {tShared(
-                          `bills.status.${statusKeyFor(b.status, b.last_action_text, b.last_action_date)}`
+                          `bills.status.${statusKeyFor(b)}`
                         )}
                       </span>
                       {b.last_action_date && (

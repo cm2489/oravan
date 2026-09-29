@@ -5,7 +5,8 @@ import es from '../messages/es.json';
 import { getBill, getLegislator } from '../lib/core';
 import { settledDecision } from '../lib/journey';
 import { settledDecisionDate } from '../lib/settled-votes';
-import { votesForBill } from '../lib/votes';
+import { statusBasisText } from '../lib/floor-text.mjs';
+import { MEMBER_VOTES_MAX_BILLS, memberVotesByBill, votesForBill } from '../lib/votes';
 import { failedVoteBill, settledBill } from './corpus-fixtures';
 import { callableBillSlug } from './corpus-samples';
 import { seedZip } from './helpers';
@@ -212,6 +213,161 @@ for (const { locale, prefix, t } of [
     await expect(panel.getByText(t('bill.settled.needZip'))).toHaveCount(0);
   });
 }
+
+/*
+ * A CONCURRENT RESOLUTION BOTH CHAMBERS AGREED TO IN ONE FORM (2026-09-29):
+ * H.Con.Res. 86. The House agreed 215–208 on 2026-06-03 (roll 199); the
+ * Senate agreed "without amendment" 50–48 on 2026-06-23 (record vote 184).
+ * It goes to no president, so its path has ended: the record-only panel as
+ * `adopted` (never as law), the Senate agreement that completed it first,
+ * then the House vote; the stepper's own sentence; the "Adopted by both
+ * chambers" label; and nothing to call with.
+ */
+const HCONRES_86 = 'hconres-86-119';
+const HCONRES_86_BASIS = 'Resolution agreed to in Senate without amendment by Yea-Nay Vote. 50 - 48. Record Vote Number: 184.';
+
+for (const { locale, prefix, t, m } of [
+  { locale: 'en', prefix: '', t: tEn, m: en },
+  { locale: 'es', prefix: '/es', t: tEs, m: es },
+] as const) {
+  test(`${locale}: H.Con.Res. 86 reads the adoption by both chambers, then the Senate vote, then the House vote, with nothing to call`, async ({
+    page,
+  }) => {
+    const bill = getBill(HCONRES_86);
+    test.skip(!bill?.status_basis_text?.startsWith(HCONRES_86_BASIS), 'H.Con.Res. 86 has a newer basis than 2026-06-23');
+    const rolls = votesForBill(HCONRES_86);
+    const senateRoll = rolls.find((r) => r.chamber === 'senate' && r.roll === 184)!;
+    const houseRoll = rolls.find((r) => r.chamber === 'house')!;
+    expect(senateRoll, 'Senate record vote 184 in data/votes.json').toBeDefined();
+    expect(houseRoll, 'a House roll call on H.Con.Res. 86 in data/votes.json').toBeDefined();
+
+    await page.goto(`${prefix}/bills/${HCONRES_86}`);
+    await seedZip(page, '78501');
+    await page.reload();
+    const panel = page.locator(PANEL);
+    await expect(panel).toHaveAttribute('data-settled-panel', 'adopted');
+    await expect(panel.getByRole('heading', { name: m.bill.settled.title })).toBeVisible();
+
+    // (1) The outcome: both chambers, the second one's date — never "law".
+    const outcome = panel.locator('[data-settled-outcome]');
+    await expect(outcome).toHaveText(t('bill.settled.adopted', { hasDate: 'yes', date: longDate(locale, '2026-06-23') }));
+    await expect(outcome).not.toHaveText(m.bill.settled.law);
+
+    // (2) One group per vote: the Senate agreement that completed it, then
+    // the House vote, each headed by its own chamber, date and tally.
+    const groups = panel.locator('[data-settled-vote-group]');
+    await expect(groups).toHaveCount(2);
+    expect(await groups.evaluateAll((els) => els.map((e) => e.getAttribute('data-settled-vote-group')))).toEqual([
+      'senate',
+      'house',
+    ]);
+    const senate = panel.locator('[data-settled-vote-group="senate"]');
+    await expect(senate).toHaveAttribute('data-settled-vote-deciding', '');
+    await expect(senate.getByRole('heading', { level: 4 })).toHaveText(
+      `${t('bill.settled.voteIn', { chamber: 'senate' })} · ${shortDate(locale, '2026-06-23')} · 50–48`
+    );
+    const house = panel.locator('[data-settled-vote-group="house"]');
+    await expect(house).not.toHaveAttribute('data-settled-vote-deciding', '');
+    await expect(house.getByRole('heading', { level: 4 })).toHaveText(
+      `${t('bill.settled.voteIn', { chamber: 'house' })} · ${shortDate(locale, houseRoll.date)} · ${houseRoll.totals.yea}–${houseRoll.totals.nay}`
+    );
+    await expect(senate.locator('[data-vote-delegate]')).toHaveCount(2);
+    await expect(house.locator('[data-vote-delegate]')).toHaveCount(1);
+    await expectOneChamberPerGroup(panel);
+    for (const [group, roll] of [
+      [senate, senateRoll],
+      [house, houseRoll],
+    ] as const) {
+      for (const id of await listed(group)) {
+        const position = (['yea', 'nay', 'present', 'notVoting'] as const).find((p) => roll.votes[p].includes(id));
+        await expect(group.locator(`[data-vote-delegate="${id}"] [data-settled-position]`)).toHaveAttribute(
+          'data-settled-position',
+          position ?? 'none'
+        );
+      }
+    }
+
+    // Nothing to call with, anywhere on the page.
+    await expect(page.getByRole('radio')).toHaveCount(0);
+    await expect(page.locator('a[href^="tel:"]')).toHaveCount(0);
+    await expect(page.locator('[data-call-cta]')).toHaveCount(0);
+    await expect(page.locator('[data-floating-call]')).toHaveCount(0);
+    await expect(page.locator('[data-walkthrough-disclosure]')).toHaveCount(0);
+    await expect(page.locator('[data-last-attempt]')).toHaveCount(0);
+
+    // "Where does it stand?": its path ends here — no longer "doesn't say yet
+    // whether the two versions match".
+    const journey = page.locator('section[aria-labelledby="journey-h"]');
+    await expect(journey).toContainText(t('bill.journey.nowAdoptedBoth'));
+    await expect(journey).not.toContainText(t('bill.journey.nowPassedSecond'));
+
+    // The status label under the headline: adopted, never "Passed one chamber".
+    const status = page.locator('main header p').first();
+    await expect(status).toContainText(m.bills.status.adopted);
+    await expect(status).not.toContainText(m.bills.status.passed_chamber);
+  });
+}
+
+/*
+ * A BILL BOTH CHAMBERS PASSED STILL GOES TO THE PRESIDENT (2026-09-29): H.R.
+ * 4467, passed by the Senate without amendment. Its label says both chambers
+ * passed it, the stepper keeps the president's step, and the call panel stays.
+ */
+const HR_4467 = 'hr-4467-119';
+
+test('H.R. 4467 (passed both chambers) keeps the call panel and the president\'s step, labeled "Passed both chambers"', async ({
+  page,
+}) => {
+  const bill = getBill(HR_4467);
+  test.skip(
+    !bill || bill.status !== 'passed_chamber' || statusBasisText(bill)?.startsWith('Passed Senate without amendment') !== true,
+    'H.R. 4467 has a newer action than 2026-09-24'
+  );
+  await page.goto(`/bills/${HR_4467}`);
+  await expect(page.locator(PANEL)).toHaveCount(0);
+  await expect(page.locator('[aria-labelledby="act"][data-call-cta]')).toBeVisible();
+
+  const status = page.locator('main header p').first();
+  await expect(status).toContainText(en.bills.status.passed_both);
+  await expect(status).not.toContainText(en.bills.status.passed_chamber);
+
+  // The fifth step is the president's desk, and "Right now:" says it goes there.
+  const journey = page.locator('section[aria-labelledby="journey-h"]');
+  await expect(journey.locator('li[aria-current="step"]')).toContainText(tEn('bill.journey.stepPresident'));
+  await expect(journey).toContainText(tEn('bill.journey.nowPassedBoth'));
+});
+
+/*
+ * THE MEMBER PAGE READS THE SAME SENTENCE (#348's vote record): a senator who
+ * voted on H.Con.Res. 86 sees its "Right now:" line say its path ends here.
+ */
+test('the member page\'s vote record says H.Con.Res. 86\'s path has ended, in both languages', async ({ page }) => {
+  const bill = getBill(HCONRES_86);
+  test.skip(!bill?.status_basis_text?.startsWith(HCONRES_86_BASIS), 'H.Con.Res. 86 has a newer basis than 2026-06-23');
+  const senateRoll = votesForBill(HCONRES_86).find((r) => r.chamber === 'senate' && r.roll === 184);
+  test.skip(!senateRoll, 'Senate record vote 184 is not in data/votes.json');
+  // A sitting senator on that roll call whose capped vote record lists it.
+  const voter = (['yea', 'nay'] as const)
+    .flatMap((p) => senateRoll!.votes[p])
+    .sort()
+    .find(
+      (id) =>
+        getLegislator(id) &&
+        memberVotesByBill(id)
+          .slice(0, MEMBER_VOTES_MAX_BILLS)
+          .some((g) => g.bill === HCONRES_86)
+    );
+  test.skip(!voter, 'no sitting senator lists H.Con.Res. 86 inside the capped vote record');
+  for (const { prefix, t } of [
+    { prefix: '', t: tEn },
+    { prefix: '/es', t: tEs },
+  ] as const) {
+    await page.goto(`${prefix}/reps/${voter}`);
+    const now = page.locator(`[data-member-vote-bill="${HCONRES_86}"] [data-member-vote-now]`);
+    await expect(now).toHaveAttribute('data-member-vote-now', 'nowAdoptedBoth');
+    await expect(now).toContainText(t('bill.journey.nowAdoptedBoth'));
+  }
+});
 
 /*
  * A REJECTION OLDER THAN THE ROLL-CALL FILE: H.R. 2262, "Failed of

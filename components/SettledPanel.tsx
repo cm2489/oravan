@@ -92,7 +92,7 @@ export function SettledPanel({
 }: {
   /** The outcome sentence, already translated by the page. */
   outcome: string;
-  /** `SettledDecision['kind']` (`law` or `rejected`) — a test hook only. */
+  /** `SettledDecision['kind']` (`law`, `rejected` or `adopted`) — a test hook only. */
   kind: string;
   /** lib/settled-votes.ts `settledVoteGroups`, in print order. */
   groups: SettledVoteGroupView[];

@@ -4,7 +4,10 @@ import { conversationBandPool, MOST_VIEWED_MIN_WEEKS } from '../lib/conversation
 import { conversationFacet } from '../lib/core/mcp-conversation';
 import { corpus, expectDataStaleAt, movingSlugsAt, slugOf, stableAcross } from './corpus';
 import { decisionState } from '../lib/docket.mjs';
-import { floorReconsiderPendingChamber, statusBasisText } from '../lib/floor-text.mjs';
+import { concurrentAdoptedBy, floorReconsiderPendingChamber, passageState, statusBasisText } from '../lib/floor-text.mjs';
+import { getBill } from '../lib/core';
+import en from '../messages/en.json';
+import es from '../messages/es.json';
 import { callTool } from './helpers';
 
 /*
@@ -278,6 +281,54 @@ test.describe('get_bill', () => {
       }
     });
   }
+
+  /*
+   * A CONCURRENT RESOLUTION BOTH CHAMBERS AGREED TO IN ONE FORM (2026-09-29).
+   * H.Con.Res. 86: the House 215–208 on June 3, the Senate "without
+   * amendment" 50–48 on June 23. It goes to no president, so the envelope
+   * has called it settled since #360; its label now says so too, where it
+   * said "Passed one chamber". And a bill the Senate passed without amendment
+   * (H.R. 4467) still goes to the president: pending, act_url kept, labeled
+   * "Passed both chambers".
+   */
+  test('an adopted concurrent resolution: settled, the Senate\'s own sentence, NO act_url, "Adopted by both chambers"', async ({
+    request,
+  }) => {
+    const b = getBill('hconres-86-119');
+    test.skip(!b || !concurrentAdoptedBy(b), 'H.Con.Res. 86 is no longer read as adopted by both chambers');
+    for (const [locale, m] of [
+      ['en', en],
+      ['es', es],
+    ] as const) {
+      const result = await callTool(request, 'get_bill', { slug: 'hconres-86-119', locale });
+      const bill = result.structuredContent!.bill as Record<string, unknown>;
+      expect(bill.decision_state).toBe('settled');
+      expect(bill.settled_reason).toBe(statusBasisText(b!));
+      expect(bill.act_url).toBeNull();
+      expect(bill.status).toBe('passed_chamber');
+      expect(bill.status_label).toBe(m.bills.status.adopted);
+    }
+  });
+
+  test('a bill both chambers passed still goes to the president: pending, act_url kept, "Passed both chambers"', async ({
+    request,
+  }) => {
+    const b = getBill('hr-4467-119');
+    test.skip(
+      !b || b.status !== 'passed_chamber' || passageState(b).stage !== 'both',
+      'H.R. 4467 is no longer read as passed by both chambers'
+    );
+    for (const [locale, m] of [
+      ['en', en],
+      ['es', es],
+    ] as const) {
+      const result = await callTool(request, 'get_bill', { slug: 'hr-4467-119', locale });
+      const bill = result.structuredContent!.bill as Record<string, unknown>;
+      expect(bill.decision_state).toBe('pending');
+      expect(bill.act_url).toBe(bill.url);
+      expect(bill.status_label).toBe(m.bills.status.passed_both);
+    }
+  });
 
   test('a law: decision_state "enacted", and NO act_url', async ({ request }) => {
     const law = corpus.find((b) => b.status === 'signed');

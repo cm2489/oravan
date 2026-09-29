@@ -3,7 +3,7 @@ import { PhoneCall } from 'lucide-react';
 import { useTranslations, useFormatter } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { Chip } from '@/components/system';
-import type { BillStatus } from '@/lib/types';
+import type { BillStatus, StatusLabelKey } from '@/lib/types';
 import { isSignalFresh } from '@/lib/signal-window';
 import type { StatusLine } from '@/lib/moment-status.mjs';
 import { MomentStatusLine } from '@/components/MomentStatusLine';
@@ -73,7 +73,7 @@ export function MomentVehicleCard({
       the same gate the homepage crown enforces (Wave B #1) — and neither
       may an AGED placement, which arrives as `floor_vote_stale` since N3
       (2026-08-11) and prints "Placed on the calendar" in ink. */
-  statusKey: BillStatus | 'floor_activity' | 'floor_vote_stale';
+  statusKey: StatusLabelKey;
   tags: string[];
   lastActionDate: string | null;
   coverageCount?: number;

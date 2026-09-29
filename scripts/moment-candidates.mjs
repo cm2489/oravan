@@ -54,6 +54,11 @@ import { DOCKET_TIERS, docketRung } from '../lib/docket.mjs';
 // C-tier this report ranks on is the same function the news band captions
 // with, so a candidate's position here is reproducible from what the site says.
 import { conversationEvidence } from '../lib/conversation.mjs';
+// THE PASSAGE READERS the status-label copy below reads when it is handed the
+// bill (2026-09-29), from the one copy: the same two lib/journey.ts's
+// statusKeyFor and the stepper read. lib/docket.mjs above already imports
+// this module, so it costs nothing new.
+import { concurrentAdoptedBy, passageState } from '../lib/floor-text.mjs';
 
 /** Printed verbatim on every run, in both output modes. The boundary is the feature. */
 export const STANDING_LINE =
@@ -185,13 +190,38 @@ export function floorCalendarChamber(actionText) {
  * corpus sweep in tests/journey.unit.spec.ts can evaluate this and the TS
  * original at ONE instant.
  *
+ * THE PASSAGE READINGS (2026-09-29), only when `record` is given. The TS
+ * original takes the whole bill and reads a `passed_chamber` record two more
+ * ways: `adopted` (a concurrent resolution both chambers agreed to in one
+ * form, lib/floor-text.mjs `concurrentAdoptedBy`) and `passed_both` (the
+ * second chamber passed it without amendment, `passageState` 'both'). Both
+ * readers need the bill type and the status basis, which the positional
+ * arguments do not carry, so this copy reads them only off `record`. Without
+ * it a `passed_chamber` record keeps `passed_chamber`, exactly as before:
+ * scripts/moment-draft.mjs and scripts/moment-updates.mjs do not pass it yet
+ * (both were in open PR #362 when this landed), so the phrase they hand the
+ * model for H.Con.Res. 86 is still "passed one chamber" until they do.
+ *
  * @param {string} status                bill.status
  * @param {string | null} lastActionText bill.last_action_text
  * @param {string | null} lastActionDate bill.last_action_date
  * @param {number} [now]
+ * @param {{ bill_type?: string | null, status_basis_text?: string | null } | null} [record]
+ *   the bill itself, for the passage readings
  * @returns {string} a `bills.status.*` message key
  */
-export function statusKeyFor(status, lastActionText, lastActionDate, now = Date.now()) {
+export function statusKeyFor(status, lastActionText, lastActionDate, now = Date.now(), record = null) {
+  if (status === 'passed_chamber') {
+    if (!record?.bill_type) return status;
+    const bill = {
+      bill_type: String(record.bill_type),
+      status,
+      last_action_text: lastActionText,
+      status_basis_text: record.status_basis_text ?? null,
+    };
+    if (concurrentAdoptedBy(bill)) return 'adopted';
+    return passageState(bill).stage === 'both' ? 'passed_both' : status;
+  }
   if (status !== 'floor_vote') return status;
   if (!floorCalendarChamber(lastActionText)) return 'floor_activity';
   return isSignalFresh(lastActionDate, now) ? 'floor_vote' : 'floor_vote_stale';

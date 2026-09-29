@@ -62,6 +62,7 @@ interface CorpusBill {
   status: string;
   last_action_date: string | null;
   last_action_text: string | null;
+  status_basis_text?: string | null;
   urgency_score: number;
 }
 
@@ -2022,14 +2023,22 @@ test.describe('scripts/moment-candidates.mjs copy is pinned to lib/journey.ts', 
    */
   const SWEEP_NOW = Date.now();
 
+  /** The TS gate takes the whole record since 2026-09-29 (the passage
+   *  readings need the bill type and the status basis). The floor fixtures
+   *  below are sentences on an H.R. bill, as they always were. */
+  const labelKey = (status: string, text: string | null, date: string | null, now?: number) =>
+    statusKeyFor(
+      { bill_type: 'hr', status: status as BillStatus, last_action_text: text, last_action_date: date },
+      now
+    );
+  const recordOf = (b: CorpusBill) => ({ ...b, status: b.status as BillStatus });
+
   test('statusKeyFor: the two answer identically over the WHOLE corpus', () => {
     for (const b of corpus) {
       expect(
-        scriptStatusKeyFor(b.status, b.last_action_text, b.last_action_date, SWEEP_NOW),
+        scriptStatusKeyFor(b.status, b.last_action_text, b.last_action_date, SWEEP_NOW, b),
         slugOf(b)
-      ).toBe(
-        statusKeyFor(b.status as BillStatus, b.last_action_text, b.last_action_date, SWEEP_NOW)
-      );
+      ).toBe(statusKeyFor(recordOf(b), SWEEP_NOW));
     }
   });
 
@@ -2082,7 +2091,7 @@ test.describe('scripts/moment-candidates.mjs copy is pinned to lib/journey.ts', 
    */
   test('statusKeyFor: all three outputs, pinned by fixture in both copies', () => {
     const both = (text: string | null, date: string | null) => {
-      const ts = statusKeyFor('floor_vote', text, date);
+      const ts = labelKey('floor_vote', text, date);
       expect(scriptStatusKeyFor('floor_vote', text, date), 'the .mjs copy agrees').toBe(ts);
       return ts;
     };
@@ -2094,8 +2103,8 @@ test.describe('scripts/moment-candidates.mjs copy is pinned to lib/journey.ts', 
     expect(both(CLOTURE_TEXT, FRESH)).toBe('floor_activity');
     expect(both(CLOTURE_TEXT, STALE)).toBe('floor_activity');
     // Every other status passes through untouched, clock or no clock.
-    expect(statusKeyFor('committee', CALENDAR_PLACEMENT, STALE)).toBe('committee');
-    expect(statusKeyFor('signed', null, null)).toBe('signed');
+    expect(labelKey('committee', CALENDAR_PLACEMENT, STALE)).toBe('committee');
+    expect(labelKey('signed', null, null)).toBe('signed');
   });
 
   test('statusKeyFor: an undated placement fails closed to the weaker claim', () => {
@@ -2103,10 +2112,10 @@ test.describe('scripts/moment-candidates.mjs copy is pinned to lib/journey.ts', 
     // no present-tense claim. 0 of the corpus's 322 placements are undated
     // (2026-08-12), so this is the shape we refuse to be surprised by rather
     // than one we currently render.
-    expect(statusKeyFor('floor_vote', CALENDAR_PLACEMENT, null)).toBe('floor_vote_stale');
+    expect(labelKey('floor_vote', CALENDAR_PLACEMENT, null)).toBe('floor_vote_stale');
     expect(scriptStatusKeyFor('floor_vote', CALENDAR_PLACEMENT, null)).toBe('floor_vote_stale');
     // An unparseable date is the same answer, for the same reason.
-    expect(statusKeyFor('floor_vote', CALENDAR_PLACEMENT, 'not-a-date')).toBe('floor_vote_stale');
+    expect(labelKey('floor_vote', CALENDAR_PLACEMENT, 'not-a-date')).toBe('floor_vote_stale');
   });
 
   test('statusKeyFor reads the ONE window — SIGNAL_WINDOW_DAYS, not a second number', () => {
@@ -2118,10 +2127,10 @@ test.describe('scripts/moment-candidates.mjs copy is pinned to lib/journey.ts', 
      * only at exactly 00:00 UTC and outside it for the rest of the day.
      * Asserting that instant would be a clock-dependent coin flip.
      */
-    expect(statusKeyFor('floor_vote', CALENDAR_PLACEMENT, dateDaysAgo(SIGNAL_WINDOW_DAYS - 1))).toBe(
+    expect(labelKey('floor_vote', CALENDAR_PLACEMENT, dateDaysAgo(SIGNAL_WINDOW_DAYS - 1))).toBe(
       'floor_vote'
     );
-    expect(statusKeyFor('floor_vote', CALENDAR_PLACEMENT, dateDaysAgo(SIGNAL_WINDOW_DAYS + 1))).toBe(
+    expect(labelKey('floor_vote', CALENDAR_PLACEMENT, dateDaysAgo(SIGNAL_WINDOW_DAYS + 1))).toBe(
       'floor_vote_stale'
     );
   });
@@ -2134,14 +2143,12 @@ test.describe('scripts/moment-candidates.mjs copy is pinned to lib/journey.ts', 
    * should be the suite that produces it.
    */
   test('every key statusKeyFor can return has a label in EN and ES', () => {
-    const keys = new Set(
-      corpus.map((b) =>
-        statusKeyFor(b.status as BillStatus, b.last_action_text, b.last_action_date, SWEEP_NOW)
-      )
-    );
+    const keys = new Set<string>(corpus.map((b) => statusKeyFor(recordOf(b), SWEEP_NOW)));
     keys.add('floor_vote');
     keys.add('floor_vote_stale');
     keys.add('floor_activity');
+    keys.add('passed_both');
+    keys.add('adopted');
     for (const key of keys) {
       expect((en.bills.status as Record<string, string>)[key], `EN ${key}`).toBeTruthy();
       expect((es.bills.status as Record<string, string>)[key], `ES ${key}`).toBeTruthy();
@@ -2150,6 +2157,94 @@ test.describe('scripts/moment-candidates.mjs copy is pinned to lib/journey.ts', 
     // point is that a reader can tell them apart.
     expect(en.bills.status.floor_vote_stale).not.toBe(en.bills.status.floor_vote);
     expect(es.bills.status.floor_vote_stale).not.toBe(es.bills.status.floor_vote);
+    // The three passage labels are three different claims, in both languages.
+    for (const m of [en, es]) {
+      const { passed_chamber, passed_both, adopted } = m.bills.status;
+      expect(new Set([passed_chamber, passed_both, adopted]).size).toBe(3);
+    }
+  });
+
+  /*
+   * THE PASSAGE READINGS (2026-09-29). "Passed one chamber" was printed over
+   * records the SECOND chamber had acted on: an adopted concurrent resolution
+   * (H.Con.Res. 86) and six bills the Senate passed without amendment. Both
+   * copies read them off the same two readers the stepper reads, so the label
+   * and the "Right now:" sentence cannot disagree. Fixture sentences are
+   * verbatim from data/bills.json as committed on 2026-09-29.
+   */
+  test('statusKeyFor: the passage readings, pinned by fixture in both copies and against the stepper', () => {
+    const MESSAGE = 'Message on Senate action sent to the House.';
+    const cases = [
+      // H.Con.Res. 86: the Senate agreed "without amendment"; the message over it.
+      [
+        {
+          bill_type: 'hconres',
+          last_action_text: MESSAGE,
+          status_basis_text:
+            'Resolution agreed to in Senate without amendment by Yea-Nay Vote. 50 - 48. Record Vote Number: 184. (consideration: CR S3039-3040)',
+        },
+        'adopted',
+        'nowAdoptedBoth',
+      ],
+      // H.R. 4467: the Senate passed it without amendment; the message over it.
+      [
+        {
+          bill_type: 'hr',
+          last_action_text: MESSAGE,
+          status_basis_text: 'Passed Senate without amendment by Unanimous Consent. (consideration: CR S4882)',
+        },
+        'passed_both',
+        'nowPassedBoth',
+      ],
+      // H.R. 2388: the Senate's passage as the latest step.
+      [
+        { bill_type: 'hr', last_action_text: 'Passed Senate without amendment by Unanimous Consent. (consideration: CR S5020)' },
+        'passed_both',
+        'nowPassedBoth',
+      ],
+      // The first chamber only: the label it always had.
+      [{ bill_type: 'hr', last_action_text: 'Received in the Senate.' }, 'passed_chamber', 'nowPassed'],
+      // S. 2403: the House passed a Senate bill, and the sentence names no
+      // amendment clause — not read, stated in statusKeyFor's header.
+      [
+        {
+          bill_type: 's',
+          last_action_text: 'Motion to reconsider laid on the table Agreed to without objection.',
+          status_basis_text:
+            'Passed/agreed to in House: On motion to suspend the rules and pass the bill Agreed to by the Yeas and Nays: (2/3 required): 401 - 14 (Roll no. 314).',
+        },
+        'passed_chamber',
+        'nowPassedSecond',
+      ],
+      // The bare message with no basis says nothing about amendment.
+      [{ bill_type: 'hconres', last_action_text: MESSAGE }, 'passed_chamber', 'nowPassedSecond'],
+    ] as const;
+    for (const [fields, key, nowKey] of cases) {
+      const b = { status: 'passed_chamber' as BillStatus, last_action_date: FRESH, ...fields };
+      const label = `${fields.bill_type} ${'status_basis_text' in fields ? fields.status_basis_text : fields.last_action_text}`;
+      expect(statusKeyFor(b), label).toBe(key);
+      expect(scriptStatusKeyFor(b.status, b.last_action_text, b.last_action_date, Date.now(), b), `.mjs ${label}`).toBe(key);
+      // The label and the stepper's sentence read the same record the same way.
+      expect(deriveJourney(b).nowKey, label).toBe(nowKey);
+      // Not clocked: an aged record keeps the same label.
+      expect(statusKeyFor({ ...b, last_action_date: STALE }), `${label} aged`).toBe(key);
+    }
+    // Without the record the .mjs copy keeps `passed_chamber`, as before — its
+    // two callers (scripts/moment-draft.mjs, scripts/moment-updates.mjs) do not
+    // hand it the bill yet.
+    expect(scriptStatusKeyFor('passed_chamber', MESSAGE, FRESH)).toBe('passed_chamber');
+  });
+
+  test('statusKeyFor over the corpus: every adopted label is the stepper\'s adopted sentence, every passed-both label its presentment step', () => {
+    for (const b of corpus) {
+      const key = statusKeyFor(recordOf(b), SWEEP_NOW);
+      if (key !== 'adopted' && key !== 'passed_both') continue;
+      const j = deriveJourney(recordOf(b));
+      expect(j.nowKey, slugOf(b)).toBe(key === 'adopted' ? 'nowAdoptedBoth' : 'nowPassedBoth');
+      expect(j.step, slugOf(b)).toBe(4);
+      if (key === 'adopted') expect(j.ending, slugOf(b)).toBe('bothChambers');
+      else expect(j.ending, slugOf(b)).not.toBe('bothChambers');
+    }
   });
 
   /* ---------------------------------------------------------------- *

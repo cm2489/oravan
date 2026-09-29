@@ -1,4 +1,4 @@
-import type { Bill } from './types';
+import type { Bill, StatusLabelKey } from './types';
 // TYPE-ONLY, and it must stay type-only: lib/moments.ts imports
 // data/moments.json and the whole bill corpus behind it, and this module is
 // read by the embed and MCP surfaces that must not pull either. `import type`
@@ -65,6 +65,7 @@ export {
 // chamber-nameable-but-unread sentence gets found now.
 import {
   CLOTURE_INVOKED_ON_MEASURE,
+  concurrentAdoptedBy,
   floorCalendarChamber,
   floorPassageRejectedChamber,
   floorPendingChamber,
@@ -427,18 +428,50 @@ export function floorCalendarName(actionText: string | null): FloorCalendar | nu
  * ONE instant, or a sweep that straddles midnight UTC can disagree with itself.
  * Every production caller takes the default.
  *
- * scripts/moment-candidates.mjs carries an import-free copy of this function;
+ * THE PASSAGE READINGS (2026-09-29). `passed_chamber` printed "Passed one
+ * chamber" on every record the status covers, and on two shapes that is
+ * false, because the SECOND chamber has acted too:
+ *
+ *   `adopted`      a concurrent resolution both chambers agreed to in one form
+ *                  (lib/floor-text.mjs `concurrentAdoptedBy`): H.Con.Res. 86,
+ *                  agreed to by the House 215–208 on 2026-06-03 and by the
+ *                  Senate "without amendment" 50–48 on 2026-06-23. It goes to
+ *                  no president, so its path has ended. "Adopted by both
+ *                  chambers".
+ *   `passed_both`  a bill or joint resolution the second chamber passed
+ *                  without amendment (`passageState` stage 'both' — H.R. 4467,
+ *                  "Passed Senate without amendment by Unanimous Consent.").
+ *                  It goes to the president next. "Passed both chambers".
+ *
+ * Both are read by the SAME readers the stepper reads (deriveJourney's
+ * `nowAdoptedBoth` and `nowPassedBoth`), so the label and the "Right now:"
+ * sentence cannot disagree. That is why this takes the bill, not three
+ * fields: the passage readers need the bill type and the status basis
+ * (`status_basis_text`, which "Message on Senate action sent to the House."
+ * writes over). Not clocked: both are durable facts about votes that
+ * happened, like the rail's passage routing ("THE THIRD GATE" above).
+ *
+ * NOT READ, stated rather than guessed at: a second-chamber passage whose
+ * amendment clause the record does not give (`passageState` 'second' — four
+ * Senate bills and S.Con.Res. 29 the House passed, on 2026-09-29), and one
+ * passed WITH amendments ('back'; none in the corpus that day). Both keep
+ * `passed_chamber`.
+ *
+ * scripts/moment-candidates.mjs carries an import-free copy of this function
+ * (it reads the passage readings only when its caller hands it the bill);
  * tests/journey.unit.spec.ts pins the two corpus-wide at a shared `now`.
  */
-export function statusKeyFor(
-  status: Bill['status'],
-  lastActionText: string | null,
-  lastActionDate: string | null,
-  now: number = Date.now()
-): Bill['status'] | 'floor_activity' | 'floor_vote_stale' {
+export type StatusKeyBill = Pick<Bill, 'bill_type' | 'status' | 'last_action_text' | 'last_action_date'> & Basis;
+
+export function statusKeyFor(bill: StatusKeyBill, now: number = Date.now()): StatusLabelKey {
+  const { status } = bill;
+  if (status === 'passed_chamber') {
+    if (concurrentAdoptedBy(bill)) return 'adopted';
+    return passageState(bill).stage === 'both' ? 'passed_both' : 'passed_chamber';
+  }
   if (status !== 'floor_vote') return status;
-  if (!floorCalendarChamber(lastActionText)) return 'floor_activity';
-  return isSignalFresh(lastActionDate, now) ? 'floor_vote' : 'floor_vote_stale';
+  if (!floorCalendarChamber(bill.last_action_text)) return 'floor_activity';
+  return isSignalFresh(bill.last_action_date, now) ? 'floor_vote' : 'floor_vote_stale';
 }
 
 /**
@@ -1043,6 +1076,7 @@ export type JourneyNowKey =
   | 'nowPassedBackStale'
   | 'nowPassedBoth'
   | 'nowPassedSecond'
+  | 'nowAdoptedBoth'
   | 'nowConference'
   | 'nowSigned'
   | 'nowVetoed';
@@ -1393,6 +1427,35 @@ export function deriveJourney(
        * President" — a conditional statement of what Article I requires, with
        * no tense to demote, true of a passage of any age.
        */
+      /*
+       * A CONCURRENT RESOLUTION BOTH CHAMBERS AGREED TO IN ONE FORM — the end
+       * of its path (2026-09-29; the reader is lib/floor-text.mjs
+       * `concurrentAdoptedBy`, #360). passageState answers 'second' for it,
+       * because its 'both' sentence says the measure goes to the president
+       * next and a concurrent resolution never does. So the stepper printed
+       * the 'second' sentence, "the official record doesn't say yet whether
+       * the two versions match", over a record that DOES say: H.Con.Res. 86,
+       * "Resolution agreed to in Senate without amendment by Yea-Nay Vote.
+       * 50 - 48.", after the House's 215–208. Read first, so no other passage
+       * reading can speak for it.
+       *
+       * Step 4, the ending this vehicle has (`bothChambers`: "Adopted by both
+       * chambers"), and no trailer: "if the Senate changes it, it goes back"
+       * warns about something still ahead, and nothing is. NOT CLOCKED, for
+       * the reason 'both' is not: it says what happened and what is left to
+       * happen, which is nothing.
+       */
+      const adoptedBy = concurrentAdoptedBy(bill);
+      if (adoptedBy) {
+        return {
+          ...base,
+          step: 4,
+          current: adoptedBy,
+          nowChamber: adoptedBy,
+          nowKey: 'nowAdoptedBoth',
+          showTrailer: false,
+        };
+      }
       const live = isSignalFresh(bill.last_action_date);
       const { stage, passedBy } = passageState(bill);
       if (stage === 'first') {
@@ -1486,10 +1549,14 @@ export function deriveJourney(
 
 /** What the record says ended the decision, in the shape the call panel's
  *  record-only block prints it. Only two things end one (owner, 2026-09-29,
- *  pick (a)): a law, or a failed vote to pass the measure itself. */
+ *  pick (a)): a law, or a failed vote to pass the measure itself — and, for
+ *  the one vehicle that never becomes law, its own ending: a concurrent
+ *  resolution both chambers agreed to in one form (`chamber` is the SECOND
+ *  chamber, whose agreement completed it). */
 export type SettledDecision =
   | { kind: 'law' }
-  | { kind: 'rejected'; chamber: Chamber; tally: { yeas: number; nays: number } | null };
+  | { kind: 'rejected'; chamber: Chamber; tally: { yeas: number; nays: number } | null }
+  | { kind: 'adopted'; chamber: Chamber };
 
 /**
  * NO DECISION LEFT — what the bill page shows where the call panel stands
@@ -1509,6 +1576,15 @@ export type SettledDecision =
  *   'rejected'  a failed vote to pass the measure, or to agree to it (the
  *               stepper's `nowFloorPassageRejected`), with the record's
  *               tally when deriveJourney kept one.
+ *
+ * And a third, which is the same "finished" for the one vehicle that never
+ * becomes law (2026-09-29):
+ *
+ *   'adopted'   a concurrent resolution both chambers agreed to in one form
+ *               (the stepper's `nowAdoptedBoth`, read by lib/floor-text.mjs
+ *               `concurrentAdoptedBy`). It goes to no president, so nothing
+ *               is left to decide: H.Con.Res. 86. `chamber` is the one whose
+ *               agreement completed it. Never printed as law.
  *
  * NOT FINISHED, and the call panel stays, with `lastFailedVote` below
  * supplying its one line about the failure:
@@ -1532,17 +1608,13 @@ export type SettledDecision =
  * the same rule (pick (a) asked for the MCP server too), so the two agree in
  * one direction by construction: everything this calls settled, the envelope
  * calls settled or enacted, and `get_bill` withholds `act_url`. The converse
- * has two gaps, stated rather than hidden:
- *   - a failed passage vote whose chamber the record does not name.
- *     `decisionState` reads the vocabulary alone and calls it settled, while
- *     the stepper prints its chamber-free "moving on the floor" sentence and
- *     the panel follows the stepper and keeps the call. On 2026-09-29 the
- *     corpus holds no record of that shape;
- *   - a concurrent resolution both chambers agreed to in one form
- *     (lib/floor-text.mjs `concurrentAdoptedBy`, #360, merged 2026-09-29 —
- *     H.Con.Res. 86). The envelope calls it settled; this page reading, its
- *     stepper sentence and the owner's strings for it are the follow-up #360
- *     lists, so until then its page keeps the call.
+ * has one gap, stated rather than hidden: a failed passage vote whose chamber
+ * the record does not name. `decisionState` reads the vocabulary alone and
+ * calls it settled, while the stepper prints its chamber-free "moving on the
+ * floor" sentence and the panel follows the stepper and keeps the call. On
+ * 2026-09-29 the corpus holds no record of that shape. (The second gap, a
+ * concurrent resolution both chambers agreed to in one form, which #360 made
+ * settled in the envelope on 2026-09-29, closed the same day with 'adopted'.)
  * tests/settled-panel.unit.spec.ts pins both directions over the committed
  * corpus.
  *
@@ -1555,6 +1627,11 @@ export function settledDecision(
 ): SettledDecision | null {
   const journey = deriveJourney(bill);
   if (journey.isLaw) return { kind: 'law' };
+  // The same reading decisionState makes for the MCP envelope, and like it
+  // with no reconsider guard: this key is only ever read off a status basis
+  // that IS the second chamber's agreement sentence, which a reconsider
+  // motion's sentence ("… entered in Senate.") never is.
+  if (journey.nowKey === 'nowAdoptedBoth') return { kind: 'adopted', chamber: journey.nowChamber };
   if (journey.nowKey !== 'nowFloorPassageRejected') return null;
   if (floorReconsiderPendingChamber(statusBasisText(bill))) return null;
   return { kind: 'rejected', chamber: journey.nowChamber, tally: journey.tally };

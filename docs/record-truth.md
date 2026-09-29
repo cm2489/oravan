@@ -93,7 +93,7 @@ Gates: `scripts/check-conversation.mjs` (only rated outlets may corroborate; eve
 
 *Owner, 2026-09-29, reviewing the follow-up (artifact 7BuRDMkWu9zigDE1u2XPLJ):* *"For the options, go with your pick (a) but we need to update the MCP server too if possible."* Pick (a), verbatim: *"Only a law or a failed final vote counts as finished. Procedural failures keep the call panel, with a line saying the last attempt failed."*
 
-- **Which bills.** `settledDecision` (`lib/journey.ts`), read off the stepper's own derivation so the panel and "Where does it stand?" agree, returns exactly two things: a signed law, or a rejected vote to pass the measure (or to agree to it), with the record's own tally, printed only when yeas are no more than nays. On 2026-09-29 that is 91 laws and 9 rejections.
+- **Which bills.** `settledDecision` (`lib/journey.ts`), read off the stepper's own derivation so the panel and "Where does it stand?" agree, returns exactly two things: a signed law, or a rejected vote to pass the measure (or to agree to it), with the record's own tally, printed only when yeas are no more than nays. On 2026-09-29 that is 91 laws and 9 rejections. (A concurrent resolution's own ending is the one addition; see below.)
 - **Everything else keeps the call panel.** That covers four cases:
   - A failed motion to proceed.
   - Cloture not invoked.
@@ -122,9 +122,9 @@ Gates: `scripts/check-conversation.mjs` (only rated outlets may corroborate; eve
   - **Values.** `enacted` for a law, `settled` for a failed passage vote (and, since #360, a concurrent resolution both chambers adopted), `pending` for everything else. A failed motion, a failed suspension vote and a veto are all `pending`.
   - **The call link.** `get_bill` offers `act_url` on every `pending` record, and withholds it on `settled` and `enacted`.
   - **Schema unchanged.** `settled_reason` stays null while pending, and no field was added for "the last vote failed". The failed vote still reaches an agent verbatim through `get_bill`'s `last_action_text`.
-- **Never wider than the MCP envelope.** Everything the panel calls settled, `decisionState` calls settled or enacted. The converse has two stated gaps:
+- **Never wider than the MCP envelope.** Everything the panel calls settled, `decisionState` calls settled or enacted. The converse has one stated gap:
   - **A failed passage vote whose chamber the record does not name.** `decisionState` reads the words alone and calls it settled. The stepper prints its chamber-free sentence, and the panel keeps the call with it. No record had that shape on 2026-09-29.
-  - **A concurrent resolution both chambers agreed to in one form.** This is `concurrentAdoptedBy` (`lib/floor-text.mjs`), from #360, merged 2026-09-29. H.Con.Res. 86 is the one case. The envelope calls it settled, because it goes to no President and its path is over. The bill page does not read it yet: its stepper sentence and panel need new strings, and #360 lists that follow-up. Until then its page keeps the call.
+- **A concurrent resolution both chambers agreed to in one form is finished too** (2026-09-29, `concurrentAdoptedBy` in `lib/floor-text.mjs`; H.Con.Res. 86, the House 215–208 on June 3 and the Senate "without amendment" 50–48 on June 23, 2026, the one case): it goes to no president, so its page shows the record-only panel as `adopted` ("Both chambers agreed to it in the same form, the second on June 23, 2026."), never as law, with the same per-chamber vote groups as a rejection; the stepper says its path ends here, its status label reads "Adopted by both chambers", and the envelope's `settled` agrees.
 - **Not yet covered:** the paid action-panel embed (`app/embed/action-panel`) does not read the settled state; rule 6 says so. The Big Questions status line (`lib/moment-status.mjs`) still marks a failed vote as terminal, so a vehicle card for a failed motion reads "Read the bill" rather than "Read + call", although its page now has the call panel.
 
 Gates:

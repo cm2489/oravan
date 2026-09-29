@@ -19,6 +19,24 @@ export const BILL_STATUSES = [
 
 export type BillStatus = (typeof BILL_STATUSES)[number];
 
+/**
+ * The key a status LABEL is printed under (lib/journey.ts `statusKeyFor`),
+ * which is a stored status or one of four readings of it:
+ *
+ *   `floor_activity`    a `floor_vote` record whose sentence is no placement
+ *                       (Wave B #1, 2026-08-04);
+ *   `floor_vote_stale`  a placement the record has shown nothing since (N3,
+ *                       2026-08-11);
+ *   `passed_both`       a `passed_chamber` record the SECOND chamber passed
+ *                       without amendment, so it goes to the president next
+ *                       (2026-09-29);
+ *   `adopted`           a concurrent resolution both chambers agreed to in
+ *                       one form, the end of its path (2026-09-29).
+ *
+ * Every one has a `bills.status.*` label in both languages.
+ */
+export type StatusLabelKey = BillStatus | 'floor_activity' | 'floor_vote_stale' | 'passed_both' | 'adopted';
+
 /** Decoded structure. `cost` is null when the bill has no cost dimension. */
 export interface DecodedSections {
   tldr: string;
@@ -116,10 +134,11 @@ export interface BillTeaser {
   title: string;
   status: BillStatus;
   /** The label-gated key (lib/journey statusKeyFor): `floor_activity` for
-   *  floor_vote bills whose record shows activity, not a placement, and
+   *  floor_vote bills whose record shows activity, not a placement,
    *  `floor_vote_stale` for a placement the record has shown nothing since
-   *  (N3, 2026-08-11 — the same fact, in the past tense). */
-  statusKey: BillStatus | 'floor_activity' | 'floor_vote_stale';
+   *  (N3, 2026-08-11 — the same fact, in the past tense), and the two
+   *  passage readings `passed_both` / `adopted` (see StatusLabelKey). */
+  statusKey: StatusLabelKey;
   tags: string[];
   lastActionDate: string | null;
 }
