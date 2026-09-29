@@ -4,7 +4,7 @@ import bills from '../data/bills.json';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
 import { decisionState } from '../lib/docket.mjs';
-import { FLOOR_PASSAGE_REJECTED, statusBasisText } from '../lib/floor-text.mjs';
+import { FLOOR_PASSAGE_REJECTED, concurrentAdoptedBy, statusBasisText } from '../lib/floor-text.mjs';
 import { deriveJourney, lastFailedVote, settledDecision } from '../lib/journey';
 import { recordedRollNumber, settledDecisionDate, settledVoteGroups } from '../lib/settled-votes';
 import type { Bill, RollCall } from '../lib/types';
@@ -198,9 +198,14 @@ test.describe('settledDecision against the committed corpus', () => {
     }
   });
 
-  test('the one stated gap: MCP settled but the page keeps the call only where the stepper names no chamber', () => {
+  test('the two stated gaps: MCP settled but the page keeps the call only where the stepper names no chamber, or on an adopted concurrent resolution', () => {
     for (const b of corpus) {
       if (decisionState(b).state === 'pending' || settledDecision(b) !== null) continue;
+      // #360 (merged 2026-09-29): a concurrent resolution both chambers agreed
+      // to in one form is settled in the envelope. Its bill-page reading (a
+      // `settledDecision` kind, the stepper sentence and owner strings) is the
+      // follow-up #360 lists; until it lands the page keeps the call.
+      if (concurrentAdoptedBy(b)) continue;
       expect(deriveJourney(b).nowKey, `${b.bill_type} ${b.last_action_text}`).toBe('nowFloorActivityNeutral');
     }
   });
@@ -214,9 +219,10 @@ test.describe('settledDecision against the committed corpus', () => {
       if (decision?.kind === 'law') expect(b.status, label).toBe('signed');
       if (decision?.kind === 'rejected') expect(FLOOR_PASSAGE_REJECTED.test(statusBasisText(b) ?? ''), label).toBe(true);
       // The MCP envelope, the same rule: nothing but a law is enacted, and
-      // nothing but a failed passage vote is settled.
+      // nothing but a failed passage vote is settled — plus a concurrent
+      // resolution both chambers adopted (#360), that vehicle's own ending.
       if (state === 'enacted') expect(b.status, label).toBe('signed');
-      if (state === 'settled') {
+      if (state === 'settled' && !concurrentAdoptedBy(b)) {
         expect(b.status, label).toBe('floor_vote');
         expect(FLOOR_PASSAGE_REJECTED.test(statusBasisText(b) ?? ''), label).toBe(true);
       }

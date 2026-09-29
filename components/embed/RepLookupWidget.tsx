@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
-import en from '@/messages/en.json';
-import es from '@/messages/es.json';
+import { useEmbedDicts } from '@/components/embed/EmbedDictsProvider';
+import type { EmbedLocale } from '@/components/embed/embed-dicts';
 import { SITE_ORIGIN } from '@/lib/site';
 import type { Legislator } from '@/lib/types';
 
@@ -13,7 +13,9 @@ const HOUSE_FIND_REP_URL = 'https://www.house.gov/representatives/find-your-repr
  * The rep-lookup embed widget (S13): ZIP in, representatives out. Deliberately
  * NOT next-intl - this page lives outside app/[locale] (no URL locale
  * segment; see app/embed/layout.tsx), so it reads the same messages/*.json
- * files directly and picks a dict by a locale that lives in component state,
+ * copy (picked on the server and handed down through useEmbedDicts since
+ * 2026-09-28, see components/embed/embed-dicts.ts) and picks a dict by a
+ * locale that lives in component state,
  * driven by an always-visible EN/ES toggle (bilingual parity is
  * constitutional - a host page can set the *default* locale via the
  * `?locale=` query param, but can never remove Spanish).
@@ -28,10 +30,6 @@ const HOUSE_FIND_REP_URL = 'https://www.house.gov/representatives/find-your-repr
  * nothing survives a reload - every render is driven by component state and
  * the initial `?zip=`/`?locale=` the host page supplied.
  */
-
-type EmbedLocale = 'en' | 'es';
-
-const DICTS: Record<EmbedLocale, typeof en> = { en, es };
 
 const DELEGATE_JURISDICTIONS = new Set(['DC', 'PR', 'GU', 'VI', 'AS', 'MP']);
 
@@ -100,7 +98,7 @@ export function RepLookupWidget({
   const [status, setStatus] = useState<Status>('idle');
   const rootRef = useRef<HTMLElement>(null);
 
-  const t = DICTS[locale];
+  const t = useEmbedDicts()[locale];
 
   // The widget's own <html lang> - this route has no locale URL segment,
   // so nothing else keeps it in sync with the in-widget toggle.

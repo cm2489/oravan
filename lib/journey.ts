@@ -1532,11 +1532,17 @@ export type SettledDecision =
  * the same rule (pick (a) asked for the MCP server too), so the two agree in
  * one direction by construction: everything this calls settled, the envelope
  * calls settled or enacted, and `get_bill` withholds `act_url`. The converse
- * has one gap, stated rather than hidden: a failed passage vote whose chamber
- * the record does not name. `decisionState` reads the vocabulary alone and
- * calls it settled, while the stepper prints its chamber-free "moving on the
- * floor" sentence and the panel follows the stepper and keeps the call. On
- * 2026-09-29 the corpus holds no record of that shape.
+ * has two gaps, stated rather than hidden:
+ *   - a failed passage vote whose chamber the record does not name.
+ *     `decisionState` reads the vocabulary alone and calls it settled, while
+ *     the stepper prints its chamber-free "moving on the floor" sentence and
+ *     the panel follows the stepper and keeps the call. On 2026-09-29 the
+ *     corpus holds no record of that shape;
+ *   - a concurrent resolution both chambers agreed to in one form
+ *     (lib/floor-text.mjs `concurrentAdoptedBy`, #360, merged 2026-09-29 —
+ *     H.Con.Res. 86). The envelope calls it settled; this page reading, its
+ *     stepper sentence and the owner's strings for it are the follow-up #360
+ *     lists, so until then its page keeps the call.
  * tests/settled-panel.unit.spec.ts pins both directions over the committed
  * corpus.
  *

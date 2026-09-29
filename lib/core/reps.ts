@@ -5,11 +5,13 @@
 import legislators from '@/data/legislators.json';
 import zipDistricts from '@/data/zip-districts.json';
 import vacancies from '@/data/vacancies.json';
-import type { District, Legislator, Vacancy } from '../types';
+import specialElections from '@/data/special-elections.json';
+import type { District, Legislator, SeatElections, Vacancy } from '../types';
 
 const LEGISLATORS = legislators as Legislator[];
 const ZIPS = zipDistricts as Record<string, District[]>;
 const VACANCIES = vacancies as Vacancy[];
+const SPECIAL_ELECTIONS = specialElections as Record<string, SeatElections>;
 
 export function districtsForZip(zip: string): District[] {
   return ZIPS[zip] ?? [];
@@ -66,6 +68,15 @@ export function vacancySlug(v: Pick<Vacancy, 'state' | 'district'>): string {
 
 export function getVacancyBySlug(slug: string): Vacancy | undefined {
   return VACANCIES.find((v) => vacancySlug(v) === slug);
+}
+
+/**
+ * The seat's special-election dates from the FEC, with the day they were
+ * checked, or undefined when the weekly sync has not recorded the seat yet
+ * (then a page says nothing about an election rather than something unchecked).
+ */
+export function specialElectionsFor(v: Pick<Vacancy, 'state' | 'district'>): SeatElections | undefined {
+  return SPECIAL_ELECTIONS[vacancySlug(v)];
 }
 
 /** The state's senators, for a seat page that has no House member to show. */

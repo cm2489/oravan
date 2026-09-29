@@ -1,6 +1,10 @@
 import { ExternalLink } from 'lucide-react';
-import { getFormatter, getTranslations } from 'next-intl/server';
+import { getFormatter, getLocale, getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
+import { GlossaryTerm } from '@/components/GlossaryTerm';
+import { glossify } from '@/components/glossary-tags';
+import type { GlossaryTermId } from '@/lib/glossary';
+import { glossaryLocale } from '@/lib/glossary-match';
 import { getLegislator } from '@/lib/core';
 import type { RollCall, VotePosition } from '@/lib/types';
 import { votesCoverage, votesForBill, votingMember } from '@/lib/votes';
@@ -25,7 +29,23 @@ import { VoteDelegation, type DelegationVote } from './VoteDelegation';
  * NAMES come from data/legislators.json joined on bioguide, with the roster in
  * votes.json as the fallback for a member who has since left. State follows
  * the name; party never does.
+ *
+ * GLOSSARY (2026-09-28). The record's own lines are where the jargon is densest
+ * ("On Motion to Suspend the Rules and Pass", "Cloture on the Motion to Proceed
+ * Rejected"), so the terms in them open in place. They are matched as ENGLISH
+ * on both locales, because the words are the record's English; the definition
+ * that opens is in the page's language. The words themselves are unchanged —
+ * the mark is on the record's text, never a rewrite of it. The four position
+ * labels carry their entries too. Each roll call is one section: a term is
+ * marked once per card.
  */
+
+/** The entry each tally label opens. Yea and Nay share one; Yea carries it. */
+const POSITION_TERM: Partial<Record<VotePosition, GlossaryTermId>> = {
+  yea: 'yea-and-nay',
+  present: 'present-vote',
+  notVoting: 'not-voting',
+};
 
 const VISIBLE = 3;
 const POSITIONS: VotePosition[] = ['yea', 'nay', 'present', 'notVoting'];
@@ -93,12 +113,14 @@ export async function VoteRecord({
 
   const t = await getTranslations('votes');
   const format = await getFormatter();
+  const lang = glossaryLocale(await getLocale());
   const fmtDate = (d: string) =>
     format.dateTime(new Date(d), { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
   const { house, senate, floorLabel } = delegationVotesFor(billId, fmtDate);
 
   const entry = (r: RollCall) => {
     const hId = `vote-${r.id}`;
+    const seen = new Set<GlossaryTermId>();
     return (
       <li
         key={r.id}
@@ -117,13 +139,13 @@ export async function VoteRecord({
           <div>
             <dt className="sr-only">{t('question')}</dt>
             <dd lang="en" className="font-semibold" data-vote-question="">
-              {r.question}
+              {glossify(r.question, 'en', seen)}
             </dd>
           </div>
           <div className="text-sm">
             <dt className="inline font-semibold">{t('result')}: </dt>
             <dd lang="en" className="inline" data-vote-result="">
-              {r.result}
+              {glossify(r.result, 'en', seen)}
             </dd>
           </div>
         </dl>
@@ -132,19 +154,32 @@ export async function VoteRecord({
           aria-label={t('tally')}
           className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 border-t border-line pt-3 text-sm min-[30rem]:grid-cols-4"
         >
-          {POSITIONS.map((p) => (
-            <div key={p} className="flex items-baseline justify-between gap-2 min-[30rem]:block">
-              <dt className="text-ink-2">{t(`position.${p}`)}</dt>
-              <dd className="font-extrabold text-ink tabular-nums" data-vote-total={p}>
-                {r.totals[p]}
-              </dd>
-            </div>
-          ))}
+          {POSITIONS.map((p) => {
+            // A label joins the card's section like any other term: marked
+            // once, so the tie-breaker line below does not mark "Yea" again.
+            const term = POSITION_TERM[p];
+            const mark = term && !seen.has(term) ? term : null;
+            if (mark) seen.add(mark);
+            return (
+              <div key={p} className="flex items-baseline justify-between gap-2 min-[30rem]:block">
+                <dt className="text-ink-2">
+                  {mark ? (
+                    <GlossaryTerm id={mark}>{t(`position.${p}`)}</GlossaryTerm>
+                  ) : (
+                    t(`position.${p}`)
+                  )}
+                </dt>
+                <dd className="font-extrabold text-ink tabular-nums" data-vote-total={p}>
+                  {r.totals[p]}
+                </dd>
+              </div>
+            );
+          })}
         </dl>
 
         {r.tieBreaker && (
           <p className="mt-2 text-sm text-ink">
-            {t('tieBreaker', { position: t(`position.${r.tieBreaker.position}`) })}
+            {glossify(t('tieBreaker', { position: t(`position.${r.tieBreaker.position}`) }), lang, seen)}
           </p>
         )}
 

@@ -17,6 +17,7 @@ import {
   getAllBills,
   getTopActions,
   repsForDistrict,
+  specialElectionsFor,
   vacancyForDistrict,
   vacancySlug,
 } from '@/lib/core';
@@ -228,7 +229,9 @@ export default async function RepsPage({
               {reps.map((r) => (
                 <RepCard key={r.bioguide} rep={r} />
               ))}
-              {vacancy && <VacantSeatCard href={`/reps/${vacancySlug(vacancy)}`} />}
+              {vacancy && (
+                <VacantSeatCard href={`/reps/${vacancySlug(vacancy)}`} elections={specialElectionsFor(vacancy)} />
+              )}
             </div>
           </section>
         );

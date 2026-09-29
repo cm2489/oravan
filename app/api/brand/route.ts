@@ -17,6 +17,7 @@ import {
   type BrandTheme,
 } from '@/lib/brandprompt';
 import { callerIp, createRateLimiter, createTenantRateLimiter } from '@/lib/ratelimit';
+import { EMBEDS_PAGES_PUBLIC } from '@/lib/site';
 import { noteBrandPreview } from '@/lib/usage';
 
 /*
@@ -24,6 +25,15 @@ import { noteBrandPreview } from '@/lib/usage';
  * white-label tier submits its site URL from /embeds and gets back a theme
  * suggestion in the closed knob set. The SECOND Anthropic-calling endpoint
  * in Oravan (after /api/script) — spend posture below.
+ *
+ * OFF while the /embeds pages are hidden (owner, 2026-09-29: "brand off").
+ * Its only caller is the /embeds configurator, which now 404s, so a live
+ * route could only spend money on requests that don't come from the site.
+ * POST answers 404 `not_found` as its FIRST step, before the limiters, the
+ * body, any fetch or the Anthropic client, so nothing is fetched or spent
+ * while it is off. It comes back, unchanged, when lib/site.ts's
+ * EMBEDS_PAGES_PUBLIC is set to true, together with the pages.
+ * tests/brand-off.unit.spec.ts pins the order.
  *
  * Stateless by the /api/district doctrine, strengthened: POST so the URL
  * never lands in an access log; the URL is truncated to its ORIGIN inside
@@ -47,6 +57,7 @@ import { noteBrandPreview } from '@/lib/usage';
  *     spend path only, mirroring /api/script's noteScriptGeneration.
  *
  * Error taxonomy (uniform bodies, nothing caller-specific ever echoed):
+ *   404 not_found          — the route is off (EMBEDS_PAGES_PUBLIC false)
  *   400 bad_request        — malformed body/URL, or the SSRF guard refused
  *   429 rate_limited       — either limiter tripped (deliberately not
  *                            distinguished, same rule as /api/script)
@@ -107,6 +118,12 @@ const CSS_FETCH = {
 };
 
 export async function POST(req: NextRequest) {
+  // Off while the /embeds pages are hidden (header). This check stays FIRST:
+  // no limiter, body read, fetch or Anthropic call may move above it.
+  if (!EMBEDS_PAGES_PUBLIC) {
+    return NextResponse.json({ error: 'not_found' }, { status: 404 });
+  }
+
   const ip = callerIp(req.headers);
   // Per-IP limiter runs first and unconditionally — it bounds a single
   // abusive caller regardless of what the request costs. The GLOBAL daily

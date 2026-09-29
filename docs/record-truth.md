@@ -119,10 +119,12 @@ Gates: `scripts/check-conversation.mjs` (only rated outlets may corroborate; eve
   The vote record's own "your members" strip is left off the page, so nothing is printed twice. There is no stance control, no script and no phone number. A member's name links to their page, which carries the numbers.
 - **What else goes.** The floating call button and the "see how a call works" demo, both of which only ever pointed at a call.
 - **The MCP envelope reads the same rule** (`decisionState`, `lib/docket.mjs`):
-  - **Values.** `enacted` for a law, `settled` for a failed passage vote, `pending` for everything else. A failed motion, a failed suspension vote and a veto are all `pending`.
+  - **Values.** `enacted` for a law, `settled` for a failed passage vote (and, since #360, a concurrent resolution both chambers adopted), `pending` for everything else. A failed motion, a failed suspension vote and a veto are all `pending`.
   - **The call link.** `get_bill` offers `act_url` on every `pending` record, and withholds it on `settled` and `enacted`.
   - **Schema unchanged.** `settled_reason` stays null while pending, and no field was added for "the last vote failed". The failed vote still reaches an agent verbatim through `get_bill`'s `last_action_text`.
-- **Never wider than the MCP envelope.** Everything the panel calls settled, `decisionState` calls settled or enacted. The converse has one stated gap: a failed passage vote whose chamber the record does not name. `decisionState` reads the words alone and calls it settled. The stepper prints its chamber-free sentence, and the panel keeps the call with it. No record had that shape on 2026-09-29.
+- **Never wider than the MCP envelope.** Everything the panel calls settled, `decisionState` calls settled or enacted. The converse has two stated gaps:
+  - **A failed passage vote whose chamber the record does not name.** `decisionState` reads the words alone and calls it settled. The stepper prints its chamber-free sentence, and the panel keeps the call with it. No record had that shape on 2026-09-29.
+  - **A concurrent resolution both chambers agreed to in one form.** This is `concurrentAdoptedBy` (`lib/floor-text.mjs`), from #360, merged 2026-09-29. H.Con.Res. 86 is the one case. The envelope calls it settled, because it goes to no President and its path is over. The bill page does not read it yet: its stepper sentence and panel need new strings, and #360 lists that follow-up. Until then its page keeps the call.
 - **Not yet covered:** the paid action-panel embed (`app/embed/action-panel`) does not read the settled state; rule 6 says so. The Big Questions status line (`lib/moment-status.mjs`) still marks a failed vote as terminal, so a vehicle card for a failed motion reads "Read the bill" rather than "Read + call", although its page now has the call panel.
 
 Gates:

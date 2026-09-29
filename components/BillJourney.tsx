@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { GlossaryTerm } from '@/components/GlossaryTerm';
+import { glossifyRich } from '@/components/glossary-tags';
+import { glossaryLocale } from '@/lib/glossary-match';
 import { Chip } from '@/components/system';
 import type { GlossaryTermId } from '@/lib/glossary';
 import type { FloorCalendar, JourneyEnding, JourneyState } from '@/lib/journey';
@@ -41,19 +43,26 @@ import type { FloorCalendar, JourneyEnding, JourneyState } from '@/lib/journey';
  * BOTH languages. The tag is one name; WHICH entry it resolves to is decided
  * here, from what the record actually said.
  *
- * THE HOUSE CALENDAR HAS NO ENTRY, AND SO GETS NO LINK. The House keeps two
- * calendars and the record names both: measured 2026-08-12 on the committed
- * corpus, 148 House placements say "Union Calendar" and 2 say "House
- * Calendar". The first batch of glossary terms (issue #181) covers the Union
- * Calendar and not the other, so those 2 render the identical sentence with no
- * trigger in it rather than a link to an entry that is about a different list.
- * Absence is a finding; a link that is 98.7% right is a false claim on the
- * rest. See lib/journey.ts's floorCalendarName for the full split.
+ * EACH CALENDAR GETS ITS OWN ENTRY. The House keeps two calendars and the
+ * record names both: measured 2026-08-12 on the committed corpus, 148 House
+ * placements say "Union Calendar" and 2 say "House Calendar". Until
+ * 2026-09-28 the glossary covered only the Union Calendar, so those 2 rendered
+ * the sentence with no trigger rather than one pointing at an entry about a
+ * different list — absence was the finding. The expansion added
+ * `house-calendar`, so now each placement opens the entry for the calendar
+ * the record actually named. See lib/journey.ts's floorCalendarName for the
+ * full split.
+ *
+ * THE REST OF THE SENTENCE is marked automatically (glossifyRich): a vetoed
+ * bill's "vetoed" and "two-thirds of both chambers" open in place. The tagged
+ * calendar phrase is an element, so the automatic pass never touches it, and
+ * the conference sentence ("reconciling their versions") matches nothing — see
+ * lib/glossary.ts's near-miss note.
  */
 const CALENDAR_TERM: Record<FloorCalendar, GlossaryTermId | null> = {
   'senate-legislative': 'legislative-calendar',
   union: 'union-calendar',
-  house: null,
+  house: 'house-calendar',
 };
 
 /*
@@ -98,6 +107,7 @@ interface Props {
 
 export function BillJourney({ journey, introducedLabel, currentLabel }: Props) {
   const t = useTranslations('bill.journey');
+  const lang = glossaryLocale(useLocale());
   const { ending } = journey;
   // Display strings for the ICU selects: origin chamber and its opposite.
   const chamber = journey.origin === 'house' ? 'House' : 'Senate';
@@ -128,6 +138,8 @@ export function BillJourney({ journey, introducedLabel, currentLabel }: Props) {
   const calendarTerm = journey.floorCalendar ? CALENDAR_TERM[journey.floorCalendar] : null;
   const floorCalendar = (chunks: ReactNode) =>
     calendarTerm ? <GlossaryTerm id={calendarTerm}>{chunks}</GlossaryTerm> : <>{chunks}</>;
+  // The "Right now" sentence and its trailer are one section.
+  const nowSeen = new Set<GlossaryTermId>(calendarTerm ? [calendarTerm] : []);
 
   return (
     <div>
@@ -177,8 +189,12 @@ export function BillJourney({ journey, introducedLabel, currentLabel }: Props) {
       <p className="mt-4 flex flex-wrap items-center gap-2 max-w-note text-sm text-ink-2">
         <span>
           <strong className="font-bold text-ink">{t('now')}</strong>{' '}
-          {t.rich(journey.nowKey, { chamber: nowChamber, other, floorCalendar, ...tally })}
-          {journey.showTrailer && <> {t(TRAILER_KEY[ending], { chamber, other })}</>}
+          {glossifyRich(
+            t.rich(journey.nowKey, { chamber: nowChamber, other, floorCalendar, ...tally }),
+            lang,
+            nowSeen
+          )}
+          {journey.showTrailer && <> {glossifyRich(t(TRAILER_KEY[ending], { chamber, other }), lang, nowSeen)}</>}
         </span>
         {isLaw && <Chip tone="tag">{t('law')}</Chip>}
       </p>
