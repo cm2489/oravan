@@ -31,6 +31,19 @@ Rules touched: page 1, rule 6 (the record, quoted, never narrated) and rule 8 (t
 
 ---
 
+<a id="privacy-lines-2026-09-28"></a>
+
+## 2026-09-28 — The two privacy lines corrected; card l16 closed
+
+Rules touched: page 1, rules 1 and 4. This closes the 2026-09-27 entry ([#privacy-lines-2026-09-27](#privacy-lines-2026-09-27)).
+
+- The owner's answer on the 2026-09-28 open-questions page (kept out of this repo), question G, "The press hold, and two privacy lines that aren't accurate": **"G: a"**, saved at 2026-09-28T19:09:07Z with no note. Option a, verbatim: *"Fix the two lines now; the press hold lifts when the rebuild ships."*
+- `privacy.p1`, both languages. It said Oravan never asks for your name, email, address or anything that identifies you. It now says that on Oravan's pages we never ask you to give us your name or email, or anything else that identifies you, with one optional exception, explained below: your street address. `privacy.p7` is that explanation and is unchanged; its opening words, "One optional exception to 'we never ask'", still quote `p1`. Checked in code: `components/AddressForm.tsx` keeps the address in component state only and sends it once, in a POST body, to `app/api/district/route.ts`, which passes it to the Census Bureau's geocoder and neither stores nor logs it. Since #345 removed the feedback form, no input on the site asks for a name or an email. "On Oravan's pages" is deliberate: the donation link and the paid-plan billing-portal link (`lib/site.ts`) go to Stripe's own pages, which this line does not describe. "Give us" is deliberate too: the call script's `[YOUR NAME]` placeholder is for the caller to say to the office, and an edited script is never sent to Oravan (`/api/script` receives only the bill, the stance, the language and, for a nomination, the audience). Found while checking, not changed here: the route's onward request to the geocoder is a GET that carries the address in its URL, while rule 1 says a street address "travels only in a POST body". That is raised with the owner in the PR that made this change.
+- `privacy.p8`, both languages. It said Oravan keeps "one plain count". It now lists every daily count, each checked against the code that writes it: page opens by kind of page (`notePageview`, from `proxy.ts`); new call scripts, and script requests each limit turned away (`noteScriptGeneration` and `noteScriptRefusal`, from `app/api/script`); MCP tool uses, and connections by client software name (`noteMcpToolCall` and `noteMcpClientHandshake`); theme suggestions on /embeds (`noteBrandPreview`, from `app/api/brand`); and widget loads, per partner (`lib/impressions.ts`) and per website domain (`lib/embed-referrer.ts`). The script refusals and the website-domain count were not in the 2026-09-27 list. `p8` now opens by pointing back to the rate limiting in `p3`, which is not a daily count. `privacy.p9`, the daily distinct-address number, is unchanged.
+- The press hold is not recorded in this repo. Per the answer it lifts when the rebuild ships, with no date to track. The tripwire in the 2026-09-27 entry is retired by a dated line appended under it, not by editing it.
+
+---
+
 <a id="call-reach-2026-09-27"></a>
 
 ## 2026-09-27 — Rule 8: the floating call button stands down over the decoded answer on phones
@@ -148,6 +161,7 @@ Rules touched: page 1, rules 1 and 4 (a shipped claim that has stopped being tru
 - The two lines, as shipped on 2026-09-27, in both languages: `privacy.p1` says Oravan never asks for your name, email or address — and the optional street-address refinement for split ZIPs asks for an address (sent once by POST, never stored or logged), and the partnership feedback form asks for contact details. `privacy.p8` says Oravan keeps "one plain count" — the page-shape count — while `lib/usage.ts` also keeps daily script-generation, MCP-tool, MCP-client and brand-preview counts, and `lib/impressions.ts` keeps per-partner embed impression counts.
 - Not changed by the change that wrote this entry. **Tripwire: before the press hold lifts; date not yet set by the owner.** Whoever lifts the hold brings this card back to the owner first.
 - 2026-09-28: the beta feedback form was removed (owner decision), so the feedback-form half of the `privacy.p1` problem is gone. The street-address half and `privacy.p8` are unchanged, and so is the card.
+- 2026-09-28, later: card closed. The owner answered **"G: a"**, *"Fix the two lines now; the press hold lifts when the rebuild ships."* Both lines are corrected in both languages, so the tripwire above no longer applies. See [#privacy-lines-2026-09-28](#privacy-lines-2026-09-28).
 
 ---
 

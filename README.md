@@ -4,8 +4,6 @@
 
 Oravan is free, nonpartisan civic infrastructure: find your federal representatives, understand active bills in plain language (English and Spanish), get a 30-second call script, and make the call — in under 5 minutes, with no account.
 
-The name is the **Oravan**: the platform in the Roman Forum where citizens stood to address the public and the powerful — the original place a voice met power. Latin roots are the shared ancestry of English and Spanish alike.
-
 ## MCP server
 
 This repository also implements a **remote MCP (Model Context Protocol) server** — the same decoded corpus and lookups, exposed for AI assistants and agents:
