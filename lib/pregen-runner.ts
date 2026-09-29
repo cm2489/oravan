@@ -16,7 +16,7 @@ import {
   type CacheProbe,
   type ScriptCache,
 } from './scriptcache';
-import { STANCES } from './scriptprompt';
+import { finishScript, STANCES } from './scriptprompt';
 import type { Bill } from './types';
 
 /*
@@ -374,8 +374,10 @@ async function collectBatch(
       console.error(`pregen: ${row.custom_id} did not succeed (${extracted.reason})`);
       continue;
     }
-    // never throws (lib/scriptcache.ts); false = it did not reach the database
-    const stored = await cache.set(combo, extracted.script);
+    // never throws (lib/scriptcache.ts); false = it did not reach the database.
+    // finishScript is the route's own finisher ("the president"), so the
+    // cached bytes are what /api/script would have cached.
+    const stored = await cache.set(combo, finishScript(extracted.script, combo.lang));
     if (stored) cacheWrites++;
     else cacheWriteFailures++;
     generated++;

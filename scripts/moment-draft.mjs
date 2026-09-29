@@ -79,6 +79,7 @@
  * scripts/moment-candidates.mjs carries import-free from lib/journey.ts.
  */
 import { lintRevisionText } from '../lib/moment-updates-gate.mjs';
+import { PRESIDENT_STYLE_RULE, presidentStyle } from '../lib/president-style.mjs';
 import { statusKeyFor } from './moment-candidates.mjs';
 
 /**
@@ -96,8 +97,11 @@ export const DRAFT_MODEL = 'claude-sonnet-5-5';
  *  v3 (2026-08-09): the RECORD BLOCK changed. The status label now routes
  *  through statusKeyFor, so a cloture-motion bill no longer reads as "On the
  *  floor calendar"; the press line no longer carries the coverage-tier enum.
- *  Drafts written under v2 saw a different, and in two ways wronger, record. */
-export const DRAFT_PROMPT_VERSION = 3;
+ *  Drafts written under v2 saw a different, and in two ways wronger, record.
+ *  v4 (2026-09-29): the prompt carries PRESIDENT_STYLE_RULE ("the president",
+ *  owner 2026-09-29), and every clean field is restyled by the same
+ *  normalizer before the lint. */
+export const DRAFT_PROMPT_VERSION = 4;
 
 /** The three slots a scaffold leaves empty. Order is display order. */
 export const DRAFT_FIELDS = ['name', 'summary', 'role'];
@@ -408,6 +412,7 @@ HARD RULES:
 - Describe the question, never a position on it. No urgency the record does not carry.
 - The Spanish is native Latin-American-neutral Spanish at an 8th-grade level, with correct accents (aprobó, Cámara, comité, votación), carrying the same facts — not a gloss of the English. Bill citations keep their English form (S. 3172, H.R. 9770).
 - Dates the way a reader says them: "July 27, 2026" in English, "27 de julio de 2026" in Spanish. Never ISO "2026-07-27" in prose. Never an internal token like "floor_vote" — if you find yourself writing an underscore, stop.
+${PRESIDENT_STYLE_RULE}
 - Plain text. No markdown, no headings, no meta-commentary about this draft.
 
 SHAPE (placeholders in angle brackets — never copy these words, they are not facts):
@@ -463,7 +468,11 @@ export function validateDraft(parsed) {
   const clean = {};
   const problems = {};
   for (const field of DRAFT_FIELDS) {
-    const value = parsed?.[field];
+    // "The president" (docs/copy-style.md) before the lint, so the draft the
+    // editor reads is the draft that was checked. Non-strings pass through
+    // for lintField to refuse.
+    const raw = parsed?.[field];
+    const value = raw && typeof raw === 'object' ? { ...raw, en: presidentStyle(raw.en, 'en'), es: presidentStyle(raw.es, 'es') } : raw;
     const failures = lintField(field, value);
     if (failures.length) problems[field] = failures;
     else clean[field] = { en: value.en.trim(), es: value.es.trim() };

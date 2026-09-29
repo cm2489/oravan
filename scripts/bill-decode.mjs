@@ -37,6 +37,7 @@ import { generateSearchInputs } from './search-inputs.mjs';
 import { formattedTextUrl, pickTextVersion, textVersionStamp, versionCount } from './text-version.mjs';
 import { classifyApiError } from './api-billing.mjs';
 import { bumpCounter, recordApiError } from './run-counters.mjs';
+import { PRESIDENT_STYLE_RULE, presidentStyle } from '../lib/president-style.mjs';
 
 /** Re-exported, not re-implemented: the "which document is the current text"
  *  question moved to scripts/text-version.mjs on 2026-09-18 so the re-decode
@@ -289,6 +290,7 @@ STRICT RULES:
 - COST: 1-2 sentences ONLY if the summary contains spending/funding/fines/who-pays content; otherwise output exactly NONE (and ES_COST, COST_CHIPS, ES_COST_CHIPS all NONE too).
 - COST_CHIPS: when COST exists, compress it to 2-3 chips separated by " | ", each a standalone fact fragment max 45 chars, sentence case, no period. Same count and order in ES_COST_CHIPS. If a fact can't fit 45 chars, output NONE for both chip tags (prose is the fallback).
 - Spanish: natural Latin American Spanish, 8th-grade level; citations/numbers exact; agency names in English with a short gloss when helpful. ES_SUMMARY is the full summary translation.
+${PRESIDENT_STYLE_RULE}
 - Plain text, no markdown.
 
 Output exactly this tagged format, each tag on its own line followed by its content:
@@ -309,6 +311,23 @@ Output exactly this tagged format, each tag on its own line followed by its cont
 [ES_SUMMARY]`;
 }
 
+/** The bill's official titles, for the president-style normalizer: words
+ *  copied verbatim from a title are the record's and are never restyled. */
+export function decodeTitles(bill) {
+  return [bill?.title, bill?.short_title].filter((t) => typeof t === 'string');
+}
+
+/** Restyle each chip of a raw " | " chip list on its own, BEFORE the length
+ *  check, so a chip that "the president" pushes past CHIP_MAX is refused by
+ *  the same rule as any other over-long chip rather than stored over it. */
+function styleChips(raw, lang, titles) {
+  if (!raw || raw === 'NONE') return raw;
+  return raw
+    .split('|')
+    .map((c) => presidentStyle(c.trim(), lang, { titles }))
+    .join(' | ');
+}
+
 /**
  * Turn the two calls' raw replies into the stored decode, or throw.
  *
@@ -316,26 +335,38 @@ Output exactly this tagged format, each tag on its own line followed by its cont
  * field throws 'bad decode shape' and the caller stores NOTHING, in either
  * language. Batched and synchronous decodes go through this one function, so
  * neither transport can invent a looser standard for itself.
+ *
+ * "THE PRESIDENT" IS APPLIED HERE TOO (owner, 2026-09-29; docs/copy-style.md),
+ * to every field of both languages, for the same one-function reason. Call
+ * 2's prompt carries the rule (PRESIDENT_STYLE_RULE); call 1's prompt
+ * deliberately does NOT. Call 1's prompt is what `decode_text_sha`
+ * fingerprints (textFingerprint): one added line would change every stored
+ * fingerprint at once, switch off the unchanged-document veto for the whole
+ * corpus, and pay for re-decodes that veto exists to refuse. The summary call
+ * 1 returns is restyled here instead, which needs no model call at all.
+ * `titles` (decodeTitles) keeps a title quoted verbatim exactly as written.
  */
-export function assembleDecode(ai_summary, structureText) {
+export function assembleDecode(ai_summary, structureText, titles = []) {
   const p = parseTagged(structureText);
   if (!p.HEADLINE_EN || !p.TLDR || !p.WHAT || !p.WHO || !p.WHY || !p.ES_SUMMARY) {
     throw new Error('bad decode shape');
   }
+  const en = (s) => presidentStyle(s, 'en', { titles });
+  const es = (s) => presidentStyle(s, 'es');
   // Chips are decided for BOTH languages at once — see normChipPair.
-  const chips = normChipPair(p.COST_CHIPS, p.ES_COST_CHIPS);
+  const chips = normChipPair(styleChips(p.COST_CHIPS, 'en', titles), styleChips(p.ES_COST_CHIPS, 'es', []));
   return {
-    ai_summary,
-    ai_headline: p.HEADLINE_EN.slice(0, 110),
+    ai_summary: en(ai_summary),
+    ai_headline: en(p.HEADLINE_EN).slice(0, 110),
     ai_sections: {
-      tldr: p.TLDR, what: p.WHAT, who: p.WHO, why: p.WHY,
-      cost: normCost(p.COST), costChips: chips.en,
+      tldr: en(p.TLDR), what: en(p.WHAT), who: en(p.WHO), why: en(p.WHY),
+      cost: normCost(en(p.COST)), costChips: chips.en,
     },
-    es_headline: p.HEADLINE_ES.slice(0, 110),
-    es_summary: p.ES_SUMMARY,
+    es_headline: es(p.HEADLINE_ES).slice(0, 110),
+    es_summary: es(p.ES_SUMMARY),
     es_sections: {
-      tldr: p.ES_TLDR, what: p.ES_WHAT, who: p.ES_WHO, why: p.ES_WHY,
-      cost: normCost(p.ES_COST), costChips: chips.es,
+      tldr: es(p.ES_TLDR), what: es(p.ES_WHAT), who: es(p.ES_WHO), why: es(p.ES_WHY),
+      cost: normCost(es(p.ES_COST)), costChips: chips.es,
     },
   };
 }
@@ -378,7 +409,7 @@ export async function decodeStructureFrom(anthropic, bill, ai_summary) {
     thinking: { type: 'between_tools' },
     messages: [{ role: 'user', content: buildStructurePrompt(bill, ai_summary) }],
   });
-  return assembleDecode(ai_summary, rest.content[0].text.trim());
+  return assembleDecode(ai_summary, rest.content[0].text.trim(), decodeTitles(bill));
 }
 
 /**
