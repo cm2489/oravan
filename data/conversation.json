@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-09-29T15:44:08.930Z",
+    "fetched_at": "2026-09-29T19:03:04.639Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-09-29T15:44:08.930Z"
+        "checked_at": "2026-09-29T19:03:04.639Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-27",
         "week_label": "Most-Viewed Bills - Week of September 27, 2026",
         "entries": 8,
-        "checked_at": "2026-09-29T15:44:08.930Z"
+        "checked_at": "2026-09-29T19:03:04.639Z"
       },
       "leans": {
         "center": {
@@ -205,9 +205,28 @@
           "firstSeen": "2026-09-29",
           "lastSeen": "2026-09-29",
           "url": "https://thehill.com/business/personal-finance/6117206-common-cents-act-would-impact-pennies-nickels-and-cash-transactions-it-may-soon-become-law/"
+        },
+        {
+          "domain": "washingtonpost.com",
+          "lean": "left",
+          "firstSeen": "2026-09-29",
+          "lastSeen": "2026-09-29",
+          "url": "https://news.google.com/rss/articles/CBMi0wFBVV95cUxNVEl1T2dZV1BVVm1Nc2IwdWJXay1Lb2xueTVuaXphNktjOGtTTXZWUWFYdGs1NUZURXp3RFE4elBIY2RhWURvem56Z2RBY0ljV2l5ejdsYi1HOHB6VjN5d3UxQVBRR09BeGdURGotc21pZUNjTjdfM3BESzZ0dklNNDRKYlZmbmU2aUlKQWV2M2dSb0E2eW1WeGU5SC1KdGI3SkFtc05DYkpsYkxjQnlKZzloN00xREdTRTd2dUFmc0MzLUFuY0gzOWc0VkdncVdUdU5v?oc=5"
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "alexandriabrief.com",
+          "firstSeen": "2026-09-29",
+          "lastSeen": "2026-09-29",
+          "url": "https://news.google.com/rss/articles/CBMiugFBVV95cUxPRW5OaTBUN25keG9MMVFHbTRCU0d5UHZKN1lSdlBROUg4MDN2SF95U0htSjB5X0RvdEp3dGZRRHpLNDJ3TklzNUV2RG5RdHRyS2JPRGUxelVsNW9xR3E5RXNtTDhYdTlQNjI2MWdTRTFVNEVkN3pvcUtsOERueDNNR3p5S0FEUDZLekF0SldjUTllelFLZE1zR1JnNVR1dUdVVWJZZDExeEpUdndJcm8wY3NzSDdKSkczSXc?oc=5"
+        },
+        {
+          "domain": "bostonglobe.com",
+          "firstSeen": "2026-09-29",
+          "lastSeen": "2026-09-29",
+          "url": "https://news.google.com/rss/articles/CBMijAFBVV95cUxQNGVFckVvanAybGtOYzRMdU0zbWRhT3pkVE95eFgwV2lDclBNS0tvekNfdGZ3RmM2aVBoMzM4WExOb3RERzBGcXNvU2FIVTYya0hiYk1JXzAzQVMzWUhkN0NlSFJueTM2RVpjMXRjSTYtdkdDTEt4dG1CUUhvaVh4dEZjWmVkb3MtbzgxZw?oc=5"
+        },
         {
           "domain": "morningstar.com",
           "firstSeen": "2026-09-29",
@@ -1716,6 +1735,13 @@
           "url": "https://www.politico.com/news/2026/09/28/senate-college-sports-trump-01096094"
         },
         {
+          "domain": "reason.com",
+          "lean": "right",
+          "firstSeen": "2026-09-29",
+          "lastSeen": "2026-09-29",
+          "url": "https://reason.com/2026/09/29/the-protect-college-sports-act-passed-the-senate-it-faces-a-tougher-road-in-the-house-and-in-the-courts/"
+        },
+        {
           "domain": "theguardian.com",
           "lean": "left",
           "firstSeen": "2026-09-29",
@@ -1775,6 +1801,12 @@
           "firstSeen": "2026-09-29",
           "lastSeen": "2026-09-29",
           "url": "https://news.google.com/rss/articles/CBMimAFBVV95cUxNa29QZTlmcnAzVkFMSFFLVzRjZ3otZnp4R0NqdUYyZS1vZkVUWndGVzBZWFdWQW5CVEdTX0pOT3pXU3hFYkFPUW9ReTQ1LUEzM1dVVDZrM3lyTl9UOWVWUEs1U3dSMDhYSU1McDR0ZXhrNUxMOE1McEU2MVR1ckFocnRKNHpsX0RPSEhBdG9TTUhXcWtkSkpBbA?oc=5"
+        },
+        {
+          "domain": "abc7.com",
+          "firstSeen": "2026-09-29",
+          "lastSeen": "2026-09-29",
+          "url": "https://news.google.com/rss/articles/CBMimAFBVV95cUxONkg5MllGQnNhNzFkMmV6eS1MczRNR1JWNldFYnZGN0lVaUlrMmd5WTdBSWg5S00wRld4OEhVZkF6TWtyNERWTWV1U0kyUzRRV240SDFCczZwejBkLTNJd2Z1X3FWTHlhRWM0c052UTJudVBtVXUtbGx4OV9ZdkJ0RjFCVjRNMnRJSHg1THpWbllzWXhlY0xOWQ?oc=5"
         },
         {
           "domain": "actionnews5.com",
@@ -1855,6 +1887,12 @@
           "url": "https://rollcall.com/2026/09/28/senate-laterals-college-sports-bill-to-house-but-forward-progress-uncertain/"
         },
         {
+          "domain": "wane.com",
+          "firstSeen": "2026-09-29",
+          "lastSeen": "2026-09-29",
+          "url": "https://news.google.com/rss/articles/CBMi0gFBVV95cUxOMy1lUjlYRFNZZm1CblFkT05UQTlEMVdvUDNVYURSWVZnNDFqVUJmTWUwZlFBTm1meDlTQm9SbWtoU0JuaWJ4eDE3VzhjOVlfZUZ2aERsZUxlZEdzNlVDVkNCN21MUk9IUVdTb0FWWFp2d2hiU0o1N1BOOFV4OU5LRW9aQ3I5LXlUNmgwR0dneS1HdjVMYThwVUxKQ2JFZm05blh4Ykgxc2Y3UHFPZEFZQWtsRjhucC1fZ0hkZjFMNnRDMjl5WmxEeVdPallLMzIybVHSAdIBQVVfeXFMTjMtZVI5WERTWWZtQm5RZE9OVEE5RDFXb1AzVWFEUllWZzQxalVCZk1lMGZRQU5tZng5U0JvUm1raFNCbmlieHgxN1c4YzlZX2VGdmhEbGVMZWRHczZVQ1ZDQjdtTFJPSFFXU29BVlhadndoYlNKNTdQTjhVeDlOS0VvWkNyOS15VDZoMEdHZ3ktR3Y1TGE4cFVMSkNiRWZtOW5YeGJIMXNmN1BxT2RBWUFrbEY4bnAtX2dIZGYxTDZ0QzI5eVpsRHlXT2pZSzMyMm1R?oc=5"
+        },
+        {
           "domain": "washingtonsun.com",
           "firstSeen": "2026-09-29",
           "lastSeen": "2026-09-29",
@@ -1907,17 +1945,6 @@
           "firstSeen": "2026-09-26",
           "lastSeen": "2026-09-26",
           "url": "https://news.google.com/rss/articles/CBMiywFBVV95cUxNSm0tbkRTVllvTTJDTTRuNHgyV202VGlPWkRIRk1NUmNTQ2NyZTFSeHdIUE9fVUliVnJiNUpaemVUNVNpQTRqU1hhc2tCakhEMFlLVVZ2T0tBbjE5aFN5bmhYdmgwekFLTWRWVmstNHpLOXZjeFpsYUZBLVhNdkVPdWlPa181ekVzQzBrWUdFSC0zM2NXeWdVTTFWTlN2UUFjRUFtUmxicnl0UGlpdnFJUlNzRkVES3VwQU9jalpTUTlWZThiVDV2WFFHSdIB0AFBVV95cUxPb1RZbWM1cHllb2ZnYVVGWU05WTVtbXowNlM4eGFkaHpyYmxuYUw0TGN1Q0pmSnR0VFVIZndidm8ycTlpbE82WEpWNnpQbU9WNDd3OUFGVGxkR1dBNUdubGE4T2dtc3lIS3hmUGRoSk8tOTdhY0hOVkEwZmxkR0twRWJkWGlweUFndHh2bHhiY0M4TUNLd3p2QXRPelNYQThJYVZFbHZOOXhqRkl2OEEwQTlmZXFaX085QlNtTVVxVWVtWEN4M2NTNlZfbzByMDBu?oc=5"
-        },
-        {
-          "domain": "sportstalkflorida.com",
-          "firstSeen": "2026-09-25",
-          "lastSeen": "2026-09-26",
-          "url": "https://news.google.com/rss/articles/CBMivwFBVV95cUxON1FpMElmSUgyMFhSWkR4WFRrY1NXTUo3azN6RTh3dUQ4eVU3dGRoU3JNNWxkbnpwMjdiaFJOZnNiaXdyNEV1cDladmtEY3hiNUdsQ0YwWS1ZS2F4RmNkMnNGQllXeWl5a09STnlUeTZjTEtyRFpBQ1ZBWUROMkM1ZkhkYUlkZ21sQWlKTTZXdVlXamZNNG5hMzg0RE1ZaUFzX2w5clRUSXZqTkdhOHBOVHNNRTg1d1JtS19BdFVRUQ?oc=5"
-        },
-        {
-          "domain": "whnt.com",
-          "firstSeen": "2026-09-25",
-          "lastSeen": "2026-09-25"
         }
       ],
       "mostViewed": {
