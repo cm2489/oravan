@@ -338,7 +338,7 @@
     "liveHouseFloor": "Este proyecto está ahora en manos de la Cámara — tu representante es la llamada que cuenta ahora.",
     "liveSenateAfterHouse": "La Cámara ya votó este proyecto — el Senado decide ahora. Tus senadores son la llamada que cuenta.",
     "liveHouseAfterSenate": "El Senado ya votó este proyecto — la Cámara decide ahora. Tu representante es la llamada que cuenta.",
-    "nominationHow": "Una nominación empieza con el Presidente, que elige a alguien para un cargo del gobierno. A partir de ahí le corresponde al Senado: un comité revisa a la persona nominada y luego el pleno del Senado vota su confirmación. La Cámara no vota las nominaciones, en ningún caso.",
+    "nominationHow": "Una nominación empieza con el presidente, que elige a alguien para un cargo del gobierno. A partir de ahí le corresponde al Senado: un comité revisa a la persona nominada y luego el pleno del Senado vota su confirmación. La Cámara no vota las nominaciones, en ningún caso.",
     "liveSenateNomination": "Solo el Senado vota una nominación — tus senadores son la llamada que cuenta ahora.",
     "nominationHousePress": "Tu representante en la Cámara no tiene voto aquí ni ningún papel formal — esto lo decide el Senado solo. Lo que sí puede hacer es alzar la voz: comparte estado con tus dos senadores y puede presionarlos sobre una nominación, en público o en privado. Así que si llamas a su oficina, dilo con claridad — que sabes que la Cámara no vota esto y que le pides a tu representante que presione a los senadores de tu estado. La oficina registra tu llamada como cualquier otra; simplemente no cuenta para la votación del Senado.",
     "nominationNoSenator": "Solo los senadores votan una nominación, y tu zona no elige ninguno — así que aquí no hay un senador al que puedas llamar sobre esta. Tu representante en la Cámara tampoco vota las nominaciones; ningún miembro de la Cámara lo hace. Lo que su oficina sí puede hacer es alzar la voz, y registra cada llamada que recibe — así que si llamas, di con claridad que sabes que la Cámara no vota esto y que quieres que se plantee la nominación. Simplemente no contará para la votación del Senado.",
@@ -385,7 +385,7 @@
       "stepCommittee": "Comité {chamber, select, House {de la Cámara} Senate {del Senado} other {de la Cámara}}",
       "stepVote": "Voto {chamber, select, House {de la Cámara} Senate {del Senado} other {de la Cámara}}",
       "stepOther": "{chamber, select, House {Cámara} Senate {Senado} other {Senado}}",
-      "stepPresident": "Escritorio del Presidente",
+      "stepPresident": "Escritorio del presidente",
       "stepBothChambers": "Aprobación en ambas cámaras",
       "stepStates": "Enviada a los estados",
       "now": "Ahora mismo:",
@@ -403,14 +403,14 @@
       "nowPassedStale": "fue aprobado por {chamber, select, House {la Cámara} Senate {el Senado} other {la Cámara}}, y el registro oficial no muestra nada nuevo desde entonces.",
       "nowPassedBack": "{other, select, House {la Cámara} Senate {el Senado} other {el Senado}} lo aprobó con cambios, así que regresa {chamber, select, House {a la Cámara} Senate {al Senado} other {a la Cámara}}.",
       "nowPassedBackStale": "{other, select, House {la Cámara} Senate {el Senado} other {el Senado}} lo aprobó con cambios, y el registro oficial no muestra nada nuevo desde entonces.",
-      "nowPassedBoth": "ambas cámaras lo han aprobado. Ahora pasa al Presidente.",
+      "nowPassedBoth": "ambas cámaras lo han aprobado. Ahora pasa al presidente.",
       "nowPassedSecond": "ambas cámaras lo han aprobado — el registro oficial aún no dice si las dos versiones coinciden.",
       "nowConference": "ambas cámaras están conciliando sus versiones.",
-      "nowSigned": "el Presidente lo firmó. Ya es ley.",
-      "nowVetoed": "el Presidente lo vetó. El Congreso puede anular el veto con dos tercios de ambas cámaras.",
-      "backTrailer": "Si {other, select, House {la Cámara} Senate {el Senado} other {el Senado}} lo cambia, regresa {chamber, select, House {a la Cámara} Senate {al Senado} other {a la Cámara}} antes de llegar al Presidente.",
-      "backTrailerBothChambers": "Si {other, select, House {la Cámara} Senate {el Senado} other {el Senado}} lo cambia, regresa {chamber, select, House {a la Cámara} Senate {al Senado} other {a la Cámara}}: ambas cámaras tienen que aprobar el mismo texto. Este tipo de resolución nunca llega al Presidente y no se convierte en ley.",
-      "backTrailerStates": "Si {other, select, House {la Cámara} Senate {el Senado} other {el Senado}} lo cambia, regresa {chamber, select, House {a la Cámara} Senate {al Senado} other {a la Cámara}}: ambas cámaras tienen que aprobar el mismo texto, cada una por dos tercios. Una enmienda constitucional propuesta nunca llega al Presidente: pasa a los estados, y tres cuartas partes de ellos tienen que ratificarla para que entre en vigor.",
+      "nowSigned": "el presidente lo firmó. Ya es ley.",
+      "nowVetoed": "el presidente lo vetó. El Congreso puede anular el veto con dos tercios de ambas cámaras.",
+      "backTrailer": "Si {other, select, House {la Cámara} Senate {el Senado} other {el Senado}} lo cambia, regresa {chamber, select, House {a la Cámara} Senate {al Senado} other {a la Cámara}} antes de llegar al presidente.",
+      "backTrailerBothChambers": "Si {other, select, House {la Cámara} Senate {el Senado} other {el Senado}} lo cambia, regresa {chamber, select, House {a la Cámara} Senate {al Senado} other {a la Cámara}}: ambas cámaras tienen que aprobar el mismo texto. Este tipo de resolución nunca llega al presidente y no se convierte en ley.",
+      "backTrailerStates": "Si {other, select, House {la Cámara} Senate {el Senado} other {el Senado}} lo cambia, regresa {chamber, select, House {a la Cámara} Senate {al Senado} other {a la Cámara}}: ambas cámaras tienen que aprobar el mismo texto, cada una por dos tercios. Una enmienda constitucional propuesta nunca llega al presidente: pasa a los estados, y tres cuartas partes de ellos tienen que ratificarla para que entre en vigor.",
       "youAreHere": "Estás aquí",
       "law": "Ya es ley",
       "nowIntroduced": "acaba de ser presentado y va rumbo a comité."
@@ -1046,8 +1046,8 @@
     "closedTitle": "No hay llamada que hacer",
     "closed": {
       "confirmed": "El Senado votó a favor de confirmar esta nominación. Una nominación confirmada está terminada — ya no queda ninguna llamada que hacer.",
-      "returned": "El Senado devolvió esta nominación al Presidente sin confirmarla. Ya no queda ninguna llamada que hacer.",
-      "withdrawn": "El Presidente retiró esta nominación. Ya no queda ninguna llamada que hacer."
+      "returned": "El Senado devolvió esta nominación al presidente sin confirmarla. Ya no queda ninguna llamada que hacer.",
+      "withdrawn": "El presidente retiró esta nominación. Ya no queda ninguna llamada que hacer."
     },
     "noScriptTitle": "El registro no incluye descripción",
     "noScriptBody": "La ficha del Senado para esta nominación no incluye descripción — nada que diga a quién corresponde ni qué cargo cubre. Esa frase es lo único con lo que se arma un guion de llamada aquí, así que Oravan no ofrece ninguno en vez de inventar palabras sobre un registro que no dice nada. La nominación sigue ante el Senado, y todo lo que el Senado ha publicado sobre ella está en esta página, completo.",
@@ -1062,7 +1062,7 @@
       "floor": "Actividad en el pleno del Senado",
       "scheduled": "Programada para una votación en el Senado",
       "confirmed": "Confirmada por el Senado",
-      "returned": "Devuelta al Presidente",
+      "returned": "Devuelta al presidente",
       "withdrawn": "Retirada",
       "unclassified": "El registro no indica la etapa"
     }
@@ -1133,7 +1133,7 @@
       },
       "cra-disapproval": {
         "term": "Resolución de desaprobación (CRA)",
-        "body": "La Ley de Revisión del Congreso (Congressional Review Act) le permite al Congreso dejar sin efecto una norma emitida por una agencia federal. Una resolución conjunta de desaprobación avanza por una vía rápida: durante un plazo limitado después de que la norma se envía al Congreso, basta una mayoría simple en cada cámara y el debate en el Senado está limitado. Como cualquier resolución conjunta, después pasa al Presidente, y solo entra en vigor si se firma o si se anula un veto. Si entra en vigor, la norma queda sin efecto y la agencia no puede emitir otra sustancialmente similar."
+        "body": "La Ley de Revisión del Congreso (Congressional Review Act) le permite al Congreso dejar sin efecto una norma emitida por una agencia federal. Una resolución conjunta de desaprobación avanza por una vía rápida: durante un plazo limitado después de que la norma se envía al Congreso, basta una mayoría simple en cada cámara y el debate en el Senado está limitado. Como cualquier resolución conjunta, después pasa al presidente, y solo entra en vigor si se firma o si se anula un veto. Si entra en vigor, la norma queda sin efecto y la agencia no puede emitir otra sustancialmente similar."
       },
       "pro-forma-session": {
         "term": "Sesión pro forma",
@@ -1233,7 +1233,7 @@
       },
       "executive-session": {
         "term": "Sesión ejecutiva (Senado)",
-        "body": "El Senado está en sesión ejecutiva cuando trabaja en nominaciones y tratados, que llegan del Presidente. El trabajo sobre proyectos y resoluciones se hace en sesión legislativa. El Senado puede pasar de una a otra en un mismo día."
+        "body": "El Senado está en sesión ejecutiva cuando trabaja en nominaciones y tratados, que llegan del presidente. El trabajo sobre proyectos y resoluciones se hace en sesión legislativa. El Senado puede pasar de una a otra en un mismo día."
       },
       "vote-a-rama": {
         "term": "Vote-a-rama (maratón de votaciones)",
@@ -1301,7 +1301,7 @@
       },
       "bill": {
         "term": "Proyecto de ley",
-        "body": "Un proyecto de ley es una propuesta para crear una ley nueva o para cambiar o derogar una existente. Los proyectos de la Cámara se numeran H.R. y los del Senado S. Para convertirse en ley, un proyecto tiene que ser aprobado por las dos cámaras con el mismo texto y firmado por el Presidente, o aprobado por encima de un veto."
+        "body": "Un proyecto de ley es una propuesta para crear una ley nueva o para cambiar o derogar una existente. Los proyectos de la Cámara se numeran H.R. y los del Senado S. Para convertirse en ley, un proyecto tiene que ser aprobado por las dos cámaras con el mismo texto y firmado por el presidente, o aprobado por encima de un veto."
       },
       "measure": {
         "term": "Medida (measure)",
@@ -1309,15 +1309,15 @@
       },
       "act": {
         "term": "Ley (Act)",
-        "body": "Un «act» es un proyecto aprobado por una o las dos cámaras. Por lo general la palabra se refiere a un proyecto que ambas aprobaron con el mismo texto y que se convirtió en ley, firmado por el Presidente o aprobado por encima de un veto. Muchos proyectos llevan «Act» en su título desde el día en que se presentan."
+        "body": "Un «act» es un proyecto aprobado por una o las dos cámaras. Por lo general la palabra se refiere a un proyecto que ambas aprobaron con el mismo texto y que se convirtió en ley, firmado por el presidente o aprobado por encima de un veto. Muchos proyectos llevan «Act» en su título desde el día en que se presentan."
       },
       "joint-resolution": {
         "term": "Resolución conjunta",
-        "body": "Una resolución conjunta funciona como un proyecto de ley: tiene que ser aprobada por las dos cámaras y firmada por el Presidente para convertirse en ley. El Congreso la usa, por ejemplo, para prorrogar fondos, aprobar o desaprobar acciones y proponer enmiendas a la Constitución. Una enmienda propuesta no pasa por el Presidente: necesita dos tercios de cada cámara y la ratificación de tres cuartas partes de los estados."
+        "body": "Una resolución conjunta funciona como un proyecto de ley: tiene que ser aprobada por las dos cámaras y firmada por el presidente para convertirse en ley. El Congreso la usa, por ejemplo, para prorrogar fondos, aprobar o desaprobar acciones y proponer enmiendas a la Constitución. Una enmienda propuesta no pasa por el presidente: necesita dos tercios de cada cámara y la ratificación de tres cuartas partes de los estados."
       },
       "concurrent-resolution": {
         "term": "Resolución concurrente",
-        "body": "Una resolución concurrente la aprueban las dos cámaras, pero no se envía al Presidente y no tiene fuerza de ley. El Congreso la usa para asuntos que afectan a las dos cámaras, como la resolución presupuestaria del Congreso."
+        "body": "Una resolución concurrente la aprueban las dos cámaras, pero no se envía al presidente y no tiene fuerza de ley. El Congreso la usa para asuntos que afectan a las dos cámaras, como la resolución presupuestaria del Congreso."
       },
       "simple-resolution": {
         "term": "Resolución simple",
@@ -1353,23 +1353,23 @@
       },
       "enrolled-bill": {
         "term": "Texto final (enrolled bill)",
-        "body": "Un «enrolled bill» es la copia final de un proyecto que las dos cámaras aprobaron con un texto idéntico. La firman autoridades de ambas cámaras y se envía al Presidente para que la firme o la vete."
+        "body": "Un «enrolled bill» es la copia final de un proyecto que las dos cámaras aprobaron con un texto idéntico. La firman autoridades de ambas cámaras y se envía al presidente para que la firme o la vete."
       },
       "veto": {
         "term": "Veto",
-        "body": "El veto es la negativa del Presidente a firmar un proyecto, que devuelve a la cámara donde se originó, por lo general con un mensaje que explica el motivo. El proyecto no se convierte en ley salvo que las dos cámaras superen el veto con dos tercios de los votos."
+        "body": "El veto es la negativa del presidente a firmar un proyecto, que devuelve a la cámara donde se originó, por lo general con un mensaje que explica el motivo. El proyecto no se convierte en ley salvo que las dos cámaras superen el veto con dos tercios de los votos."
       },
       "pocket-veto": {
         "term": "Veto de bolsillo",
-        "body": "Un veto de bolsillo ocurre cuando el Presidente no firma un proyecto en los 10 días siguientes a recibirlo (sin contar los domingos) y mientras tanto el Congreso ha levantado sus sesiones, de modo que el proyecto no puede ser devuelto. El proyecto no se convierte en ley, y el Congreso no puede superar ese veto."
+        "body": "Un veto de bolsillo ocurre cuando el presidente no firma un proyecto en los 10 días siguientes a recibirlo (sin contar los domingos) y mientras tanto el Congreso ha levantado sus sesiones, de modo que el proyecto no puede ser devuelto. El proyecto no se convierte en ley, y el Congreso no puede superar ese veto."
       },
       "veto-override": {
         "term": "Superar un veto (veto override)",
-        "body": "Superar un veto es que el Congreso convierta en ley un proyecto después de que el Presidente lo vetó. Se necesitan dos tercios de los votos tanto en la Cámara como en el Senado."
+        "body": "Superar un veto es que el Congreso convierta en ley un proyecto después de que el presidente lo vetó. Se necesitan dos tercios de los votos tanto en la Cámara como en el Senado."
       },
       "enacted": {
         "term": "Promulgado (se convirtió en ley)",
-        "body": "Un proyecto se promulga cuando se convierte en ley. Eso ocurre cuando las dos cámaras lo aprueban con el mismo texto y el Presidente lo firma, cuando el Presidente deja pasar 10 días (sin contar los domingos) sin actuar mientras el Congreso está en sesiones, o cuando el Congreso supera un veto."
+        "body": "Un proyecto se promulga cuando se convierte en ley. Eso ocurre cuando las dos cámaras lo aprueban con el mismo texto y el presidente lo firma, cuando el presidente deja pasar 10 días (sin contar los domingos) sin actuar mientras el Congreso está en sesiones, o cuando el Congreso supera un veto."
       },
       "public-law": {
         "term": "Ley pública",
@@ -1389,7 +1389,7 @@
       },
       "executive-order": {
         "term": "Orden ejecutiva",
-        "body": "Una orden ejecutiva es una directiva escrita que usa el Presidente para dirigir el funcionamiento del poder ejecutivo. Se publica en el Federal Register. No es una ley aprobada por el Congreso, y un Presidente posterior puede cambiarla o revocarla."
+        "body": "Una orden ejecutiva es una directiva escrita que usa el presidente para dirigir el funcionamiento del poder ejecutivo. Se publica en el Federal Register. No es una ley aprobada por el Congreso, y un presidente posterior puede cambiarla o revocarla."
       },
       "roll-call-vote": {
         "term": "Votación nominal",
@@ -1417,7 +1417,7 @@
       },
       "tie-vote": {
         "term": "Empate",
-        "body": "Un empate es cuando hay el mismo número de votos a favor y en contra. En la Cámara, una cuestión que empata no se aprueba. En el Senado, el Vicepresidente, como presidente del Senado, puede emitir un voto para desempatar."
+        "body": "Un empate es cuando hay el mismo número de votos a favor y en contra. En la Cámara, una cuestión que empata no se aprueba. En el Senado, el vicepresidente, como presidente del Senado, puede emitir un voto para desempatar."
       },
       "simple-majority": {
         "term": "Mayoría simple",
@@ -1437,7 +1437,7 @@
       },
       "budget-resolution": {
         "term": "Resolución presupuestaria",
-        "body": "La resolución presupuestaria es el plan presupuestario propio del Congreso, que fija totales de gasto e ingresos. Es una resolución concurrente, así que el Presidente no la firma y no se convierte en ley. Puede incluir instrucciones que inician el proceso de reconciliación."
+        "body": "La resolución presupuestaria es el plan presupuestario propio del Congreso, que fija totales de gasto e ingresos. Es una resolución concurrente, así que el presidente no la firma y no se convierte en ley. Puede incluir instrucciones que inician el proceso de reconciliación."
       },
       "continuing-resolution": {
         "term": "Resolución de continuidad (CR)",
@@ -1501,7 +1501,7 @@
       },
       "rescission": {
         "term": "Rescisión",
-        "body": "Una rescisión es una ley que cancela dinero que el Congreso ya había aprobado, antes de que se gaste. El Presidente puede proponer rescisiones, pero solo el Congreso puede aprobarlas; si no actúa dentro de 45 días de sesión continua, el dinero debe quedar disponible para gastarse."
+        "body": "Una rescisión es una ley que cancela dinero que el Congreso ya había aprobado, antes de que se gaste. El presidente puede proponer rescisiones, pero solo el Congreso puede aprobarlas; si no actúa dentro de 45 días de sesión continua, el dinero debe quedar disponible para gastarse."
       },
       "tax-credit": {
         "term": "Crédito fiscal",
@@ -1513,31 +1513,31 @@
       },
       "nomination": {
         "term": "Nominación",
-        "body": "Una nominación es la elección que hace el Presidente de una persona para un cargo federal que necesita la aprobación del Senado, como un secretario del gabinete, un embajador o un juez federal. El Senado la confirma o la rechaza; la Cámara no vota."
+        "body": "Una nominación es la elección que hace el presidente de una persona para un cargo federal que necesita la aprobación del Senado, como un secretario del gabinete, un embajador o un juez federal. El Senado la confirma o la rechaza; la Cámara no vota."
       },
       "advice-and-consent": {
         "term": "Consejo y consentimiento",
-        "body": "El consejo y consentimiento es la facultad que la Constitución da al Senado para aprobar o rechazar las nominaciones y los tratados del Presidente. Las nominaciones necesitan mayoría simple; los tratados, dos tercios de los senadores presentes."
+        "body": "El consejo y consentimiento es la facultad que la Constitución da al Senado para aprobar o rechazar las nominaciones y los tratados del presidente. Las nominaciones necesitan mayoría simple; los tratados, dos tercios de los senadores presentes."
       },
       "confirmation": {
         "term": "Confirmación",
         "body": "La confirmación es la aprobación de una nominación por parte del Senado, por lo general tras la revisión de un comité y una votación del pleno. Una vez confirmada, la persona nominada puede ser nombrada en el cargo."
       },
       "returned-nomination": {
-        "term": "Devuelta al Presidente",
-        "body": "Según las reglas del Senado, una nominación que no ha sido confirmada ni rechazada se devuelve al Presidente cuando el Senado levanta sus sesiones o hace un receso de más de 30 días, o cuando termina un periodo de sesiones. El Senado no puede volver a considerarla salvo que el Presidente la envíe de nuevo."
+        "term": "Devuelta al presidente",
+        "body": "Según las reglas del Senado, una nominación que no ha sido confirmada ni rechazada se devuelve al presidente cuando el Senado levanta sus sesiones o hace un receso de más de 30 días, o cuando termina un periodo de sesiones. El Senado no puede volver a considerarla salvo que el presidente la envíe de nuevo."
       },
       "treaty": {
         "term": "Tratado",
-        "body": "Un tratado es un acuerdo formal y obligatorio entre Estados Unidos y una o más naciones. Lo negocia el Presidente y necesita la aprobación de dos tercios de los senadores presentes. Una vez en vigor, tiene el peso de una ley federal."
+        "body": "Un tratado es un acuerdo formal y obligatorio entre Estados Unidos y una o más naciones. Lo negocia el presidente y necesita la aprobación de dos tercios de los senadores presentes. Una vez en vigor, tiene el peso de una ley federal."
       },
       "resolution-of-ratification": {
         "term": "Resolución de ratificación",
-        "body": "El Senado no ratifica los tratados por sí mismo. Vota una resolución de ratificación, que da su consentimiento; si están de acuerdo dos tercios de los senadores presentes, el Presidente puede entonces ratificar el tratado con las otras naciones."
+        "body": "El Senado no ratifica los tratados por sí mismo. Vota una resolución de ratificación, que da su consentimiento; si están de acuerdo dos tercios de los senadores presentes, el presidente puede entonces ratificar el tratado con las otras naciones."
       },
       "impeachment": {
         "term": "Juicio político (impeachment)",
-        "body": "El juicio político es la forma en que el Congreso puede acusar y juzgar a un funcionario federal, incluidos el Presidente y los jueces federales. La Cámara presenta los cargos por mayoría simple; luego el Senado celebra un juicio, y para destituir al funcionario se necesitan dos tercios de los votos a favor de la condena."
+        "body": "El juicio político es la forma en que el Congreso puede acusar y juzgar a un funcionario federal, incluidos el presidente y los jueces federales. La Cámara presenta los cargos por mayoría simple; luego el Senado celebra un juicio, y para destituir al funcionario se necesitan dos tercios de los votos a favor de la condena."
       },
       "congress": {
         "term": "Un Congreso",
@@ -1561,15 +1561,15 @@
       },
       "president-pro-tempore": {
         "term": "Presidente pro tempore",
-        "body": "El presidente pro tempore es el senador elegido para presidir el Senado cuando no está el Vicepresidente. Por costumbre es el senador del partido de la mayoría con más tiempo de servicio continuo. En la práctica, otros senadores suelen turnarse para presidir."
+        "body": "El presidente pro tempore es el senador elegido para presidir el Senado cuando no está el vicepresidente. Por costumbre es el senador del partido de la mayoría con más tiempo de servicio continuo. En la práctica, otros senadores suelen turnarse para presidir."
       },
       "presiding-officer": {
         "term": "Quien preside (presiding officer)",
-        "body": "Quien preside dirige la sesión de una cámara: da la palabra a los miembros, mantiene el orden y decide sobre las cuestiones de orden. En el Senado, a menudo ocupa la presidencia un senador del partido de la mayoría en lugar del Vicepresidente o del presidente pro tempore."
+        "body": "Quien preside dirige la sesión de una cámara: da la palabra a los miembros, mantiene el orden y decide sobre las cuestiones de orden. En el Senado, a menudo ocupa la presidencia un senador del partido de la mayoría en lugar del vicepresidente o del presidente pro tempore."
       },
       "president-of-the-senate": {
         "term": "Presidente del Senado",
-        "body": "El Vicepresidente de Estados Unidos es también el presidente del Senado. Puede presidir el Senado y solo puede votar para desempatar."
+        "body": "El vicepresidente de Estados Unidos es también el presidente del Senado. Puede presidir el Senado y solo puede votar para desempatar."
       },
       "parliamentarian": {
         "term": "Parlamentario (asesor de reglas)",
