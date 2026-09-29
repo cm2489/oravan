@@ -29,14 +29,29 @@ test('before Dec 1, 2026: silent (no swap is needed yet per the two-clock model)
   expect(rolloverWarning('2026-11-30')).toBeNull();
 });
 
-test('on/after Dec 1, 2026: a loud warning naming the literal and the file to bump', () => {
+test('on/after Dec 1, 2026: a loud warning naming the constants and the file to swap', () => {
   const msg = rolloverWarning('2026-12-01');
   expect(msg).not.toBeNull();
   expect(msg).toMatch(/119th -> 120th Congress rollover/);
-  expect(msg).toMatch(/CENSUS_QUERY\.layers/);
+  expect(msg).toMatch(/lib\/district\.ts's SITTING_CONGRESS/);
+  expect(msg).toMatch(/CENSUS_VINTAGE/);
   expect(msg).toMatch(/119th Congressional Districts/);
   expect(msg).toMatch(/zip-districts\.json/);
   expect(msg).toMatch(/two-clock-district-boundaries\.md/);
+  // The swap lands ON the day, not early: before Jan 3, 2027 the 120th map
+  // names members who do not represent the address yet (the 2026-09-28 bug).
+  expect(msg).toMatch(/land them on Jan 3, 2027, when the 120th Congress is sworn in, not before/);
+});
+
+test('the constants the tripwire names exist where it says, and the route reads them', () => {
+  // A pointer that rots is a tripwire that fires at nothing: the swap it
+  // asks for must still be an edit to these two constants.
+  const lib = readFileSync(join(process.cwd(), 'lib/district.ts'), 'utf8');
+  expect(lib).toMatch(/^export const SITTING_CONGRESS = \d+;$/m);
+  expect(lib).toMatch(/^export const CENSUS_VINTAGE = '[A-Za-z0-9_]+';$/m);
+  const route = readFileSync(join(process.cwd(), 'app/api/district/route.ts'), 'utf8');
+  expect(route).toMatch(/vintage: CENSUS_VINTAGE,/);
+  expect(route).toMatch(/layers: SITTING_CONGRESS_LAYER,/);
 });
 
 test('countdown counts down as the deadline approaches', () => {
@@ -103,11 +118,13 @@ test('before Dec 1, 2026: renders nothing at all - no issue to open yet', () => 
   expect(renderRolloverIssueBody([], '2026-11-30')).toBeNull();
 });
 
-test('the escalation body names the exact literal, its line, and the dataset', () => {
+test('the escalation body names the exact constants, their file, and the dataset', () => {
   const body = renderRolloverIssueBody([], '2026-12-01');
   expect(body).not.toBeNull();
-  expect(body).toContain('app/api/district/route.ts:42');
+  expect(body).toContain('**`lib/district.ts`** — `SITTING_CONGRESS` is `119`');
+  expect(body).toContain("re-verify `CENSUS_VINTAGE` (`'ACS2025_Current'`) live");
   expect(body).toContain("'119th Congressional Districts'");
+  expect(body).toContain('Not before Jan 3');
   expect(body).toContain('data/zip-districts.json');
   expect(body).toContain('docs/solutions/two-clock-district-boundaries.md');
   // The countdown from rolloverWarning() is quoted into the body, so the
