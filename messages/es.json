@@ -139,6 +139,7 @@
     "dcOffice": "Oficina en Washington",
     "localOffices": "Oficinas locales",
     "website": "Sitio web oficial",
+    "seeVotes": "Ver cómo votó",
     "call": "Llamar",
     "changeZip": "Cambiar código postal",
     "zipLine": "Código postal {zip}",
@@ -188,7 +189,14 @@
     "vacantMetaTitle": "{place} · Escaño vacante",
     "vacantMetaDescription": "Nadie ocupa este escaño de la Cámara por ahora. Los dos senadores del estado lo siguen representando.",
     "nextTitle": "Lo que avanza en el Congreso",
-    "nextSeeAll": "Ver todos los proyectos de ley"
+    "nextSeeAll": "Ver todos los proyectos de ley",
+    "votesHeading": "Cómo votó",
+    "votesNote": "Votaciones nominales sobre {count, plural, one {# proyecto} other {# proyectos}} de los que sigue Oravan, desde el {date}, con la más reciente primero.",
+    "votesAiNote": "Titulares y resúmenes traducidos por IA, verificados con el registro",
+    "votesTheirVote": "Su voto:",
+    "votesMoreOnBill": "{count, plural, one {Su otro voto sobre este proyecto} other {Sus otros # votos sobre este proyecto}}",
+    "votesOlder": "{count, plural, one {Sus votos anteriores sobre # proyecto más no aparecen aquí. La página de cada proyecto muestra sus votaciones registradas.} other {Sus votos anteriores sobre # proyectos más no aparecen aquí. La página de cada proyecto muestra sus votaciones registradas.}}",
+    "votesNone": "El registro oficial no muestra ninguna votación nominal de {name} sobre un proyecto de los que sigue Oravan desde el {date}."
   },
   "bills": {
     "title": "Proyectos de ley activos, en claro",
