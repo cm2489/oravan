@@ -198,7 +198,7 @@
     "votesNote": "Roll-call votes on {count, plural, one {# bill} other {# bills}} Oravan tracks, since {date}, latest first.",
     "votesAiNote": "Headlines and summaries decoded by AI, checked against the record",
     "votesTheirVote": "Their vote:",
-    "votesMoreOnBill": "{count, plural, one {Their other vote on this bill} other {Their # other votes on this bill}}",
+    "votesMoreOnBillLink": "{count, plural, one {# more vote on this bill} other {# more votes on this bill}}",
     "votesOlder": "{count, plural, one {Their earlier votes on # more bill are not shown here. Each bill's page lists its recorded votes.} other {Their earlier votes on # more bills are not shown here. Each bill's page lists its recorded votes.}}",
     "votesNone": "The official record lists no roll-call vote by {name} on a bill Oravan tracks since {date}."
   },
@@ -1703,6 +1703,10 @@
     "tieBreaker": "The vice president's tie-breaking vote: {position}",
     "source": "Official record",
     "membersToggle": "How members voted",
+    "membersOnRecord": "The official record lists how each member voted.",
+    "membersLoading": "Loading the list…",
+    "membersError": "The list didn't load.",
+    "membersRetry": "Try again",
     "group": "{position} ({count})",
     "earlier": "{count, plural, one {# earlier vote} other {# earlier votes}}",
     "delegation": {
