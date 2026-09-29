@@ -324,7 +324,7 @@
       "title": "No hay llamada que hacer",
       "law": "Esto ya es ley.",
       "rejected": "{chamber, select, House {La Cámara} Senate {El Senado} other {El Senado}} lo rechazó{tally, select, none {{hasDate, select, yes { el {date}} other {}}} other {, por {yeas} votos a favor y {nays} en contra{hasDate, select, yes {, el {date}} other {}}}}.",
-      "adopted": "Ambas cámaras lo aprobaron con el mismo texto{hasDate, select, yes {, la segunda el {date}} other {}}. Una resolución concurrente no pasa al presidente.",
+      "adopted": "Ambas cámaras lo aprobaron con el mismo texto{hasDate, select, yes {, la segunda el {date}} other {}}.",
       "needZip": "Escribe tu código postal para ver cómo votaron tus miembros del Congreso.",
       "membersHeading": "Cómo votaron tus miembros del Congreso",
       "voteIn": "{chamber, select, house {Votación de la Cámara} other {Votación del Senado}}",
@@ -336,6 +336,12 @@
       "noMember": "{chamber, select, house {No figura ningún representante de la Cámara para tu código postal.} other {No figuran senadores para tu código postal.}}",
       "multiDistrict": "Tu código postal abarca más de un distrito de la Cámara, así que no se puede saber qué representante es el tuyo.",
       "noRollCalls": "El registro de votaciones nominales de Oravan, que empieza el {floor}, no tiene ninguna votación registrada sobre este proyecto."
+    },
+    "concurrent": {
+      "general": "Una <term>resolución concurrente</term> expresa la posición de ambas cámaras. No es una ley y no pasa al presidente, así que no obliga al presidente como lo haría una ley.",
+      "warPowers": "Esta invoca la sección 5(c) de la Resolución de Poderes de Guerra, que el Servicio de Investigación del Congreso califica de <quote>constitutionally suspect</quote> (de dudosa constitucionalidad) desde que la Corte Suprema resolvió en INS v. Chadha (1983) que el Congreso solo actúa con fuerza de ley mediante una medida presentada al presidente.",
+      "crsSource": "Fuente: Servicio de Investigación del Congreso, <title>The War Powers Resolution: Concepts and Practice</title> ({report}, marzo de 2019; en inglés)",
+      "aiNote": "Explicación redactada por IA a partir de fuentes oficiales"
     },
     "liveSenateFloor": "Este proyecto está ahora en manos del Senado — tus senadores son la llamada que cuenta ahora.",
     "liveHouseFloor": "Este proyecto está ahora en manos de la Cámara — tu representante es la llamada que cuenta ahora.",
@@ -1321,7 +1327,7 @@
       },
       "concurrent-resolution": {
         "term": "Resolución concurrente",
-        "body": "Una resolución concurrente la aprueban las dos cámaras, pero no se envía al presidente y no tiene fuerza de ley. El Congreso la usa para asuntos que afectan a las dos cámaras, como la resolución presupuestaria del Congreso."
+        "body": "Una resolución concurrente es una medida que ambas cámaras aprueban con el mismo texto para expresar una posición común o para ocuparse de sus propios asuntos, como fijar las metas presupuestarias del Congreso o el momento en que levanta sus sesiones. No se envía al presidente y no tiene fuerza de ley."
       },
       "simple-resolution": {
         "term": "Resolución simple",

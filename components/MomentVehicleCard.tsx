@@ -61,6 +61,7 @@ export function MomentVehicleCard({
   ctaHref,
   calendarLabel,
   statusLine,
+  explainer,
 }: {
   slug: string;
   identifier: string;
@@ -95,6 +96,10 @@ export function MomentVehicleCard({
    *  prints the same record date itself, so keeping both would state one fact
    *  twice. Optional so any other caller renders exactly as before. */
   statusLine?: StatusLine;
+  /** What an adopted concurrent resolution can and cannot do
+   *  (components/ConcurrentExplainer.tsx), printed right under its status
+   *  line. The question page passes it for such a vehicle only. */
+  explainer?: ReactNode;
 }) {
   const t = useTranslations();
   const format = useFormatter();
@@ -157,6 +162,7 @@ export function MomentVehicleCard({
         </Link>
       </h3>
       {statusLine && <MomentStatusLine line={statusLine} className="mt-3" />}
+      {explainer && <div className="mt-2">{explainer}</div>}
       <p className="mt-3 max-w-read border-t border-line pt-3 text-sm text-ink-2">{role}</p>
       <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-ink-2">
         {tags.slice(0, 2).map((tag) => (

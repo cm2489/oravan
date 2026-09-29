@@ -702,22 +702,21 @@ test.describe('the panel\'s words, in both languages', () => {
     expect(tEs('bill.journey.nowFloorSuspensionFailed', house)).not.toMatch(/considerarlo|moción/i);
   });
 
-  test('an adopted concurrent resolution is one sentence: both chambers, the second one\'s date, and no president — never law', () => {
+  test('an adopted concurrent resolution is one sentence: both chambers and the second one\'s date — never law', () => {
+    // "A concurrent resolution does not go to the president" moved out of
+    // this sentence on 2026-09-29, into the explainer printed right under it
+    // (bill.concurrent.general, components/ConcurrentExplainer.tsx), which
+    // says it with the term glossed; tests/concurrent-explainer.unit.spec.ts
+    // pins that sentence.
     const jun23 = { hasDate: 'yes', date: 'June 23, 2026' };
     const jun23Es = { hasDate: 'yes', date: '23 de junio de 2026' };
-    expect(tEn('bill.settled.adopted', jun23)).toBe(
-      'Both chambers agreed to it in the same form, the second on June 23, 2026. A concurrent resolution does not go to the president.'
-    );
+    expect(tEn('bill.settled.adopted', jun23)).toBe('Both chambers agreed to it in the same form, the second on June 23, 2026.');
     expect(tEs('bill.settled.adopted', jun23Es)).toBe(
-      'Ambas cámaras lo aprobaron con el mismo texto, la segunda el 23 de junio de 2026. Una resolución concurrente no pasa al presidente.'
+      'Ambas cámaras lo aprobaron con el mismo texto, la segunda el 23 de junio de 2026.'
     );
     // No date held: none printed, and no stray comma.
-    expect(tEn('bill.settled.adopted', noDate)).toBe(
-      'Both chambers agreed to it in the same form. A concurrent resolution does not go to the president.'
-    );
-    expect(tEs('bill.settled.adopted', noDate)).toBe(
-      'Ambas cámaras lo aprobaron con el mismo texto. Una resolución concurrente no pasa al presidente.'
-    );
+    expect(tEn('bill.settled.adopted', noDate)).toBe('Both chambers agreed to it in the same form.');
+    expect(tEs('bill.settled.adopted', noDate)).toBe('Ambas cámaras lo aprobaron con el mismo texto.');
     // Never the law sentence, in either language.
     for (const [m, t, when] of [
       [en, tEn, jun23],

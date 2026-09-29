@@ -324,7 +324,7 @@
       "title": "No call to make",
       "law": "This is law.",
       "rejected": "The {chamber, select, House {House} Senate {Senate} other {Senate}} rejected it{tally, select, none {{hasDate, select, yes { on {date}} other {}}} other {, {yeas}–{nays}{hasDate, select, yes {, on {date}} other {}}}}.",
-      "adopted": "Both chambers agreed to it in the same form{hasDate, select, yes {, the second on {date}} other {}}. A concurrent resolution does not go to the president.",
+      "adopted": "Both chambers agreed to it in the same form{hasDate, select, yes {, the second on {date}} other {}}.",
       "needZip": "Add your ZIP code to see how your members voted.",
       "membersHeading": "How your members voted",
       "voteIn": "{chamber, select, house {House vote} other {Senate vote}}",
@@ -336,6 +336,12 @@
       "noMember": "{chamber, select, house {No House member is listed for your ZIP.} other {No senators are listed for your ZIP.}}",
       "multiDistrict": "Your ZIP spans more than one House district, so this can't say which House member is yours.",
       "noRollCalls": "Oravan's roll-call record, which begins {floor}, holds no recorded vote on this bill."
+    },
+    "concurrent": {
+      "general": "A <term>concurrent resolution</term> states where both chambers stand. It isn't a law and doesn't go to the president, so it doesn't bind the president the way a law does.",
+      "warPowers": "This one invokes section 5(c) of the War Powers Resolution, which the Congressional Research Service calls <quote>constitutionally suspect</quote> since the Supreme Court held in INS v. Chadha (1983) that Congress acts with the force of law only through a measure presented to the president.",
+      "crsSource": "Source: Congressional Research Service, <title>The War Powers Resolution: Concepts and Practice</title> ({report}, March 2019)",
+      "aiNote": "Explanation drafted by AI from official sources"
     },
     "liveSenateFloor": "This bill is in the Senate's hands right now — your senators are the live call.",
     "liveHouseFloor": "This bill is in the House's hands right now — your House member is the live call.",
@@ -1321,7 +1327,7 @@
       },
       "concurrent-resolution": {
         "term": "Concurrent resolution",
-        "body": "A concurrent resolution is passed by both chambers but is not sent to the president and does not have the force of law. Congress uses it for matters that concern both chambers, such as the congressional budget resolution."
+        "body": "A concurrent resolution is a measure both chambers pass in the same form to state a position they share or to handle their own business, such as setting Congress’s budget goals or the time it adjourns. It is not sent to the president and does not have the force of law."
       },
       "simple-resolution": {
         "term": "Simple resolution",

@@ -6,6 +6,8 @@ import { Chip } from '@/components/system';
 import { billSlug, getAllBills, localizeBill } from '@/lib/core';
 import { formatCitation } from '@/lib/format';
 import { deriveJourney } from '@/lib/journey';
+import { adoptedConcurrentReading } from '@/lib/concurrent-explainer';
+import { ConcurrentExplainer } from '@/components/ConcurrentExplainer';
 import type { Bill } from '@/lib/types';
 import { MEMBER_VOTES_MAX_BILLS, memberVotesByBill, votesCoverage, type MemberVote } from '@/lib/votes';
 
@@ -148,6 +150,9 @@ export async function MemberVotes({
     const bill = raw ? localizeBill(raw, locale) : undefined;
     const [newest, ...earlier] = votes;
     const now = bill ? rightNow(bill) : null;
+    // An adopted concurrent resolution: what it can and cannot do, as on its
+    // bill page (lib/concurrent-explainer.ts). Null on every other bill.
+    const concurrent = raw ? adoptedConcurrentReading(raw) : null;
     return (
       <li
         key={id}
@@ -175,6 +180,7 @@ export async function MemberVotes({
                 <strong className="font-bold text-ink">{tJourney('now')}</strong> {now.text}
               </p>
             )}
+            {concurrent && <ConcurrentExplainer reading={concurrent} className="mt-2" />}
           </>
         )}
         <div className="mt-3 border-t border-line pt-3">{vote(newest)}</div>

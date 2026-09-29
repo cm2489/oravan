@@ -18,6 +18,8 @@ import { WalkthroughDisclosure } from '@/components/call-walkthrough/Walkthrough
 import { FloorEvidence } from '@/components/FloorEvidence';
 import { FloorRecessNote } from '@/components/FloorRecessNote';
 import { SettledPanel } from '@/components/SettledPanel';
+import { ConcurrentExplainer } from '@/components/ConcurrentExplainer';
+import { GlossaryTerm } from '@/components/GlossaryTerm';
 import { Chip, FloorVotePanel, Stamp } from '@/components/system';
 import { coverageCheckedAt, coverageTier, getCoverage } from '@/lib/coverage';
 import { StalenessNote } from '@/components/StalenessNote';
@@ -47,6 +49,7 @@ import { getMomentsForBill } from '@/lib/moments';
 import { chamberSession, floorSignalsCheckedAt, rungFor } from '@/lib/docket';
 import { SITE_ORIGIN } from '@/lib/site';
 import { settledDecisionDate, settledVoteGroups } from '@/lib/settled-votes';
+import { adoptedConcurrentReading, isConcurrentResolution } from '@/lib/concurrent-explainer';
 import { votesCoverage, votesForBill, votingMember } from '@/lib/votes';
 
 /*
@@ -460,6 +463,10 @@ export default async function BillPage({
    */
   const settled = settledDecision(bill);
   const settledDate = settledDecisionDate(bill);
+  /* An adopted concurrent resolution: what it can and cannot do, printed
+     under the outcome (lib/concurrent-explainer.ts). Null on everything
+     else, including a concurrent resolution that failed. */
+  const concurrentReading = adoptedConcurrentReading(bill);
   const settledOutcome = settled
     ? settledOutcomeText(t, settled, settledDate ? fmtDate(settledDate) : null)
     : null;
@@ -592,6 +599,20 @@ export default async function BillPage({
               <Chip tone="status">{t(statusLabelKey)}</Chip>
               <span className="mt-2 block text-sm text-ink-2 tabular-nums">
                 <span className="font-semibold text-ink">{citation}</span>
+                {/* WHAT KIND OF MEASURE (owner, 2026-09-29: "What is a
+                    concurrent resolution? Add to glossary."). On a concurrent
+                    resolution the citation is captioned with the glossary's
+                    own term, which opens its definition in place — adopted,
+                    rejected or pending alike, so a reader of H.Con.Res. 89
+                    or 38 learns what kind of measure failed. */}
+                {isConcurrentResolution(bill) && (
+                  <>
+                    <span aria-hidden> · </span>
+                    <span data-measure-kind="concurrent-resolution">
+                      <GlossaryTerm id="concurrent-resolution" />
+                    </span>
+                  </>
+                )}
                 {bill.last_action_date && (
                   <>
                     <span aria-hidden> · </span>
@@ -865,6 +886,9 @@ export default async function BillPage({
                 kind={settled.kind}
                 groups={settledGroups}
                 floorLabel={fmtDate(votesCoverage().floor)}
+                explainer={
+                  concurrentReading ? <ConcurrentExplainer reading={concurrentReading} /> : undefined
+                }
               />
             </div>
           ) : (

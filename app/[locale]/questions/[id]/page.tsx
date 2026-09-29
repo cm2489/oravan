@@ -10,6 +10,7 @@ import { MomentStatusLine } from '@/components/MomentStatusLine';
 import { MomentTimeline, type TimelineVehicle } from '@/components/MomentTimeline';
 import { MomentNominationCard } from '@/components/MomentNominationCard';
 import { MomentVehicleCard } from '@/components/MomentVehicleCard';
+import { ConcurrentExplainer } from '@/components/ConcurrentExplainer';
 import { StalenessNote } from '@/components/StalenessNote';
 import { Chip } from '@/components/system';
 import { getBill, localizeBill } from '@/lib/core';
@@ -19,6 +20,7 @@ import { getBill, localizeBill } from '@/lib/core';
 import { getNomination } from '@/lib/core/nominations';
 import { getCoverage, normalizeSource } from '@/lib/coverage';
 import { formatCitation } from '@/lib/format';
+import { adoptedConcurrentReading } from '@/lib/concurrent-explainer';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
 import {
@@ -648,6 +650,9 @@ export default async function MomentPage({
                     // The bill page's own reading joins the status line's: a
                     // settled decision's page has no call panel (Q9, 2026-09-28).
                     const ctaKey = billCtaKey(isSettled || line.terminal || settledDecision(raw) !== null);
+                    // An adopted concurrent resolution's card says what that
+                    // means, as its bill page does (lib/concurrent-explainer.ts).
+                    const concurrentReading = adoptedConcurrentReading(raw);
                     return (
                       <MomentVehicleCard
                         key={v.slug}
@@ -674,6 +679,9 @@ export default async function MomentPage({
                         ctaHref={vehicleCtaHref(`/bills/${v.slug}`, ctaKey)}
                         statusLine={line}
                         calendarLabel={t('bills.onCalendar')}
+                        explainer={
+                          concurrentReading ? <ConcurrentExplainer reading={concurrentReading} /> : undefined
+                        }
                       />
                     );
                   })}
