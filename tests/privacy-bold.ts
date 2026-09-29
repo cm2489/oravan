@@ -12,6 +12,10 @@
  *
  * p5, the closing line, is semibold as a whole, as it shipped, so it bolds
  * nothing inside.
+ *
+ * p2's third phrase lost a word on 2026-09-29: it said "one-tap button"
+ * ("de una sola vez"), and the erase on the record page asks first, so the
+ * promise now names no step count (tests/copy-truth.unit.spec.ts).
  */
 export type PrivacyParagraph = 'p1' | 'p2' | 'p3' | 'p7' | 'p4' | 'p8' | 'p9' | 'p5';
 
@@ -21,7 +25,7 @@ export const PRIVACY_BOLD: Record<'en' | 'es', Record<PrivacyParagraph, readonly
     p2: [
       "stored only in your browser's local storage, on your device",
       'used in memory, never stored',
-      'one-tap button that erases all of it',
+      'button that erases all of it',
     ],
     p3: ['not linked to any identity', "don't keep a log tying addresses to political positions"],
     p7: ['type your street address', 'never stored or written to any log', 'Only the district number comes back.'],
@@ -35,7 +39,7 @@ export const PRIVACY_BOLD: Record<'en' | 'es', Record<PrivacyParagraph, readonly
     p2: [
       'se guardan únicamente en el almacenamiento local de tu navegador, en tu dispositivo',
       'se usa en memoria, nunca se guarda',
-      'un botón que borra todo de una sola vez',
+      'un botón que lo borra todo',
     ],
     p3: ['no se vinculan a ninguna identidad', 'no guardamos registros que liguen direcciones con posiciones políticas'],
     p7: ['escribir tu dirección', 'nunca se guarda ni se escribe en ningún registro', 'Solo regresa el número del distrito.'],
