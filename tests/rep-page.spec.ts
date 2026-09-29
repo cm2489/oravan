@@ -7,6 +7,7 @@ import {
   getLegislator,
   getVacancies,
   senatorsForState,
+  specialElectionsFor,
   vacancySlug,
 } from '../lib/core';
 
@@ -125,13 +126,22 @@ for (const { prefix, messages } of LOCALES) {
       await expectTouchTargets(page);
     });
 
-    test('vacant seat: says so, never names anyone, hands over the senators', async ({ page }) => {
+    test('vacant seat: says so, never names anyone, only FEC-recorded election dates, hands over the senators', async ({ page }) => {
       const seat = getVacancies()[0];
       test.skip(!seat, 'no vacant House seat in the roster this run');
       await page.goto(`${prefix}/reps/${vacancySlug(seat)}`);
       await expect(page.getByText(messages.reps.vacantSeat, { exact: true })).toBeVisible();
       await expect(page.getByText(messages.reps.vacantSeatBody)).toBeVisible();
-      await expect(page.getByText(/special election|elecci[oó]n especial/i)).toHaveCount(0);
+      // Election dates only as data/special-elections.json records them from
+      // the FEC - a seat it has not checked says nothing about an election.
+      const recorded = specialElectionsFor(seat);
+      const block = page.locator('[data-seat-elections]');
+      await expect(block).toHaveCount(recorded ? 1 : 0);
+      if (recorded) {
+        await expect(block.locator('[data-seat-election-date]')).toHaveCount(recorded.dates.length);
+        await expect(block.locator('[data-seat-election-none]')).toHaveCount(recorded.dates.length === 0 ? 1 : 0);
+        await expect(block.getByRole('link', { name: messages.reps.seatElectionLink })).toBeVisible();
+      }
       for (const s of senatorsForState(seat.state)) {
         await expect(page.getByRole('heading', { name: s.name })).toBeVisible();
       }
