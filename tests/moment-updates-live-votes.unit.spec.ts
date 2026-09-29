@@ -1080,12 +1080,21 @@ test.describe('SY-23 · the absence lint lets a TRUE roll-call absence through �
   test('a recorded vote OLDER than the summary window still rejects "passed … with no recorded vote" end to end (plan → write), in both languages', async () => {
     const MOMENT = 'annual-defense-policy';
     const moments = { [MOMENT]: { status: 'live', vehicles: [{ slug: 'hr-8800-119' }] } };
+    // THE REAL CLOCK, on purpose. writeSummaries → generateStateSummary reads
+    // the module's own ET day (scripts/moment-updates.mjs `todayET`, taken at
+    // import), not planSummaries' `now`, to decide which updates are in the
+    // window — and so whether the absence lint runs at all. Dated 2026-09-14
+    // against a fixed `now` of 2026-09-27, the "Received" update left that
+    // window at midnight ET on 2026-09-29 and this test turned red on every
+    // branch. Dated today, it is always in the window; roll 278 (2026-07-22)
+    // stays outside it for good.
+    const now = Date.now();
+    const today = etDay(now);
     const bills = new Map([
-      ['hr-8800-119', { full_identifier: 'hr-8800-119', status: 'passed_chamber', last_action_text: 'Received in the Senate.', last_action_date: '2026-09-14' }],
+      ['hr-8800-119', { full_identifier: 'hr-8800-119', status: 'passed_chamber', last_action_text: 'Received in the Senate.', last_action_date: today }],
     ]);
-    const base = { ...collegeRow('pending', '2026-09-14', '2026-09-15T14:30:00Z', 'Received in the Senate.'), vehicle: 'hr-8800-119' };
+    const base = { ...collegeRow('pending', today, new Date(now - 60_000).toISOString(), 'Received in the Senate.'), vehicle: 'hr-8800-119' };
     const received = { ...base, id: computeUpdateId(MOMENT, base) };
-    const now = Date.parse('2026-09-27T15:00:00Z');
     const planned = planSummaries({
       mode: 'nightly',
       moments,

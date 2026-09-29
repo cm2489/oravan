@@ -22,8 +22,9 @@
  *
  * ── SCOPE ──────────────────────────────────────────────────────────────────
  * Corpus bills only (data/bills.json). The first run reaches back
- * LOOKBACK_DAYS (120) and fixes that date as `_meta.floor`; after that the
- * record only grows forward. A Senate cloture vote on the motion to proceed
+ * LOOKBACK_DAYS (120) and fixes that date as `_meta.floor`; after that a
+ * nightly or intraday run never moves it, and only a back-fill (below) moves
+ * it, and only back. A Senate cloture vote on the motion to proceed
  * to H.R. 3633 counts for hr-3633-119, because the record's own question
  * names it. A House RULE vote does not count for the bill it schedules: the
  * rule is a separate measure (an H.Res.), and the record names that measure.
@@ -47,14 +48,47 @@
  * tonight's votes, including older ones inside the window.
  *
  * ── COST ───────────────────────────────────────────────────────────────────
- * A normal night: 2 Congress.gov list requests + 2 per new House corpus roll
- * call, 1 senate.gov menu + 1 per new Senate corpus roll call. All free.
- * Requests are spaced THROTTLE_MS apart.
+ * Per session in the window: 2 Congress.gov list requests (250 roll calls a
+ * page) + 2 per new House corpus roll call, 1 senate.gov menu + 1 per new
+ * Senate corpus roll call. With the floor at the Congress's first day that is
+ * both sessions for the nightly — 4 list requests and 2 menus. The intraday
+ * run (--only-new-rolls) lists only the newest session, because a new roll
+ * call can only be in it: 2 list requests and 1 menu, as before the back-fill.
+ * All free. Requests are spaced THROTTLE_MS apart.
+ *
+ * ── BACK-FILL (--backfill-from YYYY-MM-DD, 2026-09-29) ─────────────────────
+ * The owner, 2026-09-29: "Can we get the votes from this entire current
+ * congress? That is public record so let's back fill them all for every
+ * bill." This mode moves `_meta.floor` BACK to the given date (never forward:
+ * lib/votes-core.mjs resolveFloor) and fetches every roll call from there on
+ * that references a corpus bill, through the same parsers and the same gate:
+ *   - House: KEYLESS, from the Clerk's own record (lib/votes-backfill.mjs):
+ *     the per-year index page for the highest roll number, then every
+ *     `evs/{year}/roll{NNN}.xml` the file does not already hold. No
+ *     CONGRESS_API_KEY is read.
+ *   - Senate: the nightly's own path — it already needs no key.
+ * ALL OR NOTHING FOR THE DAYS IT ADDS: a back-fill with any failed roll call
+ * that is (or may be) dated before the file's old floor, or any list it could
+ * not read, writes NOTHING, because the new floor would claim a roll call the
+ * file does not hold (lib/votes-backfill.mjs backfillBlockers). A failure on
+ * or after the old floor was already the nightly's to retry — typically a
+ * same-day Senate vote whose XML senate.gov has not published yet — and does
+ * not hold the back-fill back. Every fetched roll-call document can be kept in
+ * `--cache-dir <dir>` (a scratch directory, never the repo), so re-running
+ * after a crash or a failure fetches only what is still missing. The index
+ * page and the Senate menus are always re-read: they grow.
+ *
+ *   node scripts/sync-votes.mjs --backfill-from 2025-01-03 --cache-dir /tmp/votes-cache [--dry-run]
+ *
+ * A back-fill needs no secret. Run it by hand, commit data/votes.json, and the
+ * nightly carries the wider floor from then on (it reads the floor from the
+ * file and re-lists every session in it).
  */
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { CONGRESS, cg } from './congress-fetch.mjs';
+import { backfillBlockers, walkHouseClerk } from '../lib/votes-backfill.mjs';
 import {
-  LOOKBACK_DAYS,
   VOTES_PATH,
   VOTES_SCHEMA,
   VoteParseError,
@@ -66,12 +100,24 @@ import {
   parseSenateMenu,
   parseSenateXml,
   resolveBillId,
+  resolveFloor,
   rollCallId,
   sessionForYear,
   verifyVotes,
 } from '../lib/votes-core.mjs';
 
 const DRY_RUN = process.argv.includes('--dry-run');
+/** `--flag value` or `--flag=value`; null when absent. */
+function flagValue(name) {
+  const i = process.argv.findIndex((a) => a === name || a.startsWith(`${name}=`));
+  if (i === -1) return null;
+  const a = process.argv[i];
+  return a.includes('=') ? a.slice(a.indexOf('=') + 1) : (process.argv[i + 1] ?? '');
+}
+/** See BACK-FILL in the header. */
+const BACKFILL_FROM = flagValue('--backfill-from');
+const BACKFILL = BACKFILL_FROM !== null;
+const CACHE_DIR = flagValue('--cache-dir');
 /**
  * --only-new-rolls (the intraday newsdesk path, 2026-09-25): write the file
  * ONLY when this run stored at least one new roll call. The one other thing a
@@ -140,9 +186,21 @@ const lisMap = new Map(legislators.filter((l) => l.lis).map((l) => [l.lis, l.bio
 
 const now = new Date();
 const existing = existsSync(VOTES_PATH) ? readJson(VOTES_PATH) : null;
-const floor =
-  existing?._meta?.floor ??
-  new Date(now.getTime() - LOOKBACK_DAYS * 86_400_000).toISOString().slice(0, 10);
+if (BACKFILL && ONLY_NEW_ROLLS) {
+  console.log('::error::sync-votes: --backfill-from and --only-new-rolls do not combine (a back-fill writes every roll call it stores, or nothing). Nothing written.');
+  process.exit(1);
+}
+if (CACHE_DIR !== null && !CACHE_DIR) {
+  console.log('::error::sync-votes: --cache-dir needs a directory. Nothing written.');
+  process.exit(1);
+}
+let floor;
+try {
+  floor = resolveFloor({ existingFloor: existing?._meta?.floor ?? null, backfillFrom: BACKFILL_FROM, congress: CONGRESS, now: now.getTime() });
+} catch (e) {
+  console.log(`::error::sync-votes: ${e.message}. Nothing written.`);
+  process.exit(1);
+}
 const rollCalls = new Map((existing?.rollCalls ?? []).map((r) => [r.id, r]));
 const roster = new Map((existing?.members ?? []).map((m) => [m.id, m]));
 const cursor = { house: existing?._meta?.cursor?.house ?? null, senate: existing?._meta?.cursor?.senate ?? null };
@@ -159,19 +217,64 @@ if (sessions.length === 0) {
   console.log(`::error::sync-votes: no session of the ${CONGRESS}th Congress (first year ${congressFirstYear(CONGRESS)}) overlaps ${floor}..today — is CONGRESS stale? Nothing written.`);
   process.exit(1);
 }
+// The intraday run looks for TODAY's votes, which can only be in the newest
+// session; the nightly (no flag) re-lists every session in the window, which
+// is what catches a bill that joins the corpus after an older vote on it.
+if (ONLY_NEW_ROLLS) sessions.splice(0, sessions.length - 1);
 
 let upstreamLoaded = 0;
+/** bioguide → full name, from the upstream files, for members
+ *  data/legislators.json no longer lists (process-data.py's own rule:
+ *  official_full, else first + last). */
+const upstreamNames = new Map();
+async function loadNextUpstream() {
+  const src = UPSTREAM_LEGISLATORS[upstreamLoaded++];
+  for (const l of JSON.parse(await getText(src))) {
+    if (l.id?.lis && l.id?.bioguide && !lisMap.has(l.id.lis)) lisMap.set(l.id.lis, l.id.bioguide);
+    const full = l.name?.official_full || `${l.name?.first ?? ''} ${l.name?.last ?? ''}`.trim();
+    if (l.id?.bioguide && full && !upstreamNames.has(l.id.bioguide)) upstreamNames.set(l.id.bioguide, full);
+  }
+}
 /** LIS id → bioguide. data/legislators.json first; on a miss (a senator
  *  sworn in since the weekly legislators refresh, or one who has left), the
  *  same public source that file is built from — current, then historical. */
 async function ensureLis(lisIds) {
   while (lisIds.some((id) => !lisMap.has(id)) && upstreamLoaded < UPSTREAM_LEGISLATORS.length) {
-    const src = UPSTREAM_LEGISLATORS[upstreamLoaded++];
-    console.log(`  LIS id(s) ${lisIds.filter((id) => !lisMap.has(id)).join(', ')} not in data/legislators.json — reading ${src}`);
-    for (const l of JSON.parse(await getText(src))) {
-      if (l.id?.lis && l.id?.bioguide && !lisMap.has(l.id.lis)) lisMap.set(l.id.lis, l.id.bioguide);
-    }
+    console.log(`  LIS id(s) ${lisIds.filter((id) => !lisMap.has(id)).join(', ')} not in data/legislators.json — reading ${UPSTREAM_LEGISLATORS[upstreamLoaded]}`);
+    await loadNextUpstream();
   }
+}
+/**
+ * The Clerk's XML names a member by last name only ("Grijalva", "Johnson
+ * (LA)"). For a member data/legislators.json still lists, store() uses that
+ * file's name and this changes nothing. For one it no longer lists (died,
+ * resigned) and the roster does not already name, the full name comes from
+ * the same public source as above, so the vote record's member list reads
+ * the member's full name, not "Grijalva". Unresolvable: the Clerk's own name.
+ */
+async function withFullNames(parsed) {
+  const need = parsed.members.filter((m) => !currentById.has(m.id) && !roster.has(m.id)).map((m) => m.id);
+  while (need.some((id) => !upstreamNames.has(id)) && upstreamLoaded < UPSTREAM_LEGISLATORS.length) {
+    console.log(`  member(s) ${need.filter((id) => !upstreamNames.has(id)).join(', ')} not in data/legislators.json — reading ${UPSTREAM_LEGISLATORS[upstreamLoaded]}`);
+    await loadNextUpstream();
+  }
+  for (const m of parsed.members) if (need.includes(m.id) && upstreamNames.has(m.id)) m.name = upstreamNames.get(m.id);
+  return parsed;
+}
+
+/** One roll call's document, through --cache-dir when given: a record once
+ *  published is re-read from disk on a resumed back-fill, never re-fetched.
+ *  Written atomically (temp file + rename), so a crash never leaves half a
+ *  document that a later run would trust. */
+async function getRoll(url) {
+  if (!CACHE_DIR) return getText(url);
+  const file = join(CACHE_DIR, url.replace(/^https:\/\//, '').replace(/[^A-Za-z0-9._-]+/g, '_'));
+  if (existsSync(file)) return readFileSync(file, 'utf8');
+  const text = await getText(url);
+  mkdirSync(CACHE_DIR, { recursive: true });
+  writeFileSync(`${file}.part`, text);
+  renameSync(`${file}.part`, file);
+  return text;
 }
 
 const stats = {
@@ -211,7 +314,35 @@ function advance(chamber, session, examined) {
 }
 
 // ---- House --------------------------------------------------------------------
+/** Every chamber-session a back-fill examined, for backfillBlockers. */
+const backfillExamined = [];
+
+/** Back-fill: the Clerk's record, no key (lib/votes-backfill.mjs). */
+async function syncHouseClerk(session) {
+  const walk = await walkHouseClerk({
+    congress: CONGRESS,
+    session,
+    floor,
+    corpus,
+    held: rollCalls,
+    getText,
+    getRoll,
+    log: (line) => console.log(line),
+  });
+  for (const one of walk.parsed) store(await withFullNames(one), 'house');
+  const h = stats.house;
+  h.listed += walk.stats.listed;
+  h.inWindow += walk.stats.inWindow;
+  h.corpus += walk.stats.corpus;
+  h.viaClerk += walk.stats.stored;
+  h.failed += walk.stats.failed;
+  console.log(`  House ${walk.year}: rolls 1-${walk.maxRoll} examined from the Clerk's record, ${walk.stats.stored} stored, ${walk.stats.failed} failed`);
+  backfillExamined.push({ chamber: 'house', session, examined: walk.examined });
+  advance('house', session, walk.examined);
+}
+
 async function syncHouse(session) {
+  if (BACKFILL) return syncHouseClerk(session);
   const items = [];
   for (let offset = 0; ; offset += 250) {
     const page = await congressGet(`/house-vote/${CONGRESS}/${session}`, { limit: 250, offset });
@@ -240,7 +371,7 @@ async function syncHouse(session) {
       } catch (e) {
         if (e instanceof VoteParseError) throw e; // a shape we can't read is not a transport failure
         console.log(`  ${id}: Congress.gov failed (${e.message}) — falling back to the Clerk's XML`);
-        parsed = parseHouseClerkXml(await getText(it.sourceDataURL), { corpus, sourceUrl: it.sourceDataURL });
+        parsed = await withFullNames(parseHouseClerkXml(await getText(it.sourceDataURL), { corpus, sourceUrl: it.sourceDataURL }));
         stats.house.viaClerk++;
       }
       if (parsed.roll.bill !== bill) throw new VoteParseError(`list said ${bill}, the roll call itself says ${parsed.roll.bill}`);
@@ -263,33 +394,38 @@ async function syncSenate(session) {
   stats.senate.listed += menu.length;
   const examined = [];
   for (const v of menu.sort((a, b) => a.roll - b.roll)) {
-    if (!v.date || v.date < floor) { examined.push({ roll: v.roll }); continue; }
+    if (!v.date || v.date < floor) { examined.push({ roll: v.roll, date: v.date }); continue; }
     stats.senate.inWindow++;
     const id = rollCallId('senate', CONGRESS, session, v.roll);
     const menuBill = resolveBillId([v.issue, v.question], corpus, CONGRESS);
-    if (!menuBill) { examined.push({ roll: v.roll }); continue; }
+    if (!menuBill) { examined.push({ roll: v.roll, date: v.date }); continue; }
     stats.senate.corpus++;
-    if (rollCalls.has(id)) { examined.push({ roll: v.roll }); continue; }
+    if (rollCalls.has(id)) { examined.push({ roll: v.roll, date: v.date }); continue; }
     const nnnnn = String(v.roll).padStart(5, '0');
     const url = `https://www.senate.gov/legislative/LIS/roll_call_votes/vote${CONGRESS}${session}/vote_${CONGRESS}_${session}_${nnnnn}.xml`;
     try {
-      const xml = await getText(url);
+      const xml = await getRoll(url);
       await ensureLis([...xml.matchAll(/<lis_member_id>([^<]+)<\/lis_member_id>/g)].map((m) => m[1].trim()));
       const parsed = parseSenateXml(xml, { corpus, sourceUrl: url, lisToBioguide: (lis) => lisMap.get(lis) ?? null });
       if (!parsed.roll.bill) throw new VoteParseError(`the menu listed ${menuBill}, but the vote record names no corpus bill`);
       store(parsed, 'senate');
-      examined.push({ roll: v.roll });
+      examined.push({ roll: v.roll, date: v.date });
       console.log(`  ${id} ${parsed.roll.date} ${parsed.roll.bill}: ${parsed.roll.question} — ${parsed.roll.result}`);
     } catch (e) {
       stats.senate.failed++;
-      examined.push({ roll: v.roll, failed: true });
+      examined.push({ roll: v.roll, date: v.date, failed: true });
       console.log(`::error::sync-votes: ${id} (${menuBill}) not stored — ${e.message}`);
     }
   }
+  if (BACKFILL) backfillExamined.push({ chamber: 'senate', session, examined });
   advance('senate', session, examined);
 }
 
-console.log(`sync-votes: ${CONGRESS}th Congress, session(s) ${sessions.join(', ')}, floor ${floor}, ${corpus.size} corpus bills, ${rollCalls.size} roll call(s) already held`);
+console.log(
+  `sync-votes: ${CONGRESS}th Congress, session(s) ${sessions.join(', ')}, floor ${floor}` +
+    (BACKFILL ? ` (BACK-FILL from ${BACKFILL_FROM}; the file's floor was ${existing?._meta?.floor ?? 'unset'}; House from the Clerk's record${CACHE_DIR ? `, cache ${CACHE_DIR}` : ''})` : '') +
+    `, ${corpus.size} corpus bills, ${rollCalls.size} roll call(s) already held`
+);
 let fatal = false;
 for (const s of sessions) {
   try {
@@ -354,13 +490,37 @@ if (verdict.failures.length) {
 
 const h = stats.house;
 const s = stats.senate;
-if (DRY_RUN) console.log('--dry-run: nothing written');
-else if (unchanged) console.log(`${VOTES_PATH}: no change`);
+/** Temp file + rename: a crash mid-write leaves the old file whole, never half
+ *  of the new one. */
+function writeAtomic(path, content) {
+  const tmp = `${path}.tmp-${process.pid}`;
+  writeFileSync(tmp, content);
+  renameSync(tmp, path);
+}
+// A back-fill answers for the days it adds, before the file's old floor: a
+// failure there (or a list it could not read) writes nothing. A failure on or
+// after the old floor is the nightly's ordinary kind (a same-day Senate vote
+// whose XML is not published yet): logged above, the cursor stops below it,
+// the next run fetches it, and the run still exits 1.
+const blockers = BACKFILL
+  ? backfillExamined.flatMap((b) => backfillBlockers(b.examined, existing?._meta?.floor ?? null).map((roll) => rollCallId(b.chamber, CONGRESS, b.session, roll)))
+  : [];
+const backfillIncomplete = BACKFILL && (fatal || blockers.length > 0);
+if (BACKFILL && !backfillIncomplete && h.failed + s.failed > 0) {
+  console.log(`::warning::sync-votes: ${h.failed + s.failed} failed roll call(s) are on or after the old floor ${existing?._meta?.floor} — the nightly's to retry, and they do not hold back the back-fill`);
+}
+if (DRY_RUN) console.log(`--dry-run: nothing written${backfillIncomplete ? ` (and a real run would write nothing either: back-fill incomplete — ${blockers.join(', ') || 'a list could not be read'})` : ''}`);
+else if (backfillIncomplete) {
+  console.log(
+    `::error::sync-votes: back-fill incomplete (${blockers.length ? `failed before the old floor: ${blockers.join(', ')}` : ''}${fatal ? `${blockers.length ? '; ' : ''}a list could not be read` : ''}) — ${VOTES_PATH} NOT written, so the floor stays ${existing?._meta?.floor ?? 'unset'}. ` +
+      `Re-run the same command${CACHE_DIR ? ' (the cache keeps every record already fetched)' : ' with --cache-dir <dir> to keep what was fetched'}.`
+  );
+} else if (unchanged) console.log(`${VOTES_PATH}: no change`);
 else if (ONLY_NEW_ROLLS && h.stored + s.stored === 0) {
   console.log(
     `${VOTES_PATH}: --only-new-rolls and no new roll call stored — the cursor-only change (house ${existing?._meta?.cursor?.house ?? '-'} -> ${cursor.house}, senate ${existing?._meta?.cursor?.senate ?? '-'} -> ${cursor.senate}) is NOT written; the nightly persists it`,
   );
-} else writeFileSync(VOTES_PATH, text);
+} else writeAtomic(VOTES_PATH, text);
 console.log(verdict.notes.join('\n'));
 console.log(
   `DONE: House ${h.stored} stored (${h.listed} listed, ${h.inWindow} in window, ${h.corpus} on corpus bills, ${h.viaClerk} via Clerk fallback, ${h.failed} failed); ` +
