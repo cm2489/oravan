@@ -37,6 +37,9 @@ import type { VotesFile } from '../lib/types';
  *                                      call ("Present")
  *   clerk-2025-roll002-speaker.xml     the Speaker election: every cast is a
  *                                      name, which parseHouseClerkXml refuses
+ *   clerk-2025-roll244-amendment-      a House amendment vote on H.R. 3838
+ *     hr3838.xml                       (the back-fill skips these, as the
+ *                                      nightly does)
  *   senate-vote-menu-119-1.xml         senate.gov, 2025: the menu's first vote
  *                                      (cloture on the motion to proceed to S. 5)
  *   senate-vote-119-1-00001.xml        that vote, with Marco Rubio (S350), who
@@ -160,6 +163,28 @@ test.describe('walkHouseClerk', () => {
     const walk = await walkHouseClerk({ ...base, floor: '2026-02-20', held: heldBelow(2, 69), getText: f.get });
     expect(walk.parsed.map((p) => p.roll.id)).toEqual(['h-119-2-72']);
     expect(walk.stats.inWindow).toBe(69 + 2);
+  });
+
+  test('a House AMENDMENT vote is skipped, as the nightly skips it, though the Clerk names the bill', async () => {
+    // Roll 244 of 2025: an amendment to H.R. 3838. The Clerk's <legis-num>
+    // says "H R 3838"; Congress.gov's list leaves the vote's legislation
+    // fields empty, so the nightly has never attached a House amendment vote.
+    const xml = fx('clerk-2025-roll244-amendment-hr3838.xml');
+    const corpus3838 = new Set(['hr-3838-119']);
+    expect(houseClerkMeta(xml, { corpus: corpus3838 })).toMatchObject({ roll: 244, bill: 'hr-3838-119', amendment: '23', date: '2025-09-10' });
+    expect(houseClerkMeta(fx('clerk-2026-roll072-s2503.xml'), { corpus }).amendment).toBeNull();
+    const index = '<a href="http://clerk.house.gov/cgi-bin/vote.asp?year=2025&rollnumber=244">244</a>';
+    const walk = await walkHouseClerk({
+      congress: 119,
+      session: 1,
+      floor: '2025-01-03',
+      corpus: corpus3838,
+      held: heldBelow(1, 243),
+      getText: async (url) => (url === clerkIndexUrl(2025) ? index : xml),
+    });
+    expect(walk.parsed).toEqual([]);
+    expect(walk.examined.at(-1)).toEqual({ roll: 244, date: '2025-09-10' });
+    expect(walk.stats).toMatchObject({ stored: 0, failed: 0, corpus: 243 });
   });
 
   test('getRoll carries the roll documents and getText only the index page', async () => {
@@ -429,5 +454,14 @@ test.describe('scripts/sync-votes.mjs --backfill-from', () => {
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
+  });
+});
+
+test.describe('the committed file', () => {
+  test('holds no House amendment vote: one rule for the whole window, the nightly\'s', () => {
+    const data = JSON.parse(readFileSync(join(process.cwd(), 'data/votes.json'), 'utf8')) as VotesFile;
+    const house = data.rollCalls.filter((r) => r.chamber === 'house');
+    expect(house.length).toBeGreaterThan(0);
+    expect(house.filter((r) => /^On Agreeing to the Amendment/.test(r.question ?? '')).map((r) => r.id)).toEqual([]);
   });
 });
