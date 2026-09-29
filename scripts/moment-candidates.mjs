@@ -58,7 +58,13 @@ import { conversationEvidence } from '../lib/conversation.mjs';
 // bill (2026-09-29), from the one copy: the same two lib/journey.ts's
 // statusKeyFor and the stepper read. lib/docket.mjs above already imports
 // this module, so it costs nothing new.
-import { concurrentAdoptedBy, passageState } from '../lib/floor-text.mjs';
+import {
+  concurrentAdoptedBy,
+  floorPassageRejectedChamber,
+  floorReconsiderPendingChamber,
+  passageState,
+  statusBasisText,
+} from '../lib/floor-text.mjs';
 
 /** Printed verbatim on every run, in both output modes. The boundary is the feature. */
 export const STANDING_LINE =
@@ -220,6 +226,17 @@ export function floorCalendarChamber(actionText) {
  * H.Con.Res. 86 "passed one chamber"; tests/writers-status-record.unit.spec.ts
  * pins each of them.
  *
+ * THE REJECTION READING (2026-09-29): a `floor_vote` record whose own
+ * sentence says a chamber voted the measure down on passage or adoption reads
+ * `rejected`, before the three floor keys. It is the TS original's
+ * `settledDecision(bill)?.kind === 'rejected'`, spelled with the same
+ * lib/floor-text.mjs readers the stepper's branch uses: no calendar placement
+ * (floorPassageRejectedChamber requires a settled, non-placement sentence), a
+ * "Failed of passage" subject, a chamber named, and no motion to reconsider
+ * entered. A failed procedural motion keeps `floor_activity`. The status
+ * basis is read from `record` when it is given, else the last action text,
+ * exactly as statusBasisText reads a bill with no basis.
+ *
  * @param {string} status                bill.status
  * @param {string | null} lastActionText bill.last_action_text
  * @param {string | null} lastActionDate bill.last_action_date
@@ -242,6 +259,11 @@ export function statusKeyFor(status, lastActionText, lastActionDate, now = Date.
     return stage === 'both' || stage === 'second' ? 'passed_both' : status;
   }
   if (status !== 'floor_vote') return status;
+  const basis = statusBasisText({
+    last_action_text: lastActionText,
+    status_basis_text: record?.status_basis_text ?? null,
+  });
+  if (floorPassageRejectedChamber(basis) && !floorReconsiderPendingChamber(basis)) return 'rejected';
   if (!floorCalendarChamber(lastActionText)) return 'floor_activity';
   return isSignalFresh(lastActionDate, now) ? 'floor_vote' : 'floor_vote_stale';
 }
