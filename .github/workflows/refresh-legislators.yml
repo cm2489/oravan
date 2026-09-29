@@ -218,8 +218,8 @@ jobs:
           fi
       - name: 119th -> 120th Congress rollover tripwire
         # S24, two-clock model (docs/solutions/two-clock-district-
-        # boundaries.md). Non-blocking by design: the mandatory literal +
-        # dataset bump isn't due until Jan 3, 2027, so this only starts a
+        # boundaries.md). Non-blocking by design: the mandatory session-
+        # constant + dataset swap isn't due until Jan 3, 2027, so this only starts a
         # loud ::warning once real lead time is needed (~2026-12-01) rather
         # than failing the pipeline for a month first. See
         # lib/rollover-tripwire.mjs.
