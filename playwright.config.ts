@@ -62,6 +62,7 @@ export default defineConfig({
         command: `npx tsx tests/e2e-server.mjs`,
         port: PORT,
         reuseExistingServer: false,
-        timeout: 240_000,
+        // Build+start counts against this: CI was ready in ~223 s at 3d30669, then passed 240 s at 25c68e4 (run 36507348144).
+        timeout: 480_000,
       },
 });
