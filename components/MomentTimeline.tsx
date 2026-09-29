@@ -4,6 +4,7 @@ import { Link } from '@/i18n/navigation';
 import { Chip } from '@/components/system';
 import { collapseQuietDays, linkHost, timelineDays } from '@/lib/moments-ui';
 import { getUpdates, type MomentUpdate, VERBATIM_MODE } from '@/lib/moment-updates';
+import { rollCallPage } from '@/lib/roll-call-page';
 
 /*
  * "What's moved" — the dated timeline of a Moment's recorded activity
@@ -297,15 +298,24 @@ function TimelineItem({
           <span className="text-2xs leading-tight font-extrabold tracking-[0.1em] text-ink-2 uppercase">
             {t('moments.updates.sourcesLabel')}
           </span>
-          {update.source.refs.map((ref) => (
+          {/* A vote's ref is the roll call's DATA FILE (the XML the sync
+              read), which a browser shows as a raw tree. The reader lands on
+              the chamber's own page for the same roll call instead, and that
+              page links back to the file. Worked out here, at render time:
+              data/moment-updates.json keeps the ref as stored. Any other ref
+              (a bill's actions page, a floor feed, a press story) comes back
+              from rollCallPage unchanged. Keyed by the page linked, not the
+              ref, so the data file's address is not in the built page at
+              all; a set, so two refs to one page print one link. */}
+          {[...new Set(update.source.refs.map(rollCallPage))].map((href) => (
             <a
-              key={ref}
-              href={ref}
+              key={href}
+              href={href}
               target="_blank"
               rel="noopener noreferrer"
               className={`${CONTENT_LINK} text-sm`}
             >
-              {linkHost(ref)}
+              {linkHost(href)}
               <ExternalLink className="h-3 w-3" aria-hidden />
             </a>
           ))}
