@@ -5,12 +5,14 @@ import { setRequestLocale, getFormatter, getTranslations } from 'next-intl/serve
 import { Link, getPathname } from '@/i18n/navigation';
 import { JsonLd } from '@/components/JsonLd';
 import { ZipForm } from '@/components/ZipForm';
+import { HeroSavedZip } from '@/components/HeroSavedZip';
+import { HomeLatestVote } from '@/components/HomeLatestVote';
 import { NewsLens } from '@/components/NewsLens';
 import { RememberLocaleLink } from '@/components/RememberLocaleLink';
 import { StalenessNote } from '@/components/StalenessNote';
 import { UrgencyEmptyState } from '@/components/UrgencyEmptyState';
 import { FloorEvidence } from '@/components/FloorEvidence';
-import { AiMark, Chip, FloorVotePanel, Stamp, selectFloorVoteFeature } from '@/components/system';
+import { AiMark, FloorVotePanel, Stamp, selectFloorVoteFeature, type ChipGround } from '@/components/system';
 import {
   billSlug,
   getAllBills,
@@ -34,77 +36,67 @@ import {
 } from '@/lib/docket';
 import { statusKeyFor } from '@/lib/journey';
 import { buildSiteJsonLd } from '@/lib/jsonld';
-import { getLiveMoments } from '@/lib/moments';
+import { homeQuestionRows, leadTally } from '@/lib/home';
+import { billStatusLine, type StatusLine } from '@/lib/moment-status.mjs';
+import { getMomentsForBill } from '@/lib/moments';
 import { LIVE_CAP } from '@/lib/moments-gate.mjs';
 import { momentDek } from '@/lib/moments-ui';
-import { latestUpdateDay } from '@/lib/moment-updates';
+import { votesForBill } from '@/lib/votes';
 import { DONATE_URL, SITE_ORIGIN } from '@/lib/site';
 
 /*
- * THE HOME SURFACE — hero C, the truth-first flip (owner decisions of record,
- * 2026-07-31; spec the project records §0).
+ * THE HOME SURFACE — option B, "this week first, then Big Questions".
  *
- * The arc is UNDERSTAND -> ACT -> TRUST -> SUPPORT. Understanding is the front
- * door; the call is the natural next step, demoted but never buried. Four
- * things on this page are load-bearing and must survive any future edit:
+ * Owner, 2026-09-29, typed: "Home Page - Option B, This week first, then Big
+ * Questions." The v2 grayscale wireframe of the same day
+ * (oravan-private-docs/wireframes-2026-09-29/home.html) draws the order this
+ * file builds, top to bottom:
  *
- * 1. ONE GREEN SLAB, and it is the FloorVotePanel — since 2026-08-01 worn as
- *    a crown: on a hot week the week's masthead fuses onto the panel's top
- *    and the two are ONE full-bleed green ground (the "green crown", owner
- *    decision; the masthead goes green only because the panel under it
- *    earned it, and on a quiet week it reverts to ruled paper). Green is
- *    still the page's only DATA-EARNED shape change: no panel, no green
- *    ground anywhere. The hero, the act zone, privacy and the support band
- *    are all ruled paper and none of them may take a ground of their own — a
- *    shape change that happens for four reasons carries no data.
+ *   hero → this week (led by the floor item) → Big Questions → in the news
+ *   → the official text, decoded → how a call works → does calling work?
+ *   · private by design · free for everyone → footer
  *
- *    The Big Questions band is the ONE sanctioned exception (owner,
- *    2026-07-24) and it is deliberately INK, not green: it needed weight, and
- *    ink buys weight without spending a colour the data gate governs. THE
- *    2026-07-31 FLIP MOVED IT ABOVE THE WEEK and changed nothing about that
- *    law: the colour law governs how many grounds a page has and what earns
- *    green, never their order. So the page still has two full-bleed grounds,
- *    still exactly one green one, and green still means only ever ONE DATED
- *    FLOOR FACT from the record — the bill is on the floor calendar, or a
- *    floor vote on it is still pending (owner ruling 2026-08-09; before it,
- *    calendar placements only, which left the crown structurally blind to the
- *    week's real floor fights). (The site footer is the page's back cover and
- *    is exempt.)
+ * It reverses the 2026-07-31 truth-first flip's ORDER only (that flip put the
+ * Big Questions band above the week; tests/moments.spec.ts pinned it and now
+ * pins the new order). Everything else that flip decided still stands:
+ * understanding is the front door and the call is the natural next step,
+ * demoted but never buried (Constitution v2, rule 8).
+ *
+ * WHAT MUST SURVIVE ANY FUTURE EDIT:
+ *
+ * 1. ONE LOUD BLOCK, DATA-EARNED. The week's lead is the green FloorVotePanel,
+ *    and on a crowned week the masthead fuses onto it (the "green crown",
+ *    2026-08-01): one full-bleed green ground, and it exists only because the
+ *    record holds a live floor fact. A quiet week is ruled paper, and says so
+ *    (rule 6). The Big Questions band keeps its ink enamel (owner 2026-07-24;
+ *    colour is a later pass, so the rebuild does not restyle it here).
  *
  * 2. EXACTLY ONE BILL takes that panel, chosen by selectFloorVoteFeature()
- *    over getFloorFeatureCandidates() — the WHOLE decoded floor_vote pool
- *    above the "Act now" floor, not the 4-card shortlist. The corpus is HOT —
- *    every bill in this week's shortlist currently carries `floor_vote` — so
- *    the cap is the entire mechanism, but the cap belongs to the selector and
- *    must never be smuggled in as a short candidate list: until 2026-08-09
- *    the crown was picked out of getTopActions(4), so a busy floor day could
- *    crowd out the one bill with a live floor fact and the page showed no
- *    crown at all. Everything else in the week is a plain ruled listing.
+ *    over getFloorFeatureCandidates() — the WHOLE decoded floor pool, never
+ *    the 4-row shortlist (the 2026-08-09 lesson: a rank-4 cut decided whether
+ *    the crown appeared at all).
  *
- * 3. EVERY CALLABLE BILL LINK stays inside the week's section. The funnel
- *    spec reads that boundary through its `data-front-door="week"` hook (a
- *    test hook, not a rule), and the panel carries a bill link — which is why
- *    that section is full-width with the max-width wrapper INSIDE it.
- *    freshness.spec.ts and moments.spec.ts still read the `top-actions` id
- *    until their own un-pinning follow-ups move them to the hook.
+ * 3. EVERY CALLABLE BILL LINK stays inside the week's section. The funnel spec
+ *    reads that boundary through its `data-front-door="week"` hook, and the
+ *    Big Questions band through `data-front-door="questions"` (test hooks,
+ *    not rules): from either, a decoded, AI-labeled answer is one click away
+ *    (funnel I1). The `top-actions` id is the hero jump's target and a hook
+ *    freshness.spec.ts and moments.spec.ts still read.
  *
- * 4. THE GO-MARK APPEARS ONCE, MEASURING. Hero C's SECOND BEAT — "Then make
- *    it count." — is the measured promise, and the stroke under it survives
- *    under that clause (2026-07-31 fork). The act zone's route gauge was its
- *    twin until 2026-08-01, when the owner retired the drawing (two redraws
- *    never made it read); the printed durations carry that honesty now.
+ * 4. EVERY ROW IS ONE WHOLE-ROW LINK (the wireframe's "none is a 21-px
+ *    target"): the week's rows and the Big Questions rows stretch their
+ *    headline link over the row (`after:absolute after:inset-0`); the news
+ *    rows are block links (components/NewsLens.tsx `rows`).
  *
- * The act zone (section[aria-labelledby="act-zone"]) is where the call
- * apparatus was consolidated: one titled zone opened by the 3px ink rule,
- * with the route, the walkthrough, the transcript and the why-call teaser as
- * its hairline-ruled body — instead of four call sections scattered down the
- * page. "Natural next step" made literal in the page structure.
+ * 5. ONE QUIET AI LABEL PER BLOCK, linking to how this is made (card a9;
+ *    page 2, Copy). The hero's is the one exception: it carries no link,
+ *    because a link there would become the hero's first action, and the
+ *    hero's first action has to lead to understanding
+ *    (tests/home-fold.spec.ts, rule 8).
  */
 
 /** The five minutes, in seconds. The `seconds` figures are what the printed
- *  `how*Dur` strings claim (0:30 / 1:00 / 1:00 / 2:30 — 5:00 total); they
- *  stay here as the record of that arithmetic even though the route gauge
- *  that drew them was retired on 2026-08-01. */
+ *  `how*Dur` strings claim (0:30 / 1:00 / 1:00 / 2:30 — 5:00 total). */
 const ROUTE = [
   { key: 1, seconds: 30 },
   { key: 2, seconds: 60 },
@@ -113,11 +105,9 @@ const ROUTE = [
 ] as const;
 
 /*
- * The crown's amber chip, one key per (fact × chamber) — a table rather than
- * a ternary because there are four sentences now and every one of them is a
- * claim about the record. `selectFloorVoteFeature` returns both coordinates
- * from the one sentence it read, so nothing here decides anything; it only
- * looks up the copy. All four keys exist in EN and ES (bill.floor.*).
+ * The crown's amber chip, one key per (fact × chamber). `selectFloorVoteFeature`
+ * returns both coordinates from the one sentence it read, so nothing here
+ * decides anything; it only looks up the copy. All keys exist in EN and ES.
  */
 const FLOOR_LABEL_KEYS = {
   announced: { house: 'bill.floor.announcedHouse', senate: 'bill.floor.announcedSenate' },
@@ -125,22 +115,22 @@ const FLOOR_LABEL_KEYS = {
   pending: { house: 'bill.floor.pendingHouse', senate: 'bill.floor.pendingSenate' },
 } as const;
 
-// Homepage had zero metadata override before this pass — no canonical, no
-// hreflang alternates — so every locale's title/description fell through to
-// the root layout's generic default, silently, and only the bill detail page
-// (PR #30) had any alternates at all. Returning only `alternates` here lets
-// the layout's title/description keep flowing through unchanged.
+/** Where every block's AI label points: the published AI-content policy. */
+const HOW_MADE_HREF = '/citations#ai-policy';
+
+/** The status-label key for a bill — one call site, so a change to
+ *  statusKeyFor's signature lands on one line of this file. */
+const statusLabelKey = (b: Bill) => statusKeyFor(b);
+
+// Returning only `alternates` lets the layout's title/description keep
+// flowing through unchanged. The RSS discovery link lives here because the
+// "what moved this week" feed mirrors this page's week.
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  // S21: the "what moved this week" feed (lib/core/feed.ts) mirrors this
-  // page's own "Act now" section, so the RSS discovery link lives here —
-  // one <link rel="alternate" type="application/rss+xml"> per locale,
-  // pointing at that locale's own static feed route
-  // (app/feed/whats-moving.xml or app/es/feed/whats-moving.xml).
   const feedPath = locale === 'es' ? '/es/feed/whats-moving.xml' : '/feed/whats-moving.xml';
   return {
     alternates: {
@@ -150,98 +140,12 @@ export async function generateMetadata({
   };
 }
 
-/*
- * THE DECODED SPECIMEN — the product's core move shown, not told: one clause
- * of a real bill's official text, then its plain-words decode, AI-labeled.
- * It replaced the phone transcript in the hero on 2026-07-31, because the
- * transcript answered a fear the visitor has not been given a reason to feel
- * yet; it now sits in the act zone, immediately before the ask.
- *
- * REAL CORPUS DATA, NEVER FICTION. It renders only when the chosen bill
- * actually carries a decode, so a corpus that has not been decoded yet shows
- * nothing here rather than an invented example.
- *
- * Density pass 2026-08-01 (owner finding): the card stretches to its grid
- * row and must carry real information down its whole height — status,
- * summary teaser, topic, last action — with the exit pinned to the foot
- * (`mt-auto`). The kicker is the citation + status, not "The official text"
- * again: the enamel header already says that 40px up. `dateLabel` arrives
- * pre-formatted from the parent because the UTC-pinning rule for
- * `last_action_date` lives there, beside billDate() — not duplicated here.
- */
-async function SpecimenAside({ bill, dateLabel }: { bill: Bill; dateLabel: string | null }) {
-  const t = await getTranslations('home');
-  const tShared = await getTranslations();
-  const official = bill.title.length > 180 ? `${bill.title.slice(0, 180)}…` : bill.title;
-  return (
-    <aside
-      className="flex min-w-0 flex-col overflow-hidden rounded-control border-2 border-ink"
-      aria-labelledby="specimen-title"
-    >
-      <h2
-        id="specimen-title"
-        className="bg-ink-deep px-5 py-3 text-xs font-bold tracking-[0.06em] text-paper uppercase leading-tight"
-      >
-        {t('specimenTitle')}
-      </h2>
-      <div className="flex flex-1 flex-col p-4 md:p-6">
-        <p className="text-2xs font-extrabold tracking-[0.1em] text-ink-2 uppercase tabular-nums">
-          {formatCitation(bill.bill_type, bill.bill_number)} ·{' '}
-          {tShared(
-            `bills.status.${statusKeyFor(bill)}`
-          )}
-        </p>
-        <p className="mt-2 font-reading text-base text-ink-2">{official}</p>
-        <p className="mt-4 border-t-[1.5px] border-line pt-4 text-2xs font-extrabold tracking-[0.1em] text-ink-2 uppercase">
-          {t('specimenPlain')}
-        </p>
-        {/* `tint` means DECODED-FOR-YOU here, the same way it means "your own
-            words" in the transcript: the plain-words half of the pair. */}
-        <p className="mt-2 rounded-control bg-tint p-3 font-reading text-lg text-ink">
-          {bill.ai_headline}
-        </p>
-        {/* The decode's opening, clamped: an honest teaser for the exit link
-            below it, in the reading voice like every decoded sentence. md+
-            only — it exists to fill the card's stretched grid row, and on a
-            phone the card is content-height, so here it would be pure
-            scroll (mobile-density audit, 2026-08-01). */}
-        {bill.ai_summary && (
-          <p className="mt-3 hidden font-reading text-base text-ink-2 md:line-clamp-4">
-            {bill.ai_summary}
-          </p>
-        )}
-        <div className="mt-auto pt-4">
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t-[1.5px] border-line pt-4 text-sm text-ink-2">
-            {bill.issue_tags?.[0] && (
-              <Chip tone="tag">{tShared(`categories.${bill.issue_tags[0]}`)}</Chip>
-            )}
-            {dateLabel && (
-              <span className="tabular-nums">{tShared('bills.updated', { date: dateLabel })}</span>
-            )}
-          </div>
-          <p className="mt-3">
-            <Chip tone="ai" marker={t('aiMarker')}>
-              {t('aiReviewed')}
-            </Chip>
-          </p>
-          <Link
-            href={`/bills/${billSlug(bill)}`}
-            className="mt-3 inline-flex min-h-11 items-center gap-1.5 font-semibold text-go underline underline-offset-4 hover:text-go-deep"
-          >
-            {t('specimenCta')}
-            <ArrowRight className="h-4 w-4" aria-hidden />
-          </Link>
-        </div>
-      </div>
-    </aside>
-  );
-}
-
 export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations('home');
   const tShared = await getTranslations();
+  const tLine = await getTranslations('homeLine');
   const format = await getFormatter();
   const top = getTopActions(4, locale);
   const newsRaw = getNewsBills(locale, 7);
@@ -250,107 +154,61 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const dataAsOf = await dataAsOfString(locale);
   // AE3: the quiet-week claim keys on the floor alone. In the rare state
   // where a bill clears the floor but isn't decoded yet, the shortlist is
-  // empty AND the week is not quiet — render neither cards nor a false
-  // claim; /bills (linked in this section) shows it under "Act now".
+  // empty AND the week is not quiet — render neither rows nor a false claim.
   const quiet = !hasActNow();
   const jsonLd = await buildSiteJsonLd(locale);
-  // The Big Questions band (data + code still say `moment` — the label
-  // changed on 2026-07-31, the route and the internal names did not; spec
-  // §0.2). Only renders when a live entry exists, so a quiet week shows
-  // nothing rather than a band faking fullness.
-  const liveMoments = getLiveMoments();
+  // The Big Questions (data + code still say `moment`), newest record action
+  // first (lib/home.ts). Only live entries, so a quiet stretch shows no band
+  // rather than a band faking fullness.
+  const questions = homeQuestionRows();
 
-  // DATA-GATED LOUDNESS. One call, at the data layer, so the cap-to-one can
-  // never be broken by a component that cannot see its siblings. `feature`
-  // is null on a week where the record shows no live floor fact — and then
-  // the page is an unbroken paper column, which is the point.
-  //
-  // THE POOL IS NOT THE SHORTLIST (2026-08-09). It reads every decoded
-  // floor_vote bill over the same "Act now" floor, untruncated, because a
-  // rank-4 cut across all statuses was silently deciding whether the crown
-  // appeared at all: on a busy cloture day the bill with the live floor fact
-  // can sit well below rank 4. The cap-to-one is unchanged — it lives in the
-  // selector, which reads the whole pool and returns at most one bill.
-  //
-  // ONE CALL, ONE TRUTH: the selector returns the bill, the FACT it earned
-  // the panel on (`kind`) and the chamber that fact names, all read from the
-  // same sentence. Nothing here re-derives any of the three.
-  //
-  // THE THIRD FACT (owner ruling V1): the selector now also reads the chamber's
-  // own published floor schedule, through a resolver rather than a data import
-  // — components/system is design primitives and must not read data/. A live
-  // announcement outranks both record facts, and it is the only one that can
-  // crown a bill whose derived status has fallen back to `committee`, which is
-  // what happens to every measure the moment it actually reaches the floor.
-  // THE FOURTH CONDITION (owner rulings D1+D2, 2026-08-15): the chamber whose
-  // floor the fact names has to be MEETING. A placement and a pending motion
-  // are both claims that something can happen next, and through a period when
-  // a chamber gavels in and straight out nothing can — while the record sits
-  // just as still, so the fact keeps clearing the 14-day window and the crown
-  // keeps saying "right now" over it. Same resolver shape as the announcement,
-  // and for the same reason: components/system reads no data. An ANNOUNCED
-  // candidate is exempt by construction — a chamber that published a schedule
-  // naming a bill is meeting — and that exemption lives in `floorFactSuspended`.
-  // THE FIFTH CONDITION (owner decision D13, 2026-09-18): an announcement the
-  // chamber's own vote has already SPENT is not a live fact. The resolver now
-  // takes the bill so it can run the ladder's gate rather than the signal file's
-  // — see `announcementFor` — which is why a bill the House passed on Tuesday
-  // stops wearing "On the House floor schedule" for the rest of the week.
+  /*
+   * DATA-GATED LOUDNESS. One call, at the data layer, so the cap-to-one can
+   * never be broken by a component that cannot see its siblings. `feature` is
+   * null on a week where the record shows no live floor fact. The selector
+   * reads four things, in rung order: the chamber's own published floor
+   * schedule naming this bill (ruling V1, quoted with its date and URL), a
+   * floor vote still ahead in the record, or the record's own "Placed on …
+   * Calendar" sentence — and, for the two record facts, whether that chamber
+   * is meeting (rulings D1+D2). An announcement the chamber's own vote has
+   * already spent is not live (D13, inside `announcementFor`).
+   */
   const feature = selectFloorVoteFeature(
     getFloorFeatureCandidates(locale),
     (b) => announcementFor(b, billSlug(b)),
     (c) => chamberSession(c)
   );
   const signalsCheckedAt = floorSignalsCheckedAt();
-  // Slug equality, NEVER reference equality. localizeBill() returns a fresh
-  // object on /es, and the pool is localized independently of `top`, so
-  // `b !== feature.bill` was true for the crown's own bill on the Spanish
-  // page — it wore the crown AND appeared again in the listing under it. An
-  // English-only check cannot see this; tests/landing.spec.ts drives both.
+  // Slug equality, NEVER reference equality: localizeBill() returns a fresh
+  // object on /es, so the crown's own bill would otherwise be listed again
+  // under it on the Spanish page (tests/landing.spec.ts drives both locales).
   const featureSlug = feature ? billSlug(feature.bill) : null;
   const listed = top.filter((b) => billSlug(b) !== featureSlug);
   /*
-   * THE DATE THE CHIP PRINTS, and it is not always the bill's.
-   *
-   * On `calendar`/`pending` it is the date of the action itself — the placement,
-   * or the day the motion was filed. On `announced` it is the ANNOUNCING
-   * DOCUMENT's own publication date, because that is the dated fact the panel is
-   * quoting: the bill's last action might be weeks old and about something else
-   * entirely (that is exactly the case ruling V1 exists for). Neither is a
-   * scheduled-vote date; the corpus still holds none.
+   * THE DATE THE CHIP PRINTS. On `calendar`/`pending` it is the date of the
+   * action itself; on `announced` it is the ANNOUNCING DOCUMENT's own
+   * publication date, because that is the dated fact the panel quotes.
+   * Neither is a scheduled-vote date; the corpus holds none.
    */
   const crownDate =
     feature?.kind === 'announced'
       ? (feature.announcement?.published ?? null)
       : (feature?.bill.last_action_date ?? null);
-  // The week wears its green crown (masthead fused onto the panel) exactly
-  // when the panel itself renders — same condition, one name, so the seam
-  // classes below can never disagree with the crown's presence.
   const crowned = Boolean(feature && crownDate);
+  // The floor item's Big Question, when its bill is a live question's vehicle
+  // (the wireframe's "Big Question: Paying college athletes"), and the newest
+  // roll call the record holds on it (the wireframe's "Latest vote").
+  const featureQuestion = featureSlug
+    ? (getMomentsForBill(featureSlug).find((m) => m.state === 'live') ?? null)
+    : null;
+  const latestRollCall = featureSlug ? (votesForBill(featureSlug)[0] ?? null) : null;
 
   /*
-   * THE QUIET WEEK THAT CAN SAY WHY (owner ruling A-3, 2026-08-15).
-   *
-   * A crownless week already prints the honest `weekNoteQuiet` — "a quiet week
-   * shows as a quiet week" — and that sentence is true whatever the reason. It
-   * is also the one sentence that could, exactly once a year, tell the reader
-   * something the record actually says: BOTH chambers are gavelling in and
-   * straight back out, and the digest names when each of them meets next.
-   *
-   * FOUR CONDITIONS, ALL OF THEM, AND ONE CHAMBER IS NOT ENOUGH. The owner's
-   * ruling is explicit that a single chamber out of session prints nothing new
-   * here: the homepage note describes the WEEK, and a week with the House
-   * sitting is not a quiet one no matter what the Senate is doing. So both
-   * chambers must read out of session, both must have a next meeting in the
-   * file, and the digest must carry its own publication date — the note quotes
-   * that document, and a claim about Congress with no dated document behind it
-   * is exactly what this note exists to avoid making. Anything short of all
-   * four falls to today's `weekNoteQuiet`, unchanged.
-   *
-   * IT SELF-HEALS. `chamberSession` decays to `unknown` when the file stops
-   * being rewritten (lib/docket.mjs, SIGNAL_STALE_HOURS), and `unknown` is not
-   * `out_of_session` — a dead pipeline goes quiet here rather than asserting a
-   * recess that may have ended.
+   * THE QUIET WEEK THAT CAN SAY WHY (owner ruling A-3, 2026-08-15): both
+   * chambers out of session, both with a next meeting in the file, and the
+   * digest carrying its own publication date. Anything short of all four
+   * falls to `weekNoteQuiet`. It self-heals: `chamberSession` decays to
+   * `unknown` when the file stops being rewritten.
    */
   const digestSource = floorSessionSource();
   const senateNextMeeting = chamberNextMeeting('senate');
@@ -369,38 +227,25 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         }
       : null;
 
-  // THE SAME HEADLINE NEVER RUNS THE PAGE THREE TIMES (blind teardown
-  // 2026-08-02, finding #8: the featured bill appeared in the hero card,
-  // the green crown, AND the first news card — "the site looks like it has
-  // one story"). The specimen now prefers a DECODED bill that is not the
-  // crown's feature (shortlist first, then news), falling back to the
-  // feature only when nothing else carries a decode — an empty hero card
-  // is worse than a repeated one. The news lens likewise drops the feature:
-  // it is fetched one over and filtered, so the crown's bill never leads
-  // the coverage grid it already headlines 500px above.
-  // Candidates are the week's shortlist ONLY: NewsBill is a teaser (slug/
-  // identifier/headline) without the decode fields SpecimenAside renders —
-  // the old `?? news[0]` fallback only ever typechecked because the ??-chain
-  // never reached it, and would have crashed if it had. On a corpus where
-  // no shortlisted bill carries a decode, the hero simply has no card —
-  // the existing honest-quiet behavior.
+  /*
+   * THE SPECIMEN (H07, kept by the owner's mark): one real bill's official
+   * title beside its plain-words decode. It prefers a DECODED bill that is not
+   * the crown's feature (the 2026-08-02 teardown: one headline three times
+   * read as "one story"), falling back to the feature only when nothing else
+   * carries a decode. Real corpus data, never fiction: no decode, no block.
+   */
   const specimenBill =
     top.find((b) => billSlug(b) !== featureSlug && b.ai_headline) ?? feature?.bill ?? null;
   const specimen = specimenBill?.ai_headline ? specimenBill : null;
-  // NewsBill carries its slug directly; filter the crown's bill out of the
-  // coverage grid it already headlines 500px above.
-  const news = newsRaw.filter((b) => b.slug !== featureSlug).slice(0, 6);
+  // In the news: a short list (owner: three items, H16), without the crown's
+  // bill, which the week already headlines.
+  const news = newsRaw.filter((b) => b.slug !== featureSlug).slice(0, 3);
 
   /*
-   * A bill's own calendar date, e.g. "Jul 20, 2026" / "20 jul 2026".
-   *
-   * PINNED TO UTC ON PURPOSE. `last_action_date` is a bare `YYYY-MM-DD`, so
-   * `new Date()` reads it as UTC midnight — formatted in any negative-offset
-   * zone it prints the DAY BEFORE (verified: 2026-07-20 rendered "Jul 19,
-   * 2026" on an America/New_York build machine). Amber is only legal with a
-   * TRUE printed date, and a listing's "last action" is a claim about a real
-   * day, so both are formatted in UTC and never drift with the builder's
-   * clock.
+   * A bill's own calendar date, e.g. "Sep 24, 2026". PINNED TO UTC ON
+   * PURPOSE: `last_action_date` is a bare `YYYY-MM-DD`, which `new Date()`
+   * reads as UTC midnight — formatted in a negative-offset zone it prints the
+   * day before. A printed "last action" is a claim about a real day.
    */
   const billDate = (iso: string) =>
     format.dateTime(new Date(iso), {
@@ -409,15 +254,12 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       day: 'numeric',
       timeZone: 'UTC',
     });
+  /** The short form a row's status line carries ("Sep 24"), also UTC. */
+  const rowDate = (iso: string) =>
+    format.dateTime(new Date(iso), { month: 'short', day: 'numeric', timeZone: 'UTC' });
 
-  /* A chamber's next meeting, printed the way this site prints anything a
-     government document said about itself: the document's OWN line first
-     ("1:30 p.m., Monday, August 17"), English and unformatted and marked as
-     such — it carries an hour the ISO date cannot hold, and it is the sentence
-     our date was derived FROM (ruling V4, the same split `coversDisplay`
-     makes). The derived date is the fallback, and only when the digest printed
-     no label at all; it is formatted in the reader's locale and never marked
-     English, because it is ours rather than the document's. */
+  /* A chamber's next meeting: the digest's OWN line first (English, marked
+     `lang="en"`, ruling V4), our derived date only when it printed none. */
   const meetingText = (meeting: { iso: string | null; label: string | null }) =>
     meeting.label ?? billDate(meeting.iso!);
   const meetingTag = (meeting: { iso: string | null; label: string | null }) =>
@@ -430,20 +272,9 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         };
 
   /*
-   * "As of" for the floor schedule — a DATE AND A TIME, and the only timestamp
-   * on this page that carries one — is formatted inside
-   * components/FloorEvidence.tsx now, beside the quote it stamps. Critic A-1's
-   * requirement is unchanged: a bill can be pulled from a chamber's schedule
-   * mid-week, so a T0 claim is only as good as the hour it was last checked and
-   * the reader has to be able to see that hour.
-   */
-
-  /*
    * The stamp's date. Deliberately NOT pinned to UTC: its screen-reader
    * sentence is dataAsOfString(), which goes through the shared formatter,
-   * and a visible date that disagreed with its own accessible name by a day
-   * would be worse than either convention. `checkedAt` is a full timestamp,
-   * not a bare date, so it does not have the midnight problem above.
+   * and `checkedAt` is a full timestamp, so it has no midnight problem.
    */
   const stampDate = format.dateTime(new Date(freshness.checkedAt), {
     year: 'numeric',
@@ -451,50 +282,83 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     day: 'numeric',
   });
 
+  /*
+   * THE SHORT STATUS LINE a row prints: the closed vocabulary of
+   * lib/moment-status.mjs, in its short homepage form (`homeLine.*`), then
+   * the record's date. Nothing here reads the record a second way.
+   */
+  const statusLine = (line: StatusLine, tally: { yeas: number; nays: number } | null) => {
+    const words = tLine(line.key, {
+      chamber: line.chamber ?? 'other',
+      law: line.law ?? 'none',
+      tally: tally ? 'yes' : 'none',
+      yeas: tally?.yeas ?? 0,
+      nays: tally?.nays ?? 0,
+    });
+    return (
+      <>
+        {words}
+        {line.date && (
+          <>
+            {' · '}
+            <time dateTime={line.date} className="tabular-nums">
+              {rowDate(line.date)}
+            </time>
+          </>
+        )}
+      </>
+    );
+  };
+
+  /*
+   * ONE QUIET AI LABEL PER BLOCK (card a9): the AI mark, one short line, and
+   * a link to how this is made. Each ground keeps its own contrast-checked
+   * tokens: ink-2 on paper (7.87:1), ink-pale on the ink band (10.82:1),
+   * go-pale on the green enamel (6.86:1).
+   */
+  const AI_LINE_TEXT: Record<ChipGround, string> = {
+    paper: 'text-ink-2',
+    ink: 'text-ink-pale',
+    go: 'text-go-pale',
+  };
+  const AI_LINK: Record<ChipGround, string> = {
+    paper: 'text-go hover:text-go-deep',
+    ink: 'text-go-bright hover:text-paper',
+    go: 'text-paper hover:decoration-[3px]',
+  };
+  const aiLine = (text: string, ground: ChipGround = 'paper', className = 'mt-3') => (
+    <p className={`flex max-w-read items-start gap-2 text-xs ${AI_LINE_TEXT[ground]} ${className}`}>
+      <AiMark ground={ground}>{t('aiMarker')}</AiMark>
+      <span className="pt-0.5">
+        {text}{' '}
+        <Link
+          href={HOW_MADE_HREF}
+          className={`font-semibold underline underline-offset-4 ${AI_LINK[ground]}`}
+        >
+          {t('aiHowMade')}
+        </Link>
+      </span>
+    </p>
+  );
+
   return (
     <div>
       <JsonLd id="site-jsonld" data={jsonLd} />
 
       {/* ---------------------------------------------------------------
-          HERO — the truth promise on the left, the product's core move shown
-          on the right. Paper, not a dark slab: the only ground change on this
-          page belongs to the green panel below.
+          HERO (H01–H06). The truth promise, one AI line, the jump to the
+          week directly below, then the ZIP block — which, with a ZIP saved
+          in this browser, names the reader's members instead
+          (components/HeroSavedZip.tsx). Paper, never a ground of its own.
           --------------------------------------------------------------- */}
       <div data-hero="" className="mx-auto max-w-5xl px-4 pt-5 pb-6 md:pt-16 md:pb-12">
-        {/* THE GO-MARK AS A STROKE: the same 6px bar at the same 3px cap
-            the route gauge is built from, drawn under the SECOND BEAT —
-            because that clause is the thing being measured. The first
-            beat is the truth promise and takes no mark. It is a
-            pseudo-element, never the <Gauge> component. */}
-        {/* FULL WIDTH, ABOVE THE COLUMNS (owner finding 2026-08-01). The
-            stroked beat cannot wrap (the bar has to be one continuous mark),
-            and inside the old 1.1fr column it could not FIT either: at every
-            md+ width the beat set wider than the column (637px against a
-            590px column at 1024, measured) and ran under the specimen card.
-            The h1 now spans the hero measure, where both locales' beats
-            clear with room; the two-column split starts below it. */}
-        {/* One step below the --text-h1 floor under 360px, and only
-            there. MEASURED: "Luego haz que cuente." sets 330px at the 32px
-            floor — 42px past the 288px content box of a 320px screen, which
-            is a WCAG 1.4.10 reflow failure, not a taste call. At 26px it
-            sets 268px. English fits at either size; this fires for both so
-            the two locales cannot drift apart typographically. */}
-        {/* TWO LINES AT md+, BROKEN AT THE CLAUSE (owner directive
-            2026-08-01: "Understand it in plain words." never breaks). Two
-            things make that true, and both are needed. (1) `data-clause-lock`
-            opts the h1 out of the global `text-wrap: balance` at md+ (the
-            unlayered rule in globals.css — a layered utility cannot beat
-            it): balance prefers the evener mid-clause break ("…in plain /
-            words. Then…") over the clause-clean one whenever the first
-            clause is the longest line — balance was the breaker, not the
-            width. (2) md:text-h1-bill (56px
-            cap, the next rung down): on the --text-h1 track the ES clause
-            sets wider than the measure between ~768–830px (741px against a
-            704px measure at 768), so the clause-clean break needs the
-            smaller rung to hold at EVERY md width — measured EN 733px /
-            ES 772px against 992px at the cap. Below md the phone keeps the
-            mobile-density-pass text-h1 floor, balance, and its three-line
-            stack, unchanged. */}
+        {/* THE GO-MARK AS A STROKE under the second beat, the measured
+            promise. Full width above the columns: the stroked beat cannot
+            wrap, and "Understand it in plain words." never breaks (owner,
+            2026-08-01) — `data-clause-lock` opts the h1 out of the global
+            balance at md+, and md:text-h1-bill is the rung that holds the
+            clause-clean break in both locales. Below 360px one step down,
+            so "Luego haz que cuente." fits a 320px screen (WCAG 1.4.10). */}
         <h1
           data-clause-lock
           className="text-h1 font-extrabold max-[22.5rem]:text-[1.625rem] md:text-h1-bill"
@@ -505,47 +369,23 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           </span>
         </h1>
 
-        {/* No md:items-start: the columns stretch to one height, which is
-            what lets the specimen card fill its block to the foot. */}
-        <div className="mt-6 grid gap-8 md:mt-8 md:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] md:gap-16">
+        <div className="mt-6 grid gap-4 md:mt-8 md:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] md:gap-16">
           <div className="min-w-0">
             <p className="max-w-read text-lede text-pretty text-ink-2">{t('heroSub')}</p>
 
-            {/* AI at first contact, as a CREDIT LINE under the lede (owner
-                pick 6C, 2026-08-01): the disclosure qualifies the lede's
-                promise, so it sits with those words as two lines of small
-                metadata — read order promise -> disclosure -> action — and
-                the button below stands alone. The middot fragments keep the
-                second line reading as metadata, not a second paragraph. The
-                old bordered chip here was the page's largest AI label and
-                outweighed the button it sat over. */}
+            {/* The one AI line (H02 folded in, card a9). No "How this is
+                made" link HERE, unlike every other block: it would be the
+                hero's first action, and that has to lead to understanding
+                (tests/home-fold.spec.ts, rule 8). */}
             <p className="mt-4 flex max-w-[52ch] items-start gap-2 text-xs text-ink-2">
               <AiMark>{t('aiMarker')}</AiMark>
-              <span className="pt-0.5">
-                <span className="block">{t('heroAiLead')}</span>
-                <span className="block">{t('heroAiMeta')}</span>
-              </span>
+              <span className="pt-0.5">{t('aiHero')}</span>
             </p>
 
-            {/* ONE PRIMARY (fold pass 2026-09-24, finding B3). The hero used
-                to carry TWO filled green controls — "See what's moving" and
-                the ZIP submit — pointing at two funnels with equal weight, so
-                neither read as the next step. The filled control is the jump
-                to what is moving: "Truth-first, call-next" (CLAUDE.md) and the
-                2026-07-31 ruling above both make READING the front door, and
-                the call apparatus is demoted, never buried. So the ZIP form
-                stays in the hero, directly under the jump, with its submit in
-                the secondary ink-outline tone (ZipForm's submitTone) — every
-                key and the ZIP-first funnel path are untouched (the form is
-                shared with the bill-page dialog and the embed widget).
-
-                THE FOLD IS MEASURED, NOT ASSUMED: at 390×844 the ZIP submit's
-                bottom edge — the lowest control in the hero — must clear the
-                fixed thumb bar's top edge in BOTH locales
-                (tests/home-fold.spec.ts). Spanish is the long language and is
-                the one that failed (8px under the bar, 2026-09-10) — so the
-                lede is held to about twenty words and the hero's top rhythm is
-                tighter below md. */}
+            {/* ONE PRIMARY (fold pass 2026-09-24, finding B3): the filled
+                control is the jump to what is moving, and the ZIP submit is
+                the secondary outline. The fold is MEASURED at 390×844 and
+                390×664 in both locales (tests/home-fold.spec.ts). */}
             <a
               href="#top-actions"
               className="ring-gap mt-5 inline-flex min-h-12 items-center gap-2 rounded-control border-2 border-go bg-go px-6 py-3 font-bold text-paper no-underline hover:border-go-deep hover:bg-go-deep"
@@ -553,31 +393,33 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               {t('heroJump')}
               <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
             </a>
+          </div>
 
-            <div className="mt-4">
+          <div className="min-w-0">
+            {/* The ZIP path stays in the hero, demoted, never buried (rule
+                8). With a ZIP saved in this browser, the block names the
+                members instead and nothing else on the page changes. */}
+            <HeroSavedZip>
               <ZipForm submitTone="secondary" inline />
-            </div>
+            </HeroSavedZip>
 
-            {/* THE TRUST LINE ON A PHONE. The header carries it inline at lg+
-                (EN) or in its sub-bar (ES), and the 56px phone bar has no room
-                for it — its own comment says "the phone already carries the
-                promise in the hero", which stopped being true when the hero
-                was cut. It is back here, beside the one field that asks for
-                something, and hidden at lg+ where the header says it. */}
+            {/* THE TRUST LINE ON A PHONE (H05): the header carries it at lg+. */}
             <p className="mt-3 text-xs text-ink-2 lg:hidden">
               {tShared('common.trustLine1')} {tShared('common.trustLine2')}
             </p>
 
-            {/* Thumb-reachable language switch (2026-07 critique round 2):
-                the header pill sits in the least reachable corner on mobile,
-                and the one control a Spanish-dominant visitor needs most
-                shouldn't. The link text is in the TARGET language — the EN
-                page says "Ver en español" — hence lang/hreflang on the link,
-                not the page. Complements the header pill, never replaces it. */}
-            <p className="mt-4 max-w-note text-sm">
-              {/* RememberLocaleLink, not Link: an explicit language choice is
-                  recorded on-device (lib/locale-pref.ts) so the preference
-                  note can offer the way back on the next bare-URL entry. */}
+            {/* Thumb-reachable language switch. The link text is in the
+                TARGET language, hence lang/hreflang on the link.
+                RememberLocaleLink records the explicit choice on-device.
+                mt-8, MEASURED (2026-09-29): with option B's one-line AI
+                credit the hero is shorter, and at mt-4 this link's top sat at
+                660px on a 390×664 phone — under the thumb bar (615–664),
+                which tests/home-fold.spec.ts forbids. At mt-8 it starts
+                below that fold in both locales (EN 676px, ES 697px), as it
+                did before (672px). With a ZIP saved it starts in the same
+                place or lower: below md the members block is never shorter
+                than the form it replaces (components/HeroSavedZip.tsx). */}
+            <p className="mt-8 max-w-note text-sm">
               <RememberLocaleLink
                 href="/"
                 locale={locale === 'es' ? 'en' : 'es'}
@@ -590,51 +432,223 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               </RememberLocaleLink>
             </p>
           </div>
-
-          {specimen && (
-            <SpecimenAside
-              bill={specimen}
-              dateLabel={specimen.last_action_date ? billDate(specimen.last_action_date) : null}
-            />
-          )}
         </div>
       </div>
 
       {/* ---------------------------------------------------------------
-          BIG QUESTIONS — the dominant truth band, and since 2026-07-31 it
-          sits ABOVE the week. The 2026-07-24 ruling ("discovery sits UNDER
-          the week: you look for a subject after you have seen what is
-          actually moving") was reversed by the truth-first decision: the
-          front door now leads with the question a visitor already arrived
-          holding, and the week is what that question turns into. It
-          disappears entirely when nothing reads as live, and then the truth
-          claim survives in the hero — carried by copy, not by a band faking
-          fullness.
+          THIS WEEK (H11, H12, H14, H15). First, straight after the hero,
+          led by the floor item when the record has one. Full-width by
+          construction: the green panel is full-bleed and MUST stay inside
+          this section, so the max-width wrapper is inside it.
+          --------------------------------------------------------------- */}
+      <section aria-labelledby="top-actions" data-front-door="week">
+        {crowned && feature && crownDate ? (
+          // THE GREEN CROWN (2026-08-01): on a hot week the masthead is the
+          // top of the green slab itself, one ground, earned by the panel.
+          <div className="mt-2 border-y-[3px] border-go bg-go-deep">
+            <div className="mx-auto max-w-5xl px-4 pt-6 md:pt-8">
+              {/* Below md the heading and the next line would cross the
+                  stamp's straddle band, so the row reserves it: pb-8 here,
+                  mt-8 on the line after. */}
+              <div className="relative border-b-[1.5px] border-paper/35 pb-8 md:pb-3">
+                <h2 id="top-actions" className="text-h2-loud font-extrabold text-paper">
+                  {t('topTitle')}
+                </h2>
+                <Stamp label={t('stampLabel')} dateLabel={stampDate} srLabel={dataAsOf} />
+              </div>
+              {/* G10: the staleness line, under the stamp, only when the data
+                  runs late. Still one per page. */}
+              <StalenessNote
+                checkedAt={freshness.checkedAt}
+                standalone
+                className="mt-8 max-w-read text-sm font-semibold text-paper md:mt-4"
+              />
+              {aiLine(t('aiWeek'), 'go', 'mt-8 md:mt-4')}
+            </div>
+            <FloorVotePanel
+              flush
+              headingLevel={3}
+              status={feature.bill.status}
+              kind={feature.kind}
+              dateLabel={billDate(crownDate)}
+              /*
+               * THE EVIDENCE, on the announced kind only: the chamber's
+               * sentence quoted VERBATIM IN ENGLISH in both locales, under a
+               * localized framing sentence (ruling V4), with its document,
+               * date, link and "as of" stamp (critic A-1).
+               */
+              evidence={
+                feature.kind === 'announced' && feature.announcement ? (
+                  <FloorEvidence
+                    announcement={feature.announcement}
+                    checkedAt={signalsCheckedAt}
+                  />
+                ) : undefined
+              }
+              // The latest roll call the record holds on the bill, quoted
+              // (components/HomeLatestVote.tsx). The wireframe's second
+              // column; absent when the bill has no stored roll call.
+              aside={latestRollCall ? <HomeLatestVote rollCall={latestRollCall} /> : undefined}
+              // The chip prints the fact the selector actually found, in the
+              // chamber the record itself names.
+              calendarLabel={tShared(FLOOR_LABEL_KEYS[feature.kind][feature.chamber])}
+              identifier={formatCitation(feature.bill.bill_type, feature.bill.bill_number)}
+              headline={
+                feature.bill.ai_headline ?? feature.bill.short_title ?? feature.bill.title
+              }
+              href={getPathname({ locale, href: `/bills/${billSlug(feature.bill)}` })}
+              ctaLabel={t('floorCta')}
+              meta={
+                <>
+                  {feature.bill.issue_tags?.[0] && (
+                    <span>{tShared(`categories.${feature.bill.issue_tags[0]}`)}</span>
+                  )}
+                  {featureQuestion && (
+                    <span>
+                      {t.rich('floorQuestion', {
+                        name: locale === 'es' ? featureQuestion.name.es : featureQuestion.name.en,
+                        link: (chunks) => (
+                          <Link
+                            href={`/questions/${featureQuestion.id}`}
+                            className="inline-flex min-h-11 items-center font-semibold text-paper underline underline-offset-4 hover:decoration-[3px]"
+                          >
+                            {chunks}
+                          </Link>
+                        ),
+                      })}
+                    </span>
+                  )}
+                </>
+              }
+            />
+          </div>
+        ) : (
+          <div className="mx-auto max-w-5xl px-4 pt-8 md:pt-10">
+            {/* Same straddle-band reservation as the crowned masthead. */}
+            <div className="relative border-b-[1.5px] border-line-strong pb-8 md:pb-3">
+              <h2 id="top-actions" className="text-h2-loud font-extrabold">
+                {t('topTitle')}
+              </h2>
+              <Stamp label={t('stampLabel')} dateLabel={stampDate} srLabel={dataAsOf} />
+            </div>
+            <StalenessNote
+              checkedAt={freshness.checkedAt}
+              standalone
+              className="mt-8 max-w-read text-sm font-semibold text-ink md:mt-4"
+            />
+            {aiLine(t('aiWeek'), 'paper', 'mt-8 md:mt-4')}
+          </div>
+        )}
 
-          DARK ENAMEL, NOT GREEN (owner, 2026-07-24, unchanged by the flip).
-          It read as an afterthought as ruled paper, so it needed real weight.
-          Green was the obvious way to give it that and is the wrong one:
-          green here would fire every week regardless of data, and the whole
-          point of the green panel below is that it only appears when a vote
-          is actually on the calendar. Ink enamel buys the weight and spends
-          no green, so the page still has exactly ONE green slab and it is
-          still data-earned.
+        <div className="mx-auto max-w-5xl px-4">
+          {/* The rest of the week: ruled rows, unboxed (card a9), each ONE
+              whole-row link. The status line is the record's, in the short
+              vocabulary the Big Questions rows use (lib/home.ts). */}
+          {listed.length > 0 && (
+            <ul className="mt-6 list-none border-t-[1.5px] border-line-strong md:grid md:grid-cols-3 md:gap-x-10">
+              {listed.map((b) => {
+                const line = billStatusLine(b);
+                return (
+                  <li
+                    key={billSlug(b)}
+                    className="relative border-b-[1.5px] border-line-strong py-4"
+                  >
+                    <p className="text-sm font-semibold text-ink-2">
+                      {statusLine(line, leadTally(line, b))}
+                    </p>
+                    <h3 className="mt-1 max-w-[36ch] text-lg leading-tight font-bold">
+                      <Link
+                        href={`/bills/${billSlug(b)}`}
+                        className="text-ink no-underline visited:text-ink-2 after:absolute after:inset-0 after:content-[''] hover:underline hover:decoration-go hover:decoration-[3px]"
+                      >
+                        {b.ai_headline ?? b.short_title ?? b.title}
+                      </Link>
+                    </h3>
+                    <p className="mt-1 text-sm text-ink-2 tabular-nums">
+                      {formatCitation(b.bill_type, b.bill_number)}
+                      {b.issue_tags?.[0] && ` · ${tShared(`categories.${b.issue_tags[0]}`)}`}
+                    </p>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
 
-          The scarcity line rides with the promotion: at the front door,
-          "never more than 6" IS the credibility claim — it is the visible
-          proof that someone said no. */}
-      {liveMoments.length > 0 && (
+          {quiet && top.length === 0 && (
+            <div className="mt-6">
+              {/* The fourth signal (critic A-5): if the sources cannot vouch
+                  for themselves, this empty week reads as OUR data being
+                  stale — never as "Congress published no schedule". */}
+              <UrgencyEmptyState
+                {...freshness}
+                floorSignals={{
+                  checkedAt: signalsCheckedAt,
+                  sourcesHealthy: floorSourcesPosture() === 'quiet',
+                }}
+              />
+            </div>
+          )}
+
+          {/* THE QUIET-WEEK NOTE, on crownless weeks only (the green-panel
+              explainer was cut, UX inventory H13, 2026-09-28). A crownless
+              week admits it is quiet, and in the one recess the record can
+              explain, says why. */}
+          {!crowned && (
+            <p
+              data-week-note={recessWeek ? 'recess' : 'standard'}
+              className="mt-6 max-w-note text-sm text-ink-2"
+            >
+              {recessWeek
+                ? t.rich('weekNoteRecess', {
+                    published: billDate(recessWeek.published),
+                    senate: meetingText(recessWeek.senate),
+                    house: meetingText(recessWeek.house),
+                    senateWhen: meetingTag(recessWeek.senate),
+                    houseWhen: meetingTag(recessWeek.house),
+                    term: glossaryTag('pro-forma-session'),
+                  })
+                : t('weekNoteQuiet')}
+            </p>
+          )}
+
+          {/* The section closes with its two exits, side by side: every
+              active bill, and the day's brief (H14; Today is off the tab bar,
+              so this is its one tap from home). */}
+          <p className="mt-4 flex flex-wrap gap-x-6">
+            <Link
+              href="/bills"
+              className="inline-flex min-h-11 items-center gap-1.5 font-bold text-go underline underline-offset-4 hover:text-go-deep"
+            >
+              {t('seeAll', { count: total })}
+              <ArrowRight className="h-4 w-4" aria-hidden />
+            </Link>
+            <Link
+              href="/today"
+              className="inline-flex min-h-11 items-center gap-1.5 font-bold text-go underline underline-offset-4 hover:text-go-deep"
+            >
+              {t('todayBrief')}
+              <ArrowRight className="h-4 w-4" aria-hidden />
+            </Link>
+          </p>
+        </div>
+      </section>
+
+      {/* ---------------------------------------------------------------
+          BIG QUESTIONS (H08–H10), after the week (option B). Newest record
+          action first, each row one whole-row link with the question, its
+          first sentence and the record's short status line. It disappears
+          entirely when nothing reads as live (tests/moments.spec.ts pins
+          that), and the scarcity line stays: "never more than N" is the
+          visible proof that someone said no.
+          --------------------------------------------------------------- */}
+      {questions.length > 0 && (
         <section
-          // THE SEAM (owner pick 8B, 2026-08-01): when the green crown
-          // follows, the band drops its own bottom border and the two slabs
-          // meet flush on the crown's single bright-green rule — no white
-          // sliver. On a crownless week the band keeps both edges.
-          className={`on-dark mt-2 ${crowned ? 'border-t-[3px]' : 'border-y-[3px]'} border-line-strong bg-ink-deep py-8 text-paper md:py-12`}
+          className="on-dark mt-10 border-y-[3px] border-line-strong bg-ink-deep py-8 text-paper md:mt-16 md:py-12"
           aria-labelledby="moments-strip-title"
           data-front-door="questions"
         >
           <div className="mx-auto max-w-5xl px-4">
-            <div className="flex flex-wrap items-baseline justify-between gap-4">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-4">
               <h2 id="moments-strip-title" className="text-h2 font-extrabold text-paper">
                 {t('momentsTitle')}
               </h2>
@@ -647,431 +661,146 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               </Link>
             </div>
             <p className="mt-1 max-w-note text-sm text-pretty text-ink-pale">{t('momentsSub')}</p>
-            <ul className="mt-6 list-none border-t-[1.5px] border-line-strong">
-              {liveMoments.map((m) => (
-                <li key={m.id} className="border-b-[1.5px] border-line-strong">
-                  <Link
-                    href={`/questions/${m.id}`}
-                    className="flex min-h-11 flex-wrap items-baseline gap-x-3 gap-y-1 py-5 text-paper no-underline hover:underline hover:decoration-go-bright hover:decoration-[3px]"
-                  >
-                    <span className="text-lg font-bold">
+            {aiLine(t('aiQuestions'), 'ink')}
+            <ul className="mt-6 list-none border-t-[1.5px] border-line-strong md:grid md:grid-cols-2 md:gap-x-14">
+              {questions.map(({ moment: m, lead, tally }) => (
+                <li key={m.id} className="relative border-b-[1.5px] border-line-strong py-4">
+                  <h3 className="text-lg leading-tight font-bold">
+                    <Link
+                      href={`/questions/${m.id}`}
+                      className="text-paper no-underline after:absolute after:inset-0 after:content-[''] hover:underline hover:decoration-go-bright hover:decoration-[3px]"
+                    >
                       {locale === 'es' ? m.name.es : m.name.en}
-                    </span>
-                    <span className="max-w-note text-sm text-ink-pale">
-                      {momentDek(locale === 'es' ? m.summary.es : m.summary.en)}
-                    </span>
-                    {/* Live-layer recency (v2 slice S5): only when a recorded
-                        update exists — never a synthesized date. ink-pale on
-                        ink-deep is 10.82:1. */}
-                    {/* ml-auto: the dates form an aligned right column
-                        instead of floating after variable-length deks (an
-                        outside craft review measured the ragged edges,
-                        2026-08-02); on narrow screens the row wraps and the
-                        date leads its own line unchanged. */}
-                    {latestUpdateDay(m.id) && (
-                      <span className="ml-auto text-xs font-semibold text-ink-pale tabular-nums">
-                        {t('momentsUpdated', {
-                          date: billDate(latestUpdateDay(m.id) as string),
-                        })}
-                      </span>
-                    )}
-                  </Link>
+                    </Link>
+                  </h3>
+                  <p className="mt-1 max-w-note text-sm text-ink-pale">
+                    {momentDek(locale === 'es' ? m.summary.es : m.summary.en)}
+                  </p>
+                  {lead && (
+                    <p className="mt-1 text-sm font-semibold text-ink-pale">
+                      {statusLine(lead, tally)}
+                    </p>
+                  )}
                 </li>
               ))}
             </ul>
-            {/* True live count, never the stored total: the file also holds
-                settled and stale entries, and the claim is about today. */}
+            {/* True live count, never the stored total. */}
             <p className="mt-4 text-sm font-semibold text-ink-pale">
-              {tShared('moments.scarcityNote', { count: liveMoments.length, cap: LIVE_CAP })}
-            </p>
-            {/* The dek under each entry is AI-drafted summary text; /questions
-                labels it, so the front door must too. At the band's FOOT and
-                in sentence case (owner, 2026-08-01 — the bold-uppercase
-                version at the top read as shouting); every entry still lands
-                on a labeled surface one click away. */}
-            <p className="mt-2 max-w-read text-xs text-pretty text-ink-pale">
-              {tShared('moments.aiNote')}
+              {tShared('moments.scarcityNote', { count: questions.length, cap: LIVE_CAP })}
             </p>
           </div>
         </section>
       )}
 
-      {/* ---------------------------------------------------------------
-          THE WEEK. Full-width by construction: the green panel is full-bleed
-          and it MUST stay inside this section (the funnel spec reads this
-          boundary by `data-front-door="week"`; freshness.spec.ts still reads
-          the `top-actions` id), so the max-width wrapper is inside, around the
-          section's other children.
-          --------------------------------------------------------------- */}
-      <section aria-labelledby="top-actions" data-front-door="week">
-        {/* THE MASTHEAD (M3 "green crown", owner decision 2026-08-01): the
-            section opens as a dateline row — heading with the Stamp pressed
-            across the row's closing hairline, sub beneath — instead of a
-            heading floating in the white strip between the ink band and the
-            green panel. On a HOT week the masthead is the TOP OF THE GREEN
-            SLAB ITSELF: one full-bleed ground carrying masthead + featured
-            bill (FloorVotePanel renders `flush` inside it), so the heading
-            carries green only because the panel below earned it. On a QUIET
-            week it renders as ruled paper and no green exists anywhere — the
-            color law's data gate is intact, and this is still ONE green
-            ground, extended, never a second one. The masthead outranks the
-            panel's headline (h2-loud over the panel's h2) in both states.
-            The Stamp lives here now — still once per page, still the sole
-            printed sync date; it certifies the whole week, panel included. */}
-        {/* EXACTLY ONE. selectFloorVoteFeature() above holds the cap AND the
-            gate — THREE facts now, in rung order: the chamber's own published
-            floor schedule naming this bill (owner ruling V1, quoted below the
-            headline with its own date and URL), OR a floor vote still ahead of
-            it in the record (cloture filed, motion to proceed made, proceedings
-            postponed, a rule reported), OR the record's own "Placed on …
-            Calendar" sentence. The panel claims exactly the fact that was
-            found and nothing else, so a REJECTED motion to proceed or a
-            cloture motion that was not invoked can never
-            wear the crown (lib/journey.ts's settled guard, which is also rule 0
-            of the ladder's T1 rung). The date printed is the date of that fact
-            — an action date, or the announcing document's own publication date.
-            NO surface here claims a scheduled vote date; neither the corpus nor
-            the schedule carries one. */}
-        {feature && crownDate ? (
-          // Seam 8B: flush against the band above (no margin), joined by the
-          // crown's own 3px top rule in the band's bright link green — one
-          // luminous line where ink meets enamel. When the band is absent
-          // (no live Big Questions) the crown sits on paper instead and
-          // keeps the quiet deep-green edge and its small offset.
-          <div
-            className={`border-y-[3px] bg-go-deep ${
-              liveMoments.length > 0 ? 'border-t-go-bright border-b-go' : 'mt-2 border-go'
-            }`}
-          >
-            <div className="mx-auto max-w-5xl px-4 pt-6 md:pt-8">
-              {/* Below md the wrapped heading and the sub would both cross
-                  the stamp's straddle band (±~30px around the rule), so the
-                  row reserves it vertically: pb-8 keeps the heading's last
-                  line above the stamp's top half, mt-8 on the sub clears its
-                  bottom half. At md+ the one-line heading sits far left of
-                  the stamp and the tight rhythm returns. */}
-              <div className="relative border-b-[1.5px] border-paper/35 pb-8 md:pb-3">
-                <h2 id="top-actions" className="text-h2-loud font-extrabold text-paper">
-                  {t('topTitle')}
-                </h2>
-                <Stamp label={t('stampLabel')} dateLabel={stampDate} srLabel={dataAsOf} />
-              </div>
-              {/* THE BEACON SITS WITH THE CLAIM IT CAVEATS (2026-08-12).
-                  It used to hang off the week-note line ~200 lines and one
-                  full green panel below, so "Moving in Congress this week"
-                  and "The bills moving right now" — the loudest recency
-                  claims on the site — read as current for a whole scroll
-                  before anything qualified them. It rides topSub instead:
-                  directly under the rule the Stamp straddles, inside the
-                  masthead that makes the claim, continuing the same
-                  sentence. STILL EXACTLY ONE PER PAGE (only one of these two
-                  mastheads renders, and the week-note line no longer carries
-                  it) — the 2026-07 critique that a repeated note "read as a
-                  malfunction banner on every core surface" was unanimous,
-                  and it is recorded in StalenessNote's own header. Moving
-                  the note is allowed; multiplying it is not. Contrast: the
-                  caveat inherits `text-go-pale` on this `bg-go-deep` ground,
-                  6.86:1 (globals.css's ledger), AAA. */}
-              <p className="mt-8 max-w-read text-pretty leading-dark tracking-dark text-go-pale md:mt-4">
-                {t('topSub')}
-                <StalenessNote checkedAt={freshness.checkedAt} />
-              </p>
-            </div>
-            <FloorVotePanel
-              flush
-              headingLevel={3}
-              status={feature.bill.status}
-              kind={feature.kind}
-              dateLabel={billDate(crownDate)}
-              /*
-               * THE EVIDENCE, on the announced kind only: the chamber's sentence
-               * quoted VERBATIM IN ENGLISH in both locales, under a framing
-               * sentence that IS localized (owner ruling V4 — translating a
-               * quote turns it into a paraphrase wearing quotation marks). The
-               * attribution row names the document, prints its own date and the
-               * meeting it covers, links to it, and carries the "as of" stamp
-               * critic A-1 requires: the schedule is re-read hourly and a bill
-               * the chamber pulls leaves this panel with the next run.
-               *
-               * It lives in components/FloorEvidence.tsx since 2026-08-12,
-               * because the BILL PAGE prints the same announcement now (the
-               * announced-kind seam) and two hand-kept copies of one attribution
-               * is how two surfaces start disagreeing about one record.
-               */
-              evidence={
-                feature.kind === 'announced' && feature.announcement ? (
-                  <FloorEvidence
-                    announcement={feature.announcement}
-                    checkedAt={signalsCheckedAt}
-                  />
-                ) : undefined
-              }
-              // The chip prints the fact the selector actually found, in the
-              // chamber the record itself names (a House bill can stand on
-              // the Senate's calendar), so the two can never disagree.
-              calendarLabel={tShared(FLOOR_LABEL_KEYS[feature.kind][feature.chamber])}
-              identifier={formatCitation(feature.bill.bill_type, feature.bill.bill_number)}
-              headline={
-                feature.bill.ai_headline ?? feature.bill.short_title ?? feature.bill.title
-              }
-              href={getPathname({ locale, href: `/bills/${billSlug(feature.bill)}` })}
-              ctaLabel={t('floorCta')}
-              meta={
-                <>
-                  {feature.bill.issue_tags?.[0] && (
-                    <Chip tone="tag" ground="go">
-                      {tShared(`categories.${feature.bill.issue_tags[0]}`)}
-                    </Chip>
-                  )}
-                  <Chip tone="ai" ground="go" marker={t('aiMarker')}>
-                    {t('aiReviewed')}
-                  </Chip>
-                </>
-              }
-            />
-          </div>
-        ) : (
-          <div className="mx-auto max-w-5xl px-4 pt-8 md:pt-10">
-            {/* Same straddle-band reservation as the hot-week masthead. */}
-            <div className="relative border-b-[1.5px] border-line-strong pb-8 md:pb-3">
-              <h2 id="top-actions" className="text-h2-loud font-extrabold">
-                {t('topTitle')}
-              </h2>
-              <Stamp label={t('stampLabel')} dateLabel={stampDate} srLabel={dataAsOf} />
-            </div>
-            {/* Same beacon, same place, on the quiet week's paper ground —
-                see the hot masthead above for why it lives here. `text-ink-2`
-                on paper, 7.87:1 (globals.css's ledger), AAA. Only one of
-                these two mastheads ever renders, so the page still carries
-                exactly one staleness note. */}
-            <p className="mt-8 max-w-read text-pretty text-ink-2 md:mt-4">
-              {t('topSub')}
-              <StalenessNote checkedAt={freshness.checkedAt} />
-            </p>
-          </div>
-        )}
-
-        <div className="mx-auto max-w-5xl px-4">
-          {/* The rest of the week is a plain ruled listing, not a card. Two
-              reasons, the same reason twice: a bordered box indents its own
-              content by border + padding, which would put these headlines
-              ~33px right of the green panel's headline directly above — two
-              items in one list on two different left edges. And "listed
-              plainly" is what the note below promises, so the distance
-              between the panel and these rows is the whole distance between
-              scheduled and not. */}
-          {/* No opening rule of its own (owner, 2026-08-01): the green slab
-              directly above already closes the featured half, and a hairline
-              60px under that 3px edge read as clutter. The rows' own
-              border-b rules carry the listing's structure. */}
-          {listed.length > 0 && (
-            <div className="mt-6">
-              {/* These headlines are `ai_headline` — decoded text. The hero's
-                  AI chip is scoped to "the bill and the script" and the panel
-                  above carries its own, so without this the only unlabeled
-                  AI content on the page was the part that reads most like
-                  editorial copy. The label sits with the content, per DESIGN.md. */}
-              <p>
-                <Chip tone="ai" marker={t('aiMarker')}>
-                  {t('aiReviewed')}
-                </Chip>
-              </p>
-              {listed.map((b) => {
-                return (
-                  <article
-                    key={billSlug(b)}
-                    className="grid gap-3 border-b-[1.5px] border-line-strong py-6"
-                  >
-                    <h3 className="max-w-[36ch] text-h3 font-extrabold">
-                      <Link
-                        href={`/bills/${billSlug(b)}`}
-                        className="inline-flex min-h-11 items-center text-ink no-underline visited:text-ink-2 hover:underline hover:decoration-go hover:decoration-[3px]"
-                      >
-                        {b.ai_headline ?? b.short_title ?? b.title}
-                      </Link>
-                    </h3>
-                    <p className="text-sm font-semibold text-ink-2 tabular-nums">
-                      {formatCitation(b.bill_type, b.bill_number)}
-                    </p>
-                    <div className="flex flex-wrap items-center gap-4 text-sm text-ink-2">
-                      {b.issue_tags?.[0] && (
-                        <Chip tone="tag">{tShared(`categories.${b.issue_tags[0]}`)}</Chip>
-                      )}
-                      <span>
-                        {tShared(
-                          `bills.status.${statusKeyFor(b)}`
-                        )}
-                      </span>
-                      {b.last_action_date && (
-                        <span className="tabular-nums">
-                          {tShared('bills.updated', { date: billDate(b.last_action_date) })}
-                        </span>
-                      )}
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-          )}
-
-          {quiet && top.length === 0 && (
-            <div className="mt-6">
-              {/* The fourth signal (critic A-5): a `billsthisweek` 404 during a
-                  recess and a 404 because the URL scheme rotted look identical,
-                  and only one of them is a fact about Congress. If the sources
-                  cannot vouch for themselves, this empty week reads as OUR data
-                  being stale — never as "Congress published no schedule". */}
-              <UrgencyEmptyState
-                {...freshness}
-                floorSignals={{
-                  checkedAt: signalsCheckedAt,
-                  sourcesHealthy: floorSourcesPosture() === 'quiet',
-                }}
-              />
-            </div>
-          )}
-
-          {/* THE QUIET-WEEK NOTE, on crownless weeks only since 2026-09-28:
-              the owner cut the green-panel explainer (UX inventory H13), which
-              was this line's crowned-week wording (home.weekNote and
-              home.weekNoteAnnounced, removed from both languages in the same
-              commit, so undoing that one commit brings them back). A crownless
-              week still admits it is quiet, and in the one recess the record
-              can explain, says why. It no longer carries the staleness beacon
-              (2026-08-12): the caveat moved UP to the masthead's topSub line,
-              where the "this week" / "right now" claims it qualifies actually
-              are, and it is not duplicated here because one note per page is
-              a standing ruling (see the masthead comment above and
-              StalenessNote's own header). */}
-          {!crowned && (
-            <p
-              data-week-note={recessWeek ? 'recess' : 'standard'}
-              className="mt-8 max-w-note text-sm text-ink-2"
-            >
-              {recessWeek
-                ? /* The one crownless week that can name its own reason. Each
-                     chamber's next meeting is the digest's OWN printed line —
-                     English, unformatted, `lang="en"` (ruling V4), exactly as
-                     the announced band prints a schedule's coverage sentence —
-                     with our derived date as the fallback, formatted in the
-                     reader's locale. The document's publication date is ours
-                     to format either way. */
-                  t.rich('weekNoteRecess', {
-                    published: billDate(recessWeek.published),
-                    senate: meetingText(recessWeek.senate),
-                    house: meetingText(recessWeek.house),
-                    /* The VALUES above are strings because next-intl's ICU
-                       arguments take strings, numbers and dates only; the
-                       SPAN that marks a verbatim English line arrives as a tag
-                       handler, one per chamber, each deciding from its own
-                       meeting whether it is wrapping the digest's words or our
-                       derived date. */
-                    senateWhen: meetingTag(recessWeek.senate),
-                    houseWhen: meetingTag(recessWeek.house),
-                    term: glossaryTag('pro-forma-session'),
-                  })
-                : t('weekNoteQuiet')}
-            </p>
-          )}
-          {/* One line to the daily brief (plan item C3). Footer/nav placement
-              is left to the owner's review: the footer's Follow column is
-              claimed by a sibling PR. */}
-          <p className={`${crowned ? 'mt-8' : 'mt-2'} max-w-note text-sm`}>
-            <Link
-              href="/today"
-              className="inline-flex min-h-11 items-center font-semibold text-go underline underline-offset-4 hover:text-go-deep"
-            >
-              {t('todayLink')}
-            </Link>
-          </p>
-
-          {/* The section closes with its exit: a full-width row under the
-              listing, not a link floating beside the intro where it reads as
-              decoration. */}
-          <Link
-            href="/bills"
-            className="mt-6 flex min-h-12 w-full items-center justify-center gap-2 rounded-control border-2 border-ink px-4 py-3 font-bold text-ink no-underline hover:bg-ink hover:text-paper"
-          >
-            {t('seeAll', { count: total })}
-            <ArrowRight className="h-4 w-4" aria-hidden />
-          </Link>
-        </div>
-      </section>
-
-      {/* In the news — coverage-led discovery, kept as ruled paper inside the
-          measure. It closes the truth half: the questions, then the week,
-          then the coverage that is the quietest of the three. It renders
-          nothing when a sync leaves no cross-spectrum or neutral coverage to
-          feature. */}
+      {/* IN THE NEWS (H16): three rows, each saying why it is here, from
+          stored evidence only. Renders nothing when a sync leaves no
+          coverage to feature. */}
       {news.length > 0 && (
-        <div className="mx-auto max-w-5xl px-4 pt-8 md:pt-16">
-          <NewsLens bills={news} />
+        <div className="mx-auto max-w-5xl px-4 pt-10 md:pt-16">
+          <NewsLens bills={news} rows note={aiLine(t('aiNews'))} />
         </div>
       )}
 
-      {/* ---------------------------------------------------------------
-          THE ACT ZONE (2026-07-31; rebuilt 2026-08-01, owner picks round 3).
-          One titled zone under the page's third and last 3px ink rule, and
-          the rule now opens BOTH columns at once: left holds the heading,
-          the sub, and the five minutes as a numbered list; right holds the
-          why-call teaser (owner item 4). Ruled paper, no third ground.
-
-          THE SCREENCAST IS OFF (owner, UX inventory H18 "cut", 2026-09-28:
-          "Let's keep it off for now until UI/UX is finalized and then we can
-          talk about adding back in and where"). components/HomeScreencast.tsx,
-          its home.screencast* and home.demoNote* strings and its frames in
-          public/walkthrough/ are all kept, unmounted, so putting it back is
-          one import and <HomeScreencast /> wherever it lands. */}
-      {/* THE FIVE MINUTES, AS NUMBERS ONLY (owner decision 2026-08-01,
-          round 3): the route gauge is gone. It was redrawn twice — four
-          per-leg bars, then one stacked track — and neither read as a
-          measurement to a fresh eye, so the printed durations and the 5:00
-          total now carry the honesty alone. The hero stroke is the page's
-          one remaining go-mark. A REAL sequence, so the list numbers are
-          information, not scaffolding: the order is the order you do the
-          steps in. */}
-      <section className="mx-auto max-w-5xl px-4 pt-8 md:pt-16" aria-labelledby="act-zone">
-        <div className="grid gap-8 border-t-[3px] border-ink pt-4 md:grid-cols-2 md:items-start md:gap-12">
-          <div>
-            <h2 id="act-zone" className="text-h2 font-extrabold">
-              {t('actTitle')}
+      {/* THE OFFICIAL TEXT, DECODED (H07, kept by the owner's mark): the
+          product's core move shown, not told — one real bill's official
+          title, then its plain-words decode, AI-labeled. After the news
+          since option B (live had it beside the hero). */}
+      {specimen && (
+        <section
+          className="mx-auto max-w-5xl px-4 pt-10 md:pt-16"
+          aria-labelledby="specimen-title"
+        >
+          <div className="border-t-[1.5px] border-line-strong pt-6">
+            <h2 id="specimen-title" className="text-h2 font-extrabold">
+              {t('specimenTitle')}
             </h2>
-            <p className="mt-2 max-w-note text-pretty text-ink-2">{t('actSub')}</p>
-            <ol className="mt-8 list-none">
-              {ROUTE.map(({ key }) => (
-                <li
-                  key={key}
-                  className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-baseline gap-x-3 border-t border-line-strong py-4 md:gap-x-4"
+            <div className="mt-4 grid gap-6 md:grid-cols-2 md:gap-12">
+              <div className="min-w-0">
+                <p className="text-2xs font-extrabold tracking-[0.1em] text-ink-2 uppercase tabular-nums">
+                  {formatCitation(specimen.bill_type, specimen.bill_number)} ·{' '}
+                  {tShared(`bills.status.${statusLabelKey(specimen)}`)} · {t('specimenOfficial')}
+                </p>
+                <p className="mt-2 font-reading text-lg text-ink-2">
+                  {specimen.title.length > 180 ? `${specimen.title.slice(0, 180)}…` : specimen.title}
+                </p>
+              </div>
+              <div className="min-w-0 border-t-[1.5px] border-line pt-4 md:border-t-0 md:border-l-[1.5px] md:pt-0 md:pl-12">
+                <p className="text-2xs font-extrabold tracking-[0.1em] text-ink-2 uppercase">
+                  {t('specimenPlain')}
+                </p>
+                {/* `tint` means DECODED-FOR-YOU: the plain-words half of the pair. */}
+                <p className="mt-2 rounded-control bg-tint p-3 font-reading text-lg text-ink">
+                  {specimen.ai_headline}
+                </p>
+                {aiLine(t('aiSpecimen'))}
+                <Link
+                  href={`/bills/${billSlug(specimen)}`}
+                  className="mt-2 inline-flex min-h-11 items-center gap-1.5 font-semibold text-go underline underline-offset-4 hover:text-go-deep"
                 >
-                  <span className="text-sm font-extrabold text-ink-2 tabular-nums">{key}</span>
-                  <div>
-                    <h3 className="text-lg font-bold leading-tight">{t(`how${key}Title`)}</h3>
-                    {/* mobile-density pass: the title + duration carry the
-                        leg on a phone; the explainer joins at md. */}
-                    <p className="mt-1 hidden max-w-read text-ink-2 md:block">
-                      {t(`how${key}Body`)}
-                    </p>
-                  </div>
-                  <span className="text-xs font-bold tracking-[0.06em] whitespace-nowrap text-ink-2 tabular-nums">
-                    {t(`how${key}Dur`)}
-                  </span>
-                </li>
-              ))}
-            </ol>
-            <p className="flex flex-wrap items-baseline gap-4 border-t-[1.5px] border-ink pt-3 text-sm text-ink-2">
-              <b className="text-lg font-extrabold text-ink tabular-nums">{t('routeTotal')}</b>
-              <span>{t('routeTotalNote')}</span>
+                  {t('specimenCta')}
+                  <ArrowRight className="h-4 w-4" aria-hidden />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* HOW A CALL WORKS (H17): step titles and times only (the four step
+          bodies are dropped, as in the wireframe), the 5:00 total, and the
+          calm line. A real sequence, so the numbers are information. The
+          screencast stays off (H18, cut 2026-09-28; its component and
+          strings are kept, unmounted). */}
+      <section className="mx-auto max-w-5xl px-4 pt-10 md:pt-16" aria-labelledby="act-zone">
+        <div className="border-t-[3px] border-ink pt-4">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+            <h2 id="act-zone" className="text-h2 font-extrabold">
+              {t('callTitle')}
+            </h2>
+            <p className="text-sm text-ink-2">
+              <b className="font-extrabold text-ink tabular-nums">{t('routeTotal')}</b>{' '}
+              {t('routeTotalNote')}
             </p>
           </div>
-          {/* The why-call teaser (owner item 4), top-aligned with the zone
-              heading beside the steps. On a phone it follows the steps under
-              its own hairline; on the two-column layout the zone's 3px rule
-              already opens it. why-title stays an h3: it is a subsection of
-              this zone's h2. */}
-          <div className="border-t-[1.5px] border-line-strong pt-6 md:border-t-0 md:pt-0">
-            <h3 id="why-title" className="text-h3 font-extrabold">
+          <ol className="mt-6 list-none md:grid md:grid-cols-4 md:gap-x-8">
+            {ROUTE.map(({ key }) => (
+              <li
+                key={key}
+                className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-baseline gap-x-3 border-t border-line-strong py-4 md:grid-cols-[auto_minmax(0,1fr)] md:border-b"
+              >
+                <span className="text-sm font-extrabold text-ink-2 tabular-nums" aria-hidden="true">
+                  {key}
+                </span>
+                <h3 className="text-lg leading-tight font-bold">{t(`how${key}Title`)}</h3>
+                <span className="text-xs font-bold tracking-[0.06em] whitespace-nowrap text-ink-2 tabular-nums md:col-start-2">
+                  <span className="sr-only">{t('howTakes', { duration: t(`how${key}Dur`) })}</span>
+                  <span aria-hidden="true">{t(`how${key}Dur`)}</span>
+                </span>
+              </li>
+            ))}
+          </ol>
+          <p className="mt-4 max-w-read text-pretty text-ink-2">
+            <b className="font-bold text-ink">{t('demoNoteLead')}</b> {t('demoNote')}
+          </p>
+        </div>
+      </section>
+
+      {/* WHY CALLING WORKS · PRIVATE BY DESIGN · FREE FOR EVERYONE (H19, H20,
+          H21, kept by the owner's marks): one closing band, three columns at
+          md+, under the page's last 3px ink rule. Each keeps its own
+          <section>. §6 rules unchanged for the support half: gated on the one
+          DONATE_URL constant, a link out only, never a payment field here,
+          and the not-tax-deductible line is the required truthful framing. */}
+      <div className="mx-auto max-w-5xl px-4 pt-10 pb-8 md:pt-16 md:pb-16">
+        <div
+          className={`grid gap-10 border-t-[3px] border-ink pt-6 md:items-start md:gap-12 ${
+            DONATE_URL ? 'md:grid-cols-3' : 'md:grid-cols-2'
+          }`}
+        >
+          <section aria-labelledby="why-title">
+            <h2 id="why-title" className="text-h2 font-extrabold">
               {t('whyTitle')}
-            </h3>
+            </h2>
             <p className="mt-3 max-w-note text-pretty text-ink-2">{t('whyBody')}</p>
             <Link
               href="/why-call"
@@ -1080,34 +809,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               {t('whyCta')}
               <ArrowRight className="h-4 w-4" aria-hidden />
             </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Privacy + support, one closing two-column band (owner direction
-          2026-08-01): the page's terms, side by side under the third 3px ink
-          rule — "Private by design" left, the support ask right — instead of
-          two stacked sections that each ran a half-empty screen. Both
-          headings sit at the same rung (text-h2; privacy dropped from
-          h2-loud) so neither reads subordinate. The columns do not
-          bottom-align and should not: this is ruled paper, not cards. Each
-          half keeps its own <section>, and the privacy guarantees stay a
-          ruled list, which is how a document states terms. (donate.spec.ts
-          checks every DONATE_URL link on the page is a link-out; it no
-          longer pins this band's presence.)
-          §6 rules unchanged: the support half is gated on the same
-          DONATE_URL constant as every donate affordance (setting it back to
-          null darkens all of them at once, and this band quietly becomes the
-          privacy column alone); link-out only, never a payment field here;
-          the not-tax-deductible line is the required truthful framing. Ruled
-          paper, no new ground: this page still changes ground exactly
-          once. */}
-      <div className="mx-auto max-w-5xl px-4 pt-8 pb-8 md:pt-16 md:pb-16">
-        <div
-          className={`grid gap-10 border-t-[3px] border-ink pt-6 ${
-            DONATE_URL ? 'md:grid-cols-2 md:items-start md:gap-12' : ''
-          }`}
-        >
+          </section>
           <section aria-labelledby="privacy-title">
             <h2 id="privacy-title" className="text-h2 font-extrabold">
               {t('privacyTitle')}
@@ -1144,6 +846,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                 className="mt-5 inline-flex min-h-12 items-center gap-2 rounded-control border-2 border-ink px-5 py-3 font-bold text-ink no-underline hover:bg-ink hover:text-paper"
               >
                 {t('supportCta')}
+                <span className="sr-only"> {t('supportOpens')}</span>
                 <ArrowRight className="h-4 w-4" aria-hidden />
               </a>
               <p className="mt-2 max-w-note text-sm text-ink-2">{t('supportNote')}</p>
