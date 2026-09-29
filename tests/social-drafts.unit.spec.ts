@@ -274,9 +274,7 @@ test.describe('rule 9: no other product or organization', () => {
     expectDropped(seeded(seeds().today, (s) => [...s, { k: 'sep', text: ' via a newsroom' }]), 'rule9');
   });
 
-  test('a platform or a domain outside a record quote is dropped', () => {
-    const d = seeded(seeds().card, (s) => s.map((x) => (x.k === 'ai' ? { ...x, text: `${x.text} on Facebook` } : x)));
-    expectDropped(d, 'rule9');
+  test('a web address outside a record quote is dropped', () => {
     const dom = seeded(seeds().card, (s) => s.map((x) => (x.k === 'ai' ? { ...x, text: `${x.text}, per example.com` } : x)));
     expectDropped(dom, 'rule9');
   });
@@ -287,7 +285,7 @@ test.describe('rule 9: no other product or organization', () => {
   });
 
   test('a name inside a record quote is the record\'s and passes', () => {
-    const rc = { ...ROLL_CALL, question: 'On Passage of the Bill (Facebook data act)' };
+    const rc = { ...ROLL_CALL, question: 'On Passage of the Bill (example.com Data Act)' };
     expect(gateDraft(composeRollCall({ rc, date: '2026-09-28', citation: 'H.R. 100' }), ctx)).toBeNull();
   });
 });

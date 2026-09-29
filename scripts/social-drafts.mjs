@@ -84,19 +84,15 @@ export const QUEUE_SCHEMA = 'social-drafts/v1';
  *
  * The first version keeps two variants. `short` counts every character of
  * the link at full length (the strictest reading, so a short draft never
- * relies on a platform shortening its link); `long` does the same.
+ * relies on a platform shortening its link); `long` does the same. Which
+ * platform would take which variant is kept in the private research notes,
+ * not here: this public repo names no other product.
  */
 export const PLATFORM_LIMITS = Object.freeze({
+  verified: false,
   variants: {
     short: { maxChars: 280, linkCounting: 'full length' },
     long: { maxChars: 500, linkCounting: 'full length' },
-  },
-  // Which variant each platform the owner may use would take. UNVERIFIED.
-  platforms: {
-    x: { maxChars: 280, links: 'shortened, counted as a fixed length (unverified)', variant: 'short' },
-    bluesky: { maxChars: 300, links: 'counted as written unless shown as a card (unverified)', variant: 'short' },
-    threads: { maxChars: 500, links: 'counted as written (unverified)', variant: 'long' },
-    mastodon: { maxChars: 500, links: 'counted as a fixed length on most servers (unverified)', variant: 'long' },
   },
 });
 
@@ -146,13 +142,11 @@ const TONE_DENY = [
   /¡/,
 ];
 
-/** Names that may never appear outside a record quote (rule 9). A starting
- *  list, not a complete one: the structural rule (Oravan's words are only
- *  messages, citations, numbers, dates and separators) does the real work. */
-const ORG_DENY = [
-  /(?<!\p{L})(?:twitter|facebook|instagram|tiktok|bluesky|threads|mastodon|reddit|youtube|linkedin|snapchat|whatsapp|telegram|discord|substack)(?!\p{L})/iu,
-  /(?<![\p{L}@/])[a-z0-9-]+\.(?:com|net|io|co|news|tv|app)(?![\p{L}])/iu,
-];
+/** Rule 9 outside a record quote. The structural rule does the real work
+ *  (Oravan's words are only messages, citations, numbers, dates and
+ *  separators); this catches a web address in published text. No product
+ *  name is listed here on purpose: this repo is public and names none. */
+const ORG_DENY = [/(?<![\p{L}@/])[a-z0-9-]+\.(?:com|net|io|co|news|tv|app)(?![\p{L}])/iu];
 
 /* ------------------------------------------------------------------ *
  * Rendering helpers (the page's own formats)
