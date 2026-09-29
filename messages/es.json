@@ -6,8 +6,8 @@
     "nav": {
       "home": "Inicio",
       "bills": "Proyectos de ley",
+      "call": "Llamar",
       "reps": "Mis representantes",
-      "impact": "Mi historial",
       "whyCall": "¿Por qué llamar?",
       "primaryLabel": "Principal",
       "moments": "Grandes preguntas"
@@ -41,8 +41,8 @@
     "navShort": {
       "home": "Inicio",
       "bills": "Proyectos",
+      "call": "Llamar",
       "reps": "Mis reps",
-      "impact": "Historial",
       "moments": "Preguntas"
     },
     "aiMarker": "IA",
@@ -555,6 +555,19 @@
       "center": "centro",
       "right": "derecha"
     }
+  },
+  "call": {
+    "title": "Haz una llamada",
+    "lede": "Elige un proyecto de ley. Te damos un guion que puedes editar y los números.",
+    "metaDescription": "Los proyectos de ley del Congreso que esta semana ameritan una llamada, cada uno con un guion que puedes editar y los números de tus representantes.",
+    "weekTitle": "Esta semana",
+    "aiNote": "Titulares traducidos por IA",
+    "aiHowMade": "Cómo se hace esto",
+    "routingSenate": "Tus senadores son la llamada que cuenta ahora: {names}",
+    "routingHouse": "Tu representante en la Cámara es la llamada que cuenta ahora: {names}",
+    "reachTitle": "A quién vas a llamar",
+    "reachNote": "Sus números están en el panel de llamada de cada proyecto, debajo de tu guion.",
+    "reachFailed": "No pudimos buscar a tus representantes en este momento. El panel de llamada de cada proyecto lo volverá a intentar."
   },
   "why": {
     "title": "Por qué llamar funciona",

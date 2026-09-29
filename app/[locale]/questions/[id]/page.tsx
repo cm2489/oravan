@@ -5,6 +5,8 @@ import { setRequestLocale, getTranslations, getFormatter } from 'next-intl/serve
 import { Link } from '@/i18n/navigation';
 import { settledDecision, statusKeyFor } from '@/lib/journey';
 import { routing } from '@/i18n/routing';
+import { CallTabTarget } from '@/components/CallTabTarget';
+import { questionCallTarget } from '@/lib/call-tab';
 import { MomentQuietNote } from '@/components/MomentQuietNote';
 import { MomentStatusLine } from '@/components/MomentStatusLine';
 import { MomentTimeline, type TimelineVehicle } from '@/components/MomentTimeline';
@@ -287,8 +289,28 @@ export default async function MomentPage({
     };
   }
 
+  // WHERE THE HEADER'S CALL TAB GOES ON THIS PAGE (owner, "nav 1";
+  // lib/call-tab.ts questionCallTarget). The callable vehicles are exactly
+  // the cards below whose button reads "Read + call": the same keys
+  // (nominationCtaKey / billCtaKey) over the same inputs the grid passes, so
+  // the tab and the cards cannot disagree about what is open.
+  const callableHrefs = statuses.flatMap(({ vehicle: v, line }) => {
+    if (vehicleKind(v) === 'nomination') {
+      const nomination = getNomination(v.slug);
+      if (!nomination) return [];
+      const key = nominationCtaKey(nomination, isSettled || line.terminal);
+      return key === 'moments.readCall' ? [vehicleCtaHref(`/nominations/${v.slug}`, key)] : [];
+    }
+    const raw = getBill(v.slug);
+    if (!raw) return [];
+    const key = billCtaKey(isSettled || line.terminal || settledDecision(raw) !== null);
+    return key === 'moments.readCall' ? [vehicleCtaHref(`/bills/${v.slug}`, key)] : [];
+  });
+  const callTabHref = questionCallTarget(callableHrefs, '#vehicles-h');
+
   return (
     <article className={`${WRAP} pt-12 pb-16`}>
+      {callTabHref && <CallTabTarget href={callTabHref} />}
       {/* 1 · Moment header — full width, above the desk. It names the question
              and dates the record; both columns below answer to it. */}
       <p className="flex flex-wrap items-center gap-3 text-sm">

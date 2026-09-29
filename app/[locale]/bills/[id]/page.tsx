@@ -8,6 +8,7 @@ import { ActionPanel } from '@/components/ActionPanel';
 import { BillJourney } from '@/components/BillJourney';
 import { CoverageSection } from '@/components/CoverageSection';
 import { FloatingCallButton } from '@/components/FloatingCallButton';
+import { CallTabTarget } from '@/components/CallTabTarget';
 import { DecodedSections } from '@/components/DecodedSections';
 import { JsonLd } from '@/components/JsonLd';
 import { ReadReceipt } from '@/components/ReadReceipt';
@@ -983,6 +984,13 @@ export default async function BillPage({
           carries the call the rest of the way. Measured, not assumed:
           tests/call-action.spec.ts and tests/bill-call-rail.spec.ts. */}
       {!settled && <FloatingCallButton />}
+
+      {/* Where the header's Call tab goes on this page (owner, "nav 1";
+          lib/call-tab.ts): to this bill's own panel whenever the panel above
+          renders — the same condition, so the tab never points at a panel
+          that is not there. A settled bill declares nothing, and the tab
+          goes to the Call hub. */}
+      {!(settled && settledOutcome) && <CallTabTarget href="#act" />}
     </>
   );
 }
