@@ -38,6 +38,9 @@ const SURFACES = [
   'components/VoteRecord.tsx',
   'components/VoteDelegation.tsx',
   'components/MemberVotes.tsx',
+  // The count by party under each tally (2026-09-29, owner's card l12): the
+  // one place a vote surface names parties, so the one most tempting to tint.
+  'components/PartyTotals.tsx',
 ] as const;
 const VOTE_SURFACES = [
   'components/VoteRecord.tsx',

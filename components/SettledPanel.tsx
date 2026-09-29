@@ -9,6 +9,7 @@ import type { SettledVoteGroup } from '@/lib/settled-votes';
 import type { Legislator } from '@/lib/types';
 import { VacantSeatCard } from './VacantSeatCard';
 import { ZipForm } from './ZipForm';
+import { PartyTotals } from './PartyTotals';
 
 /*
  * THE PANEL WHEN NO DECISION IS LEFT — what stands where the call panel
@@ -270,6 +271,11 @@ export function SettledPanel({
                         )}
                         {g.tally && ` · ${g.tally.yeas}–${g.tally.nays}`}
                       </h4>
+                      {/* The roll call's count by party, as one line of text
+                          (owner's card l12, 2026-09-29). Only for a roll call
+                          the file holds; a voice vote or a vote the file does
+                          not hold has none, and prints nothing here. */}
+                      <PartyTotals totals={g.totalsByParty} muted className="mt-1" />
                       {g.chamber === 'house' && lookup.multiDistrict ? (
                         <p className="mt-1 text-sm text-ink-2">{t('settled.multiDistrict')}</p>
                       ) : members.length === 0 ? (

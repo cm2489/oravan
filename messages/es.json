@@ -1698,5 +1698,15 @@
       "notListed": "No figura en esta votación nominal",
       "multiDistrict": "Tu código postal abarca más de un distrito de la Cámara, así que aquí solo aparecen tus senadores."
     }
+  },
+  "partyTotals": {
+    "D": "{count, plural, one {Demócrata} other {Demócratas}}",
+    "R": "{count, plural, one {Republicano/a} other {Republicanos}}",
+    "I": "{count, plural, one {Independiente} other {Independientes}}",
+    "group": "{party}: {counts}",
+    "yea": "{count} sí",
+    "nay": "{count} no",
+    "present": "{count, plural, one {# presente} other {# presentes}}",
+    "notVoting": "{count, plural, one {# no votó} other {# no votaron}}"
   }
 }

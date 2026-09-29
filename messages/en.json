@@ -1698,5 +1698,15 @@
       "notListed": "Not listed in this roll call",
       "multiDistrict": "Your ZIP spans more than one House district, so only your senators are shown here."
     }
+  },
+  "partyTotals": {
+    "D": "{count, plural, one {Democrat} other {Democrats}}",
+    "R": "{count, plural, one {Republican} other {Republicans}}",
+    "I": "{count, plural, one {Independent} other {Independents}}",
+    "group": "{party} {counts}",
+    "yea": "{count} yes",
+    "nay": "{count} no",
+    "present": "{count} present",
+    "notVoting": "{count} not voting"
   }
 }

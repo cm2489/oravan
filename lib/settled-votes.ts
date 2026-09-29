@@ -1,6 +1,6 @@
 import { recordedTally, statusBasisText } from './floor-text.mjs';
 import type { SettledDecision } from './journey';
-import type { Bill, RollCall, VotePosition } from './types';
+import type { Bill, RollCall, RollCallTotals, VotePosition } from './types';
 
 /*
  * "HOW YOUR MEMBERS VOTED", ONE VOTE AT A TIME — the groups the record-only
@@ -55,6 +55,11 @@ export interface SettledVoteGroup {
   source: 'rollCall' | 'beforeFile' | 'notInFile' | 'voice';
   /** bioguide → position; only when `source` is `rollCall`. */
   positions: Record<string, VotePosition> | null;
+  /** The roll call's own count by party (data/votes.json `totalsByParty`,
+   *  printed as one line of text by components/PartyTotals.tsx); only when
+   *  `source` is `rollCall`. A vote the file does not hold has none to show,
+   *  and the field is left off. */
+  totalsByParty?: Record<string, RollCallTotals>;
   /** The vote the outcome sentence is about. */
   deciding: boolean;
 }
@@ -97,6 +102,7 @@ function fromRollCall(r: RollCall, deciding: boolean): SettledVoteGroup {
     tally: { yeas: r.totals.yea, nays: r.totals.nay },
     source: 'rollCall',
     positions,
+    totalsByParty: r.totalsByParty,
     deciding,
   };
 }
