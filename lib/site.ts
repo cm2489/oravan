@@ -42,6 +42,33 @@ export const DONATE_URL: string | null = 'https://buy.stripe.com/00w8wIcX74px0CH
 export const BILLING_PORTAL_URL = 'https://billing.stripe.com/p/login/aFa28k5uF4px0CHdZ38k800';
 
 /**
+ * THE ONE GUARD for the partner-embeds pages: /embeds (configurator, preview,
+ * snippet, plans, billing-portal link) and /embeds/terms. Hidden on the
+ * owner's answer of 2026-09-28 (open-questions page, item F, option a):
+ * "Hide the embeds pages and terms until embeds come back. Nothing
+ * half-filled stays public. Embeds come back with filled terms." The terms'
+ * governing-law clause (embedsTerms.lawBody) still reads "[FOUNDER: fill]".
+ *
+ * While false, both pages return notFound() in both locales, and every
+ * surface that pointed at them follows this constant: app/sitemap.ts, the
+ * footer, llms.txt, the /follow embeds section, the /partners button and the
+ * action-panel widget's refusal link (which points at /partners instead).
+ * The widget routes under /embed/* and public/embed.js are NOT gated — they
+ * keep working for any site that already carries them, with rule 12's
+ * promises intact.
+ *
+ * To bring the pages back: fill embedsTerms.lawBody in both languages, then
+ * set this to true. tests/embeds-hidden.unit.spec.ts refuses true while the
+ * placeholder is still there, and tests/plans-claim.unit.spec.ts then asks
+ * for /partners' plans sentence back ("only Free is open").
+ */
+export const EMBEDS_PAGES_PUBLIC: boolean = false;
+
+/** The locale-relative paths EMBEDS_PAGES_PUBLIC hides — empty when public.
+ *  Read by app/sitemap.ts, the footer and tests/routes.ts. */
+export const HIDDEN_PAGES: readonly string[] = EMBEDS_PAGES_PUBLIC ? [] : ['/embeds', '/embeds/terms'];
+
+/**
  * The free "what moved this week" feed's public paths, per locale (S21).
  * Locale-explicit static routes — app/feed/whats-moving.{json,xml} for en,
  * app/es/feed/whats-moving.{json,xml} for es — so these are plain paths

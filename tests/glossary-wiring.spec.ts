@@ -68,6 +68,11 @@ async function expectNoTermInHeadingsOrLinks(page: Page) {
  * "pro forma session" phrase opens the entry that explains why a bill cannot
  * be called up at one. `data-week-note` names which variant rendered, so every
  * other week this skips with the reason; the hook itself is asserted every run.
+ *
+ * A CROWNED WEEK HAS NO NOTE (owner, UX inventory H13 "cut", 2026-09-28): the
+ * green-panel explainer was the note's crowned-week wording, so the note now
+ * renders exactly when the green panel (`[data-crown]`) does not. That pairing
+ * is what is asserted every run.
  */
 for (const [locale, path, messages] of [
   ['en', '/', en],
@@ -75,8 +80,11 @@ for (const [locale, path, messages] of [
 ] as const) {
   test(`${locale}: the recess note on / opens "pro forma session" in place`, async ({ page }) => {
     await page.goto(path);
+    const week = page.locator('[data-front-door="week"]');
+    const crowned = (await week.locator('[data-crown]').count()) > 0;
     const note = page.locator('[data-week-note]');
-    await expect(note, 'the week note carries its data-week-note hook').toHaveCount(1);
+    await expect(note, 'a week note exactly when there is no green panel').toHaveCount(crowned ? 0 : 1);
+    test.skip(crowned, 'a crowned week in the committed floor data — no week note, so no pro forma sentence');
     const variant = await note.getAttribute('data-week-note');
     expect(['recess', 'standard'], `unknown data-week-note value: ${variant}`).toContain(variant);
     test.skip(

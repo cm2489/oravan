@@ -5,6 +5,12 @@ import Image from 'next/image';
 import { useLocale, useTranslations } from 'next-intl';
 
 /*
+ * NOT MOUNTED since 2026-09-28 (owner, UX inventory H18 "cut": "Let's keep it
+ * off for now until UI/UX is finalized and then we can talk about adding back
+ * in and where"). The homepage dropped it; this file, its home.screencast* and
+ * home.demoNote* strings and its public/walkthrough/ frames are kept so it can
+ * return with one import. Where it goes back is the owner's call.
+ *
  * THE SCREENCAST WALKTHROUGH — "watch the whole thing", owner pick 2A
  * (2026-08-01, round 3). A video-shaped player whose frames are REAL
  * captures of the real product (public/walkthrough/{locale}/step-N.png,

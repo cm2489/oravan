@@ -14,6 +14,7 @@ import {
   type ResolvedEmbedTheme,
 } from '@/lib/embed-theme';
 import { resolveTenantAccess } from '@/lib/tenancy';
+import { EMBEDS_PAGES_PUBLIC } from '@/lib/site';
 import { ActionPanelWidget, type ActionPanelBillData } from '@/components/embed/ActionPanelWidget';
 import { EmbedThemeStyle } from '@/components/embed/EmbedThemeStyle';
 
@@ -88,7 +89,16 @@ export default async function ActionPanelEmbedPage({
         ) : (
           <p className="re-note" role="alert">
             {t.embed.actionPanelUnauthorizedTitle}{' '}
-            <a className="re-link" href="/embeds" target="_blank" rel="noopener noreferrer">
+            {/* /embeds is hidden until embeds come back (lib/site.ts
+                EMBEDS_PAGES_PUBLIC, 2026-09-28); until then the plans
+                sentence lives on /partners, so the link goes there rather
+                than to a 404. */}
+            <a
+              className="re-link"
+              href={EMBEDS_PAGES_PUBLIC ? '/embeds' : '/partners'}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               {t.embed.actionPanelUnauthorizedLink} ↗
             </a>
           </p>

@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { hreflangAlternates } from '@/lib/hreflang';
+import { EMBEDS_PAGES_PUBLIC } from '@/lib/site';
 
 /*
  * S21 — the embeds Terms of Service (embeds spec §6: "ToS/AUP"). A separate
@@ -32,12 +34,18 @@ import { hreflangAlternates } from '@/lib/hreflang';
  * TenantRecord this sprint (YAGNI) — lib/tenancy.ts's tosAcceptedAt (S18/
  * S19, adversarially hardened) stays untouched. Re-acceptance tracking is a
  * future problem only if this document is later materially revised.
+ *
+ * HIDDEN since 2026-09-28 (owner, open-questions F: "Embeds come back with
+ * filled terms"): both functions below return notFound() while lib/site.ts's
+ * EMBEDS_PAGES_PUBLIC is false, and tests/embeds-hidden.unit.spec.ts keeps it
+ * false until the [FOUNDER: fill] placeholder is gone in both languages.
  */
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
+  if (!EMBEDS_PAGES_PUBLIC) notFound();
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'embedsTerms' });
   return { title: t('title'), alternates: hreflangAlternates(locale, '/embeds/terms') };
@@ -64,6 +72,7 @@ const SECTIONS_AFTER_PROHIBITED = [
 export default async function EmbedsTermsPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
+  if (!EMBEDS_PAGES_PUBLIC) notFound();
   const t = await getTranslations('embedsTerms');
 
   return (

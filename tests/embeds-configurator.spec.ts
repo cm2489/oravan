@@ -1,7 +1,13 @@
 import { expect, test, type Page } from '@playwright/test';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
+import { EMBEDS_PAGES_PUBLIC } from '../lib/site';
 import { decodedBill, decodedBillSlug } from './corpus-samples';
+
+// Hidden until embeds come back (lib/site.ts EMBEDS_PAGES_PUBLIC). Every test
+// below needs the page, so the whole file skips while it 404s, and runs again
+// unchanged the moment the constant flips.
+test.skip(!EMBEDS_PAGES_PUBLIC, 'The /embeds pages are hidden until embeds come back (owner, 2026-09-28; PR #353). tests/embeds-hidden.spec.ts asserts their 404; set lib/site.ts EMBEDS_PAGES_PUBLIC to true to run this again.');
 
 /**
  * Every test that DRIVES a control must wait for React to attach first: a
