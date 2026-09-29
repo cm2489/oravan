@@ -6,6 +6,7 @@
  */
 import Anthropic from '@anthropic-ai/sdk';
 import { readFileSync, writeFileSync } from 'node:fs';
+import { PRESIDENT_STYLE_RULE, presidentStyle } from '../lib/president-style.mjs';
 
 const anthropic = new Anthropic({ maxRetries: 8 });
 const MODEL = 'claude-sonnet-5-5';
@@ -42,6 +43,7 @@ Rules:
 - Each chip: a standalone fact fragment, max 45 characters, sentence case, no ending period.
 - Use ONLY facts in the given text. Nonpartisan, neutral.
 - Same number of chips in both languages, same order.
+${PRESIDENT_STYLE_RULE}
 
 Output exactly two lines:
 [EN] chip | chip | chip
@@ -51,8 +53,10 @@ Output exactly two lines:
   const enLine = text.match(/\[EN\](.*)/)?.[1];
   const esLine = text.match(/\[ES\](.*)/)?.[1];
   if (!enLine || !esLine) throw new Error('missing lines');
-  const enChips = parseChips(enLine);
-  const esChips = parseChips(esLine);
+  // "The president" (docs/copy-style.md), chip by chip, before the length check.
+  const styled = (line, lang) => line.split('|').map((c) => presidentStyle(c.trim(), lang)).join(' | ');
+  const enChips = parseChips(styled(enLine, 'en'));
+  const esChips = parseChips(styled(esLine, 'es'));
   if (enChips.length !== esChips.length) throw new Error('chip count mismatch');
   return { enChips, esChips };
 }
