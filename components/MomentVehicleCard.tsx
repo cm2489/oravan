@@ -4,6 +4,7 @@ import { useTranslations, useFormatter } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { CALL_BUTTON } from '@/components/call-button';
 import { Chip } from '@/components/system';
+import { isInPageTarget } from '@/lib/call-tab';
 import type { BillStatus, StatusLabelKey } from '@/lib/types';
 import { isSignalFresh } from '@/lib/signal-window';
 import type { StatusLine } from '@/lib/moment-status.mjs';
@@ -63,6 +64,8 @@ export function MomentVehicleCard({
   calendarLabel,
   statusLine,
   explainer,
+  tag,
+  ctaContext,
 }: {
   slug: string;
   identifier: string;
@@ -84,9 +87,11 @@ export function MomentVehicleCard({
   ctaLabel: string;
   /** Where the green button lands. The question page passes
    *  lib/moments-ui.ts `vehicleCtaHref`, which sends "Read + call" straight to
-   *  the call panel (`#act`, SY-10) and every other label to the top. Absent
-   *  = the bill page's top, so any other caller renders exactly as before.
-   *  The headline link above is a read link and always lands at the top. */
+   *  the call panel (`#act`, SY-10) and every other label to the top — or,
+   *  on a one-bill question that carries the panel itself, the in-page
+   *  "#act". Absent = the bill page's top, so any other caller renders
+   *  exactly as before. The headline link above is a read link and always
+   *  lands at the top. */
   ctaHref?: string;
   /** "On the floor calendar", already localized. Claims placement, not a
       scheduled vote — the corpus cannot support the latter. */
@@ -101,6 +106,17 @@ export function MomentVehicleCard({
    *  (components/ConcurrentExplainer.tsx), printed right under its status
    *  line. The question page passes it for such a vehicle only. */
   explainer?: ReactNode;
+  /** The chamber the measure started in ("Started in the House"), already
+   *  localized, printed in the meta row after the citation. The question
+   *  page's "Still open" list passes it because that list replaced the
+   *  grouping by chamber (wireframes v2, 2026-09-29), and the owner's
+   *  2026-09-24 line keeps House and Senate movement visible under one
+   *  question. Absent prints nothing. */
+  tag?: string;
+  /** Words only a screen reader hears after the button's label, so several
+   *  "Read + call" buttons on one page each name their bill ("about
+   *  H.Con.Res. 93"). Absent adds nothing. */
+  ctaContext?: string;
 }) {
   const t = useTranslations();
   const format = useFormatter();
@@ -124,6 +140,7 @@ export function MomentVehicleCard({
   const meta: { key: string; node: ReactNode }[] = [
     { key: 'id', node: <span className="tabular-nums normal-case">{identifier}</span> },
   ];
+  if (tag) meta.push({ key: 'tag', node: tag });
   if (!onCalendar && !statusLine) meta.push({ key: 'status', node: t(`bills.status.${statusKey}`) });
   if (coverageCount != null && coverageCount > 0) {
     meta.push({ key: 'coverage', node: t('news.sources', { count: coverageCount }) });
@@ -187,13 +204,26 @@ export function MomentVehicleCard({
         )}
       </div>
       <p className="mt-auto pt-5">
-        <Link
-          href={ctaHref ?? `/bills/${slug}`}
-          className={`inline-flex min-h-12 items-center gap-2 px-5 ${CALL_BUTTON}`}
-        >
-          <PhoneCall className="h-4 w-4" aria-hidden />
-          {ctaLabel}
-        </Link>
+        {/* An in-page anchor (a one-bill question's own panel, "#act") is a
+            plain link the browser follows itself, as the header's Call tab
+            treats one (lib/call-tab.ts isInPageTarget); a route goes through
+            the locale-aware Link. */}
+        {ctaHref && isInPageTarget(ctaHref) ? (
+          <a href={ctaHref} className={`inline-flex min-h-12 items-center gap-2 px-5 ${CALL_BUTTON}`}>
+            <PhoneCall className="h-4 w-4" aria-hidden />
+            {ctaLabel}
+            {ctaContext && <span className="sr-only"> {ctaContext}</span>}
+          </a>
+        ) : (
+          <Link
+            href={ctaHref ?? `/bills/${slug}`}
+            className={`inline-flex min-h-12 items-center gap-2 px-5 ${CALL_BUTTON}`}
+          >
+            <PhoneCall className="h-4 w-4" aria-hidden />
+            {ctaLabel}
+            {ctaContext && <span className="sr-only"> {ctaContext}</span>}
+          </Link>
+        )}
       </p>
     </article>
   );

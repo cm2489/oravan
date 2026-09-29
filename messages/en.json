@@ -272,6 +272,13 @@
       "signed": "Signed into law",
       "vetoed": "Vetoed"
     },
+    "statusWord": {
+      "open": "Open",
+      "law": "Law",
+      "agreed": "Agreed to",
+      "rejected": "Rejected",
+      "vetoed": "Vetoed"
+    },
     "decodedPending": "We're still translating this one into plain language.",
     "updated": "Last action {date}",
     "showAll": "Show all {count}",
@@ -1007,6 +1014,10 @@
     "bothNoteSomeNoCall": "No side is pre-selected. Where a record still has a call to make, the same call flow opens, with support and oppose scripts equally available.",
     "readCall": "Read + call",
     "readBill": "Read the bill",
+    "readCallAbout": "about {citation}",
+    "stillOpenHeading": "Still open to a call · {count}",
+    "stillOpenRailHeading": "Still open to a call",
+    "settledGroupHeading": "Settled · {count} · kept as the record",
     "partOf": "Part of a bigger question: {name}",
     "whyHeading": "Why this Big Question exists",
     "whyCriteria": "A Big Question opens only when a live, callable bill or Senate nomination meets published criteria: a government scheduling or floor-action signal, or press coverage from outlets across the spectrum, within the last 45 days.",
@@ -1077,7 +1088,7 @@
       "latestAction": "Latest action {date}",
       "recordStepLabel": "The record's latest step, in its own words:",
       "recordStepEmpty": "The record shows no action text yet.",
-      "explainer": "Every bill in this question has reached the end of its path. The cards below say what happened.",
+      "explainer": "Every bill in this question has reached the end of its path. The list below says what happened.",
       "lastReviewed": "Summary updated {date}.",
       "group": {
         "house": "Started in the House",
