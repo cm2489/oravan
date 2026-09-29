@@ -288,6 +288,26 @@ test.describe('/today', () => {
       expect(nav.y).toBeGreaterThanOrEqual(lastSection.y + lastSection.height);
     }
   });
+
+  test('the rail sticks only on a screen tall enough to show all of it', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'the rail is a wide-screen surface');
+    for (const height of [720, 900, 1100]) {
+      await page.setViewportSize({ width: 1280, height });
+      await page.goto('/today');
+      const rail = page.locator('nav[data-days]');
+      const { position, top, railHeight } = await rail.evaluate((el) => ({
+        position: getComputedStyle(el).position,
+        top: parseFloat(getComputedStyle(el).top) || 0,
+        railHeight: el.getBoundingClientRect().height,
+      }));
+      if (position === 'sticky') {
+        // A sticky rail taller than the screen hides its own last rows.
+        expect(top + railHeight, `${height}px`).toBeLessThanOrEqual(height);
+      } else {
+        expect(height, 'short screens scroll the rail with the page').toBeLessThan(800);
+      }
+    }
+  });
 });
 
 /*

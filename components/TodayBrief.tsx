@@ -435,11 +435,16 @@ export async function TodayBrief({ brief, locale }: { brief: Brief; locale: stri
         {/* (e) OTHER DAYS — every dated permalink inside the 14-day window,
             newest first, each with its own counts (lib/today.ts
             `daySummary`: the lengths of the blocks that day's page prints,
-            never a judgment). The brief's own day is the current page. */}
+            never a judgment). The brief's own day is the current page.
+            STICKY ONLY WHERE IT FITS: the rail is fourteen 44px rows plus
+            its heading and link, and a sticky box taller than the screen
+            cuts its own last rows off until the page ends. So it sticks only
+            on a screen at least 50rem (800px) tall; on a shorter one it
+            scrolls with the page (tests/today.spec.ts measures it). */}
         <nav
           aria-labelledby="today-days"
           data-days=""
-          className="mt-12 min-w-0 border-t border-line-strong pt-4 min-[62rem]:sticky min-[62rem]:top-4 min-[62rem]:col-start-2 min-[62rem]:mt-0 min-[62rem]:self-start min-[62rem]:[grid-row:1/span_2]"
+          className="mt-12 min-w-0 border-t border-line-strong pt-4 min-[62rem]:[@media(min-height:50rem)]:sticky min-[62rem]:top-4 min-[62rem]:col-start-2 min-[62rem]:mt-0 min-[62rem]:self-start min-[62rem]:[grid-row:1/span_2]"
         >
           <h2 id="today-days" className="text-h3 font-extrabold text-ink">
             {t('navLabel')}
