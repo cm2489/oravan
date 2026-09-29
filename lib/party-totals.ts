@@ -22,8 +22,13 @@ import type { RollCallTotals, VotePosition } from './types';
  *   - size is a fact of the record, the same rule for every party, and it
  *     follows the chamber: whichever party holds more seats on the day of the
  *     vote leads that vote's line, so a change of majority changes the order
- *     with no code change. It is also the order the Clerk's own party table
- *     uses (majority first).
+ *     with no code change.
+ * The Clerk's own party table is NOT an argument for this rule: it is a fixed
+ * order, Republican, Democratic, Independent, whichever party holds the
+ * majority (checked 2026-09-29 on clerk.house.gov: 2009 roll 100, 2019 roll
+ * 100, 2021 roll 10 and 2022 roll 100, all under a Democratic majority, list
+ * Republican first). It agrees with this rule in the 119th Congress only
+ * because the Republicans are the larger group here.
  * Stated plainly, because it is the obvious objection: in the 119th Congress
  * the Republicans are the larger group on every stored roll call in both
  * chambers (measured 2026-09-29: 314 of 314 House, 280 of 280 Senate), so
