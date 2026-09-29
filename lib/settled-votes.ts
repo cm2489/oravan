@@ -24,6 +24,13 @@ import type { Bill, RollCall, VotePosition } from './types';
  * one. On a law there is no single deciding vote, so each chamber's newest
  * roll call prints, newest first.
  *
+ * On an ADOPTED concurrent resolution (2026-09-29, lib/journey.ts
+ * `settledDecision` 'adopted') the groups are built exactly as on a
+ * rejection: the second chamber's agreement first, the vote that completed
+ * it (H.Con.Res. 86: the Senate's record vote 184, 50–48, 2026-06-23), then
+ * the other chamber's newest roll call on the measure (its House roll 199,
+ * 215–208, 2026-06-03, the only House roll call the file holds on it).
+ *
  * THE DECIDING VOTE is found by the roll number the record's own sentence
  * carries ("… Record Vote Number: 244." in the Senate, "… (Roll no. 19)." in
  * the House) and the action's date, so a second roll call on the same day is
@@ -124,6 +131,7 @@ export function settledVoteGroups(
     return groups;
   }
 
+  // A rejection or an adoption: the vote the outcome sentence is about first.
   const chamber = settled.chamber;
   const record = statusBasisText(bill) ?? '';
   const date = settledDecisionDate(bill);

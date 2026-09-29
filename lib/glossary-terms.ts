@@ -412,7 +412,14 @@ export const GLOSSARY_ENTRIES = [
   {
     id: 'concurrent-resolution',
     category: 'lawmaking',
-    source: 'https://www.senate.gov/about/research-tools/glossary.htm#concurrent_resolution',
+    // The Senate's "Types of Legislation" page, not its glossary anchor
+    // (#concurrent_resolution): the definition says a concurrent resolution
+    // states a position both chambers share or handles their own business,
+    // and only this page says both in so many words — "to make or amend
+    // rules that apply to both houses" and "to express the sentiments of both
+    // of the houses". Both pages say it does not go to the president and has
+    // no force of law. Read 2026-09-29.
+    source: 'https://www.senate.gov/legislative/common/briefing/leg_laws_acts.htm#3',
     match: { en: ['concurrent resolution'], es: ['resolución concurrente', 'resoluciones concurrentes'] },
   },
   {

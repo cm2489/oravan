@@ -171,7 +171,7 @@ export function getTeasers(locale = 'en'): FeedTeaser[] {
        * `just_passed` are ink labels on a listing. Neither may light amber —
        * amber is one dated floor fact that is still AHEAD. */
       annotation: rung.annotation,
-      statusKey: statusKeyFor(b.status, b.last_action_text, b.last_action_date),
+      statusKey: statusKeyFor(b),
       lastActionDate: b.last_action_date,
     };
   });
@@ -316,7 +316,7 @@ export function getNewsBills(locale = 'en', n = 6, now: number = Date.now()): Ne
       title: b.short_title ?? b.title,
       status: b.status,
       tags: b.issue_tags ?? [],
-      statusKey: statusKeyFor(b.status, b.last_action_text, b.last_action_date),
+      statusKey: statusKeyFor(b),
       lastActionDate: b.last_action_date,
       ...extra,
     };

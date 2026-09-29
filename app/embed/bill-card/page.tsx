@@ -84,7 +84,7 @@ export default async function BillCardEmbedPage({
         // placement claim over an activity-only record either — nor, since N3
         // (2026-08-11), the present-tense placement claim over a placement the
         // record has shown nothing about in months.
-        statusKey: statusKeyFor(bill.status, bill.last_action_text, bill.last_action_date),
+        statusKey: statusKeyFor(bill),
         // N4: THE RECORD DATE. This card was the one surface named in
         // statusKeyFor's old header as printing a status label with no date
         // beside it — its BillCardData did not even carry one — and that gap

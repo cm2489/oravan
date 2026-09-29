@@ -229,6 +229,8 @@
       "floor_vote_stale": "Placed on the calendar",
       "floor_activity": "Floor activity",
       "passed_chamber": "Passed one chamber",
+      "passed_both": "Passed both chambers",
+      "adopted": "Adopted by both chambers",
       "conference": "In conference",
       "signed": "Signed into law",
       "vetoed": "Vetoed"
@@ -327,6 +329,7 @@
       "title": "No call to make",
       "law": "This is law.",
       "rejected": "The {chamber, select, House {House} Senate {Senate} other {Senate}} rejected it{tally, select, none {{hasDate, select, yes { on {date}} other {}}} other {, {yeas}–{nays}{hasDate, select, yes {, on {date}} other {}}}}.",
+      "adopted": "Both chambers agreed to it in the same form{hasDate, select, yes {, the second on {date}} other {}}.",
       "needZip": "Add your ZIP code to see how your members voted.",
       "membersHeading": "How your members voted",
       "voteIn": "{chamber, select, house {House vote} other {Senate vote}}",
@@ -338,6 +341,13 @@
       "noMember": "{chamber, select, house {No House member is listed for your ZIP.} other {No senators are listed for your ZIP.}}",
       "multiDistrict": "Your ZIP spans more than one House district, so this can't say which House member is yours.",
       "noRollCalls": "Oravan's roll-call record, which begins {floor}, holds no recorded vote on this bill."
+    },
+    "concurrent": {
+      "general": "A <term>concurrent resolution</term> states where both chambers stand. It isn't a law and doesn't go to the president, so it doesn't bind the president the way a law does.",
+      "bindsQuestion": "Does this bind the president?",
+      "warPowers": "This one invokes section 5(c) of the War Powers Resolution, a law that says the president shall remove U.S. forces from hostilities Congress has not authorized if Congress so directs by concurrent resolution. In 1983, in INS v. Chadha, the Supreme Court held that Congress acts with the force of law only through a measure passed by both chambers and presented to the president. A concurrent resolution is never presented to the president, so the Congressional Research Service calls section 5(c) <quote>constitutionally suspect</quote>.",
+      "crsSource": "Source: Congressional Research Service, <title>The War Powers Resolution: Concepts and Practice</title> ({report}, March 2019)",
+      "aiNote": "Explanation drafted by AI from official sources"
     },
     "liveSenateFloor": "This bill is in the Senate's hands right now — your senators are the live call.",
     "liveHouseFloor": "This bill is in the House's hands right now — your House member is the live call.",
@@ -411,6 +421,7 @@
       "nowPassedBackStale": "the {other, select, House {House} Senate {Senate} other {Senate}} passed it with changes, and the official record shows nothing new since.",
       "nowPassedBoth": "both chambers have passed it. It goes to the president next.",
       "nowPassedSecond": "both chambers have passed it — the official record doesn't say yet whether the two versions match.",
+      "nowAdoptedBoth": "both chambers have agreed to it in the same form. This kind of resolution does not go to the president, so its path ends here.",
       "nowConference": "both chambers are reconciling their versions.",
       "nowSigned": "the president signed it. It's law.",
       "nowVetoed": "the president vetoed it. Congress can override with two-thirds of both chambers.",
@@ -1323,7 +1334,7 @@
       },
       "concurrent-resolution": {
         "term": "Concurrent resolution",
-        "body": "A concurrent resolution is passed by both chambers but is not sent to the president and does not have the force of law. Congress uses it for matters that concern both chambers, such as the congressional budget resolution."
+        "body": "A concurrent resolution is a measure both chambers pass in the same form to state a position they share or to handle their own business, such as setting Congress’s budget goals or the time it adjourns. It is not sent to the president and does not have the force of law."
       },
       "simple-resolution": {
         "term": "Simple resolution",

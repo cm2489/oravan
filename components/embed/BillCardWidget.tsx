@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useEmbedDicts } from '@/components/embed/EmbedDictsProvider';
 import type { EmbedLocale } from '@/components/embed/embed-dicts';
 import { SITE_ORIGIN } from '@/lib/site';
-import type { BillStatus } from '@/lib/types';
+import type { BillStatus, StatusLabelKey } from '@/lib/types';
 
 /*
  * The bill-card embed widget (S14): one bill, by slug, read-only. Same
@@ -30,7 +30,7 @@ export interface BillCardData {
   status: BillStatus;
   /** Label-gated key (lib/journey statusKeyFor) — see the page's comment.
    *  `floor_vote_stale` is the aged-placement key (N3, 2026-08-11). */
-  statusKey: BillStatus | 'floor_activity' | 'floor_vote_stale';
+  statusKey: StatusLabelKey;
   /** The bill's own last-action date (`YYYY-MM-DD`), printed with the status
    *  line. The record's clock, never the sync's — see the render below. */
   lastActionDate: string | null;
