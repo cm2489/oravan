@@ -2,6 +2,7 @@ import { ExternalLink } from 'lucide-react';
 import { getFormatter, getLocale, getTranslations } from 'next-intl/server';
 import { GlossaryTerm } from '@/components/GlossaryTerm';
 import { glossify } from '@/components/glossary-tags';
+import { PartyTotals } from '@/components/PartyTotals';
 import type { GlossaryTermId } from '@/lib/glossary';
 import { glossaryLocale } from '@/lib/glossary-match';
 import type { RollCall, VotePosition } from '@/lib/types';
@@ -15,11 +16,18 @@ import { VoteMembers } from './VoteMembers';
  *
  * WHAT IT WILL NOT SAY. A member's position is one of the record's four words
  * — Yea / Nay / Present / Not voting (votes.position.*) — and nothing else: no
- * "sided with", no "for/against the bill", no party, no party color, no green
- * for Yea or alert-red for Nay. Every mark here is ink. The question and the
+ * "sided with", no "for/against the bill", no party beside a member, no party
+ * color, no green for Yea or alert-red for Nay. Every mark here is ink. The question and the
  * result are the record's own English, verbatim in BOTH locales under an
  * "as recorded" label: a translated question is a paraphrase of an official
  * record, and the record is English.
+ *
+ * THE COUNT BY PARTY (2026-09-29, the owner's card l12: "Show me these. I
+ * don't see them."). Under each tally, one line of text gives the record's own
+ * count party by party (components/PartyTotals.tsx, from the roll call's
+ * `totalsByParty`): largest group first, ink like the tally above it, no
+ * colour, no member named. It is a count of the roll call, never a label on a
+ * person, so the member list below still carries no party.
  *
  * ABSENCE. A bill with no stored roll call renders NOTHING — no heading, no
  * "no votes yet". The coverage line says what window the file covers, so a
@@ -167,6 +175,8 @@ export async function VoteRecord({
             );
           })}
         </dl>
+
+        <PartyTotals totals={r.totalsByParty} className="mt-2" />
 
         {r.tieBreaker && (
           <p className="mt-2 text-sm text-ink">
