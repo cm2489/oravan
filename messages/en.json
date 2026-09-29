@@ -344,7 +344,8 @@
     },
     "concurrent": {
       "general": "A <term>concurrent resolution</term> states where both chambers stand. It isn't a law and doesn't go to the president, so it doesn't bind the president the way a law does.",
-      "warPowers": "This one invokes section 5(c) of the War Powers Resolution, and the Congressional Research Service calls that section <quote>constitutionally suspect</quote> because in INS v. Chadha (1983) the Supreme Court held that Congress acts with the force of law only through a measure presented to the president.",
+      "bindsQuestion": "Does this bind the president?",
+      "warPowers": "This one invokes section 5(c) of the War Powers Resolution, a law that says the president shall remove U.S. forces from hostilities Congress has not authorized if Congress so directs by concurrent resolution. In 1983, in INS v. Chadha, the Supreme Court held that Congress acts with the force of law only through a measure passed by both chambers and presented to the president. A concurrent resolution is never presented to the president, so the Congressional Research Service calls section 5(c) <quote>constitutionally suspect</quote>.",
       "crsSource": "Source: Congressional Research Service, <title>The War Powers Resolution: Concepts and Practice</title> ({report}, March 2019)",
       "aiNote": "Explanation drafted by AI from official sources"
     },

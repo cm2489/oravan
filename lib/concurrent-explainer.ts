@@ -23,9 +23,10 @@ import type { Bill } from './types';
  *      force of law").
  *   2. THE WAR POWERS ROUTE, ONLY WHEN THE RECORD SAYS SO. When the measure's
  *      OFFICIAL TITLE invokes section 5(c) of the War Powers Resolution
- *      (50 U.S.C. 1544(c)), one sentence says the Congressional Research
- *      Service calls that route "constitutionally suspect" since the Supreme
- *      Court's 1983 decision in INS v. Chadha, and links the CRS report.
+ *      (50 U.S.C. 1544(c)), a disclosure, "Does this bind the president?",
+ *      says what section 5(c) provides, what the Supreme Court held in 1983
+ *      in INS v. Chadha, and that the Congressional Research Service calls
+ *      section 5(c) "constitutionally suspect", and links the CRS report.
  *      H.Con.Res. 86's title reads "Directing the President, pursuant to
  *      section 5(c) of the War Powers Resolution, to remove United States
  *      Armed Forces from hostilities with Iran."; its enrolled text on

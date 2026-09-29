@@ -12,12 +12,14 @@ import { MEMBER_VOTES_MAX_BILLS, memberVotesByBill, votesForBill } from '../lib/
  * didn't stop the president. It's now September and this passed in June.
  * This needs more explaination because it's confusing.").
  *
- * VERSION 1: everything visible. Wherever H.Con.Res. 86's adopted line is
- * printed — the record-only panel on its bill page, its card on
- * /questions/iran-war-powers, a member page's "Right now:" line — the
- * explainer follows it: the general sentence with "concurrent resolution"
- * opening its glossary entry in place, the War Powers sentence quoting the
- * Congressional Research Service, the report linked, and the AI label. The
+ * VERSION 2: the general sentence visible, the War Powers detail folded.
+ * Wherever H.Con.Res. 86's adopted line is printed — the record-only panel on
+ * its bill page, its card on /questions/iran-war-powers, a member page's
+ * "Right now:" line — the explainer follows it: the general sentence with
+ * "concurrent resolution" opening its glossary entry in place, then a
+ * disclosure, "Does this bind the president?", holding the War Powers detail
+ * quoting the Congressional Research Service and the report linked, and the
+ * AI label. The
  * rejected concurrent resolutions (H.Con.Res. 89 and 38) carry the term, so
  * a reader learns what kind of measure failed, and no explainer.
  *
@@ -46,7 +48,7 @@ async function openTerm(page: Page, term: Locator) {
   return page.locator(`[id="${await term.getAttribute('aria-controls')}"]`);
 }
 
-/** Everything version 1 promises inside one explainer. */
+/** Everything version 2 promises inside one explainer. */
 async function expectFullExplainer(page: Page, explainer: Locator, l: (typeof LOCALES)[number]) {
   await expect(explainer).toHaveAttribute('data-concurrent-explainer', 'war-powers-5c');
   await expect(explainer).toBeVisible();
@@ -61,10 +63,24 @@ async function expectFullExplainer(page: Page, explainer: Locator, l: (typeof LO
   await expect(box).toHaveAttribute('lang', l.locale);
   await page.keyboard.press('Escape');
 
-  // (2) The War Powers sentence, visible, the CRS's two words quoted in English.
+  // (2) Version 2: the War Powers detail is folded under a neutral question,
+  // closed on arrival, and opens from its 44px summary.
+  const disclosure = explainer.locator('details[data-concurrent-disclosure]');
+  await expect(disclosure).toHaveCount(1);
+  await expect(disclosure).not.toHaveAttribute('open');
+  const summary = disclosure.locator('summary');
+  // The +/– box is aria-hidden: the summary's name is the question alone.
+  await expect(summary).toHaveAccessibleName(l.m.bill.concurrent.bindsQuestion);
+  await expect(summary).toContainText(l.m.bill.concurrent.bindsQuestion);
   const warPowers = explainer.locator('[data-concurrent-war-powers]');
+  await expect(warPowers).toBeHidden();
+  const summaryBox = await summary.boundingBox();
+  expect(summaryBox!.height).toBeGreaterThanOrEqual(44);
+  await summary.click();
+  await expect(disclosure).toHaveAttribute('open', '');
+  // …holding the War Powers detail, the CRS's two words quoted in English.
   await expect(warPowers).toBeVisible();
-  await expect(warPowers).toContainText('INS v. Chadha (1983)');
+  await expect(warPowers).toContainText('INS v. Chadha');
   const quote = warPowers.locator('q[lang="en"]');
   await expect(quote).toHaveText('constitutionally suspect');
 

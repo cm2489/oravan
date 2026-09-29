@@ -344,7 +344,8 @@
     },
     "concurrent": {
       "general": "Una <term>resolución concurrente</term> expresa la posición de ambas cámaras. No es una ley y no pasa al presidente, así que no obliga al presidente como lo haría una ley.",
-      "warPowers": "Esta invoca la sección 5(c) de la Resolución de Poderes de Guerra, y el Servicio de Investigación del Congreso califica esa sección de <quote>constitutionally suspect</quote> (de dudosa constitucionalidad) porque en INS v. Chadha (1983) la Corte Suprema resolvió que el Congreso solo actúa con fuerza de ley mediante una medida presentada al presidente.",
+      "bindsQuestion": "¿Obliga esto al presidente?",
+      "warPowers": "Esta invoca la sección 5(c) de la Resolución de Poderes de Guerra, una ley que dice que el presidente retirará a las fuerzas de EE. UU. de hostilidades que el Congreso no ha autorizado si el Congreso así lo ordena mediante una resolución concurrente. En 1983, en INS v. Chadha, la Corte Suprema resolvió que el Congreso solo actúa con fuerza de ley mediante una medida aprobada por ambas cámaras y presentada al presidente. Una resolución concurrente nunca se presenta al presidente, por eso el Servicio de Investigación del Congreso califica la sección 5(c) de <quote>constitutionally suspect</quote> (de dudosa constitucionalidad).",
       "crsSource": "Fuente: Servicio de Investigación del Congreso, <title>The War Powers Resolution: Concepts and Practice</title> ({report}, marzo de 2019; en inglés)",
       "aiNote": "Explicación redactada por IA a partir de fuentes oficiales"
     },
