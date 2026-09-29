@@ -319,6 +319,11 @@
     "refineDistrictCta": "Confirma cuál es tu representante en la Cámara",
     "alsoYours": "También te representa",
     "settled": {
+      "finderShow": "Ver la votación de la Cámara para el código postal {zip}",
+      "finderSplit": "Tu código postal está dividido entre {count, plural, =2 {dos} other {#}} distritos de la Cámara. {vacant, select, yes {Uno de estos escaños es el tuyo.} other {Una de estas personas es tu representante.}}",
+      "finderDistrict": "{district, select, 0 {{state}, distrito único} other {{state}-{district}}}",
+      "finderVacant": "Escaño vacante",
+      "finderRefine": "Encuentra tu distrito exacto con tu dirección",
       "title": "No hay llamada que hacer",
       "law": "Esto ya es ley.",
       "rejected": "{chamber, select, House {La Cámara} Senate {El Senado} other {El Senado}} lo rechazó{tally, select, none {{hasDate, select, yes { el {date}} other {}}} other {, por {yeas} votos a favor y {nays} en contra{hasDate, select, yes {, el {date}} other {}}}}.",
