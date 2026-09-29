@@ -14,7 +14,9 @@
  *
  *   an open bill page          → its own call panel (#act)
  *   a nomination with a script → its own call panel (#act)
- *   a Big Question             → see app/[locale]/questions/[id]/page.tsx
+ *   a Big Question             → `questionCallTarget` below: its own panel
+ *                                (#act) with one open bill, its "Still open"
+ *                                list (#still-open) with several
  *   anything else              → /call
  *
  * This module holds one string in memory, in the browser only. Nothing is
@@ -69,24 +71,48 @@ export function callTabServerSnapshot(): string | null {
   return null;
 }
 
+/** The call panel's own heading id (components/ActionPanel.tsx), on a bill
+ *  page and on a Big Question that carries the panel itself. */
+export const CALL_PANEL_ANCHOR = '#act';
+
+/** The id of a Big Question's "Still open" list heading. Stable: the Call
+ *  tab, and anything else that wants the list, points at it. */
+export const STILL_OPEN_ID = 'still-open';
+export const STILL_OPEN_ANCHOR = `#${STILL_OPEN_ID}`;
+
+/** The kind of each callable vehicle — the cards whose button reads
+ *  "Read + call" (app/[locale]/questions/[id]). The union is restated rather
+ *  than imported, because this module ships to the browser (the header reads
+ *  it) and lib/moments.ts carries the whole corpus. */
+type CallableKind = 'bill' | 'nomination';
+
 /**
- * A Big Question's Call target, from the hrefs of its callable vehicles — the
- * cards whose button reads "Read + call" (app/[locale]/questions/[id]).
- *
- *   exactly one → that vehicle's own call panel. The wireframe puts that panel
- *                 ON the question page (Q6 b); until that is built, the panel
- *                 is on the bill's page, which is where the card's own
- *                 "Read + call" already goes.
- *   several     → the question's list of them (`listAnchor`), because each
- *                 card lands on its own bill's panel and the question's
- *                 context holds (the index's accepted inference). The
- *                 wireframe's separate "Still open" list is not built yet, so
- *                 the anchor is the whole vehicles section.
- *   none        → null: nothing to call here, so the Call hub.
+ * DOES THIS BIG QUESTION CARRY THE CALL PANEL ITSELF? (wireframes v2,
+ * 2026-09-29, UX question Q6 answered "b".) Exactly when it runs through one
+ * vehicle still open to a decision and that vehicle is a bill: the bill page's
+ * own panel then sits on the question page (lib/bill-call-panel.ts). A lone
+ * open nomination keeps its card, which lands on the nomination page's own
+ * panel; the wireframes draw no nomination panel on a question page.
  */
-export function questionCallTarget(callableHrefs: readonly string[], listAnchor: string): string | null {
-  if (callableHrefs.length === 1) return callableHrefs[0];
-  if (callableHrefs.length > 1) return listAnchor;
+export function questionHasPanel(callableKinds: readonly CallableKind[]): boolean {
+  return callableKinds.length === 1 && callableKinds[0] === 'bill';
+}
+
+/**
+ * A Big Question's Call target (the index's "Where the Call tab goes" table,
+ * v2, 2026-09-29):
+ *
+ *   one open bill       → the in-page call panel, `#act` (Q6 b);
+ *   several open, or one open nomination
+ *                       → the question's "Still open" list, `#still-open`,
+ *                         because each card there lands on its own vehicle's
+ *                         panel and the question's context holds (v1's
+ *                         inference, accepted by Claude's ruling 8);
+ *   nothing open        → null: nothing to call here, so the Call hub.
+ */
+export function questionCallTarget(callableKinds: readonly CallableKind[]): string | null {
+  if (questionHasPanel(callableKinds)) return CALL_PANEL_ANCHOR;
+  if (callableKinds.length > 0) return STILL_OPEN_ANCHOR;
   return null;
 }
 

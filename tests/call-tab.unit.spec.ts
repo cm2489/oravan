@@ -5,11 +5,15 @@ import en from '../messages/en.json';
 import es from '../messages/es.json';
 import {
   CALL_HUB_PATH,
+  CALL_PANEL_ANCHOR,
+  STILL_OPEN_ANCHOR,
+  STILL_OPEN_ID,
   callTabServerSnapshot,
   callTabSnapshot,
   claimCallTab,
   isInPageTarget,
   questionCallTarget,
+  questionHasPanel,
   releaseCallTab,
   subscribeCallTab,
 } from '../lib/call-tab';
@@ -64,21 +68,41 @@ test.describe('the declared target (lib/call-tab.ts)', () => {
 
   test('in-page anchors are told apart from routes', () => {
     expect(isInPageTarget('#act')).toBe(true);
-    expect(isInPageTarget('#vehicles-h')).toBe(true);
+    expect(isInPageTarget('#still-open')).toBe(true);
     expect(isInPageTarget('/call')).toBe(false);
     expect(isInPageTarget('/bills/s-4668-119#act')).toBe(false);
   });
 });
 
+/*
+ * WHERE A BIG QUESTION SENDS THE CALL TAB (wireframes v2, 2026-09-29; the
+ * index's "Where the Call tab goes"): its own call panel when it runs through
+ * one open bill (Q6 b — the panel is on the question page now, not a click
+ * away on the bill's), its "Still open" list when it runs through several
+ * (Claude's ruling 8), and the hub when nothing is open.
+ */
 test.describe('a Big Question picks its Call target from its callable vehicles', () => {
-  test('one open bill → that bill’s own panel', () => {
-    expect(questionCallTarget(['/bills/s-4668-119#act'], '#vehicles-h')).toBe('/bills/s-4668-119#act');
+  test('the anchors are the panel heading and a stable list id', () => {
+    expect(CALL_PANEL_ANCHOR).toBe('#act');
+    expect(STILL_OPEN_ID).toBe('still-open');
+    expect(STILL_OPEN_ANCHOR).toBe('#still-open');
   });
-  test('several open bills → the list on the page', () => {
-    expect(questionCallTarget(['/bills/a#act', '/bills/b#act'], '#vehicles-h')).toBe('#vehicles-h');
+  test('one open bill → the call panel on the question page itself', () => {
+    expect(questionHasPanel(['bill'])).toBe(true);
+    expect(questionCallTarget(['bill'])).toBe('#act');
+  });
+  test('several open → the "Still open" list on the page, never one bill’s panel', () => {
+    expect(questionHasPanel(['bill', 'bill'])).toBe(false);
+    expect(questionCallTarget(['bill', 'bill'])).toBe('#still-open');
+    expect(questionCallTarget(['bill', 'nomination'])).toBe('#still-open');
+  });
+  test('one open nomination → the list: no nomination panel is drawn on a question page', () => {
+    expect(questionHasPanel(['nomination'])).toBe(false);
+    expect(questionCallTarget(['nomination'])).toBe('#still-open');
   });
   test('nothing open → null, and the tab goes to the hub', () => {
-    expect(questionCallTarget([], '#vehicles-h')).toBeNull();
+    expect(questionHasPanel([])).toBe(false);
+    expect(questionCallTarget([])).toBeNull();
   });
 });
 
@@ -128,13 +152,22 @@ test.describe('pages declare the target under the same condition as their panel'
     expect(src).toContain('{!(closed || noScript) && <CallTabTarget href="#act" />}');
   });
 
-  test('question page: reads the cards’ own keys, then questionCallTarget', () => {
+  test('question page: reads the cards’ own keys, then questionCallTarget, under the panel’s own condition', () => {
     const src = read('app/[locale]/questions/[id]/page.tsx');
-    expect(src).toContain("const callTabHref = questionCallTarget(callableHrefs, '#vehicles-h');");
-    expect(src).toContain('nominationCtaKey(nomination, isSettled || line.terminal)');
-    expect(src).toContain('billCtaKey(isSettled || line.terminal || settledDecision(raw) !== null)');
-    // The anchor it points at is the section heading the cards sit under.
-    expect(src).toContain('id="vehicles-h"');
+    // The cards' keys, through the one helper the lists are built from…
+    expect(src).toContain('const vehicles = questionVehicles(moment);');
+    expect(src).toContain('const openVehicles = vehicles.filter((v) => v.open);');
+    const ui = read('lib/moments-ui.ts');
+    expect(ui).toContain('nominationCtaKey(nomination, isSettled || s.line.terminal)');
+    expect(ui).toContain('billCtaKey(isSettled || s.line.terminal || settledDecision(bill) !== null)');
+    // …then the target, never pointing at a panel that did not render…
+    expect(src).toContain(
+      'const callTabHref = questionHasPanel(callableKinds) && !panel ? null : questionCallTarget(callableKinds);'
+    );
+    expect(src).toContain('{panel && (');
+    expect(src).toContain('<ActionPanel {...panel} />');
+    // …and the list anchor is the "Still open" heading's own id.
+    expect(src).toContain('<h3 id={STILL_OPEN_ID}');
   });
 
   test('a member page and the hub itself declare nothing (the table sends both to /call)', () => {

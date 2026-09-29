@@ -520,3 +520,49 @@ export function groupVehicleStatuses(
     items: statuses.filter((s) => s.group === group),
   })).filter((g) => g.items.length > 0);
 }
+
+/* ---------------------------------------------------------------------------
+ * STILL OPEN, OR KEPT AS THE RECORD (wireframes v2, 2026-09-29,
+ * question-single.html and question-multi.html).
+ *
+ * A Big Question's vehicles split in two on its page: the ones still open to
+ * a decision, whose card offers "Read + call", and the ones the record has
+ * settled, which show the record and a way to read it and nothing that dials
+ * (page 1, rule 6). The split is the card's own button key — `billCtaKey` and
+ * `nominationCtaKey` over the same inputs the grid always passed — so the
+ * list a card sits in, the label on its button and the Call tab's target
+ * (lib/call-tab.ts questionCallTarget) are one decision read three ways.
+ * ------------------------------------------------------------------------ */
+
+export interface QuestionVehicle extends VehicleStatus {
+  kind: 'bill' | 'nomination';
+  /** The card's button key: "Read + call" exactly when `open`. */
+  ctaKey: 'moments.readCall' | 'moments.readBill' | 'nominations.readRecord';
+  /** Still open to a decision, so the card offers the call. */
+  open: boolean;
+}
+
+/**
+ * Every RESOLVED vehicle of a question, in authoring order, with its card key.
+ * A settled question is a record in every card it holds, whatever its
+ * vehicles can still do (the rule the grid already followed); an unresolved
+ * slug contributes nothing (vehicleStatuses).
+ */
+export function questionVehicles(
+  moment: { vehicles: MomentVehicle[]; state: string },
+  now: number = Date.now(),
+): QuestionVehicle[] {
+  const isSettled = moment.state === 'settled';
+  return vehicleStatuses(moment.vehicles, now).flatMap((s): QuestionVehicle[] => {
+    if (vehicleKind(s.vehicle) === 'nomination') {
+      const nomination = getNomination(s.vehicle.slug);
+      if (!nomination) return [];
+      const ctaKey = nominationCtaKey(nomination, isSettled || s.line.terminal);
+      return [{ ...s, kind: 'nomination', ctaKey, open: ctaKey === 'moments.readCall' }];
+    }
+    const bill = getBill(s.vehicle.slug);
+    if (!bill) return [];
+    const ctaKey = billCtaKey(isSettled || s.line.terminal || settledDecision(bill) !== null);
+    return [{ ...s, kind: 'bill', ctaKey, open: ctaKey === 'moments.readCall' }];
+  });
+}

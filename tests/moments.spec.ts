@@ -2,7 +2,8 @@ import { expect, test } from '@playwright/test';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
 import { getLiveMoments, getMoments, vehicleKind, type MomentWithState } from '../lib/moments';
-import { momentDek } from '../lib/moments-ui';
+import { momentDek, questionVehicles } from '../lib/moments-ui';
+import { questionHasPanel } from '../lib/call-tab';
 import { getBill, getTeasers } from '../lib/core';
 import { matchesBillQuery, parseBillQuery, teaserSearchDoc } from '../lib/bill-search.mjs';
 import { getNomination } from '../lib/core/nominations';
@@ -130,13 +131,18 @@ test.describe('/questions/[id] detail page', () => {
       // The label names BOTH pieces of model-written text on those cards as of
       // 2026-08-09 — the decoded headline and the role sentence under it — and
       // is therefore NO LONGER gated on a decode existing: the moments gate
-      // requires a non-empty `role` on every vehicle, so every one of these
-      // sections carries AI-drafted prose. Exactly one chip, on every moment.
+      // requires a non-empty `role` on every vehicle, so every CARD carries
+      // AI-drafted prose. Since 2026-09-29 (wireframes v2) a settled bill is a
+      // record row with no AI text, so the chip is there exactly when a card
+      // is: one chip on every moment with an open vehicle (or a nomination
+      // card), none over rows alone.
+      const qv = questionVehicles(m);
+      const anyCard = qv.some((v) => v.open || v.kind === 'nomination');
       await expect(
         page
           .locator('section[aria-labelledby="vehicles-h"]')
           .getByText(en.moments.vehiclesAiNote, { exact: true })
-      ).toHaveCount(1);
+      ).toHaveCount(anyCard ? 1 : 0);
 
       // Evidence: the qualifying-signal type and every clickable ref.
       await expect(page.getByRole('heading', { name: en.moments.whyHeading })).toBeVisible();
@@ -382,10 +388,19 @@ test.describe('Big Question vehicle links (SY-10)', () => {
     { locale: 'es', prefix: '/es', messages: es },
   ] as const) {
     test(`${locale}: "Read + call" opens the bill page at its call panel`, async ({ page }) => {
-      const m = getMoments()[0];
-      test.skip(!m, 'no moments in the corpus');
-      await page.goto(`${prefix}/questions/${m.id}`);
-      const calls = page.getByRole('link', { name: messages.moments.readCall, exact: true });
+      // A question whose calls leave the page: one with several open
+      // vehicles. A one-bill question carries the panel itself (Q6 b,
+      // 2026-09-29), and its card's "Read + call" stays on the page —
+      // tests/question-pages.spec.ts pins that one.
+      const m = getMoments().find((q) => {
+        const open = questionVehicles(q).filter((v) => v.open);
+        return open.length > 0 && !questionHasPanel(open.map((v) => v.kind));
+      });
+      test.skip(!m, 'no question sends its calls to a bill page today');
+      await page.goto(`${prefix}/questions/${m!.id}`);
+      // Each button's name is its label, then (for a screen reader) the bill
+      // it is about: "Read + call about H.Con.Res. 93".
+      const calls = page.getByRole('link', { name: new RegExp(`^${escapeRegex(messages.moments.readCall)}\\b`) });
       test.skip((await calls.count()) === 0, 'no vehicle on this question can take a call today');
       for (const href of await calls.evaluateAll((els) => els.map((e) => e.getAttribute('href')))) {
         expect(href, 'every "Read + call" carries the call anchor').toMatch(/#act$/);
@@ -397,7 +412,7 @@ test.describe('Big Question vehicle links (SY-10)', () => {
       }
       // A record link never jumps to a call.
       for (const href of await page
-        .getByRole('link', { name: messages.moments.readBill, exact: true })
+        .getByRole('link', { name: new RegExp(`^${escapeRegex(messages.moments.readBill)}\\b`) })
         .evaluateAll((els) => els.map((e) => e.getAttribute('href')))) {
         expect(href, '"Read the bill" opens the page top').not.toContain('#');
       }
@@ -435,6 +450,13 @@ test.describe('Big Question cards over a failed procedural vote (pick (a))', () 
         id: m.id,
         procedural: bySlug(slugs, (b) => lastFailedVote(b) !== null),
         finished: bySlug(slugs, (b) => settledDecision(b) !== null),
+        // A one-bill question carries the call panel itself (Q6 b,
+        // 2026-09-29), so its card's "Read + call" is the in-page #act.
+        panelHere: questionHasPanel(
+          questionVehicles(m)
+            .filter((v) => v.open)
+            .map((v) => v.kind)
+        ),
       };
     })
     .filter((q) => q.procedural.length > 0);
@@ -444,13 +466,21 @@ test.describe('Big Question cards over a failed procedural vote (pick (a))', () 
       test.skip(questions.length === 0, 'no live question holds a failed procedural vote today');
       for (const q of questions) {
         await page.goto(`${prefix}/questions/${q.id}`);
-        // A card's button is the only link on the page that carries its
-        // label AND ends at that vehicle's page (the headline link has no
-        // label of that kind), so the pair names one card's button.
+        // Inside the bills section, a card's or a row's button is the only
+        // link that carries its label AND ends at that vehicle's page (the
+        // headline link has no label of that kind), so the pair names one
+        // button. Scoped to the section because the desk's "Still open"
+        // rail repeats each open vehicle's "Read + call" (wireframes v2); the
+        // label is matched as the name's start because each button also
+        // names its bill for a screen reader ("… about S.J.Res. 185").
         const button = (label: string, href: string) =>
-          page.getByRole('link', { name: label, exact: true }).and(page.locator(`a[href$="${href}"]`));
+          page
+            .locator('section[aria-labelledby="vehicles-h"]')
+            .getByRole('link', { name: new RegExp(`^${escapeRegex(label)}\\b`) })
+            .and(page.locator(`a[href$="${href}"]`));
         for (const slug of q.procedural) {
-          await expect(button(messages.moments.readCall, `/bills/${slug}#act`), `${q.id}: ${slug}`).toHaveCount(1);
+          const callHref = q.panelHere ? '#act' : `/bills/${slug}#act`;
+          await expect(button(messages.moments.readCall, callHref), `${q.id}: ${slug}`).toHaveCount(1);
           await expect(button(messages.moments.readBill, `/bills/${slug}`), `${q.id}: ${slug}`).toHaveCount(0);
         }
         for (const slug of q.finished) {

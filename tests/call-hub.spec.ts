@@ -1,11 +1,9 @@
 import { expect, test, type Page } from '@playwright/test';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
-import { getBill } from '../lib/core/bills';
-import { getNomination } from '../lib/core/nominations';
-import { settledDecision } from '../lib/journey';
-import { getMoments, vehicleKind } from '../lib/moments';
-import { billCtaKey, nominationCtaKey, vehicleCtaHref, vehicleStatuses } from '../lib/moments-ui';
+import { questionHasPanel } from '../lib/call-tab';
+import { getMoments } from '../lib/moments';
+import { questionVehicles } from '../lib/moments-ui';
 import { anyTopAt, stableAcross, topActionSlugsAt } from './corpus';
 import { settledBill } from './corpus-fixtures';
 import { callableBillSlug, memberBioguide } from './corpus-samples';
@@ -19,8 +17,9 @@ import { mockScriptApi, seedZip } from './helpers';
  *   - the bar: five tabs on a phone, four links and the switch on a desktop,
  *     in the ruled order, with Today and the record off both;
  *   - where the Call tab goes: the hub from general, settled-bill and member
- *     pages; the page's own panel on an open bill; a Big Question's one open
- *     bill, or its list when it has several;
+ *     pages; the page's own panel on an open bill; the call panel a Big
+ *     Question carries for its one open bill, or its "Still open" list when
+ *     it has several;
  *   - the hub: this week's callable bills in the act-now pool's own order,
  *     each with "Read + call" onto its panel; the quiet-week words when the
  *     pool is empty; and who you'll reach only once a ZIP is saved;
@@ -48,29 +47,20 @@ const primaryNav = (page: Page, messages: typeof en | typeof es) =>
 const callTab = (page: Page, messages: typeof en | typeof es) =>
   primaryNav(page, messages).locator('[data-call-tab]');
 
-/** A Big Question's callable vehicles, read with the cards' own keys — the
- *  same derivation app/[locale]/questions/[id]/page.tsx runs. */
-function callableHrefs(momentId: string): string[] {
+/** A Big Question's callable vehicles' kinds, read with the cards' own keys
+ *  through the helper app/[locale]/questions/[id]/page.tsx builds its lists
+ *  from (lib/moments-ui.ts questionVehicles). */
+function callableKinds(momentId: string): ('bill' | 'nomination')[] {
   const m = getMoments().find((x) => x.id === momentId)!;
-  const isSettled = m.state === 'settled';
-  return vehicleStatuses(m.vehicles).flatMap(({ vehicle: v, line }) => {
-    if (vehicleKind(v) === 'nomination') {
-      const n = getNomination(v.slug);
-      if (!n) return [];
-      const key = nominationCtaKey(n, isSettled || line.terminal);
-      return key === 'moments.readCall' ? [vehicleCtaHref(`/nominations/${v.slug}`, key)] : [];
-    }
-    const raw = getBill(v.slug);
-    if (!raw) return [];
-    const key = billCtaKey(isSettled || line.terminal || settledDecision(raw) !== null);
-    return key === 'moments.readCall' ? [vehicleCtaHref(`/bills/${v.slug}`, key)] : [];
-  });
+  return questionVehicles(m)
+    .filter((v) => v.open)
+    .map((v) => v.kind);
 }
 
 const RENDERED_QUESTIONS = getMoments().filter((m) => m.state !== 'retired');
-const ONE_OPEN = RENDERED_QUESTIONS.find((m) => callableHrefs(m.id).length === 1) ?? null;
-const SEVERAL_OPEN = RENDERED_QUESTIONS.find((m) => callableHrefs(m.id).length > 1) ?? null;
-const NONE_OPEN = RENDERED_QUESTIONS.find((m) => callableHrefs(m.id).length === 0) ?? null;
+const ONE_OPEN = RENDERED_QUESTIONS.find((m) => questionHasPanel(callableKinds(m.id))) ?? null;
+const SEVERAL_OPEN = RENDERED_QUESTIONS.find((m) => callableKinds(m.id).length > 1) ?? null;
+const NONE_OPEN = RENDERED_QUESTIONS.find((m) => callableKinds(m.id).length === 0) ?? null;
 const SETTLED = settledBill('law') ?? settledBill('rejected');
 
 for (const { locale, prefix, messages } of LOCALES) {
@@ -137,19 +127,29 @@ for (const { locale, prefix, messages } of LOCALES) {
       await expect(page).toHaveURL(new RegExp(`${prefix}/call$`));
     });
 
-    test('on a Big Question with one open bill, to that bill’s panel', async ({ page }) => {
-      test.skip(!ONE_OPEN, 'no Big Question with exactly one open vehicle in the corpus');
+    test('on a Big Question with one open bill, to the call panel on that page', async ({ page }) => {
+      test.skip(!ONE_OPEN, 'no Big Question with exactly one open bill in the corpus');
       await page.goto(`${prefix}/questions/${ONE_OPEN!.id}`);
-      await expect(callTab(page, messages)).toHaveAttribute('href', `${prefix}${callableHrefs(ONE_OPEN!.id)[0]}`);
+      const tab = callTab(page, messages);
+      // Q6 b: the bill page's own panel sits on the question page, so the tab
+      // stays on it instead of leaving for the bill.
+      await expect(tab).toHaveAttribute('href', '#act');
+      await tab.click();
+      await expect(page).toHaveURL(new RegExp(`${prefix}/questions/${ONE_OPEN!.id}#act$`));
+      await expect(page.locator('#act')).toBeInViewport();
     });
 
-    test('on a Big Question with several open bills, to its list', async ({ page }) => {
+    test('on a Big Question with several open bills, to its "Still open" list', async ({ page }) => {
       test.skip(!SEVERAL_OPEN, 'no Big Question with several open vehicles in the corpus');
       await page.goto(`${prefix}/questions/${SEVERAL_OPEN!.id}`);
       const tab = callTab(page, messages);
-      await expect(tab).toHaveAttribute('href', '#vehicles-h');
+      await expect(tab).toHaveAttribute('href', '#still-open');
       await tab.click();
-      await expect(page.locator('#vehicles-h')).toBeInViewport();
+      const list = page.locator('#still-open');
+      await expect(list).toBeInViewport();
+      await expect(list).toHaveText(
+        messages.moments.stillOpenHeading.replace('{count}', String(callableKinds(SEVERAL_OPEN!.id).length))
+      );
     });
 
     test('on a Big Question with nothing open, to the hub', async ({ page }) => {

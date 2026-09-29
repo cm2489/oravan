@@ -5,10 +5,16 @@ import { setRequestLocale, getTranslations, getFormatter } from 'next-intl/serve
 import { Link } from '@/i18n/navigation';
 import { settledDecision, statusKeyFor } from '@/lib/journey';
 import { routing } from '@/i18n/routing';
+import { ActionPanel } from '@/components/ActionPanel';
 import { CallTabTarget } from '@/components/CallTabTarget';
-import { questionCallTarget } from '@/lib/call-tab';
+import { CALL_PANEL_ANCHOR, STILL_OPEN_ID, questionCallTarget, questionHasPanel } from '@/lib/call-tab';
+import { billCallPanelProps } from '@/lib/bill-call-panel';
+import { settledDecisionDate } from '@/lib/settled-votes';
+import { settledOutcomeSentence, statusWord } from '@/lib/status-word';
 import { MomentQuietNote } from '@/components/MomentQuietNote';
+import { MomentRecordRow } from '@/components/MomentRecordRow';
 import { MomentStatusLine } from '@/components/MomentStatusLine';
+import { MomentStillOpenRail } from '@/components/MomentStillOpenRail';
 import { MomentTimeline, type TimelineVehicle } from '@/components/MomentTimeline';
 import { MomentNominationCard } from '@/components/MomentNominationCard';
 import { MomentVehicleCard } from '@/components/MomentVehicleCard';
@@ -41,15 +47,13 @@ import {
   vehicleKind,
 } from '@/lib/moments';
 import {
-  billCtaKey,
   bothNoteKey,
-  groupVehicleStatuses,
   linkHost,
   momentDek,
-  nominationCtaKey,
+  questionVehicles,
   revisionReasons,
   vehicleCtaHref,
-  vehicleStatuses,
+  type QuestionVehicle,
 } from '@/lib/moments-ui';
 import { questionStatus } from '@/lib/moment-status.mjs';
 import { LIVE_CAP } from '@/lib/moments-gate.mjs';
@@ -74,27 +78,49 @@ const CONTENT_LINK =
 const WRAP = 'mx-auto w-full max-w-5xl px-4';
 
 /*
- * THE DESK — the same grid string as the bill page (line 393 there) and the
- * nomination page (line 393 there), character for character apart from the
- * leading spacing utility: one track of `--measure-read` and one of 20–25rem,
- * opening at the site's 62rem breakpoint, `items-start`, `justify-between`,
- * and the same clamped column gutter. No new tokens, no new breakpoint.
+ * THE DESK — the same grid string as the bill page and the nomination page
+ * apart from the leading spacing utility and the ROW gap: one track of
+ * `--measure-read` and one of 20–25rem, opening at the site's 62rem
+ * breakpoint, `items-start`, `justify-between`, and the same clamped column
+ * gutter. No new tokens, no new breakpoint.
  *
- * WHY TWO GRID CHILDREN AND NOT FIVE. The bill page hands the grid one section
- * per row and leans on `row-span-full` for the rail. That works there because
- * its rail is one panel of fixed-ish height; here the rail is a stack of cards
- * whose height tracks the vehicle count, and `grid-row: 1 / -1` resolves
- * against the EXPLICIT grid — which is empty when the rows are implicit, so it
- * collapses to row 1 and a tall rail would blow row 1 open and strand the
- * reading column beside it. Two children — the narrative and the rail — need no
- * row arithmetic at all, and they keep each section's own `mt-12` rhythm
- * untouched, which a per-row grid would have replaced with the row gap. The
- * rail is STICKY inside that single row — see its own comment below; two
- * children in one row is exactly what makes the sticky box's grid area span
- * the whole desk without `row-span-full`.
+ * THREE CHILDREN, IN READING ORDER (wireframes v2, 2026-09-29). Source order
+ * is the phone's reading order, and the rail has to sit in the MIDDLE of it:
+ *
+ *   LEAD   what Congress is deciding, then the bills (col 1, row 1);
+ *   RAIL   the call — the bill page's own call panel on a one-bill question
+ *          ("the panel right after the decoded answer", question-single),
+ *          or the desk-only "Still open to a call" list on a several-bills
+ *          question (col 2, rows 1–2, sticky);
+ *   REST   where it stands, what's moved, why this question exists (col 1,
+ *          row 2).
+ *
+ * So on a phone the panel follows the question's answer and its bill
+ * directly, as it follows the decode on a bill page (rule 8), and on the desk
+ * it rides beside the whole column.
+ *
+ * WHY THE RAIL SPANS TWO NAMED ROWS AND NOT `row-span-full`. `grid-row: 1 /
+ * -1` resolves against the EXPLICIT grid, which is empty when the rows are
+ * implicit, so it would collapse to row 1 and the sticky box could never
+ * travel past the lead. `row-start-1 row-span-2` names both rows. What rides
+ * in the rail is always short beside the column — the panel is capped at the
+ * window's height and scrolls inside itself, as on the bill page, and the
+ * desk list is one short row per open measure — so the rail never pushes a
+ * row taller than its column content, and no gap opens in the column. The
+ * old page's rail of full cards was the reason it used one row; those cards
+ * now sit in the column.
+ *
+ * NO ROW GAP. Every section keeps its own `mt-12` rhythm, exactly as when the
+ * column was one child; a row gap would add to it between LEAD and REST. The
+ * panel carries its own `mt-12` on a phone for the same reason.
  */
 const DESK =
-  'grid max-w-read gap-8 min-[62rem]:max-w-none min-[62rem]:grid-cols-[minmax(0,var(--measure-read))_minmax(20rem,25rem)] min-[62rem]:items-start min-[62rem]:justify-between min-[62rem]:gap-x-[clamp(2rem,4vw,4rem)] min-[62rem]:gap-y-8';
+  'grid max-w-read gap-x-8 min-[62rem]:max-w-none min-[62rem]:grid-cols-[minmax(0,var(--measure-read))_minmax(20rem,25rem)] min-[62rem]:items-start min-[62rem]:justify-between min-[62rem]:gap-x-[clamp(2rem,4vw,4rem)]';
+
+/* The rail's place on the desk: column 2, both rows, sticky 1rem from the top
+   of the window (the bill page's `sticky top-4 self-start`). */
+const RAIL =
+  'min-w-0 min-[62rem]:sticky min-[62rem]:top-4 min-[62rem]:col-start-2 min-[62rem]:row-start-1 min-[62rem]:row-span-2 min-[62rem]:self-start';
 
 /*
  * TRUE 404s INSIDE THE LOCALE BOUNDARY (Phase-1 P1 pair, 2026-08-04).
@@ -185,10 +211,9 @@ export default async function MomentPage({
    * promises a call about a finished vehicle (each card's CTA below asks its
    * own line's `terminal`).
    */
-  const statuses = vehicleStatuses(moment.vehicles);
-  const { mode: statusMode, lead } = questionStatus(statuses.map((s) => s.line));
+  const vehicles = questionVehicles(moment);
+  const { mode: statusMode, lead } = questionStatus(vehicles.map((s) => s.line));
   const explainer = statusMode === 'explainer';
-  const groups = groupVehicleStatuses(statuses);
 
   // ── The live layer (v2 spec §7) ────────────────────────────────────────
   const summaryRevision = getCurrentSummary(id);
@@ -289,24 +314,192 @@ export default async function MomentPage({
     };
   }
 
-  // WHERE THE HEADER'S CALL TAB GOES ON THIS PAGE (owner, "nav 1";
-  // lib/call-tab.ts questionCallTarget). The callable vehicles are exactly
-  // the cards below whose button reads "Read + call": the same keys
-  // (nominationCtaKey / billCtaKey) over the same inputs the grid passes, so
-  // the tab and the cards cannot disagree about what is open.
-  const callableHrefs = statuses.flatMap(({ vehicle: v, line }) => {
-    if (vehicleKind(v) === 'nomination') {
+  /*
+   * STILL OPEN, OR KEPT AS THE RECORD — AND WHERE THE CALL GOES (wireframes
+   * v2, 2026-09-29, question-single.html and question-multi.html; the index's
+   * "Where the Call tab goes"). `open` is each card's own "Read + call"
+   * decision (lib/moments-ui.ts questionVehicles: billCtaKey /
+   * nominationCtaKey over the inputs the grid always passed), so the list a
+   * vehicle sits in, the label on its button and the Call tab's target are
+   * one decision read three ways.
+   *
+   *   one open bill  → the bill page's own call panel sits on this page (Q6
+   *                    b), with exactly the props /bills/[id] computes
+   *                    (lib/bill-call-panel.ts). The card's "Read + call" and
+   *                    the header's Call tab both land on it (#act).
+   *   several open   → a "Still open" list with a stable id (#still-open).
+   *                    Each card lands on its own bill's panel; the Call tab
+   *                    lands on the list.
+   *   nothing open   → no call on this page; the Call tab goes to the hub.
+   *
+   * Settled vehicles sit below the open ones as record-only rows, each with
+   * one status word from the closed set (lib/status-word.ts) and the record's
+   * outcome sentence (page 1, rule 6: a settled decision shows no call
+   * apparatus).
+   */
+  const openVehicles = vehicles.filter((v) => v.open);
+  const recordVehicles = vehicles.filter((v) => !v.open);
+  const callableKinds = openVehicles.map((v) => v.kind);
+  const panel = questionHasPanel(callableKinds)
+    ? billCallPanelProps(openVehicles[0].vehicle.slug, locale, { t, fmtDate })
+    : null;
+  // Declared under the same condition the panel renders under, so the tab
+  // never points at a panel that is not there (the bill page's rule). `open`
+  // already means the record settles nothing, so a one-bill question always
+  // gets its panel; the guard only keeps the two from ever disagreeing.
+  const callTabHref = questionHasPanel(callableKinds) && !panel ? null : questionCallTarget(callableKinds);
+
+  // Group headings print when they tell the reader something: both whenever
+  // both groups are on the page, and "Still open" whenever the Call tab lands
+  // on it. A one-bill question with nothing settled prints neither.
+  const stillOpenHeading = openVehicles.length > 0 && (recordVehicles.length > 0 || !panel);
+  // The AI label covers the cards' decoded headlines and yes-or-no lines. A
+  // record row prints neither (its words are the record's), so a section of
+  // rows alone carries no label: a label over text a model did not write is
+  // over-labeling, which erodes the label (constitution-08).
+  const anyCard = openVehicles.length > 0 || recordVehicles.some((v) => v.kind === 'nomination');
+
+  /** One vehicle's card, exactly as the grid rendered it — plus its chamber
+   *  tag and the screen-reader words on its button — landing on this page's
+   *  panel when the panel is here, and on the vehicle's own panel otherwise. */
+  const vehicleCard = ({ vehicle: v, line, group, ctaKey, kind }: QuestionVehicle) => {
+    /* ONE LIST, TWO CARDS. The branch is on the vehicle's KIND, read through
+       the one normalizer (lib/moments.ts vehicleKind — absent means 'bill',
+       stated in exactly one place), never on the shape of the slug.
+       MomentNominationCard is MomentVehicleCard's sibling and not its
+       generalization; the reasoning is in its own header. Both render at
+       identical weight with the identical call button, so a mixed list never
+       reads as recommending one vehicle over the other. */
+    if (kind === 'nomination') {
       const nomination = getNomination(v.slug);
-      if (!nomination) return [];
-      const key = nominationCtaKey(nomination, isSettled || line.terminal);
-      return key === 'moments.readCall' ? [vehicleCtaHref(`/nominations/${v.slug}`, key)] : [];
+      if (!nomination) return null;
+      return (
+        <MomentNominationCard
+          key={v.slug}
+          slug={v.slug}
+          citation={nomination.citation}
+          description={nomination.nominee_description}
+          organization={nomination.organization}
+          status={nomination.status}
+          lastActionDate={nomination.last_action_date}
+          receivedDate={nomination.received_date}
+          execCalendarNumber={nomination.exec_calendar_number}
+          role={localeText(v.role, locale)}
+          /* "Read + call" is a promise about the page this button opens, so
+             it is asked of the RECORD (nominationCtaKey): a nomination the
+             Senate has finished with, or one its record never described,
+             opens a page whose entire rail is "No call to make". */
+          ctaLabel={t(ctaKey)}
+          /* "Read + call" lands ON the call panel, anything else at the
+             page's top — one decision, read off the same key as the label
+             (SY-10; vehicleCtaHref). */
+          ctaHref={vehicleCtaHref(`/nominations/${v.slug}`, ctaKey)}
+          statusLine={line}
+          noDecodeNote={t('nominations.noDecodeNote')}
+        />
+      );
     }
     const raw = getBill(v.slug);
-    if (!raw) return [];
-    const key = billCtaKey(isSettled || line.terminal || settledDecision(raw) !== null);
-    return key === 'moments.readCall' ? [vehicleCtaHref(`/bills/${v.slug}`, key)] : [];
-  });
-  const callTabHref = questionCallTarget(callableHrefs, '#vehicles-h');
+    if (!raw) return null;
+    const bill = localizeBill(raw, locale);
+    const identifier = formatCitation(bill.bill_type, bill.bill_number);
+    const coverageCount = new Set(getCoverage(v.slug).map((a) => normalizeSource(a.source))).size;
+    // An adopted concurrent resolution's card says what that means, as its
+    // bill page does (lib/concurrent-explainer.ts).
+    const concurrentReading = adoptedConcurrentReading(raw);
+    return (
+      <MomentVehicleCard
+        key={v.slug}
+        slug={v.slug}
+        identifier={identifier}
+        headline={bill.ai_headline}
+        title={bill.short_title ?? bill.title}
+        status={bill.status}
+        statusKey={statusKeyFor(bill)}
+        tags={bill.issue_tags ?? []}
+        lastActionDate={bill.last_action_date}
+        coverageCount={coverageCount}
+        role={localeText(v.role, locale)}
+        ctaLabel={t(ctaKey)}
+        /* "Read + call" opens the call panel (#act) instead of the bill's top
+           (SY-10) — and when that panel is on THIS page, it opens this one.
+           "Read the bill" opens the bill page's top. Same key as the label. */
+        ctaHref={panel ? CALL_PANEL_ANCHOR : vehicleCtaHref(`/bills/${v.slug}`, ctaKey)}
+        ctaContext={ctaKey === 'moments.readCall' ? t('moments.readCallAbout', { citation: identifier }) : undefined}
+        /* The chamber it started in, where the list used to group by chamber
+           (owner, 2026-09-24: "House and Senate movement should always be
+           recorded under a single Big Question even if they may have
+           different names"). */
+        tag={t(`moments.status.group.${group}`)}
+        statusLine={line}
+        calendarLabel={t('bills.onCalendar')}
+        explainer={concurrentReading ? <ConcurrentExplainer reading={concurrentReading} /> : undefined}
+      />
+    );
+  };
+
+  /** One settled vehicle: its citation, one status word, the record's
+   *  outcome sentence (the settled box's, `bill.settled.*`) and a way to read
+   *  it. A nomination keeps its record card. */
+  const recordRow = (qv: QuestionVehicle) => {
+    if (qv.kind === 'nomination') {
+      const card = vehicleCard(qv);
+      return card ? <li key={qv.vehicle.slug}>{card}</li> : null;
+    }
+    const raw = getBill(qv.vehicle.slug);
+    if (!raw) return null;
+    const bill = localizeBill(raw, locale);
+    const settled = settledDecision(raw);
+    const date = settledDecisionDate(raw);
+    const word = statusWord(raw);
+    const concurrentReading = adoptedConcurrentReading(raw);
+    return (
+      <MomentRecordRow
+        key={qv.vehicle.slug}
+        slug={qv.vehicle.slug}
+        identifier={formatCitation(bill.bill_type, bill.bill_number)}
+        word={word}
+        wordLabel={t(`bills.statusWord.${word}`)}
+        /* The settled box's sentence where the bill page reads the decision as
+           over; otherwise (a settled QUESTION's vehicle the record still
+           holds open) the vehicle's own status line from the record. */
+        outcome={
+          settled ? (
+            <p>{settledOutcomeSentence(t, settled, date ? fmtDate(date) : null)}</p>
+          ) : (
+            <MomentStatusLine line={qv.line} />
+          )
+        }
+        explainer={concurrentReading ? <ConcurrentExplainer reading={concurrentReading} /> : undefined}
+        readLabel={t('moments.readBill')}
+      />
+    );
+  };
+
+  /* The desk's short list of the same open vehicles (several-bills questions
+     only; the one-bill question's rail is its panel). */
+  const railItems = panel
+    ? []
+    : openVehicles.flatMap(({ vehicle: v, line, ctaKey, kind }) => {
+        const identifier =
+          kind === 'nomination'
+            ? getNomination(v.slug)?.citation
+            : (() => {
+                const raw = getBill(v.slug);
+                return raw ? formatCitation(raw.bill_type, raw.bill_number) : undefined;
+              })();
+        if (!identifier) return [];
+        return [
+          {
+            key: v.slug,
+            identifier,
+            statusLine: line,
+            href: vehicleCtaHref(kind === 'nomination' ? `/nominations/${v.slug}` : `/bills/${v.slug}`, ctaKey),
+            ctaLabel: t(ctaKey),
+            ctaContext: t('moments.readCallAbout', { citation: identifier }),
+          },
+        ];
+      });
 
   return (
     <article className={`${WRAP} pt-12 pb-16`}>
@@ -354,15 +547,14 @@ export default async function MomentPage({
         </section>
       )}
 
-      {/* THE DESK — the narrative on the left, the vehicles on the right, on
-          the same two-track grid the bill and nomination pages already use.
-          SOURCE ORDER IS THE MOBILE READING ORDER, unchanged from the single
-          column this replaced: what Congress is deciding → where it stands →
-          what's moved → the vehicles → why this question exists → how the page
-          is made. Below 62rem the two children simply stack in that order. */}
+      {/* THE DESK — three children in reading order (see DESK): the LEAD
+          (what Congress is deciding, then the bills), the RAIL (the call),
+          then the REST (where it stands, what's moved, why this question
+          exists). Below 62rem they stack in exactly that order, so on a phone
+          the call panel follows the question's answer and its bill directly;
+          on the desk the rail rides beside the whole column. */}
       <div className={`mt-12 ${DESK}`}>
-        {/* THE NARRATIVE COLUMN (2 · 3 · 4). Each section keeps its own mt-12
-            rhythm — the desk's row gap never reaches inside a column. */}
+        {/* THE LEAD (2 · 3). Each section keeps its own mt-12 rhythm. */}
         <div className="min-w-0 min-[62rem]:col-start-1 min-[62rem]:row-start-1">
           {/* 2 · The Moment entry's own summary — the page's one reading passage,
               and so the one place Besley is spent. Provenance, spelled out because
@@ -401,6 +593,99 @@ export default async function MomentPage({
             </p>
           </section>
 
+          {/* 3 · The bills — STILL OPEN, THEN KEPT AS THE RECORD (wireframes
+              v2, 2026-09-29). Open vehicles are cards whose "Read + call"
+              lands on a call panel; settled ones are rows that show the record
+              and a way to read it, with nothing that dials. The grouping by
+              chamber this replaced survives as each card's "Started in the
+              House / Senate" tag. */}
+          <section className="mt-12 border-t border-line pt-4" aria-labelledby="vehicles-h">
+            <h2 id="vehicles-h" className="text-h2 font-extrabold text-ink">
+              {t(`moments.${vehiclesKey.heading}`)}
+            </h2>
+            <p className="mt-2 max-w-note text-sm text-ink-2">{t(`moments.${vehiclesKey.lede}`)}</p>
+            {/* Every card leads with an AI-decoded headline and carries the
+                vehicle's `role` — what a yes and a no vote do — which is
+                model-written too (scripts/moment-draft.mjs, CLAUDE.md's
+                2026-08-07 amendment), and the card's button drives a call. So
+                the note names both pieces (pre-launch audit 2026-07-25,
+                constitution-05; widened 2026-08-09), and it is not gated on a
+                decode: the gate requires a `role` on every vehicle. The "where
+                there is one" clause keeps the headline half honest on a card
+                that fell back to its official title. It is gated on a CARD
+                being here at all: a settled vehicle's record row prints no AI
+                text (see `anyCard`). */}
+            {anyCard && (
+              <p className="mt-5">
+                <Chip tone="ai" marker={t('common.aiMarker')} className="max-w-note">
+                  {t('moments.vehiclesAiNote')}
+                </Chip>
+              </p>
+            )}
+
+            {/* STILL OPEN. One card per row: the reading column is one card
+                wide at every width now that the cards live in it (the rail
+                is the call). Authoring order, as data/moments.json lists them. */}
+            {openVehicles.length > 0 && (
+              <div className="mt-6" data-still-open>
+                {stillOpenHeading && (
+                  <h3 id={STILL_OPEN_ID} className="border-b border-line pb-2 text-sm font-bold text-ink">
+                    {t('moments.stillOpenHeading', { count: openVehicles.length })}
+                  </h3>
+                )}
+                <div className="mt-4 grid gap-4">{openVehicles.map(vehicleCard)}</div>
+              </div>
+            )}
+
+            {/* SETTLED · KEPT AS THE RECORD. Rows, not cards: the record's
+                word, its outcome sentence and "Read the bill" (rule 6). */}
+            {recordVehicles.length > 0 && (
+              <div className="mt-8" data-record-list>
+                <h3 className="border-b border-line pb-2 text-sm font-bold text-ink">
+                  {t('moments.settledGroupHeading', { count: recordVehicles.length })}
+                </h3>
+                <ul className="list-none">{recordVehicles.map(recordRow)}</ul>
+              </div>
+            )}
+
+            {/* "Every link above opens the same call flow" was printed here
+                unconditionally — true of a bill card whose decision is still
+                open, and false of a settled bill (record-only panel since
+                2026-09-28) and of a nomination card whose page has no call
+                script waiting on it. Asked of the SET, because that is what
+                the sentence quantifies over (lib/moments-ui.ts bothNoteKey). A
+                set whose every vehicle can be called keeps
+                `moments.bothNote` byte for byte. */}
+            <p className="mt-6 max-w-note text-sm text-ink-2">{t(bothNoteKey(moment.vehicles))}</p>
+          </section>
+        </div>
+
+        {/* THE RAIL — the call.
+
+            ONE OPEN BILL: the bill page's own call panel (Q6 b; Q5 a, one
+            call route, inline), in the bill page's own rail wrapper — sticky,
+            capped at the window's height with the panel scrolling inside it
+            on the desk — and, on a phone, in flow right after the bills with
+            the column's own 3rem rhythm. No floating "Make the call" button
+            here: the wireframe draws none on a question page (see the PR).
+
+            SEVERAL OPEN: the short "Still open to a call" list, on the desk
+            only (display: none below 62rem, where the column's list is the
+            list). */}
+        {panel && (
+          <div className={`mt-12 ${RAIL} min-[62rem]:mt-0 min-[62rem]:flex min-[62rem]:max-h-[calc(100dvh-2rem)]`}>
+            <ActionPanel {...panel} />
+          </div>
+        )}
+        {!panel && railItems.length > 0 && (
+          <div className={`hidden ${RAIL} min-[62rem]:block`}>
+            <MomentStillOpenRail heading={t('moments.stillOpenRailHeading')} items={railItems} />
+          </div>
+        )}
+
+        {/* THE REST: where it stands, what's moved, why this question exists.
+            (The section numbers in the comments below are the old page's.) */}
+        <div className="min-w-0 min-[62rem]:col-start-1 min-[62rem]:row-start-2">
           {/* 3 · "Where it stands" — the machine-written state summary (v2 spec
               §7). It sits BELOW the summary section above on purpose: the
               issue stays front-and-center and dated motion is subordinate to it.
@@ -526,208 +811,11 @@ export default async function MomentPage({
             </p>
             <MomentTimeline momentId={id} locale={locale} vehicles={timelineVehicles} />
           </section>
-        </div>
 
-        {/* THE VEHICLES RAIL (5 · 6). The cards stack ONE per row inside the
-            rail — 20–25rem is one card wide — and the qualifying-signal
-            apparatus that says why this question exists at all sits directly
-            under them, where the reader is already looking at the receipts.
-            One-per-row is the RAIL's rule and not the whole page's: the grid
-            below resolves its own track count from the width it is handed, so
-            the same string is two-up in the tablet band (see there).
-
-            STICKY, like every other rail on this site (bills/[id] line 436,
-            nominations/[slug] lines 476/487) and for the reason DESIGN.md
-            structural constraint 1 gives: a rail "holds to the page foot".
-            Pinned at row start with no sticky it terminated far above the
-            desk's foot and left the right column blank — measured at 1440×900
-            before this line existed: narrative 2816px vs rail 2291px on
-            iran-war-powers (525px of dead column), 2120 vs 1089 on
-            annual-defense-policy (1031px, and 4 of the 5 live moments carry
-            exactly one vehicle, so the one-card rail is the normal case).
-            `sticky` needs no `row-span-full` here: both children sit in row 1,
-            so the row — and therefore this item's grid area, which is what
-            bounds a sticky box — is already the full height of the taller
-            column. The rail travels down inside it and its foot lands on the
-            desk's foot. When a rail is TALLER than the viewport it pins for
-            the difference between the two columns and then scrolls on with the
-            page, so nothing in it is ever unreachable. */}
-        <div className="min-w-0 min-[62rem]:sticky min-[62rem]:top-4 min-[62rem]:col-start-2 min-[62rem]:row-start-1 min-[62rem]:self-start">
-          {/* 5 · The vehicles */}
-          <section className="border-t border-line pt-4" aria-labelledby="vehicles-h">
-            <h2 id="vehicles-h" className="text-h2 font-extrabold text-ink">
-              {t(`moments.${vehiclesKey.heading}`)}
-            </h2>
-            <p className="mt-2 max-w-note text-sm text-ink-2">{t(`moments.${vehiclesKey.lede}`)}</p>
-            {/* Every card below leads with an AI-decoded headline, and the card's
-                CTA is the phone call — so this was the one place on the site where
-                unlabeled AI text sat directly on the control that drives a call
-                (pre-launch audit 2026-07-25, constitution-05).
-
-                THE LABEL COVERS THE ROLE SENTENCE TOO, and until 2026-08-09 it did
-                not. The chip printed `bills.aiNote` — a sentence about decoded
-                HEADLINES, data-gated on a decode existing — while the paragraph
-                directly under each headline (the vehicle's `role`: what a yes vote
-                does and what a no vote does) is model-written as well, and sits
-                closer to the green call CTA than the headline does. It is drafted
-                by scripts/moment-draft.mjs today (DRAFT_FIELDS, CLAUDE.md's
-                2026-08-07 amendment), and the two July moments' role clauses were
-                written in a PR the same way. So the note names both pieces, and it is
-                NO LONGER GATED ON THE DECODE: the gate requires a non-empty `role`
-                on every vehicle (lib/moments-gate.mjs), so this section always
-                carries AI-drafted prose, decode or no decode. The "where there is
-                one" clause is what keeps the headline half honest on a card that
-                fell back to its official title — including a nomination card,
-                whose headline is Congress.gov's own sentence verbatim. */}
-            <p className="mt-5">
-              <Chip tone="ai" marker={t('common.aiMarker')} className="max-w-note">
-                {t('moments.vehiclesAiNote')}
-              </Chip>
-            </p>
-
-            {/* THE TRACK COUNT IS THE CONTAINER'S TO DECIDE, not a breakpoint's.
-                `sm:grid-cols-2` came off when the desk landed, justified as
-                "the rail is one card wide" — but the rail only exists at
-                ≥62rem, and in the 640–991px band there is no rail, just a
-                33rem column, so multi-vehicle moments paid for a rule about a
-                rail that isn't there. Measured on /questions/iran-war-powers
-                at 768×1024, one column: document 6002px, 5.86 screens of
-                scroll, #vehicles-h→#why-h 1712px.
-
-                WHY auto-fit AND NOT `sm:grid-cols-2 min-[62rem]:grid-cols-1`.
-                That pair fixes the 4-vehicle moment and regresses every other
-                one: it halves the track for a lone card, which wraps taller
-                with a 272px hole beside it — 768×1024 document height with it
-                on, annual-defense-policy 4180 → 4434, government-funding
-                4044 → 4296, syria-sanctions 3916 → 4070. `auto-fit` collapses
-                the empty track, so a lone card keeps the whole 528px: same
-                width the fix band gives (iran 6002 → 5729), and the other four
-                measure byte-identical to one column. 4 of the 5 live moments
-                carry exactly one vehicle, so that IS the common case.
-
-                In the 20–25rem rail the 15rem minimum resolves to one 400px
-                track on its own — the rail is still one card wide, and now
-                nothing has to name a breakpoint to say so. */}
-            {/* GROUPED BY CHAMBER (owner, 2026-09-24: "House and Senate movement
-                should always be recorded under a single Big Question even if they
-                may have different names"). House, Senate, then Enacted, each in
-                authoring order, so a House resolution and its Senate twin read
-                as two halves of one story. A question whose vehicles all sit in
-                one group prints no group heading — lib/moments-ui.ts
-                groupVehicleStatuses. */}
-            {groups.map(({ group, items }) => (
-              <div key={group} className="mt-6">
-                {groups.length > 1 && (
-                  <h3 className="border-b border-line pb-2 text-sm font-bold text-ink">
-                    {t(`moments.status.group.${group}`)}
-                  </h3>
-                )}
-                <div className="mt-4 grid gap-4 grid-cols-[repeat(auto-fit,minmax(15rem,1fr))]">
-                  {items.map(({ vehicle: v, line }) => {
-                    /* ONE GRID, TWO CARDS. The branch is on the vehicle's KIND, read
-                       through the one normalizer (lib/moments.ts vehicleKind — absent
-                       means 'bill', stated in exactly one place), never on the shape
-                       of the slug. MomentNominationCard is MomentVehicleCard's
-                       sibling and not its generalization; the reasoning is in its own
-                       header. Both render at identical weight with the identical
-                       green CTA, so a mixed grid never reads as recommending one
-                       vehicle over the other. */
-                    if (vehicleKind(v) === 'nomination') {
-                      const nomination = getNomination(v.slug);
-                      if (!nomination) return null;
-                      const ctaKey = nominationCtaKey(nomination, isSettled || line.terminal);
-                      return (
-                        <MomentNominationCard
-                          key={v.slug}
-                          slug={v.slug}
-                          citation={nomination.citation}
-                          description={nomination.nominee_description}
-                          organization={nomination.organization}
-                          status={nomination.status}
-                          lastActionDate={nomination.last_action_date}
-                          receivedDate={nomination.received_date}
-                          execCalendarNumber={nomination.exec_calendar_number}
-                          role={localeText(v.role, locale)}
-                          /* "Read + call" is a promise about the page this button
-                             opens, so it is asked of the RECORD, not just of the
-                             moment's state — a nomination the Senate has finished
-                             with, or one its record never described, opens a page
-                             whose entire rail is "No call to make". See
-                             nominationCtaKey; `moments.vehiclesLedeNominations` makes
-                             the same distinction in prose directly above this grid. */
-                          ctaLabel={t(ctaKey)}
-                          /* "Read + call" lands ON the call panel, anything
-                             else at the page's top — one decision, read off the
-                             same key as the label (SY-10; vehicleCtaHref). */
-                          ctaHref={vehicleCtaHref(`/nominations/${v.slug}`, ctaKey)}
-                          statusLine={line}
-                          noDecodeNote={t('nominations.noDecodeNote')}
-                        />
-                      );
-                    }
-                    const raw = getBill(v.slug);
-                    if (!raw) return null;
-                    const bill = localizeBill(raw, locale);
-                    const coverageCount = new Set(getCoverage(v.slug).map((a) => normalizeSource(a.source))).size;
-                    // The bill page's own reading joins the status line's: a
-                    // settled decision's page has no call panel (Q9, 2026-09-28).
-                    const ctaKey = billCtaKey(isSettled || line.terminal || settledDecision(raw) !== null);
-                    // An adopted concurrent resolution's card says what that
-                    // means, as its bill page does (lib/concurrent-explainer.ts).
-                    const concurrentReading = adoptedConcurrentReading(raw);
-                    return (
-                      <MomentVehicleCard
-                        key={v.slug}
-                        slug={v.slug}
-                        identifier={formatCitation(bill.bill_type, bill.bill_number)}
-                        headline={bill.ai_headline}
-                        title={bill.short_title ?? bill.title}
-                        status={bill.status}
-                        statusKey={statusKeyFor(bill)}
-                        tags={bill.issue_tags ?? []}
-                        lastActionDate={bill.last_action_date}
-                        coverageCount={coverageCount}
-                        role={localeText(v.role, locale)}
-                        /* A finished vehicle — signed, vetoed, a failed vote nobody
-                           moved to reconsider — is a record, not a call to make:
-                           the same rule a settled question already applied to all
-                           its cards, now asked per vehicle of its own line. Since
-                           2026-09-28 the bill page behind a settled decision shows
-                           no call either, so bothNote below asks the same. */
-                        ctaLabel={t(ctaKey)}
-                        /* "Read + call" opens the bill page AT the call panel
-                           (#act) instead of its top (SY-10); "Read the bill"
-                           still opens the top. Same key as the label. */
-                        ctaHref={vehicleCtaHref(`/bills/${v.slug}`, ctaKey)}
-                        statusLine={line}
-                        calendarLabel={t('bills.onCalendar')}
-                        explainer={
-                          concurrentReading ? <ConcurrentExplainer reading={concurrentReading} /> : undefined
-                        }
-                      />
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-
-            {/* "Every link above opens the same call flow" was printed here
-                unconditionally — true of a bill card whose decision is still
-                open, and false of a settled bill (record-only panel since
-                2026-09-28) and of a nomination card whose page has no call
-                script waiting on it. Asked of the SET, because that is
-                what the sentence quantifies over; the per-card version of the
-                same question is `nominationCtaKey` / `billCtaKey` on the grid
-                above. A set whose every card can be called keeps
-                `moments.bothNote` byte for byte — see bothNoteKey. */}
-            <p className="mt-6 max-w-note text-sm text-ink-2">{t(bothNoteKey(moment.vehicles))}</p>
-          </section>
-
-          {/* 6 · Why this Moment exists — in the rail, directly under the cards.
-                 It is the receipt on the section above it (this question is here
-                 because the record did THIS), so it travels with the vehicles
-                 rather than trailing the whole page as it used to. */}
-          <section className="mt-8 border-t border-line pt-4" aria-labelledby="why-h">
+          {/* 6 · Why this Moment exists — the column's last section, as the
+                 wireframes draw it (v2, 2026-09-29). It sat in the rail under
+                 the cards until the rail became the call. */}
+          <section className="mt-12 border-t border-line pt-4" aria-labelledby="why-h">
             <h2 id="why-h" className="text-xs leading-tight font-extrabold tracking-[0.1em] text-ink-2 uppercase">
               {t('moments.whyHeading')}
             </h2>
