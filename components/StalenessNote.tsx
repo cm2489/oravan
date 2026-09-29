@@ -40,12 +40,33 @@ const useHydrated = () =>
  * two-line version repeated the date and read as a malfunction banner on
  * every core surface (2026-07 critique, unanimous). Repeating this note per
  * claim re-opens that ruling and needs the owner's word.
+ *
+ * `standalone` (Home option B, 2026-09-29): the homepage's masthead no longer
+ * carries a claim sentence to continue — the v2 wireframe prints the heading,
+ * the stamp and the block's AI line, and draws the caveat as "a staleness line
+ * [that] appears under the stamp only when the data runs late" (G10). So there
+ * it renders as its own sentence, under the stamp, still one per page.
  */
-export function StalenessNote({ checkedAt }: { checkedAt: string }) {
+export function StalenessNote({
+  checkedAt,
+  standalone = false,
+  className = '',
+}: {
+  checkedAt: string;
+  standalone?: boolean;
+  className?: string;
+}) {
   const t = useTranslations('freshness');
   const hydrated = useHydrated();
 
   if (!hydrated || freshnessState(checkedAt) === 'fresh') return null;
 
+  if (standalone) {
+    return (
+      <p role="status" data-stale-line="" className={className}>
+        {t('staleLine')}
+      </p>
+    );
+  }
   return <span role="status"> — {t('staleNote')}</span>;
 }

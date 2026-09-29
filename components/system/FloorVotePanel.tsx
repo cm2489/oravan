@@ -149,6 +149,14 @@ export interface FloorVotePanelProps {
    * second one: it exists only because this panel rendered.
    */
   flush?: boolean;
+  /**
+   * A second column beside the headline at md+, under the CTA on a phone —
+   * the homepage's lead block (Home option B, v2 wireframe 2026-09-29: the
+   * bill on the left, its latest vote and the chamber's own words on the
+   * right). When set, the `evidence` quote moves into that column, under
+   * this node. Omitted (the bill page), the panel is one column, as before.
+   */
+  aside?: ReactNode;
   className?: string;
 }
 
@@ -166,6 +174,7 @@ export function FloorVotePanel({
   headingLevel = 2,
   headingId,
   flush = false,
+  aside,
   className = '',
 }: FloorVotePanelProps) {
   // THE GATE. Both halves are load-bearing: the FACT earns the loudness, the
@@ -190,6 +199,67 @@ export function FloorVotePanel({
 
   const Heading = headingLevel === 3 ? 'h3' : 'h2';
 
+  /* THE EVIDENCE, when the fact is an announcement: the chamber's own
+     sentence, quoted rather than asserted. A real <blockquote> so it is
+     a quotation to a screen reader too, set in the reading voice at the
+     panel's pale ink — present, checkable, and deliberately quieter than
+     the headline it supports. It carries its own attribution row (source,
+     date and link) from the caller. */
+  const quote = evidence ? (
+    <blockquote className="max-w-read border-l-[3px] border-paper/35 pl-4 font-reading text-base leading-dark text-go-pale">
+      {evidence}
+    </blockquote>
+  ) : null;
+
+  const main = (
+    <>
+      <Chip tone="urgent" ground="go" dateLabel={dateLabel}>
+        {calendarLabel}
+      </Chip>
+
+      {/* text-h2, one rung under the section masthead it can sit beneath
+          (owner, 2026-08-01: the loudness is the ground and the amber, not
+          a headline outshouting its own section title). */}
+      <Heading id={headingId} className="max-w-[36ch] text-h2 font-extrabold text-paper">
+        <a
+          href={href}
+          className="inline-flex min-h-11 items-center text-paper no-underline hover:underline hover:decoration-[3px]"
+        >
+          {headline}
+        </a>
+      </Heading>
+
+      {/* One column: the quote sits under the headline it supports. With an
+          `aside`, it moves to that column instead (see below). */}
+      {!aside && quote}
+
+      {/* The identifier rides the meta row, under the headline — the same
+          headline → citation → meta order every plain listing uses (owner,
+          2026-08-01: it sat alone above the headline before). */}
+      <div className="flex flex-wrap items-center gap-4 text-sm leading-dark tracking-dark text-go-pale">
+        <span className="font-semibold tabular-nums">{identifier}</span>
+        {meta}
+      </div>
+
+      <div>
+        {/* white fill on the enamel: `ring-gap` swaps this button's own
+            border to go-deep on focus, so the white ring never touches the
+            white fill. 9.75:1 at every adjacency. */}
+        {/* data-call-cta: FloatingCallButton's stand-down contract — on a
+            floor-calendar bill page both CTAs were visible at once, and at
+            320px the floating button overlapped this one (Phase-1 P1).
+            Harmless on surfaces with no floating button. */}
+        <a
+          href={href}
+          data-call-cta=""
+          className="ring-gap inline-flex min-h-12 items-center justify-center gap-2 rounded-control border-2 border-paper bg-paper px-6 py-3 font-bold text-go-deep no-underline hover:border-tint hover:bg-tint"
+        >
+          {ctaLabel}
+        </a>
+      </div>
+    </>
+  );
+
   return (
     // `on-go` retunes the focus indicator for this ground: white ring, go-deep
     // gap. The ring is never green, because the buttons here are green-filled.
@@ -201,60 +271,19 @@ export function FloorVotePanel({
         flush ? 'pt-5 pb-8 md:pb-12' : 'border-y-[3px] border-go py-8 md:py-12'
       } ${className}`}
     >
-      <div className="mx-auto grid max-w-5xl gap-3 px-4">
-        <Chip tone="urgent" ground="go" dateLabel={dateLabel}>
-          {calendarLabel}
-        </Chip>
-
-        {/* text-h2, one rung under the section masthead it can sit beneath
-            (owner, 2026-08-01: the loudness is the ground and the amber, not
-            a headline outshouting its own section title). */}
-        <Heading id={headingId} className="max-w-[36ch] text-h2 font-extrabold text-paper">
-          <a
-            href={href}
-            className="inline-flex min-h-11 items-center text-paper no-underline hover:underline hover:decoration-[3px]"
-          >
-            {headline}
-          </a>
-        </Heading>
-
-        {/* THE EVIDENCE, when the fact is an announcement: the chamber's own
-            sentence, quoted rather than asserted. A real <blockquote> so it is
-            a quotation to a screen reader too, set in the reading voice at the
-            panel's pale ink — present, checkable, and deliberately quieter than
-            the headline it supports. It carries its own attribution row (source,
-            date and link) from the caller. */}
-        {evidence && (
-          <blockquote className="max-w-read border-l-[3px] border-paper/35 pl-4 font-reading text-base leading-dark text-go-pale">
-            {evidence}
-          </blockquote>
-        )}
-
-        {/* The identifier rides the meta row, under the headline — the same
-            headline → citation → meta order every plain listing uses (owner,
-            2026-08-01: it sat alone above the headline before). */}
-        <div className="flex flex-wrap items-center gap-4 text-sm leading-dark tracking-dark text-go-pale">
-          <span className="font-semibold tabular-nums">{identifier}</span>
-          {meta}
+      {aside ? (
+        // Two columns at md+: the bill, then what the record says about it.
+        // On a phone the second column follows the CTA, in reading order.
+        <div className="mx-auto grid max-w-5xl gap-6 px-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] md:gap-12">
+          <div className="grid content-start gap-3">{main}</div>
+          <div className="grid content-start gap-5">
+            {aside}
+            {quote}
+          </div>
         </div>
-
-        <div>
-          {/* white fill on the enamel: `ring-gap` swaps this button's own
-              border to go-deep on focus, so the white ring never touches the
-              white fill. 9.75:1 at every adjacency. */}
-          {/* data-call-cta: FloatingCallButton's stand-down contract — on a
-              floor-calendar bill page both CTAs were visible at once, and at
-              320px the floating button overlapped this one (Phase-1 P1).
-              Harmless on surfaces with no floating button. */}
-          <a
-            href={href}
-            data-call-cta=""
-            className="ring-gap inline-flex min-h-12 items-center justify-center gap-2 rounded-control border-2 border-paper bg-paper px-6 py-3 font-bold text-go-deep no-underline hover:border-tint hover:bg-tint"
-          >
-            {ctaLabel}
-          </a>
-        </div>
-      </div>
+      ) : (
+        <div className="mx-auto grid max-w-5xl gap-3 px-4">{main}</div>
+      )}
     </section>
   );
 }
