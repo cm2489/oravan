@@ -15,7 +15,8 @@ import {
 } from '../lib/moments-ui';
 import { getAllNominations, getNomination, nominationSlug, type Nomination } from '../lib/core/nominations';
 import { getMoments, vehicleKind, type MomentVehicle } from '../lib/moments';
-import { nominationHasCallScript } from '../lib/journey';
+import { getBill } from '../lib/core/bills';
+import { nominationHasCallScript, settledDecision } from '../lib/journey';
 import type { UpdateDayGroup } from '../lib/moment-updates';
 import { isSignalFresh, SIGNAL_WINDOW_DAYS } from '../lib/urgency.mjs';
 
@@ -338,14 +339,15 @@ test.describe('billCtaKey + vehicleCtaHref (SY-10)', () => {
  * /questions/[id] printed `moments.bothNote` unconditionally — "No side is
  * pre-selected. Every link above opens the same call flow, with support and
  * oppose scripts equally available." The second sentence quantifies over every
- * card in the grid. True of a bill (the bill page always mounts ActionPanel);
- * false of a nomination the Senate has finished with, or one its record never
- * described, whose page's whole rail is "No call to make".
+ * card in the grid. True of a bill whose decision is still open; false of a
+ * settled bill, whose page shows a record-only panel since 2026-09-28 (owner,
+ * Q9 "a"), and of a nomination the Senate has finished with, or one its record
+ * never described, whose page's whole rail is "No call to make".
  *
- * THE SHARED STRING IS NOT EDITED. It is the bill path's sentence too, and
- * there it is true — so the fix is an additive, kind-aware variant, and a
- * bill-only moment must keep printing the original byte for byte. Both halves
- * are asserted here; tests/moments.spec.ts asserts the same pair in the DOM.
+ * THE SHARED STRING IS NOT EDITED. It is true of every set whose cards can all
+ * be called — so the fix is an additive variant, and such a set must keep
+ * printing the original byte for byte. Both halves are asserted here;
+ * tests/moments.spec.ts asserts the same pair in the DOM.
  *
  * UNREACHABLE BY DOM TEST TODAY, for the reason `nominationCtaKey` above is:
  * data/moments.json holds zero nomination vehicles and must stay byte-
@@ -365,9 +367,16 @@ test.describe('bothNoteKey', () => {
     kind: 'nomination',
   });
 
-  /* A REAL bill-only vehicle set, off the shipped corpus — the exact input
-     today's pages hand this function. */
-  const bills: MomentVehicle[] = getMoments()[0]?.vehicles ?? [];
+  /* REAL bill vehicles off the shipped corpus whose decision is still open —
+     every card a call — and, separately, the settled ones (lib/journey.ts
+     settledDecision), read straight off the record rather than through the
+     function under test. */
+  const allBills: MomentVehicle[] = getMoments()
+    .flatMap((m) => m.vehicles)
+    .filter((v) => vehicleKind(v) === 'bill' && getBill(v.slug));
+  const isSettled = (v: MomentVehicle) => settledDecision(getBill(v.slug)!) !== null;
+  const bills = allBills.filter((v) => !isSettled(v));
+  const settledBills = allBills.filter(isSettled);
 
   test('the corpus really does contain both kinds of nomination record', () => {
     // Every test below is vacuous without them, so this failing is the honest
@@ -377,10 +386,25 @@ test.describe('bothNoteKey', () => {
     expect(bills.length, 'no bill vehicles in data/moments.json').toBeGreaterThan(0);
   });
 
-  test('every shipped moment is bill-only today, and keeps the sentence it ships with', () => {
+  test('every shipped moment is bill-only today, and drops the promise exactly when a bill in it is settled', () => {
     for (const m of getMoments()) {
-      expect(bothNoteKey(m.vehicles), m.id).toBe('moments.bothNote');
+      expect(m.vehicles.every((v) => vehicleKind(v) === 'bill'), m.id).toBe(true);
+      const someSettled = m.vehicles.some((v) => getBill(v.slug) && isSettled(v));
+      expect(bothNoteKey(m.vehicles), m.id).toBe(
+        someSettled ? 'moments.bothNoteSomeNoCall' : 'moments.bothNote',
+      );
     }
+  });
+
+  test('a settled bill drops the promise — alone, and beside open bills (Q9, 2026-09-28)', () => {
+    test.skip(settledBills.length === 0, 'no settled bill vehicle in data/moments.json today');
+    expect(bothNoteKey([settledBills[0]])).toBe('moments.bothNoteSomeNoCall');
+    expect(bothNoteKey([...bills, settledBills[0]])).toBe('moments.bothNoteSomeNoCall');
+  });
+
+  test('a set of open bills keeps the promise', () => {
+    test.skip(bills.length === 0, 'no open bill vehicle in data/moments.json today');
+    expect(bothNoteKey(bills)).toBe('moments.bothNote');
   });
 
   test('the shared string is untouched, in both languages', () => {
@@ -763,6 +787,62 @@ test.describe('revisionReasons', () => {
         // The status enums the collector keeps out of reader-facing prose.
         expect(text).not.toMatch(/[:→]|floor_vote|committee|introduced|passed_house/);
       }
+    }
+  });
+});
+
+/*
+ * `moments.vehiclesLedeSomeSettled` (2026-09-28). The bill-only lede says each
+ * card opens "the call flow", which held while every bill page mounted the
+ * call panel. Since the owner's Q9 answer ("a") a settled bill's page shows a
+ * record-only panel instead, so a bill-only grid holding one prints the
+ * conditional sentence. The settled bills are read off the record
+ * (lib/journey.ts settledDecision), and the page's choice is restated here
+ * rather than imported, like `ledeKeyFor` above.
+ */
+test.describe('moments.vehiclesLedeSomeSettled', () => {
+  const allBills: MomentVehicle[] = getMoments()
+    .flatMap((m) => m.vehicles)
+    .filter((v) => vehicleKind(v) === 'bill' && getBill(v.slug));
+  const settled = allBills.filter((v) => settledDecision(getBill(v.slug)!) !== null);
+  const open = allBills.filter((v) => settledDecision(getBill(v.slug)!) === null);
+
+  /** The page's bill-only branch. */
+  const billLedeKey = (vehicles: MomentVehicle[]) =>
+    vehicles.some((v) => getBill(v.slug) && settledDecision(getBill(v.slug)!) !== null)
+      ? 'moments.vehiclesLedeSomeSettled'
+      : 'moments.vehiclesLede';
+
+  const t = (locale: 'en' | 'es') =>
+    createTranslator({
+      locale,
+      messages: (locale === 'en' ? enMessages : esMessages) as unknown as Record<string, unknown>,
+    }) as unknown as (k: string) => string;
+
+  test('a grid of open bills keeps the flat sentence; one settled bill makes it conditional', () => {
+    test.skip(open.length === 0 || settled.length === 0, 'corpus lacks an open or a settled bill vehicle');
+    expect(billLedeKey(open)).toBe('moments.vehiclesLede');
+    expect(billLedeKey([...open, settled[0]])).toBe('moments.vehiclesLedeSomeSettled');
+    // The page asks the same question bothNoteKey asks, so the lede and the
+    // note under the grid can never disagree.
+    expect(bothNoteKey([...open, settled[0]])).toBe('moments.bothNoteSomeNoCall');
+  });
+
+  test('the conditional sentence promises no call flow behind every card', () => {
+    const FLAT = {
+      en: 'Each opens the full plain-language decode and the call flow',
+      es: 'Cada uno abre la explicación completa en lenguaje claro y el flujo de llamada',
+    } as const;
+    const CONDITION = {
+      en: 'where a decision on it is still open',
+      es: 'cuando todavía queda una decisión abierta sobre él',
+    } as const;
+    for (const locale of ['en', 'es'] as const) {
+      const text = t(locale)('moments.vehiclesLedeSomeSettled');
+      expect(text).not.toContain(FLAT[locale]);
+      expect(text).toContain(CONDITION[locale]);
+      // The flat sentence is untouched for the grids it is still true of.
+      expect(t(locale)('moments.vehiclesLede')).toContain(FLAT[locale]);
     }
   });
 });

@@ -86,3 +86,49 @@ The "In the news" band is selected from `data/conversation.json` — committed, 
 - On constraint 6: *"those two slots go to the list's own top ranks, newest list first — before this they fell to alphabetical slug order, which kept H.R. 1 in the band 25 of 32 days while the rank-1 bill never appeared — and a bill that is already law takes no most-viewed slot; it renders only when the press corroborates it, as any two-outlet card does."*
 
 Gates: `scripts/check-conversation.mjs` (only rated outlets may corroborate; every entry after `_meta.links_since` carries its link), `tests/conversation.unit.spec.ts`, `tests/news-band.unit.spec.ts`. Per-question press counts have their own gate, `scripts/check-question-press.mjs` (rated outlets only; every count a stored link; never tone or text).
+
+## 7. A settled decision shows the record, not the call
+
+*Owner, 2026-09-28 (UX question Q9, answered "a" at 18:20:11 UTC).* The option he picked, verbatim: *"A record-only block with no numbers: 'This is law' or 'This was rejected, 49–50', and how your members voted. No stance, no script."*
+
+*Owner, 2026-09-29, reviewing the follow-up (artifact 7BuRDMkWu9zigDE1u2XPLJ):* *"For the options, go with your pick (a) but we need to update the MCP server too if possible."* Pick (a), verbatim: *"Only a law or a failed final vote counts as finished. Procedural failures keep the call panel, with a line saying the last attempt failed."*
+
+- **Which bills.** `settledDecision` (`lib/journey.ts`), read off the stepper's own derivation so the panel and "Where does it stand?" agree, returns exactly two things: a signed law, or a rejected vote to pass the measure (or to agree to it), with the record's own tally, printed only when yeas are no more than nays. On 2026-09-29 that is 91 laws and 9 rejections.
+- **Everything else keeps the call panel.** That covers four cases:
+  - A failed motion to proceed.
+  - Cloture not invoked.
+  - A rejected motion to discharge a committee.
+  - A failed two-thirds vote to pass it under suspension of the House's rules.
+
+  None of these is the chamber's final answer on the measure. On 2026-09-29, 25 bills moved back to the call panel: 22 failed motions and 3 failed suspension votes. The full list is in PR #350.
+- **The last-attempt line.** On those pages the call panel prints one sentence above the stances (`bill.lastAttempt`, read by `lastFailedVote` in `lib/journey.ts`). It names what failed, with the record's tally and the record's date for that action. For example: "The last attempt failed: the Senate voted against taking it up, 47–50, on June 24, 2026." (S.J.Res. 185), and "The last attempt failed: a House vote to pass it fell short of the two-thirds this fast-track vote needs, 264–133, on February 24, 2026." (S. 2503).
+  - **It never says what comes next.** For some of these procedures the measure certainly remains available: a failed cloture or motion-to-proceed vote leaves it on the calendar, and a failed suspension vote leaves it eligible under the regular rules. For others that is not certain. A discharge motion under a statute's expedited procedure (50 U.S.C. 1546a, which borrows section 601(b) of the International Security Assistance and Arms Export Control Act of 1976) runs on the statute's own clock. So no procedure gets a "can come back" clause.
+  - **It fails closed.** Only procedures somebody has read get the line: proceed, cloture on proceeding, cloture on the measure, discharge and suspension. A reconsider motion that merely mentions a failed vote, a withdrawn motion, or an unread shape prints no line. The stepper's own sentence still stands below.
+- **The stepper, for a failed two-thirds vote.** It used to print the failed-motion sentence, "has not agreed to take it up — the last motion to do so failed". That was false for H.J.Res. 1, H.J.Res. 139 and S. 2503: the House did take each one up, on a vote to pass it that needed two-thirds, and a majority voted yes. It now says "a House vote to pass it fell short of the two-thirds this fast-track vote needs, 264–133" (`nowFloorSuspensionFailed`), with the record's tally.
+- **A veto keeps the call.** Congress can still vote to override a veto, with two-thirds of both chambers, and the stepper's veto sentence says so. A veto is neither a law nor a failed final vote, so pick (a) does not count it as finished. No bill in the corpus was vetoed on 2026-09-29.
+- **A reconsider motion keeps the call.** A failed vote with a motion to reconsider *entered* keeps the call, because the same question can come back.
+- **What stands in the call panel's place, in this order** (owner, 2026-09-28, reviewing /bills/hconres-89-119: *"It's talking about the Senate but in the 'no call to make' box it talks about the House vote and then says the senators underneath this. That doesn't make sense and is confusing."*):
+  1. **The outcome, in one sentence.** It names the deciding chamber, with the record's tally and the action's date ("The Senate rejected it, 49–50, on September 24, 2026."). The date is the record's own for that action: `status_basis_date` when the pipeline wrote a basis, else `last_action_date`. It is left out when the record holds none.
+  2. **"How your members voted", once a ZIP is saved.** There is one group per vote (`lib/settled-votes.ts`): the deciding vote first, then the other chamber's newest roll call on the bill. Each group is headed by its chamber, date and tally. A member is listed only under a vote their own chamber held, never two chambers in one list.
+     - The deciding vote is matched by the roll number in the record's own sentence.
+     - When the roll-call file does not hold it, the group still prints the record's date and tally, and says positions are not shown and why. H.R. 2262's House vote of 2026-01-13 is older than the file's floor.
+     - A voice vote says no position was recorded.
+     - A member the roll call does not list reads "No recorded vote".
+  3. **With no ZIP,** one line and the ZIP form.
+
+  The vote record's own "your members" strip is left off the page, so nothing is printed twice. There is no stance control, no script and no phone number. A member's name links to their page, which carries the numbers.
+- **What else goes.** The floating call button and the "see how a call works" demo, both of which only ever pointed at a call.
+- **The MCP envelope reads the same rule** (`decisionState`, `lib/docket.mjs`):
+  - **Values.** `enacted` for a law, `settled` for a failed passage vote (and, since #360, a concurrent resolution both chambers adopted), `pending` for everything else. A failed motion, a failed suspension vote and a veto are all `pending`.
+  - **The call link.** `get_bill` offers `act_url` on every `pending` record, and withholds it on `settled` and `enacted`.
+  - **Schema unchanged.** `settled_reason` stays null while pending, and no field was added for "the last vote failed". The failed vote still reaches an agent verbatim through `get_bill`'s `last_action_text`.
+- **Never wider than the MCP envelope.** Everything the panel calls settled, `decisionState` calls settled or enacted. The converse has two stated gaps:
+  - **A failed passage vote whose chamber the record does not name.** `decisionState` reads the words alone and calls it settled. The stepper prints its chamber-free sentence, and the panel keeps the call with it. No record had that shape on 2026-09-29.
+  - **A concurrent resolution both chambers agreed to in one form.** This is `concurrentAdoptedBy` (`lib/floor-text.mjs`), from #360, merged 2026-09-29. H.Con.Res. 86 is the one case. The envelope calls it settled, because it goes to no President and its path is over. The bill page does not read it yet: its stepper sentence and panel need new strings, and #360 lists that follow-up. Until then its page keeps the call.
+- **Not yet covered:** the paid action-panel embed (`app/embed/action-panel`) does not read the settled state; rule 6 says so. The Big Questions status line (`lib/moment-status.mjs`) still marks a failed vote as terminal, so a vehicle card for a failed motion reads "Read the bill" rather than "Read + call", although its page now has the call panel.
+
+Gates:
+- `tests/settled-panel.unit.spec.ts`: the reader, both directions over the committed corpus, pick (a) over the whole corpus, and the words in both languages.
+- `tests/settled-panel.spec.ts`: the page, including S.J.Res. 185 and S. 2503 with the call panel and the line.
+- `tests/settled-state.unit.spec.ts` and `tests/mcp-tools.spec.ts`: the MCP classification.
+- Funnel invariant I2, scoped to a decision still open (`tests/funnel.spec.ts`).

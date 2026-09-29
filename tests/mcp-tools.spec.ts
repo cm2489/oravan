@@ -232,6 +232,53 @@ test.describe('get_bill', () => {
     expect(bill.act_url).toBe(bill.url);
   });
 
+  /*
+   * THE OWNER'S PICK (a), 2026-09-29: "Only a law or a failed final vote
+   * counts as finished. Procedural failures keep the call panel, with a line
+   * saying the last attempt failed." — and, for this server, "we need to
+   * update the MCP server too if possible". The three pages he reviewed, by
+   * slug, each skipped with a reason if its record has moved on:
+   *   H.Con.Res. 89  a failed vote to agree to it          → settled, no act_url
+   *   S.J.Res. 185   a failed motion to proceed            → pending, act_url
+   *   S. 2503        a failed two-thirds suspension vote   → pending, act_url
+   * The schema does not change: a pending record's settled_reason stays null,
+   * and the failed vote reaches an agent through last_action_text, verbatim.
+   */
+  for (const { slug, text, state } of [
+    { slug: 'hconres-89-119', text: 'Failed of passage in Senate by Yea-Nay Vote. 49 - 50. Record Vote Number: 244.', state: 'settled' },
+    {
+      slug: 'sjres-185-119',
+      text: 'Motion to proceed to consideration of measure rejected in Senate by Yea-Nay Vote. 47 - 50. Record Vote Number: 192. (CR S3194)',
+      state: 'pending',
+    },
+    {
+      slug: 's-2503-119',
+      text: 'On motion to suspend the rules and pass the bill Failed by the Yeas and Nays: (2/3 required): 264 - 133 (Roll no. 72).',
+      state: 'pending',
+    },
+  ] as const) {
+    test(`pick (a): ${slug} reads decision_state "${state}"`, async ({ request }) => {
+      const record = corpus.find((b) => slugOf(b) === slug);
+      test.skip(record?.last_action_text !== text, `${slug} has a newer action than the one reviewed`);
+      for (const locale of ['en', 'es'] as const) {
+        const result = await callTool(request, 'get_bill', { slug, locale });
+        const bill = result.structuredContent!.bill as Record<string, unknown>;
+        expect(bill.decision_state).toBe(state);
+        if (state === 'settled') {
+          expect(bill.settled_reason).toBe(text);
+          expect(bill.act_url).toBeNull();
+        } else {
+          expect(bill.settled_reason).toBeNull();
+          expect(bill.act_url).toBe(bill.url);
+          // The failed vote itself, verbatim and in English in both locales.
+          expect(bill.last_action_text).toBe(text);
+        }
+        // The pure reader the route calls (lib/docket.mjs) says the same.
+        expect(decisionState(record!).state).toBe(state);
+      }
+    });
+  }
+
   test('a law: decision_state "enacted", and NO act_url', async ({ request }) => {
     const law = corpus.find((b) => b.status === 'signed');
     test.skip(!law, 'no signed bill in the committed corpus');

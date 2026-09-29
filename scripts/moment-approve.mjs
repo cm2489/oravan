@@ -91,6 +91,7 @@
  */
 import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { decisionState } from '../lib/docket.mjs';
 import { ID_RE, checkMoments, vehicleKind } from '../lib/moments-gate.mjs';
 import { PLACEHOLDER_ID, PUBLISHED_SIGNAL_MAX_AGE_DAYS } from './moment-scaffold.mjs';
 import { nominationSlug } from './nominations-fetch.mjs';
@@ -587,11 +588,17 @@ export function runGate({ moments, bills, nominations, baselineVehicles, now }) 
       .filter((n) => typeof n.nominee_description === 'string' && n.nominee_description.trim() !== '')
       .map(storedNominationSlug),
   );
+  // The settled-record set, built exactly as scripts/check-moments.mjs builds
+  // it: a bill whose record leaves no decision open shows the record, not a
+  // call, so it may not be added as a new vehicle.
+  const settledBillSlugs = new Set(
+    bills.filter((b) => decisionState(b).state !== 'pending').map((b) => b.full_identifier),
+  );
   return checkMoments(
     moments,
     slugsByKind,
     (v) => statusByKind[vehicleKind(v)]?.get(v.slug),
-    { describedNominationSlugs, baselineVehicles, now },
+    { describedNominationSlugs, baselineVehicles, settledBillSlugs, now },
   );
 }
 
@@ -763,7 +770,7 @@ export function prBody(decision, { issue, moments, messages, now }) {
     `Run in process against the spliced file, with \`checkMoments\` imported from \`lib/moments-gate.mjs\` — the same function \`scripts/check-moments.mjs\` runs in CI, not a second copy of it:`,
     '',
     `- **violations: 0** (schema, EN/ES parity, vehicle resolution, qualifying-signal shape, dates, the ${LIVE_CAP}-live cap, the forbidden-vocabulary lint in both languages)`,
-    `- **new-vehicle terminality:** baseline taken from \`data/moments.json\` as \`main\` has it (${vehiclePairs(moments).size} vehicle pair(s)); every vehicle added here is non-terminal`,
+    `- **new-vehicle terminality:** baseline taken from \`data/moments.json\` as \`main\` has it (${vehiclePairs(moments).size} vehicle pair(s)); every vehicle added here is non-terminal and still has a decision open on its record`,
     decision.gate.warnings.length
       ? `- **warnings (non-blocking, printed for the record):**\n${decision.gate.warnings.map((w) => `  - ${w}`).join('\n')}`
       : '- **warnings:** none',

@@ -298,30 +298,41 @@ test.describe('lib/votes memberVotesByBill', () => {
       const groups = memberVotesByBill(id);
       const flat = groups.flatMap((g) => g.votes);
       expect(flat.map((v) => v.rollCall.id).sort()).toEqual(listed(id).map((r) => r.id).sort());
-      for (const v of flat) expect(v.position).toBe(memberPosition(v.rollCall, id));
-      for (const g of groups) for (const v of g.votes) expect(v.rollCall.bill).toBe(g.bill);
+      expect(flat.filter((v) => v.position !== memberPosition(v.rollCall, id)).map((v) => v.rollCall.id)).toEqual([]);
+      expect(groups.flatMap((g) => g.votes.filter((v) => v.rollCall.bill !== g.bill).map((v) => v.rollCall.id))).toEqual([]);
       expect(new Set(groups.map((g) => g.bill)).size).toBe(groups.length);
     }
   });
 
+  // The roster-wide checks below collect every miss and assert ONCE: since
+  // the 2026-09-29 back-fill the file holds the whole Congress (~550 members,
+  // ~130,000 member-votes), and one expect() per vote took minutes.
   test('the whole roster: no member gains or loses a roll call', () => {
+    const misses: string[] = [];
     for (const id of everyone) {
-      expect(memberVotesByBill(id).reduce((n, g) => n + g.votes.length, 0), id).toBe(listed(id).length);
+      const got = memberVotesByBill(id).reduce((n, g) => n + g.votes.length, 0);
+      const want = listed(id).length;
+      if (got !== want) misses.push(`${id}: ${got} listed, ${want} on record`);
     }
+    expect(misses).toEqual([]);
   });
 
   test('newest first — bills by the member’s newest vote, and each bill’s votes newest first', () => {
     const before = (a: RollCall, b: RollCall) =>
       a.date > b.date || (a.date === b.date && (a.chamber < b.chamber || (a.chamber === b.chamber && a.roll > b.roll)));
+    const misses: string[] = [];
     for (const id of everyone) {
       const groups = memberVotesByBill(id);
       for (const g of groups) {
-        for (let i = 1; i < g.votes.length; i++) expect(before(g.votes[i - 1].rollCall, g.votes[i].rollCall)).toBe(true);
+        for (let i = 1; i < g.votes.length; i++) {
+          if (!before(g.votes[i - 1].rollCall, g.votes[i].rollCall)) misses.push(`${id} ${g.bill}: ${g.votes[i - 1].rollCall.id} before ${g.votes[i].rollCall.id}`);
+        }
       }
       for (let i = 1; i < groups.length; i++) {
-        expect(before(groups[i - 1].votes[0].rollCall, groups[i].votes[0].rollCall)).toBe(true);
+        if (!before(groups[i - 1].votes[0].rollCall, groups[i].votes[0].rollCall)) misses.push(`${id}: bill ${groups[i - 1].bill} before ${groups[i].bill}`);
       }
     }
+    expect(misses).toEqual([]);
   });
 
   test('"Not voting" is a recorded position and is kept, not dropped', () => {
@@ -348,12 +359,14 @@ test.describe('lib/votes memberVotesByBill', () => {
   // while every left-out vote is among its bill's stored roll calls.
   test('past the member-page cap, every left-out vote is on its bill page\'s record', () => {
     expect(Number.isInteger(MEMBER_VOTES_MAX_BILLS) && MEMBER_VOTES_MAX_BILLS > 0).toBe(true);
+    const misses: string[] = [];
     for (const id of everyone) {
       for (const g of memberVotesByBill(id).slice(MEMBER_VOTES_MAX_BILLS)) {
         const onBill = new Set(votesForBill(g.bill).map((r) => r.id));
-        for (const v of g.votes) expect(onBill.has(v.rollCall.id), `${id} ${v.rollCall.id}`).toBe(true);
+        for (const v of g.votes) if (!onBill.has(v.rollCall.id)) misses.push(`${id} ${v.rollCall.id}`);
       }
     }
+    expect(misses).toEqual([]);
   });
 
   test('every voted bill is a corpus bill the row can show', () => {
