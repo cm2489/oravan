@@ -478,7 +478,9 @@ jobs:
         # the commit step to pick up. scripts/check-votes.mjs re-checks it
         # below, before the commit.
         #
-        # Cost: $0. Two free Congress.gov list requests + two per new House
+        # Cost: $0. Per session in the file's window — both sessions of the
+        # Congress since the 2026-09-29 back-fill moved the floor to
+        # 2025-01-03 — two free Congress.gov list requests + two per new House
         # corpus roll call, one senate.gov menu + one per new Senate corpus
         # roll call. No Anthropic key.
         continue-on-error: true
