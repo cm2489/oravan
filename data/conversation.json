@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-09-29T01:52:59.717Z",
+    "fetched_at": "2026-09-29T02:20:47.110Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-09-29T01:52:59.717Z"
+        "checked_at": "2026-09-29T02:20:47.110Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-27",
         "week_label": "Most-Viewed Bills - Week of September 27, 2026",
         "entries": 8,
-        "checked_at": "2026-09-29T01:52:59.717Z"
+        "checked_at": "2026-09-29T02:20:47.110Z"
       },
       "leans": {
         "center": {
@@ -1585,6 +1585,20 @@
     "s-4668-119": {
       "outlets7d": [
         {
+          "domain": "cbsnews.com",
+          "lean": "left",
+          "firstSeen": "2026-09-29",
+          "lastSeen": "2026-09-29",
+          "url": "https://www.cbsnews.com/news/senate-approves-bill-regulate-college-sports-ncaa/"
+        },
+        {
+          "domain": "politico.com",
+          "lean": "left",
+          "firstSeen": "2026-09-29",
+          "lastSeen": "2026-09-29",
+          "url": "https://www.politico.com/news/2026/09/28/senate-college-sports-trump-01096094"
+        },
+        {
           "domain": "thehill.com",
           "lean": "center",
           "firstSeen": "2026-09-28",
@@ -1650,6 +1664,12 @@
           "firstSeen": "2026-09-29",
           "lastSeen": "2026-09-29",
           "url": "https://news.google.com/rss/articles/CBMizgFBVV95cUxQZkZSUlBZZDBHd3BfWW5SOWZvZEI5WWNaMlFUVUQyUkpncExLbVBUOTQtZW1KSU40b2pxdWxURG1KTllaUW4tZUwyUnJuUHlJV1N2TFRtVXktVlQtNm9jZEZhLTBJU3UxRVBQODBwMmxlU0FXczF3SU8tQzRMczRGaDRlX19PdXB2WHlFS3FDcHhPRDlQMGVBa1huWl9LcWVBYkdXeHN3aEhkQ0NRUFVhUS1UbkJxUHNfcXk2aFJPQ0xRclZWRTNuRE96VnYyd9IBzgFBVV95cUxQZkZSUlBZZDBHd3BfWW5SOWZvZEI5WWNaMlFUVUQyUkpncExLbVBUOTQtZW1KSU40b2pxdWxURG1KTllaUW4tZUwyUnJuUHlJV1N2TFRtVXktVlQtNm9jZEZhLTBJU3UxRVBQODBwMmxlU0FXczF3SU8tQzRMczRGaDRlX19PdXB2WHlFS3FDcHhPRDlQMGVBa1huWl9LcWVBYkdXeHN3aEhkQ0NRUFVhUS1UbkJxUHNfcXk2aFJPQ0xRclZWRTNuRE96VnYydw?oc=5"
+        },
+        {
+          "domain": "washingtonsun.com",
+          "firstSeen": "2026-09-29",
+          "lastSeen": "2026-09-29",
+          "url": "https://news.google.com/rss/articles/CBMihgFBVV95cUxNdEhNZ1lBY3V1S2diNndGdXlSRDdKOTVWUEJWSGNoT3cwNTluMmY0MmRfUXhLdUtnSEVXSktnbDVvS1dPalNZQXRwcXd4WmJZNFY0ZC1NSWxibVJkTGJMYW50eXFGYUtvNW9QbnVIMVRUdXJzLTZsR01JdXlSSUVza2poazFxUQ?oc=5"
         },
         {
           "domain": "1819news.com",
