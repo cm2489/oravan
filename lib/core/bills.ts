@@ -15,6 +15,7 @@ import {
   compareDocket,
   docketKey,
   evidenceFor,
+  insideSignalWindow,
   isActNow,
   isDecidingNow,
   isSettledFloor,
@@ -192,6 +193,24 @@ export function getTopActions(n = 5, locale = 'en'): Bill[] {
   return actNowPool
     .filter((s) => s.raw.ai_headline)
     .slice(0, n)
+    .map(({ raw }) => localizeBill(raw, locale));
+}
+
+/**
+ * THE ACT-NOW POOL INSIDE A RECENCY WINDOW — the list the MCP `whats_moving`
+ * tool and both feeds publish, in ladder order, before any topic filter or
+ * cut. Same pool and same order as `getTopActions`; the only thing it adds is
+ * the window, and the window is tested on the date of the signal that put the
+ * bill in the pool (`insideSignalWindow`), not on its last action alone.
+ *
+ * It lives here rather than in lib/core/mcp.ts so the unit specs can pin it
+ * against the homepage's shortlist: mcp.ts reaches a `server-only` module.
+ */
+export function getActNowInWindow(days: number, locale = 'en', now: number = Date.now()): Bill[] {
+  const cutoff = now - days * 86_400_000;
+  const { actNowPool } = docketCorpus(now);
+  return actNowPool
+    .filter((s) => s.raw.ai_headline && insideSignalWindow(s.raw, s.rung, cutoff))
     .map(({ raw }) => localizeBill(raw, locale));
 }
 
