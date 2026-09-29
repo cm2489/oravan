@@ -193,6 +193,18 @@ test.describe('the words, in both languages', () => {
     // concurrent resolution" (govinfo.gov, read 2026-09-29).
     expect(en.bill.concurrent.warPowers).toContain('if Congress so directs by concurrent resolution');
     expect(es.bill.concurrent.warPowers).toContain('si el Congreso así lo ordena mediante una resolución concurrente');
+    // The two words are the CRS's about SECTION 5(c), not about the whole War
+    // Powers Resolution (the report adds that "most analysts" think the rest
+    // would stand, section 9 being a separability clause). So the quote names
+    // its object: a "which"
+    // or "que" hanging off "the War Powers Resolution" would read as the whole
+    // law. And the Court's decision is the CRS's REASON ("under the reasoning
+    // applied by the Court"), never a date the CRS started saying so: no
+    // "since" / "desde que" (verifier, 2026-09-29).
+    expect(en.bill.concurrent.warPowers).toMatch(/calls (that section|section 5\(c\)) <quote>/);
+    expect(es.bill.concurrent.warPowers).toMatch(/califica (esa sección|la sección 5\(c\)) de <quote>/);
+    expect(en.bill.concurrent.warPowers).not.toMatch(/\bsince\b/i);
+    expect(es.bill.concurrent.warPowers).not.toMatch(/\bdesde que\b/i);
   });
 
   test('version 2 folds the War Powers detail under a neutral question, in both languages', () => {
