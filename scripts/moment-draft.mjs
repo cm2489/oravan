@@ -80,6 +80,7 @@
  */
 import { lintRevisionText } from '../lib/moment-updates-gate.mjs';
 import { PRESIDENT_STYLE_RULE, presidentStyle } from '../lib/president-style.mjs';
+import { partyCountsPassLint, partyRule, partyTotalsPromptText } from '../lib/party-count-rule.mjs';
 import { statusKeyFor } from './moment-candidates.mjs';
 
 /**
@@ -100,8 +101,19 @@ export const DRAFT_MODEL = 'claude-sonnet-5-5';
  *  Drafts written under v2 saw a different, and in two ways wronger, record.
  *  v4 (2026-09-29): the prompt carries PRESIDENT_STYLE_RULE ("the president",
  *  owner 2026-09-29), and every clean field is restyled by the same
- *  normalizer before the lint. */
-export const DRAFT_PROMPT_VERSION = 4;
+ *  normalizer before the lint.
+ *  v5 (2026-09-29): the party rule is its own bullet, from
+ *  lib/party-count-rule.mjs. Once the rule-3 lint accepts a party count on a
+ *  recorded vote (PR #363), the record block also lists the measure's newest
+ *  recorded votes WITH the record's count by party, and the rule lets a draft
+ *  copy such a count and name a party nowhere else (owner's card l12). Until
+ *  then the record block is v4's and the rule still names no party. */
+export const DRAFT_PROMPT_VERSION = 5;
+
+/** How many of a measure's recorded votes the record block lists, newest
+ *  first. Enough for "the House passed it, the Senate rejected it"; a bill
+ *  with 47 amendment votes (H.R. 1) must not flood a 110-word draft. */
+export const DRAFT_VOTES_MAX = 3;
 
 /** The three slots a scaffold leaves empty. Order is display order. */
 export const DRAFT_FIELDS = ['name', 'summary', 'role'];
@@ -228,8 +240,13 @@ export function blankDraft(notes = []) {
  *        fields the candidate object does not carry (title, last_action_text)
  * @param {{ en?: Record<string, string>, es?: Record<string, string> } | null} [statusPhrases]
  *        messages/*.json `bills.status`, per language
+ * @param {Record<string, any>[]} [rollCalls] data/votes.json rollCalls on
+ *        this measure (moment-watch.mjs passes them). Printed in the record
+ *        block only while `partyCounts` is true — see recordedVoteLines.
+ * @param {{ partyCounts?: boolean }} [opts] whether the rule-3 lint accepts a
+ *        party count on this tree; tests pass it, the run asks the lint.
  */
-export function groundFor(c, bill, statusPhrases = null) {
+export function groundFor(c, bill, statusPhrases = null, rollCalls = [], { partyCounts = partyCountsPassLint() } = {}) {
   const lastActionText = bill?.last_action_text ?? null;
   const lastActionDate = c.lastActionDate ?? bill?.last_action_date ?? null;
   const statusKey = statusKeyFor(c.status, lastActionText, lastActionDate);
@@ -266,7 +283,42 @@ export function groundFor(c, bill, statusPhrases = null) {
      *  recordLines for why the tier enum itself never travels. */
     leanRated: (c.leans ?? []).some((l) => l === 'left' || l === 'right'),
     url: c.url ?? null,
+    /** Whether a party count may be written (lib/party-count-rule.mjs). */
+    partyCounts,
+    /** The measure's newest recorded votes, newest first, verbatim from
+     *  data/votes.json; at most DRAFT_VOTES_MAX. */
+    votes: (rollCalls ?? [])
+      .filter((r) => r?.bill === c.slug && typeof r.date === 'string')
+      .sort((a, b) => b.date.localeCompare(a.date) || a.chamber.localeCompare(b.chamber) || b.roll - a.roll)
+      .slice(0, DRAFT_VOTES_MAX)
+      .map((r) => ({
+        date: r.date,
+        chamber: r.chamber === 'house' ? 'House' : 'Senate',
+        roll: r.roll,
+        question: r.question ?? '',
+        result: r.result ?? '',
+        totals: r.totals ?? {},
+        byParty: partyTotalsPromptText(r.totalsByParty),
+      })),
   };
+}
+
+/**
+ * The recorded votes, one fact per line, as BOTH the prompt's record block and
+ * the issue print them (scripts/moment-watch.mjs) — one source, so the model
+ * and the owner are handed the same facts. Empty unless `g.partyCounts`: the
+ * lines exist to carry each vote's count by party, and while the lint refuses
+ * a party count the record block stays exactly as it was (v4).
+ * @param {ReturnType<typeof groundFor>} g
+ * @returns {string[]}
+ */
+export function recordedVoteLines(g) {
+  if (!g.partyCounts) return [];
+  return (g.votes ?? []).map((v) => {
+    const t = v.totals ?? {};
+    const counts = `Yeas ${t.yea ?? 0}, Nays ${t.nay ?? 0}, Present ${t.present ?? 0}, Not Voting ${t.notVoting ?? 0}`;
+    return `recorded vote, ${v.date}: ${v.chamber} roll call no. ${v.roll} · question "${v.question}" · result "${v.result}" · ${counts}${v.byParty ? ` · ${v.byParty}` : ''}`;
+  });
 }
 
 /**
@@ -298,6 +350,7 @@ export function recordLines(g) {
       `Oravan's own media-bias table gives a lean rating to ${g.leanRated ? 'at least one' : 'zero'} of them. ` +
       'That is a fact about that table, not a description of the reporting, and not something to write about.',
     `floor calendar: ${g.floorCalendar ? `on the ${g.floorChamber ?? 'unnamed'} floor calendar (a placement — the record states no date)` : 'not on a floor calendar'}`,
+    ...recordedVoteLines(g),
     `official record: ${g.url ?? '(not on file)'}`,
   ];
 }
@@ -373,7 +426,15 @@ export const INTERNAL_ENUM_TOKENS = [
  * @returns {string[]}
  */
 export function enumLeaks(g) {
-  const verbatim = [g.citation, g.title, g.headline, g.lastActionText, g.url].filter(isNonEmptyString);
+  const verbatim = [
+    g.citation,
+    g.title,
+    g.headline,
+    g.lastActionText,
+    g.url,
+    // A recorded vote's question and result are the record's own words too.
+    ...(g.votes ?? []).flatMap((v) => [v.question, v.result]),
+  ].filter(isNonEmptyString);
   let scanned = recordLines(g).join('\n');
   for (const span of verbatim) scanned = scanned.split(span).join(' ');
   return INTERNAL_ENUM_TOKENS.filter((token) =>
@@ -408,7 +469,8 @@ HARD RULES:
 - Use ONLY the record above. Never add a number, date, dollar figure, name, motive, or consequence that is not in it. If the record does not say what the measure would do beyond its title, say what the record does say and stop.
 - THERE IS NO SCHEDULED VOTE DATE IN THIS RECORD, and none can be derived from it. Never say when a vote will happen, never say a vote is scheduled or awaited, never imply timing the record does not state. A floor-calendar placement is a placement, not a date.
 - No forecasting and no hedging: no "expected to", "likely to", "could", "might", "set to", "poised to", "on track to", "heading to", "headed for"; no "se espera", "probablemente", "podría", "podrían", "estaría", "estarían", "previsto que", "a punto de", "rumbo a", "camino de".
-- Never name a political party. Never use advocacy verbs — fight, resist, stop, save, defend, block / luchar, resistir, detener, salvar, defender, bloquear — and never crisis, attack, or scheme framing, in either language. This is machine-checked in both languages before the editor sees your draft, and a single hit throws that whole field away in both languages.
+${partyRule({ figures: recordedVoteLines(g).length ? 'the "by party" figures of that recorded vote in THE RECORD above' : '', allowed: g.partyCounts })}
+- Never use advocacy verbs — fight, resist, stop, save, defend, block / luchar, resistir, detener, salvar, defender, bloquear — and never crisis, attack, or scheme framing, in either language. This rule and the one above are machine-checked in both languages before the editor sees your draft, and a single hit throws that whole field away in both languages.
 - Describe the question, never a position on it. No urgency the record does not carry.
 - The Spanish is native Latin-American-neutral Spanish at an 8th-grade level, with correct accents (aprobó, Cámara, comité, votación), carrying the same facts — not a gloss of the English. Bill citations keep their English form (S. 3172, H.R. 9770).
 - Dates the way a reader says them: "July 27, 2026" in English, "27 de julio de 2026" in Spanish. Never ISO "2026-07-27" in prose. Never an internal token like "floor_vote" — if you find yourself writing an underscore, stop.
