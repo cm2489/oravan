@@ -188,6 +188,18 @@ export interface Vacancy {
   since: string;
 }
 
+/**
+ * A vacant seat's special-election dates as the FEC's calendar states them
+ * (data/special-elections.json, written weekly by
+ * scripts/sync-special-elections.mjs). `type` is the FEC's own code (SP, SG,
+ * SR, SGR, ...); `checked` is the day the FEC was last asked. An empty
+ * `dates` means the FEC lists none yet - never that none is coming.
+ */
+export interface SeatElections {
+  checked: string;
+  dates: { date: string; type: string }[];
+}
+
 export type Stance = 'support' | 'oppose' | 'undecided';
 export type CallOutcome = 'contact' | 'voicemail' | 'unavailable';
 
