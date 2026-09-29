@@ -190,7 +190,11 @@ test('a member page\'s "Right now:" line for H.Con.Res. 86 carries the explainer
     if (!(await row.isVisible())) await page.locator('[data-member-votes-all] > summary').click();
     await expect(row).toBeVisible();
     await expectFullExplainer(page, row.locator(EXPLAINER), l);
-    // One explainer on the page: only H.Con.Res. 86 is an adopted concurrent resolution.
-    await expect(page.locator(EXPLAINER)).toHaveCount(1);
+    // One explainer on screen: only H.Con.Res. 86 is an adopted concurrent
+    // resolution. (Since 2026-09-29 the "Big Questions" filter's own short
+    // list repeats a folded Big Question card, hidden until that filter is
+    // picked — components/MemberVotes.tsx — so the page may hold a second,
+    // undisplayed copy; what a reader sees is one.)
+    await expect(page.locator(`${EXPLAINER}:visible`)).toHaveCount(1);
   }
 });

@@ -247,7 +247,14 @@ function MemberBody({
         </section>
 
         <div className="min-w-0 min-[62rem]:col-start-1 min-[62rem]:row-start-1">
-          <section aria-labelledby="rep-sponsored" data-testid="rep-sponsored">
+          {/* How they voted (owner, UX inventory R04, 2026-09-28), straight
+              after the numbers and before what they sponsor (wireframes v2,
+              member.html, 2026-09-29: "who she is, her numbers (first screen),
+              how she voted, then the bills she sponsors"). The rep cards on
+              /reps and the bill call panel link here by its `#votes` anchor. */}
+          <MemberVotes bioguide={rep.bioguide} name={rep.name} locale={locale} />
+
+          <section aria-labelledby="rep-sponsored" data-testid="rep-sponsored" className="mt-12">
             <div className="border-t-[3px] border-ink pt-4">
               <h2 id="rep-sponsored" className="text-h2 font-extrabold">
                 {t('sponsoredHeading')}
@@ -287,11 +294,6 @@ function MemberBody({
               </p>
             )}
           </section>
-
-          {/* How they voted (owner, UX inventory R04, 2026-09-28): between
-              what they sponsor and the continuation. The rep cards on /reps
-              and the bill call panel link here by its `#votes` anchor. */}
-          <MemberVotes bioguide={rep.bioguide} name={rep.name} locale={locale} />
 
           {sponsored.length === 0 && <Continuation locale={locale} t={t} />}
         </div>

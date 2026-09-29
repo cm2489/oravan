@@ -29,6 +29,8 @@ import { referenceBill } from './corpus-fixtures';
 
 const HOUSE = 'D000594'; // Monica De La Cruz, TX-15 (also reps.spec.ts's ZIP 78501 fixture)
 const SENATOR = 'C000127'; // Maria Cantwell, WA
+/** The vote cards open before the fold (components/MemberVotes.tsx SHOWN). */
+const SHOWN_VOTES = 5;
 
 const LOCALES = [
   { prefix: '', locale: 'en', messages: en },
@@ -238,11 +240,13 @@ for (const { prefix, messages } of LOCALES) {
  * HOW THEY VOTED (owner, UX inventory R04, 2026-09-28). The member page lists
  * the bills the record names this member on, newest first, up to
  * MEMBER_VOTES_MAX_BILLS (a page-weight cap decided on PR #348), each with the
- * AI-labeled headline, their vote in the record's own word, and the bill
- * page's own "Right now:" sentence; past the cap, one line counts the bills
- * left out. Recomputed from lib/votes at assert time, so a nightly that adds
- * roll calls cannot break this block. Asserted by message key and data-* hook
- * only.
+ * AI-labeled headline, ONE status word from a closed set (lib/status-word.ts;
+ * wireframes v2, member.html, 2026-09-29), their vote in the record's own word,
+ * and, behind a word that says the measure is finished, the record's line (the
+ * bill page's own "Right now:" sentence, or "Became law …"); past the cap, one
+ * line counts the bills left out. Recomputed from lib/votes at assert time, so
+ * a nightly that adds roll calls cannot break this block. Asserted by message
+ * key and data-* hook only.
  */
 for (const { prefix, locale, messages } of LOCALES) {
   const tRep = createTranslator({ locale, messages, namespace: 'rep' });
@@ -264,8 +268,14 @@ for (const { prefix, locale, messages } of LOCALES) {
           day: 'numeric',
           timeZone: 'UTC',
         }).format(new Date(votesCoverage().floor));
+        const updated = new Intl.DateTimeFormat(locale, {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          timeZone: 'UTC',
+        }).format(new Date(votesCoverage().updatedAt));
         await expect(
-          section.getByText(tRep('votesNote', { count: groups.length, date: since }), { exact: true })
+          section.getByText(tRep('votesNote', { count: groups.length, date: since, updated }), { exact: true })
         ).toBeVisible();
 
         const rows = section.locator('[data-member-vote-bill]');
@@ -274,11 +284,13 @@ for (const { prefix, locale, messages } of LOCALES) {
           listed.map((g) => g.bill)
         );
 
-        // "Show all N" counts the listed bills, never the ones left out.
+        // Five open (member.html: "five shown, then Show more"); "Show N more"
+        // counts the folded bills, never the ones left out past the cap.
         const folded = await section.locator('[data-member-votes-all] [data-member-vote-bill]').count();
+        expect(folded).toBe(Math.max(0, listed.length - SHOWN_VOTES));
         const all = section.locator('[data-member-votes-all] > summary');
         await expect(all).toHaveCount(folded > 0 ? 1 : 0);
-        if (folded > 0) await expect(all).toHaveText(tRep('showAll', { count: listed.length }));
+        if (folded > 0) await expect(all).toHaveText(tRep('votesShowMore', { count: folded }));
 
         // Past the cap: one visible line, outside the disclosure, counting the
         // bills left out. Under it: no line at all.
@@ -360,7 +372,7 @@ for (const { prefix, locale, messages } of LOCALES) {
       // The first open row (the first SHOWN are open) whose bill has more
       // than one of this senator's votes.
       const target = memberVotesByBill(SENATOR)
-        .slice(0, 6)
+        .slice(0, SHOWN_VOTES)
         .find((g) => g.votes.length > 1);
       test.skip(!target, 'none of the open rows has a second vote by this member');
       await page.goto(`${prefix}/reps/${SENATOR}`);
