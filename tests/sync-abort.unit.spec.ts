@@ -56,8 +56,10 @@ test.describe('shouldAbortMostlyFailed (nightly "mostly failed" abort)', () => {
     expect(abort(5, 8)).toBe(true);
     expect(abort(51, 100)).toBe(true);
     expect(abort(300, 500)).toBe(true);
-    // MAX_UPDATES is 500, so this is the largest window the sync can produce.
+    // A full window at the pre-2026-09-29 cap of 500 that failed outright.
     expect(abort(500, 500)).toBe(true);
+    // A full window at today's cap of 1000.
+    expect(abort(1000, 1000)).toBe(true);
   });
 
   test('at the floor exactly, the majority test resumes - and stays STRICTLY more than half', () => {
