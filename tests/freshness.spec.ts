@@ -279,20 +279,38 @@ test.describe('R2: staleness note on populated (call-urging) surfaces', () => {
   });
 
   /*
-   * PLACEMENT (2026-08-12). The homepage's loudest recency claims — the
-   * "Moving in Congress this week" masthead and home.topSub's "The bills
-   * moving right now" — used to be qualified by a caveat that sat one full
-   * green panel and the entire bill listing below them. It now rides the
-   * masthead sub itself. Both halves of that are pinned here, because both
-   * are rulings: WITH the claim (the move), and EXACTLY ONCE (the 2026-07
-   * unanimous critique that a repeated note "read as a malfunction banner on
-   * every core surface", recorded in components/StalenessNote.tsx's header).
+   * PLACEMENT (2026-08-12; moved 2026-09-29). The homepage's loudest recency
+   * claim is the week's masthead, "This week in Congress" and its stamp. The
+   * caveat used to sit one full green panel and the entire bill listing
+   * below it; on 2026-08-12 it moved up to ride the masthead's sub line. Home
+   * option B (owner, 2026-09-29) drops that sub line, and its v2 wireframe
+   * draws the caveat as "a staleness line [that] appears under the stamp only
+   * when the data runs late" (G10) — so it is now its own line there
+   * (StalenessNote `standalone`). Both halves are still pinned, because both
+   * are rulings: WITH the claim, above every bill the week lists, and
+   * EXACTLY ONCE (the 2026-07 unanimous critique that a repeated note "read
+   * as a malfunction banner on every core surface", recorded in
+   * components/StalenessNote.tsx's header).
    *
    * Branch-agnostic on purpose: the hot-week masthead is the green slab and
    * the quiet-week one is paper, but only one renders and both carry the
-   * same topSub paragraph, so this needs no CORPUS_STABLE guard.
+   * same line, so this needs no CORPUS_STABLE guard. Case-insensitive: as its
+   * own line the caveat starts with a capital.
    */
-  const CAVEAT = /newer activity in Congress may not be shown yet/;
+  const CAVEAT = /newer activity in Congress may not be shown yet/i;
+
+  /** The caveat line sits in the week, and before every bill link in it. */
+  async function caveatLeadsTheWeek(page: Page, text: RegExp) {
+    const line = page.locator('section[aria-labelledby="top-actions"] [data-stale-line]');
+    await expect(line).toBeVisible();
+    await expect(line).toContainText(text);
+    const beforeEveryBill = await line.evaluate((el) => {
+      const week = el.closest('section[aria-labelledby="top-actions"]');
+      const bills = [...(week?.querySelectorAll('a[href*="/bills/"]') ?? [])];
+      return bills.every((a) => Boolean(el.compareDocumentPosition(a) & Node.DOCUMENT_POSITION_FOLLOWING));
+    });
+    expect(beforeEveryBill, 'the caveat sits with the masthead, above the bills it qualifies').toBe(true);
+  }
 
   test('homepage: no caveat at all while the check is current', async ({ page }) => {
     await page.clock.setFixedTime(FRESH_CLOCK);
@@ -300,19 +318,15 @@ test.describe('R2: staleness note on populated (call-urging) surfaces', () => {
     await expect(page.getByText(CAVEAT)).toHaveCount(0);
   });
 
-  test('homepage: the caveat rides the masthead claim, and appears exactly once', async ({
+  test('homepage: the caveat sits under the masthead stamp, and appears exactly once', async ({
     page,
   }) => {
     await page.clock.setFixedTime(STALE_CLOCK);
     await page.goto('/');
     // ONE per page — never a banner repeated per claim.
     await expect(page.getByText(CAVEAT)).toHaveCount(1);
-    // And it is inside the masthead paragraph that makes the claim
-    // (home.topSub), not down by the week note.
-    const sub = page.locator('section[aria-labelledby="top-actions"] p', {
-      hasText: 'The bills Congress is deciding or moving right now',
-    });
-    await expect(sub.getByText(CAVEAT)).toBeVisible();
+    // And it is with the masthead that makes the claim, not down by the week note.
+    await caveatLeadsTheWeek(page, CAVEAT);
   });
 
   test('homepage (Spanish): same placement, localized caveat', async ({ page }) => {
@@ -320,10 +334,7 @@ test.describe('R2: staleness note on populated (call-urging) surfaces', () => {
     await page.goto('/es');
     const es = /actividad más reciente del Congreso aún no se muestre/;
     await expect(page.getByText(es)).toHaveCount(1);
-    const sub = page.locator('section[aria-labelledby="top-actions"] p', {
-      hasText: 'Los proyectos de ley que el Congreso decide o hace avanzar ahora mismo',
-    });
-    await expect(sub.getByText(es)).toBeVisible();
+    await caveatLeadsTheWeek(page, es);
   });
 });
 
