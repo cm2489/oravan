@@ -335,7 +335,7 @@ test.describe('the pipelines that write public text carry the rule (strings only
     expect(clean.role?.es).toMatch(/^Ordena al presidente/);
   });
 
-  test('call scripts: both prompts carry the rule, both versions moved, and finishScript restyles', () => {
+  test('call scripts: both prompts carry the rule, neither cache version moved, and finishScript restyles', () => {
     expect(buildScriptPrompt({ bill: bill as never, stance: 'support', lang: 'en' })).toContain(PRESIDENT_STYLE_RULE);
     const nom = buildNominationScriptPrompt({
       nomination: { citation: 'PN 12-1', nominee_description: 'Jane Doe, of Ohio, to be an Assistant Secretary of State.', organization: 'Department of State', status: 'committee', last_action_text: null } as never,
@@ -348,9 +348,12 @@ test.describe('the pipelines that write public text carry the rule (strings only
     // The examples are historical on purpose: these prompts forbid naming a
     // sitting officeholder, and an example is what a model copies.
     expect(PRESIDENT_STYLE_RULE).not.toMatch(/Trump|Biden|Vance|Harris/);
-    // A prompt change must move the cache version, or it never reaches users.
-    expect(PROMPT_VERSION).toBe('3');
-    expect(NOMINATION_PROMPT_VERSION).toBe('2');
+    // Deliberately NOT bumped (lib/scriptprompt.ts, beside PROMPT_VERSION): a
+    // bump would regenerate every cached script at once to change a capital
+    // letter that the 24-hour TTL clears for free. Bumping is the owner's
+    // call; if he makes it, this pin moves with it.
+    expect(PROMPT_VERSION).toBe('2');
+    expect(NOMINATION_PROMPT_VERSION).toBe('1');
     expect(finishScript('  Hello. I ask the President to act.\n', 'en')).toBe('Hello. I ask the president to act.');
     expect(finishScript('Hola. Le pido al Presidente que actúe.', 'es')).toBe('Hola. Le pido al presidente que actúe.');
   });

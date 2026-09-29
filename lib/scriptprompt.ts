@@ -36,14 +36,18 @@ export const STANCES: Stance[] = ['support', 'oppose', 'undecided'];
  *   v1 (implicit) — original inline prompt
  *   v2 — S6 call-flow pass: chamber-neutral, time-neutral greeting,
  *        no-ambiguous-demonstrative, voicemail-safe close (2026-07-08)
- *   v3 — "the president" (owner, 2026-09-29; docs/copy-style.md): the rules
- *        carry PRESIDENT_STYLE_RULE, and finishScript below restyles what
- *        comes back (2026-09-29). Every cached script misses once and is
- *        regenerated on its next request — at most what the 24-hour TTL
- *        would have regenerated anyway, inside the route's existing
- *        SCRIPT_DAY_MAX breaker.
+ *
+ * THE ONE DELIBERATE EXCEPTION (2026-09-29): PRESIDENT_STYLE_RULE was added to
+ * the rules below WITHOUT a bump. The rule only changes how a script writes
+ * "the president", finishScript restyles every new script anyway, and every
+ * cached script expires inside 24 hours on its own — so a bump would buy at
+ * most a day and pay for one extra generation of every script requested in
+ * that day (bounded only by SCRIPT_DAY_MAX). Bills whose summary the same
+ * change restyled get a new content version regardless, because the summary
+ * is key material. Bumping to '3' is a one-line change if the owner wants
+ * the old scripts gone at once.
  */
-export const PROMPT_VERSION = '3';
+export const PROMPT_VERSION = '2';
 
 /**
  * The generated script as it is cached and served: trimmed, and restyled to

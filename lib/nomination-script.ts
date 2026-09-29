@@ -70,12 +70,13 @@ import type { Stance } from './types';
  * vice versa, which is the whole reason these are two constants.
  *   v1 — initial fork (2026-08-06): chamber-SPECIFIC by design, two audiences,
  *        grounded in Congress.gov's own description sentence, no decode.
- *   v2 — "the president" (owner, 2026-09-29; docs/copy-style.md): the rules
- *        carry PRESIDENT_STYLE_RULE and the nonpartisan line says "the
- *        president"; the route restyles the reply with finishScript
- *        (lib/scriptprompt.ts).
+ *
+ * Not bumped on 2026-09-29, deliberately, for the reason lib/scriptprompt.ts
+ * gives beside PROMPT_VERSION: the rules gained PRESIDENT_STYLE_RULE and the
+ * nonpartisan line now says "the president", the route restyles every new
+ * script with finishScript, and every cached script expires inside 24 hours.
  */
-export const NOMINATION_PROMPT_VERSION = '2';
+export const NOMINATION_PROMPT_VERSION = '1';
 
 /*
  * WHO THE SCRIPT IS BEING READ TO. A bill script has no such axis — it is one
