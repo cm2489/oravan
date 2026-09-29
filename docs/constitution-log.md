@@ -8,6 +8,42 @@ The history behind `CLAUDE.md`'s hard rules: every dated amendment and the wordi
 
 ---
 
+<a id="session-contract-2026-09-29"></a>
+
+## 2026-09-29 — The session contract: how every session runs; Merging and conflicts changed to match
+
+Sections touched: `CLAUDE.md` (the session contract added at the top, the page-1 line, "When something conflicts", "Merging"); `docs/process.md` (the scope sentence, Lifecycle, Models, Parking lot). No numbered hard rule changed, and no gate or public copy changed.
+
+- The owner's words, typed in a working session on 2026-09-29, verbatim, his typing kept:
+
+> I am about to give you the next to-do list for this project but first I want you to read and do the following instructions before we get started--
+>
+> You will orchestrate this session as Fable 5.1 and subagents will now run on either Sonnet 5.5 or Opus 5.5 (never Fable). The model and effort level is left to your judgement depending on the task you give it - weigh for quality, speed and cost, in that order.  You can use ultracode, deep research  and planning phases where you see fit. Work in parallel worktrees as often as you can to optimize for speed where it makes sense. Ask any clarifying questions before you start your work. Be exhaustive on these questions so we are clear before the work starts in order to minimize interruptions and iterations. Once the plan is approved, you will have authority to push and merge PR's unless there is a conflict or issue that needs my eyes. When conflicts, issues or my judgement calls are needed, you will log those and continue working through anything that can be completed until you can no longer continue and need my input. You should consider anything complete or merge until you are 95% sure it is done correctly or that the info is correct. When there is a discrepancy on the last 5% include that in the report below. When you reach this point give me a Report in a new Chrome window with the following -
+>
+> 1. What work was completed and any issues that arose during the process.
+> 2. What work remains in the specific workflow, the project overall, and any corrections to the roadmap you found while doing this work that needs my attention. Calibrations to the roadmap should be done prior to sending me the report.
+> 3. Any feedback, direction, judgements, or clarifications needed from me for continuing the work. If it is a UI/UX/design or anything visual, provide a minimum of 2 mockups, preferably more it has multiple possible variations and give your reasoning for each with a final recommendation for the direction if your research passes a 95% threshold on confidence. Be specific on what variables would increase or decrease your confidence  on this score and what specific things my judgement would be valuable on. This is where you include the discrepancies that arose from above.
+> 4. Summary
+>     a. What happens next
+>     b. Tool/skill research - You should constantly be scanning for new ways to be more efficient in your work and increase the quality of your output for the subsequent runs and the project overall. If there is something that you think would benefit from a skill creation, tool install, MCP integration, etc. Please give me those and I will ok or deny their implementation.
+>
+>
+> This is how I want all sessions to run any time I am using Claude Code so make this a standing rule at or near the top of the system wide claude.md and individual projects' claude.md files so that any new session or project runs this way by default. If I want anything different I will change manually at the start of the session. No exceptions. This is a big change so stop here and confirm my instructions and show me how you implemented them. From there we can start the work.
+>
+> After reading through this please recommend any thing you think I may be missing or anything that would hinder you performing your best work and your suggested fixes. Since this will standardize our working style I'd like to get this nailed down up front to prevent as many issues for both of us as we progess forward.
+
+- **What the contract is.** Seven numbered steps that follow his words, and under them a list headed "How Claude reads it". That list is Claude's, not his, and says so in the file. He can strike any line of it.
+- **One reading of his typing.** He wrote "You should consider anything complete or merge until you are 95% sure". The contract reads it as "should not consider". The sentence after it, about the last 5%, only makes sense that way. He was asked to confirm it the same day.
+- **Where his words leave a gap, the earlier ruling stays in force.** He gave merge authority "unless there is a conflict or issue that needs my eyes" and did not list what needs them. So the contract keeps what he had already ruled: a visual, UX or wording change waits until he has seen that build; the rule files wait for him; the three exceptions he confirmed that morning (spend over $3, a rule conflict that blocks the work, anything irreversible) are told to him at once. Each of these was put to him as a question the same day, with a recommendation, and none was loosened in this change.
+- **Retired in "Merging":** "Claude opens PRs; Colby merges." and "or for a grant he gives in his own words for one session, which never carries forward." Since this change, his approval of a session's plan is the grant for the pull requests that carry out that plan.
+- **Retired in "When something conflicts":** "then either build the compliant version or wait". It now says to build the compliant version, and where there is none, to stop that thread, tell him at once, and keep working the rest.
+- **Unchanged:** the 2026-09-24 pipeline carve-out. Its sentence and its scope path list are carried word for word. The pipeline doctor routine carries its own copy of that scope in its prompt and reads this file whole, not by line number (its prompt was read on 2026-09-29), so adding text above the hard rules does not move anything it depends on. The contract says an unattended routine follows its own prompt.
+- **What GitHub enforces, read on 2026-09-29:** nothing. `main` has no branch protection and no rulesets, auto-merge is off, and Claude sessions act as the owner's account with admin rights. "Only when every CI check is green" is kept by practice, which is why "Merging" now says how: read the checks before every merge, no admin override, no direct push to `main`, never the `approve-moment` label.
+- **How this change itself lands.** It edits `CLAUDE.md` and `docs/`, which the rule on `main` that day reserved for the owner. It is not merged under the grant it creates. The owner merges it.
+- **Not done here:** the roadmap. The contract has each project name one, and this repo has none (`STATUS.md` is archived). That was put to the owner the same day.
+
+---
+
 <a id="party-counts-2026-09-29"></a>
 
 ## 2026-09-29 — Rule 3: a party count on a recorded vote passes the nonpartisan lint (card l12)

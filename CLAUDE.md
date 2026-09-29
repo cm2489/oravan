@@ -1,9 +1,50 @@
 # CLAUDE.md — Oravan
 
-Constitution v2, adopted 2026-09-27. This file is page 1: the hard rules, each with the gate that enforces it. Everything else is direction or process and lives elsewhere:
+<!-- session-contract:start v1 2026-09-29 -->
+## Session contract — how every session runs
+
+Standing rule, version 1, 2026-09-29. Colby set it that day in his own words. It applies by default any time he is using Claude Code, in every project. If he wants anything different, he changes it himself at the start of the session. No exceptions: Claude never departs from it on its own.
+
+**The contract**
+
+1. **Models.** The session Colby is talking to orchestrates, on Fable 5.1. Subagents run on Sonnet 5.5 or Opus 5.5, never Fable. Claude picks the model and the effort level for each task, weighing quality, then speed, then cost.
+2. **Methods.** Claude can use ultracode, deep research and planning phases wherever it sees fit. It works in parallel worktrees as often as it can, to optimize for speed, where that makes sense.
+3. **Questions first.** Before work starts, Claude asks every clarifying question it has. It is exhaustive, so both are clear before the work starts and interruptions and iterations stay few. The plan follows.
+4. **Plan approval is the grant.** Once Colby approves the plan, Claude has authority to push and to merge pull requests, unless there is a conflict or an issue that needs his eyes.
+5. **Log it and keep going.** When a conflict, an issue or a judgment call that is his comes up, Claude logs it and keeps working through everything that can be completed, until it can no longer continue without his input.
+6. **The 95% bar.** Claude does not consider anything complete, and does not merge it, until it is at least 95% sure it is done correctly or that the information is correct. Any discrepancy in the last 5% goes in the Report.
+7. **The Report.** When Claude can no longer continue without his input, it gives him one Report in a new Chrome window:
+   1. **Completed.** What work was completed, and any issues that arose during the process.
+   2. **Remaining.** What work remains in this workflow and in the project overall, and any corrections to the roadmap found while doing the work that need his attention. Calibrations to the roadmap are made before the Report is sent.
+   3. **Needed from Colby.** Any feedback, direction, judgment or clarification needed to continue, including the discrepancies from the last 5%. For anything UI, UX, design or otherwise visual: at least two mockups, preferably more where there are several possible variations, with the reasoning for each; a final recommendation if Claude's research passes 95% confidence; the specific variables that would raise or lower that confidence; and the specific things his judgment would be valuable on.
+   4. **Summary.** (a) What happens next. (b) Tool and skill research: Claude constantly scans for ways to work more efficiently and to raise the quality of its output, for later runs and for the project overall. Anything that would help (a skill to create, a tool to install, an MCP integration, or the like) is proposed here. Colby OKs or denies each one, and nothing is implemented before he does.
+
+**How Claude reads it.** These are Claude's operating readings, not Colby's words of 2026-09-29. Each one keeps an earlier ruling of his in force or closes a gap his words leave open. He can strike any of them.
+
+- **Who it binds.** The session Colby is talking to. A subagent follows its brief: it asks Colby nothing, publishes no Report, opens no browser window, and merges nothing its brief does not name. An unattended routine follows its own prompt and keeps its own model and grants.
+- **Size.** A request that changes no file, branch, setting or account, and spends nothing, gets a direct answer, with no question round, plan or Report.
+- **Models.** Every subagent and workflow call names its model, so none inherits the orchestrator's. That covers agents started by a skill, a plugin or a built-in agent type. If this session is not on Fable 5.1, the first reply says so. The Report states the models that ran.
+- **Questions and plan.** Claude first reads what is already answered (memory, the project's rule files, open pull requests, earlier decision lists) and asks only what is left. Each question comes with its context and Claude's recommended answer. The plan gives the steps, a verified definition of done for each, what Claude decides alone, and a dollar figure for anything with a bill. Until the plan is approved Claude only reads, researches and drafts. Nothing is committed, pushed or spent.
+- **Push and merge.** Claude pushes to feature branches only, never with force. A default branch changes only through a merged pull request. A pull request is covered when it carries out a step of the approved plan or fixes that step's own pull request. Each merge gets a comment naming the plan and its date.
+- **What needs his eyes.** These wait for Colby. Claude builds what it can, does not merge it, and keeps working everything else:
+  - any visual, UX or wording change, until he has seen that build and said merge;
+  - any change to this contract or to a project's rule files;
+  - work that is not in the approved plan;
+  - anything under the 95% bar.
+- **Told at once.** Three things he confirmed on 2026-09-29 are told to him as soon as they come up, in one line and a notification, while the rest of the work continues: spend over $3 that he has not approved by name in the plan; a conflict with a project rule that blocks the work; anything irreversible. Claude does not do the thing. Irreversible means a revert or a re-run cannot undo it, or it reaches someone other than Colby.
+- **Stricter wins.** A project rule that adds a stop, raises the bar or needs someone else's approval outranks this contract, and the contract never loosens a project rule. Where the rules named Execution transparency and No guessing apply, they hold in full: stop and pause mean that step does not run and nothing is built on it. It is logged for the Report and other work continues. A step Colby will do by hand is never handed over unverified.
+- **Sure means checked.** 95% sure means every claim has a check that passed in this session (a test, CI on the final commit, a live page, a quoted source), and an agent that did not do the work verified it. Complete, for code, means the change is on the default branch.
+- **The Report.** Section 3 is one numbered list. A number, once sent, never changes, and new items go at the end. Anything Colby must do himself is written as bold numbered steps. Between his messages Claude sends no interim lists, status tables or new asks. If a Chrome window cannot be opened, the Report's link goes first in the reply. Presentation rules, such as the ADHD rules, shape how each part reads and never shorten the questions or the Report.
+- **Roadmap.** Each project names its roadmap. A calibration is a status change: done, moved, blocked, newly found. A change to priority, order or scope is proposed in section 2, not made.
+- **Copies.** Only Colby changes this contract. If two copies differ, Claude follows the stricter one, changes neither, and lists the difference in the Report.
+<!-- session-contract:end -->
+
+**In this repo.** His words of 2026-09-29 are kept verbatim in `docs/constitution-log.md#session-contract-2026-09-29`. The rule files here are this file, README, `docs/constitution-log.md`, `docs/process.md` and `docs/current-direction.md`. The hard rules below still bind, and a clash with one is a conflict for him. What Claude may merge, and what waits, is under "Merging" below. Every session reads pinned issue #341 before it asks its questions, lists its work there before it builds, and clears it when the Report goes out. At most three full local builds or end-to-end runs at once; the pull request's CI is the full-suite check. This repo has no roadmap document yet: until the owner names one, roadmap corrections are listed in the Report and nothing is calibrated.
+
+Constitution v2, adopted 2026-09-27. This file is page 1: the owner's session contract above (2026-09-29), then the hard rules, each with the gate that enforces it. Everything else is direction or process and lives elsewhere:
 
 - `docs/current-direction.md` — how the product should look and read, as the owner last said it (dated; any session revises it with one log line).
-- `docs/process.md` — how work is handed back, how big work is delegated, and the brief template. **Read it before handing work back or writing a brief.**
+- `docs/process.md` — how the session contract runs in this repo: how work is handed back, how big work is delegated, and the brief template. **Read it before handing work back or writing a brief.**
 - `docs/record-truth.md` — the detail and the dated rulings behind rule 6.
 - `docs/accessibility.md` — the method behind rule 7.
 - `docs/runbooks/secrets.md` — the secrets inventory (rule 10).
@@ -30,11 +71,16 @@ README's **Design principles** are the product's public statement of these promi
 
 ## When something conflicts
 
-**If a change would break a rule on page 1**, say so in one bold line that names the rule number and what the change costs (tests, copy, code), then either build the compliant version or wait — the owner decides. **A shipped claim that has stopped being true is a rule-4 conflict**: fix the copy in the same PR when you can; otherwise open a one-line PR and say so. **Everything on page 2 (`docs/current-direction.md`) is direction, not a rule**: if the owner's ask contradicts it, follow the ask, update page 2 with one dated line, and mention it in one sentence. **Never write a decision card for a colour, radius, size, spacing, band order, button fill or wording** — build it, show it, and let him react. When an old owner verdict seems to apply, quote it with its date and its object and ask in one line whether it still holds; never present it as a ban.
+**If a change would break a rule on page 1**, say so in one bold line that names the rule number and what the change costs (tests, copy, code), then build the compliant version. Where there is none, stop that thread, tell him at once, and keep working the rest (session contract, "Told at once") — the owner decides. **A shipped claim that has stopped being true is a rule-4 conflict**: fix the copy in the same PR when you can; otherwise open a one-line PR and say so. **Everything on page 2 (`docs/current-direction.md`) is direction, not a rule**: if the owner's ask contradicts it, follow the ask, update page 2 with one dated line, and mention it in one sentence. **Never write a decision card for a colour, radius, size, spacing, band order, button fill or wording** — build it, show it, and let him react. When an old owner verdict seems to apply, quote it with its date and its object and ask in one line whether it still holds; never present it as a ban.
 
 ## Merging
 
-Claude opens PRs; Colby merges. One standing carve-out, ruled 2026-09-24 in his words: *"From now on you can merge anything that has to do with the doctor's pipeline indefinitely or until I request you to stop."* Its scope is the pipeline doctor's: `.github/workflows/*.yml`, `scripts/*.mjs`, `lib/*.mjs` and the `lib/*.ts` they import, the MCP server (`app/api/mcp`), `app/api/script`, `app/api/reps`, `app/api/brand`, the counters/usage code, and the tests that pin them — merged only when every CI check is green, recorded in a PR comment naming this grant, and never over $3 without his approval. Everything outside it (UI, copy, `messages/*`, `data/moments.json`, this file, README, docs) waits for Colby, or for a grant he gives in his own words for one session, which never carries forward.
+Claude opens PRs. Two standing grants let Claude merge; everything else waits for Colby.
+
+1. **The session contract** (owner, 2026-09-29; top of this file). Once Colby approves a session's plan, Claude merges the pull requests that carry out that plan — each only when every CI check is green, and each recorded in a PR comment naming the plan and its date. What still waits for him: any visual, UX or wording change (UI, copy, `messages/*`, `data/moments.json`) until he has seen that build and said merge; this file, README, `docs/constitution-log.md`, `docs/process.md` and `docs/current-direction.md`; work that is not in the approved plan; and anything over $3 that he has not approved by name.
+2. **The pipeline carve-out**, ruled 2026-09-24 in his words: *"From now on you can merge anything that has to do with the doctor's pipeline indefinitely or until I request you to stop."* Its scope is the pipeline doctor's: `.github/workflows/*.yml`, `scripts/*.mjs`, `lib/*.mjs` and the `lib/*.ts` they import, the MCP server (`app/api/mcp`), `app/api/script`, `app/api/reps`, `app/api/brand`, the counters/usage code, and the tests that pin them — merged only when every CI check is green, recorded in a PR comment naming this grant, and never over $3 without his approval.
+
+GitHub does not enforce any of this on `main`, and Claude acts there as the owner's account. So before every merge Claude reads the pull request's checks and merges only when every one has passed. It never merges with an admin override, never pushes to `main` directly, and never applies the `approve-moment` label. (evidence: `docs/constitution-log.md#session-contract-2026-09-29`)
 
 ## Architecture
 
