@@ -160,7 +160,7 @@
     "seatElectionNone": "La Comisión Federal de Elecciones aún no registra una fecha de elección especial para este escaño (comprobado el {date}).",
     "seatElectionLink": "Ver las fechas electorales de la FEC",
     "refineTitle": "Opcional: encuentra tu distrito exacto",
-    "refinePrivacy": "Tu dirección se usa una sola vez para encontrar tu distrito. No se envía a ningún otro lado y nunca se guarda.",
+    "refinePrivacy": "Tu dirección se usa una sola vez, para buscar tu distrito con el geocodificador público de la Oficina del Censo de EE. UU. Nunca la guardamos.",
     "addressLabel": "Dirección (calle y número)",
     "addressPlaceholder": "p. ej. 421 8th Ave",
     "refineCta": "Encontrar mi distrito",
@@ -313,7 +313,7 @@
     "needZip": "Escribe tu código postal para ver los números de tus representantes.",
     "switchboard": "Centralita del Capitolio",
     "switchboardNote": "¿Sin código postal a mano? La centralita del Capitolio te conecta con cualquier oficina del Congreso.",
-    "callWho": "Llama a cualquiera de tus tres — o a los tres. Una llamada por oficina es suficiente.",
+    "callWho": "Llama a cualquiera de tus miembros del Congreso — o a todos. Una llamada por oficina es suficiente.",
     "callWhoMulti": "Tu código postal abarca más de un distrito de la Cámara, así que aparece más de un representante. Tus senadores siempre son los tuyos.",
     "refineDistrictCta": "Confirma cuál es tu representante en la Cámara",
     "liveSenateFloor": "Este proyecto está ahora en manos del Senado — tus senadores son la llamada que cuenta ahora.",
@@ -471,7 +471,7 @@
       },
       "call": {
         "title": "Haz la llamada",
-        "body": "Marca a la oficina de cualquiera de tus tres miembros del Congreso — de día o de noche. Te contesta alguien del personal o dejas un mensaje de voz; de cualquier forma, tu posición cuenta igual, en unos 30 segundos."
+        "body": "Marca a la oficina de cualquiera que te represente en el Congreso — de día o de noche. Te contesta alguien del personal o dejas un mensaje de voz; de cualquier forma, tu posición cuenta igual, en unos 30 segundos."
       },
       "logged": {
         "title": "Registrada — solo en este dispositivo",
@@ -650,7 +650,7 @@
     "p2": "Los resúmenes, titulares y guiones son borradores generados por IA y están claramente marcados. Pueden contener errores. El texto oficial en Congress.gov es siempre la autoridad, y tú eres responsable de revisar y editar todo antes de decirlo.",
     "p3": "Oravan no viene con garantías. Hacemos lo posible por mantener al día los datos de representantes y el estado de los proyectos, pero las oficinas cambian de número y los proyectos avanzan a diario — verifica lo que importe.",
     "p4": "Lo que hagas con el teléfono es tuyo: tú haces las llamadas y eliges las palabras. Sé honesto, sé breve y sé amable con la persona que contesta.",
-    "p5": "No tenemos cuentas y no guardamos nada sobre ti en nuestros servidores; todo lo personal queda en tu navegador. La página de privacidad lo explica por completo."
+    "p5": "No tenemos cuentas y no guardamos nada sobre ti en nuestros servidores; todo lo personal se guarda en tu navegador. La página de privacidad lo explica por completo."
   },
   "og": {
     "aiDecoded": "Traducido por IA",
@@ -692,7 +692,7 @@
     "configuratorHeading": "Arma tu widget",
     "widgetLegend": "Widget",
     "widgetRepLookup": "Búsqueda de representantes",
-    "widgetRepLookupHint": "Los visitantes escriben un código postal y obtienen a sus tres representantes federales.",
+    "widgetRepLookupHint": "Los visitantes escriben un código postal y obtienen a sus miembros del Congreso.",
     "widgetBillCard": "Tarjeta de proyecto de ley",
     "widgetBillCardHint": "El titular en lenguaje sencillo, el estado y la fecha de actualización de un proyecto.",
     "localeLegend": "Idioma predeterminado",

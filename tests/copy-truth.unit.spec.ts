@@ -50,6 +50,46 @@ test.describe('SY-44 the find-your-members strings are true in DC and the territ
   }
 });
 
+// ---- 2026-09-29: no member count, and no "sent nowhere" ---------------------
+
+/** Every string in one message catalog, with its dotted key. */
+function allStrings(m: unknown, prefix = ''): [string, string][] {
+  if (typeof m === 'string') return [[prefix, m]];
+  if (!m || typeof m !== 'object') return [];
+  return Object.entries(m as Record<string, unknown>).flatMap(([k, v]) =>
+    allStrings(v, prefix ? `${prefix}.${k}` : k),
+  );
+}
+
+test.describe('2026-09-29 no string counts your members: DC and the territories have one delegate', () => {
+  // SY-44 fixed four keys by name. Three more said "three" (bill.callWho,
+  // walkthrough.scenes.call.body, embeds.widgetRepLookupHint), so this reads
+  // the whole catalog rather than a list of keys.
+  const COUNT = {
+    en: /\b(?:your|their)\s+three\b|\bthree\s+(?:members|federal|representatives|offices)\b/i,
+    es: /\b(?:tus|sus)\s+tres\b|\btres\s+(?:miembros|representantes|oficinas)\b/i,
+  } as const;
+  for (const [locale, m] of LOCALES) {
+    test(`${locale}: every message`, () => {
+      const hits = allStrings(m).filter(([, s]) => COUNT[locale].test(s));
+      expect(hits).toEqual([]);
+    });
+  }
+});
+
+test.describe('2026-09-29 the street address goes to the Census geocoder, and the copy says so', () => {
+  const NOWHERE = /\bnowhere\b|\bstays in your browser\b|ningún otro lado|ninguna otra parte|queda en tu navegador/i;
+  for (const [locale, m] of LOCALES) {
+    test(`${locale}: reps.refinePrivacy names the geocoder`, () => {
+      expect(m.reps.refinePrivacy).toMatch(locale === 'en' ? /U\.S\. Census Bureau/ : /Oficina del Censo/);
+    });
+    test(`${locale}: no message says the address or ZIP goes nowhere`, () => {
+      const hits = allStrings(m).filter(([, s]) => NOWHERE.test(s));
+      expect(hits).toEqual([]);
+    });
+  }
+});
+
 // ---- SY-33: the sponsor ----------------------------------------------------
 
 test.describe('SY-33 billSponsor', () => {
