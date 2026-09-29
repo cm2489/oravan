@@ -14,6 +14,7 @@ import {
   floorTagFor,
   latestRecordDay,
   shiftDate,
+  yellowTagFirst,
   type BriefDaySummary,
 } from '../lib/today';
 
@@ -228,6 +229,69 @@ test.describe('floorTagFor: which notice wears which tag', () => {
       );
     }
     for (const date of window.slice(1)) expect(buildBrief(date).schedule, date).toEqual([]);
+  });
+});
+
+/*
+ * THE YELLOW NOTICE LEADS THE BAND (independent check, 2026-09-29: on a phone
+ * the yellow tag sat on the third floor card, about two screens down). The
+ * tags below come from `floorTagFor` itself, so the order follows the one
+ * test that decides yellow.
+ */
+test.describe('yellowTagFirst: the notice with the yellow tag comes first', () => {
+  const COVERS = '2026-09-30';
+  const notice = (
+    citation: string,
+    certainty: 'scheduled_vote' | 'consideration' | 'conditional',
+    chamber: 'house' | 'senate' = 'senate'
+  ) => ({
+    citation,
+    tag: floorTagFor({
+      certainty,
+      chamber,
+      source: chamber === 'house' ? 'billsthisweek' : 'daily-digest',
+      covers: COVERS,
+      session: 'in_session',
+    }),
+  });
+  const order = (items: { citation: string }[]) => items.map((i) => i.citation);
+
+  test('four notices, one yellow in third place: the yellow one first, the rest in their old order', () => {
+    const items = [
+      notice('H.R. 2709', 'consideration', 'house'),
+      notice('S. 3000', 'conditional'),
+      notice('S. 3988', 'scheduled_vote'),
+      notice('S.J.Res. 197', 'conditional'),
+    ];
+    expect(items[2].tag?.tone).toBe('urgent');
+    expect(items.filter((i) => i.tag?.tone === 'urgent')).toHaveLength(1);
+    expect(order(yellowTagFirst(items))).toEqual(['S. 3988', 'H.R. 2709', 'S. 3000', 'S.J.Res. 197']);
+  });
+
+  test('no yellow notice: the order is unchanged', () => {
+    const items = [
+      notice('H.R. 2709', 'consideration', 'house'),
+      notice('S. 3000', 'conditional'),
+      notice('S. 3988', 'consideration'),
+      { citation: 'S. 12', tag: null },
+    ];
+    expect(items.some((i) => i.tag?.tone === 'urgent')).toBe(false);
+    expect(order(yellowTagFirst(items))).toEqual(order(items));
+  });
+
+  test('two yellow notices keep their relative order, ahead of the rest', () => {
+    const items = [
+      notice('H.R. 2709', 'consideration', 'house'),
+      notice('S. 3988', 'scheduled_vote'),
+      notice('S. 3000', 'conditional'),
+      notice('S. 4100', 'scheduled_vote'),
+    ];
+    expect(order(yellowTagFirst(items))).toEqual(['S. 3988', 'S. 4100', 'H.R. 2709', 'S. 3000']);
+  });
+
+  test('the committed schedule is already in this order', () => {
+    const schedule = buildBrief(briefWindow()[0]).schedule;
+    expect(order(yellowTagFirst(schedule))).toEqual(order(schedule));
   });
 });
 

@@ -402,9 +402,25 @@ function scheduleAhead(today: string, locale: string): BriefScheduleItem[] {
       }),
     });
   }
-  return items.sort(
-    (a, b) => a.chamber.localeCompare(b.chamber) || a.citation.localeCompare(b.citation)
+  return yellowTagFirst(
+    items.sort((a, b) => a.chamber.localeCompare(b.chamber) || a.citation.localeCompare(b.citation))
   );
+}
+
+/**
+ * THE YELLOW-TAGGED NOTICE COMES FIRST. A tag meant to draw the eye has to be
+ * where the eye lands: on a phone the band's third card sat about two screens
+ * down (independent check, 2026-09-29). A notice whose tag `floorTagFor` made
+ * `urgent` moves ahead of every notice it did not; the test is the tag that
+ * function already produced, never a second one. The partition is stable: the
+ * yellow notices keep their order among themselves, and so do the rest, so
+ * with no yellow notice the band reads exactly as before. Only the /today
+ * schedule block reads this order (`scheduleAhead`).
+ */
+export function yellowTagFirst<T extends { tag: FloorTag | null }>(items: T[]): T[] {
+  const yellow = items.filter((i) => i.tag?.tone === 'urgent');
+  const rest = items.filter((i) => i.tag?.tone !== 'urgent');
+  return [...yellow, ...rest];
 }
 
 export interface BriefQuestion {
