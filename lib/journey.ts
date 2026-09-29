@@ -1260,9 +1260,12 @@ export function deriveJourney(
        * since." The tally and the date are the record's own (recordedTally,
        * settledDecisionDate); either one is left out when the record gives
        * none. The tally prints as the record gives it, a tie included: the
-       * record says "agreed to … 50 - 50" and names nothing else, so the
-       * sentence adds nothing about how the tie was decided. The "Latest
-       * action" line under the stepper quotes the record sentence in full.
+       * action sentence says "agreed to … 50 - 50" and nothing more, so this
+       * sentence adds nothing about how the tie was decided. The page already
+       * shows that from its own record: the "Latest action" line under the
+       * stepper quotes the sentence in full, and the vote record below it
+       * prints Senate roll call 9 from data/votes.json ("Point of Order Well
+       * Taken", with the vice president's tie-breaking vote).
        *
        * No trailer: "if the House changes it, it goes back to the Senate"
        * warns about a step still ahead, and the House never received it. NOT
