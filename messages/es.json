@@ -160,7 +160,7 @@
     "seatElectionNone": "La Comisión Federal de Elecciones aún no registra una fecha de elección especial para este escaño (comprobado el {date}).",
     "seatElectionLink": "Ver las fechas electorales de la FEC",
     "refineTitle": "Opcional: encuentra tu distrito exacto",
-    "refinePrivacy": "Tu dirección se usa una sola vez para encontrar tu distrito. No se envía a ningún otro lado y nunca se guarda.",
+    "refinePrivacy": "Tu dirección se usa una sola vez, para buscar tu distrito con el geocodificador público de la Oficina del Censo de EE. UU. Nunca la guardamos.",
     "addressLabel": "Dirección (calle y número)",
     "addressPlaceholder": "p. ej. 421 8th Ave",
     "refineCta": "Encontrar mi distrito",
@@ -240,7 +240,7 @@
     "clearSearch": "Borrar búsqueda",
     "clearFilters": "Borrar todos los filtros",
     "interestsNote": "Tus temas se guardan solo en este dispositivo, nunca en un servidor.",
-    "aiNote": "Los titulares en lenguaje claro de esta página los redacta la IA y llevan esa etiqueta. Nada se publica sin pasar controles automáticos, y cada página tiene un botón para señalar un error.",
+    "aiNote": "Los titulares en lenguaje claro de esta página los redacta la IA y llevan esa etiqueta. Nada se publica sin pasar controles automáticos. Para señalar un error, escríbenos a hello@oravan.org.",
     "onCalendar": "En el calendario del pleno",
     "annotation": {
       "justPassed": "Acaba de aprobarse en una cámara",
@@ -314,11 +314,16 @@
     "needZip": "Escribe tu código postal para ver los números de tus representantes.",
     "switchboard": "Centralita del Capitolio",
     "switchboardNote": "¿Sin código postal a mano? La centralita del Capitolio te conecta con cualquier oficina del Congreso.",
-    "callWho": "Llama a cualquiera de tus tres — o a los tres. Una llamada por oficina es suficiente.",
+    "callWho": "Llama a cualquiera de tus miembros del Congreso — o a todos. Una llamada por oficina es suficiente.",
     "callWhoMulti": "Tu código postal abarca más de un distrito de la Cámara, así que aparece más de un representante. Tus senadores siempre son los tuyos.",
     "refineDistrictCta": "Confirma cuál es tu representante en la Cámara",
     "alsoYours": "También te representa",
     "settled": {
+      "finderShow": "Ver la votación de la Cámara para el código postal {zip}",
+      "finderSplit": "Tu código postal está dividido entre {count, plural, =2 {dos} other {#}} distritos de la Cámara. {vacant, select, yes {Uno de estos escaños es el tuyo.} other {Una de estas personas es tu representante.}}",
+      "finderDistrict": "{district, select, 0 {{state}, distrito único} other {{state}-{district}}}",
+      "finderVacant": "Escaño vacante",
+      "finderRefine": "Encuentra tu distrito exacto con tu dirección",
       "title": "No hay llamada que hacer",
       "law": "Esto ya es ley.",
       "rejected": "{chamber, select, House {La Cámara} Senate {El Senado} other {El Senado}} lo rechazó{tally, select, none {{hasDate, select, yes { el {date}} other {}}} other {, por {yeas} votos a favor y {nays} en contra{hasDate, select, yes {, el {date}} other {}}}}.",
@@ -484,7 +489,7 @@
       },
       "call": {
         "title": "Haz la llamada",
-        "body": "Marca a la oficina de cualquiera de tus tres miembros del Congreso — de día o de noche. Te contesta alguien del personal o dejas un mensaje de voz; de cualquier forma, tu posición cuenta igual, en unos 30 segundos."
+        "body": "Marca a la oficina de cualquiera que te represente en el Congreso — de día o de noche. Te contesta alguien del personal o dejas un mensaje de voz; de cualquier forma, tu posición cuenta igual, en unos 30 segundos."
       },
       "logged": {
         "title": "Registrada — solo en este dispositivo",
@@ -627,8 +632,8 @@
     "correctionBody": "¿Encontraste algo incorrecto — una mala traducción, un estado mal leído, un resumen en lenguaje sencillo que no refleja lo que hace el proyecto? Escríbenos a hello@oravan.org. Indica el proyecto de ley y describe el error.",
     "correctionLinkText": "Escríbenos a hello@oravan.org",
     "whenConfirmedTitle": "Qué pasa cuando se confirma una corrección",
-    "whenConfirmedBody": "Un error confirmado se corrige en la fuente — los mismos datos revisados de los que se construyen las explicaciones en ambos idiomas. A partir de ahí, cada superficie que lee esos datos se actualiza junta en el siguiente despliegue de Oravan: la página del proyecto, su imagen de tarjeta para compartir generada estáticamente y las respuestas del servidor MCP leen el mismo archivo, así que no hay una caché aparte que invalidar. Lo único que no se mueve por sí solo es el sello de fecha — la fecha de \"actualizado al\" del sitio y el campo {asOfField} del envoltorio del MCP siguen la última sincronización nocturna exitosa de Oravan, así que avanzan en la siguiente sincronización programada después de que se publique la corrección, igual que cada noche. La tarjeta de proyecto de ley para incrustar también lee ese mismo archivo, así que no necesita un paso de corrección aparte.",
-    "backlogNote": "Una corrección que señale un patrón más amplio — no un descuido puntual — se registra para el proceso continuo de revisión en español de Oravan, en lugar de parchearse en silencio y olvidarse."
+    "whenConfirmedBody": "Un error confirmado se corrige en la fuente — los mismos datos de los que se construyen las explicaciones en ambos idiomas. A partir de ahí, cada superficie que lee esos datos se actualiza junta en el siguiente despliegue de Oravan: la página del proyecto, su imagen de tarjeta para compartir generada estáticamente y las respuestas del servidor MCP leen el mismo archivo, así que no hay una caché aparte que invalidar. Lo único que no se mueve por sí solo es el sello de fecha — la fecha de \"actualizado al\" del sitio y el campo {asOfField} del envoltorio del MCP siguen la última sincronización nocturna exitosa de Oravan, así que avanzan en la siguiente sincronización programada después de que se publique la corrección, igual que cada noche. La tarjeta de proyecto de ley para incrustar también lee ese mismo archivo, así que no necesita un paso de corrección aparte.",
+    "backlogNote": "Una corrección que señale un patrón más amplio — no un descuido puntual — se registra como un patrón, en lugar de parchearse en silencio y olvidarse."
   },
   "notFound": {
     "title": "Página no encontrada",
@@ -663,7 +668,7 @@
     "p2": "Los resúmenes, titulares y guiones son borradores generados por IA y están claramente marcados. Pueden contener errores. El texto oficial en Congress.gov es siempre la autoridad, y tú eres responsable de revisar y editar todo antes de decirlo.",
     "p3": "Oravan no viene con garantías. Hacemos lo posible por mantener al día los datos de representantes y el estado de los proyectos, pero las oficinas cambian de número y los proyectos avanzan a diario — verifica lo que importe.",
     "p4": "Lo que hagas con el teléfono es tuyo: tú haces las llamadas y eliges las palabras. Sé honesto, sé breve y sé amable con la persona que contesta.",
-    "p5": "No tenemos cuentas y no guardamos nada sobre ti en nuestros servidores; todo lo personal queda en tu navegador. La página de privacidad lo explica por completo."
+    "p5": "No tenemos cuentas y no guardamos nada sobre ti en nuestros servidores; todo lo personal se guarda en tu navegador. La página de privacidad lo explica por completo."
   },
   "og": {
     "aiDecoded": "Traducido por IA",
@@ -705,7 +710,7 @@
     "configuratorHeading": "Arma tu widget",
     "widgetLegend": "Widget",
     "widgetRepLookup": "Búsqueda de representantes",
-    "widgetRepLookupHint": "Los visitantes escriben un código postal y obtienen a sus tres representantes federales.",
+    "widgetRepLookupHint": "Los visitantes escriben un código postal y obtienen a sus miembros del Congreso.",
     "widgetBillCard": "Tarjeta de proyecto de ley",
     "widgetBillCardHint": "El titular en lenguaje sencillo, el estado y la fecha de actualización de un proyecto.",
     "localeLegend": "Idioma predeterminado",
@@ -785,7 +790,7 @@
     "docsPrivacyCookies": "Cero cookies. Ninguna respuesta del widget establece una jamás.",
     "docsPrivacyThirdParty": "Cero solicitudes a terceros. Todo lo que carga el widget — fuentes, estilos, datos — viene del propio dominio de Oravan. Nada se conecta con una red publicitaria, un proveedor de analíticas ni ningún otro tercero.",
     "docsPrivacyZip": "Solo código postal. El widget de búsqueda de representantes nunca pide una dirección dentro del iframe; a quien necesite la búsqueda más precisa por distrito dividido se le enlaza al sitio principal de Oravan para ese paso.",
-    "docsPrivacyNoData": "Ningún dato del visitante llega a Oravan más allá de una carga de página ordinaria. Un código postal que un visitante escribe se usa una sola vez, en memoria, para responder esa consulta, y nunca se registra ni se almacena.",
+    "docsPrivacyNoData": "Ningún dato del visitante llega a Oravan más allá de una carga de página ordinaria. Un código postal que un visitante escribe se usa una sola vez, en memoria, para responder esa consulta. Oravan nunca lo guarda.",
     "docsPrivacyTested": "Esto no son afirmaciones que solo aparecen en este texto — están verificadas por pruebas automatizadas en el propio repositorio público de Oravan, en cada cambio, antes de publicarse.",
     "docsThemingTitle": "Referencia de personalización",
     "docsThemingBody": "El tema funciona igual en todos los widgets y se limita a un conjunto cerrado de propiedades CSS personalizadas, cada una validada en el servidor de Oravan antes de llegar a un estilo: un color de acento, un par opcional de colores de fondo y texto (aceptado solo si alcanza el contraste AA de WCAG de 4.5:1), un modo de color (claro, oscuro o según el sistema del visitante), un estilo de esquinas (rectas, suaves o redondeadas) y una fuente (sistema, serif, humanista o geométrica — todas pilas de fuentes del sistema; el widget nunca carga webfonts). No hay forma de inyectar CSS ni JavaScript arbitrario en el widget — es una frontera de seguridad deliberada, no una función pendiente.",
@@ -933,7 +938,7 @@
     "vehiclesHeadingMixed": "Los proyectos de ley y las nominaciones",
     "vehiclesLedeNominations": "Las nominaciones ante el Senado por las que realmente pasa esta cuestión. Cada una abre el registro del propio Senado — y, cuando ese registro muestra una decisión que el Senado todavía puede tomar, el flujo de llamada, con los guiones a favor y en contra igual de disponibles.",
     "vehiclesLedeMixed": "Los proyectos de ley y las nominaciones ante el Senado por los que realmente pasa esta cuestión. Cada uno abre el registro — y, cuando en ese registro todavía queda una llamada que hacer, el flujo de llamada, con los guiones a favor y en contra igual de disponibles.",
-    "vehiclesAiNote": "El texto en lenguaje claro de estas tarjetas — el titular descifrado, si lo hay, y el resumen de qué hacen un voto a favor y uno en contra — lo redacta la IA y lleva esa etiqueta. Nada se publica sin pasar controles automáticos, y cada página tiene un botón para señalar un error.",
+    "vehiclesAiNote": "El texto en lenguaje claro de estas tarjetas — el titular descifrado, si lo hay, y el resumen de qué hacen un voto a favor y uno en contra — lo redacta la IA y lleva esa etiqueta. Nada se publica sin pasar controles automáticos. Para señalar un error, escríbenos a hello@oravan.org.",
     "bothNote": "Ningún lado está preseleccionado. Cada enlace de arriba abre el mismo flujo de llamada, con guiones a favor y en contra igualmente disponibles.",
     "bothNoteSomeNoCall": "Ningún lado está preseleccionado. Cuando en un registro todavía queda una llamada que hacer, se abre el mismo flujo de llamada, con guiones a favor y en contra igualmente disponibles.",
     "readCall": "Leer y llamar",

@@ -5,8 +5,10 @@ import { RotateCcw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { usePrefs } from '@/lib/local';
+import { houseFinderRows, type FinderMember } from '@/lib/house-finder';
 import type { SettledVoteGroup } from '@/lib/settled-votes';
-import type { Legislator } from '@/lib/types';
+import type { District, Legislator } from '@/lib/types';
+import { HouseFinder } from './HouseFinder';
 import { VacantSeatCard } from './VacantSeatCard';
 import { ZipForm } from './ZipForm';
 
@@ -50,6 +52,9 @@ import { ZipForm } from './ZipForm';
  * same-origin GET /api/reps for the saved ZIP (disclosed on /privacy). The
  * answer is joined here, in the browser, against the positions the server
  * rendered into the page for every visitor alike, and kept only in memory.
+ * The split-ZIP House finder (components/HouseFinder.tsx, version A of the
+ * owner's 2026-09-29 ask) reads that same answer and nothing more: it makes
+ * no request of its own and asks for no address.
  */
 
 /** The call panel's title-bar geometry (components/ActionPanel.tsx). */
@@ -71,14 +76,15 @@ const useHydrated = () =>
     () => false
   );
 
-/** Only what the panel prints about a member — never phones, offices or party. */
-type Member = Pick<Legislator, 'bioguide' | 'name' | 'state' | 'type'>;
+/** Only what the panel prints about a member — never phones, offices or
+ *  party. The district is kept for the split-ZIP House finder's labels. */
+type Member = FinderMember;
 
 type Lookup =
   | { status: 'idle' }
   | { status: 'loading' }
   | { status: 'error' }
-  | { status: 'ready'; members: Member[]; multiDistrict: boolean; vacancies: number };
+  | { status: 'ready'; members: Member[]; multiDistrict: boolean; vacancies: number; vacantSeats: District[] };
 
 /** A vote group as the page hands it over: the record's date (YYYY-MM-DD) and
  *  the same date already formatted for the page's locale. */
@@ -119,12 +125,13 @@ export function SettledPanel({
     setLookup({ status: 'loading' });
     fetch(`/api/reps?zip=${zip}`)
       .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((d: { reps: Legislator[]; vacancies?: unknown[]; multiDistrict?: boolean }) => {
+      .then((d: { reps: Legislator[]; vacancies?: District[]; multiDistrict?: boolean }) => {
         setLookup({
           status: 'ready',
-          members: d.reps.map(({ bioguide, name, state, type }) => ({ bioguide, name, state, type })),
+          members: d.reps.map(({ bioguide, name, state, type, district }) => ({ bioguide, name, state, type, district })),
           multiDistrict: d.multiDistrict ?? false,
           vacancies: d.vacancies?.length ?? 0,
+          vacantSeats: (d.vacancies ?? []).map(({ state, district }) => ({ state, district })),
         });
       })
       .catch(() => setLookup({ status: 'error' }));
@@ -271,7 +278,22 @@ export function SettledPanel({
                         {g.tally && ` · ${g.tally.yeas}–${g.tally.nays}`}
                       </h4>
                       {g.chamber === 'house' && lookup.multiDistrict ? (
-                        <p className="mt-1 text-sm text-ink-2">{t('settled.multiDistrict')}</p>
+                        <>
+                          <p className="mt-1 text-sm text-ink-2">{t('settled.multiDistrict')}</p>
+                          {/* Version A of the owner's split-ZIP ask
+                              (2026-09-29): every House member whose district
+                              touches the ZIP, on request, beside their
+                              position on this roll call. Only when the roll
+                              call's positions are in the file — a voice vote
+                              or a vote the file does not hold has none to
+                              show, and its note below says why. */}
+                          {g.source === 'rollCall' && g.positions && zip && (
+                            <HouseFinder
+                              zip={zip}
+                              rows={houseFinderRows(lookup.members, lookup.vacantSeats, g.positions)}
+                            />
+                          )}
+                        </>
                       ) : members.length === 0 ? (
                         g.chamber === 'house' && lookup.vacancies > 0 ? (
                           // A vacant House seat is why no House member is
