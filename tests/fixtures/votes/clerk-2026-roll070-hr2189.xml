@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE rollcall-vote PUBLIC "-//US Congress//DTDs/vote v1.0 20031119 //EN" "../vote.dtd">
+<?xml-stylesheet type="text/xsl" href="../vote.xsl"?>
+<rollcall-vote>
+<vote-metadata>
+<majority>R</majority>
+<congress>119</congress>
+<session>2nd</session>
+<chamber>U.S. House of Representatives</chamber>
+<rollcall-num>70</rollcall-num>
+<legis-num>H R 2189</legis-num>
+<vote-question>On Passage</vote-question>
+<vote-type>YEA-AND-NAY</vote-type>
+<vote-result>Passed</vote-result>
+<action-date>12-Feb-2026</action-date>
+<action-time time-etz="10:45">10:45 AM</action-time>
+<vote-desc>Law-Enforcement Innovate to De-Escalate Act</vote-desc>
+<vote-totals>
+<totals-by-party-header>
+<party-header>Party</party-header>
+<yea-header>Yeas</yea-header>
+<nay-header>Nays</nay-header>
+<present-header>Answered “Present”</present-header>
+<not-voting-header>Not Voting</not-voting-header>
+</totals-by-party-header>
+
+
+
+<totals-by-vote>
+<total-stub>Totals</total-stub>
+<yea-total>1</yea-total>
+<nay-total>1</nay-total>
+<present-total>0</present-total>
+<not-voting-total>0</not-voting-total>
+</totals-by-vote>
+</vote-totals>
+</vote-metadata>
+<vote-data>
+<recorded-vote><legislator name-id="A000055" sort-field="Aderholt" unaccented-name="Aderholt" party="R" state="AL" role="legislator">Aderholt</legislator><vote>Yea</vote></recorded-vote>
+<recorded-vote><legislator name-id="A000370" sort-field="Adams" unaccented-name="Adams" party="D" state="NC" role="legislator">Adams</legislator><vote>Nay</vote></recorded-vote>
+</vote-data>
+</rollcall-vote>

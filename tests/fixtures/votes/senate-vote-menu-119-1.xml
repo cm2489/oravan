@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?><vote_summary>
+  <congress>119</congress>
+  <session>1</session>
+  <congress_year>2025</congress_year>
+  <votes>
+    <vote>
+      <vote_number>00001</vote_number>
+      <vote_date>09-Jan</vote_date>
+      <issue>S. 5</issue>
+      <question>On Cloture on the Motion to Proceed
+         </question>
+      <result>Agreed to</result>
+      <vote_tally>
+        <yeas>84</yeas>
+        <nays>9</nays>
+      </vote_tally>
+      <title>Motion to Invoke Cloture: Motion to Proceed to S. 5; A bill to require the Secretary of Homeland Security to take into custody aliens who have been charged in the United States with theft, and for other purposes.</title>
+    </vote>
+  </votes>
+</vote_summary>

@@ -209,9 +209,12 @@ test.describe('roll-call votes: sync step and pre-commit gate', () => {
   test('the sync script refuses to WRITE a file the gate would fail (the nominations precedent)', () => {
     const src = readFileSync(join(process.cwd(), 'scripts/sync-votes.mjs'), 'utf8');
     const gateAt = src.indexOf('verifyVotes({');
-    const writeAt = src.indexOf('writeFileSync(VOTES_PATH');
+    // The one write of the file: temp file + rename since the 2026-09-29
+    // back-fill, so a crash mid-write never leaves half a file.
+    const writeAt = src.indexOf('writeAtomic(VOTES_PATH');
     expect(gateAt, 'pre-write verifyVotes call').toBeGreaterThan(0);
     expect(writeAt).toBeGreaterThan(gateAt);
+    expect(src).not.toContain('writeFileSync(VOTES_PATH');
   });
 
   test('the gate pins the cursor FORMAT — a date is damage, not a roll-call cursor', () => {
@@ -606,7 +609,7 @@ test.describe('newsdesk: intraday roll-call vote sync', () => {
     expect(src).toContain("const ONLY_NEW_ROLLS = process.argv.includes('--only-new-rolls');");
     const gateAt = src.indexOf('verifyVotes({');
     const skipAt = src.indexOf('ONLY_NEW_ROLLS && h.stored + s.stored === 0');
-    const writeAt = src.indexOf('writeFileSync(VOTES_PATH');
+    const writeAt = src.indexOf('writeAtomic(VOTES_PATH');
     expect(gateAt).toBeGreaterThan(0);
     expect(skipAt).toBeGreaterThan(gateAt);
     expect(writeAt).toBeGreaterThan(skipAt);
