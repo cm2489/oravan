@@ -112,6 +112,7 @@ test.describe('House parse', () => {
     const detail = fxJson('house-api-detail-119-2-308.json');
     delete detail.houseRollCallVote.votePartyTotal[0].voteParty;
     delete detail.houseRollCallVote.votePartyTotal[0].party;
+    expect(() => parseHouseApi(detail, fxJson('house-api-members-119-2-308.json'), { corpus })).toThrow(VotePartyDisagreement);
     expect(() => parseHouseApi(detail, fxJson('house-api-members-119-2-308.json'), { corpus })).toThrow(/without a party letter/);
   });
 
