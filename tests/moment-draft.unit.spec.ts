@@ -506,6 +506,12 @@ test.describe('no internal enum reaches the model as a fact', () => {
       // groundFor()'s statusKey and so could reach the record block.
       'floor_activity',
       'floor_vote_stale',
+      // Since groundFor hands statusKeyFor the bill (2026-09-29), the
+      // passage reading `passed_both` reaches it too. Its sibling `adopted` is
+      // not claimed: it is a single English word inside its own published
+      // label ("Adopted by both chambers"), excused for the reason the six
+      // single-word statuses are (tests/writers-status-record.unit.spec.ts).
+      'passed_both',
       ...COVERAGE_TIERS,
       ...SIGNAL_TYPES,
       ...MOMENT_STATUSES,
@@ -537,9 +543,9 @@ test.describe('no internal enum reaches the model as a fact', () => {
   test('no listed token is dead — every one of them is a value something really stores', () => {
     // The other direction: a token that no vocabulary contains any more is a
     // guard firing on nothing, and it makes the list read as broader than it
-    // is. `floor_activity` and `floor_vote_stale` are the two deliberate
-    // exceptions — derived message keys, not stored values.
-    const derivedKeys = ['floor_activity', 'floor_vote_stale'];
+    // is. `floor_activity`, `floor_vote_stale` and `passed_both` are the
+    // deliberate exceptions — derived message keys, not stored values.
+    const derivedKeys = ['floor_activity', 'floor_vote_stale', 'passed_both'];
     const real = new Set<string>([
       ...BILL_STATUSES,
       ...COVERAGE_TIERS,

@@ -887,6 +887,36 @@ const RECORD_ONLY_PHRASE = {
 };
 
 /**
+ * The status key one measure is described by: the clock (floor_vote /
+ * floor_vote_stale / floor_activity) AND, since 2026-09-29, the passage
+ * readings, read off the record exactly as a page reads them.
+ *
+ * THE PASSAGE READINGS NEED THE BILL. statusKeyFor
+ * (scripts/moment-candidates.mjs) reads a `passed_chamber` record two more
+ * ways — `adopted` (a concurrent resolution both chambers agreed to in one
+ * form) and `passed_both` (the second chamber passed it) — but only when it is
+ * handed the bill type and the status basis as its 5th argument. Both call
+ * sites here used to call it with four arguments, so the prompt told the model
+ * H.Con.Res. 86 "Passed one chamber" after its bill page and chip said
+ * "Adopted by both chambers" (#368) and its Big Questions card said "Both
+ * chambers have passed it in the same form" (lib/moment-status.mjs). The model
+ * copied it: "H. Con. Res. 86 is also listed as Passed one chamber" is in the
+ * iran-war-powers revision of 2026-09-26. A record without `billType` (an old
+ * caller, a test fixture) keeps `passed_chamber`, exactly as before.
+ *
+ * @param {string} status  the raw bill status
+ * @param {{ lastActionText?: string|null, lastActionDate?: string|null, billType?: string|null, statusBasisText?: string|null }|null|undefined} record
+ * @param {number} [nowMs]
+ * @returns {string} a `bills.status.*` message key
+ */
+export function recordStatusKey(status, record, nowMs = now.getTime()) {
+  const passage = record?.billType
+    ? { bill_type: record.billType, status_basis_text: record.statusBasisText ?? null }
+    : null;
+  return statusKeyFor(status, record?.lastActionText ?? null, record?.lastActionDate ?? null, nowMs, passage);
+}
+
+/**
  * The plain-language phrase one measure is described by, in one language.
  *
  * Exported for the unit suite: this is the boundary the whole "no forecast in
@@ -895,13 +925,13 @@ const RECORD_ONLY_PHRASE = {
  * must be able to age a placement without waiting a fortnight.
  *
  * @param {string} status  the raw bill status
- * @param {{ lastActionText?: string|null, lastActionDate?: string|null }|null|undefined} record
+ * @param {{ lastActionText?: string|null, lastActionDate?: string|null, billType?: string|null, statusBasisText?: string|null }|null|undefined} record
  * @param {'en'|'es'} lang
  * @param {number} [nowMs]
  * @returns {string}
  */
 export function recordStatusPhrase(status, record, lang, nowMs = now.getTime()) {
-  const key = statusKeyFor(status, record?.lastActionText ?? null, record?.lastActionDate ?? null, nowMs);
+  const key = recordStatusKey(status, record, nowMs);
   return RECORD_ONLY_PHRASE[key]?.[lang] ?? statusPhrase(key, lang);
 }
 
@@ -914,7 +944,9 @@ export function recordStatusPhrase(status, record, lang, nowMs = now.getTime()) 
  *   on purpose: it is persisted as `grounded_in.vehicle_statuses` and diffed
  *   by summaryNeedsRefresh, so the clock rides a SEPARATE map rather than
  *   rewriting what a revision says it was grounded in.
- * @param {Record<string, {lastActionText: string|null, lastActionDate: string|null}>} [records]
+ * @param {Record<string, {lastActionText: string|null, lastActionDate: string|null, billType?: string|null, statusBasisText?: string|null}>} [records]
+ *   what each status is read against (planSummaries builds it): the clock's
+ *   two fields, and the bill type and status basis the passage readings need.
  * @param {Record<string, any>[]} [votes] data/votes.json roll calls on this
  *   moment's vehicles inside the summary window (planSummaries selects them).
  *   They are GROUNDING: printed into the prompt verbatim, persisted as
@@ -954,7 +986,7 @@ export async function generateStateSummary(anthropic, momentId, entry, statuses,
   ]);
   const phraseFor = (slug, status, lang) => {
     const rec = records[slug];
-    const key = statusKeyFor(status, rec?.lastActionText ?? null, rec?.lastActionDate ?? null, now.getTime());
+    const key = recordStatusKey(status, rec);
     if (key === 'floor_vote_stale' && activeSlugs.has(slug)) return statusPhrase('floor_activity', lang);
     return recordStatusPhrase(status, rec, lang);
   };
@@ -1659,10 +1691,12 @@ export function planSummaries({
 
     const statuses = {};
     // The record each status is read against — the two halves statusKeyFor
-    // needs to tell a live calendar placement from an aged one. Deliberately
-    // a SECOND map: `statuses` is persisted verbatim in the revision's
-    // grounded_in and diffed by summaryNeedsRefresh, so nothing here may
-    // change its shape.
+    // needs to tell a live calendar placement from an aged one, and (since
+    // 2026-09-29) the bill type and status basis its passage readings need to
+    // tell "Passed one chamber" from "Adopted by both chambers" and "Passed
+    // both chambers" (see recordStatusKey). Deliberately a SECOND map:
+    // `statuses` is persisted verbatim in the revision's grounded_in and
+    // diffed by summaryNeedsRefresh, so nothing here may change its shape.
     const records = {};
     for (const v of moment.vehicles ?? []) {
       const bill = bills?.get(v.slug);
@@ -1671,6 +1705,8 @@ export function planSummaries({
       records[v.slug] = {
         lastActionText: bill.last_action_text ?? null,
         lastActionDate: bill.last_action_date ?? null,
+        billType: bill.bill_type ?? null,
+        statusBasisText: bill.status_basis_text ?? null,
       };
     }
     const slugs = Object.keys(statuses);
