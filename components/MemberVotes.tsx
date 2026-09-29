@@ -35,11 +35,18 @@ import { MEMBER_VOTES_MAX_BILLS, memberVotesByBill, votesCoverage, type MemberVo
  * no party, no party colour, no colour for Yea or Nay, no score, no tally of
  * how often they "side" with anyone, no "agrees with you". Every mark is ink.
  *
- * CAPPED. At most the newest MEMBER_VOTES_MAX_BILLS bills (lib/votes.ts): the
- * first SHOWN open, the rest of those under "Show all". Past the cap, one
- * plain line counts the bills left out and says each bill's page lists its
- * recorded votes, which is true: components/VoteRecord.tsx shows every stored
- * roll call on the bill and every member's position on it.
+ * CAPPED, BY ROLL CALLS. At most the newest MEMBER_VOTES_MAX_BILLS bills
+ * (lib/votes.ts): the first SHOWN open, the rest of those under "Show all".
+ * Each row prints ONE roll call, the member's newest on that bill; when they
+ * cast more, one link says how many and goes to the bill page's vote record
+ * (its `#votes` section), which lists every stored roll call on the bill. So
+ * the page prints at most MEMBER_VOTES_MAX_BILLS roll calls, however many a
+ * bill collects (2026-09-29: with the 119th Congress back-filled, printing
+ * every vote per bill let one bill add 47). Past the bill cap, one plain line
+ * counts the bills left out and says each bill's page lists its recorded
+ * votes, which is true: components/VoteRecord.tsx shows every stored roll call
+ * on the bill. It prints every member's position on the newest one; for each
+ * older one it links to the chamber's own page, which lists them.
  *
  * STATIC. A server component; the rows past the first batch sit in a closed
  * <details>, so nothing here ships to the browser as JavaScript and no corpus
@@ -146,7 +153,9 @@ export async function MemberVotes({
   const row = ({ bill: id, votes }: (typeof groups)[number]) => {
     const raw = billFor(id);
     const bill = raw ? localizeBill(raw, locale) : undefined;
-    const [newest, ...earlier] = votes;
+    const [newest] = votes;
+    // Their other votes on this bill: counted here, listed on the bill page.
+    const more = votes.length - 1;
     const now = bill ? rightNow(bill) : null;
     return (
       <li
@@ -178,26 +187,16 @@ export async function MemberVotes({
           </>
         )}
         <div className="mt-3 border-t border-line pt-3">{vote(newest)}</div>
-        {earlier.length > 0 && (
-          <details className="group mt-2 border-t border-line">
-            <summary className="inline-flex min-h-11 cursor-pointer list-none items-center gap-2 text-sm font-semibold text-ink hover:text-go-deep [&::-webkit-details-marker]:hidden">
-              <span
-                aria-hidden
-                className="inline-flex h-5 w-5 flex-none items-center justify-center rounded-stamp border-[1.5px] border-ink text-xs font-extrabold leading-none"
-              >
-                <span className="group-open:hidden">+</span>
-                <span className="hidden group-open:inline">{'–'}</span>
-              </span>
-              {t('votesMoreOnBill', { count: earlier.length })}
-            </summary>
-            <ol className="grid gap-3 pb-1">
-              {earlier.map((v) => (
-                <li key={v.rollCall.id} className="border-t border-line pt-3 first:border-t-0 first:pt-1">
-                  {vote(v)}
-                </li>
-              ))}
-            </ol>
-          </details>
+        {more > 0 && (
+          <p className="mt-2 border-t border-line pt-1">
+            <Link
+              href={`/bills/${id}#votes`}
+              className="inline-flex min-h-11 items-center text-sm font-semibold text-ink underline decoration-line-strong underline-offset-4 hover:decoration-ink"
+              data-member-vote-more={more}
+            >
+              {t('votesMoreOnBillLink', { count: more })}
+            </Link>
+          </p>
         )}
       </li>
     );

@@ -1,8 +1,10 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { expect, test, type Page, type Request } from '@playwright/test';
+import { expect, test, type Locator, type Page, type Request } from '@playwright/test';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
+import { memberListPage } from '../lib/votes';
+import type { RollCall as LibRollCall } from '../lib/types';
 import { billWithRollCallsOnlyIn } from './corpus-fixtures';
 import { seedZip } from './helpers';
 import { messagePattern } from './message-pattern';
@@ -21,6 +23,13 @@ import { messagePattern } from './message-pattern';
  *
  * ZIP 05401 (Burlington, VT) is a single at-large district, so the call rail
  * resolves exactly three members and the strip has no split-ZIP branch to take.
+ *
+ * ONE PRINTED LIST (2026-09-29). Only the newest roll call prints its
+ * member-by-member list into the page; every older one keeps its record (the
+ * question, result, tally, date and official record) and links its list to
+ * the chamber's own page for that roll call (lib/votes.ts memberListPage).
+ * The specs below pin what the server HTML carries on the most-voted bill,
+ * the older cards' links, and that none of it needs JavaScript.
  */
 
 interface RollCall {
@@ -31,6 +40,7 @@ interface RollCall {
   question: string;
   result: string;
   bill: string;
+  source: string;
   totals: Record<'yea' | 'nay' | 'present' | 'notVoting', number>;
   votes: Record<'yea' | 'nay' | 'present' | 'notVoting', string[]>;
 }
@@ -66,6 +76,19 @@ const LOCALES = [
   { locale: 'en', prefix: '', m: en },
   { locale: 'es', prefix: '/es', m: es },
 ] as const;
+
+/** The bill with the most stored roll calls: the page this weight fix is for. */
+function mostVotedBill(): string {
+  const counts = new Map<string, number>();
+  for (const r of VOTES.rollCalls) counts.set(r.bill, (counts.get(r.bill) ?? 0) + 1);
+  return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0][0];
+}
+
+async function height(el: Locator): Promise<number> {
+  return (await el.boundingBox())?.height ?? 0;
+}
+
+const listPage = (r: RollCall) => memberListPage(r as unknown as LibRollCall);
 
 for (const { locale, prefix, m } of LOCALES) {
   test.describe(`vote record (${locale})`, () => {
@@ -137,8 +160,99 @@ for (const { locale, prefix, m } of LOCALES) {
         .evaluateAll((els) => els.map((e) => e.getAttribute('data-vote-group')));
       expect(order).toEqual(POSITIONS.filter((p) => r.votes[p].length > 0));
     });
+
+    test('the page HTML prints one member list, the newest vote\'s, and links every older one', async ({ request }) => {
+      const bill = mostVotedBill();
+      const rolls = newestFirst(bill);
+      expect(rolls.length).toBeGreaterThan(1);
+      const res = await request.get(`${prefix}/bills/${bill}`);
+      expect(res.status()).toBe(200);
+      const html = await res.text();
+      const count = (needle: string) => html.split(needle).length - 1;
+
+      // Every roll call keeps its record: its card, its four totals, and its
+      // official-record link.
+      expect(count('data-vote-roll="')).toBe(rolls.length);
+      expect(count('data-vote-total="')).toBe(rolls.length * POSITIONS.length);
+      const noRecord = rolls.filter((r) => !html.includes(`data-vote-roll="${r.id}"`) || !html.includes(r.source));
+      expect(noRecord.map((r) => r.id)).toEqual([]);
+
+      // One printed list, the newest roll call's, with its groups.
+      expect(count('data-vote-members=""')).toBe(1);
+      expect(count('data-vote-group="')).toBe(POSITIONS.filter((p) => rolls[0].votes[p].length > 0).length);
+      // Every other roll call links its list to the chamber's page instead.
+      expect(count('data-vote-members-link=""')).toBe(rolls.length - 1);
+      const unlinked = rolls.slice(1).filter((r) => !html.includes(`href="${listPage(r)}"`));
+      expect(unlinked.map((r) => r.id)).toEqual([]);
+
+      // A weight floor for the regression this replaced: printed, the lists
+      // cost about 84 kB of HTML per roll call on this page (3.95 MB for 47,
+      // measured 2026-09-29). One printed list plus 25 kB per roll call is
+      // well above what the record itself costs.
+      expect(html.length, `${bill}: HTML bytes`).toBeLessThan(250_000 + rolls.length * 25_000);
+    });
+
+    test('an older roll call\'s list is one link to the chamber\'s page, in a new tab, at 44px', async ({ page }) => {
+      const bill = mostVotedBill();
+      const rolls = newestFirst(bill);
+      await page.goto(`${prefix}/bills/${bill}`);
+      const record = page.locator('[data-vote-record]');
+      // The newest card: the fold-out, and no link in its place.
+      const newest = record.locator('[data-vote-roll]').first();
+      await expect(newest).toHaveAttribute('data-vote-roll', rolls[0].id);
+      await expect(newest.locator('[data-vote-members]')).toHaveCount(1);
+      await expect(newest.locator('[data-vote-members-link]')).toHaveCount(0);
+
+      // The second card is on screen without opening "earlier votes".
+      const second = record.locator(`[data-vote-roll="${rolls[1].id}"]`);
+      await expect(second.locator('[data-vote-members]')).toHaveCount(0);
+      const link = second.locator('[data-vote-members-link] a');
+      await expect(link).toBeVisible();
+      await expect(link).toHaveText(m.votes.membersOnRecordLink);
+      await expect(link).toHaveAttribute('href', listPage(rolls[1]));
+      await expect(link).toHaveAttribute('target', '_blank');
+      await expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+      expect(await height(link), '44px touch target on the older list link').toBeGreaterThanOrEqual(44);
+      // Its own record link is still there, beside it.
+      await expect(second.locator(`a[href="${rolls[1].source}"]`)).toHaveText(m.votes.source);
+
+      // Every card, in order: only the first carries a list.
+      const cards = await record.locator('[data-vote-roll]').evaluateAll((els) =>
+        els.map((e) => ({
+          id: e.getAttribute('data-vote-roll'),
+          list: e.querySelectorAll('[data-vote-members]').length,
+          link: e.querySelector('[data-vote-members-link] a')?.getAttribute('href') ?? null,
+        }))
+      );
+      expect(cards).toEqual(
+        rolls.map((r, i) => ({ id: r.id, list: i === 0 ? 1 : 0, link: i === 0 ? null : listPage(r) }))
+      );
+    });
   });
 }
+
+test.describe('without JavaScript', () => {
+  test.use({ javaScriptEnabled: false });
+
+  for (const { locale, prefix, m } of LOCALES) {
+    test(`the newest list opens and the older links work, with no script (${locale})`, async ({ page }) => {
+      const bill = mostVotedBill();
+      const rolls = newestFirst(bill);
+      await page.goto(`${prefix}/bills/${bill}`);
+      const newest = page.locator('[data-vote-record] [data-vote-roll]').first();
+      const fold = newest.locator('[data-vote-members]');
+      await fold.locator('summary').click();
+      const firstGroup = POSITIONS.find((p) => rolls[0].votes[p].length > 0)!;
+      const links = fold.locator(`[data-vote-group="${firstGroup}"] a`);
+      await expect(links.first()).toBeVisible();
+      await expect(links).toHaveCount(rolls[0].votes[firstGroup].length);
+      const older = page.locator(`[data-vote-roll="${rolls[1].id}"] [data-vote-members-link] a`);
+      await expect(older).toBeVisible();
+      await expect(older).toHaveText(m.votes.membersOnRecordLink);
+      await expect(older).toHaveAttribute('href', listPage(rolls[1]));
+    });
+  }
+});
 
 /** Every request in the page's life that carries the ZIP anywhere. */
 function zipRequests(page: Page): Request[] {

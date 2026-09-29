@@ -7,7 +7,7 @@ import type { GlossaryTermId } from '@/lib/glossary';
 import { glossaryLocale } from '@/lib/glossary-match';
 import { getLegislator } from '@/lib/core';
 import type { RollCall, VotePosition } from '@/lib/types';
-import { votesCoverage, votesForBill, votingMember } from '@/lib/votes';
+import { memberListPage, votesCoverage, votesForBill, votingMember } from '@/lib/votes';
 import { VoteDelegation, type DelegationVote } from './VoteDelegation';
 
 /*
@@ -38,6 +38,17 @@ import { VoteDelegation, type DelegationVote } from './VoteDelegation';
  * the mark is on the record's text, never a rewrite of it. The four position
  * labels carry their entries too. Each roll call is one section: a term is
  * marked once per card.
+ *
+ * WHO IS PRINTED (2026-09-29, the page-weight alternative to PR #369). Only
+ * the NEWEST roll call prints its member-by-member list into the page, under
+ * "How members voted". Every older roll call keeps everything else — the
+ * question and result as recorded, the tally, the date and roll number, the
+ * tie-breaker, the official record — and its member list becomes one link to
+ * the chamber's own page for that roll call (lib/votes.ts memberListPage),
+ * which lists every member's position. With the 119th Congress back-filled,
+ * printing every list put 47 lists of about 435 names into /bills/hr-1-119
+ * (3.95 MB of HTML). No request, no JSON file, no client component: the page
+ * is still plain server HTML.
  */
 
 /** The entry each tally label opens. Yea and Nay share one; Yea carries it. */
@@ -118,7 +129,9 @@ export async function VoteRecord({
     format.dateTime(new Date(d), { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
   const { house, senate, floorLabel } = delegationVotesFor(billId, fmtDate);
 
-  const entry = (r: RollCall) => {
+  /** `printed`: this roll call's member list is in the page (the newest
+   *  only); every other card links to the chamber's page for its list. */
+  const entry = (r: RollCall, printed: boolean) => {
     const hId = `vote-${r.id}`;
     const seen = new Set<GlossaryTermId>();
     return (
@@ -193,43 +206,57 @@ export async function VoteRecord({
           <ExternalLink className="h-4 w-4 flex-none" aria-hidden />
         </a>
 
-        <details className="group border-t border-line" data-vote-members="">
-          <summary className="inline-flex min-h-11 cursor-pointer list-none items-center gap-2 text-sm font-semibold text-ink hover:text-go-deep [&::-webkit-details-marker]:hidden">
-            <span
-              aria-hidden
-              className="inline-flex h-5 w-5 flex-none items-center justify-center rounded-stamp border-[1.5px] border-ink text-xs font-extrabold leading-none"
+        {printed ? (
+          <details className="group border-t border-line" data-vote-members="">
+            <summary className="inline-flex min-h-11 cursor-pointer list-none items-center gap-2 text-sm font-semibold text-ink hover:text-go-deep [&::-webkit-details-marker]:hidden">
+              <span
+                aria-hidden
+                className="inline-flex h-5 w-5 flex-none items-center justify-center rounded-stamp border-[1.5px] border-ink text-xs font-extrabold leading-none"
+              >
+                <span className="group-open:hidden">+</span>
+                <span className="hidden group-open:inline">{'–'}</span>
+              </span>
+              {t('membersToggle')}
+            </summary>
+            <div className="pb-3">
+              {POSITIONS.filter((p) => r.votes[p].length > 0).map((p) => {
+                const members = r.votes[p].map(named).sort(byLastName);
+                return (
+                  <section key={p} aria-labelledby={`${hId}-${p}`} className="mt-3" data-vote-group={p}>
+                    <h4 id={`${hId}-${p}`} className="text-sm font-extrabold text-ink tabular-nums">
+                      {t('group', { position: t(`position.${p}`), count: members.length })}
+                    </h4>
+                    <ul className="mt-1 grid grid-cols-[repeat(auto-fill,minmax(10.5rem,1fr))] gap-x-4">
+                      {members.map((m) => (
+                        <li key={m.id}>
+                          <Link
+                            href={`/reps/${m.id}`}
+                            className="inline-flex min-h-11 items-center text-sm text-ink underline decoration-line-strong underline-offset-4 hover:decoration-ink"
+                          >
+                            {m.name}
+                            {m.state && ` (${m.state})`}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                );
+              })}
+            </div>
+          </details>
+        ) : (
+          <p className="border-t border-line" data-vote-members-link="">
+            <a
+              href={memberListPage(r)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-ink underline decoration-line-strong underline-offset-4 hover:decoration-ink"
             >
-              <span className="group-open:hidden">+</span>
-              <span className="hidden group-open:inline">{'–'}</span>
-            </span>
-            {t('membersToggle')}
-          </summary>
-          <div className="pb-3">
-            {POSITIONS.filter((p) => r.votes[p].length > 0).map((p) => {
-              const members = r.votes[p].map(named).sort(byLastName);
-              return (
-                <section key={p} aria-labelledby={`${hId}-${p}`} className="mt-3" data-vote-group={p}>
-                  <h4 id={`${hId}-${p}`} className="text-sm font-extrabold text-ink tabular-nums">
-                    {t('group', { position: t(`position.${p}`), count: members.length })}
-                  </h4>
-                  <ul className="mt-1 grid grid-cols-[repeat(auto-fill,minmax(10.5rem,1fr))] gap-x-4">
-                    {members.map((m) => (
-                      <li key={m.id}>
-                        <Link
-                          href={`/reps/${m.id}`}
-                          className="inline-flex min-h-11 items-center text-sm text-ink underline decoration-line-strong underline-offset-4 hover:decoration-ink"
-                        >
-                          {m.name}
-                          {m.state && ` (${m.state})`}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              );
-            })}
-          </div>
-        </details>
+              {t('membersOnRecordLink')}
+              <ExternalLink className="h-4 w-4 flex-none" aria-hidden />
+            </a>
+          </p>
+        )}
       </li>
     );
   };
@@ -238,7 +265,7 @@ export async function VoteRecord({
   const earlier = rollCalls.slice(VISIBLE);
 
   return (
-    <section aria-labelledby="votes-h" className={className} data-vote-record="">
+    <section id="votes" aria-labelledby="votes-h" className={className} data-vote-record="">
       <h2 id="votes-h" className="text-h3 font-extrabold text-ink">
         {t('heading')}
       </h2>
@@ -246,7 +273,7 @@ export async function VoteRecord({
 
       {delegation && <VoteDelegation house={house} senate={senate} floorLabel={floorLabel} />}
 
-      <ol className="mt-4 grid gap-3">{shown.map(entry)}</ol>
+      <ol className="mt-4 grid gap-3">{shown.map((r, i) => entry(r, i === 0))}</ol>
 
       {earlier.length > 0 && (
         <details className="group/earlier mt-3">
@@ -260,7 +287,7 @@ export async function VoteRecord({
             </span>
             {t('earlier', { count: earlier.length })}
           </summary>
-          <ol className="mt-2 grid gap-3">{earlier.map(entry)}</ol>
+          <ol className="mt-2 grid gap-3">{earlier.map((r) => entry(r, false))}</ol>
         </details>
       )}
     </section>
