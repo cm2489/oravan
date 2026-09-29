@@ -40,8 +40,17 @@ export function ZipForm({
   onSaved,
   submitTone = 'primary',
   inline = false,
+  replace = false,
 }: {
   autoFocus?: boolean;
+  /**
+   * Navigate with `replace` instead of `push` (the /reps page's own prompts,
+   * 2026-09-28). Bare /reps now opens on the saved ZIP
+   * (components/SavedZipLookup.tsx), so a pushed entry there would make Back
+   * land on /reps and bounce straight forward to the same members. Replacing
+   * lets Back leave the page. The home hero and the bill page keep `push`.
+   */
+  replace?: boolean;
   /**
    * The submit's visual weight. 'primary' (default) is the filled green
    * control every instance has always had. 'secondary' is the ink outline
@@ -105,7 +114,8 @@ export function ZipForm({
       onSaved(clean);
       return;
     }
-    router.push(`/reps?zip=${clean}`);
+    if (replace) router.replace(`/reps?zip=${clean}`);
+    else router.push(`/reps?zip=${clean}`);
   }
 
   return (

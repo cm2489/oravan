@@ -1,4 +1,6 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
+import { districtsForZip, repsForDistrict } from '../lib/core';
+import { seedZip } from './helpers';
 import { createTranslator } from 'next-intl';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
@@ -9,6 +11,87 @@ import es from '../messages/es.json';
  */
 const t = createTranslator({ locale: 'en', messages: en, namespace: 'reps' });
 const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/*
+ * A SAVED ZIP OPENS /reps ON YOUR MEMBERS (owner, UX question Q8 answered "a",
+ * 2026-09-28: "The Reps tab opens on your members, with 'Change ZIP'. The ZIP
+ * is kept only on the device and sent only to the stateless lookup").
+ * components/SavedZipLookup.tsx reads the saved ZIP in the browser and
+ * replaces bare /reps with /reps?zip=<ZIP>; "Change ZIP code" goes to
+ * /reps?change=1, where the prompt stays put. The members printed are read
+ * from the same data the page reads.
+ */
+const SAVED = '78501';
+const SAVED_REPS = districtsForZip(SAVED).flatMap(repsForDistrict).map((l) => l.name);
+const NEW_ZIP = '20002';
+const readSavedZip = (page: Page) =>
+  page.evaluate(() => JSON.parse(localStorage.getItem('oravan.prefs') ?? '{}').zip ?? null);
+
+test.describe('a saved ZIP opens /reps on your members (Q8 "a")', () => {
+  for (const [prefix, m] of [
+    ['', en],
+    ['/es', es],
+  ] as const) {
+    const tr = createTranslator({ locale: prefix ? 'es' : 'en', messages: m, namespace: 'reps' });
+
+    test(`${prefix || '/en'}: bare /reps applies the saved ZIP; Change ZIP asks again and saves the new one`, async ({
+      page,
+    }) => {
+      expect(SAVED_REPS.length, `the fixture ZIP ${SAVED} must resolve to members in data/`).toBeGreaterThan(0);
+      await page.goto(`${prefix}/privacy`);
+      await seedZip(page, SAVED);
+
+      await page.goto(`${prefix}/reps`);
+      await expect(page).toHaveURL(new RegExp(`${prefix}/reps\\?zip=${SAVED}$`));
+      for (const name of SAVED_REPS) {
+        await expect(page.getByText(name, { exact: true }).first()).toBeVisible();
+      }
+      // The ZIP it came from is named, with the way to change it.
+      const line = page.locator('[data-zip-line]');
+      await expect(line).toContainText(tr('zipLine', { zip: SAVED }));
+      await line.getByRole('link', { name: m.reps.changeZip, exact: true }).click();
+
+      // Change ZIP: the prompt, pre-filled, and no bounce back to the saved ZIP.
+      await expect(page).toHaveURL(new RegExp(`${prefix}/reps\\?change=1$`));
+      await expect(page.getByText(m.reps.noZip, { exact: true })).toBeVisible();
+      const field = page.getByLabel(m.home.zipLabel);
+      await expect(field).toHaveValue(SAVED);
+      await field.fill(NEW_ZIP);
+      await page.getByRole('button', { name: m.home.zipCta }).click();
+      await expect(page).toHaveURL(new RegExp(`${prefix}/reps\\?zip=${NEW_ZIP}$`));
+      expect(await readSavedZip(page), 'the new ZIP is the saved one now').toBe(NEW_ZIP);
+
+      // The next visit to bare /reps opens on the new ZIP.
+      await page.goto(`${prefix}/reps`);
+      await expect(page).toHaveURL(new RegExp(`${prefix}/reps\\?zip=${NEW_ZIP}$`));
+    });
+  }
+
+  test('the lookup replaces bare /reps in history, so Back leaves the page', async ({ page }) => {
+    await page.goto('/privacy');
+    await seedZip(page, SAVED);
+    await page.goto('/reps');
+    await expect(page).toHaveURL(new RegExp(`/reps\\?zip=${SAVED}$`));
+    await page.goBack();
+    await expect(page).toHaveURL(/\/privacy$/);
+  });
+
+  test('no saved ZIP, or a saved value that is not a ZIP: bare /reps keeps its prompt', async ({
+    page,
+  }) => {
+    await page.goto('/reps');
+    await page.waitForLoadState('networkidle');
+    await expect(page).toHaveURL(/\/reps$/);
+    await expect(page.getByText(en.reps.noZip, { exact: true })).toBeVisible();
+
+    await seedZip(page, 'abcde');
+    await page.goto('/reps');
+    await page.waitForLoadState('networkidle');
+    await expect(page).toHaveURL(/\/reps$/);
+    await expect(page.getByText(en.reps.noZip, { exact: true })).toBeVisible();
+    await expect(page.locator('[data-saved-zip-lookup]')).toHaveCount(0);
+  });
+});
 
 test('normal district shows one rep and two senators with local offices', async ({ page }) => {
   await page.goto('/reps?zip=78501');
@@ -205,7 +288,7 @@ test.describe('per-caller rate limit', () => {
     request,
   }) => {
     // The dormant tenancy hook (S18/S19) is recognized by this route as it is
-    // by /api/district and /api/feedback - and must not change a byte.
+    // by /api/district - and must not change a byte.
     const ip = nextIp();
     const without = await request.get('/api/reps?zip=78501', {
       headers: { 'x-forwarded-for': ip },

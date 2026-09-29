@@ -15,8 +15,8 @@ import { briefToday, meetsAfterDay } from '../lib/today';
 import { votesForBill, votingMember } from '../lib/votes';
 
 /*
- * THE 2026-09-27 COPY-TRUTH SWEEP, rendered (SY-43, SY-44, SY-33, SY-25,
- * SY-31). The helpers are pinned in tests/copy-truth.unit.spec.ts; this spec
+ * THE 2026-09-27 COPY-TRUTH SWEEP, rendered (SY-44, SY-33, SY-25, SY-31;
+ * SY-43 left with the beta feedback option on 2026-09-28). The helpers are pinned in tests/copy-truth.unit.spec.ts; this spec
  * pins that the pages print what they return — by message key and data-*
  * hook, never by an English literal. Every bill below is chosen from the
  * committed corpus by the same helpers the page calls, so no slug is pinned
@@ -116,18 +116,6 @@ test.describe('SY-31 /today', () => {
         expect(await li.getAttribute('data-meets-later')).toBeNull();
       }
     }
-  });
-});
-
-test.describe('SY-43 feedback notice', () => {
-  test('the partnership notice is the rewritten key, not a contact ask', async ({ page }) => {
-    await page.goto('/why-call');
-    const trigger = page.getByRole('button', { name: en.feedback.trigger });
-    await expect(trigger).toBeVisible({ timeout: 15_000 });
-    await trigger.click();
-    await expect(page.locator('#feedback-notice')).toHaveText(en.feedback.notice);
-    await page.getByRole('radio', { name: en.feedback.categoryPartnership }).check();
-    await expect(page.locator('#feedback-notice')).toHaveText(en.feedback.noticePartnership);
   });
 });
 

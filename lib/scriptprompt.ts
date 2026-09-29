@@ -18,7 +18,7 @@ import type { Bill, Stance } from './types';
  * silently forking the two paths on day one.
  */
 
-export const SCRIPT_MODEL = 'claude-sonnet-5';
+export const SCRIPT_MODEL = 'claude-sonnet-5-5';
 export const SCRIPT_MAX_TOKENS = 520;
 export const STANCES: Stance[] = ['support', 'oppose', 'undecided'];
 

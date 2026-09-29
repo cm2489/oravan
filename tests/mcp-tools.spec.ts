@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { SITE_ORIGIN } from '../lib/site';
-import { conversationBandPool } from '../lib/conversation';
+import { conversationBandPool, MOST_VIEWED_MIN_WEEKS } from '../lib/conversation';
+import { conversationFacet } from '../lib/core/mcp-conversation';
 import { corpus, expectDataStaleAt, movingSlugsAt, slugOf, stableAcross } from './corpus';
 import { decisionState } from '../lib/docket.mjs';
 import { floorReconsiderPendingChamber, statusBasisText } from '../lib/floor-text.mjs';
@@ -437,42 +438,39 @@ test.describe('whats_moving', () => {
   });
 
   /*
-   * THE CONVERSATION FACET (2026-08-12, design B) — a SECOND, independent fact
-   * about a listed bill: how many AllSides-rated outlets published about it in
-   * the last seven days and whether congress.gov's own readers are on it. It is
-   * evidence handed to an agent, never a ranking: the list, its order and its
-   * membership are the docket ladder's and are asserted unchanged above.
+   * THE CONVERSATION FACET — a SECOND, independent fact about a listed bill:
+   * whether congress.gov's own readers have kept it on their most-viewed list.
+   * It is evidence handed to an agent, never a ranking: the list, its order and
+   * its membership are the docket ladder's and are asserted unchanged above.
+   *
+   * NOTHING FROM ALLSIDES (owner decision 2026-09-28: "Remove allsides leans
+   * from MCP"). Until then the facet also carried `lean_spread` and
+   * `outlets_7d`, both read from the AllSides table; /citations says those
+   * ratings "are excluded from the MCP server", and this is the HTTP half of
+   * the check that keeps that true (the stdio half, and the fixtures, are in
+   * tests/mcp-stdio.unit.spec.ts and tests/mcp-conversation.unit.spec.ts).
    */
-  test('the optional conversation facet carries counted evidence, and only where the evidence corroborates', async ({ request }) => {
-    const pool = new Map(conversationBandPool().map((item) => [item.slug, item]));
-    const result = await callTool(request, 'whats_moving', { locale: 'en' });
-    const bills = result.structuredContent!.bills as Array<{
-      slug: string;
-      conversation?: { outlets_7d: number; lean_spread: string[]; most_viewed_rank: number | null; most_viewed_weeks: number };
-    }>;
-    test.skip(bills.length === 0, 'quiet week: whats_moving is empty right now');
-    for (const b of bills) {
-      const evidence = pool.get(b.slug);
-      // Absent is the normal case, and it is the B-1 guarantee in payload form:
-      // a bill one outlet wrote about is c0 and carries NO facet at all. (Where
-      // congress.gov's most-viewed list admitted the bill, the article beside it
-      // does print as `outlets_7d: 1`; the assert below is the invariant that
-      // holds either way — one of the two facts is always real.)
-      if (!evidence) {
-        expect(b.conversation, b.slug).toBeUndefined();
-        continue;
+  test('the optional conversation facet carries the most-viewed listing and nothing from AllSides', async ({ request }) => {
+    const pool = new Map(conversationBandPool().map((item) => [item.slug, item.evidence]));
+    // Every KEY in the payload (never the values: "clean" is not a lean).
+    const keyPaths = (value: unknown, path = ''): string[] =>
+      Array.isArray(value)
+        ? value.flatMap((v, i) => keyPaths(v, `${path}[${i}]`))
+        : value && typeof value === 'object'
+          ? Object.entries(value).flatMap(([k, v]) => [`${path}.${k}`, ...keyPaths(v, `${path}.${k}`)])
+          : [];
+    for (const locale of ['en', 'es'] as const) {
+      const result = await callTool(request, 'whats_moving', { locale, days: 90, limit: 50 });
+      const bills = result.structuredContent!.bills as Array<{ slug: string; conversation?: Record<string, unknown> }>;
+      for (const b of bills) {
+        // Absent is the normal case: a bill congress.gov's list does not carry
+        // has no field at all.
+        expect(b.conversation, `${locale} ${b.slug}`).toEqual(conversationFacet(pool.get(b.slug)));
+        if (!b.conversation) continue;
+        expect(Object.keys(b.conversation).sort(), `${locale} ${b.slug}`).toEqual(['most_viewed_rank', 'most_viewed_weeks']);
+        expect(b.conversation.most_viewed_weeks as number, b.slug).toBeGreaterThanOrEqual(MOST_VIEWED_MIN_WEEKS);
       }
-      expect(b.conversation, b.slug).toBeTruthy();
-      expect(b.conversation!.outlets_7d, b.slug).toBe(evidence.evidence.ratedOutlets);
-      expect(b.conversation!.lean_spread, b.slug).toEqual(evidence.evidence.leanSpread);
-      expect(b.conversation!.most_viewed_rank, b.slug).toBe(evidence.evidence.mostViewed?.lastRank ?? null);
-      // Whichever rung admitted it, one of the two facts must be real: two or
-      // more rated outlets, or the government's own most-viewed list.
-      expect(
-        b.conversation!.outlets_7d >= 2 || b.conversation!.most_viewed_rank !== null,
-        b.slug
-      ).toBe(true);
-      for (const lean of b.conversation!.lean_spread) expect(['left', 'center', 'right']).toContain(lean);
+      expect(keyPaths(result.structuredContent).filter((p) => /lean|outlet|allsides|bias/i.test(p)), locale).toEqual([]);
     }
   });
 

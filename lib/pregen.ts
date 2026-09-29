@@ -71,7 +71,7 @@ export interface BatchRequest {
   params: {
     model: string;
     max_tokens: number;
-    thinking: { type: 'disabled' };
+    thinking: { type: 'between_tools' };
     messages: { role: 'user'; content: string }[];
   };
 }
@@ -83,7 +83,9 @@ export function buildBatchRequest(combo: Combo): BatchRequest {
     params: {
       model: SCRIPT_MODEL,
       max_tokens: SCRIPT_MAX_TOKENS,
-      thinking: { type: 'disabled' },
+      // The same no-up-front-thinking setting the live route sends
+      // (app/api/script/route.ts); `disabled` is a 400 on Sonnet 5.5.
+      thinking: { type: 'between_tools' },
       messages: [
         { role: 'user', content: buildScriptPrompt({ bill: combo.bill, stance: combo.stance, lang: combo.lang }) },
       ],
@@ -97,6 +99,14 @@ export function buildBatchRequest(combo: Combo): BatchRequest {
  * ($2/$10 per M tok, through Aug 31 2026), $0.0042/gen at standard pricing
  * ($3/$15 per M tok, Sept 1 on). These are the doc's numbers, not rederived
  * here — keep them in sync with the strategy doc if pricing changes.
+ *
+ * Pricing did change, and the `standard` figure is no longer a price
+ * (2026-09-28): the model is now Sonnet 5.5, listed at $2/$10 per M tok on
+ * Anthropic's pricing page, the same as Sonnet 5, whose scheduled rise to
+ * $3/$15 that page says "will not occur". So `intro` is the list price and
+ * `standard` is a 1.5x ceiling above it. Both are kept, unchanged, because
+ * the nightly log line and scripts/pipeline-health.mjs read the pair as a
+ * low-high range.
  */
 export const COST_PER_GEN_NON_BATCH = { intro: 0.0028, standard: 0.0042 };
 export const BATCH_DISCOUNT = 0.5;

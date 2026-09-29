@@ -523,7 +523,7 @@ jobs:
         # reason as in newsdesk.yml: the live layer is additive and must never
         # cost the nightly run its corpus work.
         # Cost: ONE batched Haiku call + at most MOMENT_SUMMARY_DAILY_CAP=8
-        # Sonnet 5 summaries, and only for moments that actually moved — see
+        # Sonnet 5.5 summaries, and only for moments that actually moved — see
         # scripts/moment-updates.mjs's SPEND section.
         continue-on-error: true
         env:

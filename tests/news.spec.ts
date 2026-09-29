@@ -1,8 +1,6 @@
 import { expect, test } from '@playwright/test';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
-import { getNewsBills } from '../lib/core';
-import { stableAcross } from './corpus';
 
 /*
  * The "In the news" band. Selection and captions are unit-tested in
@@ -15,19 +13,17 @@ import { stableAcross } from './corpus';
  * this file exists to catch.
  *
  * The band is found by its `[data-news-band]` hook and the reasons by their
- * message keys, so neither the heading copy nor which page carries the band
- * is pinned here. Data-driven: each page skips cleanly when a quiet week
- * leaves nothing to feature there. On /bills the data decides: that page
- * renders the band exactly when getNewsBills has something to feature, so
- * there a band that should exist and cannot be found FAILS rather than skips
- * (a lost hook must not read as a quiet week). The homepage also drops the
- * crowned bill from the band, so there the rendered page decides.
+ * message keys, so the heading copy is not pinned here. Data-driven: the page
+ * skips cleanly when a quiet week leaves nothing to feature. The homepage
+ * drops the crowned bill from the band, so the rendered page decides.
+ *
+ * The homepage is the only page that carries the band since 2026-09-28, when
+ * the owner cut it from /bills (UX inventory B05). /bills used to be the
+ * stricter half of this file: it rendered the band exactly when
+ * getNewsBills(locale, 6) had cards, so there a missing band FAILED rather
+ * than skipped. Bring /bills back into PAGES, with that check, if the band
+ * returns to it.
  */
-
-/** /bills renders the band iff getNewsBills(locale, 6) is non-empty. */
-const bandDueOnBills = (at: number) => getNewsBills('en', 6, at).length > 0;
-const BILLS_BAND_STABLE = stableAcross(bandDueOnBills);
-const BILLS_BAND_DUE = bandDueOnBills(Date.now());
 
 const NUMBER = '\\d[\\d,.\\u00a0\\u202f]*';
 
@@ -93,8 +89,8 @@ function reasonRegex(messages: typeof en | typeof es): RegExp {
 }
 
 const PAGES = [
-  { locale: 'en', paths: ['/', '/bills'], messages: en, other: es },
-  { locale: 'es', paths: ['/es', '/es/bills'], messages: es, other: en },
+  { locale: 'en', paths: ['/'], messages: en, other: es },
+  { locale: 'es', paths: ['/es'], messages: es, other: en },
 ] as const;
 
 for (const { locale, paths, messages, other } of PAGES) {
@@ -102,9 +98,6 @@ for (const { locale, paths, messages, other } of PAGES) {
     test(`${path}: every news card states its reason, in ${locale}`, async ({ page }) => {
       await page.goto(path);
       const band = page.locator('[data-news-band]');
-      if (path.endsWith('/bills') && BILLS_BAND_STABLE && BILLS_BAND_DUE) {
-        await expect(band, 'getNewsBills has cards to feature, so /bills renders the band').toHaveCount(1);
-      }
       test.skip((await band.count()) === 0, `no news-lens coverage on ${path} in current data`);
 
       // Every card is a link through to a bill, and the band has at least one.

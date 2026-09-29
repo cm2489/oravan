@@ -15,36 +15,19 @@ import { votingMember } from '../lib/votes';
 import type { RollCall } from '../lib/types';
 
 /*
- * THE 2026-09-27 COPY-TRUTH SWEEP (SY-43, SY-44, SY-33, SY-25, SY-31): five
- * shipped claims that were false the day the audit read them. Pure Node — no
- * page, no server. Synthetic records for the helpers, so nothing here pins a
+ * THE 2026-09-27 COPY-TRUTH SWEEP (SY-44, SY-33, SY-25, SY-31): shipped
+ * claims that were false the day the audit read them. Pure Node — no page,
+ * no server. Synthetic records for the helpers, so nothing here pins a
  * corpus slug; the rendered surfaces are pinned by key and data-* hook in
- * tests/copy-truth.spec.ts.
+ * tests/copy-truth.spec.ts. (SY-43, the feedback notice, left with the beta
+ * feedback option on 2026-09-28; tests/feedback.unit.spec.ts pins that the
+ * copy no longer points to it.)
  */
 
 const LOCALES = [
   ['en', en],
   ['es', es],
 ] as const;
-
-// ---- SY-43: the feedback notice --------------------------------------------
-
-test.describe('SY-43 feedback notice says where a note goes', () => {
-  for (const [locale, m] of LOCALES) {
-    for (const key of ['notice', 'noticePartnership'] as const) {
-      test(`${locale} feedback.${key}: public GitHub issue, never "private", no contact ask`, () => {
-        const s = m.feedback[key];
-        // app/api/feedback files an issue in a PUBLIC repository.
-        expect(s).toContain('GitHub');
-        expect(s).not.toMatch(/private|privad[oa]/i);
-        // The retired ask: "include a way to reach you (email or phone)".
-        expect(s).not.toMatch(/email or phone|correo o tel[eé]fono|way to reach you|forma de contactarte/i);
-        // Both notices keep the "no personal details" instruction.
-        expect(s).toMatch(locale === 'en' ? /Don't include personal details/ : /No incluyas datos personales/);
-      });
-    }
-  }
-});
 
 // ---- SY-44: "two senators" for everyone ------------------------------------
 

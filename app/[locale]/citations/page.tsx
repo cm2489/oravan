@@ -178,10 +178,11 @@ export default async function CitationsPage({ params }: { params: Promise<{ loca
         <section className="mt-8 rounded-control bg-wash p-6">
           <h2 className="text-h3 font-extrabold">{t('correctionTitle')}</h2>
           <p className="mt-2">{t('correctionBody')}</p>
-          {/* Same-page anchor to the Footer's own FeedbackDialog (components/
-              Footer.tsx#feedback) - one intake, not a parallel correction form. */}
+          {/* The site's public contact address, the one /about and /partners
+              name. The beta feedback form this used to point at was removed
+              on 2026-09-28. */}
           <a
-            href="#feedback"
+            href="mailto:hello@oravan.org"
             className="ring-gap mt-4 inline-flex min-h-12 items-center rounded-control border-2 border-go bg-go px-5 font-bold text-paper no-underline hover:border-go-deep hover:bg-go-deep"
           >
             {t('correctionLinkText')}

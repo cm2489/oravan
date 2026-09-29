@@ -248,7 +248,7 @@ test('X-Oravan-Key is parsed and inert: recognized shape, no effect on limiting'
 
   // Inert against the limiter: the limiter API cannot even receive it -
   // route-level inertness (identical responses with/without the header) is
-  // pinned in tests/feedback.unit.spec.ts against a live route handler.
+  // pinned in tests/reps.spec.ts against the live /api/reps route.
   restoreEnv = setUpstashEnv();
   const mock = new MockUpstash();
   restoreFetch = installUpstashFetch({ [COUNTERS_URL]: mock });

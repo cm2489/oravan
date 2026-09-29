@@ -92,7 +92,6 @@
     "floorCta": "Read it in plain words",
     "aiReviewed": "Decoded by AI, checked against the record",
     "stampLabel": "Data as of",
-    "weekNote": "The green panel marks one dated fact: this bill is on the floor calendar, or a floor vote on it is pending. The order comes from the legislative record, never our opinion — and a quiet week shows as a quiet week.",
     "weekNoteQuiet": "The order comes from the legislative record, never our opinion — and a quiet week shows as a quiet week.",
     "weekNoteRecess": "No legislative business is scheduled in either chamber. The Senate's own Daily Digest, published {published}, gives the next Senate meeting as <senateWhen>{senate}</senateWhen> and the next House meeting as <houseWhen>{house}</houseWhen> — both <term>pro forma sessions</term>. The bills below still stand where the record left them.",
     "how1Dur": "0:30",
@@ -125,7 +124,6 @@
     "evidenceCovers": "for {date}",
     "evidenceLink": "Read the source",
     "floorCheckedAt": "Schedule checked {date}",
-    "weekNoteAnnounced": "The green panel marks one dated fact from the record: the chamber has named this bill on its own published floor schedule, quoted above with the date it was published. The schedule is re-read every hour, and a bill the chamber drops leaves the panel with it. Nothing here says when a vote will happen — only Congress can say that, and it has not.",
     "todayLink": "Today's brief: votes, bills that moved, and each chamber's schedule, from the record."
   },
   "reps": {
@@ -141,8 +139,11 @@
     "dcOffice": "DC office",
     "localOffices": "Local offices",
     "website": "Official website",
+    "seeVotes": "See how they voted",
     "call": "Call",
     "changeZip": "Change ZIP code",
+    "zipLine": "ZIP code {zip}",
+    "savedZipLoading": "Looking up {zip}, the ZIP code saved on this device…",
     "zipNotFound": "We couldn't match that ZIP code to a congressional district. Some valid ZIPs — like PO-box or business-only ZIP codes — don't map to any district. Double-check the digits, try your home ZIP, or look up your member directly at house.gov.",
     "party": {
       "Democrat": "Democrat",
@@ -188,7 +189,14 @@
     "vacantMetaTitle": "{place} · Vacant seat",
     "vacantMetaDescription": "No one holds this House seat right now. The state's two senators still represent it.",
     "nextTitle": "What's moving in Congress",
-    "nextSeeAll": "Browse all bills"
+    "nextSeeAll": "Browse all bills",
+    "votesHeading": "How they voted",
+    "votesNote": "Roll-call votes on {count, plural, one {# bill} other {# bills}} Oravan tracks, since {date}, latest first.",
+    "votesAiNote": "Headlines and summaries decoded by AI, checked against the record",
+    "votesTheirVote": "Their vote:",
+    "votesMoreOnBill": "{count, plural, one {Their other vote on this bill} other {Their # other votes on this bill}}",
+    "votesOlder": "{count, plural, one {Their earlier votes on # more bill are not shown here. Each bill's page lists its recorded votes.} other {Their earlier votes on # more bills are not shown here. Each bill's page lists its recorded votes.}}",
+    "votesNone": "The official record lists no roll-call vote by {name} on a bill Oravan tracks since {date}."
   },
   "bills": {
     "title": "Active bills, decoded",
@@ -576,7 +584,7 @@
     "fundingSupportBody": "If Oravan is useful to you, you can chip in to keep it running. Contributions support hosting and upkeep and are not tax-deductible.",
     "fundingSupportCta": "Support Oravan",
     "accountabilityTitle": "Independent, and reachable",
-    "accountabilityBody": "Oravan is an independent, nonpartisan project — not a campaign, a party, or a PAC. Its promises are built to be verified, not trusted: no account, no tracking, and nothing about you kept on a server. For a correction, a question, or a partnership inquiry, the feedback link at the bottom of any page reaches a real person, or email us at hello@oravan.org.",
+    "accountabilityBody": "Oravan is an independent, nonpartisan project — not a campaign, a party, or a PAC. Its promises are built to be verified, not trusted: no account, no tracking, and nothing about you kept on a server. For a correction, a question, or a partnership inquiry, email us at hello@oravan.org.",
     "builtBy": "Oravan is built and run by Colby Maxwell. The full source code is public:",
     "repoLinkLabel": "github.com/cm2489/oravan"
   },
@@ -602,10 +610,10 @@
     "langSpanish": "Español",
     "licenseCoverage": "AllSides' outlet-lean ratings, shown in each bill's \"Read\" section, are used under a separate CC BY-NC license and are excluded from the MCP server and from anything commercial — a website-only feature until that's resolved.",
     "correctionTitle": "Report an error",
-    "correctionBody": "Found something wrong — a mistranslation, a misread status, a plain-language summary that misstates what a bill does? Use the feedback button in the footer of this (or any) page and choose \"Something's not working.\" Name the bill and describe the error — that's the same intake Oravan uses for every other bug report, not a separate correction form.",
-    "correctionLinkText": "Report an error",
+    "correctionBody": "Found something wrong — a mistranslation, a misread status, a plain-language summary that misstates what a bill does? Email hello@oravan.org. Name the bill and describe the error.",
+    "correctionLinkText": "Email hello@oravan.org",
     "whenConfirmedTitle": "What happens when a correction is confirmed",
-    "whenConfirmedBody": "A confirmed error is fixed at the source — the same reviewed data both languages' decodes are built from. From there, every surface reading that data updates together on Oravan's next deploy: the bill page, its statically generated share-card image, and the MCP server's tool responses all read the identical file, so there's no separate cache to invalidate. The one thing that doesn't move on its own is the freshness stamp — the site-wide \"as of\" date and the MCP envelope's {asOfField} field both track Oravan's last successful nightly sync, so they advance at the next scheduled sync run after the fix ships, the same way they do every night. An embeddable widget that carries bill text is still in development, not yet shipped; once it exists, it will read this same corrected data with no separate correction step of its own.",
+    "whenConfirmedBody": "A confirmed error is fixed at the source — the same reviewed data both languages' decodes are built from. From there, every surface reading that data updates together on Oravan's next deploy: the bill page, its statically generated share-card image, and the MCP server's tool responses all read the identical file, so there's no separate cache to invalidate. The one thing that doesn't move on its own is the freshness stamp — the site-wide \"as of\" date and the MCP envelope's {asOfField} field both track Oravan's last successful nightly sync, so they advance at the next scheduled sync run after the fix ships, the same way they do every night. The embeddable bill card reads the same file too, so it needs no correction step of its own.",
     "backlogNote": "A correction that points to a broader pattern — not a one-off slip — gets tracked for Oravan's ongoing Spanish-language review process rather than patched quietly and forgotten."
   },
   "notFound": {
@@ -642,29 +650,6 @@
     "p3": "Oravan comes with no guarantees. We do our best to keep representative data and bill statuses current, but offices change numbers and bills move daily — verify anything that matters.",
     "p4": "What you do with the phone is yours: you place the calls, you choose the words. Be honest, be brief, and be kind to the staffer who answers.",
     "p5": "We have no accounts and store nothing about you on our servers; everything personal stays in your browser. The privacy page explains this in full."
-  },
-  "feedback": {
-    "trigger": "Beta feedback",
-    "title": "Beta feedback",
-    "intro": "Oravan is in beta. Tell us what's broken, confusing, or missing.",
-    "categoryLegend": "What kind of feedback?",
-    "categoryBug": "Something's broken",
-    "categoryFeature": "An idea or request",
-    "categoryOther": "Something else",
-    "categoryPartnership": "Partnership or licensing",
-    "messageLabel": "Your feedback",
-    "pagePrefix": "Page: ",
-    "notice": "Don't include personal details. Your feedback becomes a public GitHub issue that anyone can read, and we can't reply.",
-    "noticePartnership": "Don't include personal details: this becomes a public GitHub issue that anyone can read. For a reply, email hello@oravan.org.",
-    "send": "Send feedback",
-    "sending": "Sending…",
-    "cancel": "Cancel",
-    "close": "Close",
-    "success": "Got it — thank you. Every note during the beta shapes what gets fixed first.",
-    "errorIncomplete": "Pick a category and write a message first.",
-    "errorRateLimited": "You've sent several notes in a short time. Take a breath and try again soon.",
-    "errorGeneric": "That didn't go through. Try again in a minute.",
-    "errorLabel": "Check this"
   },
   "og": {
     "aiDecoded": "AI-decoded",
@@ -848,16 +833,16 @@
   },
   "partners": {
     "title": "Partners",
-    "intro": "Oravan's widgets are built to live inside other people's pages — newsroom articles, library guides, an organization's action center. Everything on this page is free to use today; here's what each kind of partner gets, and where the licensed tier begins.",
+    "intro": "Oravan's widgets are built to live inside other people's pages — newsroom articles, library guides, an organization's action center. They aren't open to new sites right now: they'll come back with their own page and terms. Here's what they do for each kind of partner, and where the licensed tier begins.",
     "newsroomsTitle": "Spanish-language and local newsrooms",
     "newsroomsBody": "Drop a representative lookup or a plain-language bill card into any article — two script tags, no account, no tracking of your readers, ever. Spanish ships as a peer surface, not an afterthought: every interface string is written in both languages, a bill's plain-language layer is AI-translated from the English decode, and neither language publishes without the other — so an es-first outlet embeds an es-first widget, complete on the day it goes live. Theme it to your section colors, or use brandless chrome so the widget reads as part of your page.",
     "newsroomsCta": "Build your embed",
     "librariesTitle": "Libraries and civic programs",
     "librariesBody": "Oravan is safe to put in front of every patron: strictly nonpartisan by construction, no accounts, nothing stored server-side, and plain language that never publishes without passing automated checks against the official record. Link it from a resource guide or embed the lookup on your programs page — it works the same on a library terminal as on a phone.",
     "orgsTitle": "Organizations and licensed use",
-    "orgsBody": "Nonprofits, unions, and civic groups use the same free widgets as everyone else — themed, in either language, with attribution. A licensed tier for organizations that need attribution-free white-label embeds is coming; the capability exists today and is documented on the embeds page.",
+    "orgsBody": "Nonprofits, unions, and civic groups use the same free widgets as everyone else — themed, in either language, with attribution. A licensed tier for organizations that need attribution-free white-label embeds is coming; the capability exists today.",
     "licensingTitle": "Licensing and pricing",
-    "licensingBody": "If your organization wants white-label embeds, attribution removal, or a data partnership, email hello@oravan.org — it reaches a real person directly. The embeds page lists four plans — Free, Pro, Nonprofit, and Network — but only Free is open today: checkout for the paid plans isn’t open yet, and their prices aren’t published. You can also use the feedback link at the bottom of any page and choose “Partnership or licensing” if you’d rather not email.",
+    "licensingBody": "If your organization wants embeds on its site, white-label embeds, attribution removal, or a data partnership, email hello@oravan.org — it reaches a real person directly. The embeds have four plans — Free, Pro, Nonprofit, and Network — and none is open to new sites right now: checkout for the paid plans isn’t open yet, and their prices aren’t published.",
     "licensingCta": "Email hello@oravan.org"
   },
   "follow": {

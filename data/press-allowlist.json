@@ -23,16 +23,6 @@
       "topics": ["government-funding"]
     },
     {
-      "domain": "defenseone.com",
-      "name": "Defense One",
-      "approved_on": "2026-09-28",
-      "trial_ends": "2026-10-11",
-      "status": "active",
-      "approved_by": "Colby",
-      "reason": "Defense policy and Pentagon budget newsroom (GovExec). Its March 2026 AllSides capture shows a Not Rated badge beside text calling it Center, so its status needs a browser check. House Periodical press gallery.",
-      "topics": ["defense", "government-funding", "iran"]
-    },
-    {
       "domain": "breakingdefense.com",
       "name": "Breaking Defense",
       "approved_on": "2026-09-28",

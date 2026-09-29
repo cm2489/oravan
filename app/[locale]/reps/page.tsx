@@ -4,6 +4,7 @@ import { ArrowRight, BookOpen } from 'lucide-react';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { JsonLd } from '@/components/JsonLd';
 import { ZipForm } from '@/components/ZipForm';
+import { SavedZipLookup } from '@/components/SavedZipLookup';
 import { AddressForm } from '@/components/AddressForm';
 import { RepCard } from '@/components/RepCard';
 import { VacantSeatCard } from '@/components/VacantSeatCard';
@@ -60,11 +61,11 @@ export default async function RepsPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ zip?: string; district?: string }>;
+  searchParams: Promise<{ zip?: string; district?: string; change?: string }>;
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const { zip, district: districtParam } = await searchParams;
+  const { zip, district: districtParam, change } = await searchParams;
   const t = await getTranslations('reps');
   // Reused verbatim from the bill namespace (the ActionPanel's own why-call
   // line) rather than duplicated into reps.* — the two surfaces can't drift.
@@ -94,18 +95,50 @@ export default async function RepsPage({
   const freshness = getFreshness();
   const orgJsonLd = buildOrganizationJsonLd();
 
+  // `replace`: on this page a typed ZIP takes the prompt's place in history
+  // (see ZipForm's prop), so Back leaves /reps instead of bouncing forward.
+  const prompt = (
+    <div className="max-w-xl rounded-control border-[1.5px] border-line-strong bg-paper p-6">
+      <p className="mb-4 text-lg font-bold">{t('noZip')}</p>
+      <ZipForm autoFocus replace />
+    </div>
+  );
+
   return (
     <div className="mx-auto max-w-5xl px-4 py-12">
       <JsonLd id="org-jsonld" data={orgJsonLd} />
       <h1 className="text-h1-bill font-extrabold">{t('title')}</h1>
       <p className="mt-4 max-w-read text-lede text-ink-2">{t('sub')}</p>
 
+      {/* WHICH ZIP, AND THE WAY TO CHANGE IT, UP TOP (owner, Q8 "a",
+          2026-09-28: "The Reps tab opens on your members, with 'Change
+          ZIP'"). The members may now appear without the reader typing
+          anything, so the ZIP they came from is named before them, not after
+          the continuation. min-h-11: the link's hit box is 44px; the text
+          stays text-sm. */}
+      {zip && districts.length > 0 && (
+        <p data-zip-line="" className="mt-4 text-sm text-ink-2">
+          {t('zipLine', { zip })} ·{' '}
+          <Link
+            href="/reps?change=1"
+            className="inline-flex min-h-11 items-center underline underline-offset-2"
+          >
+            {t('changeZip')}
+          </Link>
+        </p>
+      )}
+
+      {/* A saved ZIP ANSWERS THIS PROMPT ON ITS OWN (owner, Q8 "a",
+          2026-09-28): SavedZipLookup reads it in the browser and swaps in
+          /reps?zip=<ZIP>. `?change=1` is the "Change ZIP code" link's way in,
+          so there the prompt stays put and the saved ZIP only pre-fills it. */}
       {!zip && (
         <div className="mt-8">
-          <div className="max-w-xl rounded-control border-[1.5px] border-line-strong bg-paper p-6">
-            <p className="mb-4 text-lg font-bold">{t('noZip')}</p>
-            <ZipForm autoFocus />
-          </div>
+          {change === undefined ? (
+            <SavedZipLookup>{prompt}</SavedZipLookup>
+          ) : (
+            prompt
+          )}
 
           {/* The payoff, previewed before anything is asked (2026-07 critique
               round 2): a ghost of the three cards a ZIP unlocks, so the
@@ -145,7 +178,7 @@ export default async function RepsPage({
           </p>
           <p className="mt-1 font-semibold text-ink">{t('zipNotFound')}</p>
           <div className="mt-4">
-            <ZipForm />
+            <ZipForm replace />
           </div>
         </div>
       )}
@@ -274,17 +307,6 @@ export default async function RepsPage({
             <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
           </Link>
         </section>
-      )}
-
-      {zip && districts.length > 0 && (
-        <p className="mt-12 text-sm text-ink-2">
-          ZIP {zip} ·{' '}
-          {/* min-h-11: this measured 17px tall, under the 44px target rule.
-              The text stays text-sm; only the hit box grows. */}
-          <Link href="/reps" className="inline-flex min-h-11 items-center underline underline-offset-2">
-            {t('changeZip')}
-          </Link>
-        </p>
       )}
     </div>
   );

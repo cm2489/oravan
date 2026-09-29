@@ -29,14 +29,21 @@ import { expect, test } from '@playwright/test';
 
 // The vote record (C1b) joined the list: it names members beside how they
 // voted, which is the other place a red/blue "scoreboard" would be one diff away.
+// The member page's "How they voted" (R04, 2026-09-28) joined it for the same
+// reason: one member's positions, row after row.
 const SURFACES = [
   'components/CoverageSection.tsx',
   'components/RepCard.tsx',
   'app/[locale]/reps/[bioguide]/page.tsx',
   'components/VoteRecord.tsx',
   'components/VoteDelegation.tsx',
+  'components/MemberVotes.tsx',
 ] as const;
-const VOTE_SURFACES = ['components/VoteRecord.tsx', 'components/VoteDelegation.tsx'] as const;
+const VOTE_SURFACES = [
+  'components/VoteRecord.tsx',
+  'components/VoteDelegation.tsx',
+  'components/MemberVotes.tsx',
+] as const;
 const GLOBALS = 'app/globals.css';
 const read = (f: string) => readFileSync(join(process.cwd(), f), 'utf8');
 

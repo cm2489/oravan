@@ -548,7 +548,7 @@ test('Senate routing demotes the House member without burying him, and labels hi
 
   // THE RAIL. Three rows, in that order, and the House member is the third —
   // present, not filtered.
-  const railNames = page.locator('section[aria-labelledby="act"] ul > li > p.font-bold');
+  const railNames = page.locator('section[aria-labelledby="act"] ul > li [data-rep-name]');
   await expect(railNames).toHaveCount(3);
   await expect(railNames.nth(0)).toHaveText('John Cornyn');
   await expect(railNames.nth(1)).toHaveText('Ted Cruz');
@@ -723,7 +723,7 @@ test('a reader with no senator sees no routing sentence claiming senators are th
   await expect(page.getByRole('textbox', { name: en.bill.scriptTitle })).toBeVisible();
 
   // The office they do have is right there, dialable.
-  const railNames = page.locator('section[aria-labelledby="act"] ul > li > p.font-bold');
+  const railNames = page.locator('section[aria-labelledby="act"] ul > li [data-rep-name]');
   await expect(railNames).toHaveCount(1);
   await expect(railNames.nth(0)).toHaveText('Eleanor Holmes Norton');
   await expect(page.locator('section[aria-labelledby="act"] a[href^="tel:"]').first()).toBeVisible();

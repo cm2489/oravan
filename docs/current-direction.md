@@ -14,7 +14,7 @@ Owner, 2026-09-27 02:35: features (keep, cut, later) → core flows → grayscal
 
 Owner, 2026-09-26 03:58 and 2026-09-27 02:35: green is the brand — the masthead band and the wordmark; yellow (`#ffc933`, "lamp") marks only what you can act on; each has one light, flat tint used once or twice per main page — tints, not gradients. Status and date tags are plain text. Links are ink, underlined. The Call tab in the island bar is not yellow (2026-09-27 00:43; this reversed 2026-09-26 13:50, which reversed the card l5 note — only the last stands). Alert stays an orange-brown, never a flag red. Contrast pairs are recomputed for these tokens before anything ships (page 1, rule 7; method in `docs/accessibility.md`).
 
-**A hue change is a copy change.** Shipped copy names the colour of the floor panel in both languages: `home.weekNote` and `home.weekNoteAnnounced` begin "The green panel…" / "El panel verde…". Change the panel's colour and those two strings change in the same PR, in `messages/en.json` and `messages/es.json`.
+**A hue change is a copy change.** ~~Shipped copy names the colour of the floor panel in both languages: `home.weekNote` and `home.weekNoteAnnounced` begin "The green panel…" / "El panel verde…". Change the panel's colour and those two strings change in the same PR, in `messages/en.json` and `messages/es.json`.~~ (Struck 2026-09-28: the owner cut the homepage's green-panel explainer, UX inventory H13 "cut", and those were its two strings.) Since that cut no string in `messages/en.json` or `messages/es.json` names a colour (searched 2026-09-28). If one ever does again, it changes in the same PR as the hue, in both languages.
 
 ## Shape
 
@@ -58,6 +58,7 @@ The impeccable skill is a lint and a rubric, not an explorer (audit card a8, 202
 
 Newest first. One line per change: date · who · the words or the card · what line changed.
 
+- `2026-09-28 · owner · UX inventory H13 marked "cut" (the homepage's green-panel explainer) → colour: "a hue change is a copy change" struck; no shipped string names the panel's colour`
 - `2026-09-27 · owner · audit card a8 answered "a" (10:17:35Z) → tooling: impeccable is lint and rubric only, never during exploration`
 - `2026-09-27 · owner · audit cards a1 + a2 answered "a" (10:15:55Z, 10:16:07Z) → Constitution v2 adopted; this page created from the audit draft; DESIGN.md moved to docs/history/`
 - `2026-09-27 · owner · "nail down features and flow before we add back in color" → order of work`

@@ -306,6 +306,17 @@ export function useReads(): ReadRecord[] {
 
 export const setPrefs = (p: Partial<Prefs>) => write(PREFS_KEY, { ...prefsSnapshot(), ...p });
 
+/**
+ * The saved ZIP as it stands right now, read once and outside React — or null
+ * when none is saved or it is not five digits. For a one-shot decision made
+ * after hydration (components/SavedZipLookup.tsx), where `usePrefs()` would
+ * also fire on a ZIP the reader types a moment later. Browser only.
+ */
+export function savedZip(): string | null {
+  const zip = prefsSnapshot().zip;
+  return zip && /^\d{5}$/.test(zip) ? zip : null;
+}
+
 /** One record per (bill, rep): re-logging updates the outcome instead of appending a duplicate. */
 export function upsertCall(c: CallRecord) {
   const rest = callsSnapshot().filter(

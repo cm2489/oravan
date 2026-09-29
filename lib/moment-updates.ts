@@ -222,7 +222,8 @@ export function getRevisions(id: string): SummaryRevision[] {
 /**
  * The token a revision carries when a PERSON wrote it. Only the seed
  * revisions the live layer shipped with carry it today; the collector stamps
- * its own model id (`claude-sonnet-5`) on everything it writes.
+ * its own model id (`claude-sonnet-5-5` since 2026-09-28; earlier revisions
+ * carry `claude-sonnet-5`) on everything it writes.
  */
 export const HAND_AUTHORED_MODEL = 'hand-authored';
 

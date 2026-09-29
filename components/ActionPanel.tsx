@@ -1411,7 +1411,21 @@ export function ActionPanel({
                         {t('alsoYours')}
                       </p>
                     )}
-                    <p className="font-bold text-ink" data-rep-name="">{rep.name}</p>
+                    {/* The name, and beside it a link to how this member
+                        voted (the member page's #votes section). A link
+                        only: the panel ships no vote data, so the member
+                        page answers it, including when the record lists
+                        no roll call for them. */}
+                    <div className="flex flex-wrap items-center justify-between gap-x-3">
+                      <p className="font-bold text-ink" data-rep-name="">{rep.name}</p>
+                      <Link
+                        href={`/reps/${rep.bioguide}#votes`}
+                        className="inline-flex min-h-11 items-center text-sm text-ink-2 underline underline-offset-2 hover:text-ink"
+                        data-rep-votes-link=""
+                      >
+                        {tReps('seeVotes')}
+                      </Link>
+                    </div>
                     <div className="mt-2 flex flex-wrap items-center gap-2">
                       {rep.phone && (
                         <>

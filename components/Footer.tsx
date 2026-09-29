@@ -1,10 +1,10 @@
 import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
-import { FeedbackDialog } from '@/components/FeedbackDialog';
 import { OravanLockup } from '@/components/brand/OravanLockup';
 import { DONATE_URL } from '@/lib/site';
 // Its own line on purpose: tests/donate.unit.spec.ts pins the DONATE_URL import verbatim.
 import { feedPaths } from '@/lib/site';
+import { HIDDEN_PAGES } from '@/lib/site';
 
 /*
  * THE BACK COVER.
@@ -23,15 +23,16 @@ import { feedPaths } from '@/lib/site';
  * an internal full-width rule between two near-equal masses, a brand column
  * 60% empty, and the actions scattered through the lower band — it still
  * READ as two stacked sections (owner, 2026-07-25). Now it is one grid: the
- * support link-out (the ask) and the feedback trigger (the utility, never
- * promoted — no ground of its own) sit together in the space under the
- * mission that the tall nav columns create anyway, and provenance compresses
- * to a one-line small-print colophon at the baseline, no rule above it. A
- * colophon reads as a section's last line; a ruled paragraph stack reads as
- * a second section.
+ * support link-out (the ask) sits in the space under the mission that the
+ * tall nav columns create anyway, and provenance compresses to a one-line
+ * small-print colophon at the baseline, no rule above it. A colophon reads
+ * as a section's last line; a ruled paragraph stack reads as a second
+ * section.
  *
- * The `#feedback` id (the correction anchor /citations links to) travels
- * with the action pair: ONE intake, never a parallel one.
+ * The beta feedback trigger that sat beside the ask was removed on
+ * 2026-09-28 (owner: "remove the feedback option for now"); corrections and
+ * questions go to hello@oravan.org, which /citations, /about and /partners
+ * name.
  *
  * Nothing here prints the sync DATE: the Stamp owns that, once per page. This
  * block carries the provenance, which the Stamp does not.
@@ -86,22 +87,16 @@ export function Footer({ donateUrl = DONATE_URL }: { donateUrl?: string | null }
                 it was ~120px of brand poetry on the tail of all ~1,000 pages. */}
             <p className="mt-4 max-w-note">{t('footer.mission')}</p>
 
-            {/* The one ask and the one utility, side by side in the space the
-                tall nav columns create anyway (owner, 2026-07-25: the old
-                layout left this column 60% empty and pushed the actions into
-                what read as a second footer below a full-width rule). Support
-                keeps the outline weight — the ask; feedback stays ghost — the
-                utility. `#feedback` is the correction anchor /citations links
-                to: ONE intake, and it travels with this pair.
+            {/* The one ask, in the space the tall nav columns create anyway
+                (owner, 2026-07-25: the old layout left this column 60% empty
+                and pushed the actions into what read as a second footer below
+                a full-width rule). It keeps the outline weight.
 
                 The funding line lives in the colophon below; both surfaces
                 gate on the same DONATE_URL constant, no second flag. Link-out
                 only: never an iframe, never a payment field on our infra. */}
-            <div
-              id="feedback"
-              className="mt-6 flex scroll-mt-20 flex-wrap items-center gap-3"
-            >
-              {donateUrl && (
+            {donateUrl && (
+              <div className="mt-6 flex flex-wrap items-center gap-3">
                 <a
                   href={donateUrl}
                   target="_blank"
@@ -114,9 +109,8 @@ export function Footer({ donateUrl = DONATE_URL }: { donateUrl?: string | null }
                 >
                   {t('footer.fundingCta')}
                 </a>
-              )}
-              <FeedbackDialog />
-            </div>
+              </div>
+            )}
           </div>
 
           {/* One landmark, three columns: a screen reader hears a single footer
@@ -130,7 +124,8 @@ export function Footer({ donateUrl = DONATE_URL }: { donateUrl?: string | null }
                 {t('footer.colSite')}
               </h2>
               <ul className="mt-2 grid">
-                {SITE_LINKS.map(({ href, key }) => (
+                {/* A hidden page (lib/site.ts HIDDEN_PAGES) 404s, so it takes no link. */}
+                {SITE_LINKS.filter(({ href }) => !HIDDEN_PAGES.includes(href)).map(({ href, key }) => (
                   <li key={href}>
                     <Link href={href} className={linkClass}>
                       {t(key)}
