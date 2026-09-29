@@ -14,7 +14,9 @@ import { embedProbes, hiddenLocalePages, localeProbes, localeUrl } from './route
  *   - no page links to either one (footer, /follow, /partners and the rest),
  *     and llms.txt and sitemap.xml name neither;
  *   - the widget routes under /embed/* still answer, and no page links to
- *     them or loads the loader — they are for sites that already carry them.
+ *     them or loads the loader — they are for sites that already carry them;
+ *   - POST /api/brand, the configurator's paid theme suggestion, answers 404
+ *     (owner, 2026-09-29: "brand off").
  *
  * When the constant flips back to true this file skips, and the page specs
  * (tests/embeds-configurator.spec.ts, embeds-terms, the cold walkthrough) run
@@ -69,4 +71,15 @@ test('the widget routes still answer: hiding the pages leaves /embed/* and the l
   }
   const loader = await request.get('/embed.js');
   expect(loader.status()).toBe(200);
+});
+
+test('the brand preview is off: POST /api/brand answers 404 not_found', async ({ request }) => {
+  // An address the SSRF guard refuses, so a route that wrongly ran its live
+  // path would answer 400 here and still reach nothing outside this machine.
+  const res = await request.post('/api/brand', {
+    headers: { 'content-type': 'application/json', 'x-forwarded-for': '192.168.201.7' },
+    data: { url: 'https://10.0.0.1/' },
+  });
+  expect(res.status()).toBe(404);
+  expect(await res.json()).toEqual({ error: 'not_found' });
 });
