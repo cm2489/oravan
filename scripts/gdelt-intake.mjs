@@ -241,11 +241,14 @@ export function httpsFetch(url, { headers = {}, signal } = {}) {
   });
 }
 
-/** Response headers that are safe to print when a request is refused: the
- *  date, the server, how long to wait, the content type, and anything that
- *  names a rate limit. Nothing else is ever printed (never a cookie or an
- *  authorization header, though this script sends neither). */
-const LOGGABLE_HEADER = /^(date|server|retry-after|content-type)$|rate-?limit|^x-rate|^retry/i;
+/** Response headers that are safe to print when a request is refused: an exact
+ *  list of names. Nothing else is ever printed (never a cookie, an
+ *  authorization header or any header the service names itself). */
+const LOGGABLE_HEADERS = new Set([
+  'date', 'server', 'retry-after', 'content-type', 'content-length',
+  'x-ratelimit-limit', 'x-ratelimit-remaining', 'x-ratelimit-reset',
+  'ratelimit-limit', 'ratelimit-remaining', 'ratelimit-reset', 'ratelimit-policy',
+]);
 
 /**
  * One log line's worth of evidence about a refused request: the status, the
@@ -253,7 +256,7 @@ const LOGGABLE_HEADER = /^(date|server|retry-after|content-type)$|rate-?limit|^x
  * collapsed to one line). `res.headers` may be a plain object (node:https) or
  * a Headers-like object; a missing one prints as none.
  * @param {{ status: number, headers?: any }} res
- * @param {string | null} body null when the body could not be read in time
+ * @param {string | null} body null when the body had not yet arrived
  */
 export function refusalEvidence(res, body) {
   /** @type {Array<[string, string]>} */
@@ -261,8 +264,8 @@ export function refusalEvidence(res, body) {
   const h = res?.headers;
   if (h && typeof h.entries === 'function') pairs = [...h.entries()].map(([k, v]) => [String(k), String(v)]);
   else if (h && typeof h === 'object') pairs = Object.entries(h).map(([k, v]) => [String(k), Array.isArray(v) ? v.join(', ') : String(v)]);
-  const shown = pairs.filter(([k]) => LOGGABLE_HEADER.test(k)).map(([k, v]) => `${k.toLowerCase()}: ${v.replace(/\s+/g, ' ').slice(0, 200)}`);
-  const text = body === null ? '(the body was not read in time)' : `"${String(body).replace(/\s+/g, ' ').slice(0, 200)}"`;
+  const shown = pairs.filter(([k]) => LOGGABLE_HEADERS.has(k.toLowerCase())).map(([k, v]) => `${k.toLowerCase()}: ${v.replace(/\s+/g, ' ').slice(0, 200)}`);
+  const text = body === null ? '(body not yet received)' : `"${String(body).replace(/\s+/g, ' ').slice(0, 200)}"`;
   return `HTTP ${res?.status}; headers: ${shown.length ? shown.join('; ') : '(none of the loggable ones)'}; body starts: ${text}`;
 }
 
@@ -503,15 +506,25 @@ export async function collect({
     }
   };
 
-  /** Read (within what is left of the request's timeout) and log the evidence of a 429. */
+  /** Log the evidence of a 429 from what has ALREADY arrived. The evidence log
+   *  never delays the run: the body read is raced against a real 5 ms bound
+   *  (`setTimeout`, not the injected timer and never the injected clock), so
+   *  the backoff, the circuit and `lastTryAt` happen when they would have
+   *  happened without it. A body that has not arrived is printed as such. */
   const logRefusal = async (res) => {
     /** @type {string | null} */
     let text = null;
+    /** @type {ReturnType<typeof setTimeout> | undefined} */
+    let t;
     try {
-      const b = await within(Promise.resolve().then(() => res.text()), Math.max(1, limits.timeoutMs - (clock() - lastRequestAt)));
+      const read = Promise.resolve().then(() => res.text());
+      read.catch(() => {});
+      const b = await Promise.race([read, new Promise((resolve) => { t = setTimeout(() => resolve(TIMED_OUT), 5); })]);
       if (b !== TIMED_OUT) text = String(b);
     } catch {
       /* the body is evidence only; a broken one is printed as unread */
+    } finally {
+      clearTimeout(t);
     }
     log(`gdelt-intake: GDELT refused a request — ${refusalEvidence(res, text)}`);
   };

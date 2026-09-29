@@ -23,7 +23,7 @@ const LIMITS = limitsFrom({});
 const FIRST_OPENED = '2026-09-26T18:09:14.000Z';
 const OLD_ANSWER = '2026-09-26T18:05:00.000Z';
 
-type Reply = { status: number; body: string; headers?: Record<string, string> };
+type Reply = { status: number; body: string; headers?: Record<string, string>; hang?: boolean };
 
 const artList = (): Reply => ({
   status: 200,
@@ -38,11 +38,15 @@ const artList = (): Reply => ({
 function net(script: (n: number) => Reply) {
   let t = NOW;
   let n = 0;
+  const times: number[] = [];
   return {
+    times,
     fetchImpl: async () => {
       n++;
+      times.push(t - NOW);
       const r = script(n);
-      return { status: r.status, ok: r.status >= 200 && r.status < 300, headers: r.headers ?? {}, text: async () => r.body };
+      // `hang`: the body never finishes arriving.
+      return { status: r.status, ok: r.status >= 200 && r.status < 300, headers: r.headers ?? {}, text: () => (r.hang ? new Promise<string>(() => {}) : Promise.resolve(r.body)) };
     },
     sleep: async (ms: number) => {
       t += ms;
@@ -100,6 +104,8 @@ const refusal = (): Reply => ({
     'set-cookie': 'session=SECRET-COOKIE-VALUE',
     authorization: 'Bearer SECRET-TOKEN',
     'x-something-else': 'NOT-ALLOWED',
+    'x-ratelimit-token': 'TOKEN-LIKE-VALUE',
+    'retry-debug': 'INTERNAL-HOST',
   },
 });
 
@@ -164,6 +170,8 @@ test.describe('the press-count intake logs the evidence for a refusing source', 
     expect(line).toContain('x-ratelimit-remaining: 0');
     expect(line).toContain('Please limit requests to one every 5 seconds or contact');
     expect(line).not.toMatch(/set-cookie|SECRET|authorization|x-something-else|NOT-ALLOWED/i);
+    // Only exact names are printed: near-misses are not.
+    expect(line).not.toMatch(/x-ratelimit-token|retry-debug|TOKEN-LIKE|INTERNAL-HOST/);
     const body = /body starts: "(.*)"$/.exec(line)?.[1] ?? '';
     expect(body.length).toBe(200);
     expect(lines.join('\n')).not.toMatch(/SECRET/);
@@ -174,12 +182,27 @@ test.describe('the press-count intake logs the evidence for a refusing source', 
     const { lines } = await go(nt);
     expect(lines.filter((l) => /GDELT refused a request — HTTP 429/.test(l))).toHaveLength(nt.count());
     const five = net(() => ({ status: 503, body: 'try later', headers: { server: 'GDELT Server', 'x-other': 'no' } }));
-    const r = await go(five);
+    const r = await go(five, { circuit: priorCircuit(LIMITS.circuitCooldownMs + 60_000, { lastAnsweredAt: OLD_ANSWER }) });
     const line = r.lines.find((l) => /GDELT refused a request — HTTP 503/.test(l)) ?? '';
     expect(line).toContain('server: GDELT Server');
     expect(line).toContain('"try later"');
     expect(line).not.toContain('x-other');
-    expect(r.circuit).toBeNull();
+    // A 503 is not an answer: lastAnsweredAt stays what it was.
+    expect(r.circuit?.lastAnsweredAt).toBe(OLD_ANSWER);
+  });
+
+  test('a 503 does not set lastAnsweredAt: the next question is refused and the reopened circuit carries none', async () => {
+    const moments = {
+      ...MOMENTS,
+      'second-question': { status: 'live', aliases: { en: ['second topic'], es: [] }, vehicles: [{ slug: 'hr-1-119' }] },
+    };
+    const bills = [...BILLS, { full_identifier: 'hr-1-119', press_names: null, short_title: null, news_query: 'y', sponsor_bioguide_id: 'J000298' }];
+    const nt = net((n) => (n === 1 ? { status: 503, body: 'try later', headers: {} } : refusal()));
+    const r = await go(nt, { moments, bills });
+    expect(nt.count()).toBeGreaterThan(1);
+    expect(r.circuit).toMatchObject({ open: true, reason: '429' });
+    expect(r.circuit?.lastAnsweredAt).toBeUndefined();
+    expect(r.lines.some((l) => /last answered never on record/.test(l))).toBe(true);
   });
 
   test('refusalEvidence: headers may be a Headers object or absent; an unread body says so', () => {
@@ -188,7 +211,7 @@ test.describe('the press-count intake logs the evidence for a refusing source', 
     expect(line).toContain('server: GDELT Server');
     expect(line).toContain('retry-after: 5');
     expect(line).not.toMatch(/cookie/i);
-    expect(line).toContain('(the body was not read in time)');
+    expect(line).toContain('(body not yet received)');
     expect(refusalEvidence({ status: 429 }, 'hi')).toContain('(none of the loggable ones)');
   });
 
@@ -202,5 +225,27 @@ test.describe('the press-count intake logs the evidence for a refusing source', 
     const c = readCircuit(old);
     expect(c).toMatchObject({ open: true, openedAt: FIRST_OPENED });
     expect(c?.lastAnsweredAt).toBeUndefined();
+  });
+
+  test('a 429 whose body never finishes changes no request time and no lastTryAt (fake clock, main\'s constants)', async () => {
+    // main's constants: a 429 waits 30 s, then 90 s; spacing is 6 s.
+    const [b1, b2] = [30_000, 90_000];
+    expect(LIMITS.spacingMs).toBe(6_000);
+    const hung = net(() => ({ ...refusal(), hang: true }));
+    const prompt = net(() => refusal());
+    const a = await go(hung);
+    const b = await go(prompt);
+    // Requests go out at 0, +30 s, +30 s +90 s: the same with and without a body.
+    expect(hung.times).toEqual([0, b1, b1 + b2]);
+    expect(hung.times).toEqual(prompt.times);
+    expect(a.circuit?.lastTryAt).toBe(new Date(NOW + b1 + b2).toISOString());
+    expect(a.circuit?.lastTryAt).toBe(b.circuit?.lastTryAt);
+    expect(a.circuit).toMatchObject({ open: true, reason: '429', tries: 1 });
+    expect(a.lines.some((l) => /GDELT refused a request — HTTP 429.*\(body not yet received\)/.test(l))).toBe(true);
+    // Half-open probe: one request at the start, lastTryAt is that moment, not 30 s later.
+    const probe = net(() => ({ ...refusal(), hang: true }));
+    const p = await go(probe, { circuit: priorCircuit(LIMITS.circuitCooldownMs + 60_000) });
+    expect(probe.times).toEqual([0]);
+    expect(p.circuit?.lastTryAt).toBe(new Date(NOW).toISOString());
   });
 });
