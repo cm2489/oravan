@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { expect, test, type Page, type Request } from '@playwright/test';
+import { expect, test, type Locator, type Page, type Request } from '@playwright/test';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
 import { billWithRollCallsOnlyIn } from './corpus-fixtures';
@@ -21,6 +21,15 @@ import { messagePattern } from './message-pattern';
  *
  * ZIP 05401 (Burlington, VT) is a single at-large district, so the call rail
  * resolves exactly three members and the strip has no split-ZIP branch to take.
+ *
+ * THE MEMBER LIST IS FETCHED (2026-09-29). The page prints every roll call's
+ * question, result, tally, date and official record, and the strip's
+ * positions; the member-by-member list under "How members voted" is one static
+ * file per roll call (/votes/<id>.json, app/votes/[file]/route.ts), fetched
+ * from this site when the disclosure opens. The specs below pin both halves:
+ * what the server HTML carries and does not, the fetch on open in both
+ * languages and by keyboard, the no-JavaScript fallback, and that every built
+ * file matches data/votes.json.
  */
 
 interface RollCall {
@@ -31,6 +40,7 @@ interface RollCall {
   question: string;
   result: string;
   bill: string;
+  source: string;
   totals: Record<'yea' | 'nay' | 'present' | 'notVoting', number>;
   votes: Record<'yea' | 'nay' | 'present' | 'notVoting', string[]>;
 }
@@ -66,6 +76,32 @@ const LOCALES = [
   { locale: 'en', prefix: '', m: en },
   { locale: 'es', prefix: '/es', m: es },
 ] as const;
+
+/** The bill with the most stored roll calls: the page this weight fix is for. */
+function mostVotedBill(): string {
+  const counts = new Map<string, number>();
+  for (const r of VOTES.rollCalls) counts.set(r.bill, (counts.get(r.bill) ?? 0) + 1);
+  return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0][0];
+}
+
+/** "Yea (264)" in the page's language, built from the message itself. */
+function groupLabel(m: typeof en | typeof es, p: (typeof POSITIONS)[number], count: number): string {
+  return m.votes.group.replace('{position}', m.votes.position[p]).replace('{count}', String(count));
+}
+
+/** Every request for a roll-call member file in the page's life, as paths. */
+function memberFileRequests(page: Page): string[] {
+  const hits: string[] = [];
+  page.on('request', (req) => {
+    const url = new URL(req.url());
+    if (url.pathname.startsWith('/votes/')) hits.push(url.pathname);
+  });
+  return hits;
+}
+
+async function height(el: Locator): Promise<number> {
+  return (await el.boundingBox())?.height ?? 0;
+}
 
 for (const { locale, prefix, m } of LOCALES) {
   test.describe(`vote record (${locale})`, () => {
@@ -107,16 +143,23 @@ for (const { locale, prefix, m } of LOCALES) {
       await expect(page.getByRole('heading', { name: m.votes.heading })).toHaveCount(0);
     });
 
-    test('the fold-out lists every member, grouped by position, each linking to their page', async ({ page }) => {
+    test('the fold-out fetches its list when opened: every member, grouped by position, each linking to their page', async ({ page }) => {
       test.skip(!HOUSE_BILL, 'no bill with House-only roll calls in data/votes.json today');
       const r = newestFirst(HOUSE_BILL!)[0];
+      const fetched = memberFileRequests(page);
       await page.goto(`${prefix}/bills/${HOUSE_BILL}`);
       const fold = page.locator('[data-vote-record] [data-vote-roll]').first().locator('[data-vote-members]');
       const summary = fold.locator('summary');
-      const box = await summary.boundingBox();
-      expect(box!.height, '44px touch target on the fold-out control').toBeGreaterThanOrEqual(44);
+      expect(await height(summary), '44px touch target on the fold-out control').toBeGreaterThanOrEqual(44);
+      await expect(summary).toHaveText(m.votes.membersToggle);
+
+      // Nothing is fetched, and no list is in the page, until it opens.
+      await page.waitForLoadState('networkidle');
+      expect(fetched, 'no member file before a fold-out is opened').toEqual([]);
+      await expect(page.locator('[data-vote-group]')).toHaveCount(0);
 
       await summary.click();
+      await expect(fold).toHaveAttribute('data-vote-members-state', 'ready');
       for (const p of POSITIONS) {
         const group = fold.locator(`[data-vote-group="${p}"]`);
         if (r.votes[p].length === 0) {
@@ -124,21 +167,174 @@ for (const { locale, prefix, m } of LOCALES) {
           continue;
         }
         await expect(group).toBeVisible();
+        await expect(group.getByRole('heading', { level: 4 })).toHaveText(groupLabel(m, p, r.votes[p].length));
         const links = group.getByRole('link');
         await expect(links).toHaveCount(r.votes[p].length);
         const hrefs = await links.evaluateAll((els) => els.map((e) => e.getAttribute('href') ?? ''));
         const ids = hrefs.map((h) => h.split('/').pop());
         expect(new Set(ids)).toEqual(new Set(r.votes[p]));
         for (const h of hrefs) expect(h).toMatch(new RegExp(`^${prefix}/reps/[A-Z]\\d{6}$`));
+        expect(await height(links.first()), '44px touch target on a member link').toBeGreaterThanOrEqual(44);
       }
       // Group order is the record's: Yea, Nay, Present, Not voting.
       const order = await fold
         .locator('[data-vote-group]')
         .evaluateAll((els) => els.map((e) => e.getAttribute('data-vote-group')));
       expect(order).toEqual(POSITIONS.filter((p) => r.votes[p].length > 0));
+      // The fallback line gives way to the list, and the status line is quiet.
+      await expect(fold.locator('[data-vote-members-fallback]')).toHaveCount(0);
+      await expect(fold.locator('[data-vote-members-status]')).toHaveText('');
+
+      // One request, to this site, for this roll call; closing and reopening
+      // does not ask again.
+      await summary.click();
+      await summary.click();
+      await expect(fold.locator('[data-vote-group]').first()).toBeVisible();
+      expect(fetched).toEqual([`/votes/${r.id}.json`]);
+    });
+
+    test('keyboard: Tab reaches the fold-out with a visible ring, Enter opens it, and Tab walks into the list', async ({ page }) => {
+      test.skip(!HOUSE_BILL, 'no bill with House-only roll calls in data/votes.json today');
+      const r = newestFirst(HOUSE_BILL!)[0];
+      await page.goto(`${prefix}/bills/${HOUSE_BILL}`);
+      await page.waitForLoadState('networkidle');
+      const roll = page.locator('[data-vote-record] [data-vote-roll]').first();
+      const fold = roll.locator('[data-vote-members]');
+      const summary = fold.locator('summary');
+
+      // Start on the roll call's own official-record link, the control just
+      // before the fold-out, and Tab once.
+      await roll.locator(`a[href="${r.source}"]`).first().focus();
+      await page.keyboard.press('Tab');
+      await expect(summary).toBeFocused();
+      const ring = await summary.evaluate((el) => {
+        const cs = getComputedStyle(el);
+        return {
+          focusVisible: el.matches(':focus-visible'),
+          outline: cs.outlineStyle !== 'none' ? parseFloat(cs.outlineWidth) : 0,
+        };
+      });
+      expect(ring.focusVisible, 'the fold-out control is :focus-visible from the keyboard').toBe(true);
+      // globals.css draws a 3px `--focus` ring; anything thinner is a regression.
+      expect(ring.outline).toBeGreaterThanOrEqual(3);
+
+      await page.keyboard.press('Enter');
+      await expect(fold).toHaveAttribute('data-vote-members-state', 'ready');
+      const firstGroup = POSITIONS.find((p) => r.votes[p].length > 0)!;
+      await page.keyboard.press('Tab');
+      const first = fold.locator(`[data-vote-group="${firstGroup}"] a`).first();
+      await expect(first).toBeFocused();
+      expect(await height(first)).toBeGreaterThanOrEqual(44);
+    });
+
+    test('the page HTML carries every roll call\'s record, and no member-by-member list', async ({ request }) => {
+      const bill = mostVotedBill();
+      const rolls = newestFirst(bill);
+      const res = await request.get(`${prefix}/bills/${bill}`);
+      expect(res.status()).toBe(200);
+      const html = await res.text();
+      const count = (needle: string) => html.split(needle).length - 1;
+
+      // Every roll call is printed: its card, its four totals, its record
+      // link, and a closed fold-out whose fallback names the official record.
+      expect(count('data-vote-roll="')).toBe(rolls.length);
+      expect(count('data-vote-total="')).toBe(rolls.length * POSITIONS.length);
+      expect(count('data-vote-members-fallback=')).toBe(rolls.length);
+      const missing = rolls.filter((r) => !html.includes(`data-vote-roll="${r.id}"`) || !html.includes(r.source));
+      expect(missing.map((r) => r.id)).toEqual([]);
+      expect(html).toContain(m.votes.membersOnRecord);
+
+      // The list itself is not.
+      expect(count('data-vote-group=')).toBe(0);
+
+      // A weight floor for the regression this replaced: printed, the lists
+      // cost about 84 kB of HTML per roll call on this page (3.95 MB for 47,
+      // measured 2026-09-29). 25 kB per roll call is well above what the
+      // record itself costs and well below any printed list of a chamber.
+      expect(html.length / rolls.length, `${bill}: HTML bytes per roll call`).toBeLessThan(25_000);
     });
   });
 }
+
+test('a list that fails to load says so, keeps the official record, and retries on request', async ({ page }) => {
+  test.skip(!HOUSE_BILL, 'no bill with House-only roll calls in data/votes.json today');
+  const r = newestFirst(HOUSE_BILL!)[0];
+  await page.route('**/votes/*.json', (route) => route.abort());
+  await page.goto(`/bills/${HOUSE_BILL}`);
+  await page.waitForLoadState('networkidle');
+  const fold = page.locator('[data-vote-record] [data-vote-roll]').first().locator('[data-vote-members]');
+  await fold.locator('summary').click();
+  await expect(fold).toHaveAttribute('data-vote-members-state', 'error');
+  await expect(fold.getByRole('status')).toHaveText(en.votes.membersError);
+  await expect(fold.locator('[data-vote-members-fallback] a')).toHaveAttribute('href', r.source);
+  const retry = fold.getByRole('button', { name: en.votes.membersRetry });
+  expect(await height(retry)).toBeGreaterThanOrEqual(44);
+
+  await page.unroute('**/votes/*.json');
+  await retry.click();
+  await expect(fold).toHaveAttribute('data-vote-members-state', 'ready');
+  await expect(fold.locator('[data-vote-group]').first()).toBeVisible();
+});
+
+test.describe('without JavaScript', () => {
+  test.use({ javaScriptEnabled: false });
+
+  for (const { locale, prefix, m } of LOCALES) {
+    test(`the fold-out still opens, and points to the official record (${locale})`, async ({ page }) => {
+      test.skip(!HOUSE_BILL, 'no bill with House-only roll calls in data/votes.json today');
+      const r = newestFirst(HOUSE_BILL!)[0];
+      await page.goto(`${prefix}/bills/${HOUSE_BILL}`);
+      const fold = page.locator('[data-vote-record] [data-vote-roll]').first().locator('[data-vote-members]');
+      await fold.locator('summary').click();
+      const fallback = fold.locator('[data-vote-members-fallback]');
+      await expect(fallback).toBeVisible();
+      await expect(fallback).toContainText(m.votes.membersOnRecord);
+      const link = fallback.getByRole('link', { name: m.votes.source });
+      await expect(link).toHaveAttribute('href', r.source);
+      expect(await height(link)).toBeGreaterThanOrEqual(44);
+      await expect(fold.locator('[data-vote-group]')).toHaveCount(0);
+    });
+  }
+});
+
+test.describe('the roll-call member files', () => {
+  test('every stored roll call has its file, and each matches data/votes.json', async ({ request }) => {
+    const misses: string[] = [];
+    const rolls = VOTES.rollCalls;
+    for (let i = 0; i < rolls.length; i += 25) {
+      await Promise.all(
+        rolls.slice(i, i + 25).map(async (r) => {
+          const res = await request.get(`/votes/${r.id}.json`);
+          if (res.status() !== 200) {
+            misses.push(`${r.id}: HTTP ${res.status()}`);
+            return;
+          }
+          if (!/^application\/json/.test(res.headers()['content-type'] ?? '')) misses.push(`${r.id}: content-type`);
+          if (res.headers()['set-cookie']) misses.push(`${r.id}: sets a cookie`);
+          const body = (await res.json()) as {
+            id: string;
+            groups: { position: (typeof POSITIONS)[number]; members: [string, string, string][] }[];
+          };
+          if (body.id !== r.id) misses.push(`${r.id}: id ${body.id}`);
+          const want = POSITIONS.filter((p) => r.votes[p].length > 0);
+          if (body.groups.map((g) => g.position).join() !== want.join()) misses.push(`${r.id}: groups`);
+          for (const g of body.groups) {
+            const ids = g.members.map(([id]) => id).sort();
+            const record = [...r.votes[g.position]].sort();
+            if (ids.join() !== record.join()) misses.push(`${r.id} ${g.position}: members differ from the record`);
+          }
+        })
+      );
+    }
+    expect(misses).toEqual([]);
+  });
+
+  test('a roll call the build did not write is a 404, and the files keep the site-wide frame lock', async ({ request }) => {
+    expect((await request.get('/votes/h-0-0-0.json')).status()).toBe(404);
+    const res = await request.get(`/votes/${VOTES.rollCalls[0].id}.json`);
+    expect(res.headers()['content-security-policy'] ?? '').toContain("frame-ancestors 'self'");
+  });
+});
 
 /** Every request in the page's life that carries the ZIP anywhere. */
 function zipRequests(page: Page): Request[] {
@@ -167,6 +363,10 @@ test.describe('your members strip', () => {
     await page.goto(`/bills/${SENATE_BILL}`);
     await seedZip(page, ZIP);
     const hits = zipRequests(page);
+    // The strip's positions are server-rendered into the page: with every
+    // roll-call member file blocked, it still prints them, and never asks.
+    const files = memberFileRequests(page);
+    await page.route('**/votes/*.json', (route) => route.abort());
     await page.reload();
 
     const strip = page.locator('[data-vote-delegation]');
@@ -190,6 +390,7 @@ test.describe('your members strip', () => {
     expect(hits.length).toBeGreaterThan(0);
     for (const h of hits) expect(new URL(h.url()).pathname).toBe('/api/reps');
     expect(hits.length, 'the strip must not add a second lookup').toBe(1);
+    expect(files, 'the strip reads no roll-call member file').toEqual([]);
   });
 
   test('House roll call: the House member\'s position, the senators say there is no Senate vote', async ({ page }) => {

@@ -61,10 +61,19 @@ export const SKIP_LEADING_CHARS = 40;
  * The bill corpus's JSON shape, as a bundler inlines it
  * (`JSON.parse('[{"full_identifier":"…","congress_number":119,…')`). No
  * client code has a reason to contain either key in JSON form.
+ *
+ * The roll-call file's shape joined them on 2026-09-29, when the bill page
+ * stopped printing every member of every roll call and started fetching one
+ * roll call's list on demand (components/VoteMembers.tsx). data/votes.json is
+ * mostly bioguide ids, so its prose markers come only from the few questions
+ * long enough to sample; a chunk carrying one roll call's `totals` or `votes`
+ * object is caught by shape whatever the questions say.
  */
 export const STRUCTURAL_MARKERS = [
   { source: 'data/bills.json (shape)', text: '"full_identifier":"' },
   { source: 'data/bills.json (shape)', text: '"ai_summary":"' },
+  { source: 'data/votes.json (shape)', text: '"totals":{"yea":' },
+  { source: 'data/votes.json (shape)', text: '"votes":{"yea":[' },
 ];
 
 /* Letters, digits and single spaces only: survives every escaping a bundler
@@ -213,6 +222,20 @@ function selfTest() {
       rule: 'corpus',
     },
     { name: 'a chunk over the size budget', chunk: chunk('c.js', 'a'.repeat(CHUNK_BUDGET_BYTES + 1)), rule: 'budget' },
+    {
+      // One roll call, no prose at all: only the shape can catch it.
+      name: 'a chunk that inlines one roll call of the vote file',
+      chunk: chunk(
+        'd.js',
+        `x.exports=JSON.parse('${JSON.stringify({
+          id: 'h-119-1-6',
+          question: 'On Passage',
+          totals: { yea: 2, nay: 1, present: 0, notVoting: 0 },
+          votes: { yea: ['A000001', 'B000002'], nay: ['C000003'], present: [], notVoting: [] },
+        })}')`
+      ),
+      rule: 'corpus',
+    },
   ];
   let failed = false;
   if (markersFromData('data/fixture.json', data).length === 0) {

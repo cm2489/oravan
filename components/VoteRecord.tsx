@@ -1,14 +1,13 @@
 import { ExternalLink } from 'lucide-react';
 import { getFormatter, getLocale, getTranslations } from 'next-intl/server';
-import { Link } from '@/i18n/navigation';
 import { GlossaryTerm } from '@/components/GlossaryTerm';
 import { glossify } from '@/components/glossary-tags';
 import type { GlossaryTermId } from '@/lib/glossary';
 import { glossaryLocale } from '@/lib/glossary-match';
-import { getLegislator } from '@/lib/core';
 import type { RollCall, VotePosition } from '@/lib/types';
-import { votesCoverage, votesForBill, votingMember } from '@/lib/votes';
+import { votesCoverage, votesForBill } from '@/lib/votes';
 import { VoteDelegation, type DelegationVote } from './VoteDelegation';
+import { VoteMembers } from './VoteMembers';
 
 /*
  * THE VOTE RECORD — every stored roll call on this bill, newest first, as the
@@ -26,9 +25,22 @@ import { VoteDelegation, type DelegationVote } from './VoteDelegation';
  * "no votes yet". The coverage line says what window the file covers, so a
  * reader who does see the block knows how far back it reaches.
  *
- * NAMES come from data/legislators.json joined on bioguide, with the roster in
- * votes.json as the fallback for a member who has since left. State follows
- * the name; party never does.
+ * WHAT IS IN THE PAGE, AND WHAT IS FETCHED (2026-09-29). For every roll call
+ * the server prints the chamber, date and roll number, the question and result
+ * as recorded, the tally, the tie-breaker when there is one, and the official
+ * record; "Your members on this bill" (VoteDelegation) gets its positions from
+ * the server too. The member-by-member list is the one part that is not
+ * printed: after the 119th Congress back-fill it made /bills/hr-1-119 about
+ * 3.95 MB of HTML, every member of the chamber on each of 47 roll calls. The
+ * build writes it as one static file per roll call (app/votes/[file]/route.ts)
+ * and the "How members voted" disclosure (components/VoteMembers.tsx) fetches
+ * that file from this site when it is opened. Without JavaScript the
+ * disclosure says the official record lists how each member voted, and links
+ * to it.
+ *
+ * NAMES in that list come from data/legislators.json joined on bioguide, with
+ * the roster in votes.json as the fallback for a member who has since left
+ * (lib/vote-members.ts). State follows the name; party never does.
  *
  * GLOSSARY (2026-09-28). The record's own lines are where the jargon is densest
  * ("On Motion to Suspend the Rules and Pass", "Cloture on the Motion to Proceed
@@ -49,27 +61,6 @@ const POSITION_TERM: Partial<Record<VotePosition, GlossaryTermId>> = {
 
 const VISIBLE = 3;
 const POSITIONS: VotePosition[] = ['yea', 'nay', 'present', 'notVoting'];
-const SUFFIX = /^(jr|sr|ii|iii|iv|v)\.?$/i;
-
-interface Named {
-  id: string;
-  name: string;
-  state: string;
-  last: string;
-}
-
-function named(id: string): Named {
-  const l = getLegislator(id);
-  if (l) return { id, name: l.name, state: l.state, last: l.last };
-  const m = votingMember(id);
-  const name = m?.name ?? id;
-  const parts = name.replace(/,/g, '').split(/\s+/).filter((p) => !SUFFIX.test(p));
-  return { id, name, state: m?.state ?? '', last: parts[parts.length - 1] ?? name };
-}
-
-function byLastName(a: Named, b: Named) {
-  return a.last.localeCompare(b.last, 'en') || a.name.localeCompare(b.name, 'en');
-}
 
 /**
  * What the "your members on this bill" strip needs: the newest roll call per
@@ -193,43 +184,7 @@ export async function VoteRecord({
           <ExternalLink className="h-4 w-4 flex-none" aria-hidden />
         </a>
 
-        <details className="group border-t border-line" data-vote-members="">
-          <summary className="inline-flex min-h-11 cursor-pointer list-none items-center gap-2 text-sm font-semibold text-ink hover:text-go-deep [&::-webkit-details-marker]:hidden">
-            <span
-              aria-hidden
-              className="inline-flex h-5 w-5 flex-none items-center justify-center rounded-stamp border-[1.5px] border-ink text-xs font-extrabold leading-none"
-            >
-              <span className="group-open:hidden">+</span>
-              <span className="hidden group-open:inline">{'–'}</span>
-            </span>
-            {t('membersToggle')}
-          </summary>
-          <div className="pb-3">
-            {POSITIONS.filter((p) => r.votes[p].length > 0).map((p) => {
-              const members = r.votes[p].map(named).sort(byLastName);
-              return (
-                <section key={p} aria-labelledby={`${hId}-${p}`} className="mt-3" data-vote-group={p}>
-                  <h4 id={`${hId}-${p}`} className="text-sm font-extrabold text-ink tabular-nums">
-                    {t('group', { position: t(`position.${p}`), count: members.length })}
-                  </h4>
-                  <ul className="mt-1 grid grid-cols-[repeat(auto-fill,minmax(10.5rem,1fr))] gap-x-4">
-                    {members.map((m) => (
-                      <li key={m.id}>
-                        <Link
-                          href={`/reps/${m.id}`}
-                          className="inline-flex min-h-11 items-center text-sm text-ink underline decoration-line-strong underline-offset-4 hover:decoration-ink"
-                        >
-                          {m.name}
-                          {m.state && ` (${m.state})`}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              );
-            })}
-          </div>
-        </details>
+        <VoteMembers rollCallId={r.id} source={r.source} headingId={hId} />
       </li>
     );
   };
@@ -238,7 +193,7 @@ export async function VoteRecord({
   const earlier = rollCalls.slice(VISIBLE);
 
   return (
-    <section aria-labelledby="votes-h" className={className} data-vote-record="">
+    <section id="votes" aria-labelledby="votes-h" className={className} data-vote-record="">
       <h2 id="votes-h" className="text-h3 font-extrabold text-ink">
         {t('heading')}
       </h2>

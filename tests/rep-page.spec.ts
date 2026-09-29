@@ -290,6 +290,29 @@ for (const { prefix, locale, messages } of LOCALES) {
           await expect(older).toHaveCount(0);
         }
 
+        // Capped by ROLL CALLS (2026-09-29): each row prints one vote, the
+        // member's newest on that bill, and counts the rest in a link to the
+        // bill page's vote record.
+        await expect(section.locator('[data-member-vote-roll]')).toHaveCount(listed.length);
+        const printed = await rows.evaluateAll((els) =>
+          els.map((e) => ({
+            bill: e.getAttribute('data-member-vote-bill'),
+            rolls: [...e.querySelectorAll('[data-member-vote-roll]')].map((v) => v.getAttribute('data-member-vote-roll')),
+            more: e.querySelector('a[data-member-vote-more]')?.getAttribute('data-member-vote-more') ?? null,
+            moreHref: e.querySelector('a[data-member-vote-more]')?.getAttribute('href') ?? null,
+            moreText: e.querySelector('a[data-member-vote-more]')?.textContent ?? null,
+          }))
+        );
+        expect(printed).toEqual(
+          listed.map((g) => ({
+            bill: g.bill,
+            rolls: [g.votes[0].rollCall.id],
+            more: g.votes.length > 1 ? String(g.votes.length - 1) : null,
+            moreHref: g.votes.length > 1 ? `${prefix}/bills/${g.bill}#votes` : null,
+            moreText: g.votes.length > 1 ? tRep('votesMoreOnBillLink', { count: g.votes.length - 1 }) : null,
+          }))
+        );
+
         const first = rows.first();
         const newest = groups[0].votes[0];
         await expect(first.locator(`a[href$="/bills/${groups[0].bill}"]`)).toBeVisible();
@@ -318,6 +341,27 @@ for (const { prefix, locale, messages } of LOCALES) {
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth
       );
       expect(overflow, `${prefix}/reps/${SENATOR} must not scroll horizontally`).toBeLessThanOrEqual(0);
+    });
+
+    test('"N more votes on this bill" lands on the bill page\'s vote record', async ({ page }) => {
+      // The first open row (the first SHOWN are open) whose bill has more
+      // than one of this senator's votes.
+      const target = memberVotesByBill(SENATOR)
+        .slice(0, 6)
+        .find((g) => g.votes.length > 1);
+      test.skip(!target, 'none of the open rows has a second vote by this member');
+      await page.goto(`${prefix}/reps/${SENATOR}`);
+      const link = page.locator(`[data-member-vote-bill="${target!.bill}"] a[data-member-vote-more]`);
+      await expect(link).toHaveText(tRep('votesMoreOnBillLink', { count: target!.votes.length - 1 }));
+      expect(await link.evaluate(hitHeight)).toBeGreaterThanOrEqual(44);
+      await link.click();
+      await expect(page).toHaveURL(new RegExp(`${prefix}/bills/${target!.bill}#votes$`));
+      const record = page.locator('section#votes[data-vote-record]');
+      await expect(record).toBeVisible();
+      // Every vote the member page counted is on that record.
+      for (const v of target!.votes) {
+        await expect(record.locator(`[data-vote-roll="${v.rollCall.id}"]`)).toHaveCount(1);
+      }
     });
 
     test('a row\'s "Right now" sentence is the bill page\'s own', async ({ page }) => {
