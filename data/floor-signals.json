@@ -1,22 +1,22 @@
 {
   "_meta": {
     "schema": "floor-signals/v1",
-    "fetched_at": "2026-09-29T08:23:25.609Z",
+    "fetched_at": "2026-09-29T15:44:00.763Z",
     "sources": {
       "daily-digest": {
         "status": "ok",
         "detail": "1 announced measure(s)/nomination(s)",
-        "checked_at": "2026-09-29T08:23:25.609Z",
-        "url": "https://www.congress.gov/119/crec/2026/09/24/d24se6-1.htm",
-        "published": "2026-09-24",
-        "covers": "2026-09-28",
-        "covers_label": "3 p.m., Monday, September 28",
+        "checked_at": "2026-09-29T15:44:00.763Z",
+        "url": "https://www.congress.gov/119/crec/2026/09/28/d28se6-1.htm",
+        "published": "2026-09-28",
+        "covers": "2026-09-29",
+        "covers_label": "10 a.m., Tuesday, September 29",
         "via": "congress.gov"
       },
       "billsthisweek": {
         "status": "quiet",
         "detail": "no schedule published for this week (404)",
-        "checked_at": "2026-09-29T08:23:25.609Z",
+        "checked_at": "2026-09-29T15:44:00.763Z",
         "url": "https://docs.house.gov/billsthisweek/20260928/20260928.xml",
         "published": "2026-09-28",
         "covers": "2026-09-28",
@@ -31,33 +31,33 @@
     },
     "next_meeting": {
       "senate": {
-        "date": "2026-09-28",
-        "label": "3 p.m., Monday, September 28"
+        "date": "2026-09-29",
+        "label": "10 a.m., Tuesday, September 29"
       },
       "house": {
-        "date": "2026-09-28",
-        "label": "12 noon, Monday, September 28"
+        "date": "2026-10-01",
+        "label": "11:30 a.m., Thursday, October 1"
       }
     },
     "dropped": []
   },
   "signals": {
-    "s-4668-119": {
+    "sjres-197-119": {
       "tier0": {
         "source": "daily-digest",
         "chamber": "senate",
-        "quote": "Senate will resume consideration of S. 4668, Protect College Sports Act, as amended, post-cloture, with the time from 4 p.m. to 5:30 p.m. equally divided between proponents and opponents of the bill.",
+        "quote": "If Senator Baldwin, or her designee, makes a motion to proceed to consideration of S.J. Res. 197, Patient Protection and Affordable Care Act, HHS Notice of Benefit and Payment Parameters for 2027; and Basic Health Program, Senate will vote on the motion at 2:15 p.m.",
         "quote_lang": "en",
         "quote_kind": "digest_program_sentence",
-        "url": "https://www.congress.gov/119/crec/2026/09/24/d24se6-1.htm",
-        "published": "2026-09-24",
-        "covers": "2026-09-28",
-        "covers_label": "3 p.m., Monday, September 28",
+        "url": "https://www.congress.gov/119/crec/2026/09/28/d28se6-1.htm",
+        "published": "2026-09-28",
+        "covers": "2026-09-29",
+        "covers_label": "10 a.m., Tuesday, September 29",
         "track": "unspecified",
-        "certainty": "consideration"
+        "certainty": "conditional"
       },
-      "fetched_at": "2026-09-29T08:23:25.609Z",
-      "first_seen": "2026-09-23T16:51:14.445Z",
+      "fetched_at": "2026-09-29T15:44:00.763Z",
+      "first_seen": "2026-09-29T15:44:00.763Z",
       "stale": false
     }
   },

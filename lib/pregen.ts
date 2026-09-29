@@ -1,4 +1,5 @@
 import { billSlug } from './core/bills';
+import { settledDecision } from './journey';
 import { contentVersion } from './scriptcache';
 import { buildScriptPrompt, SCRIPT_MAX_TOKENS, SCRIPT_MODEL } from './scriptprompt';
 import type { Bill, Stance } from './types';
@@ -21,10 +22,27 @@ export interface Combo {
   bill: Bill;
 }
 
-/** Every (bill x stance x locale) combo for a shortlist of bills. */
+/**
+ * Every (bill x stance x locale) combo for a shortlist of bills — except a
+ * bill with no decision left, which gets none.
+ *
+ * THE SAME REFUSAL THE LIVE ROUTE MAKES (2026-09-29). app/api/script answers
+ * 409 `settled` for any bill `settledDecision` calls finished — a law, a
+ * failed final vote, a concurrent resolution both chambers adopted — before
+ * it reads the cache. A script written here for such a bill is money spent on
+ * an entry nothing will ever read, so it is never planned, never submitted
+ * and never written. The shortlist this job reads (getTopActions, the act-now
+ * pool) held no settled bill on 2026-09-29, and the ladder (lib/docket.mjs
+ * docketRung) puts a law or an adopted concurrent resolution on T4 by
+ * construction. A failed passage vote is not held off the same way: its
+ * status stays `floor_vote`, and a live announcement lifts it to T0 unless the
+ * announcing chamber's record answered it on or after the announcement's own
+ * date. So the job applies the route's predicate rather than the pool's.
+ */
 export function planCombos(bills: Bill[], stances: Stance[], locales: Array<'en' | 'es'>): Combo[] {
   const combos: Combo[] = [];
   for (const bill of bills) {
+    if (settledDecision(bill)) continue;
     const slug = billSlug(bill);
     // Same CALL app/api/script/route.ts makes — this IS the cache key's
     // content-version component, computed identically so a pregenerated

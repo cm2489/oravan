@@ -11,6 +11,7 @@ import {
   specialElectionsFor,
   vacancySlug,
 } from '../lib/core';
+import { rollCallPage } from '../lib/roll-call-page';
 import { MEMBER_VOTES_MAX_BILLS, memberVotesByBill, votesCoverage } from '../lib/votes';
 import { mockScriptApi } from './helpers';
 import { referenceBill } from './corpus-fixtures';
@@ -333,7 +334,19 @@ for (const { prefix, locale, messages } of LOCALES) {
           messages.votes.position[newest.position]
         );
         await expect(vote.locator('[data-member-vote-question]')).toHaveText(newest.rollCall.question);
-        await expect(vote.locator(`a[href="${newest.rollCall.source}"]`)).toBeVisible();
+        // "Official record" opens the chamber's readable page for the roll
+        // call (lib/roll-call-page.ts): the Clerk's for the House member, the
+        // Senate's .htm for the senator. Never the XML data file.
+        const record = vote.getByRole('link', { name: messages.votes.source });
+        await expect(record).toBeVisible();
+        await expect(record).toHaveAttribute('href', rollCallPage(newest.rollCall.source));
+        await expect(record).toHaveAttribute(
+          'href',
+          id === HOUSE
+            ? /^https:\/\/clerk\.house\.gov\/Votes\/\d{4}[1-9]\d*$/
+            : /^https:\/\/www\.senate\.gov\/legislative\/LIS\/roll_call_votes\/vote\d{4}\/vote_\d{3}_\d_\d{5}\.htm$/
+        );
+        await expect(section.locator('a[href$=".xml"]')).toHaveCount(0);
 
         // Party never rides with a vote, as text or otherwise.
         const rep = getLegislator(id)!;
