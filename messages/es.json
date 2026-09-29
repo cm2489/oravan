@@ -198,7 +198,7 @@
     "votesNote": "Votaciones nominales sobre {count, plural, one {# proyecto} other {# proyectos}} de los que sigue Oravan, desde el {date}, con la más reciente primero.",
     "votesAiNote": "Titulares y resúmenes traducidos por IA, verificados con el registro",
     "votesTheirVote": "Su voto:",
-    "votesMoreOnBill": "{count, plural, one {Su otro voto sobre este proyecto} other {Sus otros # votos sobre este proyecto}}",
+    "votesMoreOnBillLink": "{count, plural, one {# voto más sobre este proyecto} other {# votos más sobre este proyecto}}",
     "votesOlder": "{count, plural, one {Sus votos anteriores sobre # proyecto más no aparecen aquí. La página de cada proyecto muestra sus votaciones registradas.} other {Sus votos anteriores sobre # proyectos más no aparecen aquí. La página de cada proyecto muestra sus votaciones registradas.}}",
     "votesNone": "El registro oficial no muestra ninguna votación nominal de {name} sobre un proyecto de los que sigue Oravan desde el {date}."
   },
@@ -1703,6 +1703,10 @@
     "tieBreaker": "Voto de desempate del vicepresidente: {position}",
     "source": "Registro oficial",
     "membersToggle": "Cómo votó cada miembro",
+    "membersOnRecord": "El registro oficial muestra cómo votó cada miembro.",
+    "membersLoading": "Cargando la lista…",
+    "membersError": "No se pudo cargar la lista.",
+    "membersRetry": "Intentar de nuevo",
     "group": "{position} ({count})",
     "earlier": "{count, plural, one {# votación anterior} other {# votaciones anteriores}}",
     "delegation": {

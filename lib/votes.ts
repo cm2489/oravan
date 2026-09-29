@@ -27,6 +27,7 @@ for (const r of VOTES.rollCalls) {
 }
 for (const list of byBill.values()) list.sort(newestFirst);
 const members = new Map(VOTES.members.map((m) => [m.id, m]));
+const byId = new Map(VOTES.rollCalls.map((r) => [r.id, r]));
 
 /** One position one member holds on one roll call, as the record lists it. */
 export interface MemberVote {
@@ -87,6 +88,13 @@ export function memberVotesByBill(bioguide: string): MemberBillVotes[] {
  * call and every member on it. A page-weight cap, decided 2026-09-28 on PR
  * #348: every row ships as HTML and again as server-component payload, and a
  * House member's list grows with every roll call the Congress takes.
+ *
+ * It caps ROLL CALLS as well as bills (2026-09-29, after the 119th Congress
+ * back-fill): each row prints only the member's newest vote on its bill and
+ * links to the bill page's vote record for the rest, so the page prints at
+ * most this many roll calls. Counting bills alone let one bill print every
+ * roll call the member cast on it (hr-1-119 has 47), and the heaviest member
+ * page, a senator's, measured 998 kB of HTML on the build of 2026-09-29.
  */
 export const MEMBER_VOTES_MAX_BILLS = 50;
 
@@ -94,6 +102,16 @@ export const MEMBER_VOTES_MAX_BILLS = 50;
  *  which for a bill that never reached a recorded vote is the true answer. */
 export function votesForBill(billId: string): RollCall[] {
   return byBill.get(billId) ?? [];
+}
+
+/** Every stored roll call, in the file's order. */
+export function allRollCalls(): readonly RollCall[] {
+  return VOTES.rollCalls;
+}
+
+/** One stored roll call by its id (`h-119-1-6`), or undefined. */
+export function rollCallById(id: string): RollCall | undefined {
+  return byId.get(id);
 }
 
 /** How a member voted on one roll call, or null when the record does not
