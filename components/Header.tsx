@@ -147,8 +147,12 @@ export function Header() {
           screen would take that meaning away from it. Its top rule is
           `line-strong` (3.24:1 on paper) because THAT rule is a real
           boundary — the only thing separating a fixed bar from the content
-          scrolling underneath it — and `line` would not clear 1.4.11. */}
+          scrolling underneath it — and `line` would not clear 1.4.11.
+          `data-thumb-bar` is how an in-place glossary box finds the bar's
+          top edge and keeps its last line (the AI label) above it
+          (components/GlossaryPopover.tsx). */}
       <nav
+        data-thumb-bar
         aria-label={t('nav.primaryLabel')}
         className="fixed inset-x-0 bottom-0 z-40 border-t border-line-strong bg-paper pb-[env(safe-area-inset-bottom)] md:hidden"
       >

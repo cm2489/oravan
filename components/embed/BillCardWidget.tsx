@@ -1,28 +1,26 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import en from '@/messages/en.json';
-import es from '@/messages/es.json';
+import { useEmbedDicts } from '@/components/embed/EmbedDictsProvider';
+import type { EmbedLocale } from '@/components/embed/embed-dicts';
 import { SITE_ORIGIN } from '@/lib/site';
 import type { BillStatus } from '@/lib/types';
 
 /*
  * The bill-card embed widget (S14): one bill, by slug, read-only. Same
  * design choices as RepLookupWidget (S13) and for the same reasons — see
- * that file's header comment: direct messages/*.json import instead of
- * next-intl (this route has no [locale] segment and no
- * NextIntlClientProvider to read from), stateless per pageview, an
- * always-visible EN/ES toggle a host can default but never remove.
+ * that file's header comment: messages/*.json copy instead of next-intl
+ * (this route has no [locale] segment and no NextIntlClientProvider to read
+ * from; since 2026-09-28 the copy arrives from the server through
+ * useEmbedDicts, see components/embed/embed-dicts.ts), stateless per
+ * pageview, an always-visible EN/ES toggle a host can default but never
+ * remove.
  *
  * House rule (AI-label-travels): bill.headline is already null when the
  * corpus has no AI decode for this bill (lib/core's localizeBill never
  * invents one) — the chip only ever renders alongside a real AI headline,
  * never next to the bare official title.
  */
-
-type EmbedLocale = 'en' | 'es';
-
-const DICTS: Record<EmbedLocale, typeof en> = { en, es };
 
 export interface BillCardData {
   slug: string;
@@ -63,7 +61,7 @@ export function BillCardWidget({
 }) {
   const [locale, setLocale] = useState<EmbedLocale>(initialLocale);
   const rootRef = useRef<HTMLElement>(null);
-  const t = DICTS[locale];
+  const t = useEmbedDicts()[locale];
 
   useEffect(() => {
     document.documentElement.lang = locale;

@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import en from '@/messages/en.json';
-import es from '@/messages/es.json';
+import { useEmbedDicts } from '@/components/embed/EmbedDictsProvider';
+import type { EmbedDict, EmbedLocale } from '@/components/embed/embed-dicts';
 import { officeHoursStatus } from '@/lib/office-hours';
 import { SITE_ORIGIN } from '@/lib/site';
 import type { Legislator, Stance } from '@/lib/types';
@@ -10,9 +10,10 @@ import type { Legislator, Stance } from '@/lib/types';
 /*
  * The action-panel embed widget (S19, paid tier only): adapted from
  * components/ActionPanel.tsx, compressed, with deliberate cuts — see the
- * S19 design doc for the full reasoning. Same direct messages/*.json
- * import pattern as RepLookupWidget/BillCardWidget (this route has no
- * [locale] segment, no NextIntlClientProvider) — copy for the stance
+ * S19 design doc for the full reasoning. Same messages/*.json copy pattern
+ * as RepLookupWidget/BillCardWidget (this route has no [locale] segment, no
+ * NextIntlClientProvider; the copy arrives from the server through
+ * useEmbedDicts, see components/embed/embed-dicts.ts) — copy for the stance
  * picker, the script review step, and the loading/error states is REUSED
  * VERBATIM from the `bill` namespace, never duplicated into a parallel
  * `embed.actionPanel.*` set, so the two surfaces can never drift apart the
@@ -39,8 +40,6 @@ import type { Legislator, Stance } from '@/lib/types';
  *     citizen site's lib/local.ts does.
  */
 
-type EmbedLocale = 'en' | 'es';
-const DICTS: Record<EmbedLocale, typeof en> = { en, es };
 const STANCES: Stance[] = ['support', 'oppose', 'undecided'];
 const GENERATING_KEYS = ['generating1', 'generating2', 'generating3'] as const;
 
@@ -61,7 +60,7 @@ function telHref(phone: string) {
  * ships, built from the same messages (this route has no
  * NextIntlClientProvider, so the {citation} slot is filled by hand).
  */
-function fallbackFor(dict: typeof en, s: Stance, citation: string) {
+function fallbackFor(dict: EmbedDict, s: Stance, citation: string) {
   return dict.bill.fallbackScript[s].replace('{citation}', citation);
 }
 
@@ -95,7 +94,7 @@ export function ActionPanelWidget({
   attribution?: 'on' | 'none';
 }) {
   const [locale, setLocale] = useState<EmbedLocale>(initialLocale);
-  const t = DICTS[locale];
+  const t = useEmbedDicts()[locale];
   const rootRef = useRef<HTMLElement>(null);
   const stanceRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const hydrated = useHydrated();

@@ -1058,11 +1058,24 @@
     "dismiss": "No volver a mostrar este aviso"
   },
   "glossary": {
-    "title": "El procedimiento, en palabras claras",
-    "metaDescription": "Explicaciones en palabras claras de los términos de procedimiento que aparecen en el registro oficial del Congreso: cierre del debate, consentimiento unánime, mociones para considerar, los calendarios y más.",
-    "intro": "El Congreso funciona con un vocabulario que nadie te explica mientras lees. Estos son los términos de procedimiento que más aparecen en el registro oficial y en este sitio: qué hace cada uno en realidad, y qué no te dice.",
-    "scopeNote": "Cada entrada describe solo el mecanismo. Ninguna dice a quién beneficia, quién gana, ni cuándo se votará algo.",
-    "indexLabel": "Ir a un término",
+    "title": "El Congreso, en palabras claras",
+    "metaDescription": "Explicaciones en palabras claras de los términos que aparecen en el registro oficial del Congreso y en este sitio: cierre del debate, consentimiento unánime, asignaciones, votaciones nominales, distritos congresionales y más.",
+    "intro": "El Congreso funciona con un vocabulario que nadie te explica mientras lees. Estos son los términos que aparecen en el registro oficial y en este sitio: qué hace cada uno en realidad, y qué no te dice. Donde un término del sitio aparece subrayado con puntos, pasa el cursor sobre él o tócalo para leer su definición sin salir de la página.",
+    "scopeNote": "Cada entrada describe solo el mecanismo y se basa en la fuente oficial enlazada debajo. Ninguna dice a quién beneficia, quién gana, ni cuándo se votará algo.",
+    "indexLabel": "Ir a una sección",
+    "sourceLabel": "Fuente: {site}",
+    "aiNote": "Definición redactada por IA a partir de fuentes oficiales",
+    "pageAiNote": "Cada definición de esta página está redactada por IA a partir de fuentes oficiales",
+    "aiPolicyLink": "La política de contenido con IA de Oravan",
+    "categories": {
+      "floor": "En el pleno",
+      "committees": "Comités",
+      "lawmaking": "Proyectos, resoluciones y leyes",
+      "votes": "Votaciones",
+      "budget": "Presupuesto y gasto",
+      "nominations": "Nominaciones, tratados y juicio político",
+      "people": "Miembros, escaños y oficinas"
+    },
     "terms": {
       "cloture": {
         "term": "Cierre del debate (cloture)",
@@ -1111,6 +1124,494 @@
       "pro-forma-session": {
         "term": "Sesión pro forma",
         "body": "Una sesión pro forma es una reunión que una cámara celebra para cumplir la regla constitucional de que ninguna de las dos puede interrumpir sus trabajos más de tres días sin el consentimiento de la otra. Dura un minuto o dos: quien preside abre la sesión, no se trata ningún asunto legislativo y la sesión se levanta. En una sesión así no se puede someter un proyecto a consideración, y ninguna medida avanza en el pleno por su causa. El Daily Digest de la propia cámara publica el programa de cada reunión, así que una sesión pro forma queda dicha en el registro."
+      },
+      "filibuster": {
+        "term": "Filibusterismo (filibuster)",
+        "body": "El filibusterismo es un intento de retrasar o impedir una votación en el Senado hablando durante mucho tiempo, presentando muchas mociones o usando otras tácticas de demora. El Senado puede ponerle fin con el cierre del debate, que en la mayoría de los proyectos requiere 60 votos."
+      },
+      "hold": {
+        "term": "Reserva informal («hold»)",
+        "body": "Un «hold» es un aviso informal de un senador a los líderes de su partido de que no quiere que un proyecto o una nominación llegue al pleno. Es una práctica, no una regla, y no es una votación."
+      },
+      "quorum": {
+        "term": "Quórum",
+        "body": "El quórum es el número de miembros que deben estar presentes para que una cámara pueda sesionar. La Constitución lo fija en la mayoría: 51 senadores o 218 representantes cuando todos los escaños están ocupados. Una llamada de quórum es un pase de lista para comprobar si hay suficientes miembros, y a menudo se usa solo para hacer una pausa en la sesión."
+      },
+      "recess": {
+        "term": "Receso",
+        "body": "Un receso es una pausa en las sesiones de una cámara. Puede durar unas horas, una noche o varias semanas, por ejemplo durante un feriado. Ninguna de las dos cámaras puede interrumpir sus trabajos más de tres días sin el consentimiento de la otra."
+      },
+      "adjournment": {
+        "term": "Levantar la sesión (adjournment)",
+        "body": "Levantar la sesión es terminar la reunión del día en la Cámara o el Senado, por lo general indicando cuándo volverá a reunirse. Levantar la sesión termina la reunión, no los proyectos que están pendientes."
+      },
+      "adjournment-sine-die": {
+        "term": "Clausura sine die",
+        "body": "La clausura sine die es el levantamiento final que pone fin a un periodo de sesiones del Congreso. Sine die es una expresión latina que significa «sin día»: no se fija otro día de reunión en ese periodo."
+      },
+      "session": {
+        "term": "Periodo de sesiones",
+        "body": "Un periodo de sesiones es el tiempo durante el cual el Congreso se reúne y trabaja. Cada Congreso de dos años suele tener dos periodos de sesiones, de un año aproximadamente cada uno. La palabra «sesión» también se usa para la reunión de un solo día de la Cámara o el Senado."
+      },
+      "lame-duck-session": {
+        "term": "Sesión de «pato cojo» (lame duck)",
+        "body": "La sesión de «pato cojo» es el tiempo en que el Congreso se reúne después de una elección general y antes de que empiece el nuevo Congreso. Se llama así porque algunos de los miembros que participan no volverán."
+      },
+      "legislative-day": {
+        "term": "Día legislativo",
+        "body": "Un día legislativo va desde que una cámara abre la sesión hasta que la levanta. Suele coincidir con un día del calendario, pero si el Senado hace un receso en lugar de levantar la sesión, un solo día legislativo puede durar varios días o incluso semanas. Algunas reglas cuentan días legislativos, no días del calendario."
+      },
+      "floor": {
+        "term": "El pleno (the floor)",
+        "body": "El pleno es la sala donde se reúne toda la Cámara o todo el Senado. Una acción «en el pleno» es una acción de toda la cámara, y no de un comité. Quien está hablando allí «tiene la palabra»."
+      },
+      "point-of-order": {
+        "term": "Cuestión de orden",
+        "body": "Una cuestión de orden es un reclamo, hecho desde el pleno, de que la cámara está incumpliendo una de sus propias reglas. Quien preside decide sobre ella, y los miembros pueden apelar esa decisión ante toda la cámara."
+      },
+      "germaneness": {
+        "term": "Pertinente (germane)",
+        "body": "Una enmienda es pertinente cuando trata el mismo tema que el proyecto que quiere cambiar. La Cámara de Representantes en general exige que las enmiendas sean pertinentes. El Senado permite enmiendas sobre otros temas en la mayoría de los casos."
+      },
+      "amendment-tree": {
+        "term": "Árbol de enmiendas",
+        "body": "El árbol de enmiendas es una forma de representar cuántas enmiendas puede tener pendientes el Senado sobre un proyecto al mismo tiempo, y en qué orden. «Llenar el árbol» significa presentar todas las enmiendas que el árbol permite, de modo que ningún otro senador pueda presentar una hasta que se resuelvan esas."
+      },
+      "motion-to-table": {
+        "term": "Moción para dejar sobre la mesa (motion to table)",
+        "body": "Una moción para dejar sobre la mesa le pide a la cámara que aparte definitivamente una cuestión pendiente. Se decide sin debate. Aprobar que una enmienda o moción quede sobre la mesa tiene el mismo efecto que rechazarla en votación."
+      },
+      "motion-to-reconsider": {
+        "term": "Moción de reconsideración",
+        "body": "Una moción de reconsideración le pide a la cámara que repita una votación. Solo puede presentarla un miembro que votó con el lado que prevaleció, y una sola vez por votación. Por lo general, enseguida se presenta una moción para dejarla sobre la mesa, lo que confirma el resultado."
+      },
+      "suspension-of-the-rules": {
+        "term": "Suspensión de las reglas (Cámara)",
+        "body": "La suspensión de las reglas es una forma rápida de aprobar un proyecto en la Cámara de Representantes. El debate se limita a 40 minutos, no se pueden presentar enmiendas desde el pleno y para aprobar el proyecto se necesitan dos tercios de los miembros que votan. La Cámara la usa sobre todo para proyectos con amplio apoyo."
+      },
+      "discharge-petition": {
+        "term": "Petición de descargo (discharge petition)",
+        "body": "Una petición de descargo permite a los miembros de la Cámara llevar un proyecto al pleno después de que haya pasado al menos 30 días legislativos en un comité. Si la firma la mayoría de la Cámara (218 miembros cuando todos los escaños están ocupados), la moción pasa a un calendario especial y más adelante se puede someter a votación. Los nombres de quienes firman son públicos."
+      },
+      "special-rule": {
+        "term": "Regla especial (Cámara)",
+        "body": "Una regla especial es una resolución que fija las condiciones para debatir un proyecto en el pleno de la Cámara: cuánto dura el debate y qué enmiendas se pueden presentar, si alguna. La redacta el Comité de Reglas, y toda la Cámara vota la regla antes de tomar el proyecto. Una regla abierta permite cualquier enmienda que cumpla las reglas de la Cámara; una regla cerrada no permite ninguna aparte de las del propio comité."
+      },
+      "rules-committee": {
+        "term": "Comité de Reglas (Cámara)",
+        "body": "El Comité de Reglas de la Cámara decide cómo llegan al pleno la mayoría de los proyectos importantes. Redacta la regla especial de cada uno, que fija el tiempo de debate y qué enmiendas se pueden presentar. Después, toda la Cámara vota esa regla."
+      },
+      "motion-to-recommit": {
+        "term": "Moción para devolver a comité (motion to recommit)",
+        "body": "Una moción para devolver a comité le pide a la Cámara que envíe un proyecto de vuelta al comité en lugar de aprobarlo. Llega justo antes de la votación final, y un miembro que se opone al proyecto tiene la primera oportunidad de presentarla. Según las reglas actuales de la Cámara, no puede incluir enmiendas."
+      },
+      "previous-question": {
+        "term": "Cuestión previa (previous question)",
+        "body": "En la Cámara, «ordenar la cuestión previa» termina el debate y lleva a la Cámara directamente a votar el asunto que tiene delante. La moción para ordenarla se decide a su vez sin debate."
+      },
+      "committee-of-the-whole": {
+        "term": "Comité Plenario (Committee of the Whole)",
+        "body": "El Comité Plenario es la Cámara reunida de otra forma, con todos los representantes como miembros, para debatir y enmendar los proyectos del Union Calendar. Tiene reglas más sencillas que la Cámara en pleno, como un quórum de 100. Los delegados y el comisionado residente pueden votar en él."
+      },
+      "house-calendar": {
+        "term": "El House Calendar (Cámara de Representantes)",
+        "body": "El House Calendar es la lista de la Cámara para los proyectos y resoluciones públicos, dictaminados por un comité, que no recaudan ni gastan dinero. Los que sí recaudan o gastan dinero van al Union Calendar. Estar en un calendario hace que un proyecto pueda llegar al pleno; no programa nada."
+      },
+      "executive-session": {
+        "term": "Sesión ejecutiva (Senado)",
+        "body": "El Senado está en sesión ejecutiva cuando trabaja en nominaciones y tratados, que llegan del Presidente. El trabajo sobre proyectos y resoluciones se hace en sesión legislativa. El Senado puede pasar de una a otra en un mismo día."
+      },
+      "vote-a-rama": {
+        "term": "Vote-a-rama (maratón de votaciones)",
+        "body": "Un vote-a-rama es una larga serie de votaciones seguidas en el Senado sobre enmiendas. Ocurre con una resolución presupuestaria o un proyecto de reconciliación: cuando se acaba el tiempo de debate, los senadores todavía pueden presentar enmiendas, y cada una se vota."
+      },
+      "congressional-record": {
+        "term": "Congressional Record (diario oficial del Congreso)",
+        "body": "El Congressional Record es el relato oficial, casi palabra por palabra, de lo que se dice y se hace en el pleno de la Cámara y del Senado. Se publica por cada día en que se reúne alguna de las dos cámaras."
+      },
+      "daily-digest": {
+        "term": "Daily Digest (resumen diario)",
+        "body": "El Daily Digest es la sección al final de cada edición diaria del Congressional Record. Resume lo que pasó ese día en el pleno y en los comités, y funciona como índice de la edición. También indica cuándo se reúne de nuevo cada cámara."
+      },
+      "committee": {
+        "term": "Comité",
+        "body": "Un comité es un grupo más pequeño de miembros que hace buena parte del trabajo detallado del Congreso. Los comités estudian proyectos, celebran audiencias e investigaciones, y deciden qué proyectos envían al pleno."
+      },
+      "subcommittee": {
+        "term": "Subcomité",
+        "body": "Un subcomité es una parte más pequeña de un comité que se ocupa de una parte de su trabajo. Puede celebrar audiencias y trabajar en un proyecto antes de que lo tome el comité completo."
+      },
+      "standing-committee": {
+        "term": "Comité permanente",
+        "body": "Un comité permanente es un comité fijo, creado por las reglas de una cámara, que se ocupa de un área, como la agricultura o las fuerzas armadas. Los proyectos sobre ese tema normalmente se le remiten a él."
+      },
+      "select-committee": {
+        "term": "Comité selecto o especial",
+        "body": "Un comité selecto o especial se crea mediante una resolución para estudiar o investigar un solo asunto. Suele durar un tiempo limitado y a menudo no puede enviar proyectos a la cámara."
+      },
+      "joint-committee": {
+        "term": "Comité conjunto",
+        "body": "Un comité conjunto tiene miembros de la Cámara y del Senado. Los comités conjuntos suelen ocuparse de un área concreta y en general no pueden enviar proyectos a ninguna de las dos cámaras."
+      },
+      "hearing": {
+        "term": "Audiencia",
+        "body": "Una audiencia es una reunión de un comité en la que sus miembros escuchan testimonios y hacen preguntas. Los comités celebran audiencias sobre proyectos, sobre cómo funcionan las agencias y los programas, sobre investigaciones y sobre nominaciones y tratados. Una audiencia no es una votación."
+      },
+      "markup": {
+        "term": "Sesión de enmiendas en comité (markup)",
+        "body": "El «markup» es la reunión de un comité en la que sus miembros debaten un proyecto, cambian su texto mediante enmiendas y votan si lo envían al pleno. Los subcomités también celebran sesiones de este tipo."
+      },
+      "referral": {
+        "term": "Remitido a comité",
+        "body": "Cuando se presenta un proyecto, se remite al comité que se ocupa de su tema principal. Un proyecto puede enviarse a más de un comité. Ser remitido es un trámite de rutina y no dice nada sobre si el comité actuará."
+      },
+      "committee-report": {
+        "term": "Informe del comité",
+        "body": "Un informe del comité es un documento que redacta un comité para explicar un proyecto que envía al pleno: qué hace, por qué y, muchas veces, cuánto costaría. Los miembros que no están de acuerdo pueden añadir sus propias opiniones."
+      },
+      "ranking-member": {
+        "term": "Miembro de mayor rango de la minoría (ranking member)",
+        "body": "El «ranking member» es el miembro de mayor rango del partido de la minoría en un comité o subcomité, por lo general quien lleva más tiempo en él. La presidencia corresponde al partido de la mayoría."
+      },
+      "conference-committee": {
+        "term": "Comisión mixta (comité de conferencia)",
+        "body": "Una comisión mixta es un grupo temporal de miembros de la Cámara y del Senado que se forma para resolver las diferencias entre las versiones de un proyecto aprobadas por cada cámara. Sus miembros se llaman conferenciantes. Lo que acuerdan vuelve a las dos cámaras para que lo voten."
+      },
+      "conference-report": {
+        "term": "Informe de la comisión mixta (conference report)",
+        "body": "El informe de la comisión mixta es el texto que acordaron los negociadores de la Cámara y del Senado, con una declaración que explica cómo resolvieron cada diferencia. Luego cada cámara lo vota en su conjunto."
+      },
+      "oversight": {
+        "term": "Supervisión (oversight)",
+        "body": "La supervisión es la tarea del Congreso de revisar cómo funcionan las agencias y los programas federales y cómo gastan el dinero. Los comités la hacen mediante audiencias, informes e investigaciones."
+      },
+      "bill": {
+        "term": "Proyecto de ley",
+        "body": "Un proyecto de ley es una propuesta para crear una ley nueva o para cambiar o derogar una existente. Los proyectos de la Cámara se numeran H.R. y los del Senado S. Para convertirse en ley, un proyecto tiene que ser aprobado por las dos cámaras con el mismo texto y firmado por el Presidente, o aprobado por encima de un veto."
+      },
+      "measure": {
+        "term": "Medida (measure)",
+        "body": "«Medida» es la palabra general para cualquier proyecto o resolución sobre la que actúa la Cámara o el Senado. Cuando un registro dice «la medida», puede referirse a cualquiera de los dos."
+      },
+      "act": {
+        "term": "Ley (Act)",
+        "body": "Un «act» es un proyecto aprobado por una o las dos cámaras. Por lo general la palabra se refiere a un proyecto que ambas aprobaron con el mismo texto y que se convirtió en ley, firmado por el Presidente o aprobado por encima de un veto. Muchos proyectos llevan «Act» en su título desde el día en que se presentan."
+      },
+      "joint-resolution": {
+        "term": "Resolución conjunta",
+        "body": "Una resolución conjunta funciona como un proyecto de ley: tiene que ser aprobada por las dos cámaras y firmada por el Presidente para convertirse en ley. El Congreso la usa, por ejemplo, para prorrogar fondos, aprobar o desaprobar acciones y proponer enmiendas a la Constitución. Una enmienda propuesta no pasa por el Presidente: necesita dos tercios de cada cámara y la ratificación de tres cuartas partes de los estados."
+      },
+      "concurrent-resolution": {
+        "term": "Resolución concurrente",
+        "body": "Una resolución concurrente la aprueban las dos cámaras, pero no se envía al Presidente y no tiene fuerza de ley. El Congreso la usa para asuntos que afectan a las dos cámaras, como la resolución presupuestaria del Congreso."
+      },
+      "simple-resolution": {
+        "term": "Resolución simple",
+        "body": "Una resolución simple la aprueba una sola cámara. Trata asuntos internos de esa cámara o expresa su opinión, y no tiene fuerza de ley."
+      },
+      "sense-of-congress": {
+        "term": "Opinión del Congreso («sense of Congress»)",
+        "body": "Una disposición de «opinión del Congreso» (o del Senado, o de la Cámara) expresa un parecer. No cambia la ley ni obliga a nadie a hacer nada."
+      },
+      "amendment": {
+        "term": "Enmienda",
+        "body": "Una enmienda es una propuesta para cambiar el texto de un proyecto u otra medida quitando palabras, añadiéndolas o ambas cosas. Las enmiendas se pueden presentar en el comité o en el pleno, y cada una se aprueba o se rechaza por separado."
+      },
+      "rider": {
+        "term": "Cláusula añadida («rider»)",
+        "body": "Un «rider» es una disposición que se añade a un proyecto sobre un tema distinto. El término también se usa para una disposición de política dentro de un proyecto de gasto que cambia cómo funciona un programa, más allá de fijar sus fondos."
+      },
+      "companion-bill": {
+        "term": "Proyecto gemelo (companion bill)",
+        "body": "Un proyecto gemelo es un proyecto parecido o idéntico que se presenta en la otra cámara. Cada uno tiene su propio número, y cada cámara actúa sobre su propia versión."
+      },
+      "sponsor": {
+        "term": "Patrocinador",
+        "body": "El patrocinador es el miembro del Congreso que presenta un proyecto de ley. Cada proyecto tiene un solo patrocinador."
+      },
+      "cosponsor": {
+        "term": "Copatrocinador",
+        "body": "Un copatrocinador es un miembro que agrega formalmente su nombre a un proyecto que presentó otra persona. Un proyecto puede tener muchos copatrocinadores, y se pueden añadir más después de que se presenta."
+      },
+      "engrossed-bill": {
+        "term": "Texto aprobado por una cámara (engrossed bill)",
+        "body": "Un «engrossed bill» es la copia oficial de un proyecto tal como lo aprobó una cámara, con todas las enmiendas que adoptó, certificada por esa cámara. Es la versión que se envía a la otra cámara."
+      },
+      "enrolled-bill": {
+        "term": "Texto final (enrolled bill)",
+        "body": "Un «enrolled bill» es la copia final de un proyecto que las dos cámaras aprobaron con un texto idéntico. La firman autoridades de ambas cámaras y se envía al Presidente para que la firme o la vete."
+      },
+      "veto": {
+        "term": "Veto",
+        "body": "El veto es la negativa del Presidente a firmar un proyecto, que devuelve a la cámara donde se originó, por lo general con un mensaje que explica el motivo. El proyecto no se convierte en ley salvo que las dos cámaras superen el veto con dos tercios de los votos."
+      },
+      "pocket-veto": {
+        "term": "Veto de bolsillo",
+        "body": "Un veto de bolsillo ocurre cuando el Presidente no firma un proyecto en los 10 días siguientes a recibirlo (sin contar los domingos) y mientras tanto el Congreso ha levantado sus sesiones, de modo que el proyecto no puede ser devuelto. El proyecto no se convierte en ley, y el Congreso no puede superar ese veto."
+      },
+      "veto-override": {
+        "term": "Superar un veto (veto override)",
+        "body": "Superar un veto es que el Congreso convierta en ley un proyecto después de que el Presidente lo vetó. Se necesitan dos tercios de los votos tanto en la Cámara como en el Senado."
+      },
+      "enacted": {
+        "term": "Promulgado (se convirtió en ley)",
+        "body": "Un proyecto se promulga cuando se convierte en ley. Eso ocurre cuando las dos cámaras lo aprueban con el mismo texto y el Presidente lo firma, cuando el Presidente deja pasar 10 días (sin contar los domingos) sin actuar mientras el Congreso está en sesiones, o cuando el Congreso supera un veto."
+      },
+      "public-law": {
+        "term": "Ley pública",
+        "body": "Una ley pública es un proyecto o una resolución conjunta ya promulgados que se aplican a todo el país. Cada una recibe un número formado por el Congreso que la aprobó y su orden, como «Public Law 118-5»."
+      },
+      "private-law": {
+        "term": "Ley privada",
+        "body": "Una ley privada es un proyecto promulgado que se aplica solo a personas u organizaciones concretas, por ejemplo para resolver el caso de inmigración o el reclamo de una sola persona. Una ley pública, en cambio, se aplica a todo el país."
+      },
+      "us-code": {
+        "term": "Código de los Estados Unidos (U.S. Code)",
+        "body": "El Código de los Estados Unidos es la colección de las leyes federales generales y permanentes que están en vigor, ordenadas por tema en títulos numerados. Cuando un proyecto «enmienda la sección 101 del título 5», está cambiando el texto del Código."
+      },
+      "codify": {
+        "term": "Codificar",
+        "body": "Codificar algo es escribirlo en la ley federal. Los proyectos a menudo codifican una norma, un programa o una práctica que hasta entonces solo existía en un reglamento de una agencia, una orden ejecutiva o una decisión judicial, de modo que ya no se pueda cambiar sin una nueva ley."
+      },
+      "executive-order": {
+        "term": "Orden ejecutiva",
+        "body": "Una orden ejecutiva es una directiva escrita que usa el Presidente para dirigir el funcionamiento del poder ejecutivo. Se publica en el Federal Register. No es una ley aprobada por el Congreso, y un Presidente posterior puede cambiarla o revocarla."
+      },
+      "roll-call-vote": {
+        "term": "Votación nominal",
+        "body": "Una votación nominal registra cómo votó cada miembro, con su nombre. En el Senado, el secretario llama a cada senador por su nombre; la Cámara suele votar de forma electrónica. El registro muestra la posición de cada miembro."
+      },
+      "recorded-vote": {
+        "term": "Votación registrada",
+        "body": "Una votación registrada es cualquier votación en la que la posición de cada miembro queda anotada en el registro con su nombre, como en una votación nominal. En la Cámara, los miembros pueden exigirla si suficientes de ellos apoyan la petición. Una votación a viva voz no es una votación registrada."
+      },
+      "voice-vote": {
+        "term": "Votación a viva voz",
+        "body": "En una votación a viva voz, los miembros a favor responden en voz alta todos juntos, luego los que están en contra, y quien preside juzga qué lado se oyó más. No se registran nombres ni totales, así que el registro no muestra cómo votó cada miembro."
+      },
+      "yea-and-nay": {
+        "term": "Yea y Nay (sí y no)",
+        "body": "«Yea» significa sí y «nay» significa no. Son las respuestas que dan los miembros en una votación, y «the yeas and nays» es otro nombre para una votación nominal."
+      },
+      "present-vote": {
+        "term": "Votar «presente»",
+        "body": "Un miembro que responde «presente» en una votación cuenta como presente pero no toma partido por ningún lado. El voto se registra como presente, no como sí ni como no."
+      },
+      "not-voting": {
+        "term": "No votó (not voting)",
+        "body": "«No votó» significa que el registro no muestra ningún voto de ese miembro en esa cuestión. Puede que estuviera ausente o que decidiera no votar; el registro por sí solo no dice cuál de las dos."
+      },
+      "tie-vote": {
+        "term": "Empate",
+        "body": "Un empate es cuando hay el mismo número de votos a favor y en contra. En la Cámara, una cuestión que empata no se aprueba. En el Senado, el Vicepresidente, como presidente del Senado, puede emitir un voto para desempatar."
+      },
+      "simple-majority": {
+        "term": "Mayoría simple",
+        "body": "La mayoría simple es más de la mitad de los miembros que votan. Con todos los escaños ocupados y todos los miembros votando, son 218 en la Cámara y 51 en el Senado. La mayoría de las cuestiones en las dos cámaras se deciden por mayoría simple."
+      },
+      "supermajority": {
+        "term": "Mayoría calificada (dos tercios, tres quintos)",
+        "body": "Una mayoría calificada es un número de votos exigido mayor que la mayoría simple. Superar un veto, aprobar un proyecto por suspensión de las reglas en la Cámara, aprobar un tratado y proponer una enmienda constitucional requieren dos tercios. Cerrar el debate en la mayoría de los asuntos del Senado requiere tres quintos de todo el Senado, es decir, 60 votos."
+      },
+      "appropriations": {
+        "term": "Asignaciones (appropriations)",
+        "body": "Una asignación es una ley que permite a las agencias federales gastar dinero del Tesoro para fines determinados. El Congreso aprueba cada año fiscal proyectos de asignaciones regulares para financiar la mayor parte del trabajo diario del gobierno."
+      },
+      "authorization": {
+        "term": "Autorización",
+        "body": "Una autorización es una ley que crea o mantiene un programa y fija sus reglas, a menudo incluido cuánto dinero se puede gastar en él. No aporta el dinero en sí; para eso hace falta una asignación aparte. Una reautorización renueva un programa cuya autorización se está acabando."
+      },
+      "budget-resolution": {
+        "term": "Resolución presupuestaria",
+        "body": "La resolución presupuestaria es el plan presupuestario propio del Congreso, que fija totales de gasto e ingresos. Es una resolución concurrente, así que el Presidente no la firma y no se convierte en ley. Puede incluir instrucciones que inician el proceso de reconciliación."
+      },
+      "continuing-resolution": {
+        "term": "Resolución de continuidad (CR)",
+        "body": "Una resolución de continuidad es una ley de financiación temporal que mantiene funcionando a las agencias federales cuando no se han aprobado sus asignaciones regulares. Dura hasta una fecha que la propia resolución fija."
+      },
+      "omnibus": {
+        "term": "Proyectos ómnibus y minibús",
+        "body": "El Congreso tiene que aprobar cada año 12 proyectos de asignaciones regulares. Un ómnibus reúne varios de ellos, a menudo los 12, en un solo proyecto; un minibús reúne solo unos pocos. No hay una frontera oficial entre los dos términos."
+      },
+      "supplemental-appropriations": {
+        "term": "Asignaciones suplementarias",
+        "body": "Una asignación suplementaria es dinero adicional que se aprueba en una ley de asignaciones fuera de los proyectos anuales de financiación regulares. Por lo general es para una necesidad urgente, como la ayuda por desastres, que no puede esperar al siguiente proyecto regular."
+      },
+      "fiscal-year": {
+        "term": "Año fiscal",
+        "body": "El año fiscal federal es el año presupuestario del gobierno. Va del 1 de octubre al 30 de septiembre y lleva el nombre del año calendario en que termina. El Congreso financia al gobierno un año fiscal a la vez."
+      },
+      "budget-authority": {
+        "term": "Autoridad presupuestaria",
+        "body": "La autoridad presupuestaria es la facultad legal que el Congreso da a una agencia para comprometer dinero federal, por ejemplo firmando contratos u otorgando subvenciones. Los pagos reales, llamados desembolsos, pueden llegar después, a veces años después."
+      },
+      "mandatory-spending": {
+        "term": "Gasto obligatorio",
+        "body": "El gasto obligatorio, también llamado gasto directo, es el dinero que las leyes vigentes obligan al gobierno a pagar, como los beneficios del Seguro Social y de Medicare. No necesita un nuevo voto del Congreso cada año y representa casi dos tercios del gasto federal."
+      },
+      "discretionary-spending": {
+        "term": "Gasto discrecional",
+        "body": "El gasto discrecional es la parte del presupuesto federal que el Congreso fija cada año mediante proyectos de asignaciones, como los fondos para defensa, educación y transporte. Si el Congreso no actúa, esos fondos se acaban."
+      },
+      "entitlement": {
+        "term": "Programa de prestaciones garantizadas (entitlement)",
+        "body": "Un programa de prestaciones garantizadas paga beneficios a todas las personas que cumplen las reglas fijadas por la ley, como el Seguro Social y Medicare. Su gasto es obligatorio: depende de cuántas personas califican, no de un voto anual."
+      },
+      "deficit": {
+        "term": "Déficit presupuestario",
+        "body": "El déficit presupuestario es la cantidad en que el gasto federal supera a los ingresos federales en un año fiscal. El gobierno lo cubre pidiendo prestado, lo que aumenta la deuda nacional. Lo contrario es un superávit."
+      },
+      "national-debt": {
+        "term": "Deuda nacional",
+        "body": "La deuda nacional es el total que el gobierno federal ha pedido prestado para cubrir déficits pasados, más los intereses que debe. Cada año con déficit la aumenta."
+      },
+      "debt-limit": {
+        "term": "Límite de deuda (techo de deuda)",
+        "body": "El límite de deuda es la cantidad total que la ley permite pedir prestada al gobierno federal para pagar obligaciones que ya tiene, como beneficios, salarios e intereses. Aumentarlo o suspenderlo no aprueba gastos nuevos. Solo el Congreso puede cambiarlo."
+      },
+      "government-shutdown": {
+        "term": "Cierre del gobierno",
+        "body": "Un cierre del gobierno ocurre cuando se acaba la financiación porque no se ha promulgado una nueva ley de asignaciones ni una resolución de continuidad. Las agencias deben suspender el trabajo que se paga con los fondos anuales, salvo las actividades que la ley permite continuar. Muchos empleados federales quedan en licencia sin sueldo hasta que se restablecen los fondos."
+      },
+      "cbo-cost-estimate": {
+        "term": "Estimación de costos de la CBO",
+        "body": "La Oficina de Presupuesto del Congreso (CBO) es la oficina presupuestaria del Congreso. Para la mayoría de los proyectos que un comité envía al pleno, estima cuánto cambiarían el gasto y los ingresos federales en los próximos años. A menudo se llama a esa estimación la «puntuación» del proyecto."
+      },
+      "sequestration": {
+        "term": "Secuestro presupuestario (sequestration)",
+        "body": "El secuestro presupuestario es un recorte automático y general del gasto federal, que exige una ley presupuestaria cuando no se cumple un límite o una meta de gasto. Cada cuenta afectada se recorta en el mismo porcentaje."
+      },
+      "earmark": {
+        "term": "Asignación dirigida (earmark)",
+        "body": "Un «earmark» es dinero de un proyecto de gasto reservado para un proyecto o un lugar concreto a pedido de un miembro del Congreso. Según las reglas de la Cámara, un proyecto o su informe deben enumerar sus «earmarks» y el miembro que pidió cada uno. El Senado los llama gasto dirigido por el Congreso."
+      },
+      "rescission": {
+        "term": "Rescisión",
+        "body": "Una rescisión es una ley que cancela dinero que el Congreso ya había aprobado, antes de que se gaste. El Presidente puede proponer rescisiones, pero solo el Congreso puede aprobarlas; si no actúa dentro de 45 días de sesión continua, el dinero debe quedar disponible para gastarse."
+      },
+      "tax-credit": {
+        "term": "Crédito fiscal",
+        "body": "Un crédito fiscal es una cantidad que se resta directamente del impuesto que debe una persona o empresa. Un crédito reembolsable puede devolver dinero aunque no se deba ningún impuesto. Un crédito es distinto de una deducción, que reduce el ingreso sobre el que se calcula el impuesto."
+      },
+      "tax-deduction": {
+        "term": "Deducción fiscal",
+        "body": "Una deducción fiscal es una cantidad que se resta del ingreso antes de calcular el impuesto, de modo que se paga impuesto sobre menos ingreso. Reduce el impuesto adeudado menos de lo que lo haría un crédito del mismo monto."
+      },
+      "nomination": {
+        "term": "Nominación",
+        "body": "Una nominación es la elección que hace el Presidente de una persona para un cargo federal que necesita la aprobación del Senado, como un secretario del gabinete, un embajador o un juez federal. El Senado la confirma o la rechaza; la Cámara no vota."
+      },
+      "advice-and-consent": {
+        "term": "Consejo y consentimiento",
+        "body": "El consejo y consentimiento es la facultad que la Constitución da al Senado para aprobar o rechazar las nominaciones y los tratados del Presidente. Las nominaciones necesitan mayoría simple; los tratados, dos tercios de los senadores presentes."
+      },
+      "confirmation": {
+        "term": "Confirmación",
+        "body": "La confirmación es la aprobación de una nominación por parte del Senado, por lo general tras la revisión de un comité y una votación del pleno. Una vez confirmada, la persona nominada puede ser nombrada en el cargo."
+      },
+      "returned-nomination": {
+        "term": "Devuelta al Presidente",
+        "body": "Según las reglas del Senado, una nominación que no ha sido confirmada ni rechazada se devuelve al Presidente cuando el Senado levanta sus sesiones o hace un receso de más de 30 días, o cuando termina un periodo de sesiones. El Senado no puede volver a considerarla salvo que el Presidente la envíe de nuevo."
+      },
+      "treaty": {
+        "term": "Tratado",
+        "body": "Un tratado es un acuerdo formal y obligatorio entre Estados Unidos y una o más naciones. Lo negocia el Presidente y necesita la aprobación de dos tercios de los senadores presentes. Una vez en vigor, tiene el peso de una ley federal."
+      },
+      "resolution-of-ratification": {
+        "term": "Resolución de ratificación",
+        "body": "El Senado no ratifica los tratados por sí mismo. Vota una resolución de ratificación, que da su consentimiento; si están de acuerdo dos tercios de los senadores presentes, el Presidente puede entonces ratificar el tratado con las otras naciones."
+      },
+      "impeachment": {
+        "term": "Juicio político (impeachment)",
+        "body": "El juicio político es la forma en que el Congreso puede acusar y juzgar a un funcionario federal, incluidos el Presidente y los jueces federales. La Cámara presenta los cargos por mayoría simple; luego el Senado celebra un juicio, y para destituir al funcionario se necesitan dos tercios de los votos a favor de la condena."
+      },
+      "congress": {
+        "term": "Un Congreso",
+        "body": "Un Congreso es el periodo de dos años de la Cámara y el Senado entre elecciones, numerado en orden desde el primero, como el 119.º Congreso. Cuando un Congreso termina, los proyectos que no se convirtieron en ley caducan y hay que presentarlos de nuevo; los tratados son la excepción."
+      },
+      "speaker-of-the-house": {
+        "term": "Presidente de la Cámara (Speaker)",
+        "body": "El Speaker es quien dirige la Cámara de Representantes, elegido por sus miembros. Preside la Cámara, decide quién toma la palabra y tiene un papel importante en qué proyectos llegan al pleno."
+      },
+      "majority-leader": {
+        "term": "Líder de la mayoría",
+        "body": "El líder de la mayoría es el líder en el pleno elegido por el partido con más escaños en una cámara. En el Senado, decide en gran parte qué asuntos toma el Senado y cuándo."
+      },
+      "minority-leader": {
+        "term": "Líder de la minoría",
+        "body": "El líder de la minoría es el líder en el pleno elegido por el partido con menos escaños en una cámara. Habla por ese partido en el pleno y negocia con la mayoría sobre el calendario de trabajo."
+      },
+      "whip": {
+        "term": "Coordinador de bancada («whip»)",
+        "body": "El «whip» es un líder de partido que ayuda al líder en el pleno contando votos y reuniendo el apoyo de los miembros de su partido en las cuestiones importantes. Cada partido tiene uno en cada cámara."
+      },
+      "president-pro-tempore": {
+        "term": "Presidente pro tempore",
+        "body": "El presidente pro tempore es el senador elegido para presidir el Senado cuando no está el Vicepresidente. Por costumbre es el senador del partido de la mayoría con más tiempo de servicio continuo. En la práctica, otros senadores suelen turnarse para presidir."
+      },
+      "presiding-officer": {
+        "term": "Quien preside (presiding officer)",
+        "body": "Quien preside dirige la sesión de una cámara: da la palabra a los miembros, mantiene el orden y decide sobre las cuestiones de orden. En el Senado, a menudo ocupa la presidencia un senador del partido de la mayoría en lugar del Vicepresidente o del presidente pro tempore."
+      },
+      "president-of-the-senate": {
+        "term": "Presidente del Senado",
+        "body": "El Vicepresidente de Estados Unidos es también el presidente del Senado. Puede presidir el Senado y solo puede votar para desempatar."
+      },
+      "parliamentarian": {
+        "term": "Parlamentario (asesor de reglas)",
+        "body": "El parlamentario es el asesor de la cámara sobre cómo interpretar sus reglas y procedimientos, y asesora a quien preside durante el debate. También ayuda a decidir a qué comité se remite un proyecto."
+      },
+      "caucus": {
+        "term": "Caucus (grupo de legisladores)",
+        "body": "Un caucus es un grupo informal de miembros del Congreso que comparten un interés, como una región o un tema, y se reúnen para tratarlo. La palabra también se usa para la organización de un partido que reúne a todos sus miembros en una cámara."
+      },
+      "congressional-district": {
+        "term": "Distrito congresional",
+        "body": "Un distrito congresional es la zona que representa un miembro de la Cámara. Cada estado se divide en tantos distritos como escaños tiene en la Cámara, y cada distrito elige a un representante cada dos años."
+      },
+      "at-large": {
+        "term": "Distrito único («at-large»)",
+        "body": "Un estado con un solo escaño en la Cámara elige a su representante «at large», es decir, con los votos de todo el estado y no de un distrito. Cada estado tiene al menos un representante, por pequeña que sea su población."
+      },
+      "delegate": {
+        "term": "Delegado o delegada",
+        "body": "Los delegados representan en la Cámara al Distrito de Columbia, Guam, las Islas Vírgenes de EE. UU., Samoa Estadounidense y las Islas Marianas del Norte. Pueden presentar proyectos, formar parte de comités y votar en ellos, y hablar en el pleno, pero no pueden votar cuando la Cámara se reúne en pleno, que es donde se aprueban los proyectos."
+      },
+      "resident-commissioner": {
+        "term": "Comisionado residente",
+        "body": "El comisionado residente representa a Puerto Rico en la Cámara. Como los delegados, puede formar parte de comités y hablar en el pleno, pero no puede votar cuando la Cámara se reúne en pleno, que es donde se aprueban los proyectos."
+      },
+      "apportionment": {
+        "term": "Reparto de escaños (apportionment)",
+        "body": "El reparto de escaños es la división de los 435 escaños de la Cámara entre los estados según su población. Se hace después de cada censo, cada 10 años, de modo que el número de escaños de un estado puede cambiar según cambie su población."
+      },
+      "redistricting": {
+        "term": "Redistritación",
+        "body": "La redistritación es volver a trazar los límites de los distritos del Congreso y de las legislaturas estatales. Por lo general ocurre después de cada censo, con los datos de población que la Oficina del Censo entrega a los estados."
+      },
+      "special-election": {
+        "term": "Elección especial",
+        "body": "Una elección especial cubre un escaño del Congreso que quedó vacío antes de que terminara el periodo. Un escaño de la Cámara sigue vacío hasta que los votantes lo cubren en una elección especial. Para un escaño del Senado, el gobernador puede nombrar a alguien que ocupe el cargo hasta la elección especial, si la ley del estado lo permite."
+      },
+      "vacancy": {
+        "term": "Escaño vacante",
+        "body": "Un escaño está vacante cuando nadie lo ocupa, por ejemplo después de que un miembro fallece o renuncia. Un escaño vacante no vota hasta que alguien nuevo jura el cargo."
+      },
+      "member-elect": {
+        "term": "Miembro electo",
+        "body": "Un miembro electo ganó la elección para un escaño pero todavía no ha prestado juramento. Se convierte en miembro, con derecho a voto, cuando jura el cargo."
+      },
+      "senate-class": {
+        "term": "Clase del Senado",
+        "body": "Los senadores cumplen mandatos de seis años, divididos en tres clases para que cada dos años se elija aproximadamente un tercio del Senado. Los dos senadores de un mismo estado nunca están en la misma clase."
+      },
+      "inspector-general": {
+        "term": "Inspector general",
+        "body": "Un inspector general es un funcionario independiente dentro de una agencia federal que audita e investiga sus programas para detectar despilfarro, fraude y abuso. Los inspectores generales informan al jefe de la agencia y al Congreso."
+      },
+      "gao": {
+        "term": "GAO (Oficina de Rendición de Cuentas del Gobierno)",
+        "body": "La Oficina de Rendición de Cuentas del Gobierno (GAO) es una oficina federal, independiente de los departamentos del poder ejecutivo, que investiga cómo se recibe, se gasta y se usa el dinero público. La dirige el Contralor General. Los proyectos a menudo le piden a la GAO que estudie un programa e informe."
       }
     }
   },
@@ -1130,7 +1631,7 @@
     "dayEmpty": "Nada en el registro que tenemos para este día: ninguna votación nominal sobre un proyecto que seguimos, y ningún proyecto cuya última acción tenga esta fecha.",
     "votesHeading": "Votaciones nominales",
     "voteRoll": "{chamber}, votación nominal {roll}",
-    "tally": "A favor {yea} · En contra {nay} · Presente {present} · No votaron {notVoting}",
+    "tally": "<yeaTerm>A favor</yeaTerm> {yea} · En contra {nay} · <presentTerm>Presente</presentTerm> {present} · <notVotingTerm>No votaron</notVotingTerm> {notVoting}",
     "voteSource": "Recuento oficial",
     "movedHeading": "Proyectos cuya última acción tiene esta fecha",
     "movedMore": "{count, plural, one {# proyecto más tiene} other {# proyectos más tienen}} una última acción con esta fecha.",

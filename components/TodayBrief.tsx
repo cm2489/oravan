@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
 import { ArrowLeft, ArrowRight, ExternalLink } from 'lucide-react';
 import { getFormatter, getTranslations } from 'next-intl/server';
-import { glossaryTag } from '@/components/glossary-tags';
+import { glossaryTag, glossaryTagOnce, glossify } from '@/components/glossary-tags';
+import type { GlossaryTermId } from '@/lib/glossary';
 import { Link } from '@/i18n/navigation';
 import type { Brief, BriefChamber, BriefScheduleItem } from '@/lib/today';
 
@@ -200,17 +201,32 @@ export async function TodayBrief({ brief, locale }: { brief: Brief; locale: stri
             <div className="mt-6" data-block="votes">
               <h3 className="text-md font-bold text-ink">{t('votesHeading')}</h3>
               <ul className="mt-3 grid gap-4">
-                {d.rollCalls.map((r) => (
+                {d.rollCalls.map((r) => {
+                  // One roll call is one section for the glossary: the
+                  // record's English lines are matched as English on /es
+                  // too, and the tally's labels are wired by name.
+                  const seen = new Set<GlossaryTermId>();
+                  return (
                   <li key={r.id} className="max-w-read border-t border-line pt-3">
                     <p className="text-xs font-semibold text-ink-2">
                       {t('voteRoll', { chamber: chamberName(r.chamber), roll: r.roll })}
                     </p>
                     <p className="mt-1 text-md text-ink">
-                      <Verbatim>{r.question}</Verbatim>
+                      <Verbatim>{glossify(r.question, 'en', seen)}</Verbatim>
                       {' — '}
-                      <Verbatim className="font-bold">{r.result}</Verbatim>
+                      <Verbatim className="font-bold">{glossify(r.result, 'en', seen)}</Verbatim>
                     </p>
-                    <p className="mt-1 text-sm text-ink-2 tabular-nums">{t('tally', { ...r.totals })}</p>
+                    {/* The tally's labels are wired by name in both
+                        languages ("A favor" is no phrase a matcher could
+                        safely find), and share the card's section. */}
+                    <p className="mt-1 text-sm text-ink-2 tabular-nums" data-brief-tally="">
+                      {t.rich('tally', {
+                        ...r.totals,
+                        yeaTerm: glossaryTagOnce('yea-and-nay', seen),
+                        presentTerm: glossaryTagOnce('present-vote', seen),
+                        notVotingTerm: glossaryTagOnce('not-voting', seen),
+                      })}
+                    </p>
                     <p className="mt-1 flex flex-wrap items-center gap-x-4">
                       <Link href={`/bills/${r.bill.slug}`} className={`inline-flex min-h-11 items-center text-sm ${LINK}`}>
                         {r.bill.citation}
@@ -224,7 +240,8 @@ export async function TodayBrief({ brief, locale }: { brief: Brief; locale: stri
                       <Verbatim>{r.bill.title}</Verbatim>
                     </p>
                   </li>
-                ))}
+                  );
+                })}
               </ul>
             </div>
           )}

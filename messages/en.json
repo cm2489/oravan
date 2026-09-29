@@ -1058,11 +1058,24 @@
     "dismiss": "No volver a mostrar este aviso"
   },
   "glossary": {
-    "title": "Procedure, in plain words",
-    "metaDescription": "Plain-words explainers for the procedural terms that turn up in the official congressional record — cloture, unanimous consent, motions to proceed, the calendars, and more.",
-    "intro": "Congress runs on a vocabulary that nothing explains while you read it. These are the procedural terms that show up most often in the official record and on this site — what each one actually does, and what it does not tell you.",
-    "scopeNote": "Every entry describes the mechanics only. None of them says who benefits, who wins, or when anything will be voted on.",
-    "indexLabel": "Jump to a term",
+    "title": "Congress, in plain words",
+    "metaDescription": "Plain-words explainers for the terms that turn up in the official congressional record and on this site — cloture, unanimous consent, appropriations, roll call votes, congressional districts, and more.",
+    "intro": "Congress runs on a vocabulary that nothing explains while you read it. These are the terms that show up in the official record and on this site — what each one actually does, and what it does not tell you. Where a term on the site is underlined with dots, hover over it or tap it to read its entry without leaving the page.",
+    "scopeNote": "Every entry describes the mechanics only, and is based on the official source linked under it. None of them says who benefits, who wins, or when anything will be voted on.",
+    "indexLabel": "Jump to a section",
+    "sourceLabel": "Source: {site}",
+    "aiNote": "Definition drafted by AI from official sources",
+    "pageAiNote": "Every definition on this page is drafted by AI from official sources",
+    "aiPolicyLink": "Oravan's AI-content policy",
+    "categories": {
+      "floor": "On the floor",
+      "committees": "Committees",
+      "lawmaking": "Bills, resolutions and laws",
+      "votes": "Votes",
+      "budget": "Budget and spending",
+      "nominations": "Nominations, treaties and impeachment",
+      "people": "Members, seats and offices"
+    },
     "terms": {
       "cloture": {
         "term": "Cloture",
@@ -1111,6 +1124,494 @@
       "pro-forma-session": {
         "term": "Pro forma session",
         "body": "A pro forma session is a meeting a chamber holds to satisfy the constitutional rule that neither chamber may break for more than three days without the other's consent. It runs a minute or two: a presiding officer gavels in, no legislative business is conducted, and the chamber gavels out. A bill cannot be called up at one, and no measure moves on the floor because of it. The chamber's own Daily Digest prints the program for each meeting, so a pro forma one says so in the record."
+      },
+      "filibuster": {
+        "term": "Filibuster",
+        "body": "A filibuster is an effort to delay or prevent a Senate vote by talking at length, offering many motions, or using other delaying tactics. The Senate can end one with cloture, which on most bills takes 60 votes."
+      },
+      "hold": {
+        "term": "Hold (Senate)",
+        "body": "A hold is an informal notice from a senator to party leaders that the senator does not want a bill or nomination to come to the floor. It is a practice, not a rule, and it is not a vote."
+      },
+      "quorum": {
+        "term": "Quorum",
+        "body": "A quorum is the number of members who must be present for a chamber to do business. The Constitution sets it at a majority: 51 senators or 218 representatives when every seat is filled. A quorum call is a roll call to check whether enough members are there, and it is often used simply to pause the proceedings."
+      },
+      "recess": {
+        "term": "Recess",
+        "body": "A recess is a break in a chamber’s meeting. It can last a few hours, overnight, or several weeks, such as over a holiday. Neither chamber may break for more than three days without the other chamber’s consent."
+      },
+      "adjournment": {
+        "term": "Adjournment",
+        "body": "To adjourn is to end a day’s meeting of the House or Senate, usually naming when the chamber will meet next. Adjourning ends the meeting; it does not end the bills that are pending."
+      },
+      "adjournment-sine-die": {
+        "term": "Adjournment sine die",
+        "body": "An adjournment sine die is the final adjournment that ends a session of Congress. Sine die is Latin for “without a day”: no day is set to meet again in that session."
+      },
+      "session": {
+        "term": "Session of Congress",
+        "body": "A session is the period in which Congress meets and does business. Each two-year Congress usually has two sessions, each lasting about a year. The word also means a single day’s meeting of the House or Senate."
+      },
+      "lame-duck-session": {
+        "term": "Lame-duck session",
+        "body": "A lame-duck session is the time Congress meets after a general election and before the new Congress begins. It gets its name because some of the members taking part will not be returning."
+      },
+      "legislative-day": {
+        "term": "Legislative day",
+        "body": "A legislative day runs from the time a chamber convenes until it adjourns. It is usually one calendar day, but if the Senate recesses instead of adjourning, one legislative day can stretch over several days or even weeks. Some rules count legislative days, not calendar days."
+      },
+      "floor": {
+        "term": "The floor",
+        "body": "The floor is the chamber where the full House or Senate meets. Action “on the floor” is action by the whole chamber, as opposed to a committee. A member who is speaking there “has the floor.”"
+      },
+      "point-of-order": {
+        "term": "Point of order",
+        "body": "A point of order is a claim, made from the floor, that the chamber is breaking one of its own rules. The presiding officer rules on it, and members can appeal that ruling to the full chamber."
+      },
+      "germaneness": {
+        "term": "Germane",
+        "body": "An amendment is germane when it is on the same subject as the bill it would change. The House generally requires amendments to be germane. The Senate allows amendments on other subjects in most situations."
+      },
+      "amendment-tree": {
+        "term": "Amendment tree",
+        "body": "The amendment tree is a way of picturing how many amendments the Senate can have pending on a bill at once, and in what order. “Filling the tree” means offering every amendment the tree allows, so no other senator can offer one until those are dealt with."
+      },
+      "motion-to-table": {
+        "term": "Motion to table",
+        "body": "A motion to table asks the chamber to set a pending question aside for good. It is decided without debate. Agreeing to table an amendment or motion has the same effect as voting it down."
+      },
+      "motion-to-reconsider": {
+        "term": "Motion to reconsider",
+        "body": "A motion to reconsider asks the chamber to take a vote again. Only a member who voted on the prevailing side can make it, and only once for each vote. It is usually followed right away by a motion to table it, which locks in the result."
+      },
+      "suspension-of-the-rules": {
+        "term": "Suspension of the rules (House)",
+        "body": "Suspension of the rules is a fast way for the House to pass a bill. Debate is limited to 40 minutes, no amendments can be offered from the floor, and passing the bill takes a two-thirds vote of the members voting. The House uses it mostly for bills with broad support."
+      },
+      "discharge-petition": {
+        "term": "Discharge petition (House)",
+        "body": "A discharge petition lets House members bring a bill to the floor after it has sat in committee for at least 30 legislative days. If a majority of the House — 218 members when every seat is filled — sign it, the motion goes on a special calendar and can later be called up for a vote. The names of the signers are public."
+      },
+      "special-rule": {
+        "term": "Special rule (House)",
+        "body": "A special rule is a resolution that sets the terms for debating one bill on the House floor: how long debate lasts and which amendments, if any, may be offered. The Rules Committee writes it, and the full House votes on the rule before it takes up the bill. An open rule allows any amendment that follows House rules; a closed rule allows none beyond the committee’s own."
+      },
+      "rules-committee": {
+        "term": "Rules Committee (House)",
+        "body": "The House Rules Committee decides how most major bills reach the House floor. It writes the special rule for each one, setting the time for debate and which amendments can be offered. The full House then votes on that rule."
+      },
+      "motion-to-recommit": {
+        "term": "Motion to recommit (House)",
+        "body": "A motion to recommit asks the House to send a bill back to committee instead of passing it. It comes just before the final passage vote, and a member opposed to the bill gets first chance to offer it. Under current House rules it cannot carry amendments."
+      },
+      "previous-question": {
+        "term": "Previous question (House)",
+        "body": "In the House, “ordering the previous question” ends debate and brings the House straight to a vote on the matter in front of it. The motion to order it is itself decided without debate."
+      },
+      "committee-of-the-whole": {
+        "term": "Committee of the Whole (House)",
+        "body": "The Committee of the Whole is the House meeting in a different form, with every representative as a member, to debate and amend bills from the Union Calendar. It has simpler rules than the full House, such as a quorum of 100. Delegates and the Resident Commissioner can vote in it."
+      },
+      "house-calendar": {
+        "term": "The House Calendar",
+        "body": "The House Calendar is where the House lists public bills and resolutions reported by committee that do not raise or spend money. Bills that do raise or spend money go on the Union Calendar instead. Being on a calendar makes a bill eligible for the floor; it schedules nothing."
+      },
+      "executive-session": {
+        "term": "Executive session (Senate)",
+        "body": "The Senate is in executive session when it works on nominations and treaties, which come from the President. Work on bills and resolutions happens in legislative session. The Senate can switch between the two in a single day."
+      },
+      "vote-a-rama": {
+        "term": "Vote-a-rama",
+        "body": "A vote-a-rama is a long series of back-to-back Senate votes on amendments. It happens on a budget resolution or a reconciliation bill: once debate time runs out, senators can still offer amendments, and each one gets a vote."
+      },
+      "congressional-record": {
+        "term": "Congressional Record",
+        "body": "The Congressional Record is the official, nearly word-for-word account of what is said and done on the House and Senate floors. It is printed for each day either chamber meets."
+      },
+      "daily-digest": {
+        "term": "Daily Digest",
+        "body": "The Daily Digest is the section at the back of each day’s Congressional Record. It summarizes what happened on the floor and in committees that day and works as a table of contents for the issue. It also lists when each chamber meets next."
+      },
+      "committee": {
+        "term": "Committee",
+        "body": "A committee is a smaller group of members that does much of Congress’s detailed work. Committees study bills, hold hearings and investigations, and decide which bills to send to the full chamber."
+      },
+      "subcommittee": {
+        "term": "Subcommittee",
+        "body": "A subcommittee is a smaller part of a committee that handles one slice of its work. It can hold hearings and work on a bill before the full committee takes it up."
+      },
+      "standing-committee": {
+        "term": "Standing committee",
+        "body": "A standing committee is a permanent committee set up under a chamber’s rules to handle one subject area, such as agriculture or armed services. Bills on that subject are usually referred to it."
+      },
+      "select-committee": {
+        "term": "Select or special committee",
+        "body": "A select or special committee is set up by a resolution to study or investigate one issue. It usually lasts a limited time and often cannot report bills to the chamber."
+      },
+      "joint-committee": {
+        "term": "Joint committee",
+        "body": "A joint committee has members from both the House and the Senate. Joint committees usually focus on a narrow area and generally cannot report bills to either chamber."
+      },
+      "hearing": {
+        "term": "Hearing",
+        "body": "A hearing is a committee meeting where members hear testimony and ask questions. Committees hold hearings on bills, on how agencies and programs are working, on investigations, and on nominations and treaties. A hearing is not a vote."
+      },
+      "markup": {
+        "term": "Markup",
+        "body": "A markup is the committee meeting where members debate a bill, change its text through amendments, and vote on whether to send it to the full chamber. Subcommittees hold markups too."
+      },
+      "referral": {
+        "term": "Referred to committee",
+        "body": "When a bill is introduced, it is referred to the committee that handles its main subject. A bill can be sent to more than one committee. Being referred is routine and says nothing about whether the committee will act on it."
+      },
+      "committee-report": {
+        "term": "Committee report",
+        "body": "A committee report is a document a committee writes to explain a bill it is sending to the full chamber: what the bill does, why, and often what it would cost. Members who disagree can add their own views to it."
+      },
+      "ranking-member": {
+        "term": "Ranking member",
+        "body": "The ranking member is the highest-ranking member of the minority party on a committee or subcommittee, usually the one who has served on it longest. The chair comes from the majority party."
+      },
+      "conference-committee": {
+        "term": "Conference committee",
+        "body": "A conference committee is a temporary group of House and Senate members formed to settle the differences between the two chambers’ versions of a bill. Its members are called conferees. What they agree on goes back to both chambers for a vote."
+      },
+      "conference-report": {
+        "term": "Conference report",
+        "body": "A conference report is the text the House and Senate negotiators agreed on, with a statement explaining how they settled each difference. Each chamber then votes on it as a whole."
+      },
+      "oversight": {
+        "term": "Oversight",
+        "body": "Oversight is Congress checking how federal agencies and programs are run and how they spend money. Committees do it through hearings, reports, and investigations."
+      },
+      "bill": {
+        "term": "Bill",
+        "body": "A bill is a proposal for a new law, or for changing or repealing an existing one. House bills are numbered H.R. and Senate bills S. A bill has to pass both chambers in the same form and be signed by the President, or passed over a veto, to become law."
+      },
+      "measure": {
+        "term": "Measure",
+        "body": "“Measure” is the general word for any bill or resolution the House or Senate acts on. When a record says “the measure,” it can mean either."
+      },
+      "act": {
+        "term": "Act",
+        "body": "An act is a bill that has passed one or both chambers. The word usually means a bill that passed both in the same form and became law, either signed by the President or passed over a veto. Many bills are titled “Act” from the day they are introduced."
+      },
+      "joint-resolution": {
+        "term": "Joint resolution",
+        "body": "A joint resolution works like a bill: it has to pass both chambers and be signed by the President to become law. Congress uses it for things like continuing funding, approving or disapproving actions, and proposing constitutional amendments. A proposed amendment skips the President: it needs two-thirds of each chamber and ratification by three-quarters of the states."
+      },
+      "concurrent-resolution": {
+        "term": "Concurrent resolution",
+        "body": "A concurrent resolution is passed by both chambers but is not sent to the President and does not have the force of law. Congress uses it for matters that concern both chambers, such as the congressional budget resolution."
+      },
+      "simple-resolution": {
+        "term": "Simple resolution",
+        "body": "A simple resolution is passed by one chamber only. It deals with that chamber’s own business or states its opinion, and it does not have the force of law."
+      },
+      "sense-of-congress": {
+        "term": "Sense of Congress",
+        "body": "A “sense of Congress” (or “sense of the Senate” or “of the House”) provision states an opinion. It does not change the law or require anyone to do anything."
+      },
+      "amendment": {
+        "term": "Amendment",
+        "body": "An amendment is a proposal to change the text of a bill or other measure by striking words, adding words, or both. Amendments can be offered in committee or on the floor, and each one is agreed to or rejected separately."
+      },
+      "rider": {
+        "term": "Rider",
+        "body": "A rider is a provision added to a bill on a different subject. The term is also used for a policy provision in a spending bill that changes how a program works, beyond setting its funding."
+      },
+      "companion-bill": {
+        "term": "Companion bill",
+        "body": "A companion bill is a similar or identical bill introduced in the other chamber. Each one has its own number, and each chamber acts on its own version."
+      },
+      "sponsor": {
+        "term": "Sponsor",
+        "body": "The sponsor is the member of Congress who introduces a bill. There is only one sponsor per bill."
+      },
+      "cosponsor": {
+        "term": "Cosponsor",
+        "body": "A cosponsor is a member who formally adds their name to a bill someone else introduced. A bill can have many cosponsors, and more can be added after it is introduced."
+      },
+      "engrossed-bill": {
+        "term": "Engrossed bill",
+        "body": "An engrossed bill is the official copy of a bill as passed by one chamber, with every amendment it adopted, certified by that chamber. It is the version sent to the other chamber."
+      },
+      "enrolled-bill": {
+        "term": "Enrolled bill",
+        "body": "An enrolled bill is the final copy of a bill that both chambers passed in identical form. It is signed by officers of both chambers and sent to the President to sign or veto."
+      },
+      "veto": {
+        "term": "Veto",
+        "body": "A veto is the President’s refusal to sign a bill, returning it to the chamber it started in, usually with a message explaining why. The bill does not become law unless both chambers override the veto by a two-thirds vote."
+      },
+      "pocket-veto": {
+        "term": "Pocket veto",
+        "body": "A pocket veto happens when the President does not sign a bill within 10 days of receiving it (not counting Sundays) and Congress has adjourned in the meantime, so the bill cannot be returned. The bill does not become law, and Congress cannot override it."
+      },
+      "veto-override": {
+        "term": "Veto override",
+        "body": "A veto override is Congress passing a bill into law after the President vetoed it. It takes a two-thirds vote in both the House and the Senate."
+      },
+      "enacted": {
+        "term": "Enacted (became law)",
+        "body": "A bill is enacted when it becomes law. That happens when both chambers pass it in identical form and the President signs it, when the President lets 10 days pass (not counting Sundays) without acting while Congress is in session, or when Congress overrides a veto."
+      },
+      "public-law": {
+        "term": "Public law",
+        "body": "A public law is an enacted bill or joint resolution that applies to the nation as a whole. Each one gets a number made of the Congress that passed it and its order, such as “Public Law 118-5.”"
+      },
+      "private-law": {
+        "term": "Private law",
+        "body": "A private law is an enacted bill that applies only to specific people or organizations, such as relief for one person in an immigration or claims case. A public law, by contrast, applies to the nation as a whole."
+      },
+      "us-code": {
+        "term": "U.S. Code",
+        "body": "The United States Code is the collection of the country’s general and permanent federal laws currently in force, organized by subject into numbered titles. When a bill “amends section 101 of title 5,” it is changing the text of the Code."
+      },
+      "codify": {
+        "term": "Codify",
+        "body": "To codify something is to write it into federal law. Bills often codify a rule, program, or practice that until then existed only in an agency regulation, an executive order, or a court decision, so it can no longer be changed without a new law."
+      },
+      "executive-order": {
+        "term": "Executive order",
+        "body": "An executive order is a written directive the President uses to manage how the executive branch operates. It is published in the Federal Register. It is not a law passed by Congress, and a later President can change or revoke it."
+      },
+      "roll-call-vote": {
+        "term": "Roll call vote",
+        "body": "A roll call vote records how each member voted, by name. In the Senate the clerk calls each senator’s name; the House usually votes electronically. The record shows every member’s position."
+      },
+      "recorded-vote": {
+        "term": "Recorded vote",
+        "body": "A recorded vote is any vote where each member’s position is written into the record by name, as in a roll call vote. In the House, members can demand one if enough of them support the request. A voice vote is not a recorded vote."
+      },
+      "voice-vote": {
+        "term": "Voice vote",
+        "body": "In a voice vote, members in favor call out together, then members against, and the presiding officer judges which side was louder. No names or totals are recorded, so the record does not show how any individual member voted."
+      },
+      "yea-and-nay": {
+        "term": "Yea and Nay",
+        "body": "“Yea” means yes and “nay” means no. They are the answers members give on a vote, and “the yeas and nays” is another name for a roll call vote."
+      },
+      "present-vote": {
+        "term": "Voting “present”",
+        "body": "A member who answers “present” on a vote is counted as there but takes neither side. The vote is recorded as present, not as yes or no."
+      },
+      "not-voting": {
+        "term": "Not voting",
+        "body": "“Not voting” means the record shows no vote from that member on that question. The member may have been absent or may have chosen not to vote; the record alone does not say which."
+      },
+      "tie-vote": {
+        "term": "Tie vote",
+        "body": "A tie vote is an equal number of yes and no votes. In the House, a question that ties fails. In the Senate, the Vice President, as President of the Senate, may cast a vote to break the tie."
+      },
+      "simple-majority": {
+        "term": "Simple majority",
+        "body": "A simple majority is more than half of the members who vote. With every seat filled and every member voting, that is 218 in the House and 51 in the Senate. Most questions in both chambers are decided by simple majority."
+      },
+      "supermajority": {
+        "term": "Supermajority (two-thirds, three-fifths)",
+        "body": "A supermajority is a required vote larger than a simple majority. Overriding a veto, passing a bill under suspension in the House, approving a treaty, and proposing a constitutional amendment take two-thirds. Ending debate with cloture on most Senate business takes three-fifths of the whole Senate, which is 60 votes."
+      },
+      "appropriations": {
+        "term": "Appropriations",
+        "body": "An appropriation is a law that lets federal agencies spend money from the Treasury for set purposes. Congress passes regular appropriations bills each fiscal year to fund most of the government’s day-to-day work."
+      },
+      "authorization": {
+        "term": "Authorization",
+        "body": "An authorization is a law that creates or continues a program and sets its rules, often including how much money may be spent on it. It does not provide the money itself; that takes a separate appropriation. A reauthorization renews a program whose authorization is running out."
+      },
+      "budget-resolution": {
+        "term": "Budget resolution",
+        "body": "The budget resolution is Congress’s own budget plan, setting totals for spending and revenue. It is a concurrent resolution, so the President does not sign it and it does not become law. It can include instructions that start the reconciliation process."
+      },
+      "continuing-resolution": {
+        "term": "Continuing resolution (CR)",
+        "body": "A continuing resolution is a temporary funding law that keeps federal agencies running when their regular appropriations have not been passed. It lasts until a date written into it."
+      },
+      "omnibus": {
+        "term": "Omnibus and minibus bills",
+        "body": "Congress has 12 regular appropriations bills to pass each year. An omnibus packages several of them, often all 12, into one bill; a minibus packages just a few. There is no official line between the two terms."
+      },
+      "supplemental-appropriations": {
+        "term": "Supplemental appropriations",
+        "body": "A supplemental appropriation is extra money provided in an appropriations law passed outside the regular yearly funding bills. It is usually for an urgent need, such as disaster relief, that cannot wait for the next regular bill."
+      },
+      "fiscal-year": {
+        "term": "Fiscal year",
+        "body": "The federal fiscal year is the government’s budget year. It runs from October 1 to September 30 and is named for the calendar year in which it ends. Congress funds the government one fiscal year at a time."
+      },
+      "budget-authority": {
+        "term": "Budget authority",
+        "body": "Budget authority is the legal power an agency gets from Congress to commit federal money, for example by signing contracts or awarding grants. The actual payments, called outlays, can come later, sometimes years later."
+      },
+      "mandatory-spending": {
+        "term": "Mandatory spending",
+        "body": "Mandatory spending, also called direct spending, is money that existing laws require the government to pay, such as Social Security and Medicare benefits. It does not need a new vote by Congress each year and makes up nearly two-thirds of federal spending."
+      },
+      "discretionary-spending": {
+        "term": "Discretionary spending",
+        "body": "Discretionary spending is the part of the federal budget Congress sets each year through appropriations bills, such as funding for defense, education, and transportation. If Congress does not act, that funding lapses."
+      },
+      "entitlement": {
+        "term": "Entitlement program",
+        "body": "An entitlement program pays benefits to everyone who meets the rules set in law, such as Social Security and Medicare. Its spending is mandatory: it depends on how many people qualify, not on a yearly vote."
+      },
+      "deficit": {
+        "term": "Budget deficit",
+        "body": "A budget deficit is the amount by which federal spending is more than federal revenue in a fiscal year. The government covers it by borrowing, which adds to the national debt. The opposite is a surplus."
+      },
+      "national-debt": {
+        "term": "National debt",
+        "body": "The national debt is the total the federal government has borrowed to cover past deficits, plus the interest it owes. Each year with a deficit adds to it."
+      },
+      "debt-limit": {
+        "term": "Debt limit (debt ceiling)",
+        "body": "The debt limit is the total amount the federal government is allowed by law to borrow to pay bills it already owes, such as benefits, salaries, and interest. Raising or suspending it does not approve new spending. Only Congress can change it."
+      },
+      "government-shutdown": {
+        "term": "Government shutdown",
+        "body": "A government shutdown happens when funding lapses because a new appropriations law or continuing resolution has not been enacted. Agencies must halt the work paid for by yearly funding, except activities the law allows to continue. Many federal employees are furloughed until funding is restored."
+      },
+      "cbo-cost-estimate": {
+        "term": "CBO cost estimate",
+        "body": "The Congressional Budget Office (CBO) is Congress’s budget office. For most bills a committee sends to the floor, it estimates how much the bill would change federal spending and revenue over the next several years. People often call that estimate a bill’s “score.”"
+      },
+      "sequestration": {
+        "term": "Sequestration",
+        "body": "Sequestration is an automatic, across-the-board cut to federal spending, required by a budget law when a spending limit or goal is not met. Each affected account is cut by the same percentage."
+      },
+      "earmark": {
+        "term": "Earmark",
+        "body": "An earmark is money in a spending bill set aside for a specific project or place at the request of a member of Congress. Under House rules, a bill or report must list its earmarks and the member who requested each one. The Senate calls them congressionally directed spending."
+      },
+      "rescission": {
+        "term": "Rescission",
+        "body": "A rescission is a law that cancels money Congress already provided, before it is spent. The President can propose rescissions, but only Congress can enact them; if it does not act within 45 days of continuous session, the money must be made available for spending."
+      },
+      "tax-credit": {
+        "term": "Tax credit",
+        "body": "A tax credit is an amount subtracted directly from the tax a person or business owes. A refundable credit can pay money back even if no tax is owed. A credit is different from a deduction, which lowers the income the tax is figured on."
+      },
+      "tax-deduction": {
+        "term": "Tax deduction",
+        "body": "A tax deduction is an amount subtracted from income before tax is figured, so less of the income is taxed. It lowers the tax owed by less than a credit of the same size would."
+      },
+      "nomination": {
+        "term": "Nomination",
+        "body": "A nomination is the President’s choice of a person for a federal job that needs Senate approval, such as a cabinet secretary, an ambassador, or a federal judge. The Senate confirms or rejects it; the House has no vote."
+      },
+      "advice-and-consent": {
+        "term": "Advice and consent",
+        "body": "Advice and consent is the Senate’s power under the Constitution to approve or reject the President’s nominations and treaties. Nominations need a simple majority; treaties need two-thirds of the senators present."
+      },
+      "confirmation": {
+        "term": "Confirmation",
+        "body": "Confirmation is the Senate’s approval of a nomination, usually after a committee review and a vote of the full Senate. Once confirmed, the nominee can be appointed to the job."
+      },
+      "returned-nomination": {
+        "term": "Returned to the President",
+        "body": "Under Senate rules, a nomination that has not been confirmed or rejected is sent back to the President when the Senate adjourns or recesses for more than 30 days, or when a session ends. The Senate cannot act on it again unless the President sends the nomination again."
+      },
+      "treaty": {
+        "term": "Treaty",
+        "body": "A treaty is a formal, binding agreement between the United States and one or more other nations. The President negotiates it, and it needs the approval of two-thirds of the senators present. Once in force, it has the weight of federal law."
+      },
+      "resolution-of-ratification": {
+        "term": "Resolution of ratification",
+        "body": "The Senate does not ratify treaties itself. It votes on a resolution of ratification, which gives its consent; if two-thirds of the senators present agree, the President can then ratify the treaty with the other nations."
+      },
+      "impeachment": {
+        "term": "Impeachment",
+        "body": "Impeachment is how Congress can charge and try a federal official, including the President and federal judges. The House impeaches, or brings charges, by a simple majority vote; the Senate then holds a trial, and removing the official from office takes a two-thirds vote to convict."
+      },
+      "congress": {
+        "term": "A Congress",
+        "body": "A Congress is the two-year term of the House and Senate between elections, numbered in order since the first one, such as the 119th Congress. When a Congress ends, bills that did not become law expire and must be introduced again; treaties are the exception."
+      },
+      "speaker-of-the-house": {
+        "term": "Speaker of the House",
+        "body": "The Speaker is the leader of the House of Representatives, elected by its members. The Speaker presides over the House, decides who speaks, and plays a large role in which bills reach the floor."
+      },
+      "majority-leader": {
+        "term": "Majority leader",
+        "body": "The majority leader is the floor leader chosen by the party with the most seats in a chamber. In the Senate, the majority leader largely decides what the Senate takes up and when."
+      },
+      "minority-leader": {
+        "term": "Minority leader",
+        "body": "The minority leader is the floor leader chosen by the party with fewer seats in a chamber. The minority leader speaks for that party on the floor and negotiates with the majority over the schedule."
+      },
+      "whip": {
+        "term": "Whip",
+        "body": "A whip is a party leader who helps the floor leader by counting votes and rallying the party’s members on major questions. Each party in each chamber has one."
+      },
+      "president-pro-tempore": {
+        "term": "President pro tempore",
+        "body": "The president pro tempore is the senator elected to preside over the Senate when the Vice President is absent. By custom it is the majority-party senator with the longest continuous service. In practice, other senators often take turns presiding."
+      },
+      "presiding-officer": {
+        "term": "Presiding officer",
+        "body": "The presiding officer runs a chamber’s meeting: recognizing members to speak, keeping order, and ruling on points of order. In the Senate, a senator of the majority party often fills the chair in place of the Vice President or president pro tempore."
+      },
+      "president-of-the-senate": {
+        "term": "President of the Senate",
+        "body": "The Vice President of the United States is also the President of the Senate. The Vice President may preside over the Senate and may vote only to break a tie."
+      },
+      "parliamentarian": {
+        "term": "Parliamentarian",
+        "body": "The parliamentarian is the chamber’s adviser on how to interpret its rules and procedures, and advises the presiding officer during debate. The parliamentarian also helps decide which committee a bill is referred to."
+      },
+      "caucus": {
+        "term": "Caucus",
+        "body": "A caucus is an informal group of members of Congress who share an interest, such as a region or an issue, and meet to discuss it. The word is also used for a party’s organization of all its members in a chamber."
+      },
+      "congressional-district": {
+        "term": "Congressional district",
+        "body": "A congressional district is the area one member of the House represents. Each state is divided into as many districts as it has House seats, and each district elects one representative every two years."
+      },
+      "at-large": {
+        "term": "At-large",
+        "body": "A state with only one seat in the House elects its representative “at large,” meaning by the whole state instead of one district. Each state has at least one representative, however small its population."
+      },
+      "delegate": {
+        "term": "Delegate",
+        "body": "Delegates represent the District of Columbia, Guam, the U.S. Virgin Islands, American Samoa, and the Northern Mariana Islands in the House. They can introduce bills, serve and vote on committees, and speak on the floor, but they cannot vote when the House meets as the full House, which is where bills are passed."
+      },
+      "resident-commissioner": {
+        "term": "Resident Commissioner",
+        "body": "The Resident Commissioner represents Puerto Rico in the House. Like the delegates, the Resident Commissioner can serve on committees and speak on the floor but cannot vote when the House meets as the full House, which is where bills are passed."
+      },
+      "apportionment": {
+        "term": "Apportionment",
+        "body": "Apportionment is dividing the 435 House seats among the states by population. It is done after each census, every 10 years, so the number of seats a state has can change as its population changes."
+      },
+      "redistricting": {
+        "term": "Redistricting",
+        "body": "Redistricting is redrawing the lines of congressional and state legislative districts. It usually happens after each census, using the population counts the Census Bureau provides to the states."
+      },
+      "special-election": {
+        "term": "Special election",
+        "body": "A special election fills a seat in Congress that became empty before the term ended. A House seat stays empty until voters fill it in a special election. For a Senate seat, the governor may appoint someone to serve until the special election, if state law allows."
+      },
+      "vacancy": {
+        "term": "Vacant seat",
+        "body": "A seat is vacant when no one holds it, for example after a member dies or resigns. A vacant seat has no vote until someone new is sworn in."
+      },
+      "member-elect": {
+        "term": "Member-elect",
+        "body": "A member-elect has won the election for a seat but has not yet taken the oath of office. They become a member, able to vote, once they are sworn in."
+      },
+      "senate-class": {
+        "term": "Senate class",
+        "body": "Senators serve six-year terms, split into three classes so that about one-third of the Senate is up for election every two years. Both senators from a state are never in the same class."
+      },
+      "inspector-general": {
+        "term": "Inspector general",
+        "body": "An inspector general is an independent official inside a federal agency who audits and investigates its programs to find waste, fraud, and abuse. Inspectors general report to the agency head and to Congress."
+      },
+      "gao": {
+        "term": "GAO (Government Accountability Office)",
+        "body": "The Government Accountability Office is a federal office, independent of the executive departments, that investigates how public money is received, spent, and used. It is led by the Comptroller General. Bills often direct GAO to study a program and report back."
       }
     }
   },
@@ -1130,7 +1631,7 @@
     "dayEmpty": "Nothing in the record we hold for this day: no roll-call vote on a bill we track, and no bill whose latest action is dated this day.",
     "votesHeading": "Roll-call votes",
     "voteRoll": "{chamber} roll call {roll}",
-    "tally": "Yea {yea} · Nay {nay} · Present {present} · Not voting {notVoting}",
+    "tally": "<yeaTerm>Yea</yeaTerm> {yea} · Nay {nay} · <presentTerm>Present</presentTerm> {present} · <notVotingTerm>Not voting</notVotingTerm> {notVoting}",
     "voteSource": "Official tally",
     "movedHeading": "Bills whose latest action is dated this day",
     "movedMore": "{count, plural, one {# more bill has} other {# more bills have}} a latest action dated this day.",
