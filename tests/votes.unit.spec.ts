@@ -6,6 +6,7 @@ import {
   PARTY_RE,
   VOTES_SCHEMA,
   VoteParseError,
+  VotePartyDisagreement,
   finishPartyTotals,
   hasPartyTotals,
   houseClerkDate,
@@ -112,6 +113,45 @@ test.describe('House parse', () => {
     delete detail.houseRollCallVote.votePartyTotal[0].voteParty;
     delete detail.houseRollCallVote.votePartyTotal[0].party;
     expect(() => parseHouseApi(detail, fxJson('house-api-members-119-2-308.json'), { corpus })).toThrow(/without a party letter/);
+  });
+
+  test('Congress.gov: the party table must agree with the members reply, or the Clerk is read instead', () => {
+    // One Democratic yea moved to the Republican row: the totals still add up,
+    // but the API now disagrees with its own member rows about who cast them.
+    const detail = fxJson('house-api-detail-119-2-308.json');
+    const rows = detail.houseRollCallVote.votePartyTotal;
+    const r = rows.find((p: { voteParty: string }) => p.voteParty === 'R');
+    const d = rows.find((p: { voteParty: string }) => p.voteParty === 'D');
+    r.yeaTotal += 1;
+    d.yeaTotal -= 1;
+    const members = fxJson('house-api-members-119-2-308.json');
+    const swapped = (() => {
+      try {
+        parseHouseApi(detail, members, { corpus });
+      } catch (e) {
+        return e;
+      }
+      return null;
+    })();
+    expect(swapped).toBeInstanceOf(VotePartyDisagreement);
+    expect(String((swapped as Error).message)).toMatch(/disagrees with the member rows/);
+    // NOT a VoteParseError: scripts/sync-votes.mjs rethrows those and falls
+    // back to the Clerk's XML (the roll call's cited source) on anything else.
+    expect(swapped).not.toBeInstanceOf(VoteParseError);
+
+    // A member row with no party letter: the table cannot be checked, same path.
+    const unlettered = fxJson('house-api-members-119-2-308.json');
+    delete unlettered.houseRollCallVoteMemberVotes.results[0].voteParty;
+    expect(() => parseHouseApi(fxJson('house-api-detail-119-2-308.json'), unlettered, { corpus })).toThrow(VotePartyDisagreement);
+  });
+
+  test('scripts/sync-votes.mjs falls back to the Clerk on a party disagreement, and rethrows only a VoteParseError', () => {
+    const src = readFileSync(join(process.cwd(), 'scripts/sync-votes.mjs'), 'utf8');
+    const call = src.indexOf('parsed = parseHouseApi(');
+    const handler = src.slice(call, src.indexOf('stats.house.viaClerk++', call));
+    expect(handler).toMatch(/if \(e instanceof VoteParseError\) throw e;/);
+    expect(handler).not.toMatch(/VotePartyDisagreement\) throw/);
+    expect(handler).toMatch(/parseHouseClerkXml\(/);
   });
 
   test('a RULE vote never attaches to the bills it schedules', () => {
