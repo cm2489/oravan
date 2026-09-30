@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-09-30T19:13:43.871Z",
+    "fetched_at": "2026-09-30T20:02:27.216Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-09-30T19:13:43.871Z"
+        "checked_at": "2026-09-30T20:02:27.216Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-27",
         "week_label": "Most-Viewed Bills - Week of September 27, 2026",
         "entries": 8,
-        "checked_at": "2026-09-30T19:13:43.871Z"
+        "checked_at": "2026-09-30T20:02:27.216Z"
       },
       "leans": {
         "center": {
@@ -956,6 +956,12 @@
           "url": "https://news.google.com/rss/articles/CBMiZEFVX3lxTFBqZ0l3aWF4cmI0eVdsaWNMUnd4eUxZOWNTN3hpdUg2V2JUVTF1M0doWGZZd2ZZUTFJR294emlyWFJ4OXdmZDh0WmwzU2k2YlViMGZ4UEpJcHkzS3VFZlVlcEhtWkw?oc=5"
         },
         {
+          "domain": "northpennnow.com",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMitAFBVV95cUxOa3BhQk5uZ3pETVFfMHQzbkVOdTNjZWxaT25BYjRLbzhYbFczTUUxYXZVakZ5akxSUmFST3dZZkxNRE1zTWx3eHR5TnlSSll4LWpOVUVfZFdPZXU4aEd5VW9iVEtVbGFwTTJLb0U0SE0weWhtR0VqYjFyODRQQ3FiRmtXUFhCVndReUxWcHl3ajZfYnk0ZHJ0S3J1VjBvQ2pOc0lEbWl5X0dPN1d0ckNwWGdvcGk?oc=5"
+        },
+        {
           "domain": "politicalwire.com",
           "firstSeen": "2026-09-30",
           "lastSeen": "2026-09-30",
@@ -972,6 +978,12 @@
           "firstSeen": "2026-09-30",
           "lastSeen": "2026-09-30",
           "url": "https://news.google.com/rss/articles/CBMiiwFBVV95cUxPMEhVaHVSQmxoVlFCcUhEeWg5YlNtWkdBM3VyZWVST3JoVVN1ZFg4NUp0aEMwLTctMnNfTjZtdmVpZmlWQ2N0SDNVdlV6b1ptWXBfNW1jTTE1U0otNUZmSVowUXExbVVXNGtvSXctZHV3VDdhRHhwWWRMU3BNRkdWNE96dTVMaUkzRkE4?oc=5"
+        },
+        {
+          "domain": "timesnews.net",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMipAFBVV95cUxObElDSVpQTlZyQ2dzMmlTWXlwcWRBMUhwQTl5WUlyc3NJWkdnQVo5TnpOR1JfcGY1bXlZRDRqZTFpQWNYdmdXOFFHaEFjalJQZ3pJMGtZSzJ2Ml9ZdldpVXVPaFpJR1hVSmY1NW1CQnA2cTlMSmtkc0xscUl3SDl6MjJjTm9teDNtdkdOSzV2dnZUWUpZOGNUOTlhMHIxMzhHVkd1bg?oc=5"
         },
         {
           "domain": "tradingview.com",
