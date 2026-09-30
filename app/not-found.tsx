@@ -34,7 +34,7 @@ export default function RootNotFound() {
         <main style={{ maxWidth: '33rem' }}>
           <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0 }}>Page not found</h1>
           <p style={{ fontSize: '1.05rem', lineHeight: 1.6, color: '#4a544e' }}>
-            That page doesn&rsquo;t exist, but your representatives do.
+            That page doesn&rsquo;t exist. You can look up your representatives from the home page.
           </p>
           <p>
             <Link
