@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-09-30T13:38:01.266Z",
+    "fetched_at": "2026-09-30T18:23:16.717Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-09-30T13:38:01.266Z"
+        "checked_at": "2026-09-30T18:23:16.717Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-27",
         "week_label": "Most-Viewed Bills - Week of September 27, 2026",
         "entries": 8,
-        "checked_at": "2026-09-30T13:38:01.266Z"
+        "checked_at": "2026-09-30T18:23:16.717Z"
       },
       "leans": {
         "center": {
@@ -251,6 +251,12 @@
           "firstSeen": "2026-09-30",
           "lastSeen": "2026-09-30",
           "url": "https://news.google.com/rss/articles/CBMiqgFBVV95cUxPQmI1RGJQbVpYdk5STy1PTGRRUURZVWs3NVI2Qm1uV0JwSEl2OC10dk9RVUVRVTh6THczRTBWSGdXMEVqeXNpb3RKbFJqR1kzdE5YbDZvb1UwLU5yUlo0b1czTWpwUkhld1hVX1RyUjdTY093ZlFOcFFnMFQ3N01pbTVlZU1oR3JwNjAxaWZmYXF6d3NUT0dlMnlQdmZndDg3Q29hQzNvUzJyQQ?oc=5"
+        },
+        {
+          "domain": "scrippsnews.com",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMiuAFBVV95cUxNbURiZEtBaU1YWGgwNW9TZExmSGZ3Q1ctcTd0b011b3djQ2ZnNThxQllBZXhFVE90VU8zSG9rRFBKSk13SFRINmc3UTNEV0NzOW52YnVTRi04RkNRR0hnNHVVZFAwbUlGTEp0dnVPTnF4eFFDNUZZM3FPTXRqSWJSVWQyZ2lKWnNEdE52QzZWLVlCbGJlRHFjUFNoOVNyRVo0WWlpa3QyUUZjUWdabW1Lcnc2dlFZNDFC?oc=5"
         },
         {
           "domain": "tribstar.com",
@@ -874,6 +880,41 @@
     "hr-7008-119": {
       "outlets7d": [
         {
+          "domain": "cnbc.com",
+          "lean": "center",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://www.cnbc.com/2026/09/30/senate-stock-trading-ban-data-center-election.html"
+        },
+        {
+          "domain": "newsmax.com",
+          "lean": "right",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMif0FVX3lxTE1qNWpkU21nTmwxNThsdnpzeG02NVFNQmNaUHBRZWNWOHdQQ1R1TmE3TzVfUkE1MHh6eFRRTUp4M2VRcGZGY1RnanJMUjRNOG9uN2JqUFFIMEFOUFRQTWtmWUVFYTlBWTQzd3prd1dVRUpMV2YxQVRYU1hSQXdkQms?oc=5"
+        },
+        {
+          "domain": "nypost.com",
+          "lean": "right",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMingFBVV95cUxPOU5JMTBWVWtONklqYUlMdUxUUXRrV3RUUHpGSzR2YWxSWUR6RklwSEtpMDhNTWdIVjdkOHVaYWNUQUZIaVU3S2w5ZUlTWGFXYWRKTm1TVFpvS3UxazRwYnJVRWl4OFJtQUJmUUFsbXlwMXdjbGVkb1JBbGtOcWhCSUszVXBGZ0V2c3BUa2VyaWc2ZmhRUUw4ZU43S29MZw?oc=5"
+        },
+        {
+          "domain": "nytimes.com",
+          "lean": "left",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMijwFBVV95cUxOSVRucWl0b3MwaEVNam45R0hqQXVCdktWOW1mbFdMdC10NEthNENTb1p0cndUWG1kMkxua0VEczdYcTV6SDhFZGJ3Y3JQakwxTkV6NXhxNkY3QnAtNmNKUXV0NWZyVHRuUXYxc2hJUVVlYW8xMFNsd0UzYWNjOVpQNk56Zk55aElWZDlyYm5iZw?oc=5"
+        },
+        {
+          "domain": "politico.com",
+          "lean": "left",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://www.politico.com/live-updates/2026/09/30/congress/senate-stock-trading-vote-01099912"
+        },
+        {
           "domain": "thehill.com",
           "lean": "center",
           "firstSeen": "2026-09-30",
@@ -881,7 +922,50 @@
           "url": "https://thehill.com/homenews/administration/6119378-live-updates-trump-ai-tariffs-hegseth-pentagon-cuts/"
         }
       ],
-      "unratedOutlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "investing.com",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMixgFBVV95cUxNc3VNVjduM0puWkZuX3RmVnFVN2RubVJsc1NVSXR0dHYzME1oZWxGRmdUVFNBOEpDQTloMHFFUlNqT2IyczFnYjlWMktBTmxFcEtfVUs1c1BVTV83SDgxek92WnM1c2VmdWRIek1CblcwRWdTb3oxQjBHNXVGQmFYZDRMWDE5VzZvcXp0RmRTeDJYckxqUVI3Y3FLazhKQXc2RUxVazR5X0FmNzJXcUowbmhybHF5cUpSZjF5X21LVW1sZmp5OHc?oc=5"
+        },
+        {
+          "domain": "lufkindailynews.com",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMi8gFBVV95cUxQVjhkSms2MXNqdVFrakFhcFF5bTlwSkJFbGhQd21IQVl5RUN0SDVnYjZNcXRDUVdEZERWRGNTYWlYLWdManJlNUpHbW50Ukp4Ukt0ZUd5S1ptb0sxeFFBZlNaRXA5V0ROc0RjMUZtUmY4dmRjbmdQYmQyUzNVNHhTUW1lVTlKOWoyMkxIdjFYVGpWRkNYQ1pUcTJYM0d3c3M5UTlmaTFoNUlxdnVUN2N4NHJYc1k3R1ZRYjVEckZFNGlwVThXd2Jxbk0xTTNEV2oxR2FUNVVzRF9Ecnh1QU40bWczMmxzX3doWVhQMVNNNHNrUQ?oc=5"
+        },
+        {
+          "domain": "mezha.net",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMiZEFVX3lxTFBqZ0l3aWF4cmI0eVdsaWNMUnd4eUxZOWNTN3hpdUg2V2JUVTF1M0doWGZZd2ZZUTFJR294emlyWFJ4OXdmZDh0WmwzU2k2YlViMGZ4UEpJcHkzS3VFZlVlcEhtWkw?oc=5"
+        },
+        {
+          "domain": "qz.com",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMid0FVX3lxTE1EcTIzSmxBU2RROW9ueWV6czFuYWplb2d5Y3A3TUpUeWpyZWNRajBDOUFDbld3RmFRNjZsWGZxdkZfb1JZX2lGSHVnckV1WFUwQ1JuR0pOallBWDlDSV9wOG04bEZYb1JmVnJsT05paW10WFpGbTFZ?oc=5"
+        },
+        {
+          "domain": "rollcall.com",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMiiwFBVV95cUxPMEhVaHVSQmxoVlFCcUhEeWg5YlNtWkdBM3VyZWVST3JoVVN1ZFg4NUp0aEMwLTctMnNfTjZtdmVpZmlWQ2N0SDNVdlV6b1ptWXBfNW1jTTE1U0otNUZmSVowUXExbVVXNGtvSXctZHV3VDdhRHhwWWRMU3BNRkdWNE96dTVMaUkzRkE4?oc=5"
+        },
+        {
+          "domain": "tradingview.com",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMiygFBVV95cUxPeW5nTGlsX0gxdkEyMXAyZ05va1dMcGo3UU5vWE9DVjY0X2FHTzlyNklLN3dpOWRQbHRZTGlpZlRidThTWmFYc181S0pEa1Jxd3pTbHpFNmJoQXJKMDd3XzZpOXdDR0d2b1c3aDZZWm9aVXRhdnB2QUg2MTBrSzlvMFYtcUxYcHNqaFFpQlFwZXNpalR5YlZ3WEhNLV82WDZHb2I2OEdCZ0dtdktEVUR0c1A1eEtsQTF0MXo4MjJmZ2ltQkx0WnBjalBR?oc=5"
+        },
+        {
+          "domain": "ua.news",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMioAFBVV95cUxNa0pITE03cGVBbVJRYm1jQlBTdXByQ1lxRFdwUk1XTFk3TUxZa2dHRjYwSk8zTklHQjZHVngzdUhFREdzNWtjcXJTdmYyUm5xRFR2M0x3NHNKTW9ZVlVIbktkMTQ5QlEwSjFVQmlUN0ZkNzJFdlJzT3laTnlwQ3V0LTNxY2pQbkRvZ196MzZBV1VsdlhZZlRBUTFjYlNBVEh2?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "hr-7039-119": {
@@ -895,6 +979,18 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-7128-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "insurancebusinessmag.com",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMi0gFBVV95cUxQYkloNW5zNWFWTncyT0ZuZzF2UDhCMl9OOVdsckdoZkZEU2ZmZUxPSWRhRUNhdzRiTGdjYmI5LWotazN5ekl0bzVmaG1sWEZreTBBa1dtVW1FbjcwcWtqeWlFSGkyTENKTUNMVmkxUjlOb3FHTUM2WnFfaW1FbXZkNUNIc0RWVm1MMTY2YUgyR0tSWEJ4cVg4c0tweGhHMkJESV9xcFlrbUx2azgyQXR3akZienh4emgtMnF0Q19DTm5pVDlmVjN6YTVxSXRyVk95Wnc?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "hr-726-119": {
@@ -1049,6 +1145,19 @@
       ],
       "mostViewed": null
     },
+    "hr-8756-119": {
+      "outlets7d": [
+        {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://www.foxnews.com/politics/gop-lawmakers-fraud-crusade-takes-dramatic-turn-scandal-engulfs-his-own-career"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hr-8770-119": {
       "outlets7d": [
         {
@@ -1164,6 +1273,33 @@
       ],
       "mostViewed": null
     },
+    "hr-9019-119": {
+      "outlets7d": [
+        {
+          "domain": "cbsnews.com",
+          "lean": "left",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://www.cbsnews.com/news/senate-data-center-bill-vote-democrats/"
+        },
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://thehill.com/policy/energy-environment/6119834-senate-data-center-bill-ratepayer-protection-act/"
+        }
+      ],
+      "unratedOutlets7d": [
+        {
+          "domain": "financialexpress.com",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMiygFBVV95cUxQaEs2N2ZsRkNiV0Q0U2FFVm5oeFVLQk5NSnlWZkpQelg4cV9hVGZIU2pHQXJSbEZUR3g4ckp1TS10Ylg2b2RhSjktM2RhdlQ2c1Z0d1BJc2ZZZXRDSGhKR3VzOEF3LWdZam5MNUZUZWFwTWN3NEVGLVZDd0hxMXQybk56VEwtU0c4bVlVTVAxd3M2ZjBSN1lxQTJ1V0R2aVBKMU1pUTN2bGRhd1ZmMTRSeTlsQVZ1Z1l4ZC1wTVo5SUtITjVUQmtINGZ30gHQAUFVX3lxTE5XR1VCLTlUbnk2MEZ0ZWk4M3BVU1dIX1pHM1FRTWJvV0RyRXBqSWU2ZjlibzMtU2Rvc24zdEh3QTlFQ3lIVTgxYkJTWER1akFBbHZSSDEwTDFqTTBuaUljSXlKMG1RSGVpd3BXaFNONXZFT1liX1dOSnVaemFhTVhaNDdMbUFsYndQc2J1SG11b3BGNDVRUnl6S2F3eElFQ25uYWRQWXRMdWVWTTlfYmhyTzFKWnZ0a3MzX2FRYkh2dUlQVGVIUElWb1RoWHE5UEo?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-9340-119": {
       "outlets7d": [],
       "unratedOutlets7d": [],
@@ -1173,6 +1309,39 @@
         "lastSeen": "2026-09-28",
         "lastWeek": "2026-09-20"
       }
+    },
+    "hr-9363-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://thehill.com/homenews/senate/6120658-watch-live-senate-homeland-security-panel-rogue-ai/"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-9367-119": {
+      "outlets7d": [
+        {
+          "domain": "cbsnews.com",
+          "lean": "left",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://www.cbsnews.com/news/senate-stock-trading-voter-id-bill-democrats-block/"
+        },
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://thehill.com/homenews/senate/6120528-senate-blocks-gop-stock-bill/"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
     },
     "hr-9497-119": {
       "outlets7d": [],
@@ -1283,6 +1452,18 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "s-2398-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "thetelegraph.com",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMihgFBVV95cUxNOXhVMzlrUF93SGhQUVdaOElLa293Y01FS19vLWtVZ3l1YTM5aEN6VkJnTmFpOHFXN1NiOWdaaDZlMEg2bVg3YjNkTkdmcGEza29KV0pEWDlNYzZEQWlMV1A0R1UyVDNqYzkwU0cyRjF5b3d3WHhnemRiVzRHc2ViRURUQzVYZw?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "s-2403-119": {
@@ -1976,6 +2157,19 @@
           "lastSeen": "2026-09-24"
         }
       ],
+      "mostViewed": null
+    },
+    "sjres-195-119": {
+      "outlets7d": [
+        {
+          "domain": "reason.com",
+          "lean": "right",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://reason.com/volokh/2026/09/30/journalists-publishing-information-about-sealed-arrest-protected-by-first-amendment/"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "sjres-200-119": {
