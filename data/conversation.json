@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-09-30T18:23:16.717Z",
+    "fetched_at": "2026-09-30T18:45:51.155Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-09-30T18:23:16.717Z"
+        "checked_at": "2026-09-30T18:45:51.155Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-27",
         "week_label": "Most-Viewed Bills - Week of September 27, 2026",
         "entries": 8,
-        "checked_at": "2026-09-30T18:23:16.717Z"
+        "checked_at": "2026-09-30T18:45:51.155Z"
       },
       "leans": {
         "center": {
@@ -1302,7 +1302,14 @@
     },
     "hr-9340-119": {
       "outlets7d": [],
-      "unratedOutlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "rollcall.com",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://rollcall.com/2026/09/30/voluntary-ratepayer-protection-bill-blocked-in-senate-again/"
+        }
+      ],
       "mostViewed": {
         "weeksOnList": 1,
         "lastRank": 8,
