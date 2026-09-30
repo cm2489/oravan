@@ -14,6 +14,7 @@ import {
   floorTagFor,
   latestRecordDay,
   shiftDate,
+  oneYellowTag,
   yellowTagFirst,
   type BriefDaySummary,
 } from '../lib/today';
@@ -246,10 +247,14 @@ test.describe('floorTagFor: which notice wears which tag', () => {
     const brief = buildBrief(window[0]);
     for (const item of brief.schedule) {
       const session = brief.chamber!.chambers.find((c) => c.chamber === item.chamber)!.session;
-      expect(item.tag, item.citation).toEqual(
-        floorTagFor({ certainty: item.certainty, chamber: item.chamber, source: item.source, covers: item.covers, session })
-      );
+      const own = floorTagFor({ certainty: item.certainty, chamber: item.chamber, source: item.source, covers: item.covers, session });
+      // The page wears one yellow: a notice `floorTagFor` made urgent may print in ink
+      // (oneYellowTag), but its tag text and date are always its own.
+      expect(item.tag?.key, item.citation).toBe(own?.key);
+      expect(item.tag?.dateIso, item.citation).toBe(own?.dateIso);
+      if (own?.tone !== 'urgent') expect(item.tag?.tone, item.citation).toBe(own?.tone);
     }
+    expect(brief.schedule.filter((i) => i.tag?.tone === 'urgent').length).toBeLessThanOrEqual(1);
     for (const date of window.slice(1)) expect(buildBrief(date).schedule, date).toEqual([]);
   });
 });
@@ -314,6 +319,40 @@ test.describe('yellowTagFirst: the notice with the yellow tag comes first', () =
   test('the committed schedule is already in this order', () => {
     const schedule = buildBrief(briefWindow()[0]).schedule;
     expect(order(yellowTagFirst(schedule))).toEqual(order(schedule));
+  });
+});
+
+test.describe('oneYellowTag: only the nearest-dated notice stays yellow', () => {
+  const notice = (citation: string, covers: string) => ({
+    citation,
+    tag: floorTagFor({ certainty: 'scheduled_vote', chamber: 'senate', source: 'daily-digest', covers, session: 'in_session' }),
+  });
+  const tones = (items: { tag: { tone: string } | null }[]) => items.map((i) => i.tag?.tone);
+
+  test('three yellow notices on one day: the first in record order stays yellow, the others go to ink with the same tag and date', () => {
+    const items = [notice('S. 3988', '2026-09-30'), notice('S. 4100', '2026-09-30'), notice('S. 4200', '2026-09-30')];
+    const out = oneYellowTag(items);
+    expect(tones(out)).toEqual(['urgent', 'status', 'status']);
+    for (const [i, o] of out.entries()) {
+      expect(o.tag?.key).toBe(items[i].tag?.key);
+      expect(o.tag?.dateIso).toBe(items[i].tag?.dateIso);
+    }
+  });
+
+  test('the earliest date wins over record order', () => {
+    const out = oneYellowTag([notice('S. 1', '2026-10-02'), notice('S. 2', '2026-10-01'), notice('S. 3', '2026-10-01')]);
+    expect(tones(out)).toEqual(['status', 'urgent', 'status']);
+  });
+
+  test('ink notices and a missing tag pass through untouched', () => {
+    const ink = floorTagFor({ certainty: 'consideration', chamber: 'senate', source: 'daily-digest', covers: '2026-09-30', session: 'in_session' });
+    const items = [{ citation: 'S. 9', tag: ink }, { citation: 'S. 10', tag: null }];
+    expect(oneYellowTag(items)).toEqual(items);
+  });
+
+  test('the committed schedule has at most one yellow notice', () => {
+    const yellow = buildBrief(briefWindow()[0]).schedule.filter((i) => i.tag?.tone === 'urgent');
+    expect(yellow.length).toBeLessThanOrEqual(1);
   });
 });
 

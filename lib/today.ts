@@ -403,7 +403,25 @@ function scheduleAhead(today: string, locale: string): BriefScheduleItem[] {
     });
   }
   return yellowTagFirst(
-    items.sort((a, b) => a.chamber.localeCompare(b.chamber) || a.citation.localeCompare(b.citation))
+    oneYellowTag(items.sort((a, b) => a.chamber.localeCompare(b.chamber) || a.citation.localeCompare(b.citation)))
+  );
+}
+
+/**
+ * ONE EARNED LOUD THING. Only the nearest-dated notice whose tag
+ * `floorTagFor` made `urgent` keeps the yellow; every other such notice prints
+ * the same tag text and the same date in ink (the `status` tone). Nearest is
+ * the earliest `covers` date, then the list's own order. Nothing the record
+ * says changes: the tag's key, date and the quoted line are untouched.
+ */
+export function oneYellowTag<T extends { tag: FloorTag | null }>(items: T[]): T[] {
+  let keep = -1;
+  items.forEach((item, i) => {
+    if (item.tag?.tone !== 'urgent') return;
+    if (keep === -1 || (item.tag.dateIso ?? '') < (items[keep].tag?.dateIso ?? '')) keep = i;
+  });
+  return items.map((item, i) =>
+    item.tag?.tone === 'urgent' && i !== keep ? { ...item, tag: { ...item.tag, tone: 'status' as const } } : item
   );
 }
 
