@@ -635,7 +635,7 @@ test.describe('moments.vehiclesLedeMixed', () => {
       'The bills behind this question. Each opens the plain-language version and the call panel. Its support and oppose scripts are equally one tap away.',
     );
     expect(esMessages.moments.vehiclesLede).toBe(
-      'Los proyectos de ley que hay detrás de esta cuestión. Cada uno abre la versión en lenguaje claro y el panel de llamada. Sus guiones a favor y en contra están los dos a un toque.',
+      'Los proyectos de ley que hay detrás de esta cuestión. Cada uno abre la versión en lenguaje claro y el panel de llamada. Sus guiones a favor y en contra están igual de cerca, a un toque.',
     );
     for (const m of getMoments()) {
       expect(ledeKeyFor(m.vehicles), m.id).toBe('moments.vehiclesLede');
