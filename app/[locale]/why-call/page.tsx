@@ -17,6 +17,17 @@ import { hreflangAlternates } from '@/lib/hreflang';
 
 const SECTIONS = ['tally', 'email', 'voicemail', 'script', 'respect'] as const;
 
+/*
+ * Every sentence on this page either cites one of these reports or states no
+ * fact (advice, or what Oravan does). A figure added to `why.*` needs its
+ * report here. Both are Congressional Management Foundation PDFs; they are
+ * links, so the page itself makes no third-party request.
+ */
+const SOURCES = [
+  { key: 'sourceCca', href: 'https://www.congressfoundation.org/s/cmf-citizen-centric-advocacy.pdf' },
+  { key: 'sourcePca', href: 'https://www.congressfoundation.org/s/cwc-perceptions-of-citizen-advocacy.pdf' },
+] as const;
+
 export async function generateMetadata({
   params,
 }: {
@@ -44,6 +55,26 @@ export default async function WhyCallPage({ params }: { params: Promise<{ locale
             <p className="mt-2">{t(`${s}Body`)}</p>
           </section>
         ))}
+
+        <section className="mt-8 border-t border-line pt-6">
+          <h2 className="text-h3 font-extrabold">{t('sourcesTitle')}</h2>
+          <p className="mt-2 text-sm text-ink-2">{t('sourcesNote')}</p>
+          <ul className="mt-2 text-sm text-ink-2">
+            {SOURCES.map((s) => (
+              <li key={s.key}>
+                <a
+                  href={s.href}
+                  hrefLang="en"
+                  rel="noopener noreferrer"
+                  target="_blank"
+                  className="inline-flex min-h-11 items-center underline decoration-line-strong underline-offset-4 hover:decoration-ink"
+                >
+                  {t(s.key)}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
 
         <Link
           href="/bills"
