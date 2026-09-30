@@ -423,6 +423,16 @@ export function yellowTagFirst<T extends { tag: FloorTag | null }>(items: T[]): 
   return [...yellow, ...rest];
 }
 
+/**
+ * HOW MANY FLOOR NOTICES SHOW BEFORE THE FOLD: three, or every yellow-tagged
+ * notice when there are more than three. `yellowTagFirst` already puts the
+ * yellow notices first, so a fold after this many holds only the non-yellow tail.
+ */
+export const SCHEDULE_SHOWN = 3;
+export function scheduleShownCount<T extends { tag: FloorTag | null }>(items: T[]): number {
+  return Math.max(SCHEDULE_SHOWN, items.filter((i) => i.tag?.tone === 'urgent').length);
+}
+
 export interface BriefQuestion {
   id: string;
   name: { en: string; es: string };

@@ -7,7 +7,7 @@ import { Chip } from '@/components/system';
 import { TodayFloorCard } from '@/components/TodayFloorCard';
 import { TodayVoteCard } from '@/components/TodayVoteCard';
 import { Link } from '@/i18n/navigation';
-import { dayCountParts, type Brief, type BriefChamber, type BriefScheduleItem } from '@/lib/today';
+import { dayCountParts, scheduleShownCount, type Brief, type BriefChamber, type BriefScheduleItem } from '@/lib/today';
 
 /*
  * THE DAILY BRIEF — one renderer for /today and /today/[date].
@@ -57,8 +57,6 @@ import { dayCountParts, type Brief, type BriefChamber, type BriefScheduleItem } 
 // The first section on the page carries the heavy rule, the rest the thin one.
 const HEAVY_RULE = 'mt-12 border-t-[3px] border-ink pt-4';
 const THIN_RULE = 'mt-12 border-t border-line-strong pt-4';
-/* How many floor notices show before the rest fold into a disclosure. */
-const SCHEDULE_SHOWN = 3;
 
 const LINK =
   'font-semibold text-go underline underline-offset-4 visited:text-go-deep hover:text-go-deep';
@@ -224,6 +222,9 @@ export async function TodayBrief({ brief, locale }: { brief: Brief; locale: stri
      about Congress at all — our own reading may be why it is empty. */
   const showSchedule = brief.schedule.length > 0 || brief.schedulePosture === 'quiet';
 
+  /* Floor notices that show before the fold: three, or every yellow one. */
+  const shown = scheduleShownCount(brief.schedule);
+
   /* One floor notice, as a grid item. */
   const notice = (item: BriefScheduleItem) => (
     <li key={`${item.kind}-${item.citation}`} data-ai-text={item.teaser?.headline ? '' : undefined}>
@@ -261,10 +262,10 @@ export async function TodayBrief({ brief, locale }: { brief: Brief; locale: stri
             <>
               <p className="mt-2 max-w-read text-sm text-ink-2">{t('scheduleNote')}</p>
               {brief.schedule.some((i) => i.teaser?.headline) && aiLabel('aiHeadlines')}
-              <ul className={GRID}>{brief.schedule.slice(0, SCHEDULE_SHOWN).map(notice)}</ul>
-              {/* THE FOLD: past three notices the rest wait inside a native
+              <ul className={GRID}>{brief.schedule.slice(0, shown).map(notice)}</ul>
+              {/* THE FOLD: past three notices (never a yellow one) the rest wait inside a native
                   <details> (no JavaScript), so the chambers stay near the top. */}
-              {brief.schedule.length > SCHEDULE_SHOWN && (
+              {brief.schedule.length > shown && (
                 <details className="group mt-4" data-schedule-fold="">
                   <summary className="inline-flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-stamp text-sm font-semibold text-ink hover:text-go-deep [&::-webkit-details-marker]:hidden">
                     <span
@@ -274,9 +275,9 @@ export async function TodayBrief({ brief, locale }: { brief: Brief; locale: stri
                       <span className="group-open:hidden">+</span>
                       <span className="hidden group-open:inline">{'–'}</span>
                     </span>
-                    {t('scheduleMore', { count: brief.schedule.length - SCHEDULE_SHOWN })}
+                    {t('scheduleMore', { count: brief.schedule.length - shown })}
                   </summary>
-                  <ul className={GRID}>{brief.schedule.slice(SCHEDULE_SHOWN).map(notice)}</ul>
+                  <ul className={GRID}>{brief.schedule.slice(shown).map(notice)}</ul>
                 </details>
               )}
             </>
