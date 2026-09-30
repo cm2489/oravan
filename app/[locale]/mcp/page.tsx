@@ -206,7 +206,7 @@ export default async function McpPage({ params }: { params: Promise<{ locale: st
           </p>
           <Link
             href="/citations"
-            className="mt-4 inline-flex min-h-11 items-center gap-1.5 font-semibold text-go underline underline-offset-2 hover:text-go-deep"
+            className="mt-4 inline-flex min-h-11 items-center gap-1.5 font-semibold text-ink underline underline-offset-2 hover:decoration-[3px]"
           >
             {t('citationsLinkText')} →
           </Link>

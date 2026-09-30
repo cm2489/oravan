@@ -10,14 +10,17 @@
    THE TWO LAWS (settled by the owner — do not re-derive, do not soften)
    ---------------------------------------------------------------------------
 
-   COLOR LAW
-     `go` (#0f6c4a) means GO. It is spent on actions and on the 6px gauge, and
-     on nothing else. Not a heading, not a rule, not a hover tint on a topic.
-     `tint` (#e7f2ec) means YOURS — what the user picked, typed, or was handed.
+   COLOR LAW (palette "warm paper, bottle green", owner pick 2026-09-30)
+     Green is the brand: the masthead band (`go-deep`, #133f2d) and the
+     wordmark. `go` (#1d5e43) is spent on actions, the green panel and the 6px
+     gauge, and on nothing else. Not a heading, not a rule, not a link: links
+     are ink, underlined (docs/current-direction.md, Colour).
+     `tint` (#e5eee2) means YOURS — what the user picked, typed, or was handed.
      Never a topic tag, never a status, never decoration.
-     `urgent` (#ffc845, amber) is spent on exactly ONE fact: a bill standing on
-     the floor calendar. Always with ink text. The date is always printed
-     beside it. No date, no amber.
+     `urgent` (#ffc933, "the lamp") marks only what you can act on: a picked
+     choice, the House finder's half-lamp button, and the one dated floor
+     notice on Today (owner, 2026-09-29). Always with ink text. A floor status
+     anywhere else is an ink chip, not a lamp.
      `alert` means failure, and only failure.
      `ink` carries everything else — including every topic tag in every state.
 
@@ -38,72 +41,89 @@
    ---------------------------------------------------------------------------
 
    TEXT PAIRS (AA needs 4.5:1 normal, 3:1 at >=24px or >=18.66px bold)
-     ink        on paper ......... 17.66  AAA
-     ink        on wash .......... 16.23  AAA
-     ink        on tint .......... 15.40  AAA
-     ink        on urgent ........ 11.44  AAA   <- the only legal text on amber
-     ink-2      on paper .......... 7.87  AAA
-     ink-2      on wash ........... 7.23  AAA
-     ink-2      on tint ........... 6.86  AAA
-     go         on paper .......... 6.43  AAA
-     go         on wash ........... 5.91  AA
-     go         on tint ........... 5.61  AA
-     go-deep    on paper .......... 9.75  AAA
-     go-deep    on wash ........... 8.96  AAA
-     go-deep    on tint ........... 8.50  AAA
-     paper      on go ............. 6.43  AAA   <- filled action button
-     paper      on go-deep ........ 9.75  AAA   <- pressed action button
-     paper      on ink ........... 17.66  AAA   <- every ink enamel ground
-     paper      on alert .......... 7.66  AAA   <- filled failure state
-     alert      on paper .......... 7.66  AAA
-     alert      on wash ........... 7.04  AAA
-     go-bright  on ink ............ 9.48  AAA   <- link on an ink ground
-     go-pale    on go-deep ........ 6.86  AAA   <- secondary on the green panel
-     ink-pale   on ink ........... 10.82  AAA   <- secondary on an ink ground
+     ink        on paper ......... 16.50  AAA
+     ink        on wash .......... 15.13  AAA
+     ink        on tint .......... 14.48  AAA
+     ink        on urgent ........ 11.20  AAA   <- the only legal text on the lamp
+     ink-2      on paper .......... 7.56  AAA
+     ink-2      on wash ........... 6.93  AA
+     ink-2      on tint ........... 6.63  AA
+     go         on paper .......... 7.36  AAA
+     go         on wash ........... 6.75  AA
+     go         on tint ........... 6.46  AA
+     go-deep    on paper ......... 11.32  AAA
+     go-deep    on wash .......... 10.39  AAA
+     go-deep    on tint ........... 9.94  AAA
+     paper      on go ............. 7.36  AAA   <- filled action button
+     paper      on go-deep ....... 11.32  AAA   <- pressed action button
+     paper      on ink ........... 16.50  AAA   <- every ink enamel ground
+     paper      on alert .......... 5.93  AA    <- filled failure state
+     alert      on paper .......... 5.93  AA
+     alert      on wash ........... 5.44  AA
+     go-bright  on ink ............ 9.63  AAA   <- link on an ink ground
+     go-pale    on go-deep ........ 8.26  AAA   <- secondary on the green panel
+     ink-pale   on ink ........... 10.33  AAA   <- secondary on an ink ground
+     paper (band) on go-deep ..... 11.32  AAA   <- wordmark and nav on the band
+     go-pale (band) on go-deep .... 8.26  AAA   <- the band's secondary line
+     go-deep (switch) on paper ... 11.32  AAA   <- the language switch, inverted
+     paper (switch) on go ......... 7.36  AAA   <- the phone switch's cell
+   The House finder's light lamp button is `bg-urgent/30` over paper (#fdebba):
+   ink on it computes to 14.57 (tests/house-finder.unit.spec.ts measures it).
+   A stance choice's hover is the half-lamp, `bg-urgent/50` over paper
+   (#fee294, page 2's "half-lamp on hover"): ink on it computes to 13.55, and
+   its ink edge (hover:border-ink) is 13.55 against it.
 
    NON-TEXT / BOUNDARY PAIRS (1.4.11 needs 3:1)
-     line-strong on paper ......... 3.24  PASS  <- every component edge
-     line-strong on wash .......... 2.97  FAIL by 0.03 — see the note below
-     go (gauge segment) on paper .. 6.43  PASS
-     go (gauge segment) on line ... 4.70  PASS  <- segment against its track
-     go-bright on go-deep ......... 5.23  PASS
-     line       on paper .......... 1.37  DECORATIVE ONLY. `line` may separate;
+     line-strong on paper ......... 4.24  PASS  <- every component edge
+     line-strong on wash .......... 3.89  PASS  <- clears on the recessed ground
+     go (gauge segment) on paper .. 7.36  PASS
+     go (gauge segment) on line ... 5.68  PASS  <- segment against its track
+     go-bright on go-deep ......... 6.61  PASS
+     paper (ring) on go-deep ...... 11.32  PASS  <- the focus ring, band and panel
+     paper (ring) on ink .......... 16.50  PASS  <- the skip link's ring on its pill
+     go-pale (edge) on go-deep ..... 8.26  PASS  <- the language switch's edge
+     ink (picked edge) on urgent .. 11.20  PASS  <- a picked choice's edge
+     ink (picked edge) on paper ... 16.50  PASS  <- the same edge on the page
+     line       on paper .......... 1.30  DECORATIVE ONLY. `line` may separate;
                                           it may never be a component edge, and
                                           it may never be the only thing making
                                           a control findable.
-     urgent     on paper .......... 1.54  fill, not a boundary — the amber chip
-                                          is found by its ink text (11.44), so
+     urgent     on paper .......... 1.47  fill, not a boundary — a lamp is
+                                          found by its ink text (11.20) and,
+                                          on a control, its ink edge, so
                                           1.4.11 does not apply to the fill.
-     tint       on paper .......... 1.15  same: `tint` is always carrying ink
+     tint       on paper .......... 1.14  same: `tint` is always carrying ink
                                           text, and any tinted CONTROL also
                                           takes a line-strong or ink edge.
 
-   THE line-strong / wash NOTE (read before edging anything on a wash ground):
-     line-strong clears 3:1 against paper (3.24) but lands at 2.97 against
-     wash — 1% short. In the reference the only place a line-strong edge meets
-     a wash fill is a DISABLED control, and 1.4.11 exempts inactive components.
-     So the rule is: an enabled component's line-strong edge must have `paper`
-     on at least one side. A component whose own ground is `wash` takes an
-     `ink-2` edge (7.23) instead. Do not "fix" this by lightening wash or by
+   THE line-strong / wash NOTE:
+     The July palette's line-strong missed 3:1 on wash by 0.03, so an enabled
+     component edged in line-strong had to keep `paper` on one side. This
+     palette's line-strong clears both grounds (4.24 on paper, 3.89 on wash).
+     Keep it that way: do not "fix" a future miss by lightening wash or by
      using `line` as an edge.
 
    FOCUS IS TWO-TONE BY CONSTRUCTION, and that is why it passes:
-     A 3px ink ring alone on a go-filled button would be 2.75:1 — a fail. The
+     A 3px ink ring alone on a go-filled button would be 2.24:1 — a fail. The
      ring is therefore never adjacent to the fill. A filled control swaps its
      own 2px border to the gap tone on focus (`.ring-gap`), so the stack reads
-     outward: go fill | paper border 6.43 | paper gap | ink ring 17.66 | paper
-     page 17.66. Every adjacency clears 3:1.
-     On the green enamel panel (`.on-go`) it inverts: white fill | go-deep
-     border 9.75 | go-deep gap | white ring 9.75 | go-deep panel 9.75.
-     On an ink ground (`.on-dark`): white ring 17.66 against the ink ground.
+     outward: go fill | paper border 7.36 | paper gap | ink ring 16.50 | paper
+     page 16.50. Every adjacency clears 3:1.
+     On the green enamel panel (`.on-go`) it inverts: paper fill | go-deep
+     border 11.32 | go-deep gap | paper ring 11.32 | go-deep panel 11.32.
+     On the masthead band (`.on-band`) the ring is paper too: 11.32 against
+     the band, where the default ink ring would be 1.46. The skip link, an
+     ink pill that appears over the band, carries `.on-band` as well: its
+     paper ring is 16.50 against the pill and 11.32 against the band.
+     On an ink ground (`.on-dark`): paper ring 16.50 against the ink ground.
 
    KNOWN COLOR-VISION HAZARD, and its mitigation:
-     `go` and `alert` sit 1.19:1 apart in luminance. To a deuteranope they are
-     near-identical. `alert` is therefore NEVER the sole carrier of meaning: a
+     `go` and `alert` sit 1.24:1 apart in luminance (alert and ink 2.78:1).
+     To a deuteranope go and alert are near-identical. `alert` is therefore NEVER the sole carrier of meaning: a
      failure always also carries a 3px rule, a bold text label, and the right
      ARIA (`aria-invalid`, `role="alert"`). Color is the third signal, never
      the first. Same reasoning keeps `urgent` legible — it is found by its ink
-     text and its printed date, not by being yellow.
+     text (and its printed date, or its ink edge), not by being yellow.
    ========================================================================= */
 
 /* `static` — every token is emitted to :root whether or not a utility happens
@@ -118,12 +138,12 @@
      reachable by accident. Fifteen colors, all of them law-bearing. */
   --color-*: initial;
 
-  --color-paper: #ffffff;        /* the page, and text on any dark ground */
-  --color-wash: #f3f6f4;         /* recessed ground: notes, disabled, inset */
-  --color-ink: #16191b;          /* primary text, and every component edge */
-  --color-ink-2: #4a544e;        /* secondary text on paper or wash */
-  --color-ink-pale: #c3cdc6;     /* secondary text on an ink ground */
-  --color-ink-deep: #16191b;     /* ROLE TOKEN: dark enamel GROUND only.
+  --color-paper: #fcfaf4;        /* the page, and text on any dark ground */
+  --color-wash: #f4f0e6;         /* recessed ground: notes, disabled, inset */
+  --color-ink: #1c1b18;          /* primary text, and every component edge */
+  --color-ink-2: #55514a;        /* secondary text on paper or wash */
+  --color-ink-pale: #cdc8bd;     /* secondary text on an ink ground */
+  --color-ink-deep: #1c1b18;     /* ROLE TOKEN: dark enamel GROUND only.
                                     Deliberately the same value as --color-ink:
                                     variant B has exactly one dark, and the ink
                                     you read is the ink you stand on. The two
@@ -131,26 +151,24 @@
                                     call site — `text-ink` / `border-ink` for
                                     marks, `bg-ink-deep` for a ground. Never
                                     give these two different values. */
-  --color-line: #d7ded9;         /* DECORATIVE separators only (1.37:1) */
-  --color-line-strong: #7e948a;  /* every component edge (3.24:1 on paper) */
-  --color-go: #0f6c4a;           /* GO: actions and the gauge. Nothing else. */
-  --color-go-deep: #0a4e35;      /* pressed/hover go; the enamel panel ground */
-  --color-go-bright: #5fd39a;    /* go, on an ink ground */
-  --color-go-pale: #c9ddd4;      /* secondary text on the green enamel panel */
-  --color-tint: #e7f2ec;         /* YOURS: what the user chose or wrote */
-  --color-urgent: #ffc845;       /* one dated floor-calendar fact, ink text */
-  --color-alert: #8c3a1f;        /* failure, and only failure */
-  /* WHY THIS HEX, AND WHY IT WAS NOT CHANGED (decided 2026-07-24, measured).
-     `alert` is confusable with `go` for a deuteranope — they are 1.19:1 apart
-     in luminance. That is real, and it has no colour-space fix: every darker
-     candidate that separates from `go` collapses into `ink` instead
-     (#6b1d10 = 1.81 vs go but 1.52 vs ink), and every lighter one that
-     separates from `ink` moves into `go` (#b23a1a = 2.95 vs ink, 1.08 vs go).
-     There is no hex that clears both, so the search was abandoned rather than
-     churned. #8c3a1f keeps the best contrast on both grounds (7.66 on paper,
-     7.04 on wash) and mid-range separation from each.
+  --color-line: #e3ddd0;         /* DECORATIVE separators only (1.30:1) */
+  --color-line-strong: #7f7768;  /* every component edge (4.24:1 on paper) */
+  --color-go: #1d5e43;           /* GO: actions and the gauge. Nothing else. */
+  --color-go-deep: #133f2d;      /* pressed/hover go; the enamel panel; the masthead band */
+  --color-go-bright: #7fd3a2;    /* go, on an ink ground */
+  --color-go-pale: #cbdccf;      /* secondary text on the green panel and the band */
+  --color-tint: #e5eee2;         /* YOURS: what the user chose or wrote */
+  --color-urgent: #ffc933;       /* the lamp: what you can act on, ink text */
+  --color-alert: #a0461f;        /* failure, and only failure */
+  /* WHY THIS HEX (re-measured 2026-09-30 for the bottle-green palette).
+     `alert` is confusable with `go` for a deuteranope, and no hex separates
+     it from both `go` and `ink` at once: a darker one collapses into ink, a
+     lighter one into go. The July value (#8c3a1f) sat 1.00:1 from this
+     palette's deeper `go` (computed with lib/contrast.ts), so it moved to a
+     rust: #a0461f is 1.24 from go and 2.78 from ink (July: 1.19 and 2.30),
+     and it keeps AA text on both grounds (5.93 on paper, 5.44 on wash).
      Of the two confusions, alert-vs-ink is the costlier one — an error you do
-     not register AS an error — and this value is the stronger of the two there.
+     not register AS an error — and this value widens both.
      THE MITIGATION IS THE ACTUAL ANSWER, and it is mandatory: alert is never
      the sole carrier of failure. It always rides with a 3px rule, a bold
      label, and `aria-invalid` / `role="alert"`. That is what WCAG 1.4.1
@@ -303,9 +321,11 @@ figcaption {
 
 /* Link COLOR is not set here on purpose — the shell's nav, the footer and the
    green panel all carry links that must inherit their ground's tone. Content
-   links take `text-go hover:text-go-deep`; visited is spent on bills and
-   articles only (`visited:text-go-deep` — an ink-weight shift, not a second
-   hue, so it stays inside the color law) and never on navigation. */
+   links are ink and underlined (docs/current-direction.md, Colour): `text-ink
+   underline`, and hover thickens the underline (`hover:decoration-[3px]`)
+   rather than changing the hue. Visited is spent on bills and articles only
+   (`visited:text-ink-2` — a weight shift inside ink, not a second hue) and
+   never on navigation. */
 a {
   text-decoration-thickness: 1.5px;
   text-underline-offset: 3px;
@@ -331,6 +351,15 @@ a {
   --focus-gap: var(--color-ink);
 }
 .on-go {
+  --focus: var(--color-paper);
+  --focus-gap: var(--color-go-deep);
+}
+/* The masthead band (components/Header.tsx): the site header on `go-deep`.
+   The same ring as the green panel — paper, 11.32:1 on the band, where the
+   default ink ring would be 1.46:1 — but NOT the panel's dark-ground leading
+   below: the bar's type keeps its own line-heights, so the band changes no
+   size or spacing. Text colours stay explicit at the call site. */
+.on-band {
   --focus: var(--color-paper);
   --focus-gap: var(--color-go-deep);
 }

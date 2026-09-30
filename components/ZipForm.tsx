@@ -15,7 +15,7 @@ import { setPrefs, usePrefs } from '@/lib/local';
  * actually decides whether two controls fit side by side. A viewport query
  * would leave the rail's 22rem copy rendering a two-track grid on a desktop.
  *
- * FAILURE IS NEVER CARRIED BY COLOR. `go` and `alert` sit 1.19:1 apart in
+ * FAILURE IS NEVER CARRIED BY COLOR. `go` and `alert` sit 1.24:1 apart in
  * luminance, so a red-vs-green read is unavailable to a deuteranope. The
  * error block is therefore opened by a 3px ink rule, led by a bold uppercase
  * label, and wired with aria-invalid + role="alert"; the alert tone on the

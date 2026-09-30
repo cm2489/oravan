@@ -77,15 +77,12 @@ export function OravanLockup({
       {/* Mark-as-O. It inherits currentColor by default, so the lockup reads as
           ONE ink (or one paper, on a dark ground). `markClassName` is the one
           sanctioned exception: the owner asked for the O to carry a green pop
-          (2026-07-24), so the header passes `text-go`.
+          (2026-07-24), and the header passed `text-go` on paper. Since the
+          header became the bottle-green band (colour direction c, owner's
+          pick 2026-09-30) the band itself is the green, and the whole lockup
+          is one cream: `go` on the band would be 1.54:1.
 
-          This deliberately spends `go` outside the "actions and the gauge"
-          rule, and the owner made that call knowing it: green now sits in the
-          header on every page, so it is no longer exclusively a data-earned
-          colour. The data gate still governs the one thing that matters —
-          the floor-vote panel is still the page's only green SLAB.
-
-          Never pass `markClassName` on a dark ground: `go` on `ink` is 2.75:1. */}
+          Never pass `markClassName` on a dark ground: `go` on `ink` is 2.24:1. */}
       <svg
         viewBox="75.7 698.5 648.9 648.9"
         fill="currentColor"

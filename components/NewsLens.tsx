@@ -106,7 +106,7 @@ export async function NewsLens({
             <li key={b.slug} className="border-t-[1.5px] border-line first:border-t-0">
               <Link
                 href={`/bills/${b.slug}`}
-                className="flex min-h-11 flex-wrap items-baseline gap-x-2 gap-y-0.5 py-2.5 text-ink no-underline visited:text-ink-2 hover:text-go-deep hover:underline"
+                className="flex min-h-11 flex-wrap items-baseline gap-x-2 gap-y-0.5 py-2.5 text-ink underline visited:text-ink-2 hover:decoration-[3px]"
               >
                 <span className="whitespace-nowrap text-xs font-bold text-ink-2 tabular-nums">
                   {b.identifier}
@@ -172,7 +172,7 @@ export async function NewsLens({
                   <span className="block text-sm font-semibold text-ink-2">
                     {captionOf(b) ?? t('sources', { count: b.sourceCount })}
                   </span>
-                  <h3 className="mt-1 text-lg leading-tight font-bold group-hover:underline group-hover:decoration-go group-hover:decoration-[3px]">
+                  <h3 className="mt-1 text-lg leading-tight font-bold group-hover:underline group-hover:decoration-ink group-hover:decoration-[3px]">
                     {b.headline ?? b.title}
                   </h3>
                   <span className="mt-1 block text-sm text-ink-2 tabular-nums">{meta.join(' · ')}</span>

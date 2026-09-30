@@ -143,7 +143,7 @@ export function Gauge({
               {segment.href ? (
                 <a
                   href={segment.href}
-                  className="block no-underline hover:text-go-deep hover:underline"
+                  className="block no-underline hover:underline"
                 >
                   {body}
                 </a>

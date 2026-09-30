@@ -27,7 +27,7 @@ import type { BriefScheduleItem } from '@/lib/today';
  */
 
 const LINK =
-  'font-semibold text-go underline underline-offset-4 visited:text-go-deep hover:text-go-deep';
+  'font-semibold text-ink underline underline-offset-4 visited:text-ink-2 hover:decoration-[3px]';
 
 export function TodayFloorCard({
   item,
@@ -75,7 +75,7 @@ export function TodayFloorCard({
       <h3 className="mt-1 text-lg leading-tight font-bold text-ink">
         <Link
           href={item.href}
-          className="inline-flex min-h-11 items-center hover:underline hover:decoration-go hover:decoration-[3px]"
+          className="inline-flex min-h-11 items-center underline hover:decoration-[3px]"
         >
           {headline ?? (
             <span lang="en">{item.kind === 'bill' ? (item.teaser?.title ?? item.citation) : item.citation}</span>

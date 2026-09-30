@@ -23,7 +23,7 @@ interface Props {
   text: string;
 }
 
-// Hand-sized controls, so `rounded-control`. `line-strong` reads 3.24:1
+// Hand-sized controls, so `rounded-control`. `line-strong` reads 4.24:1
 // against the paper page on at least one side of every edge.
 const btn =
   'inline-flex min-h-11 items-center gap-1.5 rounded-control border-[1.5px] border-line-strong px-3 py-2 text-sm font-semibold text-ink no-underline hover:border-go hover:bg-tint hover:text-go-deep';

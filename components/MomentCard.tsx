@@ -84,7 +84,7 @@ export function MomentCard({ moment }: { moment: MomentTeaser }) {
             not a caveat on the reader's card. The card's status line below is
             re-derived from the record on every build either way. */}
       </div>
-      <h3 className="mt-3 text-lg leading-tight font-bold text-ink group-hover:underline group-hover:decoration-go group-hover:decoration-[3px]">
+      <h3 className="mt-3 text-lg leading-tight font-bold text-ink group-hover:underline group-hover:decoration-ink group-hover:decoration-[3px]">
         {moment.name}
       </h3>
       <p className="mt-2 max-w-read text-sm text-ink-2">{moment.dek}</p>

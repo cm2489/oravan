@@ -22,7 +22,7 @@ import type { StatusWord } from '@/lib/status-word';
 /* The question page's content link: green means go, and a link goes
    somewhere. 44px tall on its own line (rule 7). */
 const READ_LINK =
-  'inline-flex min-h-11 items-center gap-2 text-sm font-bold text-go underline transition-colors hover:text-go-deep';
+  'inline-flex min-h-11 items-center gap-2 text-sm font-bold text-ink underline transition-colors hover:decoration-[3px]';
 
 export function MomentRecordRow({
   slug,

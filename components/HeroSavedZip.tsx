@@ -98,7 +98,7 @@ export function HeroSavedZip({ children }: { children: ReactNode }) {
       <Link
         key={m.bioguide}
         href={`/reps/${m.bioguide}`}
-        className="font-bold text-ink underline underline-offset-4 hover:text-go-deep"
+        className="font-bold text-ink underline underline-offset-4 hover:decoration-[3px]"
       >
         {t('homeZip.member', { role: memberRole(m), name: m.name })}
       </Link>
@@ -107,7 +107,7 @@ export function HeroSavedZip({ children }: { children: ReactNode }) {
   );
   const lookupHref = `/reps?zip=${zip}`;
   const inlineLink = (chunks: ReactNode) => (
-    <Link href={lookupHref} className="font-semibold text-go underline underline-offset-4 hover:text-go-deep">
+    <Link href={lookupHref} className="font-semibold text-ink underline underline-offset-4 hover:decoration-[3px]">
       {chunks}
     </Link>
   );
@@ -120,7 +120,7 @@ export function HeroSavedZip({ children }: { children: ReactNode }) {
         <p className="text-sm font-bold">{t('homeZip.members')}</p>
         <Link
           href="/reps?change=1"
-          className="inline-flex min-h-11 items-center text-sm font-semibold text-go underline underline-offset-4 hover:text-go-deep"
+          className="inline-flex min-h-11 items-center text-sm font-semibold text-ink underline underline-offset-4 hover:decoration-[3px]"
         >
           {t('reps.changeZip')}
         </Link>

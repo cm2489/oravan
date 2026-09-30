@@ -21,7 +21,7 @@ import type { RollCall } from '@/lib/types';
  * it, in the record's four words, is the information.
  *
  * It sits inside the green enamel panel (components/system/FloorVotePanel.tsx
- * `aside`), so its text uses the panel's pale ink, 6.86:1 on go-deep.
+ * `aside`), so its text uses the panel's pale ink, 8.26:1 on go-deep.
  */
 const POSITIONS = ['yea', 'nay', 'present', 'notVoting'] as const;
 
