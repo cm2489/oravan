@@ -284,7 +284,8 @@ ${ai_summary}
 
 STRICT RULES:
 - Use ONLY facts present in the summary. Never invent numbers, costs, or claims.
-- Headlines: 45-90 chars, sentence case, factual news-desk style, varied construction (NOT "Topic — Consequence", avoid colons), never start with "Congress". Prioritize the most decision-relevant specifics: what it does, who it affects, what it costs, or where it stands.
+- Headlines: 45-90 chars, sentence case, factual news-desk style, varied construction (NOT "Topic — Consequence", avoid colons), never start with "Congress". Prioritize the most decision-relevant specifics: what it does, who it affects, or what it costs.
+- Never say where the bill stands in Congress in the headlines, the TLDR, or any section (WHAT, WHO, WHY, COST, chips), in either language: not which chamber has it, not which committee, not whether a vote happened or is coming, not whether it went to the president, even if the summary says so. The page prints that from the official record.
 - TLDR: one sentence, max 160 chars, the single most decision-relevant fact.
 - WHAT: 1-3 sentences. WHO: 1-2. WHY: 1-2 sentences of neutral consequence, never benefits-framing.
 - COST: 1-2 sentences ONLY if the summary contains spending/funding/fines/who-pays content; otherwise output exactly NONE (and ES_COST, COST_CHIPS, ES_COST_CHIPS all NONE too).
