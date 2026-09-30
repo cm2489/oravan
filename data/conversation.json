@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-09-30T18:45:51.155Z",
+    "fetched_at": "2026-09-30T19:13:43.871Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-09-30T18:45:51.155Z"
+        "checked_at": "2026-09-30T19:13:43.871Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-27",
         "week_label": "Most-Viewed Bills - Week of September 27, 2026",
         "entries": 8,
-        "checked_at": "2026-09-30T18:45:51.155Z"
+        "checked_at": "2026-09-30T19:13:43.871Z"
       },
       "leans": {
         "center": {
@@ -894,6 +894,13 @@
           "url": "https://news.google.com/rss/articles/CBMif0FVX3lxTE1qNWpkU21nTmwxNThsdnpzeG02NVFNQmNaUHBRZWNWOHdQQ1R1TmE3TzVfUkE1MHh6eFRRTUp4M2VRcGZGY1RnanJMUjRNOG9uN2JqUFFIMEFOUFRQTWtmWUVFYTlBWTQzd3prd1dVRUpMV2YxQVRYU1hSQXdkQms?oc=5"
         },
         {
+          "domain": "newsweek.com",
+          "lean": "left",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMipAFBVV95cUxOcnBNRmdaazFJdnFSbGUyWEVTVjlYRFdmUHh2MlpiZE9rM3BiMVM5NndXU1EyQ1gxY2VrMUdBYTFjZzZsdV9LWDk1T0lsemh4Y2JSRkNsUklnV1RoeEVlRDJRR2VBeGs2UmFSbUZSemJyRDFBV29OZ2VPZXRsUGNOM2x0NklVTVJhZ0hBZmhWRDNJSnF2N2tKalh3WlZYX0ZMbjNBUw?oc=5"
+        },
+        {
           "domain": "nypost.com",
           "lean": "right",
           "firstSeen": "2026-09-30",
@@ -913,6 +920,13 @@
           "firstSeen": "2026-09-30",
           "lastSeen": "2026-09-30",
           "url": "https://www.politico.com/live-updates/2026/09/30/congress/senate-stock-trading-vote-01099912"
+        },
+        {
+          "domain": "reuters.com",
+          "lean": "center",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMiogFBVV95cUxQZ05ZTWN6RUNvTGVETzdsejlqam1USDRBUHdSWlJpNE9FZEw2UENFb2hqeUk1bXZ6RlpYTWVJQjR6djYwLTNkMk1RSlhfNjFqMWt4Y1VPNTlHLW1Kb3BTTloxQ1o4NmVkQUs2QlJpTDU3blpKM3EyX1I2WU4zN2hUMVgtMk84YVdzVUttNVp6a2FMWnBXVE12endUYWNmNTh3MFE?oc=5"
         },
         {
           "domain": "thehill.com",
@@ -940,6 +954,12 @@
           "firstSeen": "2026-09-30",
           "lastSeen": "2026-09-30",
           "url": "https://news.google.com/rss/articles/CBMiZEFVX3lxTFBqZ0l3aWF4cmI0eVdsaWNMUnd4eUxZOWNTN3hpdUg2V2JUVTF1M0doWGZZd2ZZUTFJR294emlyWFJ4OXdmZDh0WmwzU2k2YlViMGZ4UEpJcHkzS3VFZlVlcEhtWkw?oc=5"
+        },
+        {
+          "domain": "politicalwire.com",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMilgFBVV95cUxQUXZpTGlJNGE1Z3ExdUhBdHpqX3hoRzJsQnBHSkd2N2JsNmY2dzJ2b1FLUUVIbXU5dGE4OFhYNVhwTThVdUdKZkF2ZUl4MWhoT0w3TmxXbkVSd21QNFFFcU5vNTFqMFNBZzhiRHBDbFZnWTkwLV90RG9LVHNjbTV2X1F0eEd3bzgzOEFGWXY1SzB0Q09DNlE?oc=5"
         },
         {
           "domain": "qz.com",
