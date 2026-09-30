@@ -75,7 +75,7 @@ export function TodayFloorCard({
       <h3 className="mt-1 text-lg leading-tight font-bold text-ink">
         <Link
           href={item.href}
-          className="inline-flex min-h-11 items-center hover:underline hover:decoration-ink hover:decoration-[3px]"
+          className="inline-flex min-h-11 items-center underline hover:decoration-[3px]"
         >
           {headline ?? (
             <span lang="en">{item.kind === 'bill' ? (item.teaser?.title ?? item.citation) : item.citation}</span>

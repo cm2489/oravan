@@ -106,7 +106,7 @@ export async function NewsLens({
             <li key={b.slug} className="border-t-[1.5px] border-line first:border-t-0">
               <Link
                 href={`/bills/${b.slug}`}
-                className="flex min-h-11 flex-wrap items-baseline gap-x-2 gap-y-0.5 py-2.5 text-ink no-underline visited:text-ink-2 hover:underline"
+                className="flex min-h-11 flex-wrap items-baseline gap-x-2 gap-y-0.5 py-2.5 text-ink underline visited:text-ink-2 hover:decoration-[3px]"
               >
                 <span className="whitespace-nowrap text-xs font-bold text-ink-2 tabular-nums">
                   {b.identifier}

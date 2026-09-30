@@ -21,11 +21,11 @@ import { useRouter } from '@/i18n/navigation';
  * IN-FLIGHT IS A REAL DISABLED STATE, not a dimmed one: opacity would drag
  * every pair below AA at once. A checking control takes the `wash` ground and
  * a `line-strong` edge - the one place that pairing is legal, because 1.4.11
- * exempts inactive components - plus `ink-2` text at 7.23:1 and
+ * exempts inactive components - plus `ink-2` text at 6.93:1 and
  * cursor-not-allowed. The status line beside it is `role="status"`, so the
  * wait is announced rather than only drawn.
  *
- * FAILURE IS NEVER CARRIED BY COLOR (go and alert are 1.19:1 apart): a 3px
+ * FAILURE IS NEVER CARRIED BY COLOR (go and alert are 1.24:1 apart): a 3px
  * ink rule, a bold uppercase label, aria-invalid and role="alert" all fire
  * before the alert tone does.
  */

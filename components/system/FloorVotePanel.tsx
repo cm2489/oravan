@@ -242,9 +242,9 @@ export function FloorVotePanel({
       </div>
 
       <div>
-        {/* white fill on the enamel: `ring-gap` swaps this button's own
-            border to go-deep on focus, so the white ring never touches the
-            white fill. 9.75:1 at every adjacency. */}
+        {/* paper fill on the enamel: `ring-gap` swaps this button's own
+            border to go-deep on focus, so the paper ring never touches the
+            paper fill. 11.32:1 at every adjacency. */}
         {/* data-call-cta: FloatingCallButton's stand-down contract — on a
             floor-calendar bill page both CTAs were visible at once, and at
             320px the floating button overlapped this one (Phase-1 P1).

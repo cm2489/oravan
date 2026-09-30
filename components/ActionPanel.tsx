@@ -47,8 +47,10 @@ import { ZipForm } from './ZipForm';
  *
  * COLOR LAW inside this panel:
  *   go     the dial, and only the dial.
- *   lamp   (`urgent`) the stance you picked: a full lamp fill with ink type
- *          (11.20:1) and an ink edge — page 2's "full lamp when picked"
+ *   lamp   (`urgent`) the stance choices: the half-lamp on hover
+ *          (`bg-urgent/50` over paper, ink 13.55:1) and a full lamp fill with
+ *          ink type (11.20:1) and an ink edge when picked — page 2's
+ *          "outlined at rest, half-lamp on hover, full lamp when picked"
  *          (docs/current-direction.md, Layout, 2026-09-27 00:40).
  *   tint   YOURS — the outcome you logged, the draft you edit. Never a
  *          status, never decoration.
@@ -1065,7 +1067,7 @@ export function ActionPanel({
                 className={`flex min-h-12 items-center gap-2 rounded-control border-2 px-4 py-3 text-left text-md font-bold transition-colors disabled:cursor-not-allowed disabled:border-line-strong disabled:bg-wash disabled:text-ink-2 ${
                   stance === s
                     ? 'border-ink bg-urgent text-ink'
-                    : 'border-line-strong bg-paper text-ink hover:border-ink'
+                    : 'border-line-strong bg-paper text-ink hover:border-ink enabled:hover:bg-urgent/50'
                 }`}
               >
                 {/* Never colour alone: the chosen card also carries a check

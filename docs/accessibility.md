@@ -24,7 +24,7 @@ Every adjacency clears 3:1. Ground contexts retune the two tones:
 
 - `.on-dark` — any ink enamel ground (footer, voicemail, transcript title bar). Ring = paper (16.50 on ink), gap = ink.
 - `.on-go` — the green enamel panel. Ring = paper (11.32 on go-deep), gap = go-deep. Stack: `paper fill │ go-deep border 11.32 │ go-deep gap │ paper ring 11.32 │ go-deep panel 11.32`.
-- `.on-band` — the masthead band (the site header on `go-deep`). Ring = paper (11.32 on the band, where the default ink ring would be 1.46), gap = go-deep. Unlike `.on-go` it leaves the type's line-heights alone.
+- `.on-band` — the masthead band (the site header on `go-deep`). Ring = paper (11.32 on the band, where the default ink ring would be 1.46), gap = go-deep. Unlike `.on-go` it leaves the type's line-heights alone. The skip link carries it too: it is an ink pill shown over the band, and its paper ring is 16.50 against the pill and 11.32 against the band.
 
 Focus is **never** removed. It is never drawn in `go`, because `go` is what buttons are filled with, and a green ring on a green button is 1.00:1 — the general form of that rule is: never draw the ring in the colour of the thing it surrounds.
 
@@ -37,6 +37,8 @@ Three results for the current tokens that you must know before you build on them
 1. **`line-strong` clears 3:1 on both grounds: 4.24 on paper, 3.89 on wash.** The July palette missed on wash by 0.03 (2.97), which forced an enabled component's `line-strong` edge to keep `paper` on one side; this palette lifts that restriction. If a future palette misses again, do not "fix" it by lightening `wash` or by promoting `line` (1.30 on paper, decorative only) to an edge.
 2. **`go` and `alert` sit 1.24:1 apart in luminance** (alert and ink: 2.78) — to a deuteranope go and alert are near-identical. `alert` is therefore never the sole carrier of meaning: a failure always also carries a 3px rule, a bold text label, and the right ARIA (`aria-invalid`, `role="alert"`). Color is the third signal, never the first.
 3. **Fill colors are not boundaries.** `urgent` (the lamp) on paper is 1.47:1 and `tint` on paper is 1.14:1, and both are fine — a lamp is found by its ink text (11.20) and, on a control, its ink edge (a picked stance) or `line-strong` edge (the House finder), and the Today floor notice by its printed date, not by being yellow; `tint` is always carrying ink text. But any *control* on a tinted ground still takes a `line-strong` or `ink` edge.
+
+Choice controls light up in two steps (page 2, Layout, 2026-09-27 00:40): the half-lamp on hover is `bg-urgent/50` over paper (#fee294), ink on it 13.55; the picked state is the full lamp, ink on it 11.20, with an ink edge. The House finder's lighter lamp (`bg-urgent/30`, #fdebba) carries ink at 14.57.
 
 The masthead band adds three text pairs, all in the ledger: the wordmark and nav on the band (paper on go-deep, 11.32), the trust line (go-pale on go-deep, 8.26) and the inverted language switch (go-deep on paper, 11.32).
 

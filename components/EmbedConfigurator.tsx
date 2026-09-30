@@ -521,7 +521,7 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
               {matchStatus === 'loading' && <p className="text-ink-2">{t('matchSiteLoading')}</p>}
               {/* A failure is opened by a 3px ink rule and set in bold on a
                   wash — the same specimen the citizen site uses. `alert` and
-                  `go` are 1.19:1 apart in luminance, so color is never the
+                  `go` are 1.24:1 apart in luminance, so color is never the
                   carrier here: the rule, the weight and role="alert" are. */}
               {(matchStatus === 'bad_request' ||
                 matchStatus === 'rate_limited' ||

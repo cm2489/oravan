@@ -313,8 +313,8 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   /*
    * ONE QUIET AI LABEL PER BLOCK (card a9): the AI mark, one short line, and
    * a link to how this is made. Each ground keeps its own contrast-checked
-   * tokens: ink-2 on paper (7.87:1), ink-pale on the ink band (10.82:1),
-   * go-pale on the green enamel (6.86:1).
+   * tokens: ink-2 on paper (7.56:1), ink-pale on the ink band (10.33:1),
+   * go-pale on the green enamel (8.26:1).
    */
   const AI_LINE_TEXT: Record<ChipGround, string> = {
     paper: 'text-ink-2',

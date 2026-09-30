@@ -260,7 +260,7 @@ export function Header() {
       {/* The thumb bar. Paper, not ink: the footer is the page's only dark
           mass, and a permanent dark band across the bottom of every phone
           screen would take that meaning away from it. Its top rule is
-          `line-strong` (3.24:1 on paper) because THAT rule is a real
+          `line-strong` (4.24:1 on paper) because THAT rule is a real
           boundary — the only thing separating a fixed bar from the content
           scrolling underneath it — and `line` would not clear 1.4.11.
           `data-thumb-bar` is how an in-place glossary box finds the bar's

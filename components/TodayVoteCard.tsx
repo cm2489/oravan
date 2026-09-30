@@ -51,7 +51,7 @@ export function TodayVoteCard({ vote, chamberName }: { vote: BriefRollCall; cham
       <h3 className="mt-1 text-lg leading-tight font-bold text-ink">
         <Link
           href={`/bills/${vote.bill.slug}`}
-          className="inline-flex min-h-11 items-center hover:underline hover:decoration-ink hover:decoration-[3px]"
+          className="inline-flex min-h-11 items-center underline hover:decoration-[3px]"
         >
           {headline ?? <span lang="en">{vote.bill.title}</span>}
         </Link>

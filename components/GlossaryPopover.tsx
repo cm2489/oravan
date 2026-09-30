@@ -404,7 +404,7 @@ export function GlossaryPopover({
             {body}
           </span>
           {/* The AI label: small print under the words it labels. See the
-              header, "THE AI LABEL". ink-2 on paper is 7.87:1. */}
+              header, "THE AI LABEL". ink-2 on paper is 7.56:1. */}
           <span id={noteId} data-glossary-ai-note className="mt-2 block text-2xs text-ink-2">
             {aiNote}
           </span>

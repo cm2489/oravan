@@ -58,7 +58,7 @@ The impeccable skill is a lint and a rubric, not an explorer (audit card a8, 202
 
 Newest first. One line per change: date · who · the words or the card · what line changed.
 
-- `2026-09-30: the owner picked colour direction c (warm paper, bottle green) from the direction page; built as #425, not yet merged.`
+- `2026-09-30 · owner · "For now start on skin c" (his pick from the colour direction page, as the orchestrator relayed it) → colour: direction c, warm paper and bottle green with a green masthead band, built as #425`
 - `2026-09-30 · owner · "31 a but add floor first" and "29 a" (typed, his reply to the Run 1 Report) → on /today the floor band comes before "The chambers", and the phone tab reads "Big Questions" / "Grandes preguntas" on two lines`
 - `2026-09-29 · owner · "if there is a vote this week scheduled it needs to have a yellow tag or something that explicitly draws attention to it" (typed) → colour: on Today, a yellow tag marks a floor notice; "Status and date tags are plain text" no longer covers that one tag`
 - `2026-09-29 · owner · "The 'Call' button in the header needs to be removed and 'Today in Congress' needs to come first on the header" (typed), "Desktop only" (picker), "I'd like the phone to say Big Questions instead of just questions if possible" (typed) → layout: the desktop row is Today in Congress · Bills · Big Questions · My reps; the phone bar keeps five tabs and says Big Questions`

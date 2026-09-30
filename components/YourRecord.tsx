@@ -300,9 +300,9 @@ export function YourRecord({ standalone = false }: { standalone?: boolean }) {
                   {t('confirmErase')}
                 </button>
                 {/* Cancel takes bg-paper: its border-line-strong edge sat
-                    directly on the wash panel at 2.97:1 — the exact
-                    enabled-control case the contrast ledger marks FAIL
-                    (line-strong needs paper on at least one side). */}
+                    directly on the wash panel at 2.97:1 in the July
+                    palette, which the ledger then marked FAIL (today's
+                    line-strong clears wash at 3.89:1; the paper stays). */}
                 <button
                   type="button"
                   onClick={() => setConfirming(false)}

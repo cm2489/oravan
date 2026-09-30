@@ -234,7 +234,7 @@ export function resolveEmbedTheme(raw: {
   // accentInk (the text on an accent-filled chip/toggle) picks the tenant's
   // OWN light/dark color when a pair is set — not Oravan's paper/ink — so a
   // themed widget's button text is the buyer's white, not ours. With no pair,
-  // pickTextColor's defaults are the variant-B paper/ink pair.
+  // pickTextColor's defaults are the site's paper/ink pair.
   //
   // ...but WITH an AA FLOOR. Picking the better of the tenant's own two
   // colors says nothing about whether the better one is legible: the
@@ -243,15 +243,22 @@ export function resolveEmbedTheme(raw: {
   // accent whose brand ink and surface both sit near it) shipped sub-AA text
   // inside the widget on the buyer's own site (pre-launch audit, 2026-07-25).
   //
-  // If the tenant's own choice does not clear 4.5, fall back to whichever of
-  // paper/ink does — lib/contrast.ts proves one of them always clears >= 4.58
-  // against any surface, so this always converges. The buyer's palette is
-  // honored whenever it is legible, and never at the cost of legibility.
+  // If the tenant's own choice does not clear 4.5, try the site's own
+  // paper/ink pair (pickTextColor's defaults). That pair is a cream and a
+  // warm near-black, not the extremes, so it does NOT always clear 4.5: on a
+  // mid-tone accent such as #d2503c the better of the two is 4.06 (about 10%
+  // of sampled sRGB accents fall below 4.5, measured 2026-09-30). The last
+  // step is therefore pure white or pure black, and the better of those two
+  // clears >= sqrt(21) ~ 4.58 against ANY colour, so this always converges.
+  // The buyer's palette is honored whenever it is legible, and never at the
+  // cost of legibility.
   const accentInk = accent
     ? (() => {
         const tenantChoice = pickTextColor(accent, surface, ink);
         if (contrastRatio(accent, tenantChoice) >= MIN_PAIR_CONTRAST) return tenantChoice;
-        return pickTextColor(accent);
+        const siteChoice = pickTextColor(accent);
+        if (contrastRatio(accent, siteChoice) >= MIN_PAIR_CONTRAST) return siteChoice;
+        return pickTextColor(accent, '#ffffff', '#000000');
       })()
     : undefined;
   const focus =

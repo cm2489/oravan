@@ -67,8 +67,11 @@
      go-pale (band) on go-deep .... 8.26  AAA   <- the band's secondary line
      go-deep (switch) on paper ... 11.32  AAA   <- the language switch, inverted
      paper (switch) on go ......... 7.36  AAA   <- the phone switch's cell
-   The House finder's half-lamp button is `bg-urgent/30` over paper (#fdebba):
+   The House finder's light lamp button is `bg-urgent/30` over paper (#fdebba):
    ink on it computes to 14.57 (tests/house-finder.unit.spec.ts measures it).
+   A stance choice's hover is the half-lamp, `bg-urgent/50` over paper
+   (#fee294, page 2's "half-lamp on hover"): ink on it computes to 13.55, and
+   its ink edge (hover:border-ink) is 13.55 against it.
 
    NON-TEXT / BOUNDARY PAIRS (1.4.11 needs 3:1)
      line-strong on paper ......... 4.24  PASS  <- every component edge
@@ -77,6 +80,7 @@
      go (gauge segment) on line ... 5.68  PASS  <- segment against its track
      go-bright on go-deep ......... 6.61  PASS
      paper (ring) on go-deep ...... 11.32  PASS  <- the focus ring, band and panel
+     paper (ring) on ink .......... 16.50  PASS  <- the skip link's ring on its pill
      go-pale (edge) on go-deep ..... 8.26  PASS  <- the language switch's edge
      ink (picked edge) on urgent .. 11.20  PASS  <- a picked choice's edge
      ink (picked edge) on paper ... 16.50  PASS  <- the same edge on the page
@@ -108,7 +112,9 @@
      On the green enamel panel (`.on-go`) it inverts: paper fill | go-deep
      border 11.32 | go-deep gap | paper ring 11.32 | go-deep panel 11.32.
      On the masthead band (`.on-band`) the ring is paper too: 11.32 against
-     the band, where the default ink ring would be 1.46.
+     the band, where the default ink ring would be 1.46. The skip link, an
+     ink pill that appears over the band, carries `.on-band` as well: its
+     paper ring is 16.50 against the pill and 11.32 against the band.
      On an ink ground (`.on-dark`): paper ring 16.50 against the ink ground.
 
    KNOWN COLOR-VISION HAZARD, and its mitigation:
