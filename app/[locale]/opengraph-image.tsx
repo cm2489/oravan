@@ -7,7 +7,7 @@ export const alt = 'Oravan';
 
 const TAGLINES: Record<string, { tag: string; sub: string }> = {
   en: { tag: 'Your line to Congress', sub: 'Read bills in plain words and call your members of Congress.' },
-  es: { tag: 'Tu línea con el Congreso', sub: 'Encuentra a tus representantes. Entiende los proyectos de ley. Haz la llamada.' },
+  es: { tag: 'Tu línea con el Congreso', sub: 'Lee proyectos de ley en palabras claras y llama a tus miembros del Congreso.' },
 };
 
 // Palette is the live token set from app/globals.css, restated as literals because
