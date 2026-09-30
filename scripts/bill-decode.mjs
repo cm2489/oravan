@@ -275,7 +275,10 @@ ${text}`;
  *  INSTRUCTION, NOT A GATE, and `lintForbidden` is not widened to decodes —
  *  the 2026-08-06 measurement (docs/constitution-log.md#ai-content-2026-08-06-
  *  vocab) found it would reject 27% of the corpus for correct description.
- *  So this only tells the model; nothing here rejects a decode.
+ *  So this only tells the model; nothing here rejects a decode. For the same
+ *  reason it is scoped to ADVOCACY USE: a plain noun or an official term that
+ *  contains a listed word ("truck stop", "988 crisis line", "shark attack")
+ *  is correct description and stays allowed.
  *
  *  The words come from the one versioned list (`FORBIDDEN` in
  *  lib/moments-gate.mjs), never a copy, so the instruction and the Big
@@ -284,7 +287,7 @@ ${text}`;
  *  touched: its prompt is what `decode_text_sha` fingerprints. */
 const listedWords = (lang) =>
   FORBIDDEN[lang].map(({ word }) => word).filter((w) => !/part(y|ido)/.test(w)).join(', ');
-export const VOCABULARY_RULE = `- No advocacy vocabulary in any field, in either language: never use these words or any of their forms, except inside an official name or title the summary gives. English: ${listedWords('en')}. Spanish: ${listedWords('es')}. Never name a political party. Say what the bill does in neutral words instead (for example "would bar", "would end", "would overturn"; "impediría", "pondría fin a", "anularía").`;
+export const VOCABULARY_RULE = `- No advocacy vocabulary, in any field, in either language. Do not use these words, or their forms, to characterise what a bill or a side is doing or to urge anything: English: ${listedWords('en')}. Spanish: ${listedWords('es')}. A plain noun or an official term that happens to contain one is fine (a truck stop, a crisis line, a shark attack, a name the summary gives). Never name a political party. Say what the bill would do in neutral words instead (for example "would bar", "would end", "would overturn"; "impediría", "pondría fin a", "anularía").`;
 
 /** Call 2: headlines, scannable sections, and the Spanish twin — from call
  *  1's summary ONLY, never from the document. That constraint is the

@@ -11,18 +11,26 @@ import { FORBIDDEN } from '../lib/moments-gate.mjs';
 
 const bill = { bill_type: 'hconres', bill_number: 89, title: 'A fixture title' };
 
-test('call 2 carries the vocabulary instruction', () => {
-  expect(buildStructurePrompt(bill, 'A plain summary.')).toContain(VOCABULARY_RULE);
+const EXPECTED_RULE =
+  '- No advocacy vocabulary, in any field, in either language. Do not use these words, or their forms, to characterise what a bill or a side is doing or to urge anything: English: fight, resist, stop, save, defend, block, crisis, attack, scheme. Spanish: luchar, resistir, detener, salvar, defender, bloquear, crisis, ataque, esquema. A plain noun or an official term that happens to contain one is fine (a truck stop, a crisis line, a shark attack, a name the summary gives). Never name a political party. Say what the bill would do in neutral words instead (for example "would bar", "would end", "would overturn"; "impediría", "pondría fin a", "anularía").';
+
+test('call 2 carries the vocabulary instruction, scoped to advocacy use', () => {
+  // Pinned whole: the scope sentence ("A plain noun or an official term …")
+  // is what keeps neutral description allowed — the reason the 2026-08-06
+  // measurement kept the lint off decodes. Losing it should fail here.
+  expect(VOCABULARY_RULE).toBe(EXPECTED_RULE);
+  expect(buildStructurePrompt(bill, 'A plain summary.')).toContain(EXPECTED_RULE);
 });
 
-test('the instruction names every listed word, in both languages', () => {
+test('the prompt names every listed word, in both languages', () => {
+  const prompt = buildStructurePrompt(bill, 'A plain summary.');
   for (const lang of ['en', 'es'] as const) {
     for (const { word } of FORBIDDEN[lang]) {
       if (/part(y|ido)/.test(word)) continue; // regex entries, stated in prose
-      expect(VOCABULARY_RULE, `${lang}: ${word}`).toContain(word);
+      expect(prompt, `${lang}: ${word}`).toContain(word);
     }
   }
-  expect(VOCABULARY_RULE).toContain('Never name a political party.');
+  expect(prompt).toContain('Never name a political party.');
 });
 
 test('call 1 does not carry it, so no stored fingerprint moves', () => {
