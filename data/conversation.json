@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-09-30T06:38:53.521Z",
+    "fetched_at": "2026-09-30T13:38:01.266Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-09-30T06:38:53.521Z"
+        "checked_at": "2026-09-30T13:38:01.266Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-27",
         "week_label": "Most-Viewed Bills - Week of September 27, 2026",
         "entries": 8,
-        "checked_at": "2026-09-30T06:38:53.521Z"
+        "checked_at": "2026-09-30T13:38:01.266Z"
       },
       "leans": {
         "center": {
@@ -154,6 +154,13 @@
     "hconres-89-119": {
       "outlets7d": [
         {
+          "domain": "washingtonexaminer.com",
+          "lean": "right",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMilwFBVV95cUxPOVV5VVFnT0RZQ2U3eTU5V3R6VWpxaEI2ZHNSMUE5Tm00aUpvMk5rNndwU2lpdkstd29sdnNvTVZqR3pPN1dhVnRBbEF4R3d1ZTVWcXFFVVdyODFrZVM1d3Z0TTQza0doUWZ3eWY0dE5XWDY2LUNsQVRSbktnNThUUmRieUxSMHFjbW01VU1jUkswbWlKRUQw?oc=5"
+        },
+        {
           "domain": "thehill.com",
           "lean": "center",
           "firstSeen": "2026-09-28",
@@ -250,6 +257,12 @@
           "firstSeen": "2026-09-30",
           "lastSeen": "2026-09-30",
           "url": "https://news.google.com/rss/articles/CBMi8wFBVV95cUxPd3RXVm1Jb3NLeXlnQ1NfMFd4ZEZuV1ZBcE15S1JEUEtidnhIWVRQRTNnNWNaMkJrZWhtUG5UNE9RY3UxS1lBN0plRzBTcmVDYkxGZVFDUVZMWXd0TnBJUW1GOEdkLVhFcVM1U2VWUmRISVdzb202VVdPcTRVV21ZV05NRTdnbm93d0IxdlZqQU9BWmdhTEFkaTJ0SVlXT2x6ZTFhLS1NbHZRVGJQLTNJdk9BUHFFV19qNm9fakt0TE02di00SEUxcy1hMjdfQ1gtUnpiQUYxd0tia2ZMSVJuTkJCUExyWmRXVUY1WW5JUEFLR3M?oc=5"
+        },
+        {
+          "domain": "wenatcheeworld.com",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMi-wFBVV95cUxOYnFZRFBkV25HVkNBTlJzbngwS3JKeTJwVnFieDZoX0wxOFNhbDFsa1AyZmV5Y1hZWUN0aEVwcVZwNENHOVExVVktVENFOHJDaTY5WklXaUpacHVGbDZZRXo4YW1tM3g1dERfa2ZFczRpVGk5TTVrOFdMOVJOblNGX0RkQUdFYkZ3SkQ1MGlDOW1YOUVxejl1cHVaeXJzSWctYXVPaGs4YkExYm02WlB6djNETW5jUGVPYXp0RXlBV2M1elV1TUFCdGpGWV9HYUZqRXZQWXk1RXdSQkpXalA5M1l1M3JMMFQ1cTF4T3ZMVWVkdzQ2YkM5MUVhbw?oc=5"
         },
         {
           "domain": "alexandriabrief.com",
@@ -858,6 +871,19 @@
       ],
       "mostViewed": null
     },
+    "hr-7008-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://thehill.com/homenews/administration/6119378-live-updates-trump-ai-tariffs-hegseth-pentagon-cuts/"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hr-7039-119": {
       "outlets7d": [
         {
@@ -1436,8 +1462,8 @@
         {
           "domain": "abcnews.com",
           "firstSeen": "2026-09-26",
-          "lastSeen": "2026-09-26",
-          "url": "https://news.google.com/rss/articles/CBMiqgFBVV95cUxQZ05DS3BxSjRwaEhnWFlueEd1MjhnZWgwRk1hRnoyNlRndi1uMTJaclVWbTJ3M1JTVEEzTHpTVXpDQjZDcG5tVDdvM1UyRld6ZWp4YUFPZzNmNERsM2xSdG5lbzVnWktPSXoxTTB6eVM4bEEzbjVHY3Jla2FDUk5fZkpJbXZubXNwN2RoY3poSTZwMDI0OHZDbW1yVWFPRG9aVmtnRnNVVFlFQdIBrwFBVV95cUxNU0RTa0hHSzdfcGJHNXgyRTVYMmI5NjBEaXRjTl9OZ2lNcnJHMGdDSlIzMUkzZHQzNUViZWxfMDhXYklkSi1wR3EyZ2h6eDlUOEs2OTBYa1VFbmlFQWpMRjNNaHlhN0EwamhLREt6WW84RF95Vndxdk04anNETEhfN3BjTzZaOFp0UVNDeGlHcHQtTVpUbl9mUzJ1RDFNVFZhejQ4dmJEUjhjZlFPNDk0?oc=5"
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMipAFBVV95cUxObUtQbXJmZ0VYdWpkNmt0elRjRmRLbVY0VVRwTFJweFVYNVA4ZXJiVjZSUk9CUVFwbUxLVVhmd0lHUHM1R2FEaDhicW5ISW8wWU5nQ09ELThQb3h5MjQ5NWFodWtEN1BwNGEybFJ1ekthcFoxbXh5VHJYSmw5NndmOHZILTdLRHpFbnNkOV9RM19hNXVrVkVUZG5NdVI5QnRiOVB0LdIBqgFBVV95cUxQTHRLUVFqY0sxS3pUUHNLeGYzTHcwMU9YaE5vVWlSNk9Kc1BHLXM3QWVSdUhjMW5kUC1SQjRQQ24wOHdSdkZBZ05pV0I2bVprckJ4NEZGcEZvX2tsZ1RyOFd6dlBQRnhVdGJ0MkxIQm9ScUt0YnQwMW1RUWgzcmpVX3lZU0o2U21RUVBLRmV1bzd5UjJHdnhRWlhpRS1jYmgtS19NYXBCNGJKZw?oc=5"
         }
       ],
       "mostViewed": null
@@ -1577,6 +1603,13 @@
     "s-4668-119": {
       "outlets7d": [
         {
+          "domain": "nytimes.com",
+          "lean": "left",
+          "firstSeen": "2026-09-21",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMipwFBVV95cUxNYk9hQzZiM3EzdzI2Wno3NkRpbV9EZElTYzROOFFNRHlpdDFiQWo3UW54RjFBa0J3Vk9SSGZEUVBoTU90WlBNVVQ5M2xLU3NXeUl2R2JEUWxEQmFXVUZfQWVhYmd0eDBWRnAyQnAtYTVGMF9PMkNzUU5OSzA0X1pQQWoxSmtNSzFNclZpbklDSkVXUkhhNk40U1MzRnJkUHkwN0lFRjJaQQ?oc=5"
+        },
+        {
           "domain": "reuters.com",
           "lean": "center",
           "firstSeen": "2026-09-30",
@@ -1603,13 +1636,6 @@
           "firstSeen": "2026-09-27",
           "lastSeen": "2026-09-29",
           "url": "https://www.npr.org/2026/09/28/nx-s1-5977851/protect-college-sports-act-senate-bill-vote"
-        },
-        {
-          "domain": "nytimes.com",
-          "lean": "left",
-          "firstSeen": "2026-09-21",
-          "lastSeen": "2026-09-29",
-          "url": "https://news.google.com/rss/articles/CBMifkFVX3lxTE9FcnNqRVd4aU40UHVJaThWcjhIUHhmNVcyYWp1SUJqak5iZ21TZWZuUTBhM3JnaXVVTExQc1h2bTZHNmZZMVc3bDNYNW02MEZkUl9nbkxBUlFoRmJyTW1yZkl1N0tUblVLbU1vTmJzcl9QVVRjdUh3QVNXbjRTZw?oc=5"
         },
         {
           "domain": "politico.com",
@@ -1681,10 +1707,22 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "africa.espn.com",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMirgFBVV95cUxPZmI4LVJHY2puMXYzdmg0SDlZUVYwZnkwS2gxbWJIM2ZWQXozWl9KWHdkOVZRNHI5SkdXQjAzMWlKUWFjbElSeTNwZlhjVDBacGNteHJLX2N2Q1A0aDdCdFJlTjgxNk1wdmlpZEExbl90OVNmbjZ4WlBuVXRfZktDOHF6REtUNm5tdHFVTXR3SkxuWDBrV3JVNU5PNkstajkxTHhrUnJuUk9mRUZXQnc?oc=5"
+        },
+        {
           "domain": "ksla.com",
           "firstSeen": "2026-09-30",
           "lastSeen": "2026-09-30",
           "url": "https://news.google.com/rss/articles/CBMirgFBVV95cUxPaV9nSlN4THdzd1R5ZkYwMk9uaHNLV3ZnWXhHVDU2VlN1UmwzQUN5NnhmSnl3VFh5QUlNS2k2M2E5VzN3ajV6emJDYTUzanRPVEhNUGJOMk5SemRyUXZhTFpZeUxrUDhYNG1YM1ZpVHNSUERHQ2d6UHRPRXhSMVM3QlVhZDFfR2twZUtzcjFaS0tFT3l1OEcwRjR5Yk5vZFR5d3hvaG50NXVpRG5DdkE?oc=5"
+        },
+        {
+          "domain": "oaoa.com",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMisgFBVV95cUxPZkEwbmI5LVBFUmRXZXU3X1F0UENROE9sZkEzNEx0RV9hdW5tMnVJcWFfbE9kX2Jja0ZvQXlNSDFNMVZmbVFEOFBzbHNNY1BwQmpPMWV6c2JVMFI3VERMOU5aVjNyM2FjYmVQbGtFQ1JwU2lscGt3VmtibFQ5SlB3bnAtRVVaeTlSQUQxMlV1dWgzSDVmM2pPOFZlblFMU3JVQUFFNU1ha2hwS2FEOWxHLXpR?oc=5"
         },
         {
           "domain": "6abc.com",
@@ -1817,18 +1855,6 @@
           "firstSeen": "2026-09-28",
           "lastSeen": "2026-09-28",
           "url": "https://news.google.com/rss/articles/CBMivAFBVV95cUxQaDNwb3ZXb3ptSllvQm1oYmdreHAwRF9CU0hnX2lOcTRBS0dXbmFZRi1tT0hMRjV6QUhycVl3YjZ2MjFROFlwNnN0T0p2czRJQjM3cVlYWENpRnFQTFpoTFJmM2Q4Vjl3emRmZm9DQWxhdUFtRGcxeUdCakkwV2xtRTBCcVgtUVBaUTY3MjRLMWJPUWdtaS1ldTJWMHQ4T3VYbUhyOW5MZ0c1OTdwMkZYcjBBNElKYWNLb2ozYQ?oc=5"
-        },
-        {
-          "domain": "mynorthwest.com",
-          "firstSeen": "2026-09-28",
-          "lastSeen": "2026-09-28",
-          "url": "https://news.google.com/rss/articles/CBMi3gFBVV95cUxOa2ozSTA5eTJmMTZOSzZlVWQtYkRfdUg3QmRCQWxoUmNWSnVGY1NGbkdVX2J1d3BXcDdXbWJlc2Q1VEhCb2g4ZXA2a2RmRHp0ZEZuQktrLVhhU005MlpfQmhRTnpyTk92ZXdqS0FCR1JCalpMeUc2eU5hazJEaTh1SWs1MjMwWDBEeHF2RUhFRkt1T0JmNFloRTZDRXI0YXk4UHM3QXp5UGhBbDJpcmc2em9CZDM0RVFWMkNnVFRRXzEtTERyUkZiS3czeWRLYnI4Z3dFMkRuUlZqcHNmOWc?oc=5"
-        },
-        {
-          "domain": "tennessean.com",
-          "firstSeen": "2026-09-27",
-          "lastSeen": "2026-09-28",
-          "url": "https://news.google.com/rss/articles/CBMi1gFBVV95cUxONWdHOVJTSWtEcXpOVDhVTWlwdm5vdlVhaFVyNUFRUGhzY2hiNEVEbnZTYW8wcVJHV2E1SWlZOXF3b0xkOEpCQ29BS292UWlSSGlVa3dJREtQRTZfYXRfRE10T2hHUXdEN05QZHVTVER2NTdGaF91aFgxOThwSUlZYW42NU1hbFRZa3ZJM0pFblJBOUJ6dDljVmQ2R1RZRC16cDU5SUdnV1pzdjhyUzNldFdZYVQ3Tm1SWXI4ZVB6c0xNSGpzbGl6Q05vVkdiRTR3MDdvYVZ3?oc=5"
         }
       ],
       "mostViewed": {
