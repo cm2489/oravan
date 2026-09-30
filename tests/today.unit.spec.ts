@@ -106,7 +106,9 @@ test.describe('the decided order, in the renderer', () => {
   // schedule block only renders while an announcement is still ahead, which
   // the committed data often does not hold. This pins the order of the
   // renderer's own sibling blocks, which is the order the page prints them in.
-  test('chambers, then the floor schedule, then the record, then the Big Questions; the day list and stamps last', () => {
+  // The floor schedule comes before the chambers since 2026-09-30 (owner:
+  // "31 a but add floor first").
+  test('the floor schedule, then the chambers, then the record, then the Big Questions; the day list and stamps last', () => {
     const src = readFileSync(join(process.cwd(), 'components/TodayBrief.tsx'), 'utf8');
     const at = (needle: string) => {
       const i = src.indexOf(needle);
@@ -114,8 +116,8 @@ test.describe('the decided order, in the renderer', () => {
       return i;
     };
     const order = [
-      'aria-labelledby="today-chambers"',
       'aria-labelledby="today-schedule"',
+      'aria-labelledby="today-chambers"',
       'data-day={d.date}',
       'data-record-empty=""',
       'aria-labelledby="today-questions"',

@@ -12,11 +12,12 @@ import { dayCountParts, type Brief, type BriefChamber, type BriefScheduleItem } 
 /*
  * THE DAILY BRIEF — one renderer for /today and /today/[date].
  *
- * THE ORDER (wireframes v2, today.html, 2026-09-29). The two same-day facts
- * sit together at the top: the chambers, then the floor schedule next. Then
- * the record — the brief's day and the day before, or, when both are empty,
- * one role="status" line that says so and links to the latest day that has
- * any record, so a quiet Monday never dead-ends (funnel I3). Then the Big
+ * THE ORDER (wireframes v2, today.html, 2026-09-29; the floor band moved
+ * first on 2026-09-30, owner: "31 a but add floor first"). The two same-day
+ * facts sit together at the top: the floor schedule next, then the chambers.
+ * Then the record — the brief's day and the day before, or, when both are
+ * empty, one role="status" line that says so and links to the latest day that
+ * has any record, so a quiet Monday never dead-ends (funnel I3). Then the Big
  * Questions that moved. "Other days" lists every dated permalink with its
  * counts, full width under the record, and the per-source "Record as of:"
  * line closes the page.
@@ -230,40 +231,10 @@ export async function TodayBrief({ brief, locale }: { brief: Brief; locale: stri
       </p>
       <p className="mt-3 max-w-read text-sm text-ink-2">{t('recordNote')}</p>
 
-      {/* (a) THE CHAMBERS — the current day only: the schedule file is re-read
-          hourly and not archived, so a past day has no honest chamber line. */}
-      {brief.chamber && (
-        <section className="mt-12 border-t-[3px] border-ink pt-4" aria-labelledby="today-chambers">
-          <h2 id="today-chambers" className="text-h3 font-extrabold text-ink">
-            {t('chambersHeading')}
-          </h2>
-          <ul className="mt-4 grid max-w-read gap-3">
-            {brief.chamber.chambers.map((c) => (
-              <li
-                key={c.chamber}
-                className="text-md text-ink"
-                data-chamber={c.chamber}
-                data-session={c.session}
-                data-meets-later={c.meetsLater ? 'true' : undefined}
-              >
-                {chamberLine(c, brief.chamber!.source?.published ?? null)}
-              </li>
-            ))}
-          </ul>
-          {brief.chamber.source?.url && (
-            <p className="mt-2">
-              <a href={brief.chamber.source.url} target="_blank" rel="noopener noreferrer" className={`inline-flex min-h-11 items-center gap-1.5 text-sm ${LINK}`}>
-                {tHome('evidenceLink')}
-                <ExternalLink className="h-4 w-4 flex-none" aria-hidden />
-              </a>
-            </p>
-          )}
-        </section>
-      )}
-
-      {/* (b) ON THE FLOOR SCHEDULE NEXT — first after the chambers: the two
-          same-day facts sit together at the top. Quoted, dated, attributed;
-          never a vote date. */}
+      {/* (a) ON THE FLOOR SCHEDULE NEXT — first on the page, above the
+          chambers (owner, 2026-09-30: "31 a but add floor first"), so a
+          yellow-tagged notice is on a phone's first screen. Quoted, dated,
+          attributed; never a vote date. */}
       {showSchedule && (
         <section className="mt-12 border-t border-line-strong pt-4" aria-labelledby="today-schedule" data-block="schedule">
           <h2 id="today-schedule" className="text-h3 font-extrabold text-ink">
@@ -288,6 +259,38 @@ export async function TodayBrief({ brief, locale }: { brief: Brief; locale: stri
           ) : (
             <p role="status" className="mt-4 max-w-read text-md text-ink" data-schedule-quiet="">
               {t('scheduleQuiet')}
+            </p>
+          )}
+        </section>
+      )}
+
+      {/* (b) THE CHAMBERS — after the floor band, the current day only: the
+          schedule file is re-read hourly and not archived, so a past day has
+          no honest chamber line. */}
+      {brief.chamber && (
+        <section className="mt-12 border-t-[3px] border-ink pt-4" aria-labelledby="today-chambers">
+          <h2 id="today-chambers" className="text-h3 font-extrabold text-ink">
+            {t('chambersHeading')}
+          </h2>
+          <ul className="mt-4 grid max-w-read gap-3">
+            {brief.chamber.chambers.map((c) => (
+              <li
+                key={c.chamber}
+                className="text-md text-ink"
+                data-chamber={c.chamber}
+                data-session={c.session}
+                data-meets-later={c.meetsLater ? 'true' : undefined}
+              >
+                {chamberLine(c, brief.chamber!.source?.published ?? null)}
+              </li>
+            ))}
+          </ul>
+          {brief.chamber.source?.url && (
+            <p className="mt-2">
+              <a href={brief.chamber.source.url} target="_blank" rel="noopener noreferrer" className={`inline-flex min-h-11 items-center gap-1.5 text-sm ${LINK}`}>
+                {tHome('evidenceLink')}
+                <ExternalLink className="h-4 w-4 flex-none" aria-hidden />
+              </a>
             </p>
           )}
         </section>

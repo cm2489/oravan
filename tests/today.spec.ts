@@ -204,12 +204,13 @@ test.describe('/today', () => {
   });
   // ── The decided structure (wireframes v2, today.html, 2026-09-29) ──────────
 
-  test('the same-day facts come first: chambers, then the floor schedule, then the record', async ({ page }) => {
+  // The floor schedule leads since 2026-09-30 (owner: "31 a but add floor first").
+  test('the same-day facts come first: the floor schedule, then the chambers, then the record', async ({ page }) => {
     await page.goto('/today');
     const record = (await page.locator('[data-day]').count()) > 0 ? '[data-day]' : '[data-record-empty]';
     expect(await precedes(page, '[aria-labelledby="today-chambers"]', record)).toBe(true);
     if ((await page.locator('[data-block="schedule"]').count()) > 0) {
-      expect(await precedes(page, '[aria-labelledby="today-chambers"]', '[data-block="schedule"]')).toBe(true);
+      expect(await precedes(page, '[data-block="schedule"]', '[aria-labelledby="today-chambers"]')).toBe(true);
       expect(await precedes(page, '[data-block="schedule"]', record)).toBe(true);
     }
     // The per-source stamp line stays, after the record.
