@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-09-29T15:44:11.511Z"
+    "generated_at": "2026-09-29T19:50:53.562Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -1244,10 +1244,85 @@
           "status:hconres-89-119 passed_chamber→floor_vote"
         ],
         "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_7f4fe0a2",
+        "generated_at": "2026-09-29T19:51:01.972Z",
+        "as_of_day": "2026-09-29",
+        "text": {
+          "en": "On September 24, 2026, the Senate voted on H. Con. Res. 89 and it failed of passage by a recorded vote of 49 to 50 (Roll no. 244). On that vote, 4 Republicans and 43 Democrats voted yes. Also that day, the Senate Committee on Foreign Relations was discharged from the measure under the order of August 8, 2026. Earlier, on September 15, 2026, the House agreed to H. Con. Res. 93 by a recorded vote of 220 to 204 (Roll no. 307). On that vote, 7 Republicans and 213 Democrats voted yes. The measure was received in the Senate on September 16, 2026, and referred to the Committee on Foreign Relations.",
+          "es": "El 24 de septiembre de 2026, el Senado votó sobre la H. Con. Res. 89 y no fue aprobada, por votación nominal de 49 a 50 (votación núm. 244). En esa votación, 4 republicanos y 43 demócratas votaron a favor. Ese mismo día, el Comité de Relaciones Exteriores del Senado fue relevado de la medida conforme a la orden del 8 de agosto de 2026. Antes, el 15 de septiembre de 2026, la Cámara de Representantes aprobó la H. Con. Res. 93 por votación nominal de 220 a 204 (votación núm. 307). En esa votación, 7 republicanos y 213 demócratas votaron a favor. La medida se recibió en el Senado el 16 de septiembre de 2026 y se remitió al Comité de Relaciones Exteriores."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "hconres-93-119": "passed_chamber",
+            "hconres-89-119": "floor_vote",
+            "hconres-86-119": "passed_chamber",
+            "sjres-185-119": "floor_vote",
+            "sjres-200-119": "committee",
+            "sjres-211-119": "committee",
+            "sjres-180-119": "floor_vote",
+            "sjres-181-119": "floor_vote",
+            "sjres-172-119": "floor_vote",
+            "hconres-38-119": "floor_vote"
+          },
+          "vehicle_status_keys": {
+            "hconres-93-119": "passed_chamber",
+            "hconres-89-119": "floor_activity",
+            "hconres-86-119": "adopted",
+            "sjres-185-119": "floor_activity",
+            "sjres-200-119": "committee",
+            "sjres-211-119": "committee",
+            "sjres-180-119": "floor_activity",
+            "sjres-181-119": "floor_activity",
+            "sjres-172-119": "floor_activity",
+            "hconres-38-119": "floor_activity"
+          },
+          "update_ids": [
+            "u_40aa8bf1",
+            "u_fe66be12",
+            "u_470e18ff",
+            "u_06fa2260"
+          ],
+          "roll_calls": [
+            "s-119-2-244",
+            "h-119-2-307"
+          ],
+          "roll_calls_on_record": [
+            "h-119-2-199",
+            "h-119-2-282",
+            "h-119-2-307",
+            "h-119-2-85",
+            "s-119-2-129",
+            "s-119-2-174",
+            "s-119-2-184",
+            "s-119-2-192",
+            "s-119-2-207",
+            "s-119-2-216",
+            "s-119-2-244"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/93",
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/89",
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/86",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/185",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/200",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/211",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/180",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/181",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/172",
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/38",
+            "https://www.congress.gov/crs-report/R42699"
+          ]
+        },
+        "changed_because": [
+          "reanchor:3d"
+        ],
+        "model": "claude-sonnet-5-5"
       }
     ],
     "summary_attempts": {
-      "day": "2026-09-26",
+      "day": "2026-09-29",
       "count": 1
     }
   },
@@ -1412,6 +1487,43 @@
   },
   "paying-college-athletes": {
     "updates": [
+      {
+        "id": "u_c9918aa9",
+        "class": "press_cluster",
+        "vehicle": "s-4668-119",
+        "day": "2026-09-29",
+        "occurred_at": "2026-09-29",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-29T19:50:53.562Z",
+        "text": {
+          "en": "ABC News, Oann, and Reason published coverage of S. 4668.",
+          "es": "ABC News, Oann y Reason publicaron cobertura sobre S. 4668."
+        },
+        "source": {
+          "kind": "press",
+          "refs": [
+            "https://abcnews.com/Politics/trump-celebrates-senate-passage-legislation-overhaul-college-sports/story?id=136851143",
+            "https://www.oann.com/newsroom/senate-overwhelmingly-passes-protect-college-sports-act-with-bipartisan-support/",
+            "https://reason.com/2026/09/29/the-protect-college-sports-act-passed-the-senate-it-faces-a-tougher-road-in-the-house-and-in-the-courts/"
+          ],
+          "outlets": [
+            "abcnews.go.com",
+            "oann.com",
+            "reason.com"
+          ],
+          "outlet_names": [
+            "ABC News",
+            "Oann",
+            "Reason"
+          ],
+          "lean_set": [
+            "left",
+            "right"
+          ]
+        },
+        "record": null,
+        "ai": true
+      },
       {
         "id": "u_eda56d8f",
         "class": "vote",
@@ -2674,11 +2786,86 @@
           "updates:+2"
         ],
         "model": "claude-sonnet-5-5"
+      },
+      {
+        "id": "s_1c339dac",
+        "generated_at": "2026-09-29T19:51:06.837Z",
+        "as_of_day": "2026-09-29",
+        "text": {
+          "en": "The Senate passed S. 4668, the Protect College Sports Act of 2026, on September 28, 2026, by a recorded vote of 77 to 22 (Roll no. 250). On that vote, 50 Republicans and 26 Democrats voted yes. Earlier that day, senators rejected four amendments and agreed to one, by a recorded vote of 96 to 1 (Roll no. 245). Before that, the Senate agreed to amendment S.Amdt. 6776 on September 24, 2026, by a recorded vote of 77 to 23 (Roll no. 242), and invoked cloture on the bill the same day, 74 to 25 (Roll no. 243). The Senate voted 77 to 22 on September 17, 2026, to proceed to the bill (Roll no. 236). The bill is now listed as \"Passed one chamber.\"",
+          "es": "El Senado aprobó el proyecto S. 4668, la Ley para Proteger los Deportes Universitarios de 2026, el 28 de septiembre de 2026, por votación nominal de 77 a 22 (votación núm. 250). En esa votación, 50 republicanos y 26 demócratas votaron a favor. Ese mismo día, los senadores rechazaron cuatro enmiendas y aprobaron una, por votación nominal de 96 a 1 (votación núm. 245). Antes, el 24 de septiembre de 2026, el Senado aprobó la enmienda S.Amdt. 6776 por votación nominal de 77 a 23 (votación núm. 242) y ese mismo día invocó el cierre del debate sobre el proyecto, por 74 a 25 (votación núm. 243). El 17 de septiembre de 2026, el Senado votó 77 a 22 para proceder al proyecto (votación núm. 236). El proyecto figura ahora como \"Aprobado por una cámara\"."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "s-4668-119": "passed_chamber"
+          },
+          "vehicle_status_keys": {
+            "s-4668-119": "passed_chamber"
+          },
+          "update_ids": [
+            "u_c9918aa9",
+            "u_eda56d8f",
+            "u_eea56f22",
+            "u_eea7adb9",
+            "u_efa570b5",
+            "u_f0a57248",
+            "u_f1a573db",
+            "u_5f348c7a",
+            "u_3385513a",
+            "u_348552cd",
+            "u_d5eaf6d9",
+            "u_fcb078e5",
+            "u_53ca06ca",
+            "u_c6a1ebcb",
+            "u_fa1d2a34",
+            "u_a3cc6ca3",
+            "u_682cca41",
+            "u_86b9e54f",
+            "u_f0db9993",
+            "u_732a58b6",
+            "u_317b9dc8",
+            "u_04053945"
+          ],
+          "roll_calls": [
+            "s-119-2-250",
+            "s-119-2-249",
+            "s-119-2-248",
+            "s-119-2-247",
+            "s-119-2-246",
+            "s-119-2-245",
+            "s-119-2-243",
+            "s-119-2-242",
+            "s-119-2-240",
+            "s-119-2-236",
+            "s-119-2-235"
+          ],
+          "roll_calls_on_record": [
+            "s-119-2-235",
+            "s-119-2-236",
+            "s-119-2-240",
+            "s-119-2-242",
+            "s-119-2-243",
+            "s-119-2-245",
+            "s-119-2-246",
+            "s-119-2-247",
+            "s-119-2-248",
+            "s-119-2-249",
+            "s-119-2-250"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "changed_because": [
+          "status:s-4668-119 floor_vote→passed_chamber",
+          "updates:+1"
+        ],
+        "model": "claude-sonnet-5-5"
       }
     ],
     "summary_attempts": {
       "day": "2026-09-29",
-      "count": 1
+      "count": 2
     }
   },
   "annual-defense-policy": {
@@ -2889,7 +3076,7 @@
       }
     ],
     "summary_attempts": {
-      "day": "2026-09-28",
+      "day": "2026-09-29",
       "count": 1
     }
   },
@@ -3387,7 +3574,7 @@
     ],
     "summary_revisions": [],
     "summary_attempts": {
-      "day": "2026-09-28",
+      "day": "2026-09-29",
       "count": 1
     }
   }

@@ -25,10 +25,27 @@
  * every other e2e test in this suite has always run — this changes
  * nothing observable for any pre-S19 test (nothing before S19 ever sends
  * an X-Oravan-Key header or loads /embed/action-panel).
+ *
+ * E2E_SERVER_MODE splits the one command in two so CI can build once and
+ * serve that same build from several parallel test shards:
+ *   - `both` (the default, so every local run behaves as it always has):
+ *     `npm run build && next start`.
+ *   - `build`: `npm run build` only, then exit with the build's exit code.
+ *   - `start`: `next start` only, and ONLY when a finished build is already
+ *     in .next (its BUILD_ID file). Without one it refuses at once with exit
+ *     1 — it never builds silently, so a shard can only ever serve the build
+ *     it was handed.
+ *   - anything else: refuse with exit 1.
+ * A build made on one machine can be started on another because nothing
+ * about the fake tenancy database is baked into the build: its URL and
+ * token are read per request (lib/upstash.ts's tenancyClient, reached only
+ * from the dynamic /embed/action-panel page and the /api routes), and the
+ * fake's port was already a fresh random one on every run.
  */
 import { createServer } from 'node:http';
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
+import { existsSync } from 'node:fs';
 import {
   E2E_TENANT_DOMAIN_ALLOWLIST,
   E2E_TENANT_ID,
@@ -43,6 +60,21 @@ import {
 } from './fixtures/e2e-tenant.ts';
 
 const PORT = process.env.PW_PORT ?? '3300';
+
+const MODE = process.env.E2E_SERVER_MODE || 'both';
+const COMMANDS = {
+  both: `npm run build && npx next start -p ${PORT}`,
+  build: 'npm run build',
+  start: `npx next start -p ${PORT}`,
+};
+if (!Object.hasOwn(COMMANDS, MODE)) {
+  console.error(`e2e-server: unknown E2E_SERVER_MODE "${MODE}" (expected both, build or start)`);
+  process.exit(1);
+}
+if (MODE === 'start' && !existsSync('.next/BUILD_ID')) {
+  console.error('e2e-server: E2E_SERVER_MODE=start needs a finished build in .next (no .next/BUILD_ID found); refusing to build here');
+  process.exit(1);
+}
 
 // --- the fake Upstash REST surface: GET / SET / DEL over a plain Map -------
 
@@ -151,7 +183,7 @@ upstash.listen(0, '127.0.0.1', () => {
   // those tests red and made e2e runs spend real API money. Strip the key
   // here AND pass the empty-string override (a set-but-empty env var beats
   // .env.local in Next's precedence, so the child can't resurrect it).
-  const child = spawn('sh', ['-c', `npm run build && npx next start -p ${PORT}`], {
+  const child = spawn('sh', ['-c', COMMANDS[MODE]], {
     stdio: 'inherit',
     env: {
       ...process.env,
@@ -167,6 +199,9 @@ upstash.listen(0, '127.0.0.1', () => {
 
   child.on('exit', (code) => {
     upstash.close();
-    process.exit(code ?? 0);
+    // A build killed by a signal has no exit code; that is a failed build,
+    // never a pass. (A server stopped by a signal at the end of a run is the
+    // normal way it ends, so `both` and `start` keep exiting 0 there.)
+    process.exit(code ?? (MODE === 'build' ? 1 : 0));
   });
 });
