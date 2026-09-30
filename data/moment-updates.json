@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-09-30T17:53:33.196Z"
+    "generated_at": "2026-09-30T19:50:03.994Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -3073,11 +3073,46 @@
           "reanchor:7d"
         ],
         "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_285a1777",
+        "generated_at": "2026-09-30T19:50:09.623Z",
+        "as_of_day": "2026-09-30",
+        "text": {
+          "en": "The record for H.R. 8800 and S. 4784 shows no votes and no actions in the last 14 days. No roll call was recorded on either measure in that window. H.R. 8800 is listed as \"Passed one chamber,\" and S. 4784 is listed as \"Floor activity.\" Readers who want the full history of each bill can find every recorded vote, action, and date in the official congressional record. The page will show a new vote or action, along with its date and tally, as soon as one is entered in that record for either bill.",
+          "es": "El registro de H.R. 8800 y S. 4784 no muestra votos ni acciones en los últimos 14 días. No se registró ninguna votación nominal sobre ninguna de las dos medidas en ese período. H.R. 8800 figura como \"Aprobado por una cámara\" y S. 4784 figura como \"Actividad en el pleno\". Quienes deseen conocer el historial completo de cada proyecto pueden consultar todos los votos, acciones y fechas en el registro oficial del Congreso. La página mostrará cualquier voto o acción nueva, con su fecha y su resultado, en cuanto se anote en ese registro para cualquiera de los dos proyectos."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "hr-8800-119": "passed_chamber",
+            "s-4784-119": "floor_vote"
+          },
+          "vehicle_status_keys": {
+            "hr-8800-119": "passed_chamber",
+            "s-4784-119": "floor_activity"
+          },
+          "update_ids": [],
+          "roll_calls": [],
+          "roll_calls_on_record": [
+            "h-119-2-277",
+            "h-119-2-278",
+            "s-119-2-195"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/8800",
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4784"
+          ]
+        },
+        "changed_because": [
+          "status:hr-8800-119 unknown→passed_chamber",
+          "updates:+1"
+        ],
+        "model": "claude-sonnet-5-5"
       }
     ],
     "summary_attempts": {
       "day": "2026-09-30",
-      "count": 1
+      "count": 2
     }
   },
   "crypto-oversight-split-between-sec-and-cftc": {
@@ -3575,7 +3610,7 @@
     "summary_revisions": [],
     "summary_attempts": {
       "day": "2026-09-30",
-      "count": 1
+      "count": 2
     }
   }
 }
