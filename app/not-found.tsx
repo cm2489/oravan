@@ -25,15 +25,15 @@ export default function RootNotFound() {
           alignItems: 'center',
           justifyContent: 'center',
           padding: '2rem',
-          background: '#ffffff',
-          color: '#16191b',
+          background: '#fcfaf4',
+          color: '#1c1b18',
           fontFamily:
             'system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif',
         }}
       >
         <main style={{ maxWidth: '33rem' }}>
           <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0 }}>Page not found</h1>
-          <p style={{ fontSize: '1.05rem', lineHeight: 1.6, color: '#4a544e' }}>
+          <p style={{ fontSize: '1rem', lineHeight: 1.6, color: '#55514a' }}>
             That page doesn&rsquo;t exist, but your representatives do.
           </p>
           <p>
@@ -45,9 +45,9 @@ export default function RootNotFound() {
                 alignItems: 'center',
                 padding: '0 1.5rem',
                 borderRadius: '8px',
-                border: '2px solid #0f6c4a',
-                background: '#0f6c4a',
-                color: '#ffffff',
+                border: '2px solid #1d5e43',
+                background: '#1d5e43',
+                color: '#fcfaf4',
                 fontWeight: 700,
                 textDecoration: 'none',
               }}

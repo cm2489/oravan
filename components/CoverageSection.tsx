@@ -235,7 +235,7 @@ function CoverageRow({ article }: { article: CoverageArticle }) {
           target="_blank"
           rel="noopener noreferrer"
           aria-label={t('openArticle', { source: article.source })}
-          className="inline-flex min-h-11 items-start gap-1.5 font-semibold text-ink underline decoration-line-strong underline-offset-4 visited:text-ink-2 hover:text-go-deep hover:decoration-go"
+          className="inline-flex min-h-11 items-start gap-1.5 font-semibold text-ink underline decoration-line-strong underline-offset-4 visited:text-ink-2 hover:decoration-[3px] hover:decoration-ink"
         >
           <span>{article.title}</span>
           <ExternalLink className="mt-1 h-4 w-4 flex-none" aria-hidden />

@@ -29,7 +29,7 @@ import type { BriefRollCall } from '@/lib/today';
  */
 
 const LINK =
-  'font-semibold text-go underline underline-offset-4 visited:text-go-deep hover:text-go-deep';
+  'font-semibold text-ink underline underline-offset-4 visited:text-ink-2 hover:decoration-[3px]';
 
 export function TodayVoteCard({ vote, chamberName }: { vote: BriefRollCall; chamberName: string }) {
   const t = useTranslations('today');
@@ -51,7 +51,7 @@ export function TodayVoteCard({ vote, chamberName }: { vote: BriefRollCall; cham
       <h3 className="mt-1 text-lg leading-tight font-bold text-ink">
         <Link
           href={`/bills/${vote.bill.slug}`}
-          className="inline-flex min-h-11 items-center hover:underline hover:decoration-go hover:decoration-[3px]"
+          className="inline-flex min-h-11 items-center hover:underline hover:decoration-ink hover:decoration-[3px]"
         >
           {headline ?? <span lang="en">{vote.bill.title}</span>}
         </Link>

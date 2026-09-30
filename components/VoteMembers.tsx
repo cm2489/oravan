@@ -87,7 +87,7 @@ export function VoteMembers({
       href={source}
       target="_blank"
       rel="noopener noreferrer"
-      className="inline-flex min-h-11 items-center gap-1.5 font-semibold text-go underline hover:text-go-deep"
+      className="inline-flex min-h-11 items-center gap-1.5 font-semibold text-ink underline hover:decoration-[3px]"
     >
       {t('source')}
       <ExternalLink className="h-4 w-4 flex-none" aria-hidden />
@@ -106,7 +106,7 @@ export function VoteMembers({
         if (e.currentTarget.open) void load();
       }}
     >
-      <summary className="inline-flex min-h-11 cursor-pointer list-none items-center gap-2 text-sm font-semibold text-ink hover:text-go-deep [&::-webkit-details-marker]:hidden">
+      <summary className="inline-flex min-h-11 cursor-pointer list-none items-center gap-2 text-sm font-semibold text-ink hover:underline [&::-webkit-details-marker]:hidden">
         <span
           aria-hidden
           className="inline-flex h-5 w-5 flex-none items-center justify-center rounded-stamp border-[1.5px] border-ink text-xs font-extrabold leading-none"

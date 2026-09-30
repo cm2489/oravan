@@ -203,7 +203,7 @@ export function YourRecord({ standalone = false }: { standalone?: boolean }) {
             <p className="mt-3">
               <Link
                 href="/bills"
-                className="inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-go visited:text-go-deep hover:text-go-deep hover:underline"
+                className="inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-ink underline visited:text-ink-2 hover:decoration-[3px]"
               >
                 {t('followCta')}
                 <ArrowRight className="h-4 w-4 flex-none" aria-hidden />

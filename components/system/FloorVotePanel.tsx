@@ -206,14 +206,14 @@ export function FloorVotePanel({
      the headline it supports. It carries its own attribution row (source,
      date and link) from the caller. */
   const quote = evidence ? (
-    <blockquote className="max-w-read border-l-[3px] border-paper/35 pl-4 font-reading text-base leading-dark text-go-pale">
+    <blockquote className="max-w-read border-l-[3px] border-paper/35 pl-4 font-reading text-md leading-dark text-go-pale">
       {evidence}
     </blockquote>
   ) : null;
 
   const main = (
     <>
-      <Chip tone="urgent" ground="go" dateLabel={dateLabel}>
+      <Chip tone="floor" ground="go" dateLabel={dateLabel}>
         {calendarLabel}
       </Chip>
 

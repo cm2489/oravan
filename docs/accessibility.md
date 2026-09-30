@@ -2,7 +2,7 @@
 
 The rule is page 1, rule 7 of `CLAUDE.md`: semantic HTML; visible focus; AA contrast on every enforced pair, computed, not eyeballed; 44px targets (a link inline in a sentence is exempt); reduced motion honoured; no horizontal overflow at 320px. This page is how to meet it.
 
-Moved here from `DESIGN.md` on 2026-09-27, when `DESIGN.md` was retired (its Focus and Contrast sections, the accessibility floor, and the reduced-motion paragraphs; the rest of that file is `docs/history/DESIGN-2026-07-24.md`). **The method binds; the token names and ratios below are the July 2026 values.** They are computed against the tokens in `app/globals.css` as they stood on that date. When the rebuild changes the tokens (see `docs/current-direction.md`), recompute every pair with `lib/contrast.ts` and update this page in the same PR — a ratio copied from here onto a new palette is exactly the eyeballing rule 7 forbids.
+Moved here from `DESIGN.md` on 2026-09-27, when `DESIGN.md` was retired (its Focus and Contrast sections, the accessibility floor, and the reduced-motion paragraphs; the rest of that file is `docs/history/DESIGN-2026-07-24.md`). **The method binds; the ratios below are computed for the warm-paper, bottle-green tokens (colour direction c, the owner's pick of 2026-09-30; recomputed with `lib/contrast.ts` that day).** They replaced the July 2026 values. When the rebuild changes the tokens again (see `docs/current-direction.md`), recompute every pair with `lib/contrast.ts` and update this page in the same PR — a ratio copied from here onto a new palette is exactly the eyeballing rule 7 forbids.
 
 ## The floor
 
@@ -14,28 +14,31 @@ Gates: `tests/bill-a11y.spec.ts` sweeps the bill page (at rest and with the call
 
 Two-tone by construction, and that is the only reason it passes 1.4.11.
 
-A 3px `ink` ring alone on a `go`-filled button is **2.75:1** — a fail. So the ring is never adjacent to the fill. A filled control swaps its **own** border to the gap tone on focus. Add `ring-gap` to any solid button and the stack reads outward:
+A 3px `ink` ring alone on a `go`-filled button is **2.24:1** — a fail. So the ring is never adjacent to the fill. A filled control swaps its **own** border to the gap tone on focus. Add `ring-gap` to any solid button and the stack reads outward:
 
 ```
-go fill │ paper border 6.43 │ paper gap │ ink ring 17.66 │ paper page 17.66
+go fill │ paper border 7.36 │ paper gap │ ink ring 16.50 │ paper page 16.50
 ```
 
 Every adjacency clears 3:1. Ground contexts retune the two tones:
 
-- `.on-dark` — any ink enamel ground (footer, voicemail, transcript title bar). Ring = paper (17.66 on ink), gap = ink.
-- `.on-go` — the green enamel panel. Ring = paper (9.75 on go-deep), gap = go-deep. Stack: `white fill │ go-deep border 9.75 │ go-deep gap │ white ring 9.75 │ go-deep panel 9.75`.
+- `.on-dark` — any ink enamel ground (footer, voicemail, transcript title bar). Ring = paper (16.50 on ink), gap = ink.
+- `.on-go` — the green enamel panel. Ring = paper (11.32 on go-deep), gap = go-deep. Stack: `paper fill │ go-deep border 11.32 │ go-deep gap │ paper ring 11.32 │ go-deep panel 11.32`.
+- `.on-band` — the masthead band (the site header on `go-deep`). Ring = paper (11.32 on the band, where the default ink ring would be 1.46), gap = go-deep. Unlike `.on-go` it leaves the type's line-heights alone.
 
-Focus is **never** removed. With the July tokens it is never drawn in `go`, because `go` is what buttons are filled with, and a green ring on a green button is 1.00:1 — the general form of that rule is: never draw the ring in the colour of the thing it surrounds.
+Focus is **never** removed. It is never drawn in `go`, because `go` is what buttons are filled with, and a green ring on a green button is 1.00:1 — the general form of that rule is: never draw the ring in the colour of the thing it surrounds.
 
 ## Contrast
 
 Every enforced pair is computed with `lib/contrast.ts` (WCAG 2.x) against the rendered hex — not eyeballed, not inherited from a mockup comment. **The full ledger is the comment block at the top of `app/globals.css`.** Recompute it if any value changes.
 
-Three results for the July tokens that you must know before you build on them:
+Three results for the current tokens that you must know before you build on them:
 
-1. **`line-strong` on `wash` is 2.97:1 — 1% short of 3:1.** It clears on paper (3.24). An *enabled* component's `line-strong` edge must therefore have `paper` on at least one side; a component whose own ground is `wash` takes an `ink-2` edge (7.23) instead. The one place the reference puts a `line-strong` edge on a `wash` fill is a **disabled** control, and 1.4.11 exempts inactive components. Do not "fix" this by lightening `wash` or by promoting `line` to an edge.
-2. **`go` and `alert` sit 1.19:1 apart in luminance** — to a deuteranope they are near-identical. `alert` is therefore never the sole carrier of meaning: a failure always also carries a 3px rule, a bold text label, and the right ARIA (`aria-invalid`, `role="alert"`). Color is the third signal, never the first.
-3. **Fill colors are not boundaries.** `urgent` on paper is 1.54:1 and `tint` on paper is 1.15:1, and both are fine — the amber chip is found by its ink text (11.44) and the printed date, not by being yellow, and `tint` is always carrying ink text. But any *control* on a tinted ground still takes a `line-strong` or `ink` edge.
+1. **`line-strong` clears 3:1 on both grounds: 4.24 on paper, 3.89 on wash.** The July palette missed on wash by 0.03 (2.97), which forced an enabled component's `line-strong` edge to keep `paper` on one side; this palette lifts that restriction. If a future palette misses again, do not "fix" it by lightening `wash` or by promoting `line` (1.30 on paper, decorative only) to an edge.
+2. **`go` and `alert` sit 1.24:1 apart in luminance** (alert and ink: 2.78) — to a deuteranope go and alert are near-identical. `alert` is therefore never the sole carrier of meaning: a failure always also carries a 3px rule, a bold text label, and the right ARIA (`aria-invalid`, `role="alert"`). Color is the third signal, never the first.
+3. **Fill colors are not boundaries.** `urgent` (the lamp) on paper is 1.47:1 and `tint` on paper is 1.14:1, and both are fine — a lamp is found by its ink text (11.20) and, on a control, its ink edge (a picked stance) or `line-strong` edge (the House finder), and the Today floor notice by its printed date, not by being yellow; `tint` is always carrying ink text. But any *control* on a tinted ground still takes a `line-strong` or `ink` edge.
+
+The masthead band adds three text pairs, all in the ledger: the wordmark and nav on the band (paper on go-deep, 11.32), the trust line (go-pale on go-deep, 8.26) and the inverted language switch (go-deep on paper, 11.32).
 
 ## Reduced motion
 

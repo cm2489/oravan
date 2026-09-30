@@ -322,7 +322,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     go: 'text-go-pale',
   };
   const AI_LINK: Record<ChipGround, string> = {
-    paper: 'text-go hover:text-go-deep',
+    paper: 'text-ink hover:decoration-[3px]',
     ink: 'text-go-bright hover:text-paper',
     go: 'text-paper hover:decoration-[3px]',
   };
@@ -425,7 +425,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                 locale={locale === 'es' ? 'en' : 'es'}
                 lang={locale === 'es' ? 'en' : 'es'}
                 hrefLang={locale === 'es' ? 'en' : 'es'}
-                className="inline-flex min-h-11 items-center gap-1.5 font-semibold text-go underline underline-offset-4 hover:text-go-deep"
+                className="inline-flex min-h-11 items-center gap-1.5 font-semibold text-ink underline underline-offset-4 hover:decoration-[3px]"
               >
                 {t('heroLocaleLink')}
                 <ArrowRight className="h-4 w-4" aria-hidden />
@@ -559,7 +559,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                     <h3 className="mt-1 max-w-[36ch] text-lg leading-tight font-bold">
                       <Link
                         href={`/bills/${billSlug(b)}`}
-                        className="text-ink no-underline visited:text-ink-2 after:absolute after:inset-0 after:content-[''] hover:underline hover:decoration-go hover:decoration-[3px]"
+                        className="text-ink no-underline visited:text-ink-2 after:absolute after:inset-0 after:content-[''] hover:underline hover:decoration-ink hover:decoration-[3px]"
                       >
                         {b.ai_headline ?? b.short_title ?? b.title}
                       </Link>
@@ -617,14 +617,14 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           <p className="mt-4 flex flex-wrap gap-x-6">
             <Link
               href="/bills"
-              className="inline-flex min-h-11 items-center gap-1.5 font-bold text-go underline underline-offset-4 hover:text-go-deep"
+              className="inline-flex min-h-11 items-center gap-1.5 font-bold text-ink underline underline-offset-4 hover:decoration-[3px]"
             >
               {t('seeAll', { count: total })}
               <ArrowRight className="h-4 w-4" aria-hidden />
             </Link>
             <Link
               href="/today"
-              className="inline-flex min-h-11 items-center gap-1.5 font-bold text-go underline underline-offset-4 hover:text-go-deep"
+              className="inline-flex min-h-11 items-center gap-1.5 font-bold text-ink underline underline-offset-4 hover:decoration-[3px]"
             >
               {t('todayBrief')}
               <ArrowRight className="h-4 w-4" aria-hidden />
@@ -735,7 +735,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                 {aiLine(t('aiSpecimen'))}
                 <Link
                   href={`/bills/${billSlug(specimen)}`}
-                  className="mt-2 inline-flex min-h-11 items-center gap-1.5 font-semibold text-go underline underline-offset-4 hover:text-go-deep"
+                  className="mt-2 inline-flex min-h-11 items-center gap-1.5 font-semibold text-ink underline underline-offset-4 hover:decoration-[3px]"
                 >
                   {t('specimenCta')}
                   <ArrowRight className="h-4 w-4" aria-hidden />
@@ -804,7 +804,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             <p className="mt-3 max-w-note text-pretty text-ink-2">{t('whyBody')}</p>
             <Link
               href="/why-call"
-              className="mt-4 inline-flex min-h-11 items-center gap-1.5 font-semibold text-go underline underline-offset-4 hover:text-go-deep"
+              className="mt-4 inline-flex min-h-11 items-center gap-1.5 font-semibold text-ink underline underline-offset-4 hover:decoration-[3px]"
             >
               {t('whyCta')}
               <ArrowRight className="h-4 w-4" aria-hidden />
@@ -827,7 +827,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             </ul>
             <Link
               href="/privacy"
-              className="mt-4 inline-flex min-h-11 items-center gap-1.5 font-semibold text-go underline underline-offset-4 hover:text-go-deep"
+              className="mt-4 inline-flex min-h-11 items-center gap-1.5 font-semibold text-ink underline underline-offset-4 hover:decoration-[3px]"
             >
               {t('privacyCta')}
               <ArrowRight className="h-4 w-4" aria-hidden />

@@ -46,9 +46,11 @@ import { ZipForm } from './ZipForm';
  * components/SettledPanel.tsx in its place (owner, 2026-09-28, Q9 "a").
  *
  * COLOR LAW inside this panel:
- *   go     the dial, and only the dial (plus the stance card's chosen edge,
- *          which IS an action control).
- *   tint   YOURS — the stance you picked, the outcome you logged. Never a
+ *   go     the dial, and only the dial.
+ *   lamp   (`urgent`) the stance you picked: a full lamp fill with ink type
+ *          (11.20:1) and an ink edge — page 2's "full lamp when picked"
+ *          (docs/current-direction.md, Layout, 2026-09-27 00:40).
+ *   tint   YOURS — the outcome you logged, the draft you edit. Never a
  *          status, never decoration.
  *   ink    everything else, including every ground and every edge.
  *   alert  failure only, and never the sole carrier: every failure here
@@ -1062,7 +1064,7 @@ export function ActionPanel({
                 disabled={loading}
                 className={`flex min-h-12 items-center gap-2 rounded-control border-2 px-4 py-3 text-left text-md font-bold transition-colors disabled:cursor-not-allowed disabled:border-line-strong disabled:bg-wash disabled:text-ink-2 ${
                   stance === s
-                    ? 'border-go bg-tint text-go-deep'
+                    ? 'border-ink bg-urgent text-ink'
                     : 'border-line-strong bg-paper text-ink hover:border-ink'
                 }`}
               >
@@ -1278,7 +1280,7 @@ export function ActionPanel({
             <p className="mt-3 max-w-note text-sm text-ink-2">{t('staffNote')}</p>
             <Link
               href="/why-call"
-              className="mt-2 inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-go underline visited:text-go-deep hover:text-go-deep"
+              className="mt-2 inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-ink underline visited:text-ink-2 hover:decoration-[3px]"
             >
               <BookOpen className="h-4 w-4 flex-none" aria-hidden />
               {t('whyLink')}
@@ -1417,7 +1419,7 @@ export function ActionPanel({
               <p className="mt-2 max-w-note text-sm">
                 <Link
                   href={`/reps?zip=${zip}`}
-                  className="inline-flex min-h-11 items-center gap-1.5 font-semibold text-go underline visited:text-go-deep hover:text-go-deep"
+                  className="inline-flex min-h-11 items-center gap-1.5 font-semibold text-ink underline visited:text-ink-2 hover:decoration-[3px]"
                 >
                   {t('refineDistrictCta')}
                 </Link>
@@ -1570,7 +1572,7 @@ export function ActionPanel({
                                     : t('outcomeLogged')}{' '}
                               <Link
                                 href="/reps#your-calls"
-                                className="font-semibold text-go-deep underline"
+                                className="font-semibold text-ink underline"
                               >
                                 {t('viewImpact')}
                               </Link>

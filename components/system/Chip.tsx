@@ -1,18 +1,25 @@
 import type { ReactNode } from 'react';
 
 /*
- * THE CHIP FAMILY — four tones, one shape, and a law behind each.
+ * THE CHIP FAMILY — five tones, one shape, and a law behind each.
  *
  *   ai      The AI label at first contact. UNBOXED since 2026-08-01 (owner
  *           ruling): the filled marker holding the AI mark plus a small
  *           tracked caption, no outline — the label is a caption on the
  *           content, not a component competing with it. Still always WITH
  *           the AI content it labels, never in a footnote.
- *   urgent  The ONLY amber in the product. One fact: a bill standing on the
- *           floor calendar. Ink text on amber (11.44:1), and the date is
- *           PRINTED — the type below makes `dateLabel` impossible to omit.
- *   stale   Data is past its claim window. INK, never amber: amber means a
- *           dated floor-calendar fact, and a staleness caveat is not one.
+ *   urgent  The lamp (#ffc933). Spent on ONE chip: the dated floor notice
+ *           on Today (components/TodayFloorCard.tsx; owner, 2026-09-29:
+ *           a scheduled vote "needs to have a yellow tag"). Ink text on the
+ *           lamp (11.20:1), and the date is PRINTED — the type below makes
+ *           `dateLabel` impossible to omit.
+ *   floor   The same dated floor fact everywhere else (the bill page's green
+ *           panel, the Big Question cards, the nomination page). INK, in the
+ *           chip's shape: page 2 says status and date tags are plain text,
+ *           and yellow marks only what you can act on (colour direction c,
+ *           owner's pick 2026-09-30). The date is printed, as for `urgent`.
+ *   stale   Data is past its claim window. INK, never the lamp: a staleness
+ *           caveat is not a floor fact.
  *   status  A record's derived status label (bill page credibility block,
  *           2026-09-24). INK, never amber and never green: the label comes
  *           from statusKeyFor / the floor gate, and the chip only prints it.
@@ -29,9 +36,9 @@ import type { ReactNode } from 'react';
  * two dark grounds do not resolve the same way — an ink ground takes
  * `ink-pale`, the green enamel panel takes `go-pale`. Pass the same ground
  * the wrapper's `on-dark` / `on-go` class names. Every combination below is
- * a computed pass: paper-on-ink 17.66 · ink-pale-on-ink 10.82 ·
- * paper-on-go-deep 9.75 · go-pale-on-go-deep 6.86 · ink-on-amber 11.44 ·
- * ink-2-on-paper 7.87 · line-strong edge on paper 3.24.
+ * a computed pass: paper-on-ink 16.50 · ink-pale-on-ink 10.33 ·
+ * paper-on-go-deep 11.32 · go-pale-on-go-deep 8.26 · ink-on-lamp 11.20 ·
+ * ink-2-on-paper 7.56 · line-strong edge on paper 4.24.
  *
  * BILINGUAL: every string is a prop, already localized. That includes
  * `marker` — the AI mark is "AI" in English and "IA" in Spanish, so it is NOT
@@ -59,11 +66,11 @@ export type ChipProps = ChipBase &
         marker?: ReactNode;
       }
     | {
-        tone: 'urgent';
+        tone: 'urgent' | 'floor';
         /**
-         * REQUIRED. Amber without a printed date is illegal in this system,
-         * so the type will not let you build one. Already formatted and
-         * localized by the caller.
+         * REQUIRED. A floor fact without a printed date is illegal in this
+         * system, so the type will not let you build one. Already formatted
+         * and localized by the caller.
          */
         dateLabel: string;
       }
@@ -82,8 +89,8 @@ const OUTLINE: Record<ChipGround, string> = {
 };
 
 /** The unboxed AI caption's text tone per ground. Computed passes at 12px
- *  bold: ink-2-on-paper 7.87 · ink-pale-on-ink 10.82 · go-pale-on-go-deep
- *  6.86. */
+ *  bold: ink-2-on-paper 7.56 · ink-pale-on-ink 10.33 · go-pale-on-go-deep
+ *  8.26. */
 const AI_TEXT: Record<ChipGround, string> = {
   paper: 'text-ink-2',
   ink: 'text-ink-pale',
@@ -121,9 +128,24 @@ const TAG: Record<ChipGround, string> = {
 export function Chip(props: ChipProps) {
   const { children, ground = 'paper', className = '' } = props;
 
+  if (props.tone === 'floor') {
+    // The dated floor fact in ink: the outline tones of its ground, the same
+    // type and the same two spans as `urgent`, so the claim reads the same
+    // on the page it links to. `data-floor-chip` is how specs find it.
+    return (
+      <span
+        data-floor-chip
+        className={`${SHELL} border-[1.5px] px-3 py-1 text-xs font-bold tracking-[0.04em] uppercase tabular-nums ${OUTLINE[ground]} ${className}`}
+      >
+        <span>{children}</span>
+        <span className="font-extrabold">{props.dateLabel}</span>
+      </span>
+    );
+  }
+
   if (props.tone === 'urgent') {
-    // Amber is a fill, so it resolves the same on every ground: ink text,
-    // 11.44:1, with the date printed beside the claim.
+    // The lamp is a fill, so it resolves the same on every ground: ink text,
+    // 11.20:1, with the date printed beside the claim.
     return (
       <span
         className={`${SHELL} bg-urgent px-3 py-1 text-xs font-bold tracking-[0.04em] text-ink uppercase tabular-nums ${className}`}

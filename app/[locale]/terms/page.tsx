@@ -32,7 +32,7 @@ export default async function TermsPage({ params }: { params: Promise<{ locale: 
             {t('p5')}{' '}
             <Link
               href="/privacy"
-              className="font-semibold text-go underline underline-offset-2 hover:text-go-deep"
+              className="font-semibold text-ink underline underline-offset-2 hover:decoration-[3px]"
             >
               {tc('footer.privacy')}
             </Link>

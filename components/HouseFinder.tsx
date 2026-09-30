@@ -16,17 +16,13 @@ import { seatSlug, type FinderRow } from '@/lib/house-finder';
  * would be a use of a subtle yellow button (I know color comes later) but
  * there should be a way for them to find those votes in this box here."
  *
- * THE AMBER, SCOPED. app/globals.css's COLOR LAW still reads that `urgent`
- * "is spent on exactly ONE fact: a bill standing on the floor calendar", and
- * /reps's header says "your ZIP spans two districts" is not that fact. The
- * owner's later direction (docs/current-direction.md, 2026-09-26 / 09-27:
- * "yellow ... marks only what you can act on") and his words above put a
- * light amber fill on this one control. It is a FILL, never text and never a
- * boundary: ink text on it (the mix sits between paper and `urgent`, so ink
- * clears 11.44:1 at the least), and the control's findable edge is the 1.5px
- * `line-strong` border (3.24:1 on the panel's paper). No gate enforces the
- * one-fact law (searched tests/ and scripts/ 2026-09-29), so nothing was
- * loosened to let this in; the conflict is named in the PR for the owner.
+ * THE LAMP, SCOPED. The owner's direction (docs/current-direction.md,
+ * 2026-09-26 / 09-27: "yellow ... marks only what you can act on") and his
+ * words above put a light lamp fill on this one control; app/globals.css's
+ * COLOR LAW names it since the warm-paper palette (2026-09-30). It is a
+ * FILL, never text and never a boundary: ink text on it (the 30% mix over
+ * paper, #fdebba, computes to 14.57:1), and the control's findable edge is
+ * the 1.5px `line-strong` border (4.24:1 on the panel's paper).
  *
  * A DISCLOSURE, per the ARIA pattern: a real <button> with aria-expanded and
  * aria-controls, the label unchanged when open (the chevron turns), focus

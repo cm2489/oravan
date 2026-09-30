@@ -17,10 +17,12 @@ import { rememberLocaleChoice, type LocaleChoice } from '@/lib/locale-pref';
  * law assigns radius by SCALE. The two links round their own outer corners at
  * the same 3px, so no derived radius appears anywhere.
  *
- * COLOR: ink fill = "you are here". That is this switch's own convention in
- * the reference, and the header nav borrows it, so one mark means one thing
- * across the whole bar. No green: the action green is spent on actions, and
- * changing language is navigation.
+ * COLOR: it stands on the masthead band (components/Header.tsx), so it is
+ * the band's inverse. A paper fill with band-green type = "you are here"
+ * (11.32:1); the header nav borrows it, so one mark means one thing across
+ * the whole bar. The other cell is cream type on the band (11.32:1), and the
+ * edge is `go-pale` (8.26:1 on the band). Built for the owner's pick of
+ * colour direction c, 2026-09-30.
  *
  * WIDTH is set by the LONGER (Spanish) label, per the bilingual rule —
  * "Español" sizes the cell and "English" sits inside it.
@@ -52,10 +54,11 @@ export function LocaleSwitcher() {
       // 390×844 the ink-filled pair was the loudest object on the homepage's
       // first screen — louder than the hero's one green action. Below md it
       // keeps both cells, both endonyms, and the 44px target, and it stays
-      // in the bar on every page; it drops the solid ink fill for a wash
-      // cell with a bold, underlined label, and a `line-strong` edge (3.24:1
-      // on paper, still clears 1.4.11). md+ is unchanged: ink edge, ink fill.
-      className="inline-grid grid-cols-2 rounded-stamp border-[1.5px] border-line-strong md:border-ink"
+      // in the bar on every page; it drops the solid fill for a `go` cell
+      // (a step off the band, cream type 7.36:1) with a bold, underlined
+      // label. md+ carries the full inverted fill. The edge is `go-pale` at
+      // every width (8.26:1 on the band, clears 1.4.11).
+      className="inline-grid grid-cols-2 rounded-stamp border-[1.5px] border-go-pale"
     >
       {routing.locales.map((code) => {
         const current = code === locale;
@@ -89,8 +92,8 @@ export function LocaleSwitcher() {
               'first:rounded-l-[calc(var(--radius-stamp)-1.5px)]',
               'last:rounded-r-[calc(var(--radius-stamp)-1.5px)]',
               current
-                ? 'bg-wash font-bold text-ink underline decoration-2 underline-offset-4 md:bg-ink md:font-semibold md:text-paper md:no-underline'
-                : 'font-semibold text-ink-2 no-underline hover:bg-wash hover:text-ink active:bg-wash md:text-ink',
+                ? 'bg-go font-bold text-paper underline decoration-2 underline-offset-4 md:bg-paper md:font-semibold md:text-go-deep md:no-underline'
+                : 'font-semibold text-go-pale no-underline hover:bg-go hover:text-paper active:bg-go md:text-paper',
             ].join(' ')}
           >
             {LOCALE_NAME[code] ?? code}
