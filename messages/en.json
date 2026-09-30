@@ -721,7 +721,7 @@
   },
   "notFound": {
     "title": "Page not found",
-    "body": "That page doesn't exist. You can look up your representatives from the home page.",
+    "body": "That page doesn't exist. You can look up your members of Congress from the home page.",
     "cta": "Go home"
   },
   "errorBoundary": {
@@ -752,7 +752,7 @@
     "p2": "Bill summaries and headlines are written by AI, call scripts are drafted by AI, and all of them are clearly labeled. They can contain mistakes. The official bill text on Congress.gov is always the authority, and you are responsible for reviewing and editing anything before you say it.",
     "p3": "Oravan comes with no guarantees. We do our best to keep representative data and bill statuses current, but offices change numbers and bills move daily. Verify anything that matters.",
     "p4": "What you do with the phone is yours: you place the calls, you choose the words. Be honest, be brief, and be kind to the staffer who answers.",
-    "p5": "We have no accounts and store nothing about you on our servers. Everything personal is kept in your browser. The privacy page explains this in full."
+    "p5": "We have no accounts and store nothing about you on our servers. Your settings and history are kept in your browser. When you look up your members of Congress, your ZIP code is sent to find your district and is used in memory only. A street address, if you give one, is used once and never stored. A stance you choose is sent only to draft your call script and is never linked to you. The privacy page explains this in full."
   },
   "og": {
     "aiDecoded": "AI-decoded",

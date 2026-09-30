@@ -721,7 +721,7 @@
   },
   "notFound": {
     "title": "Página no encontrada",
-    "body": "Esa página no existe. Puedes buscar a tus representantes desde la página de inicio.",
+    "body": "Esa página no existe. Puedes buscar a tus miembros del Congreso desde la página de inicio.",
     "cta": "Ir al inicio"
   },
   "errorBoundary": {
@@ -752,7 +752,7 @@
     "p2": "Los resúmenes y los titulares de los proyectos de ley los redacta la IA, los guiones de llamada son borradores de IA, y todos están claramente marcados. Pueden contener errores. El texto oficial en Congress.gov es siempre la autoridad, y tú eres responsable de revisar y editar todo antes de decirlo.",
     "p3": "Oravan no ofrece garantías. Hacemos lo posible por mantener al día los datos de representantes y el estado de los proyectos, pero las oficinas cambian de número y los proyectos avanzan a diario. Verifica lo que importe.",
     "p4": "Lo que hagas con el teléfono es tuyo: tú haces las llamadas y eliges las palabras. Sé honesto, sé breve y sé amable con la persona que contesta.",
-    "p5": "No tenemos cuentas y no guardamos nada sobre ti en nuestros servidores. Todo lo personal se guarda en tu navegador. La página de privacidad lo explica por completo."
+    "p5": "No tenemos cuentas y no guardamos nada sobre ti en nuestros servidores. Tus ajustes y tu historial se guardan en tu navegador. Cuando buscas a tus miembros del Congreso, tu código postal se envía para encontrar tu distrito y solo se usa en memoria. Si nos das una dirección, se usa una sola vez y nunca se guarda. La postura que elijas se envía solo para preparar tu guion de llamada y nunca se vincula contigo. La página de privacidad lo explica por completo."
   },
   "og": {
     "aiDecoded": "Traducido por IA",
