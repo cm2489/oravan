@@ -1743,6 +1743,7 @@
     "voteSource": "Recuento oficial",
     "movedHeading": "Proyectos cuya última acción tiene esta fecha",
     "movedMore": "{count, plural, one {# proyecto más tiene} other {# proyectos más tienen}} una última acción con esta fecha.",
+    "scheduleMore": "{count, plural, one {Mostrar # aviso más} other {Mostrar # avisos más}}",
     "scheduleHeading": "Lo próximo en la agenda del pleno",
     "scheduleNote": "Cada aviso cita las propias palabras de la cámara. La fecha de la etiqueta es la de la reunión que cubre el aviso, no la hora de una votación.",
     "scheduleQuiet": "Ninguna de las agendas que publican las cámaras nombra un proyecto de ley o una nominación que seguimos para una reunión próxima.",

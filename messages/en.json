@@ -1743,6 +1743,7 @@
     "voteSource": "Official tally",
     "movedHeading": "Bills whose latest action is dated this day",
     "movedMore": "{count, plural, one {# more bill has} other {# more bills have}} a latest action dated this day.",
+    "scheduleMore": "{count, plural, one {Show # more notice} other {Show # more notices}}",
     "scheduleHeading": "On the floor schedule next",
     "scheduleNote": "Each notice quotes the chamber's own words. The tag's date is the meeting the notice covers, not a vote time.",
     "scheduleQuiet": "Neither chamber's published schedule names a bill or nomination we track for a meeting still ahead.",

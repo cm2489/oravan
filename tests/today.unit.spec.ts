@@ -317,6 +317,40 @@ test.describe('yellowTagFirst: the notice with the yellow tag comes first', () =
   });
 });
 
+test.describe('the floor band folds past three notices', () => {
+  // No render helper here, so this pins the renderer's source.
+  const src = readFileSync(join(process.cwd(), 'components/TodayBrief.tsx'), 'utf8');
+
+  test('the first three render as cards; the fold renders only when there are more than three', () => {
+    expect(src).toContain('const SCHEDULE_SHOWN = 3;');
+    expect(src).toContain('brief.schedule.slice(0, SCHEDULE_SHOWN).map(notice)');
+    expect(src).toContain('{brief.schedule.length > SCHEDULE_SHOWN && (');
+    expect(src).toContain('brief.schedule.slice(SCHEDULE_SHOWN).map(notice)');
+    // The fold is a native <details> whose summary is at least 44px tall and reads the message key.
+    expect(src).toMatch(/<details[^>]*data-schedule-fold=""[\s\S]*<summary className="[^"]*min-h-11[^"]*"/);
+    expect(src).toContain("t('scheduleMore', { count: brief.schedule.length - SCHEDULE_SHOWN })");
+  });
+
+  test('the AI label is computed over the whole schedule and printed above both lists', () => {
+    const label = src.indexOf("brief.schedule.some((i) => i.teaser?.headline) && aiLabel('aiHeadlines')");
+    expect(label).toBeGreaterThan(-1);
+    expect(label).toBeLessThan(src.indexOf('brief.schedule.slice(0, SCHEDULE_SHOWN)'));
+  });
+
+  test('the summary key exists in both languages and takes a count', () => {
+    for (const [name, m] of [['en', en], ['es', es]] as const) {
+      const msg = (m as { today: Record<string, string> }).today.scheduleMore;
+      expect(msg, name).toBeTruthy();
+      expect(msg, name).toContain('{count');
+    }
+    const t = createTranslator({ locale: 'en', messages: en });
+    expect(t('today.scheduleMore', { count: 3 })).toBe('Show 3 more notices');
+    expect(t('today.scheduleMore', { count: 1 })).toBe('Show 1 more notice');
+    const tEs = createTranslator({ locale: 'es', messages: es });
+    expect(tEs('today.scheduleMore', { count: 3 })).toBe('Mostrar 3 avisos más');
+  });
+});
+
 test.describe('teaserFor: a /today card is the /bills card', () => {
   for (const locale of ['en', 'es']) {
     test(`${locale}: every bill the window's briefs print gets exactly getTeasers' teaser`, () => {
