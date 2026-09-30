@@ -23,9 +23,10 @@ import { CALL_BUTTON, CALL_BUTTON_CURRENT } from '../components/call-button';
  * THE CALL TAB, PINNED WITHOUT A BROWSER (owner, 2026-09-29, "nav 1").
  *
  * Three things here are decisions rather than plumbing, and each has a pin:
- *   1. the bar's ORDER — Home · Bills · Call · Questions · Reps on the phone,
- *      Bills · Call · Big Questions · My reps on the row nav — with Today and
- *      "My record" off both;
+ *   1. the bar's ORDER — Home · Bills · Call · Big Questions · Reps on the
+ *      phone, Today in Congress · Bills · Big Questions · My reps on the row
+ *      nav (owner, 2026-09-29: "'Today in Congress' needs to come first on
+ *      the header", scope "Desktop only") — with "My record" off both;
  *   2. WHERE THE TAB GOES — the page declares it (lib/call-tab.ts), and a
  *      stale declaration can never outlive its page;
  *   3. ONE CALL STYLE — every call control reads the same string.
@@ -115,18 +116,31 @@ test.describe('the bar (components/Header.tsx)', () => {
     return [...block![1].matchAll(/key: '([a-zA-Z]+)'/g)].map((m) => m[1]);
   }
 
-  test('phone bar: Home · Bills · Call · Questions · Reps', () => {
+  function blockOf(constName: 'TABS' | 'LINKS'): string {
+    return new RegExp(`const ${constName} = \\[([\\s\\S]*?)\\] as const;`).exec(header)![1];
+  }
+
+  test('phone bar: Home · Bills · Call · Big Questions · Reps', () => {
     expect(keysOf('TABS')).toEqual(['home', 'bills', 'call', 'moments', 'reps']);
   });
 
-  test('row nav: Bills · Call · Big Questions · My reps (the lockup is Home, the switch follows)', () => {
-    expect(keysOf('LINKS')).toEqual(['bills', 'call', 'moments', 'reps']);
+  test('row nav: Today in Congress · Bills · Big Questions · My reps (the lockup is Home, the switch follows)', () => {
+    // Owner, 2026-09-29, typed: the header's Call item removed, "Today in
+    // Congress" first; scope "Desktop only".
+    expect(keysOf('LINKS')).toEqual(['today', 'bills', 'moments', 'reps']);
   });
 
-  test('Today, the record and "Why call?" are off both navs', () => {
-    expect(header).not.toMatch(/href: '\/today'/);
-    expect(header).not.toMatch(/href: '\/record'/);
-    expect(header).not.toMatch(/href: '\/why-call'/);
+  test('Today is on the row nav only, Call on the thumb bar only; the record and "Why call?" on neither', () => {
+    const links = blockOf('LINKS');
+    const tabs = blockOf('TABS');
+    expect(links).toMatch(/href: '\/today'/);
+    expect(tabs).not.toMatch(/href: '\/today'/);
+    expect(tabs).toMatch(/key: 'call'/);
+    expect(links).not.toMatch(/key: 'call'/);
+    for (const block of [links, tabs]) {
+      expect(block).not.toMatch(/href: '\/record'/);
+      expect(block).not.toMatch(/href: '\/why-call'/);
+    }
   });
 
   test('the labels exist in both languages, and the short Spanish one is the wireframe’s', () => {
@@ -134,6 +148,19 @@ test.describe('the bar (components/Header.tsx)', () => {
     expect(en.common.navShort.call).toBe('Call');
     expect(es.common.nav.call).toBe('Llamar');
     expect(es.common.navShort.call).toBe('Llamar');
+    // The row nav's Today item (owner, 2026-09-29), matching the page's own title.
+    expect(en.common.nav.today).toBe(en.today.title);
+    expect(es.common.nav.today).toBe(es.today.title);
+    expect(en.common.navShort.today).toBe('Today');
+    expect(es.common.navShort.today).toBe('Hoy');
+    // The desktop door to the Call hub, matching the hub's own title.
+    expect(en.common.footer.callHub).toBe(en.call.title);
+    expect(es.common.footer.callHub).toBe(es.call.title);
+    // The thumb bar's own Big Questions label; the row nav's short label stays.
+    expect(en.common.tab.moments).toBe('Big Questions');
+    expect(en.common.navShort.moments).toBe('Questions');
+    expect(es.common.navShort.moments).toBe('Preguntas');
+    expect(header).toContain('tabLabel(key)');
   });
 });
 
