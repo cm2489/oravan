@@ -2,33 +2,68 @@
   "schema": "decode-batch-parked/v1",
   "batches": [
     {
-      "id": "msgbatch_012wHTK8nLEu5bQ1Sz9u34SF",
+      "id": "msgbatch_01Tzp44AjFMBQBpRQDnTABFw",
       "round": "summaries",
-      "parkedAt": "2026-09-29T19:34:07.929Z",
+      "parkedAt": "2026-09-30T17:30:38.444Z",
       "jobs": [
         {
-          "slug": "s-2339-119",
-          "promptSha": "fb0c90a68effcc8f"
+          "slug": "s-1574-119",
+          "promptSha": "be04ae9462e165f1"
         },
         {
-          "slug": "hr-997-119",
-          "promptSha": "36c45fae6541b4ad"
+          "slug": "hr-1190-119",
+          "promptSha": "74d54093004460ff"
         },
+        {
+          "slug": "hr-5284-119",
+          "promptSha": "52b67d2628aad23a"
+        },
+        {
+          "slug": "hr-9326-119",
+          "promptSha": "58b5d9ae2dafac4a"
+        }
+      ]
+    },
+    {
+      "id": "msgbatch_01KxF3SHTxSqetZAYN8F5ouV",
+      "round": "structure",
+      "parkedAt": "2026-09-30T17:38:45.787Z",
+      "jobs": [
         {
           "slug": "s-1680-119",
-          "promptSha": "40321142a70267b8"
+          "promptSha": "40321142a70267b8",
+          "summaryBatch": "msgbatch_012wHTK8nLEu5bQ1Sz9u34SF",
+          "summaryAt": "2026-09-29T19:34:07.929Z"
         },
         {
           "slug": "s-2440-119",
-          "promptSha": "4a83186e4917a731"
+          "promptSha": "4a83186e4917a731",
+          "summaryBatch": "msgbatch_012wHTK8nLEu5bQ1Sz9u34SF",
+          "summaryAt": "2026-09-29T19:34:07.929Z"
         },
         {
           "slug": "hconres-11-119",
-          "promptSha": "b6f4fb5ce298a178"
+          "promptSha": "b6f4fb5ce298a178",
+          "summaryBatch": "msgbatch_012wHTK8nLEu5bQ1Sz9u34SF",
+          "summaryAt": "2026-09-29T19:34:07.929Z"
         },
         {
           "slug": "hconres-1-119",
-          "promptSha": "76930b0e65d44cc3"
+          "promptSha": "76930b0e65d44cc3",
+          "summaryBatch": "msgbatch_012wHTK8nLEu5bQ1Sz9u34SF",
+          "summaryAt": "2026-09-29T19:34:07.929Z"
+        },
+        {
+          "slug": "hr-997-119",
+          "promptSha": "36c45fae6541b4ad",
+          "summaryBatch": "msgbatch_012wHTK8nLEu5bQ1Sz9u34SF",
+          "summaryAt": "2026-09-29T19:34:07.929Z"
+        },
+        {
+          "slug": "s-2339-119",
+          "promptSha": "fb0c90a68effcc8f",
+          "summaryBatch": "msgbatch_012wHTK8nLEu5bQ1Sz9u34SF",
+          "summaryAt": "2026-09-29T19:34:07.929Z"
         }
       ]
     }

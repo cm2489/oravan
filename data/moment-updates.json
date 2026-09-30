@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-09-29T19:50:53.562Z"
+    "generated_at": "2026-09-30T17:53:33.196Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -3076,7 +3076,7 @@
       }
     ],
     "summary_attempts": {
-      "day": "2026-09-29",
+      "day": "2026-09-30",
       "count": 1
     }
   },
@@ -3574,7 +3574,7 @@
     ],
     "summary_revisions": [],
     "summary_attempts": {
-      "day": "2026-09-29",
+      "day": "2026-09-30",
       "count": 1
     }
   }
