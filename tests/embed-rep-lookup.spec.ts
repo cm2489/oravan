@@ -92,7 +92,7 @@ test('unknown ZIP gets a recoverable, localized error', async ({ page }) => {
   await page.getByLabel(en.home.zipLabel).fill('00000');
   await page.getByRole('button', { name: en.home.zipCta }).click();
   // Next's own route announcer also carries role="alert" - scope to ours.
-  await expect(page.getByRole('alert').filter({ hasText: /couldn't match/i })).toBeVisible();
+  await expect(page.getByRole('alert').filter({ hasText: /couldn’t match/i })).toBeVisible();
 });
 
 test('an invalid (non-ZIP) entry is rejected client-side with the right message', async ({
