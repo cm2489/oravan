@@ -14,6 +14,7 @@ import {
   floorTagFor,
   latestRecordDay,
   shiftDate,
+  scheduleShownCount,
   yellowTagFirst,
   type BriefDaySummary,
 } from '../lib/today';
@@ -314,6 +315,63 @@ test.describe('yellowTagFirst: the notice with the yellow tag comes first', () =
   test('the committed schedule is already in this order', () => {
     const schedule = buildBrief(briefWindow()[0]).schedule;
     expect(order(yellowTagFirst(schedule))).toEqual(order(schedule));
+  });
+});
+
+test.describe('the floor band folds past three notices', () => {
+  // No render helper here, so this pins the renderer's source.
+  const src = readFileSync(join(process.cwd(), 'components/TodayBrief.tsx'), 'utf8');
+
+  test('the first three render as cards; the fold renders only when there are more than three', () => {
+    expect(src).toContain('const shown = scheduleShownCount(brief.schedule);');
+    expect(src).toContain('brief.schedule.slice(0, shown).map(notice)');
+    expect(src).toContain('{brief.schedule.length > shown && (');
+    expect(src).toContain('brief.schedule.slice(shown).map(notice)');
+    // The fold is a native <details> whose summary is at least 44px tall and reads the message key.
+    expect(src).toMatch(/<details[^>]*data-schedule-fold=""[\s\S]*<summary className="[^"]*min-h-11[^"]*"/);
+    expect(src).toContain("t('scheduleMore', { count: brief.schedule.length - shown })");
+  });
+
+  const notice = (citation: string, certainty: 'scheduled_vote' | 'consideration') => ({
+    citation,
+    tag: floorTagFor({ certainty, chamber: 'senate', source: 'daily-digest', covers: '2026-09-30', session: 'in_session' }),
+  });
+
+  test('four yellow notices: all four show and the fold holds the rest; one yellow: three show', () => {
+    const four = yellowTagFirst([
+      notice('S. 1', 'consideration'), notice('S. 2', 'consideration'),
+      notice('S. 3', 'scheduled_vote'), notice('S. 4', 'scheduled_vote'),
+      notice('S. 5', 'scheduled_vote'), notice('S. 6', 'scheduled_vote'),
+    ]);
+    const n = scheduleShownCount(four);
+    expect(n).toBe(4);
+    expect(four.slice(0, n).every((i) => i.tag?.tone === 'urgent')).toBe(true);
+    expect(four.slice(n).some((i) => i.tag?.tone === 'urgent')).toBe(false);
+    const one = yellowTagFirst([
+      notice('S. 1', 'consideration'), notice('S. 2', 'consideration'), notice('S. 3', 'consideration'),
+      notice('S. 4', 'consideration'), notice('S. 5', 'scheduled_vote'),
+    ]);
+    expect(scheduleShownCount(one)).toBe(3);
+    expect(scheduleShownCount(one.slice(0, 3))).toBe(3);
+  });
+
+  test('the AI label is computed over the whole schedule and printed above both lists', () => {
+    const label = src.indexOf("brief.schedule.some((i) => i.teaser?.headline) && aiLabel('aiHeadlines')");
+    expect(label).toBeGreaterThan(-1);
+    expect(label).toBeLessThan(src.indexOf('brief.schedule.slice(0, shown)'));
+  });
+
+  test('the summary key exists in both languages and takes a count', () => {
+    for (const [name, m] of [['en', en], ['es', es]] as const) {
+      const msg = (m as { today: Record<string, string> }).today.scheduleMore;
+      expect(msg, name).toBeTruthy();
+      expect(msg, name).toContain('{count');
+    }
+    const t = createTranslator({ locale: 'en', messages: en });
+    expect(t('today.scheduleMore', { count: 3 })).toBe('Show 3 more notices');
+    expect(t('today.scheduleMore', { count: 1 })).toBe('Show 1 more notice');
+    const tEs = createTranslator({ locale: 'es', messages: es });
+    expect(tEs('today.scheduleMore', { count: 3 })).toBe('Mostrar 3 avisos más');
   });
 });
 

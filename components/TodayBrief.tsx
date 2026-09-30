@@ -7,7 +7,7 @@ import { Chip } from '@/components/system';
 import { TodayFloorCard } from '@/components/TodayFloorCard';
 import { TodayVoteCard } from '@/components/TodayVoteCard';
 import { Link } from '@/i18n/navigation';
-import { dayCountParts, type Brief, type BriefChamber, type BriefScheduleItem } from '@/lib/today';
+import { dayCountParts, scheduleShownCount, type Brief, type BriefChamber, type BriefScheduleItem } from '@/lib/today';
 
 /*
  * THE DAILY BRIEF — one renderer for /today and /today/[date].
@@ -222,6 +222,20 @@ export async function TodayBrief({ brief, locale }: { brief: Brief; locale: stri
      about Congress at all — our own reading may be why it is empty. */
   const showSchedule = brief.schedule.length > 0 || brief.schedulePosture === 'quiet';
 
+  /* Floor notices that show before the fold: three, or every yellow one. */
+  const shown = scheduleShownCount(brief.schedule);
+
+  /* One floor notice, as a grid item. */
+  const notice = (item: BriefScheduleItem) => (
+    <li key={`${item.kind}-${item.citation}`} data-ai-text={item.teaser?.headline ? '' : undefined}>
+      <TodayFloorCard
+        item={item}
+        meta={scheduleMeta(item)}
+        tagDate={item.tag?.dateIso ? rowDay(item.tag.dateIso) : null}
+      />
+    </li>
+  );
+
   /* The /bills grid (components/BillsBrowser.tsx): one column, two from sm. */
   const GRID = 'mt-4 grid gap-4 sm:grid-cols-2';
 
@@ -248,17 +262,24 @@ export async function TodayBrief({ brief, locale }: { brief: Brief; locale: stri
             <>
               <p className="mt-2 max-w-read text-sm text-ink-2">{t('scheduleNote')}</p>
               {brief.schedule.some((i) => i.teaser?.headline) && aiLabel('aiHeadlines')}
-              <ul className={GRID}>
-                {brief.schedule.map((item) => (
-                  <li key={`${item.kind}-${item.citation}`} data-ai-text={item.teaser?.headline ? '' : undefined}>
-                    <TodayFloorCard
-                      item={item}
-                      meta={scheduleMeta(item)}
-                      tagDate={item.tag?.dateIso ? rowDay(item.tag.dateIso) : null}
-                    />
-                  </li>
-                ))}
-              </ul>
+              <ul className={GRID}>{brief.schedule.slice(0, shown).map(notice)}</ul>
+              {/* THE FOLD: past three notices (never a yellow one) the rest wait inside a native
+                  <details> (no JavaScript), so the chambers stay near the top. */}
+              {brief.schedule.length > shown && (
+                <details className="group mt-4" data-schedule-fold="">
+                  <summary className="inline-flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-stamp text-sm font-semibold text-ink hover:text-go-deep [&::-webkit-details-marker]:hidden">
+                    <span
+                      aria-hidden
+                      className="inline-flex h-5 w-5 flex-none items-center justify-center rounded-stamp border-[1.5px] border-ink text-xs leading-none font-extrabold"
+                    >
+                      <span className="group-open:hidden">+</span>
+                      <span className="hidden group-open:inline">{'–'}</span>
+                    </span>
+                    {t('scheduleMore', { count: brief.schedule.length - shown })}
+                  </summary>
+                  <ul className={GRID}>{brief.schedule.slice(shown).map(notice)}</ul>
+                </details>
+              )}
             </>
           ) : (
             <p role="status" className="mt-4 max-w-read text-md text-ink" data-schedule-quiet="">
