@@ -53,5 +53,5 @@ export default async function TodayDatedPage({
   const { locale, date } = await params;
   setRequestLocale(locale);
   if (!isBriefDate(date)) notFound();
-  return <TodayBrief brief={buildBrief(date)} locale={locale} />;
+  return <TodayBrief brief={buildBrief(date, locale)} locale={locale} />;
 }
