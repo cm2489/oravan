@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-09-30T01:39:33.730Z",
+    "fetched_at": "2026-09-30T06:38:53.521Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -9,15 +9,15 @@
       "press": {
         "status": "ok",
         "feeds_total": 11,
-        "feeds_silent": 1,
-        "checked_at": "2026-09-30T01:39:33.730Z"
+        "feeds_silent": 0,
+        "checked_at": "2026-09-30T06:38:53.521Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-27",
         "week_label": "Most-Viewed Bills - Week of September 27, 2026",
         "entries": 8,
-        "checked_at": "2026-09-30T01:39:33.730Z"
+        "checked_at": "2026-09-30T06:38:53.521Z"
       },
       "leans": {
         "center": {
@@ -226,6 +226,12 @@
           "firstSeen": "2026-09-30",
           "lastSeen": "2026-09-30",
           "url": "https://news.google.com/rss/articles/CBMimgFBVV95cUxNbHIzLW9xZXg0b2ZHVF9BVEltM0ViUnp4MXoyLV9adGkwalp5bk1pS1JfZHduS25BNlh2Um56aWhoYzBJVHJjTUJNVHpUUVJEamJMY1lPTWluRjJGX3BkNWJ1MlBYZkh1cWNMRzhLUEhSMnl2dzNJNHZhZ1kzcHNoeUNCNGdUZXM4NEpfR2U1MnFOQ0NncDNvUzlB0gGfAUFVX3lxTE5aSUFTRWpoSlFXNVhXeDZNTXBQdWJ0RWFRU09XeTE4UjJxY3hJbXJJaUhYREpPTnJYZXJYUkZxOGhsdmFsWDZIMDFXMzJQdXNGUGtFMF9GRlBxU2c4VUg2YUVKWEU0WlhwSlJqdHdFLW8wUUZEMkFucmtvU2w4eWNHLTIzWWtKQjZrM05tR25mT0xudDRFeFlONG9SSFpDcw?oc=5"
+        },
+        {
+          "domain": "benzinga.com",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMi5AFBVV95cUxNVHFRNmRBemtFam5YRDVxRDc4bGd0cjB2SUUxOWQ3UWF2bUljc25BZzFrenVOdERfM0kxWldyN1h3U2l5OGJBQUVZbGVGSlJhTGFqelBXUlhrUTdvQW52WklYenc5enRaQWdGZVBiVmZwYWlDSVo5LWdPUGp2dVVDT2lOS1l1bkJOMlZRMGdiOFZUZUVmcDBPSTZNYUI4Q21GRHl4UG9xRktMY3Zpdm5JTy11VUtCVUU3dnJzdi1heHM2MTZldHdfZHl5R1M1bGhYNko5NXFQNGY2OTZ2WUVxMlRTODM?oc=5"
         },
         {
           "domain": "bozemandailychronicle.com",
@@ -779,7 +785,7 @@
           "domain": "newsweek.com",
           "lean": "left",
           "firstSeen": "2026-09-29",
-          "lastSeen": "2026-09-29",
+          "lastSeen": "2026-09-30",
           "url": "https://news.google.com/rss/articles/CBMilgFBVV95cUxQb3RWSnZFNmdCTHlyYURJdXZYZFhvUTVMNlZIOWpVSjJHVXlILUl1Ym4xbVZjd3o0RVpFMWxOYU5yQWZlZGU3UFJGbVdzQUlXcFZrNk1zcHYwMUJCSm1XbVdOTU9GeHkxYkJlRmdoczctdFVNZ3RBYWpjTWktc0VYalgxTmNOa0w5WHBJNUkxN1BScWNCcmc?oc=5"
         },
         {
@@ -1188,6 +1194,19 @@
       ],
       "mostViewed": null
     },
+    "s-1518-119": {
+      "outlets7d": [
+        {
+          "domain": "washingtonexaminer.com",
+          "lean": "right",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMizAFBVV95cUxOc0xUSnQxclMyNmc2SEc5YjllRk85eWVTQ0V0OHVwcW9OUEcwb1ZCMjJvMWtaR0RLeUVydFhVZ29kS212emEtZHlCTjRBZVowQjVwSVR4MzlmM0wxMDZreDFtb3VQOHcwd1hzY1ZsRWw3TDJjdzNaejdwZllPM0JNUW1lY2ZnMzBfa2JnaWdodEpoZUVCOWI2XzAwTXgxYjNhQ2dlNUF3NmFob2Izd1h1T2Z4ZDZ1SUVyUERiUTd2ZHgzWDN2Y3oycDRiY2o?oc=5"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "s-1682-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1262,6 +1281,18 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "s-2666-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "wfmynews2.com",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMi-wFBVV95cUxQRkhrU1RTQjAybkRXYU9FVy1yd1ZiNHF1M0txSTlMY3dHNVo3WVFuTWRMWldIT1c5Q1plODhWcnFCcXVtdmFJOVlZSmowTEl6aVVqVDFjTGktNXZUcWRIcDFLVVBJZEdXOFJ1SkZIV25LbzlxSmlFRzFwWGJ5Z1kxRER1Rl9oMW13NWZ2ZjRvYTExZDZocUJfMWwxN1I1YnZJeVVlRkRUOW56TkFkQ2ZrZk9KSno3aFVCMnRCS0lsM0ZnR2lORnA1TUs0ZVZhM1RsSkdFYU1YVlB0RjJwNG5XckI1bGY3OS1jZGJDSTdZdThwM2htVmtyUm44MA?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "s-2667-119": {
@@ -1545,6 +1576,13 @@
     },
     "s-4668-119": {
       "outlets7d": [
+        {
+          "domain": "reuters.com",
+          "lean": "center",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMiqwFBVV95cUxOOTZqSEpHV3FnalBmU2lFRW9NcjdwNEd0Y211TFRXUGJBUS13aWZlTFNXRXVMSGdkSUFKOXRtTEl1RVlNcWVQenR6d0p0alRVMmgzdFhEQ1N6RlB0Q0xjZjNrOVBUMktxMVRTeTB2bWNYN0tOQkJQVDkzOW9HY2hlWUNqbTJka3VjeGxucThfTmw2LUpyMzctZ2RRdDh5aWVsQlEyTmFOZzNPakE?oc=5"
+        },
         {
           "domain": "cbsnews.com",
           "lean": "left",
