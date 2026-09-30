@@ -114,3 +114,23 @@ for (const [locale, m] of [
     for (const plan of PLAN_NAMES[locale]) expect(m.embedsTerms.intro).toContain(plan);
   });
 }
+
+for (const [locale, m] of [
+  ['en', en],
+  ['es', es],
+] as const) {
+  test(`${locale}: about.fundingBody's "none open" sentence follows EMBEDS_PAGES_PUBLIC`, () => {
+    // The about page says the partner embeds' plans are not open to new
+    // sites. That is true only while the flag is false, so the sentence is
+    // pinned to it: flipping the flag must change this string in the same PR.
+    const pattern = {
+      en: /\bnone open to new sites yet\b/i,
+      es: /\bninguno está abierto todavía a sitios nuevos\b/i,
+    }[locale];
+    if (EMBEDS_PAGES_PUBLIC) {
+      expect(m.about.fundingBody, 'about.fundingBody must not say none is open').not.toMatch(pattern);
+    } else {
+      expect(m.about.fundingBody, 'about.fundingBody says none is open').toMatch(pattern);
+    }
+  });
+}
