@@ -67,7 +67,13 @@
  * ---- GDELT'S RATE LIMIT AND THE CIRCUIT BREAKER --------------------------------
  * GDELT asks for one request every five seconds per IP and answers 429
  * otherwise; GitHub runners share IPs, so a 429 is normal weather.
- *   - at least GDELT_SPACING_MS (6 s) between requests, always;
+ *   - at least GDELT_SPACING_MS (6 s) of quiet before every request, counted
+ *     from the moment the previous one ENDED (its answer arrived, or it
+ *     failed), not from when it was sent. GDELT takes 10-15 s to answer a
+ *     search, so a gap counted from the send was no gap at all: on
+ *     2026-09-26 (run 36261148594) and 2026-09-27 (run 36341456981) every
+ *     request sent the moment a search had been answered got a 429, three
+ *     of three, while requests sent after a backoff's quiet were answered;
  *   - a 429 waits 30 s, then 90 s — two retries per request, never more;
  *   - the CIRCUIT OPENS, and the run makes no further request, on: a request
  *     still 429 after its retries; SILENT_CIRCUIT (2) requests in a row with no
@@ -86,10 +92,15 @@
  *   - THE CIRCUIT IS PERSISTED (GDELT_STATE_PATH, carried between runs in the
  *     Actions cache). A later run inside GDELT_CIRCUIT_COOLDOWN_MS (6 h) of
  *     the last failed attempt makes NO request. After the cooldown the run is
- *     HALF-OPEN: its first request gets no 429 backoff and a single silent
- *     answer is enough — if GDELT is still refusing, the run ends after ONE
- *     request and at most one timeout, and the circuit stays open. A cache
- *     miss reads as a closed circuit, which costs one ordinary run at worst.
+ *     HALF-OPEN: its first request gets the same two 429 backoffs as any
+ *     other request, and a single silent answer is enough — if GDELT is
+ *     still refusing, the run ends after at most THREE requests (the probe
+ *     and its two retries) or one timeout, and the circuit stays open. The
+ *     probe used to get no backoff at all, and since a 429 on a shared runner
+ *     address is normal weather, one un-retried request per run kept the
+ *     circuit shut from 2026-09-27 to 2026-10-01: seven half-open probes,
+ *     seven single 429s, no check recorded. A cache miss reads as a closed
+ *     circuit, which costs one ordinary run at worst.
  *   - any other failure (5xx, an empty body, a malformed body — truncated
  *     JSON or an HTML error page) fails THAT question for this run, without
  *     spending its remaining searches, since a question only updates when
@@ -418,6 +429,10 @@ export async function collect({
   const runStart = clock();
   const runDeadline = runStart + limits.runDeadlineMs;
   let lastRequestAt = -Infinity;
+  // When the previous request ENDED: its answer arrived (headers, and the
+  // body when one is read), or it failed. The spacing counts from here
+  // (see the header, GDELT'S RATE LIMIT).
+  let lastEndedAt = -Infinity;
   let silentInARow = 0;
   let refusedInARow = 0;
 
@@ -445,7 +460,7 @@ export async function collect({
   const request = async (url, questionDeadline) => {
     for (let attempt = 0; ; attempt++) {
       if (stats.requests >= limits.maxRequests) return { kind: 'budget', why: `request cap ${limits.maxRequests}` };
-      const wait = Math.max(0, lastRequestAt + limits.spacingMs - clock());
+      const wait = Math.max(0, Math.max(lastRequestAt, lastEndedAt) + limits.spacingMs - clock());
       const finishBy = clock() + wait + limits.timeoutMs;
       if (finishBy > runDeadline) return { kind: 'budget', why: `run deadline ${Math.round(limits.runDeadlineMs / 1000)} s` };
       if (finishBy > questionDeadline) return { kind: 'question_deadline' };
@@ -458,10 +473,12 @@ export async function collect({
       try {
         res = await within(Promise.resolve().then(() => fetchImpl(url, { headers: { 'User-Agent': USER_AGENT }, signal: ac.signal })), limits.timeoutMs);
       } catch (err) {
+        lastEndedAt = clock();
         silentInARow++;
         const code = err?.cause?.code ?? err?.name;
         return { kind: 'silent', error: `no answer: ${err?.message ?? err}${code ? ` (${code})` : ''}` };
       }
+      lastEndedAt = clock();
       if (res === TIMED_OUT) {
         ac.abort();
         silentInARow++;
@@ -471,7 +488,7 @@ export async function collect({
         silentInARow = 0;
         stats.rateLimited++;
         await logRefusal(res);
-        if (halfOpen || attempt >= limits.backoffMs.length) return { kind: 'rate_limited' };
+        if (attempt >= limits.backoffMs.length) return { kind: 'rate_limited' };
         const backoff = limits.backoffMs[attempt];
         const retryBy = clock() + Math.max(backoff, limits.spacingMs) + limits.timeoutMs;
         if (retryBy > runDeadline) return { kind: 'budget', why: `run deadline ${Math.round(limits.runDeadlineMs / 1000)} s (a 429 backoff would pass it)` };
@@ -487,10 +504,12 @@ export async function collect({
       try {
         body = await within(Promise.resolve().then(() => res.text()), limits.timeoutMs - (clock() - lastRequestAt));
       } catch (err) {
+        lastEndedAt = clock();
         ac.abort();
         silentInARow++;
         return { kind: 'silent', error: `the body broke off: ${err?.message ?? err}` };
       }
+      lastEndedAt = clock();
       if (body === TIMED_OUT) {
         ac.abort();
         silentInARow++;
@@ -576,7 +595,7 @@ export async function collect({
         if (r.kind === 'rate_limited') {
           openCircuit('429');
           log(
-            `::warning::gdelt-intake: GDELT is still answering 429${halfOpen ? ' on the half-open probe' : ` after ${limits.backoffMs.length} backoffs`} — circuit open, no further requests this run or for ${Math.round(limits.circuitCooldownMs / 60_000)} min. ${q.id} and later questions carry forward.`
+            `::warning::gdelt-intake: GDELT is still answering 429${halfOpen ? ' on the half-open probe' : ''} after ${limits.backoffMs.length} backoffs — circuit open, no further requests this run or for ${Math.round(limits.circuitCooldownMs / 60_000)} min. ${q.id} and later questions carry forward.`
           );
           stats.failed.push(q.id);
           break outer;
