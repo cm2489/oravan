@@ -115,6 +115,23 @@ test.describe('the parts', () => {
     expect(e, 'one red shard must not cancel the others').toContain('fail-fast: false');
   });
 
+  // 2026-10-01: three shards hung in this step for over an hour on main
+  // (run 36888529973), before any test ran, and every later main run waited
+  // behind them in the workflow's queue.
+  test('the browser install cannot hang a shard for hours: each attempt is cut, retried once, and the step has a timeout', () => {
+    const e = job('e2e');
+    const at = e.indexOf('- name: Install Playwright WebKit');
+    expect(at, 'the install step exists').toBeGreaterThan(-1);
+    const step = e.slice(at, e.indexOf('\n      - ', at + 1));
+    expect(step).toMatch(/\n {8}timeout-minutes: \d+\n/);
+    const minutes = Number(step.match(/timeout-minutes: (\d+)/)![1]);
+    expect(minutes).toBeLessThanOrEqual(30);
+    expect(step).toContain('for attempt in 1 2; do');
+    expect(step).toContain('timeout 8m npx playwright install --with-deps webkit');
+    // Two cut attempts fit inside the step's timeout.
+    expect(2 * 8).toBeLessThan(minutes);
+  });
+
   test('the shards run every browser project, and nothing else', () => {
     const e = job('e2e');
     const run = e.match(/run: (npx playwright test [^\n]*)/)![1];

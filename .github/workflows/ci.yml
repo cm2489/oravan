@@ -362,7 +362,22 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
       - name: Install Playwright WebKit
-        run: npx playwright install --with-deps webkit
+        # The browser binary comes from the cache above; --with-deps also
+        # installs WebKit's system libraries with apt, and the runner's
+        # package mirror can stall. On 2026-10-01 this step took 0 to 15
+        # minutes on pull-request shards and hung for over an hour on main
+        # (run 36888529973) before any test ran, holding every later main run
+        # in this workflow's queue. Each attempt is cut at 8 minutes and tried
+        # once more; the step's own timeout fails the shard instead of waiting
+        # out GitHub's 6-hour default.
+        timeout-minutes: 20
+        run: |
+          for attempt in 1 2; do
+            if timeout 8m npx playwright install --with-deps webkit; then exit 0; fi
+            echo "::warning::playwright install attempt $attempt failed or did not finish within 8 minutes"
+            sudo dpkg --configure -a || true
+          done
+          exit 1
       - name: Download the build
         uses: actions/download-artifact@v8
         with:
