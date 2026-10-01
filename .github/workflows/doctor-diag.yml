@@ -1,9 +1,11 @@
 name: Doctor diagnostic (temporary, never merged)
 
-# Throwaway branch only (doctor/diag-summary-20261001). Runs the real
-# "Where it stands" prompt for the penny question against the real model and
-# prints the raw replies and the lint verdicts. Read-only: no commit, no
-# write, no deploy. Owner-authorized test spend, capped in the script.
+# Throwaway branch only (doctor/diag-summary-20261001). Second run: the GDELT
+# press-count collector from the fix branch (doctor/gdelt-breaker-20261001),
+# run once from a GitHub runner the way question-press.yml runs it, to see
+# whether GDELT answers with the new pacing. Read-only: no commit, no write
+# to main, no model call, $0. The summary diagnostic it replaced was run
+# 36884798035.
 on:
   push:
     branches: ['doctor/diag-summary-20261001']
@@ -16,18 +18,19 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  diag:
+  gdelt:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: doctor/gdelt-breaker-20261001
       - uses: actions/setup-node@v6
         with:
           node-version: 24
-          cache: npm
-      - run: npm ci
-      - run: node scripts/doctor-diag-summary.mjs
+      - name: Collect press counts with the fixed pacing (nothing is committed)
+        run: node scripts/gdelt-intake.mjs
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          DIAG_RUNS: '6'
-          DIAG_MAX_USD: '1.50'
+          GDELT_STATE_PATH: ${{ runner.temp }}/gdelt-state/state.json
+      - name: What it would have written
+        run: git diff --stat -- data/question-press.json || true
