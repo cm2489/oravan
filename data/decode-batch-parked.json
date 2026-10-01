@@ -2,33 +2,33 @@
   "schema": "decode-batch-parked/v1",
   "batches": [
     {
-      "id": "msgbatch_012wHTK8nLEu5bQ1Sz9u34SF",
-      "round": "summaries",
-      "parkedAt": "2026-09-29T19:34:07.929Z",
+      "id": "msgbatch_01AQhminZDicupikZmcyq8Qy",
+      "round": "structure",
+      "parkedAt": "2026-09-30T19:32:55.020Z",
       "jobs": [
         {
-          "slug": "s-2339-119",
-          "promptSha": "fb0c90a68effcc8f"
+          "slug": "s-1574-119",
+          "promptSha": "be04ae9462e165f1",
+          "summaryBatch": "msgbatch_01Tzp44AjFMBQBpRQDnTABFw",
+          "summaryAt": "2026-09-30T17:30:38.444Z"
         },
         {
-          "slug": "hr-997-119",
-          "promptSha": "36c45fae6541b4ad"
+          "slug": "hr-1190-119",
+          "promptSha": "74d54093004460ff",
+          "summaryBatch": "msgbatch_01Tzp44AjFMBQBpRQDnTABFw",
+          "summaryAt": "2026-09-30T17:30:38.444Z"
         },
         {
-          "slug": "s-1680-119",
-          "promptSha": "40321142a70267b8"
+          "slug": "hr-5284-119",
+          "promptSha": "52b67d2628aad23a",
+          "summaryBatch": "msgbatch_01Tzp44AjFMBQBpRQDnTABFw",
+          "summaryAt": "2026-09-30T17:30:38.444Z"
         },
         {
-          "slug": "s-2440-119",
-          "promptSha": "4a83186e4917a731"
-        },
-        {
-          "slug": "hconres-11-119",
-          "promptSha": "b6f4fb5ce298a178"
-        },
-        {
-          "slug": "hconres-1-119",
-          "promptSha": "76930b0e65d44cc3"
+          "slug": "hr-9326-119",
+          "promptSha": "58b5d9ae2dafac4a",
+          "summaryBatch": "msgbatch_01Tzp44AjFMBQBpRQDnTABFw",
+          "summaryAt": "2026-09-30T17:30:38.444Z"
         }
       ]
     }

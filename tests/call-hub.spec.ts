@@ -16,7 +16,12 @@ import { mockScriptApi, seedZip } from './helpers';
  *
  * What is pinned here, in the order a reader meets it:
  *   - the bar: five tabs on a phone, four links and the switch on a desktop,
- *     in the ruled order, with Today and the record off both;
+ *     in the ruled order — since 2026-09-29 the desktop row is Today in
+ *     Congress · Bills · Big Questions · My reps with no Call item (owner,
+ *     typed: "The 'Call' button in the header needs to be removed and 'Today
+ *     in Congress' needs to come first on the header"; scope "Desktop only"),
+ *     so the Call tab below is a phone control, and a desktop reaches the hub
+ *     from the footer's "Make a call";
  *   - where the Call tab goes: the hub from general, settled-bill and member
  *     pages; the page's own panel on an open bill; the call panel a Big
  *     Question carries for its one open bill, or its "Still open" list when
@@ -66,28 +71,33 @@ const SETTLED = settledBill('law') ?? settledBill('rejected');
 
 for (const { locale, prefix, messages } of LOCALES) {
   test.describe(`${locale}: the bar`, () => {
-    test('phone: Home · Bills · Call · Questions · Reps; desktop: Bills · Call · Big Questions · My reps', async ({
+    test('phone: Home · Bills · Call · Big Questions · Reps; desktop: Today in Congress · Bills · Big Questions · My reps', async ({
       page,
       isMobile,
     }) => {
       await page.goto(`${prefix}/`);
       const nav = primaryNav(page, messages);
-      const texts = (await nav.getByRole('link').allInnerTexts()).map((s) => s.trim());
+      const texts = (await nav.getByRole('link').allInnerTexts()).map((s) => s.replace(/\s+/g, ' ').trim());
       const expected = isMobile
         ? [
             messages.common.navShort.home,
             messages.common.navShort.bills,
             messages.common.navShort.call,
-            messages.common.navShort.moments,
+            messages.common.tab.moments,
             messages.common.navShort.reps,
           ]
-        : [messages.common.nav.bills, messages.common.nav.call, messages.common.nav.moments, messages.common.nav.reps];
+        : [messages.common.nav.today, messages.common.nav.bills, messages.common.nav.moments, messages.common.nav.reps];
       expect(texts).toEqual(expected);
-      // Today and the record are off the bar (owner, "nav 1").
-      await expect(nav.locator('a[href$="/today"], a[href$="/record"], a[href$="/why-call"]')).toHaveCount(0);
+      // The record and "Why call?" are off both bars (owner, "nav 1"); Today
+      // is on the desktop row only, and Call on the phone bar only (owner,
+      // 2026-09-29, "Desktop only").
+      await expect(nav.locator('a[href$="/record"], a[href$="/why-call"]')).toHaveCount(0);
+      await expect(nav.locator('a[href$="/today"]')).toHaveCount(isMobile ? 0 : 1);
+      await expect(nav.locator('[data-call-tab]')).toHaveCount(isMobile ? 1 : 0);
     });
 
-    test('the Call tab clears the 44px floor @reflow', async ({ page }) => {
+    test('the Call tab clears the 44px floor @reflow', async ({ page, isMobile }) => {
+      test.skip(!isMobile, 'the Call tab is a phone control since 2026-09-29 (owner: header Call removed, "Desktop only")');
       await page.goto(`${prefix}/`);
       const box = await callTab(page, messages).boundingBox();
       expect(box, 'the Call tab must render').not.toBeNull();
@@ -97,6 +107,12 @@ for (const { locale, prefix, messages } of LOCALES) {
   });
 
   test.describe(`${locale}: where the Call tab goes`, () => {
+    // The Call tab is a phone control since 2026-09-29: the owner removed the
+    // header's Call item on desktop ("Desktop only"); the thumb bar keeps it.
+    test.beforeEach(({ isMobile }) => {
+      test.skip(!isMobile, 'phone only since 2026-09-29: the desktop header has no Call item (owner, "Desktop only")');
+    });
+
     test('from Home to the hub, where it is the current page', async ({ page }) => {
       await page.goto(`${prefix}/`);
       const tab = callTab(page, messages);
@@ -243,7 +259,37 @@ for (const { locale, prefix, messages } of LOCALES) {
       expect(overflow).toBeLessThanOrEqual(0);
     });
 
-    test('Call tab → Read + call → a stance is a completed script: three interactions', async ({ page }) => {
+    test('desktop: footer "Make a call" → Read + call → a stance is a completed script: three interactions', async ({
+      page,
+      isMobile,
+    }) => {
+      test.skip(isMobile, 'the phone reaches the hub from its Call tab (the case below)');
+      test.skip(!anyTop, 'quiet week: no bill on the hub to call about');
+      test.skip(!CORPUS_STABLE, 'corpus sits at a scoring boundary');
+      await mockScriptApi(page);
+      await page.goto(`${prefix}/`);
+      let used = 0;
+      used += 1;
+      // Since 2026-09-29 the desktop header has no Call item (owner, "Desktop
+      // only"); the footer's first Site link is the hub's standing door.
+      await page.locator('footer').getByRole('link', { name: messages.common.footer.callHub, exact: true }).click();
+      await expect(page).toHaveURL(new RegExp(`${prefix}/call$`));
+      used += 1;
+      await page.locator('[data-call-hub-cta]').first().click();
+      await expect(page).toHaveURL(/\/bills\/[^#]+#act$/);
+      used += 1;
+      const stance = page.getByRole('radio', { name: messages.bill.stance.support });
+      await expect(async () => {
+        const request = page.waitForRequest('**/api/script', { timeout: 3000 });
+        await stance.click();
+        await request;
+      }).toPass({ timeout: 30_000 });
+      await expect(page.getByRole('textbox', { name: messages.bill.scriptTitle })).toBeVisible();
+      expect(used).toBeLessThanOrEqual(3);
+    });
+
+    test('Call tab → Read + call → a stance is a completed script: three interactions', async ({ page, isMobile }) => {
+      test.skip(!isMobile, 'phone only since 2026-09-29: the desktop header has no Call item (owner, "Desktop only")');
       test.skip(!anyTop, 'quiet week: no bill on the hub to call about');
       test.skip(!CORPUS_STABLE, 'corpus sits at a scoring boundary');
       await mockScriptApi(page);
@@ -291,3 +337,32 @@ test('es: the row nav fits at 768px with the switch, no wrap and no overflow', a
     .evaluateAll((els) => els.filter((e) => e.scrollWidth > e.clientWidth + 1).map((e) => e.textContent));
   expect(squeezed).toEqual([]);
 });
+
+/*
+ * THE ROW AT 1024px (owner, 2026-09-29: "'Today in Congress' needs to come
+ * first on the header"). 64rem is where the full labels start, and the
+ * English bar also carries the trust line there, so it is the tightest the
+ * row gets. Both languages: one row, no page overflow, no link squeezed.
+ */
+for (const { locale, prefix, messages } of LOCALES) {
+  test(`${locale}: the row nav fits at 1024px in one row, Today first`, async ({ page, isMobile }) => {
+    test.skip(isMobile, 'the row nav is a desktop surface');
+    await page.setViewportSize({ width: 1024, height: 900 });
+    await page.goto(`${prefix}/`);
+    const nav = primaryNav(page, messages);
+    await expect(nav).toBeVisible();
+    const links = nav.getByRole('link');
+    await expect(links).toHaveCount(4);
+    await expect(links.first()).toHaveAttribute('href', `${prefix}/today`);
+    const tops = await links.evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)));
+    expect(new Set(tops).size).toBe(1);
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    expect(overflow).toBeLessThanOrEqual(0);
+    const squeezed = await page
+      .locator('header a')
+      .evaluateAll((els) =>
+        els.filter((e) => e.getClientRects().length > 0 && e.scrollWidth > e.clientWidth + 1).map((e) => e.textContent)
+      );
+    expect(squeezed).toEqual([]);
+  });
+}
