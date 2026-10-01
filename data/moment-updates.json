@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-09-30T19:50:03.994Z"
+    "generated_at": "2026-10-01T19:55:22.639Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -1482,6 +1482,33 @@
           "reanchor:7d"
         ],
         "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_94d02dfa",
+        "generated_at": "2026-10-01T19:55:25.990Z",
+        "as_of_day": "2026-10-01",
+        "text": {
+          "en": "The latest action in the official record on this measure is dated July 27, 2026.",
+          "es": "La última acción del registro oficial sobre esta medida es del 27 de julio de 2026."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "s-3172-119": "floor_vote"
+          },
+          "vehicle_status_keys": {
+            "s-3172-119": "floor_vote_stale"
+          },
+          "update_ids": [],
+          "roll_calls": [],
+          "roll_calls_on_record": [],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/3172"
+          ]
+        },
+        "changed_because": [
+          "reanchor:7d"
+        ],
+        "model": "record-only"
       }
     ]
   },
@@ -3393,6 +3420,36 @@
           "reanchor:7d"
         ],
         "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_71867f89",
+        "generated_at": "2026-10-01T19:55:25.992Z",
+        "as_of_day": "2026-10-01",
+        "text": {
+          "en": "The latest action in the official record on this measure is dated September 15, 2026.",
+          "es": "La última acción del registro oficial sobre esta medida es del 15 de septiembre de 2026."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "hr-3633-119": "floor_vote"
+          },
+          "vehicle_status_keys": {
+            "hr-3633-119": "floor_activity"
+          },
+          "update_ids": [],
+          "roll_calls": [],
+          "roll_calls_on_record": [
+            "h-119-1-199",
+            "s-119-2-234"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/3633"
+          ]
+        },
+        "changed_because": [
+          "reanchor:7d"
+        ],
+        "model": "record-only"
       }
     ]
   },
@@ -3607,10 +3664,47 @@
         "ai": true
       }
     ],
-    "summary_revisions": [],
+    "summary_revisions": [
+      {
+        "id": "s_5ef7d3b6",
+        "generated_at": "2026-10-01T19:55:28.415Z",
+        "as_of_day": "2026-10-01",
+        "text": {
+          "en": "On September 28, 2026, the Senate passed H.R. 10167 without amendment by unanimous consent. The same day, the Senate Committee on Banking, Housing, and Urban Affairs was discharged from the bill, also by unanimous consent. H.R. 10167 now stands as \"Passed both chambers.\"",
+          "es": "El 28 de septiembre de 2026, el Senado aprobó el proyecto H.R. 10167 sin enmiendas por consentimiento unánime. Ese mismo día, el Comité de Banca, Vivienda y Asuntos Urbanos del Senado quedó relevado del proyecto, también por consentimiento unánime. El H.R. 10167 figura como \"Aprobado por ambas cámaras\"."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "hr-10167-119": "passed_chamber",
+            "s-1525-119": "passed_chamber",
+            "hr-3074-119": "passed_chamber"
+          },
+          "vehicle_status_keys": {
+            "hr-10167-119": "passed_both",
+            "s-1525-119": "passed_chamber",
+            "hr-3074-119": "passed_chamber"
+          },
+          "update_ids": [
+            "u_10792eb6",
+            "u_a1f9a417"
+          ],
+          "roll_calls": [],
+          "roll_calls_on_record": [],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/10167",
+            "https://www.congress.gov/bill/119th-congress/senate-bill/1525",
+            "https://www.congress.gov/bill/119th-congress/house-bill/3074"
+          ]
+        },
+        "changed_because": [
+          "first-summary"
+        ],
+        "model": "claude-sonnet-5-5"
+      }
+    ],
     "summary_attempts": {
-      "day": "2026-09-30",
-      "count": 2
+      "day": "2026-10-01",
+      "count": 1
     }
   }
 }
