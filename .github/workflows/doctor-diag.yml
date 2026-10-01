@@ -1,0 +1,33 @@
+name: Doctor diagnostic (temporary, never merged)
+
+# Throwaway branch only (doctor/diag-summary-20261001). Runs the real
+# "Where it stands" prompt for the penny question against the real model and
+# prints the raw replies and the lint verdicts. Read-only: no commit, no
+# write, no deploy. Owner-authorized test spend, capped in the script.
+on:
+  push:
+    branches: ['doctor/diag-summary-20261001']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: doctor-diag
+  cancel-in-progress: false
+
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: node scripts/doctor-diag-summary.mjs
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          DIAG_RUNS: '6'
+          DIAG_MAX_USD: '1.50'
