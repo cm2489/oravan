@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-01T20:08:17.168Z",
+    "fetched_at": "2026-10-01T23:08:24.699Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-01T20:08:17.168Z"
+        "checked_at": "2026-10-01T23:08:24.699Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-27",
         "week_label": "Most-Viewed Bills - Week of September 27, 2026",
         "entries": 8,
-        "checked_at": "2026-10-01T20:08:17.168Z"
+        "checked_at": "2026-10-01T23:08:24.699Z"
       },
       "leans": {
         "center": {
@@ -447,6 +447,18 @@
       ],
       "mostViewed": null
     },
+    "hr-1703-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "rollcall.com",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-01",
+          "url": "https://rollcall.com/2026/10/01/bill-easing-seniors-wheelchair-upgrade-costs-clears-senate/"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-1945-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -467,6 +479,12 @@
           "firstSeen": "2026-09-30",
           "lastSeen": "2026-10-01",
           "url": "https://news.google.com/rss/articles/CBMivAFBVV95cUxNb2ZuM25mZzZ3aXljb3U5TWJzMlp3VE13UTJTRnZTbzhhRWoyd3JRQy1CY2pMcHRQZk1JQkg2R01ZX216VEc3UXR3VmlXejQ1S2xSWWhTZGNRamVMd0ZZT3YzOEo0RndEQTlVeHI5aUVPbnNDRllIdTNCUkZoSVpQYjd2QUhIU1cyWC1PU3JNN29QVDR2aGQ3a2pnNm9HcGhIa1Q0V3BWN1NoOXh6SFRQT0FVVWUzR2FuVWtWWg?oc=5"
+        },
+        {
+          "domain": "missouriindependent.com",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMixAFBVV95cUxQNU1MaUhMTnhwQ3RRQjc5b3BNc3o2M09HVl9Ka0Vnc19MbnRJUXFHSFZVc0JTUW5ucGRjOWZUVTVWRFRtWkJBTmFkOVVTbEU5SDdzT3cxcEtkS0lmZ2IzVHZOSmxlU2FoeXlaeFhoWmR6UlYzSjFxR1VmUF9icEcxODZyci12M0M4eHA5aXNBV3hNOXQ5bEJyUFAxdFlrUTF4OWY2eUtyajBTY01QYmQ0cE9XRkRRbHM2ODdtdHRWeUZNaWFs?oc=5"
         }
       ],
       "mostViewed": null
@@ -548,6 +566,18 @@
       "unratedOutlets7d": [],
       "mostViewed": null
     },
+    "hr-4509-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "marijuanamoment.net",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMi5gFBVV95cUxPVGdYUHgxdUtjb2pfRkVfTTgyZElqMzJQdlQ0OWhJU2FOTmZ3SUpnTVRuNzNQRGZWQUZ0bUhncEpNdkpza2FSVF9mc3k2NzIxSW5VSkFIMjlERHQyYUQ2Qzk4ampjYXFGdGdWcUVlTWRuZm5RbFlDMUZjN1IxQy0yM085aF9OeFhfUGRQejlvYWs5Z2ZBckJ1WThZc2VlTktNLVhJYV9pTlVySE5GRXY3T0s4RmVZVnA5cXNwUTZvZDVzR0dqNDFrSE9JMEkwcE5oRm5YcmVaN0hCZDRhRm5NTDdvNVIzUQ?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-4795-119": {
       "outlets7d": [],
       "unratedOutlets7d": [],
@@ -626,6 +656,24 @@
         "lastSeen": "2026-10-01",
         "lastWeek": "2026-09-27"
       }
+    },
+    "hr-5284-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "newsnationnow.com",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMigAFBVV95cUxOLV9KMGh0RkZfRTliLWxNdTJvY2tKd1U1aDFCdGphMTRfbXljZl81UlotU3dWOXZYcGZCQ2FCMTA4aXlpbmxLY2NFcWxxZjJGX1l4eDMxbWNEMUE0eHItZUlUWnFuS3ZUdDh4WDFqWG0walFUOVk4enZVbHZybllkTNIBhgFBVV95cUxPVkZyNWc1Vl9kLVQtNzJ2a2NnX0ZrQktSSWxuR280cFNCVzhtX2dyZ3FwRjloYk12TWFWdnNKQ2JKTnJlTEg0aVhpWDV4S211aDhkNGxuYWFtblJYUmZMQzB3QTNTS09kSVhER1hjWXVzMG8yX3JMZUREQlVUSG5xeS0wSTBHdw?oc=5"
+        },
+        {
+          "domain": "planadviser.com",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMiTkFVX3lxTE8xT0V6RVJqN0RiOFJQZ1ZScnFrcnlsYnhadTQ0em9ZVC1uamZHR041dGEyenBRUUFwYUZueWg4OW0wS0x1MGNYQ3hxUG9tUQ?oc=5"
+        }
+      ],
+      "mostViewed": null
     },
     "hr-5316-119": {
       "outlets7d": [],
@@ -1012,6 +1060,12 @@
           "firstSeen": "2026-10-01",
           "lastSeen": "2026-10-01",
           "url": "https://news.google.com/rss/articles/CBMiwAFBVV95cUxPOWc5V04zbXlSTVIxajdnVzAzZnpKVmRXSTY1aV9CUXpZMlEyVkI4TVJZWDZhQ19rbHYzWHYtS0hnbDJxSW0zbmFicEl2QlBSeDRYQUJVYmQwUFE3N3AtbWpkaVZKbDloaU9ETFZSNFZjWGFVNjk4U3I4X1dTTngxaEVtMm5ITHlfTFZQUU5MUWk4cjlaQ084Y3JLdEMxMUIzRUpEUUFocy1IVjVnLXI1SnMyTzNPRGI2UXRUZXRkblE?oc=5"
+        },
+        {
+          "domain": "cobbcountycourier.com",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMivAFBVV95cUxOMU9EeHZ0S1BoRWR2bFpwbG5MbkF2RnZ2NzNTZ0NhYnZabTIwQ2paXzV2ZHVMNDZNZmtVN3ZuMGpFT1Q4NmRXQVJkMi0weWZOcktFTjdzRzlXQ09lVGhnTFViZTVsVXAxRHA5WmVnQ1FtTWRhcW1IZWpqcV9vTlhEUGxNNE5Sb0V3SjNZTWhQYzRFYm5SRGtwdzk0TlZqTjZ3d1pyZ2MyNkM0a1N4T1hFQ0VORHFTY2ZEcVRPUA?oc=5"
         },
         {
           "domain": "denvergazette.com",
@@ -2084,6 +2138,12 @@
           "url": "https://news.google.com/rss/articles/CBMimgFBVV95cUxPZkVhb1lUb0JQRVhUUHJLZ0xHZkZYUmFoOUxOU1RwU05wZlloWnNOdTVpUlJLZFhNek15bzFBUE1zeU91TkZJWFpRdHFjLXZJN0J4RjJSZ29xdUI1cEQ5blZ4bjdWNUZPdVoxX2dCZ21iUV9sRWhvVGE4RGtWa3dxS3RNUUljblFORlV2NVJ1c3FjR2dXNkVYQVVB?oc=5"
         },
         {
+          "domain": "washingtonsun.com",
+          "firstSeen": "2026-09-29",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMiqgFBVV95cUxQM3NqaEdKLVdLOGx6VXZnYVhCSTZJUUNpemNlcXJxMEM1RGtJX19hbmdnbFljTjBvLU9pZmtaNjZxT0VlZkxWb1dLRW1Fd2ZzSGJXNm0zYW5aMnd2OVBfQzFUaDFael82MlNnRWg5eW1VLThyVXhsMlFsc29RNjU1WHVVdTR2VEZMQVBrUWRxUFlkR20wRXpFOVdUdE9Nc0N0TGZFSVJVN3lSZw?oc=5"
+        },
+        {
           "domain": "africa.espn.com",
           "firstSeen": "2026-09-30",
           "lastSeen": "2026-09-30",
@@ -2202,12 +2262,6 @@
           "firstSeen": "2026-09-29",
           "lastSeen": "2026-09-29",
           "url": "https://news.google.com/rss/articles/CBMi0gFBVV95cUxOMy1lUjlYRFNZZm1CblFkT05UQTlEMVdvUDNVYURSWVZnNDFqVUJmTWUwZlFBTm1meDlTQm9SbWtoU0JuaWJ4eDE3VzhjOVlfZUZ2aERsZUxlZEdzNlVDVkNCN21MUk9IUVdTb0FWWFp2d2hiU0o1N1BOOFV4OU5LRW9aQ3I5LXlUNmgwR0dneS1HdjVMYThwVUxKQ2JFZm05blh4Ykgxc2Y3UHFPZEFZQWtsRjhucC1fZ0hkZjFMNnRDMjl5WmxEeVdPallLMzIybVHSAdIBQVVfeXFMTjMtZVI5WERTWWZtQm5RZE9OVEE5RDFXb1AzVWFEUllWZzQxalVCZk1lMGZRQU5tZng5U0JvUm1raFNCbmlieHgxN1c4YzlZX2VGdmhEbGVMZWRHczZVQ1ZDQjdtTFJPSFFXU29BVlhadndoYlNKNTdQTjhVeDlOS0VvWkNyOS15VDZoMEdHZ3ktR3Y1TGE4cFVMSkNiRWZtOW5YeGJIMXNmN1BxT2RBWUFrbEY4bnAtX2dIZGYxTDZ0QzI5eVpsRHlXT2pZSzMyMm1R?oc=5"
-        },
-        {
-          "domain": "washingtonsun.com",
-          "firstSeen": "2026-09-29",
-          "lastSeen": "2026-09-29",
-          "url": "https://news.google.com/rss/articles/CBMihgFBVV95cUxNdEhNZ1lBY3V1S2diNndGdXlSRDdKOTVWUEJWSGNoT3cwNTluMmY0MmRfUXhLdUtnSEVXSktnbDVvS1dPalNZQXRwcXd4WmJZNFY0ZC1NSWxibVJkTGJMYW50eXFGYUtvNW9QbnVIMVRUdXJzLTZsR01JdXlSSUVza2poazFxUQ?oc=5"
         },
         {
           "domain": "wjbf.com",
