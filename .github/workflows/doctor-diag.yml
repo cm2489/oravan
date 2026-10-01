@@ -1,11 +1,11 @@
 name: Doctor diagnostic (temporary, never merged)
 
-# Throwaway branch only (doctor/diag-summary-20261001). Second run: the GDELT
-# press-count collector from the fix branch (doctor/gdelt-breaker-20261001),
-# run once from a GitHub runner the way question-press.yml runs it, to see
-# whether GDELT answers with the new pacing. Read-only: no commit, no write
-# to main, no model call, $0. The summary diagnostic it replaced was run
-# 36884798035.
+# Throwaway branch only (doctor/diag-summary-20261001). Third run: the
+# nightly's own Moment step, on main after #428, exactly as sync-bills.yml
+# runs it, to see the penny question's first "Where it stands" pass the gate
+# end to end. Read-only: no commit, no write to main, no deploy. Spend: the
+# step's normal nightly calls (about a cent). Earlier runs: 36884798035
+# (the summary prompt), 36886323113 (the GDELT pacing).
 on:
   push:
     branches: ['doctor/diag-summary-20261001']
@@ -18,19 +18,30 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  gdelt:
+  moments:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: doctor/gdelt-breaker-20261001
+          ref: main
       - uses: actions/setup-node@v6
         with:
           node-version: 24
-      - name: Collect press counts with the fixed pacing (nothing is committed)
-        run: node scripts/gdelt-intake.mjs
+          cache: npm
+      - run: npm ci
+      - name: The nightly's Moment step, as sync-bills.yml runs it (nothing is committed)
         env:
-          GDELT_STATE_PATH: ${{ runner.temp }}/gdelt-state/state.json
-      - name: What it would have written
-        run: git diff --stat -- data/question-press.json || true
+          MOMENT_UPDATES_MODE: nightly
+          CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: node scripts/moment-updates.mjs
+      - name: The penny revision it wrote, then the gate over the whole file
+        run: |
+          node --input-type=module -e "
+          import { readFileSync } from 'node:fs';
+          const s = JSON.parse(readFileSync('data/moment-updates.json', 'utf8'))['penny-production-and-cash-rounding'];
+          const r = (s.summary_revisions ?? []).at(-1);
+          console.log(JSON.stringify(r ? { id: r.id, as_of_day: r.as_of_day, model: r.model, changed_because: r.changed_because, roll_calls_on_record: r.grounded_in?.roll_calls_on_record, text: r.text } : 'NO REVISION', null, 1));
+          "
+          node scripts/check-moment-updates.mjs
