@@ -1,22 +1,22 @@
 {
   "_meta": {
     "schema": "floor-signals/v1",
-    "fetched_at": "2026-10-01T18:51:13.189Z",
+    "fetched_at": "2026-10-01T19:12:05.359Z",
     "sources": {
       "daily-digest": {
-        "status": "ok",
-        "detail": "2 announced measure(s)/nomination(s)",
-        "checked_at": "2026-10-01T18:51:13.189Z",
-        "url": "https://www.govinfo.gov/content/pkg/CREC-2026-09-29/html/CREC-2026-09-29-pt1-PgD951.htm",
-        "published": "2026-09-29",
-        "covers": "2026-09-30",
-        "covers_label": "10:15 a.m., Wednesday, September 30",
-        "via": "govinfo"
+        "status": "quiet",
+        "detail": "Senate program: pro forma session",
+        "checked_at": "2026-10-01T19:12:05.359Z",
+        "url": "https://www.congress.gov/119/crec/2026/09/30/d30se6-1.htm",
+        "published": "2026-09-30",
+        "covers": "2026-10-01",
+        "covers_label": "10:30 a.m., Thursday, October 1",
+        "via": "congress.gov"
       },
       "billsthisweek": {
-        "status": "data_stale",
+        "status": "quiet",
         "detail": "no schedule published for this week (404)",
-        "checked_at": "2026-10-01T18:51:13.189Z",
+        "checked_at": "2026-10-01T19:12:05.359Z",
         "url": "https://docs.house.gov/billsthisweek/20260928/20260928.xml",
         "published": "2026-09-28",
         "covers": "2026-09-28",
@@ -25,66 +25,22 @@
       }
     },
     "in_session": {
-      "senate": "in_session",
-      "house": "in_session",
+      "senate": "out_of_session",
+      "house": "out_of_session",
       "basis": "Daily Digest \"Program for\" blocks"
     },
     "next_meeting": {
       "senate": {
-        "date": "2026-09-30",
-        "label": "10:15 a.m., Wednesday, September 30"
+        "date": "2026-10-01",
+        "label": "10:30 a.m., Thursday, October 1"
       },
       "house": {
         "date": "2026-10-01",
         "label": "11:30 a.m., Thursday, October 1"
       }
     },
-    "dropped": [
-      {
-        "source": "daily-digest",
-        "reason": "nomination_unroutable",
-        "slug": null,
-        "text": "on the motion to invoke cloture on the nomination of Keith Sonderling,"
-      }
-    ]
+    "dropped": []
   },
-  "signals": {
-    "hr-7008-119": {
-      "tier0": {
-        "source": "daily-digest",
-        "chamber": "senate",
-        "quote": "invoke cloture on the motion to proceed to consideration of H.R. 7008,",
-        "quote_lang": "en",
-        "quote_kind": "digest_program_sentence",
-        "url": "https://www.govinfo.gov/content/pkg/CREC-2026-09-29/html/CREC-2026-09-29-pt1-PgD951.htm",
-        "published": "2026-09-29",
-        "covers": "2026-09-30",
-        "covers_label": "10:15 a.m., Wednesday, September 30",
-        "track": "unspecified",
-        "certainty": "consideration"
-      },
-      "fetched_at": "2026-10-01T18:51:13.189Z",
-      "first_seen": "2026-09-30T13:37:56.543Z",
-      "stale": false
-    },
-    "hr-9340-119": {
-      "tier0": {
-        "source": "daily-digest",
-        "chamber": "senate",
-        "quote": "H.R. 9340, Ratepayer Protection Act. Following which Senate will vote",
-        "quote_lang": "en",
-        "quote_kind": "digest_program_sentence",
-        "url": "https://www.govinfo.gov/content/pkg/CREC-2026-09-29/html/CREC-2026-09-29-pt1-PgD951.htm",
-        "published": "2026-09-29",
-        "covers": "2026-09-30",
-        "covers_label": "10:15 a.m., Wednesday, September 30",
-        "track": "unspecified",
-        "certainty": "consideration"
-      },
-      "fetched_at": "2026-10-01T18:51:13.189Z",
-      "first_seen": "2026-09-30T13:37:56.543Z",
-      "stale": false
-    }
-  },
+  "signals": {},
   "nominations": {}
 }

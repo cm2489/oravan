@@ -1,15 +1,15 @@
 {
   "schema": "floor-signals-checked/v1",
-  "checked_at": "2026-10-01T13:04:35.438Z",
+  "checked_at": "2026-10-01T19:12:05.359Z",
   "in_session": {
-    "senate": "in_session",
+    "senate": "out_of_session",
     "house": "out_of_session",
     "basis": "Daily Digest \"Program for\" blocks"
   },
   "next_meeting": {
     "senate": {
-      "date": "2026-09-30",
-      "label": "10:15 a.m., Wednesday, September 30"
+      "date": "2026-10-01",
+      "label": "10:30 a.m., Thursday, October 1"
     },
     "house": {
       "date": "2026-10-01",

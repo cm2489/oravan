@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-01T18:51:20.017Z",
+    "fetched_at": "2026-10-01T19:12:10.284Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-01T18:51:20.017Z"
+        "checked_at": "2026-10-01T19:12:10.284Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-27",
         "week_label": "Most-Viewed Bills - Week of September 27, 2026",
         "entries": 8,
-        "checked_at": "2026-10-01T18:51:20.017Z"
+        "checked_at": "2026-10-01T19:12:10.284Z"
       },
       "leans": {
         "center": {
@@ -260,6 +260,12 @@
           "url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxNckV6Z1A3SGFQajRGR1dKSkpBQkVWNk05Z1RYeTZSOVhKOE5ycTNtLWE2ajZDWjZ4VXNQeXhJeXFDODJNRmlJM0RjR08wcE5XVFViMGxiWmZKT3JzaF9RTmJrY3dPVFZ2WjZNcDM4T1FyVTBMa1RaYzktSzVtbmIwMEZn?oc=5"
         },
         {
+          "domain": "scrippsnews.com",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMiuAFBVV95cUxNbURiZEtBaU1YWGgwNW9TZExmSGZ3Q1ctcTd0b011b3djQ2ZnNThxQllBZXhFVE90VU8zSG9rRFBKSk13SFRINmc3UTNEV0NzOW52YnVTRi04RkNRR0hnNHVVZFAwbUlGTEp0dnVPTnF4eFFDNUZZM3FPTXRqSWJSVWQyZ2lKWnNEdE52QzZWLVlCbGJlRHFjUFNoOVNyRVo0WWlpa3QyUUZjUWdabW1Lcnc2dlFZNDFC?oc=5"
+        },
+        {
           "domain": "3bmedianews.com",
           "firstSeen": "2026-09-29",
           "lastSeen": "2026-09-30",
@@ -288,12 +294,6 @@
           "firstSeen": "2026-09-30",
           "lastSeen": "2026-09-30",
           "url": "https://news.google.com/rss/articles/CBMiqgFBVV95cUxPQmI1RGJQbVpYdk5STy1PTGRRUURZVWs3NVI2Qm1uV0JwSEl2OC10dk9RVUVRVTh6THczRTBWSGdXMEVqeXNpb3RKbFJqR1kzdE5YbDZvb1UwLU5yUlo0b1czTWpwUkhld1hVX1RyUjdTY093ZlFOcFFnMFQ3N01pbTVlZU1oR3JwNjAxaWZmYXF6d3NUT0dlMnlQdmZndDg3Q29hQzNvUzJyQQ?oc=5"
-        },
-        {
-          "domain": "scrippsnews.com",
-          "firstSeen": "2026-09-30",
-          "lastSeen": "2026-09-30",
-          "url": "https://news.google.com/rss/articles/CBMiuAFBVV95cUxNbURiZEtBaU1YWGgwNW9TZExmSGZ3Q1ctcTd0b011b3djQ2ZnNThxQllBZXhFVE90VU8zSG9rRFBKSk13SFRINmc3UTNEV0NzOW52YnVTRi04RkNRR0hnNHVVZFAwbUlGTEp0dnVPTnF4eFFDNUZZM3FPTXRqSWJSVWQyZ2lKWnNEdE52QzZWLVlCbGJlRHFjUFNoOVNyRVo0WWlpa3QyUUZjUWdabW1Lcnc2dlFZNDFC?oc=5"
         },
         {
           "domain": "tribstar.com",
@@ -1006,6 +1006,12 @@
           "firstSeen": "2026-10-01",
           "lastSeen": "2026-10-01",
           "url": "https://news.google.com/rss/articles/CBMinAFBVV95cUxNWTFjdFdEdjhRYzU4RjRDVVdCaUQ3WEU5NW1zd2VyWldNRm1pZjBjeHQ5LUtvZ1pWamZKZkVPcVFfV1J4RzJNbjRZWHFRVi1oeWIzV0NOMUVOdGVUU1VPSTNQMDQzYWZBQkluMzFoSGM2Vnd3WHhfZmxSZ2VMQXFHb3R5ZHI2Z2ppTV9keW9pSzQ3by1EWXFlRUNFUng?oc=5"
+        },
+        {
+          "domain": "heartlandernews.com",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMingFBVV95cUxOQ0N0NE51TW9uNktXMVpGYWx4OHk0Mi1GVkFTekdkWGZFV2RfbE93ZWprQnIxZjRQZFFmQzF0Rkt6QmRwMFV5WWNHZHFkcnhta2hvU0RqYUhNSDlqeFNsbi1pWVFvTzJFYjRvdnRtNWM3R25FelM3U25sdEIxMXM3RWJjcjdmNTNWbXQxVDNHa1hROWNGN0xwQzdsNHh5dw?oc=5"
         },
         {
           "domain": "merkley.senate.gov",
@@ -2048,6 +2054,12 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "kscj.com",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMimgFBVV95cUxPZkVhb1lUb0JQRVhUUHJLZ0xHZkZYUmFoOUxOU1RwU05wZlloWnNOdTVpUlJLZFhNek15bzFBUE1zeU91TkZJWFpRdHFjLXZJN0J4RjJSZ29xdUI1cEQ5blZ4bjdWNUZPdVoxX2dCZ21iUV9sRWhvVGE4RGtWa3dxS3RNUUljblFORlV2NVJ1c3FjR2dXNkVYQVVB?oc=5"
+        },
+        {
           "domain": "africa.espn.com",
           "firstSeen": "2026-09-30",
           "lastSeen": "2026-09-30",
@@ -2190,12 +2202,6 @@
           "firstSeen": "2026-09-28",
           "lastSeen": "2026-09-28",
           "url": "https://news.google.com/rss/articles/CBMi1gFBVV95cUxOT2FycFg4ZkhfVlBTQ3JUZFlpZGhhejA4Vjk1RE1qUHBsWHEwWk9XdnFydzFkMWFBOUI5djFycVpFTGFlVDYxbXRzNjhyUEVUd2s3MElodVYyNnR2dXY2Wm5fTUVUV2pxUTdnbG9SOFFfZS1nQU9LemtwbTNuVzBfMW1EeXk3NHFZVVlobXlucWJWSzNTZXpkRzBXaFZfN2phYnZGb1cyQ2tDaTgwOFB6MVEtY2VXU25YS0tmWFg2X3FSZTdPYlVQVTRMN2xJS3JXcnNBc2t3?oc=5"
-        },
-        {
-          "domain": "kcur.org",
-          "firstSeen": "2026-09-28",
-          "lastSeen": "2026-09-28",
-          "url": "https://news.google.com/rss/articles/CBMivAFBVV95cUxQaDNwb3ZXb3ptSllvQm1oYmdreHAwRF9CU0hnX2lOcTRBS0dXbmFZRi1tT0hMRjV6QUhycVl3YjZ2MjFROFlwNnN0T0p2czRJQjM3cVlYWENpRnFQTFpoTFJmM2Q4Vjl3emRmZm9DQWxhdUFtRGcxeUdCakkwV2xtRTBCcVgtUVBaUTY3MjRLMWJPUWdtaS1ldTJWMHQ4T3VYbUhyOW5MZ0c1OTdwMkZYcjBBNElKYWNLb2ozYQ?oc=5"
         }
       ],
       "mostViewed": {
