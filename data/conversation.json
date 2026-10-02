@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-02T18:22:17.654Z",
+    "fetched_at": "2026-10-02T18:51:34.305Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-02T18:22:17.654Z"
+        "checked_at": "2026-10-02T18:51:34.305Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-27",
         "week_label": "Most-Viewed Bills - Week of September 27, 2026",
         "entries": 8,
-        "checked_at": "2026-10-02T18:22:17.654Z"
+        "checked_at": "2026-10-02T18:51:34.305Z"
       },
       "leans": {
         "center": {
@@ -433,6 +433,12 @@
           "firstSeen": "2026-10-01",
           "lastSeen": "2026-10-02",
           "url": "https://news.google.com/rss/articles/CBMirwFBVV95cUxPXzZybGdFZkJnZ0NhbmE0TzB1UUc4UUxFdjZQS3V2bmJUQTBIbGNkM19TMmtJMzdIejRWLWs1dzNHZ2FDX2l2Xzh3Q1hrRmhldVp5Z1NncDNHZTJpWTlrOXd1WmhnbFZBUnpEYWJFTS1pdkR5M2EzbEFuUmlBY3U2cnEwT1VUbF9Hdzl5V2ZTQV9fVm5VOEJpcm1GaUZHWHB2QW1xMG1WeWNwMFBzSmRz?oc=5"
+        },
+        {
+          "domain": "kbia.org",
+          "firstSeen": "2026-10-02",
+          "lastSeen": "2026-10-02",
+          "url": "https://news.google.com/rss/articles/CBMixwFBVV95cUxQUkx4anV2SmpoMTRKcHE3NzNWa3E3Mms1UmVqZ1VGYlBJeXctNWZ5dS0xbFdqb0YxWFRzWW9lLVY2LURpNnRfSlN5dEh6ZW1xVmlvanA2akM4b0ZPTjlCWkcxbXo0eVppaXBhMVBnRG1wVEozNmpUNmFOTG5nelktQzFaQWs3b2Rhc01BRlNIMHJGNVpFU1FTSVcxOEE4VDE3UGVuMC16UkNTZ0ZianYydi15bWxPcVgxajlZcXlWYUhObXEtYVVr?oc=5"
         },
         {
           "domain": "columbiamissourian.com",
@@ -1441,6 +1447,18 @@
       ],
       "mostViewed": null
     },
+    "hr-9062-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "postandcourier.com",
+          "firstSeen": "2026-10-02",
+          "lastSeen": "2026-10-02",
+          "url": "https://news.google.com/rss/articles/CBMi1gFBVV95cUxQYl9LT3BpcDZ6cFp2aWxiSmJkUTN1aE1fUHRjWFJ5T09jTWdWU0VOWDBvV2xvQVdOWWt4Z016MEFwUVJPSjdGVDlBeGZEMHlXRG9WM2dHUGV6dWtvZEFRYldGb250YWhDT1BPZFByaFRwd0pVYkRJRDB0M0FndUMxanlfeEhQWVFFdmp4UktVYnRvMjJQektSN1BOdUw2UFBGZWxYc2FVRFVTTlA3WnhhYW9jdTNjbnFwT1ExYlpMWXJGRVlWbG5qOW9mUGFWdHNMZ1FZMTl3?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-9340-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1498,6 +1516,18 @@
       ],
       "mostViewed": null
     },
+    "hr-9372-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "news.bgov.com",
+          "firstSeen": "2026-10-02",
+          "lastSeen": "2026-10-02",
+          "url": "https://news.google.com/rss/articles/CBMinAFBVV95cUxOemJGcFV4c181TF9LcEd1VG9MTkNlOXI3aXM5UnczQTZwRXRicElHOFFnZFlWMjlfcVVrVzJnd255OUlaa0E5MG42VWFKNm00SEgyY0NzVzR6aU1KYzJoRkNadm5wZTN3c0R5VEthT1BaU0MzUE4tS3AtVC0wSkhEbmhSN2pHZmN4MkR2SUJVQjRhN2xfeGpPaVJQSVc?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "s-1093-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1523,7 +1553,15 @@
       "mostViewed": null
     },
     "s-1498-119": {
-      "outlets7d": [],
+      "outlets7d": [
+        {
+          "domain": "dailywire.com",
+          "lean": "right",
+          "firstSeen": "2026-10-02",
+          "lastSeen": "2026-10-02",
+          "url": "https://news.google.com/rss/articles/CBMikAFBVV95cUxOUGlnX0pyR2M5bzVCNkJ1aDBYMGJ2Q2U3M1E5M0hRUHdxUkVmOUFxYVZZQnZTSFBQek5TSVRmOXA5blZDY1ZoUTNjWFNrOWp0dVRoSTlRaHJFWElZRTFpMTdqY2tKTlNIZjFDUjFGU1MzR2NGcEI1VDBsTmNTWkZLSHdUS215YTVxUUprM1RsTnA?oc=5"
+        }
+      ],
       "unratedOutlets7d": [
         {
           "domain": "themainewire.com",
