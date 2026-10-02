@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-02T19:52:45.291Z",
+    "fetched_at": "2026-10-02T22:57:02.996Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-02T19:52:45.291Z"
+        "checked_at": "2026-10-02T22:57:02.996Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-27",
         "week_label": "Most-Viewed Bills - Week of September 27, 2026",
         "entries": 8,
-        "checked_at": "2026-10-02T19:52:45.291Z"
+        "checked_at": "2026-10-02T22:57:02.996Z"
       },
       "leans": {
         "center": {
@@ -454,6 +454,12 @@
           "url": "https://news.google.com/rss/articles/CBMixwFBVV95cUxQUkx4anV2SmpoMTRKcHE3NzNWa3E3Mms1UmVqZ1VGYlBJeXctNWZ5dS0xbFdqb0YxWFRzWW9lLVY2LURpNnRfSlN5dEh6ZW1xVmlvanA2akM4b0ZPTjlCWkcxbXo0eVppaXBhMVBnRG1wVEozNmpUNmFOTG5nelktQzFaQWs3b2Rhc01BRlNIMHJGNVpFU1FTSVcxOEE4VDE3UGVuMC16UkNTZ0ZianYydi15bWxPcVgxajlZcXlWYUhObXEtYVVr?oc=5"
         },
         {
+          "domain": "sedaliademocrat.com",
+          "firstSeen": "2026-10-02",
+          "lastSeen": "2026-10-02",
+          "url": "https://news.google.com/rss/articles/CBMixwFBVV95cUxOc2EtUkhFem5EU28zV1NzR2dpbnF5Z1pJOWhaZ3RvSlRWY0VlM0dYZkRTRU1nQTVzM3hyTjA4QU5EQUhwMi1FaVpEdVd5XzhHWjViQkE2RU5FT1ByNl9pU0VmOFdMN2c1QmlRNFBlVHM3V293czJGSjNmN0hDd1NKTnBfZ2RNSHdVZEg5bGJvS1FFeFc3MUd2eFdJeGdTcGNRN3A2VU04clo4VDFVbXJSdElNd0lrSF9odUxHLVJERVVIM2g5TjlR?oc=5"
+        },
+        {
           "domain": "columbiamissourian.com",
           "firstSeen": "2026-10-01",
           "lastSeen": "2026-10-01",
@@ -494,6 +500,18 @@
           "firstSeen": "2026-10-01",
           "lastSeen": "2026-10-01",
           "url": "https://news.google.com/rss/articles/CBMisAFBVV95cUxPZXZoWGVjNWtDS0p5Um5IWEt5MENCX0FVcjVOTmlBdWptNlhTZkxHZHlZSTZlM3JSS0R4UTN3Z3AwdVZIWjZnZ25ELUVxSkxUdVZrNVlISU4wR0kwdFhacWstNExyWGp2SkI0ODZzUW5CSDNjckJfN3I0dW1TR3NEVGtrSTVVd1ZNVVJIMmxLTkNWVHFNVkpjX2h4OWVrT3VjQXpxejhqRWdyZklPRE9iYg?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-2347-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "augustafreepress.com",
+          "firstSeen": "2026-10-02",
+          "lastSeen": "2026-10-02",
+          "url": "https://news.google.com/rss/articles/CBMiwgFBVV95cUxQNGQwY1R3LVNmdG8yTnN3aTZLdEpSMzZNemh3UGRmeDVJMjJUQjJQblg5WXhMNjFzdTJITWZYTkVsM25HQlUtMEJ6aUFDUER0Zm9hSFNld3YwTUFXbmVrbjZMb19TYmJJNmExVE51V2hhbnp3bVhxRWphSzZNOGcwSml5WlRCRFpySHNUMllZY056STVnTDJBRWRrQ0RUVDFoT0IyWGJOMDB2QlkwZnlyaXpZZzZ1LUE5LURfeVhkeXdhQQ?oc=5"
         }
       ],
       "mostViewed": null
@@ -1560,6 +1578,18 @@
       ],
       "mostViewed": null
     },
+    "hr-9496-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "oswegocountynewsnow.com",
+          "firstSeen": "2026-10-02",
+          "lastSeen": "2026-10-02",
+          "url": "https://news.google.com/rss/articles/CBMi-wFBVV95cUxOWjBJZnlGdHBDR3p2TzIzb2pyWFB5NFNJSzNnOVplTF96XzEweno1MVdVZU9VcGc0a1REMm5qanVLVVVxajFOMk91aUVhUndqTnpXTXQ4bmZpWDZuRjczbVhrXzMtZ0hVcXY3THBvSVl4MnZSYVRQdWUyVUp4ODBPQUV4RjZyRXB4VXdHWmNTNXF5VmRJQVNDWjV6djVjeFJpMzh0NTBnT0FwUmpMMzdKWEVyQ2NEN196UF82N1JaN0c5ak5kSklTSmZKdHVpaUVJbjlUbkVmLWhtYUFuUUhmQ1VqeDlsUTdERHR3Uk04YmtzX21zRHpXOTBWSQ?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "s-1093-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1897,6 +1927,19 @@
       ],
       "mostViewed": null
     },
+    "s-3900-119": {
+      "outlets7d": [
+        {
+          "domain": "reason.com",
+          "lean": "right",
+          "firstSeen": "2026-10-02",
+          "lastSeen": "2026-10-02",
+          "url": "https://reason.com/2026/10/02/rand-paul-was-right-to-block-the-senates-attempt-to-censor-the-internet/"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "s-4053-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -2108,6 +2151,18 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "tomahawknation.com",
+          "firstSeen": "2026-10-02",
+          "lastSeen": "2026-10-02",
+          "url": "https://news.google.com/rss/articles/CBMihgJBVV95cUxPYmtPREszZ0dYNlI4WlYweEFlMjdHdlU5QWQzS0VBb0h3WlRNWkxoWUcwNC00QS1qRnRFak9RbmFUR3ZMUGdZNjZHLWFsbE5IVnpCcjJQRjU4VjRxQUkycW1oUUdkZU9uMUxJaDhUXy1BM0xhaW9lSndGVHY3bk5PYXB1SDZxOE0zWjVCeDBQRFRLM0EzbG1RLWhjS1k1ZkFTc0piLXNNZTJONXNKVHJHMDVXUkx4UERWalJUWDBnOVB3bUEycHhYQndSMWxBYzFPWVY0OG1MdVNGSjZ1cTVfR0IyM1FHcVdfQVV1TUI0WFIwanFKSUN4dDQ4YXg5N3lDbkhLblRR?oc=5"
+        },
+        {
+          "domain": "wral.com",
+          "firstSeen": "2026-10-02",
+          "lastSeen": "2026-10-02",
+          "url": "https://news.google.com/rss/articles/CBMizgFBVV95cUxPQWthdmVWT0xOUkdYVE91UkdLY1FoX2x4Q3VNVjdVNlA4Rk44enBTSFZNQkRVbE9MUXVQUGdleWxWcGR2anNrNG1YUTlibGlrbkxIYTkyb3FnZVpGcHAtSWtvMmFnankzNDR3alpSbFhVVFloWXQtWGZnanZfZVoxMEc1UmpnTzRMZnV6QThLUXRTcXdtVFZlYVNBOExfRHpmUmk4NUc1X2RkOGptRHQ0ckh4NUlfUHBJSXBZc3FwclMxbEJKMGU3YTNySGg4UQ?oc=5"
+        },
+        {
           "domain": "kscj.com",
           "firstSeen": "2026-10-01",
           "lastSeen": "2026-10-01",
@@ -2244,18 +2299,6 @@
           "firstSeen": "2026-09-29",
           "lastSeen": "2026-09-29",
           "url": "https://news.google.com/rss/articles/CBMi3wFBVV95cUxQaUticFB3WHJsajdMVk9ZbWZDVm5yVUt6Ny00bDB5LUxVcUJYb1JEa1I3alRMN2hwNDdWOXJ2Qkg5LTZKYWZEMF9OQWhtUXFTdVFtN2dwX1pOMEVxSV94dE1sVkRCMTBzXzlKaF9CUTBrbnhvc2dhMnlDYkRJLTdJUGlvNUxLTGh1RVEyY1VWaHpETWkwdzNMd0hFUXhzM1lIc2JFa1EtQ1BOb0luZzJQLUFNbUFTay1KX2VvclZCcUxSM3lQRV9wM3k5SjJsLVFwWlZmOW1sT3lPYTNrbUM40gHfAUFVX3lxTFBpS2JwUHdYcmxqN0xWT1ltZkNWbnJVS3o3LTRsMHktTFVxQlhvUkRrUjdqVEw3aHA0N1Y5cnZCSDktNkphZkQwX05BaG1RcVN1UW03Z3BfWk4wRXFJX3h0TWxWREIxMHNfOUpoX0JRMGtueG9zZ2EyeUNiREktN0lQaW81TEtMaHVFUTJjVVZoekRNaTB3M0x3SEVReHMzWUhzYkVrUS1DUE5vSW5nMlAtQU1tQVNrLUpfZW9yVkJxTFIzeVBFX3AzeTlKMmwtUXBaVmY5bWxPeU9hM2ttQzg?oc=5"
-        },
-        {
-          "domain": "1819news.com",
-          "firstSeen": "2026-09-28",
-          "lastSeen": "2026-09-28",
-          "url": "https://news.google.com/rss/articles/CBMi4wFBVV95cUxQaEFhYnM5eDVSRWNxalN1TVk2Z2RuWFRZWEVEWFA1OWlsVVc0VThBbTRoS1I1S3lSVVdGOC1adGI0Zk8xT3NGWUM1bEJqQkpVVWdRYkpQaURSNG96ejdYS2ZabUNiWXMybF81YTZCUDdVeUx3ZUI0d2lyNFZ1UW1nVTAxdzhoTWs2ZEwxRGRhdXVaZmRFblFINkdxczVoVlVYLW5qR2o0RFNjcEtjRGEzc1ZVcDhkSDFtR0JtQ2lwc2JvM3llcTBXYkVEcHlSZklINjVyaEJ0ZHJoLWVfNWtiOUdKQQ?oc=5"
-        },
-        {
-          "domain": "bvmsports.com",
-          "firstSeen": "2026-09-28",
-          "lastSeen": "2026-09-28",
-          "url": "https://news.google.com/rss/articles/CBMi1gFBVV95cUxOT2FycFg4ZkhfVlBTQ3JUZFlpZGhhejA4Vjk1RE1qUHBsWHEwWk9XdnFydzFkMWFBOUI5djFycVpFTGFlVDYxbXRzNjhyUEVUd2s3MElodVYyNnR2dXY2Wm5fTUVUV2pxUTdnbG9SOFFfZS1nQU9LemtwbTNuVzBfMW1EeXk3NHFZVVlobXlucWJWSzNTZXpkRzBXaFZfN2phYnZGb1cyQ2tDaTgwOFB6MVEtY2VXU25YS0tmWFg2X3FSZTdPYlVQVTRMN2xJS3JXcnNBc2t3?oc=5"
         }
       ],
       "mostViewed": {
