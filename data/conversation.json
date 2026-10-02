@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-02T18:51:34.305Z",
+    "fetched_at": "2026-10-02T19:52:45.291Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-02T18:51:34.305Z"
+        "checked_at": "2026-10-02T19:52:45.291Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-27",
         "week_label": "Most-Viewed Bills - Week of September 27, 2026",
         "entries": 8,
-        "checked_at": "2026-10-02T18:51:34.305Z"
+        "checked_at": "2026-10-02T19:52:45.291Z"
       },
       "leans": {
         "center": {
@@ -153,6 +153,13 @@
   "slugs": {
     "hconres-89-119": {
       "outlets7d": [
+        {
+          "domain": "reason.com",
+          "lean": "right",
+          "firstSeen": "2026-10-02",
+          "lastSeen": "2026-10-02",
+          "url": "https://reason.com/2026/10/02/want-to-stop-the-iran-war-dont-pay-the-bill/"
+        },
         {
           "domain": "washingtonexaminer.com",
           "lean": "right",
@@ -377,6 +384,12 @@
     "hr-139-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "thenationaldesk.com",
+          "firstSeen": "2026-10-02",
+          "lastSeen": "2026-10-02",
+          "url": "https://news.google.com/rss/articles/CBMigAJBVV95cUxOOGJyVXRTRG1MZ3RUUW4wUEZHUWhXeHpyWXdwUU5BQmhaTFFobUxUTGVEN1VHdjg1RTJZdTh5bG92Zk52TkVKRUVCWm1XSnZ6aWZGNDFIOGFzWVJVSjd4RlIxTl9KblhxWUhaQzYwMWhLNm9NSWZGVmU4QnREN2E5dVRUdzZKQmtJcmdGY0pDSEdhMFVidkJLMHZLNkVFQi1NdzdVVkx5V1l6UVZrNzJTUHRIOGRGOFd6cUVNSnB0UlJnMzNzendIYU1lc05rYmtiMHVTaHNqSHcybTBMZXRSOEdaS01LdlJuUGZqX1ZhSDRxUTFpNmJ0aktDd0JYUTFN?oc=5"
+        },
         {
           "domain": "nbcsandiego.com",
           "firstSeen": "2026-09-25",
@@ -633,6 +646,12 @@
     "hr-5284-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "aol.com",
+          "firstSeen": "2026-10-02",
+          "lastSeen": "2026-10-02",
+          "url": "https://news.google.com/rss/articles/CBMihAFBVV95cUxNZTd0WkE1WjZBMEZ4dVJqaW81dTdSVG9lN0YwSWR6VXVpd21VWFo0bGJDTC1GWHEzNllmSEZZaVZTQXJpaklYSEpJMHlHQU9LMWFlU1BXQk5IZi1KTmVUeVhHenMxOGhFZUplNlItLUtZckMzSW5tek9VRjR2YnNIcmZFOHI?oc=5"
+        },
         {
           "domain": "newsnationnow.com",
           "firstSeen": "2026-10-01",
@@ -1231,6 +1250,19 @@
       ],
       "mostViewed": null
     },
+    "hr-7674-119": {
+      "outlets7d": [
+        {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-10-02",
+          "lastSeen": "2026-10-02",
+          "url": "https://www.foxnews.com/politics/dems-demanding-venezuela-brief-face-state-dept-fury-senators-leave-town-without-answers"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hr-7831-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1649,6 +1681,18 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "s-1837-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "politiko.com.ph",
+          "firstSeen": "2026-10-02",
+          "lastSeen": "2026-10-02",
+          "url": "https://news.google.com/rss/articles/CBMimwFBVV95cUxPcVl5SHpMLTZZQ053Sy11dko4amp2LWdseVJCVDdsV2JpX3YwRzFoczY3cXFFUV8wTV8wYWZjd05scGliSTJ0dzg0U3ltMmhsNC00VzRsN2tjWlhuc1ZwbktmcEJ6TWNnZTIwSTZWdm1oUUNGbmJ3d2daMVU1dVM2RzB0UFo3U1dsYXMtN3l3NENBa3kxNUx6SVR4NA?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "s-2296-119": {
