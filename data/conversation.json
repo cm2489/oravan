@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-02T02:00:29.414Z",
+    "fetched_at": "2026-10-02T05:28:20.350Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-02T02:00:29.414Z"
+        "checked_at": "2026-10-02T05:28:20.350Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-27",
         "week_label": "Most-Viewed Bills - Week of September 27, 2026",
         "entries": 8,
-        "checked_at": "2026-10-02T02:00:29.414Z"
+        "checked_at": "2026-10-02T05:28:20.350Z"
       },
       "leans": {
         "center": {
@@ -401,8 +401,8 @@
         {
           "domain": "rollcall.com",
           "firstSeen": "2026-10-01",
-          "lastSeen": "2026-10-01",
-          "url": "https://rollcall.com/2026/10/01/bill-easing-seniors-wheelchair-upgrade-costs-clears-senate/"
+          "lastSeen": "2026-10-02",
+          "url": "https://news.google.com/rss/articles/CBMilgFBVV95cUxNQjJNNnYxa3FGVkJqUWN0Tm1uYnpFWDZ3ckxpT25mRFhZbUd1T1c2SHhPN3o2RHA4SElRWWJwbVBHQkJmSVNYM2hfVXRpVUpyOXlKVmFVOE84dHV0bEJ6Nnh1X3Y1QVFRVHB2cjVGUGdZd1FEekFXVG1mZ2x2TkhTZzNFbDhHcEF6UWRXWE9kNlY0TllWa1E?oc=5"
         }
       ],
       "mostViewed": null
@@ -960,6 +960,12 @@
           "url": "https://news.google.com/rss/articles/CBMirAFBVV95cUxQYV9qakZ1Tm9OZ3BaYkF2VnQ4Y2dEMU51dFBxVjJiTnRVVzZZWHRXUFdueDkyblhqRzAtVlljVFdqWWJuZTNqM19YcWZqdzcyVF9oN3lDcEhrSXo2UUlCVzA1YnFNWUlNRDVOMm4wMUtYS0JiQldKdjRYdTdkWTJ6ZUpsbC1nRUc2XzA5dkV0ekpReHdFcDRwbkdVS2lIYW9oRVZwOHJEVHFuWUx6?oc=5"
         },
         {
+          "domain": "wispolitics.com",
+          "firstSeen": "2026-10-02",
+          "lastSeen": "2026-10-02",
+          "url": "https://news.google.com/rss/articles/CBMirwFBVV95cUxPazFDMS1qU1MxelkyMlJ5ZjRGREJyREh2YTh3TzF1VlRaS3IySGZEMGk5V3hkV0hZNy14OHRjZkJnY2MzWHlXVldXbjV3Vk5mT3NlZnJLUnJoQS00S3VBVUQyZlJhUlY2YjdJMGdoNGJLTi1BNGxVU0JGbWdFU3NoZ2tkRDF2b21GdERvUjgwNndIMkx6UlpfRlVOZlpsekdlZXBOMU5TYzVEcnVNN2hN?oc=5"
+        },
+        {
           "domain": "247wallst.com",
           "firstSeen": "2026-10-01",
           "lastSeen": "2026-10-01",
@@ -1476,6 +1482,12 @@
           "firstSeen": "2026-10-02",
           "lastSeen": "2026-10-02",
           "url": "https://news.google.com/rss/articles/CBMitwFBVV95cUxPeWxqcHJ3SDliYmJva0N5T1BOU1JYSUYwaFBzX3ZqclVRUG9ONEFrZUtpRzdrSVdoQkJLX1lqLVNzdEpEc1hleUxsN2tFWjA3UGNTM1VMQkRJcGNDRjIyRFNtOEN4R3g4SDByYVlhY0kydm1RV1otOThOQjUtMUZnNkNWM1lNLUFwMUg0MU0zZGFZRjVxMFlJcXVfUXFKSWpOcVR4Sl96bjdFNWtmV2dkQXRGeC1yRXM?oc=5"
+        },
+        {
+          "domain": "wionews.com",
+          "firstSeen": "2026-10-02",
+          "lastSeen": "2026-10-02",
+          "url": "https://news.google.com/rss/articles/CBMiqwFBVV95cUxNSjVaYnZqZl9GM1RNbXVZa3lXUkg5cUcyNmFIeGdsUlU3MFlFdXc5eVdqMGlEa2gzUzFTSFJHMVduYjViNFk5X1JBU08xMTgwOUtidW5Jb3V2QkNNZHN6enNNN2hxb2xWenpXUEV1RmJDajNuN2JFd2VlcHA0QVdqYmNqZFkxSnlYci1EZVhTVVFjMzNISDZlWDNiNHQzc3dPcTdKc2p2dVhEaGfSAbABQVVfeXFMTUtXRTBnS2JOY0hIXzItbTdfNkdqSzNGRHBaUGZITndSWHdyRGhGM3pCcXBXd3dWRlJGZWdOWFI0VHh3Y0FpcDBwTGNkUjlPcVJZZW9PZFBOaVJqQWx2TjZBRm9iYVhlRVVQNEFCaUpPQWNWV0RpeXJfOUVzUlFyakpqSlpTZkltVWpSSHZkQWpGbzZOYUFCQ2lGbmJYYlY5cURweWNwV1NCamFVT3VyOUc?oc=5"
         },
         {
           "domain": "dailyjournal.net",
