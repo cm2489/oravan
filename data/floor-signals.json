@@ -1,22 +1,22 @@
 {
   "_meta": {
     "schema": "floor-signals/v1",
-    "fetched_at": "2026-10-01T19:12:05.359Z",
+    "fetched_at": "2026-10-02T12:25:29.835Z",
     "sources": {
       "daily-digest": {
         "status": "quiet",
         "detail": "Senate program: pro forma session",
-        "checked_at": "2026-10-01T19:12:05.359Z",
-        "url": "https://www.congress.gov/119/crec/2026/09/30/d30se6-1.htm",
-        "published": "2026-09-30",
-        "covers": "2026-10-01",
-        "covers_label": "10:30 a.m., Thursday, October 1",
+        "checked_at": "2026-10-02T12:25:29.835Z",
+        "url": "https://www.congress.gov/119/crec/2026/10/01/d01oc6-1.htm",
+        "published": "2026-10-01",
+        "covers": "2026-10-05",
+        "covers_label": "4 p.m., Monday, October 5",
         "via": "congress.gov"
       },
       "billsthisweek": {
         "status": "quiet",
         "detail": "no schedule published for this week (404)",
-        "checked_at": "2026-10-01T19:12:05.359Z",
+        "checked_at": "2026-10-02T12:25:29.835Z",
         "url": "https://docs.house.gov/billsthisweek/20260928/20260928.xml",
         "published": "2026-09-28",
         "covers": "2026-09-28",
@@ -31,12 +31,12 @@
     },
     "next_meeting": {
       "senate": {
-        "date": "2026-10-01",
-        "label": "10:30 a.m., Thursday, October 1"
+        "date": "2026-10-05",
+        "label": "4 p.m., Monday, October 5"
       },
       "house": {
-        "date": "2026-10-01",
-        "label": "11:30 a.m., Thursday, October 1"
+        "date": "2026-10-05",
+        "label": "4:30 p.m., Monday, October 5"
       }
     },
     "dropped": []
