@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-10-01T19:55:22.639Z"
+    "generated_at": "2026-10-02T19:39:53.852Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -666,6 +666,45 @@
           "updates:+16"
         ],
         "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_2ee89fe5",
+        "generated_at": "2026-10-02T19:39:57.850Z",
+        "as_of_day": "2026-10-02",
+        "text": {
+          "en": "The latest action in the official record on these measures is dated September 2, 2026.",
+          "es": "La última acción del registro oficial sobre estas medidas es del 2 de septiembre de 2026."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "hr-6500-119": "signed",
+            "hr-9770-119": "passed_chamber"
+          },
+          "vehicle_status_keys": {
+            "hr-6500-119": "signed",
+            "hr-9770-119": "passed_chamber"
+          },
+          "update_ids": [],
+          "roll_calls": [],
+          "roll_calls_on_record": [
+            "h-119-2-14",
+            "h-119-2-272",
+            "h-119-2-286",
+            "s-119-2-218",
+            "s-119-2-226",
+            "s-119-2-227",
+            "s-119-2-228"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/6500",
+            "https://www.congress.gov/bill/119th-congress/house-bill/9770",
+            "https://www.congress.gov/crs-report/R48832"
+          ]
+        },
+        "changed_because": [
+          "reanchor:7d"
+        ],
+        "model": "record-only"
       }
     ],
     "summary_attempts": {
