@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-03T08:01:18.564Z",
+    "fetched_at": "2026-10-03T13:19:55.306Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-03T08:01:18.564Z"
+        "checked_at": "2026-10-03T13:19:55.306Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-27",
         "week_label": "Most-Viewed Bills - Week of September 27, 2026",
         "entries": 8,
-        "checked_at": "2026-10-03T08:01:18.564Z"
+        "checked_at": "2026-10-03T13:19:55.306Z"
       },
       "leans": {
         "center": {
@@ -202,6 +202,19 @@
       ],
       "mostViewed": null
     },
+    "hjres-152-119": {
+      "outlets7d": [
+        {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-10-03",
+          "lastSeen": "2026-10-03",
+          "url": "https://www.foxnews.com/politics/activist-judge-rules-congress-cannot-bar-noncitizens-voting-federal-elections"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hr-1-119": {
       "outlets7d": [],
       "unratedOutlets7d": [],
@@ -382,7 +395,7 @@
         {
           "domain": "thenationaldesk.com",
           "firstSeen": "2026-10-02",
-          "lastSeen": "2026-10-02",
+          "lastSeen": "2026-10-03",
           "url": "https://news.google.com/rss/articles/CBMigAJBVV95cUxOOGJyVXRTRG1MZ3RUUW4wUEZHUWhXeHpyWXdwUU5BQmhaTFFobUxUTGVEN1VHdjg1RTJZdTh5bG92Zk52TkVKRUVCWm1XSnZ6aWZGNDFIOGFzWVJVSjd4RlIxTl9KblhxWUhaQzYwMWhLNm9NSWZGVmU4QnREN2E5dVRUdzZKQmtJcmdGY0pDSEdhMFVidkJLMHZLNkVFQi1NdzdVVkx5V1l6UVZrNzJTUHRIOGRGOFd6cUVNSnB0UlJnMzNzendIYU1lc05rYmtiMHVTaHNqSHcybTBMZXRSOEdaS01LdlJuUGZqX1ZhSDRxUTFpNmJ0aktDd0JYUTFN?oc=5"
         }
       ],
@@ -420,6 +433,12 @@
     "hr-1945-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "kcur.org",
+          "firstSeen": "2026-10-03",
+          "lastSeen": "2026-10-03",
+          "url": "https://news.google.com/rss/articles/CBMioAFBVV95cUxOOUtqRHRuZC1hUXJESjNnMFdHZUdyZF9ZRTRmcWxpc3FGQUFQMXN2eVJQVFpvR0FiQklHZ1dSR3FlRkVhR0RrN1YweWs1QUQwWmVERkdvSk9CVEw4Sk5FYktmU0JGU0pDYjNPVFFPMXpCbHBnampxZ2tnSVlVa3RGWnRoaEpoTkg5Wm9xMnZqbkNRNHJ5cW9tdnpwbHl4Rnp1?oc=5"
+        },
         {
           "domain": "ksdk.com",
           "firstSeen": "2026-10-03",
@@ -763,7 +782,7 @@
         {
           "domain": "azcentral.com",
           "firstSeen": "2026-10-02",
-          "lastSeen": "2026-10-02",
+          "lastSeen": "2026-10-03",
           "url": "https://news.google.com/rss/articles/CBMizAFBVV95cUxNcmRRQjBZREYyWWJ0cHl2LW9LaE5BSEcwV2U0OWxoQWx1UWFuM0p0VGh2V250N0VJUDlyTExyLTk2M2lJNXRlUFNLRno1MEQ4NTloc1dtU3J2MklubUttZnFxMVNQOUpVdUVtWHVxTjF0VzFlLTBYY3g0bGVYcGlMM3VWdC1QRExuSVJBakxVaEpOUUZ6dUVYdEt5NnZkaEloemwxempTWjMwQ0pBSk5ZcHVRYU9XQ1Y3OFZLb3J1WkljZ0dlVGs1NWpfSlA?oc=5"
         }
       ],
