@@ -44,7 +44,7 @@ export const PRIVACY_BOLD: Record<'en' | 'es', Record<PrivacyParagraph, readonly
     p3: ['no se vinculan a ninguna identidad', 'no guardamos registros que liguen direcciones con posiciones políticas'],
     p7: ['escribir tu dirección', 'nunca se guarda ni se escribe en ningún registro', 'Solo regresa el número del distrito.'],
     p4: ['Sin rastreadores de analítica, sin píxeles publicitarios, sin cookies en absoluto.'],
-    p8: ['cuentas diarias sencillas, ninguna ligada a un visitante', 'nunca cuál en concreto'],
+    p8: ['conteos diarios sencillos, ninguno ligado a un visitante', 'nunca cuál en concreto'],
     p9: ['un solo número al día para todo el sitio', 'ninguna dirección se guarda ni puede recuperarse'],
     p5: [],
   },

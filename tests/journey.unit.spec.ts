@@ -1197,10 +1197,10 @@ test.describe('deriveJourney', () => {
 
   test('a failed motion reads as failed, in both languages, with the chamber the record named', () => {
     expect(sentence(en, 'sjres', 'floor_vote', DISCHARGE_REJECTED_TEXT)).toBe(
-      'the Senate has not agreed to take it up — the last motion to do so failed.'
+      'the Senate has not agreed to take it up. The last motion to do so failed.'
     );
     expect(sentence(es, 'sjres', 'floor_vote', DISCHARGE_REJECTED_TEXT)).toBe(
-      'el Senado no ha aceptado considerarlo — la última moción para hacerlo fracasó.'
+      'el Senado no ha aceptado considerarlo. La última moción para hacerlo fracasó.'
     );
   });
 
