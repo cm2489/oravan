@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-03T13:19:55.306Z",
+    "fetched_at": "2026-10-03T17:49:04.307Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -9,15 +9,15 @@
       "press": {
         "status": "ok",
         "feeds_total": 11,
-        "feeds_silent": 0,
-        "checked_at": "2026-10-03T13:19:55.306Z"
+        "feeds_silent": 1,
+        "checked_at": "2026-10-03T17:49:04.307Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-27",
         "week_label": "Most-Viewed Bills - Week of September 27, 2026",
         "entries": 8,
-        "checked_at": "2026-10-03T13:19:55.306Z"
+        "checked_at": "2026-10-03T17:49:04.307Z"
       },
       "leans": {
         "center": {
@@ -1690,6 +1690,19 @@
         "lastSeen": "2026-10-03",
         "lastWeek": "2026-09-27"
       }
+    },
+    "s-3170-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-10-03",
+          "lastSeen": "2026-10-03",
+          "url": "https://thehill.com/homenews/administration/6127587-trump-posts-tom-cotton-phone-number/"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
     },
     "s-32-119": {
       "outlets7d": [],
