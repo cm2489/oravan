@@ -96,8 +96,8 @@ test('every stored roll call gets its own chamber\'s readable page, for its own 
 test('no page links a roll call\'s data file: every vote card goes through rollCallPage', () => {
   // The three cards that print an official-record link for a roll call: the
   // bill page's vote record (and its no-JavaScript line, which gets the same
-  // value), the member page's votes, and the daily brief.
-  for (const file of ['components/VoteRecord.tsx', 'components/MemberVotes.tsx', 'components/TodayBrief.tsx']) {
+  // value), the member page's votes, and the daily brief's vote card.
+  for (const file of ['components/VoteRecord.tsx', 'components/MemberVotes.tsx', 'components/TodayVoteCard.tsx']) {
     const src = readFileSync(join(process.cwd(), file), 'utf8');
     expect(src, `${file} imports the helper`).toMatch(/from '@\/lib\/roll-call-page'/);
     expect(src, `${file} links a roll call's source directly`).not.toMatch(/(href|source)=\{\s*[\w.]*\.source\s*\}/);

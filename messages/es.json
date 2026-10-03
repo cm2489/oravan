@@ -10,9 +10,11 @@
       "reps": "Mis representantes",
       "whyCall": "¿Por qué llamar?",
       "primaryLabel": "Principal",
-      "moments": "Grandes preguntas"
+      "moments": "Grandes preguntas",
+      "today": "Hoy en el Congreso"
     },
     "footer": {
+      "callHub": "Haz una llamada",
       "mission": "Oravan es infraestructura cívica gratuita y no partidista. Sin cuentas, sin anuncios, sin rastreadores — no guardamos en nuestros servidores nada que te identifique, y a los visitantes solo los contamos en un único número diario para todo el sitio.",
       "privacy": "Privacidad",
       "aiNote": "El contenido redactado por IA siempre está claramente marcado: revísalo antes de usarlo.",
@@ -43,7 +45,11 @@
       "bills": "Proyectos",
       "call": "Llamar",
       "reps": "Mis reps",
-      "moments": "Preguntas"
+      "moments": "Preguntas",
+      "today": "Hoy"
+    },
+    "tab": {
+      "moments": "Grandes preguntas"
     },
     "aiMarker": "IA",
     "localeGroupLabel": "Idioma / Language",
@@ -1721,7 +1727,7 @@
     "title": "Hoy en el Congreso",
     "titleDated": "El Congreso el {date}",
     "metaDescription": "Lo que muestra el registro oficial para el {date}: votaciones nominales, proyectos de ley que avanzaron y la agenda que publica cada cámara.",
-    "recordNote": "Citado del registro oficial, en sus propias palabras, en inglés.",
+    "recordNote": "Las citas son las propias palabras del registro, en inglés; las líneas de las cámaras son nuestro resumen del Daily Digest enlazado.",
     "senate": "Senado",
     "house": "Cámara de Representantes",
     "chambersHeading": "Las cámaras",
@@ -1738,7 +1744,13 @@
     "movedHeading": "Proyectos cuya última acción tiene esta fecha",
     "movedMore": "{count, plural, one {# proyecto más tiene} other {# proyectos más tienen}} una última acción con esta fecha.",
     "scheduleHeading": "Lo próximo en la agenda del pleno",
-    "scheduleNote": "Una agenda nombra una reunión, no la hora de una votación.",
+    "scheduleNote": "Cada aviso cita las propias palabras de la cámara. La fecha de la etiqueta es la de la reunión que cubre el aviso, no la hora de una votación.",
+    "scheduleQuiet": "Ninguna de las agendas que publican las cámaras nombra un proyecto de ley o una nominación que seguimos para una reunión próxima.",
+    "tagConditional": "Depende de una condición en las palabras de la cámara",
+    "tagWeekOf": "semana del {date}",
+    "aiHeadlines": "Titulares traducidos por IA",
+    "aiNames": "Nombres de las Grandes preguntas redactados por IA",
+    "aiBoth": "Titulares y nombres de las Grandes preguntas redactados por IA",
     "scheduleMeta": "{source} · publicado el {published} · para <when>{covers}</when>",
     "scheduleMetaNoCovers": "{source} · publicado el {published}",
     "questionsHeading": "Grandes preguntas que avanzaron",
