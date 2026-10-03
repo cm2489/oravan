@@ -10,9 +10,11 @@
       "reps": "My reps",
       "whyCall": "Why call?",
       "primaryLabel": "Primary",
-      "moments": "Big Questions"
+      "moments": "Big Questions",
+      "today": "Today in Congress"
     },
     "footer": {
+      "callHub": "Make a call",
       "mission": "Oravan is free and nonpartisan. No accounts, no ads, no trackers. Nothing that identifies you is stored on our servers. We keep a few daily counts that are not tied to any visitor, and short-lived counters that limit abuse. The privacy page lists every one.",
       "privacy": "Privacy",
       "aiNote": "AI-written text and AI-drafted scripts are always clearly marked. Check them before you use them.",
@@ -43,7 +45,11 @@
       "bills": "Bills",
       "call": "Call",
       "reps": "Reps",
-      "moments": "Questions"
+      "moments": "Questions",
+      "today": "Today"
+    },
+    "tab": {
+      "moments": "Big Questions"
     },
     "aiMarker": "AI",
     "localeGroupLabel": "Language / Idioma",
@@ -719,7 +725,7 @@
   },
   "notFound": {
     "title": "Page not found",
-    "body": "That page doesn't exist. You can look up your representatives from the home page.",
+    "body": "That page doesn't exist. You can look up your members of Congress from the home page.",
     "cta": "Go home"
   },
   "errorBoundary": {
@@ -750,7 +756,7 @@
     "p2": "Bill summaries and headlines are written by AI, call scripts are drafted by AI, and all of them are clearly labeled. They can contain mistakes. The official bill text on Congress.gov is always the authority, and you are responsible for reviewing and editing anything before you say it.",
     "p3": "Oravan comes with no guarantees. We do our best to keep representative data and bill statuses current, but offices change numbers and bills move daily. Verify anything that matters.",
     "p4": "What you do with the phone is yours: you place the calls, you choose the words. Be honest, be brief, and be kind to the staffer who answers.",
-    "p5": "We have no accounts and store nothing about you on our servers. Everything personal is kept in your browser. The privacy page explains this in full."
+    "p5": "We have no accounts and store nothing about you on our servers. Your settings and history are kept in your browser. When you look up your members of Congress, your ZIP code is sent to find your district and is used in memory only. A street address, if you give one, is used once and never stored. A stance you choose is sent only to draft your call script and is never linked to you. The privacy page explains this in full."
   },
   "og": {
     "aiDecoded": "AI-decoded",
@@ -1725,7 +1731,7 @@
     "title": "Today in Congress",
     "titleDated": "Congress on {date}",
     "metaDescription": "What the official record shows for {date}: roll-call votes, bills that moved, and each chamber's own published schedule.",
-    "recordNote": "Quoted from the official record, in its own words.",
+    "recordNote": "Quotes are the record's own words; the chamber lines are our summary of the linked Daily Digest.",
     "senate": "Senate",
     "house": "House",
     "chambersHeading": "The chambers",
@@ -1741,8 +1747,14 @@
     "voteSource": "Official tally",
     "movedHeading": "Bills whose latest action is dated this day",
     "movedMore": "{count, plural, one {# more bill has} other {# more bills have}} a latest action dated this day.",
-    "scheduleHeading": "Next on the floor schedule",
-    "scheduleNote": "A schedule names a meeting, not a vote time.",
+    "scheduleHeading": "On the floor schedule next",
+    "scheduleNote": "Each notice quotes the chamber's own words. The tag's date is the meeting the notice covers, not a vote time.",
+    "scheduleQuiet": "Neither chamber's published schedule names a bill or nomination we track for a meeting still ahead.",
+    "tagConditional": "Depends on a condition in the chamber's words",
+    "tagWeekOf": "week of {date}",
+    "aiHeadlines": "Headlines decoded by AI",
+    "aiNames": "Big Question names by AI",
+    "aiBoth": "Headlines and Big Question names by AI",
     "scheduleMeta": "{source} · published {published} · for <when>{covers}</when>",
     "scheduleMetaNoCovers": "{source} · published {published}",
     "questionsHeading": "Big Questions that moved",

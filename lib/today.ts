@@ -13,6 +13,9 @@
  *   roll calls                    data/votes.json, as lib/votes.ts reads it
  *   bills that moved              data/bills.json `last_action_date`
  *   Big Questions that moved      lib/moments.ts + the vehicles' own records
+ *   each bill's card              lib/core/bills.ts teaserFor — the card /bills
+ *                                 prints, AI headline included (the page
+ *                                 labels it; components/TodayBrief.tsx)
  *
  * WHICH DAY IS "TODAY". Not the build machine's clock: the date of the newest
  * stamp the data itself carries (floor schedule re-check, votes update, bill
@@ -34,7 +37,7 @@
  */
 import votesJson from '@/data/votes.json';
 import syncState from '@/data/sync-state.json';
-import { billSlug, getAllBills, getBill } from '@/lib/core/bills';
+import { billSlug, getAllBills, getBill, teaserFor } from '@/lib/core/bills';
 import {
   getAllNominations,
   isTerminalNominationStatus,
@@ -47,12 +50,14 @@ import {
   floorSessionSource,
   floorSignalsCheckedAt,
   floorSignalsFile,
+  floorSourcesPosture,
   signalIsLive,
   type ChamberSession,
+  type FloorSignalTier0,
 } from '@/lib/docket';
 import { formatCitation } from '@/lib/format';
 import { getMoments, momentClaimsVehicles, vehicleKind } from '@/lib/moments';
-import type { Bill, RollCall, RollCallTotals, VotesFile } from '@/lib/types';
+import type { Bill, FeedTeaser, RollCall, RollCallTotals, VotesFile } from '@/lib/types';
 
 const VOTES = votesJson as unknown as VotesFile;
 
@@ -132,13 +137,17 @@ export interface BriefRollCall {
   totals: RollCallTotals;
   source: string;
   bill: BriefBillRef;
+  /** The bill's /bills card data (lib/core/bills.ts `teaserFor`), in the
+   *  brief's locale. Present when the brief was built for a locale. */
+  teaser?: FeedTeaser;
 }
 
 export interface BriefMovedBill extends BriefBillRef {
   status: Bill['status'];
   /** The record's own sentence for the action, English verbatim. */
   actionText: string | null;
-  bill: Bill;
+  /** The bill's /bills card data, in the brief's locale (see BriefRollCall). */
+  teaser?: FeedTeaser;
 }
 
 export interface BriefDay {
@@ -149,7 +158,12 @@ export interface BriefDay {
   movedMore: number;
 }
 
-function rollCallsOn(date: string): BriefRollCall[] {
+/**
+ * `locale` is set only when a page prints the day: then each bill carries its
+ * card data (`teaser`). The "Other days" counts read the same function without
+ * it, so the counts never pay for cards they do not print.
+ */
+function rollCallsOn(date: string, locale?: string): BriefRollCall[] {
   return VOTES.rollCalls
     .filter((r: RollCall) => r.date === date)
     .sort((a, b) => a.chamber.localeCompare(b.chamber) || a.roll - b.roll)
@@ -166,13 +180,14 @@ function rollCallsOn(date: string): BriefRollCall[] {
           totals: r.totals,
           source: r.source,
           bill: billRef(bill),
+          ...(locale ? { teaser: teaserFor(bill, locale) } : {}),
         },
       ];
     });
 }
 
-function dayOf(date: string): BriefDay {
-  const rollCalls = rollCallsOn(date);
+function dayOf(date: string, locale?: string): BriefDay {
+  const rollCalls = rollCallsOn(date, locale);
   // A bill already shown under a roll call that day is not listed twice.
   const voted = new Set(rollCalls.map((r) => r.bill.slug));
   const moved = getAllBills()
@@ -185,7 +200,7 @@ function dayOf(date: string): BriefDay {
       ...billRef(b),
       status: b.status,
       actionText: b.last_action_text?.trim() || null,
-      bill: b,
+      ...(locale ? { teaser: teaserFor(b, locale) } : {}),
     })),
     movedMore: Math.max(0, moved.length - MOVED_BILLS_SHOWN),
   };
@@ -257,6 +272,65 @@ export interface BriefScheduleItem {
   source: 'daily-digest' | 'billsthisweek';
   href: string;
   citation: string;
+  /** Which verb the chamber used — see `floorTagFor`. */
+  certainty: FloorSignalTier0['certainty'];
+  /** The tag the card prints over the quote, or null for none. */
+  tag: FloorTag | null;
+  /** A bill item's /bills card data, in the brief's locale. Nominations have
+   *  no teaser: their card is headed by the citation. */
+  teaser?: FeedTeaser;
+}
+
+/**
+ * THE FLOOR-NOTICE TAG (owner, 2026-09-29: "if there is a vote this week
+ * scheduled it needs to have a yellow tag or something that explicitly draws
+ * attention to it").
+ *
+ * WHAT IT MAY SAY (page 1, rule 6; docs/record-truth.md: "A schedule names
+ * measures for a session; it does not schedule votes, and neither does
+ * Oravan"). The tag names the chamber's own notice and the date of the meeting
+ * it covers — never "vote scheduled". The chamber's words are quoted under it.
+ *
+ *   scheduled_vote  the Senate's program says "will vote on"  → the yellow
+ *                   (`urgent`) chip, dated with `covers`
+ *   consideration   the Senate program's other verbs, and every House weekly
+ *                   item                                      → ink, dated
+ *                   (the House item says "week of")
+ *   conditional     "If Senator …" / "If cloture …"           → ink, no date
+ *
+ * FAILS CLOSED. Yellow needs all three: the "will vote on" verb, a `covers`
+ * date to print (the chip's type will not build a dateless yellow), and the
+ * chamber `in_session` on the brief — rule 6 lets a floor claim present as
+ * live only while that chamber is meeting. Missing any one, the same notice
+ * prints in ink. A dated past brief has no schedule, so never a tag.
+ */
+export interface FloorTag {
+  tone: 'urgent' | 'status';
+  /** A message key from the catalogue root. */
+  key: 'bill.floor.announcedSenate' | 'bill.floor.announcedHouse' | 'today.tagConditional';
+  /** `covers`, formatted by the page in the reader's locale; null prints no date. */
+  dateIso: string | null;
+  /** True when the date is the first day of a weekly schedule ("week of"). */
+  week: boolean;
+}
+
+export function floorTagFor(item: {
+  certainty: FloorSignalTier0['certainty'];
+  chamber: 'house' | 'senate';
+  covers: string | null;
+  source: 'daily-digest' | 'billsthisweek';
+  session: ChamberSession;
+}): FloorTag | null {
+  const covers = item.covers && DATE_RE.test(item.covers) ? item.covers : null;
+  const key = item.chamber === 'senate' ? 'bill.floor.announcedSenate' : 'bill.floor.announcedHouse';
+  if (item.certainty === 'conditional') {
+    return { tone: 'status', key: 'today.tagConditional', dateIso: null, week: false };
+  }
+  const week = item.source === 'billsthisweek';
+  if (item.certainty === 'scheduled_vote' && covers && !week && item.session === 'in_session') {
+    return { tone: 'urgent', key, dateIso: covers, week: false };
+  }
+  return { tone: 'status', key, dateIso: covers, week: week && covers !== null };
 }
 
 /**
@@ -273,9 +347,10 @@ function stillAhead(source: string, covers: string | null, today: string): boole
   return last >= today;
 }
 
-function scheduleAhead(today: string): BriefScheduleItem[] {
+function scheduleAhead(today: string, locale: string): BriefScheduleItem[] {
   const file = floorSignalsFile();
   const items: BriefScheduleItem[] = [];
+  const session = (chamber: 'house' | 'senate') => chamberSession(chamber);
   for (const slug of Object.keys(file.signals ?? {})) {
     const bill = getBill(slug);
     if (!bill) continue;
@@ -293,6 +368,9 @@ function scheduleAhead(today: string): BriefScheduleItem[] {
       source: a.source,
       href: `/bills/${slug}`,
       citation: formatCitation(bill.bill_type, bill.bill_number),
+      certainty: a.certainty,
+      tag: floorTagFor({ ...a, session: session(a.chamber) }),
+      teaser: teaserFor(bill, locale),
     });
   }
   const noms = (file as unknown as { nominations?: Record<string, unknown> }).nominations ?? {};
@@ -300,8 +378,9 @@ function scheduleAhead(today: string): BriefScheduleItem[] {
     const nomination = getAllNominations().find((n) => n.citation === citation);
     if (!nomination || isTerminalNominationStatus(nomination.status)) continue;
     if (!signalIsLive(signal, { fetchedAt: file._meta?.fetched_at ?? null })) continue;
-    const t0 = (signal as { tier0: BriefScheduleItem & { covers_label?: string | null } }).tier0;
+    const t0 = (signal as { tier0: FloorSignalTier0 }).tier0;
     if (!stillAhead(t0.source, t0.covers, today)) continue;
+    const certainty = t0.certainty ?? 'consideration';
     items.push({
       kind: 'nomination',
       chamber: 'senate',
@@ -313,11 +392,35 @@ function scheduleAhead(today: string): BriefScheduleItem[] {
       source: t0.source,
       href: `/nominations/${nominationSlug(nomination)}`,
       citation,
+      certainty,
+      tag: floorTagFor({
+        certainty,
+        chamber: 'senate',
+        covers: t0.covers ?? null,
+        source: t0.source,
+        session: session('senate'),
+      }),
     });
   }
-  return items.sort(
-    (a, b) => a.chamber.localeCompare(b.chamber) || a.citation.localeCompare(b.citation)
+  return yellowTagFirst(
+    items.sort((a, b) => a.chamber.localeCompare(b.chamber) || a.citation.localeCompare(b.citation))
   );
+}
+
+/**
+ * THE YELLOW-TAGGED NOTICE COMES FIRST. A tag meant to draw the eye has to be
+ * where the eye lands: on a phone the band's third card sat about two screens
+ * down (independent check, 2026-09-29). A notice whose tag `floorTagFor` made
+ * `urgent` moves ahead of every notice it did not; the test is the tag that
+ * function already produced, never a second one. The partition is stable: the
+ * yellow notices keep their order among themselves, and so do the rest, so
+ * with no yellow notice the band reads exactly as before. Only the /today
+ * schedule block reads this order (`scheduleAhead`).
+ */
+export function yellowTagFirst<T extends { tag: FloorTag | null }>(items: T[]): T[] {
+  const yellow = items.filter((i) => i.tag?.tone === 'urgent');
+  const rest = items.filter((i) => i.tag?.tone !== 'urgent');
+  return [...yellow, ...rest];
 }
 
 export interface BriefQuestion {
@@ -425,6 +528,14 @@ export interface Brief {
   days: BriefDay[];
   chamber: BriefChamberState | null;
   schedule: BriefScheduleItem[];
+  /**
+   * What the schedule's sources say about themselves (lib/docket.ts
+   * `floorSourcesPosture`), on the current day only. `quiet` is the one
+   * posture that lets an empty schedule block say so; `unknown` means our own
+   * reading may be why it is empty, so the page says nothing about Congress.
+   * Null on a dated past brief, which has no schedule block.
+   */
+  schedulePosture: 'quiet' | 'unknown' | null;
   questions: BriefQuestion[];
   stamps: ReturnType<typeof briefStamps>;
   /** Every date with a permalink and its counts, newest first. */
@@ -433,8 +544,11 @@ export interface Brief {
   latestRecord: string | null;
 }
 
-/** The whole brief for one date. Callers gate `date` with `isBriefDate`. */
-export function buildBrief(date: string): Brief {
+/**
+ * The whole brief for one date, with every bill's card data in `locale`.
+ * Callers gate `date` with `isBriefDate`.
+ */
+export function buildBrief(date: string, locale = 'en'): Brief {
   const window = briefWindow();
   const isToday = date === window[0];
   const dates = [date, shiftDate(date, -1)];
@@ -442,9 +556,10 @@ export function buildBrief(date: string): Brief {
   return {
     date,
     isToday,
-    days: dates.map(dayOf),
+    days: dates.map((d) => dayOf(d, locale)),
     chamber: isToday ? chamberState(date) : null,
-    schedule: isToday ? scheduleAhead(date) : [],
+    schedule: isToday ? scheduleAhead(date, locale) : [],
+    schedulePosture: isToday ? floorSourcesPosture() : null,
     questions: questionsMoved(dates),
     stamps: briefStamps(),
     window: days,

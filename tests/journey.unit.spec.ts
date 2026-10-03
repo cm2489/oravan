@@ -1200,7 +1200,7 @@ test.describe('deriveJourney', () => {
       'the Senate has not agreed to take it up. The last motion to do so failed.'
     );
     expect(sentence(es, 'sjres', 'floor_vote', DISCHARGE_REJECTED_TEXT)).toBe(
-      'el Senado no ha aceptado considerarlo — la última moción para hacerlo fracasó.'
+      'el Senado no ha aceptado considerarlo. La última moción para hacerlo fracasó.'
     );
   });
 

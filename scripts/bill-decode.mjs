@@ -38,6 +38,7 @@ import { formattedTextUrl, pickTextVersion, textVersionStamp, versionCount } fro
 import { classifyApiError } from './api-billing.mjs';
 import { bumpCounter, recordApiError } from './run-counters.mjs';
 import { PRESIDENT_STYLE_RULE, presidentStyle } from '../lib/president-style.mjs';
+import { FORBIDDEN } from '../lib/moments-gate.mjs';
 
 /** Re-exported, not re-implemented: the "which document is the current text"
  *  question moved to scripts/text-version.mjs on 2026-09-18 so the re-decode
@@ -268,6 +269,26 @@ Full text (may be truncated):
 ${text}`;
 }
 
+/** The advocacy-vocabulary instruction for call 2 (owner, 2026-09-30:
+ *  regenerate the Spanish headlines that used listed words; the gate stays
+ *  as it is). Page 1, rule 3: on bill decodes the vocabulary rule is a PROMPT
+ *  INSTRUCTION, NOT A GATE, and `lintForbidden` is not widened to decodes —
+ *  the 2026-08-06 measurement (docs/constitution-log.md#ai-content-2026-08-06-
+ *  vocab) found it would reject 27% of the corpus for correct description.
+ *  So this only tells the model; nothing here rejects a decode. For the same
+ *  reason it is scoped to ADVOCACY USE: a plain noun or an official term that
+ *  contains a listed word ("truck stop", "988 crisis line", "shark attack")
+ *  is correct description and stays allowed.
+ *
+ *  The words come from the one versioned list (`FORBIDDEN` in
+ *  lib/moments-gate.mjs), never a copy, so the instruction and the Big
+ *  Questions lint cannot drift apart. The party-name entries are regexes, not
+ *  words, so they are stated in prose. Call 1 (`buildSummaryPrompt`) is NOT
+ *  touched: its prompt is what `decode_text_sha` fingerprints. */
+const listedWords = (lang) =>
+  FORBIDDEN[lang].map(({ word }) => word).filter((w) => !/part(y|ido)/.test(w)).join(', ');
+export const VOCABULARY_RULE = `- No advocacy vocabulary, in any field, in either language. Do not use these words, or their forms, to characterise what a bill or a side is doing or to urge anything: English: ${listedWords('en')}. Spanish: ${listedWords('es')}. A plain noun or an official term that happens to contain one is fine (a truck stop, a crisis line, a shark attack, a name the summary gives). Never name a political party. Say what the bill would do in neutral words instead (for example "would bar", "would end", "would overturn"; "impediría", "pondría fin a", "anularía").`;
+
 /** Call 2: headlines, scannable sections, and the Spanish twin — from call
  *  1's summary ONLY, never from the document. That constraint is the
  *  hallucination guard ("Use ONLY facts present in the summary"), and it is
@@ -284,7 +305,9 @@ ${ai_summary}
 
 STRICT RULES:
 - Use ONLY facts present in the summary. Never invent numbers, costs, or claims.
-- Headlines: 45-90 chars, sentence case, factual news-desk style, varied construction (NOT "Topic — Consequence", avoid colons), never start with "Congress". Prioritize the most decision-relevant specifics: what it does, who it affects, what it costs, or where it stands.
+- Headlines: 45-90 chars, sentence case, factual news-desk style, varied construction (NOT "Topic — Consequence", avoid colons), never start with "Congress". Prioritize the most decision-relevant specifics: what it does, who it affects, or what it costs.
+- Never say where the bill stands in Congress in the headlines, the TLDR, or any section (WHAT, WHO, WHY, COST, chips), in either language: not which chamber has it, not which committee, not whether a vote happened or is coming, not whether it went to the president, even if the summary says so. The page prints that from the official record.
+${VOCABULARY_RULE}
 - TLDR: one sentence, max 160 chars, the single most decision-relevant fact.
 - WHAT: 1-3 sentences. WHO: 1-2. WHY: 1-2 sentences of neutral consequence, never benefits-framing.
 - COST: 1-2 sentences ONLY if the summary contains spending/funding/fines/who-pays content; otherwise output exactly NONE (and ES_COST, COST_CHIPS, ES_COST_CHIPS all NONE too).
