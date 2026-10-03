@@ -56,10 +56,10 @@ import {
   billSlug,
   docketSignalFor,
   effectiveUrgency,
+  getActNowInWindow,
   getAllBills,
   getBill,
   getTeasers,
-  getTopActions,
   localizeBill,
 } from './bills';
 import { districtsForZip, getLegislator, portraitUrl, repsForDistrict, vacancyForDistrict } from './reps';
@@ -694,12 +694,6 @@ export function searchBills(params: SearchBillsParams, locale: Locale) {
  * Tool 4: whats_moving
  * ---------------------------------------------------------------------- */
 
-// getTopActions' own `n` param is a display cap, not a data-completeness
-// one - passing a ceiling well above the corpus size returns the FULL
-// "act now" set so this tool's own topic/day filters run over all of it,
-// not a pre-truncated slice (n=10 would silently miss a topic-13th bill).
-const WHATS_MOVING_POOL_SIZE = 10_000;
-
 export interface WhatsMovingParams {
   days?: number;
   topic?: string;
@@ -711,18 +705,18 @@ const HOME_PATH = '/';
 export function whatsMoving(params: WhatsMovingParams, locale: Locale) {
   const days = params.days ?? 7;
   const limit = params.limit ?? 10;
-  const cutoff = Date.now() - days * 86_400_000;
 
-  // The exact set the homepage's "Act now" section reads (getTopActions) -
-  // one urgency/floor scoring path, per KTD-2's house rule against a second
-  // copy of it drifting from the site's own (docs/solutions/
-  // stale-urgency-freeze.md).
-  const pool = getTopActions(WHATS_MOVING_POOL_SIZE, locale);
-  const filtered = pool.filter((b) => {
-    if (params.topic && !(b.issue_tags ?? []).includes(params.topic)) return false;
-    if (!b.last_action_date) return false; // a recency claim needs a known date
-    return new Date(b.last_action_date).getTime() >= cutoff;
-  });
+  // The exact set the homepage's "Act now" section reads (getTopActions's
+  // pool, whole and uncut) - one urgency/floor scoring path, per KTD-2's house
+  // rule against a second copy of it drifting from the site's own
+  // (docs/solutions/stale-urgency-freeze.md) - inside the `days` window. The
+  // window is tested on the date of the signal that put each bill in the pool
+  // (a live chamber announcement's own date), then on its last action; see
+  // `insideSignalWindow` in lib/docket.ts for why.
+  const pool = getActNowInWindow(days, locale);
+  const filtered = params.topic
+    ? pool.filter((b) => (b.issue_tags ?? []).includes(params.topic as string))
+    : pool;
   /*
    * EVERY ITEM CARRIES ITS OWN REASON (2026-08-12). The pool is the docket
    * ladder's act-now set, so each bill is here because of one sentence Congress

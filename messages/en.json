@@ -10,9 +10,11 @@
       "reps": "My reps",
       "whyCall": "Why call?",
       "primaryLabel": "Primary",
-      "moments": "Big Questions"
+      "moments": "Big Questions",
+      "today": "Today in Congress"
     },
     "footer": {
+      "callHub": "Make a call",
       "mission": "Oravan is free, nonpartisan civic infrastructure. No accounts, no ads, no trackers — nothing that identifies you is stored on our servers, and we count visitors only as one site-wide number a day.",
       "privacy": "Privacy",
       "aiNote": "AI-drafted content is always clearly marked — review it before you use it.",
@@ -43,7 +45,11 @@
       "bills": "Bills",
       "call": "Call",
       "reps": "Reps",
-      "moments": "Questions"
+      "moments": "Questions",
+      "today": "Today"
+    },
+    "tab": {
+      "moments": "Big Questions"
     },
     "aiMarker": "AI",
     "localeGroupLabel": "Language / Idioma",
@@ -1724,7 +1730,7 @@
     "title": "Today in Congress",
     "titleDated": "Congress on {date}",
     "metaDescription": "What the official record shows for {date}: roll-call votes, bills that moved, and each chamber's own published schedule.",
-    "recordNote": "Quoted from the official record, in its own words.",
+    "recordNote": "Quotes are the record's own words; the chamber lines are our summary of the linked Daily Digest.",
     "senate": "Senate",
     "house": "House",
     "chambersHeading": "The chambers",
@@ -1741,7 +1747,13 @@
     "movedHeading": "Bills whose latest action is dated this day",
     "movedMore": "{count, plural, one {# more bill has} other {# more bills have}} a latest action dated this day.",
     "scheduleHeading": "On the floor schedule next",
-    "scheduleNote": "A schedule names a meeting, not a vote time.",
+    "scheduleNote": "Each notice quotes the chamber's own words. The tag's date is the meeting the notice covers, not a vote time.",
+    "scheduleQuiet": "Neither chamber's published schedule names a bill or nomination we track for a meeting still ahead.",
+    "tagConditional": "Depends on a condition in the chamber's words",
+    "tagWeekOf": "week of {date}",
+    "aiHeadlines": "Headlines decoded by AI",
+    "aiNames": "Big Question names by AI",
+    "aiBoth": "Headlines and Big Question names by AI",
     "scheduleMeta": "{source} · published {published} · for <when>{covers}</when>",
     "scheduleMetaNoCovers": "{source} · published {published}",
     "questionsHeading": "Big Questions that moved",

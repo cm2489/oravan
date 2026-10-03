@@ -12,7 +12,7 @@ Owner, 2026-09-27 02:35: features (keep, cut, later) → core flows → grayscal
 
 ## Colour
 
-Owner, 2026-09-26 03:58 and 2026-09-27 02:35: green is the brand — the masthead band and the wordmark; yellow (`#ffc933`, "lamp") marks only what you can act on; each has one light, flat tint used once or twice per main page — tints, not gradients. Status and date tags are plain text. Links are ink, underlined. The Call tab in the island bar is not yellow (2026-09-27 00:43; this reversed 2026-09-26 13:50, which reversed the card l5 note — only the last stands). Alert stays an orange-brown, never a flag red. Contrast pairs are recomputed for these tokens before anything ships (page 1, rule 7; method in `docs/accessibility.md`).
+Owner, 2026-09-26 03:58 and 2026-09-27 02:35: green is the brand — the masthead band and the wordmark; yellow (`#ffc933`, "lamp") marks only what you can act on; each has one light, flat tint used once or twice per main page — tints, not gradients. Status and date tags are plain text. Links are ink, underlined. The Call tab in the island bar is not yellow (2026-09-27 00:43; this reversed 2026-09-26 13:50, which reversed the card l5 note — only the last stands). Alert stays an orange-brown, never a flag red. On Today, a yellow tag marks a floor notice (owner, 2026-09-29, typed: "if there is a vote this week scheduled it needs to have a yellow tag or something that explicitly draws attention to it"); for that one tag this replaces "Status and date tags are plain text". Contrast pairs are recomputed for these tokens before anything ships (page 1, rule 7; method in `docs/accessibility.md`).
 
 **A hue change is a copy change.** ~~Shipped copy names the colour of the floor panel in both languages: `home.weekNote` and `home.weekNoteAnnounced` begin "The green panel…" / "El panel verde…". Change the panel's colour and those two strings change in the same PR, in `messages/en.json` and `messages/es.json`.~~ (Struck 2026-09-28: the owner cut the homepage's green-panel explainer, UX inventory H13 "cut", and those were its two strings.) Since that cut no string in `messages/en.json` or `messages/es.json` names a colour (searched 2026-09-28). If one ever does again, it changes in the same PR as the hue, in both languages.
 
@@ -30,7 +30,7 @@ Default from 2026-07-24, re-aimed 2026-09-25 (plan card q18): one earned loud th
 
 ## Layout
 
-The bill page keeps a reading column and a call rail on desktop (owner kept the "D desktop rail", 2026-09-26); the fold/expand control belongs on the vote list only (2026-09-27 00:44); the Call tab and the "Call your senators" button share one token set (2026-09-27 00:38); choice controls are outlined at rest, half-lamp on hover, full lamp when picked (2026-09-27 00:40).
+The bill page keeps a reading column and a call rail on desktop (owner kept the "D desktop rail", 2026-09-26); the fold/expand control belongs on the vote list only (2026-09-27 00:44); the Call tab and the "Call your senators" button share one token set (2026-09-27 00:38); choice controls are outlined at rest, half-lamp on hover, full lamp when picked (2026-09-27 00:40). The desktop header row is Today in Congress · Bills · Big Questions · My reps, with no Call item; the phone's bottom bar keeps its five tabs, Call included, and says Big Questions (owner, 2026-09-29, typed: "The 'Call' button in the header needs to be removed and 'Today in Congress' needs to come first on the header"; picker: "Desktop only"; typed: "I'd like the phone to say Big Questions instead of just questions if possible").
 
 ## Copy
 
@@ -57,6 +57,10 @@ The impeccable skill is a lint and a rubric, not an explorer (audit card a8, 202
 ## Log
 
 Newest first. One line per change: date · who · the words or the card · what line changed.
+
+- `2026-09-30 · owner · "31 a but add floor first" and "29 a" (typed, his reply to the Run 1 Report) → on /today the floor band comes before "The chambers", and the phone tab reads "Big Questions" / "Grandes preguntas" on two lines`
+- `2026-09-29 · owner · "if there is a vote this week scheduled it needs to have a yellow tag or something that explicitly draws attention to it" (typed) → colour: on Today, a yellow tag marks a floor notice; "Status and date tags are plain text" no longer covers that one tag`
+- `2026-09-29 · owner · "The 'Call' button in the header needs to be removed and 'Today in Congress' needs to come first on the header" (typed), "Desktop only" (picker), "I'd like the phone to say Big Questions instead of just questions if possible" (typed) → layout: the desktop row is Today in Congress · Bills · Big Questions · My reps; the phone bar keeps five tabs and says Big Questions`
 
 - `2026-09-29 · owner · "Home Page - Option B, This week first, then Big Questions." (typed) → loudness: the homepage leads with This week, then Big Questions; the Big-Question-first line struck`
 - `2026-09-28 · owner · UX inventory H13 marked "cut" (the homepage's green-panel explainer) → colour: "a hue change is a copy change" struck; no shipped string names the panel's colour`

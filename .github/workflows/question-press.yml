@@ -89,10 +89,11 @@ jobs:
       - name: Restore the GDELT circuit state
         # The breaker's memory between runs (scripts/gdelt-intake.mjs, THE
         # CIRCUIT IS PERSISTED): a GDELT that refused the last run is skipped,
-        # or given one half-open request, instead of being asked again from
-        # scratch. Same ever-growing-cache pattern as newsdesk.yml's
-        # seen-headlines cache (a cache entry cannot be overwritten under one
-        # key). A miss reads as a closed circuit — one ordinary run at worst.
+        # or given one half-open probe (with the usual two 429 backoffs),
+        # instead of being asked again from scratch. Same ever-growing-cache
+        # pattern as newsdesk.yml's seen-headlines cache (a cache entry cannot
+        # be overwritten under one key). A miss reads as a closed circuit —
+        # one ordinary run at worst.
         uses: actions/cache/restore@v4
         with:
           path: .gdelt-state
