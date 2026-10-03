@@ -1,3 +1,5 @@
 #!/bin/sh
+# Refuses a helper's commit whose Claude trailer is wrong or missing; a human commit
+# with no Claude lines passes. core.hooksPath is shared by all worktrees of this repo.
 # One-time setup per worktree: git config core.hooksPath .githooks
 exec node "$(git rev-parse --show-toplevel)/scripts/check-commit-trailer.mjs" "$1"

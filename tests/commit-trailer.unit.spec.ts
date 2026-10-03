@@ -18,8 +18,15 @@ test('a Fable trailer fails', () => {
   expect(checkMessage(msg('Claude Fable 5.1'))).toMatch(/Fable/);
 });
 
-test('a missing trailer fails', () => {
-  expect(checkMessage(`Fix a thing\n\n${SESSION}\n`)).toMatch(/no "Co-Authored-By/);
+test('a human commit with no Claude lines passes', () => {
+  expect(checkMessage('Fix a thing\n\nPlain body.\n')).toBeNull();
+});
+
+test('a session line without a valid Claude trailer fails (a helper that forgot)', () => {
+  expect(checkMessage(`Fix a thing\n\n${SESSION}\n`)).toMatch(/no valid "Co-Authored-By/);
+  expect(
+    checkMessage(`Fix\n\nCo-Authored-By: Claude Sonnet 5.5 <other@example.com>\n${SESSION}\n`),
+  ).toMatch(/no valid "Co-Authored-By/);
 });
 
 test('an unlisted model fails, and a missing session line fails', () => {
@@ -29,11 +36,12 @@ test('an unlisted model fails, and a missing session line fails', () => {
   ).toMatch(/Claude-Session/);
 });
 
-test('a pipeline data commit is exempt; the same subject from anyone else is not', () => {
+test('a pipeline data commit is exempt even with a bad Claude line; others are not', () => {
   const data = 'chore(data): hot-bill refresh 2026-10-03T17Z\n';
   expect(checkMessage(data, { authorName: 'oravan-sync' })).toBeNull();
-  expect(checkMessage(data, { authorName: 'Someone' })).not.toBeNull();
-  expect(checkMessage('Fix a thing\n', { authorName: 'oravan-sync' })).not.toBeNull();
+  const bad = `${data}\nCo-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>\n${SESSION}\n`;
+  expect(checkMessage(bad, { authorName: 'oravan-sync' })).toBeNull();
+  expect(checkMessage(bad, { authorName: 'Someone' })).not.toBeNull();
 });
 
 test('a merge commit is exempt', () => {
