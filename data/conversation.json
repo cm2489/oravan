@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-03T17:49:04.307Z",
+    "fetched_at": "2026-10-03T18:30:16.278Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -9,15 +9,15 @@
       "press": {
         "status": "ok",
         "feeds_total": 11,
-        "feeds_silent": 1,
-        "checked_at": "2026-10-03T17:49:04.307Z"
+        "feeds_silent": 0,
+        "checked_at": "2026-10-03T18:30:16.278Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-27",
         "week_label": "Most-Viewed Bills - Week of September 27, 2026",
         "entries": 8,
-        "checked_at": "2026-10-03T17:49:04.307Z"
+        "checked_at": "2026-10-03T18:30:16.278Z"
       },
       "leans": {
         "center": {
@@ -386,6 +386,12 @@
     "hr-139-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "fox23maine.com",
+          "firstSeen": "2026-10-03",
+          "lastSeen": "2026-10-03",
+          "url": "https://news.google.com/rss/articles/CBMi8wFBVV95cUxOa2diVjk5RXh0VkdHWHFEY3lOb1lXRzBMbEFjRnAtR3F1SUNZS2l3VGpOYXpsV3QwcEhvOWtmYXYwUGZnRnJqRmVRbVNtRzB6eXIwcHlkOWd5WG9RUjJCRi15SzJrVUxfR2ZxZWw4UDRuaTJCOThxbVhneWtSUVpUUDFDZmxGYVotd0NlSkxKbENFNVJvbFdyRFQwUkRqYU5wRmVyQ3E1RmdMbGhUZktfbThjTmhDSmthNDViWmwzVGxlemZjZ2U4Q2s1ODMzT3RGWVBMLW9rMEtqY2E1RkdkUnJJS2hXOUVVT0Q4NkhncWo5ejA?oc=5"
+        },
         {
           "domain": "mb.ntd.com",
           "firstSeen": "2026-10-03",
@@ -784,6 +790,12 @@
           "firstSeen": "2026-10-02",
           "lastSeen": "2026-10-03",
           "url": "https://news.google.com/rss/articles/CBMizAFBVV95cUxNcmRRQjBZREYyWWJ0cHl2LW9LaE5BSEcwV2U0OWxoQWx1UWFuM0p0VGh2V250N0VJUDlyTExyLTk2M2lJNXRlUFNLRno1MEQ4NTloc1dtU3J2MklubUttZnFxMVNQOUpVdUVtWHVxTjF0VzFlLTBYY3g0bGVYcGlMM3VWdC1QRExuSVJBakxVaEpOUUZ6dUVYdEt5NnZkaEloemwxempTWjMwQ0pBSk5ZcHVRYU9XQ1Y3OFZLb3J1WkljZ0dlVGs1NWpfSlA?oc=5"
+        },
+        {
+          "domain": "coppercourier.com",
+          "firstSeen": "2026-10-03",
+          "lastSeen": "2026-10-03",
+          "url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxQOWtPdzBiUF9ubGtwLWtXWVNwQ0k5SXMxOUxWSVZkR25qb3FwN21jXzB3QnozejJWbmR5dFFOTGRUSjBWSUhsTkhrZFNmcHlGNDZBZ09RUlFDMnV2c0RQRV9ibHhyMVhJSzE4amx4WGw2YUpoaHpMS0dWU1U3RDZQWXVB?oc=5"
         }
       ],
       "mostViewed": null
@@ -1960,16 +1972,16 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "tomahawknation.com",
+          "firstSeen": "2026-10-02",
+          "lastSeen": "2026-10-03",
+          "url": "https://news.google.com/rss/articles/CBMihgJBVV95cUxPYmtPREszZ0dYNlI4WlYweEFlMjdHdlU5QWQzS0VBb0h3WlRNWkxoWUcwNC00QS1qRnRFak9RbmFUR3ZMUGdZNjZHLWFsbE5IVnpCcjJQRjU4VjRxQUkycW1oUUdkZU9uMUxJaDhUXy1BM0xhaW9lSndGVHY3bk5PYXB1SDZxOE0zWjVCeDBQRFRLM0EzbG1RLWhjS1k1ZkFTc0piLXNNZTJONXNKVHJHMDVXUkx4UERWalJUWDBnOVB3bUEycHhYQndSMWxBYzFPWVY0OG1MdVNGSjZ1cTVfR0IyM1FHcVdfQVV1TUI0WFIwanFKSUN4dDQ4YXg5N3lDbkhLblRR?oc=5"
+        },
+        {
           "domain": "wral.com",
           "firstSeen": "2026-10-02",
           "lastSeen": "2026-10-03",
           "url": "https://news.google.com/rss/articles/CBMizgFBVV95cUxPQWthdmVWT0xOUkdYVE91UkdLY1FoX2x4Q3VNVjdVNlA4Rk44enBTSFZNQkRVbE9MUXVQUGdleWxWcGR2anNrNG1YUTlibGlrbkxIYTkyb3FnZVpGcHAtSWtvMmFnankzNDR3alpSbFhVVFloWXQtWGZnanZfZVoxMEc1UmpnTzRMZnV6QThLUXRTcXdtVFZlYVNBOExfRHpmUmk4NUc1X2RkOGptRHQ0ckh4NUlfUHBJSXBZc3FwclMxbEJKMGU3YTNySGg4UQ?oc=5"
-        },
-        {
-          "domain": "tomahawknation.com",
-          "firstSeen": "2026-10-02",
-          "lastSeen": "2026-10-02",
-          "url": "https://news.google.com/rss/articles/CBMihgJBVV95cUxPYmtPREszZ0dYNlI4WlYweEFlMjdHdlU5QWQzS0VBb0h3WlRNWkxoWUcwNC00QS1qRnRFak9RbmFUR3ZMUGdZNjZHLWFsbE5IVnpCcjJQRjU4VjRxQUkycW1oUUdkZU9uMUxJaDhUXy1BM0xhaW9lSndGVHY3bk5PYXB1SDZxOE0zWjVCeDBQRFRLM0EzbG1RLWhjS1k1ZkFTc0piLXNNZTJONXNKVHJHMDVXUkx4UERWalJUWDBnOVB3bUEycHhYQndSMWxBYzFPWVY0OG1MdVNGSjZ1cTVfR0IyM1FHcVdfQVV1TUI0WFIwanFKSUN4dDQ4YXg5N3lDbkhLblRR?oc=5"
         },
         {
           "domain": "kscj.com",
