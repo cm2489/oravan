@@ -1,2 +1,3 @@
 #!/bin/sh
+# One-time setup per worktree: git config core.hooksPath .githooks
 exec node "$(git rev-parse --show-toplevel)/scripts/check-commit-trailer.mjs" "$1"

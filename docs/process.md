@@ -37,7 +37,6 @@ Current-direction lines that apply: copied from docs/current-direction.md with t
 
 - Owner words are quoted with their date and their object, or linked to the card that holds them — never paraphrased, and never summarised as a verdict he did not give.
 - No "DESIGN.md tokens only", no "never suppress" about a design hook, no "the owner's verdicts are…". A tool's findings are nudges the owner outranks.
-- Every helper commit ends with the `Co-Authored-By: Claude <Model> <noreply@anthropic.com>` and `Claude-Session:` lines, naming the model that wrote it (Opus 5.5 or Sonnet 5.5, never Fable). A local hook refuses a wrong one; run `git config core.hooksPath .githooks` once in each worktree (owner, 2026-10-03, T20).
 - For a fresh-eyes ask, the blind-run protocol is the brief: sterile agents, the browser only, never the repo.
 
 ## Rebuild checklist: embed lockstep
