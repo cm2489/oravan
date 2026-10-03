@@ -4,7 +4,7 @@
  * TURNS IT ON, and by default it only prints what it would send.
  *
  *   npx tsx scripts/social-send.mjs [--dry-run] [--queue <queue.json> | --queue-dir <dir>]
- *                                   [--ledger <file>] [--now <ISO instant>]
+ *                                   [--ledger <file>] [--first-run] [--now <ISO instant>]
  *
  * WHAT IT READS: the queue scripts/social-drafts.mjs wrote (outside this
  * repository), the committed record through that same script, and
@@ -31,7 +31,15 @@
  * this moment and sends an item only if the rebuilt draft is the same text:
  * the drafter's live gate, record-lag gate and every other gate run again at
  * send time. An item whose record date is older than the drafter's own window
- * (lib/today.ts BRIEF_WINDOW_DAYS) is refused.
+ * (lib/today.ts BRIEF_WINDOW_DAYS) is refused. A floor notice is refused once
+ * the day it covers (for a weekly schedule, the week's last day) is before
+ * today, Eastern, even while the drafter's own live rule still holds it.
+ *
+ * THE LEDGER of what was sent lives outside the repo (in the workflow, in an
+ * Actions cache, which the platform drops after 7 days unused). A send run
+ * with no ledger to read refuses to send, because an empty ledger would post
+ * again everything still inside the window, unless --first-run says this is
+ * the very first run.
  *
  * WHAT IT NEVER DOES, by construction: answer, tag, endorse or re-share
  * anyone's post, follow anyone, search a platform, read a feed, or send a
@@ -53,7 +61,7 @@
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
-import { DEFAULT_OUT_DIR, QUEUE_SCHEMA, assertOutsideRepo, buildQueue } from './social-drafts.mjs';
+import { DEFAULT_OUT_DIR, QUEUE_SCHEMA, assertOutsideRepo, buildQueue, recordContext } from './social-drafts.mjs';
 import { BRIEF_WINDOW_DAYS, briefToday, easternDate, shiftDate } from '../lib/today';
 
 /* ------------------------------------------------------------------ *
@@ -92,6 +100,8 @@ const URL_RE = /https:\/\/[^\s]+/g;
 const OWN_LINK_RE = /^https:\/\/oravan\.org(\/es)?\/(bills|questions|today)\/[a-z0-9-]+$/;
 /** An @handle in the text would read as tagging someone. */
 const HANDLE_RE = /(^|[\s(])@[\p{L}\p{N}._-]+/u;
+/** A platform error code that may be printed: letters only, 40 at most. */
+const ERROR_CODE_RE = /^[A-Za-z]{1,40}$/;
 
 /* ------------------------------------------------------------------ *
  * The kill switch
@@ -181,8 +191,19 @@ export function outboundGuard(item, lang, platform) {
  * `fresh` is the queue rebuilt at send time (buildQueue); `ledger` is the
  * list of what was already sent; `today` is the Eastern date of `now`.
  */
-/** @param {{ queue: any, fresh: any, ledger?: any[], today: string, cap?: number }} args */
-export function pickItems({ queue, fresh, ledger = [], today, cap = DAILY_CAP }) {
+/**
+ * The last day a floor notice covers, or null when the record gives none:
+ * the meeting day for the Senate's daily program, the week's last day for
+ * the House's weekly schedule.
+ * @param {{ covers?: string | null, source?: string } | null | undefined} a
+ */
+export function coveredThrough(a) {
+  if (!a?.covers || !DATE_RE.test(a.covers)) return null;
+  return a.source === 'billsthisweek' ? shiftDate(a.covers, 6) : a.covers;
+}
+
+/** @param {{ queue: any, fresh: any, ledger?: any[], today: string, cap?: number, floorCovers?: (item: any) => string | null }} args */
+export function pickItems({ queue, fresh, ledger = [], today, cap = DAILY_CAP, floorCovers = () => null }) {
   if (queue?.schema !== QUEUE_SCHEMA) throw new Error(`social-send: queue schema is ${queue?.schema}, expected ${QUEUE_SCHEMA}`);
   const oldest = shiftDate(today, -MAX_FACT_AGE_DAYS);
   const freshById = new Map((fresh?.items ?? []).map((i) => [i.id, i]));
@@ -201,6 +222,17 @@ export function pickItems({ queue, fresh, ledger = [], today, cap = DAILY_CAP })
     if (item.factDate > today) {
       refused.push({ id: item.id, reason: `record date ${item.factDate} is after today (${today})` });
       continue;
+    }
+    if (item.kind === 'floor-notice') {
+      const through = floorCovers(item);
+      if (!through) {
+        refused.push({ id: item.id, reason: 'the floor notice names no covered day' });
+        continue;
+      }
+      if (through < today) {
+        refused.push({ id: item.id, reason: `the floor notice covers ${through}, before today (${today})` });
+        continue;
+      }
     }
     const again = freshById.get(item.id);
     if (!again) {
@@ -297,7 +329,9 @@ async function xrpc(fetchImpl, method, { token, body, query, service = BLUESKY_S
     json = null;
   }
   if (!res.ok) {
-    const code = typeof json?.error === 'string' ? json.error.slice(0, 40) : 'no error code';
+    // Only a short word of letters is printed; anything else the platform
+    // put in the field could carry text we must not print.
+    const code = typeof json?.error === 'string' && ERROR_CODE_RE.test(json.error) ? json.error : 'error';
     throw new PlatformError(`bluesky ${method}: HTTP ${res.status} (${code})`);
   }
   return json;
@@ -322,6 +356,7 @@ export async function ensureBotLabel(fetchImpl, session) {
   let cid = null;
   try {
     const got = await xrpc(fetchImpl, 'com.atproto.repo.getRecord', {
+      token: session.token,
       query: { repo: session.did, collection: 'app.bsky.actor.profile', rkey: 'self' },
     });
     existing = got?.value ?? null;
@@ -446,6 +481,7 @@ export function dryRunText({ picks, refused, state, today }) {
  *   sleep?: (ms: number) => Promise<unknown>,
  *   switchFilePath?: string,
  *   rebuild?: (instant: number) => any,
+ *   floorCovers?: (item: any) => string | null,
  * }} options
  */
 export async function run({
@@ -457,11 +493,13 @@ export async function run({
   sleep = (ms) => new Promise((r) => setTimeout(r, ms)),
   switchFilePath,
   rebuild = (instant) => buildQueue({ now: instant }),
+  floorCovers,
 }) {
-  const args = { dryRun: false, queue: null, queueDir: DEFAULT_OUT_DIR, ledger: null, now };
+  const args = { dryRun: false, firstRun: false, queue: null, queueDir: DEFAULT_OUT_DIR, ledger: null, now };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--dry-run') args.dryRun = true;
+    else if (a === '--first-run') args.firstRun = true;
     else if (a === '--queue') args.queue = argv[++i];
     else if (a === '--queue-dir') args.queueDir = argv[++i];
     else if (a === '--ledger') args.ledger = argv[++i];
@@ -482,14 +520,26 @@ export async function run({
     return { mode: state.send ? 'sent' : 'dry-run', exitCode: state.send ? 1 : 0, sent: [], errors: ['no queue'], picks: null, refused: [] };
   }
   const queue = JSON.parse(readFileSync(queuePath, 'utf8'));
+  const ledgerFound = existsSync(ledgerPath);
   const ledger = readLedger(ledgerPath);
-  const { picks, refused } = pickItems({ queue, fresh, ledger, today });
+  const covers =
+    floorCovers ??
+    ((ctx) => (item) => coveredThrough(item?.ref?.slug ? ctx.liveAnnouncement(item.ref.slug) : null))(recordContext(args.now));
+  const { picks, refused } = pickItems({ queue, fresh, ledger, today, floorCovers: covers });
 
   if (!state.send) {
     log(dryRunText({ picks, refused, state, today }));
     return { mode: 'dry-run', exitCode: 0, sent: [], errors: [], picks, refused };
   }
 
+  if (!ledgerFound && !args.firstRun) {
+    log(
+      `social-send: refusing to send: no ledger of earlier posts at ${ledgerPath}. ` +
+        'Without it, items already sent would be sent again. If this is the very first run, pass --first-run ' +
+        '(the workflow input first_run); otherwise restore the ledger first.',
+    );
+    return { mode: 'refused', exitCode: 1, sent: [], errors: ['no ledger'], picks, refused };
+  }
   if (typeof fetchImpl !== 'function') throw new Error('social-send: no fetchImpl was given');
   const sent = [...ledger];
   const done = [];

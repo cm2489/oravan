@@ -22,6 +22,7 @@ import {
   SECRET_NAMES,
   SEND_KINDS,
   blueskyPostRecord,
+  coveredThrough,
   ensureBotLabel,
   escapeHtml,
   linkFacets,
@@ -97,7 +98,7 @@ const SIX = [
 
 type Call = { url: string; init?: { method?: string; headers?: Record<string, string>; body?: string } };
 
-function fakeFetch(opts: { fail?: 'bluesky' | 'telegram'; profile?: unknown } = {}) {
+function fakeFetch(opts: { fail?: 'bluesky' | 'bluesky-hostile' | 'telegram'; profile?: unknown } = {}) {
   const calls: Call[] = [];
   const respond = (status: number, json: unknown) => ({ ok: status >= 200 && status < 300, status, json: async () => json });
   const fetchImpl = async (url: string, init?: Call['init']) => {
@@ -108,6 +109,7 @@ function fakeFetch(opts: { fail?: 'bluesky' | 'telegram'; profile?: unknown } = 
     }
     if (url.includes('com.atproto.server.createSession')) {
       if (opts.fail === 'bluesky') return respond(401, { error: 'AuthenticationRequired', message: `bad ${SECRETS.BLUESKY_APP_PASSWORD}` });
+      if (opts.fail === 'bluesky-hostile') return respond(401, { error: SECRETS.BLUESKY_APP_PASSWORD, message: SECRETS.BLUESKY_APP_PASSWORD });
       return respond(200, { accessJwt: 'jwt-SECRET', did: 'did:plc:example' });
     }
     if (url.includes('com.atproto.repo.getRecord')) return respond(200, opts.profile ?? { value: { displayName: 'Oravan', labels: { values: [{ val: 'bot' }] } }, cid: 'cid1' });
@@ -131,6 +133,9 @@ async function runWith(opts: {
   argv?: string[];
   fetch?: ReturnType<typeof fakeFetch>;
   ledger?: unknown[];
+  /** Pass --first-run when no ledger is given (default true). */
+  firstRun?: boolean;
+  floorCovers?: (item: unknown) => string | null;
 }) {
   const dir = workdir();
   const items = opts.items ?? SIX;
@@ -143,7 +148,7 @@ async function runWith(opts: {
   const fake = opts.fetch ?? fakeFetch();
   const lines: string[] = [];
   const result = await run({
-    argv: ['--queue', queuePath, '--ledger', ledgerPath, ...(opts.argv ?? [])],
+    argv: ['--queue', queuePath, '--ledger', ledgerPath, ...(!opts.ledger && opts.firstRun !== false ? ['--first-run'] : []), ...(opts.argv ?? [])],
     env: opts.env ?? {},
     fetchImpl: fake.fetchImpl,
     now: NOW,
@@ -151,6 +156,7 @@ async function runWith(opts: {
     sleep: async () => {},
     switchFilePath: switchPath,
     rebuild: () => queueOf(items),
+    floorCovers: opts.floorCovers ?? (() => TODAY),
   });
   return { result, calls: fake.calls, lines, ledgerPath };
 }
@@ -400,7 +406,7 @@ test.describe('what goes over the wire', () => {
 /* ---- 5. secrets never printed (rule 10) -------------------------------------------- */
 
 test('a failing platform prints a status and a code, never a secret, and the run fails', async () => {
-  for (const fail of ['bluesky', 'telegram'] as const) {
+  for (const fail of ['bluesky', 'bluesky-hostile', 'telegram'] as const) {
     const { result, lines } = await runWith({ env: { SOCIAL_SEND: 'on', ...SECRETS }, file: ON_FILE, fetch: fakeFetch({ fail }) });
     expect(result.exitCode).toBe(1);
     const out = lines.join('\n') + JSON.stringify(result.errors);
@@ -456,4 +462,85 @@ test('the source names only the platform methods it needs', () => {
   expect(fetchUses).toBe(1); // globalThis.fetch, handed in at the run-directly guard only
   // Secrets are read only from the env object passed in, by name.
   expect(code.match(/process\.env/g)).toHaveLength(1);
+});
+
+/* ---- 7. the fixes from the independent check (2026-10-03) ------------------------- */
+
+test.describe('the sent ledger', () => {
+  test('a send run with no ledger and no --first-run refuses, sends nothing and says why', async () => {
+    const { result, calls, lines } = await runWith({ env: { SOCIAL_SEND: 'on', ...SECRETS }, file: ON_FILE, firstRun: false });
+    expect(result.mode).toBe('refused');
+    expect(result.exitCode).toBe(1);
+    expect(result.sent).toHaveLength(0);
+    expect(calls).toHaveLength(0);
+    expect(lines.join('\n')).toMatch(/no ledger of earlier posts/);
+  });
+
+  test('a dry run with no ledger is still a plain dry run', async () => {
+    const { result, calls } = await runWith({ env: {}, file: ON_FILE, firstRun: false });
+    expect(result.mode).toBe('dry-run');
+    expect(result.exitCode).toBe(0);
+    expect(calls).toHaveLength(0);
+  });
+
+  test('--first-run sends; the next day with the ledger kept repeats nothing', async () => {
+    const first = await runWith({ env: { SOCIAL_SEND: 'on', ...SECRETS }, file: ON_FILE });
+    expect(first.result.sent).toHaveLength(2 * DAILY_CAP);
+    const ledger = JSON.parse(readFileSync(first.ledgerPath, 'utf8')).sent;
+    const { picks } = pickItems({ queue: queueOf(SIX), fresh: queueOf(SIX), ledger, today: '2026-09-30', floorCovers: () => '2026-09-30' });
+    const sent = new Set(ledger.map((e: { id: string; platform: string }) => `${e.platform}|${e.id}`));
+    for (const p of ['bluesky', 'telegram'] as const) for (const x of picks[p]) expect(sent.has(`${p}|${x.id}`)).toBe(false);
+  });
+
+  test('an existing, empty ledger counts as restored', async () => {
+    const { result } = await runWith({ env: { SOCIAL_SEND: 'on', ...SECRETS }, file: ON_FILE, ledger: [] });
+    expect(result.mode).toBe('sent');
+    expect(result.sent).toHaveLength(2 * DAILY_CAP);
+  });
+});
+
+test.describe('a floor notice after its covered day', () => {
+  const notice = item('floor-notice', 'sjres-197-119', '2026-09-28', { id: 'floor-notice:sjres-197-119:senate:daily-digest' });
+
+  test('is refused once the day it covers is before today (Eastern)', () => {
+    const q = queueOf([notice]);
+    const past = pickItems({ queue: q, fresh: q, today: '2026-09-30', floorCovers: () => '2026-09-29' });
+    expect(past.picks.telegram).toHaveLength(0);
+    expect(past.refused[0].reason).toMatch(/covers 2026-09-29, before today/);
+    const same = pickItems({ queue: q, fresh: q, today: '2026-09-29', floorCovers: () => '2026-09-29' });
+    expect(same.picks.telegram).toHaveLength(1);
+  });
+
+  test('a notice with no covered day is refused', () => {
+    const q = queueOf([notice]);
+    const r = pickItems({ queue: q, fresh: q, today: TODAY, floorCovers: () => null });
+    expect(r.picks.telegram).toHaveLength(0);
+    expect(r.refused[0].reason).toMatch(/no covered day/);
+  });
+
+  test('the covered day: the meeting for the daily program, the week for the weekly schedule', () => {
+    expect(coveredThrough({ covers: '2026-09-29', source: 'daily-digest' })).toBe('2026-09-29');
+    expect(coveredThrough({ covers: '2026-09-28', source: 'billsthisweek' })).toBe('2026-10-04');
+    expect(coveredThrough({ covers: null, source: 'daily-digest' })).toBeNull();
+    expect(coveredThrough(null)).toBeNull();
+  });
+
+  test('on the committed record: the Sep 29 Senate notice is not sent on Sep 30 at 10 am Eastern', async () => {
+    const dir = workdir();
+    const at = Date.parse('2026-09-30T14:00:00Z');
+    const q = buildQueue({ now: at });
+    const queuePath = join(dir, 'queue.json');
+    writeFileSync(queuePath, JSON.stringify(q));
+    const lines: string[] = [];
+    const r = await run({ argv: ['--queue', queuePath, '--dry-run'], env: {}, now: at, log: (l: string) => lines.push(l), rebuild: () => q });
+    const sentIds = [...r.picks!.bluesky, ...r.picks!.telegram].map((p: { id: string }) => p.id);
+    expect(sentIds.some((id: string) => id.startsWith('floor-notice:'))).toBe(false);
+    // The drafter's own live rule still holds the notice at this moment, so it
+    // is the sender's covered-day rule that keeps it back.
+    const queued = q.items.filter((i: { kind: string }) => i.kind === 'floor-notice');
+    expect(queued.length).toBeGreaterThan(0);
+    for (const n of queued) {
+      expect(r.refused.find((x: { id: string }) => x.id === n.id)?.reason, n.id).toMatch(/before today/);
+    }
+  });
 });
