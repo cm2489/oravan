@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-10-02T19:39:53.852Z"
+    "generated_at": "2026-10-03T08:01:19.582Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -347,63 +347,6 @@
         },
         "record": {
           "action_text": "Motion to proceed to measure considered in Senate. (CR S4415)",
-          "action_code": null,
-          "action_type": "Floor",
-          "source_system": "Senate"
-        },
-        "ai": false
-      },
-      {
-        "id": "u_1fb325fc",
-        "class": "vote",
-        "vehicle": "hr-6500-119",
-        "day": "2026-08-03",
-        "occurred_at": "2026-08-03",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-25T13:41:33.041Z",
-        "text": {
-          "en": "“Cloture on the motion to proceed to the measure invoked in Senate by Yea-Nay Vote. 89 - 4. Record Vote Number: 218. (CR S4405)”",
-          "es": "Registro oficial, en inglés: “Cloture on the motion to proceed to the measure invoked in Senate by Yea-Nay Vote. 89 - 4. Record Vote Number: 218. (CR S4405)”"
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/house-bill/6500",
-            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00218.xml"
-          ]
-        },
-        "record": {
-          "action_text": "Cloture on the motion to proceed to the measure invoked in Senate by Yea-Nay Vote. 89 - 4. Record Vote Number: 218. (CR S4405)",
-          "action_code": null,
-          "action_type": "Floor",
-          "source_system": "Senate",
-          "roll_call": {
-            "chamber": "senate",
-            "number": 218
-          }
-        },
-        "ai": false
-      },
-      {
-        "id": "u_d7940568",
-        "class": "floor_action",
-        "vehicle": "hr-6500-119",
-        "day": "2026-08-03",
-        "occurred_at": "2026-08-03",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-25T13:41:33.041Z",
-        "text": {
-          "en": "“Motion to proceed to measure considered in Senate. (CR S4414)”",
-          "es": "Registro oficial, en inglés: “Motion to proceed to measure considered in Senate. (CR S4414)”"
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/house-bill/6500"
-          ]
-        },
-        "record": {
-          "action_text": "Motion to proceed to measure considered in Senate. (CR S4414)",
           "action_code": null,
           "action_type": "Floor",
           "source_system": "Senate"
