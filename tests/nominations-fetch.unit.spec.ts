@@ -134,6 +134,26 @@ test.describe('refreshNominationFields', () => {
     expect(record.update_date).toBe('2026-08-08T11:00:21Z');
   });
 
+  // PN730-35: a stage-neutral receipt keeps the stage (and calendar number)
+  // the record already held; the sentence and date still update.
+  test('a stage-neutral committee receipt keeps the stored stage', () => {
+    const record: Loose = {
+      ...stored(),
+      status: 'exec_calendar',
+      exec_calendar_number: 838,
+      last_action_text: 'Placed on Senate Executive Calendar. Calendar No. 838.',
+    };
+    const item = {
+      ...ITEM,
+      latestAction: { actionDate: '2026-09-30', text: 'Committee requested information was received.' },
+    };
+    expect(refreshNominationFields(record, item)).toBe('refreshed');
+    expect(record.last_action_text).toBe('Committee requested information was received.');
+    expect(record.last_action_date).toBe('2026-09-30');
+    expect(record.status).toBe('exec_calendar');
+    expect(record.exec_calendar_number).toBe(838);
+  });
+
   /*
    * THE BUG, AS A TEST. Every field is compared, not just the ones the old
    * code got wrong, because "nothing was touched" is the whole promise —
