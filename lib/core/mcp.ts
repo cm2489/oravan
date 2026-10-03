@@ -127,7 +127,7 @@ export const SOURCE: Record<Locale, string> = {
  */
 export const AI_LABEL_TEXT: Record<Locale, string> = {
   en: 'This plain-language content is AI-generated and automatically checked before publish. It is not the official bill text.',
-  es: 'Este contenido en lenguaje sencillo es generado por IA y verificado automáticamente antes de publicarse. No es el texto oficial del proyecto de ley.',
+  es: 'Este contenido en lenguaje claro es generado por IA y verificado automáticamente antes de publicarse. No es el texto oficial del proyecto de ley.',
 };
 
 export const LICENSE_PUBLIC_DOMAIN: Record<Locale, string> = {
@@ -137,7 +137,7 @@ export const LICENSE_PUBLIC_DOMAIN: Record<Locale, string> = {
 
 export const LICENSE_AI_CONTENT: Record<Locale, string> = {
   en: "CC BY 4.0 (Oravan's AI-generated plain-language content); underlying official data is U.S. public domain (Congress.gov).",
-  es: 'CC BY 4.0 (el contenido en lenguaje sencillo generado por IA de Oravan); los datos oficiales subyacentes son de dominio público en EE. UU. (Congress.gov).',
+  es: 'CC BY 4.0 (el contenido en lenguaje claro generado por IA de Oravan); los datos oficiales subyacentes son de dominio público en EE. UU. (Congress.gov).',
 };
 
 /*

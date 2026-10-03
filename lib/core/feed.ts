@@ -38,7 +38,7 @@ const FEED_TITLE: Record<Locale, string> = {
 
 const FEED_DESCRIPTION: Record<Locale, string> = {
   en: "Active, plain-language-decoded U.S. federal bills that cleared Oravan's \"act now\" urgency bar in the last 7 days. Free, nonpartisan, no account or sign-up required.",
-  es: 'Proyectos de ley federales activos, en lenguaje sencillo, que superaron el umbral de urgencia "actúa ahora" de Oravan en los últimos 7 días. Gratis, sin filiación partidista, sin cuenta ni registro.',
+  es: 'Proyectos de ley federales activos, en lenguaje claro, que superaron el umbral de urgencia "actúa ahora" de Oravan en los últimos 7 días. Gratis, sin filiación partidista, sin cuenta ni registro.',
 };
 
 // Mandatory per the embeds spec's "powers their newsletters with an
