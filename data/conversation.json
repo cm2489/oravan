@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-04T17:52:27.920Z",
+    "fetched_at": "2026-10-04T22:18:59.685Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-04T17:52:27.920Z"
+        "checked_at": "2026-10-04T22:18:59.685Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-27",
         "week_label": "Most-Viewed Bills - Week of September 27, 2026",
         "entries": 8,
-        "checked_at": "2026-10-04T17:52:27.920Z"
+        "checked_at": "2026-10-04T22:18:59.685Z"
       },
       "leans": {
         "center": {
@@ -400,6 +400,13 @@
           "url": "https://news.google.com/rss/articles/CBMi0wFBVV95cUxPeHVZTHZXLXhicGdILXpid2kxcVVYd3gwQnlMSEZhQzV1aG8yZ1prcy00QTNtMGJrWWdoSWxVcHhpT2N2YU5tZmZpdHpzSXY5alRqU3dMWGIwc1h1X21EUDlRbTdOeTNSQjJuSHFjM1dBTXhJM3FURVFXa1pvd2hYazZHRW9IR0gzVFNmeVVRTFpWUEFyZXFOajBIZDBZTkFTanBIQTNFSnFkTFdLU2tHVWpuQzBTZWNZWndmNWdnam9HcDUxYXR3RlNFcmx3RkdHNjZR?oc=5"
         },
         {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-10-04",
+          "lastSeen": "2026-10-04",
+          "url": "https://thehill.com/homenews/administration/6127691-trump-cotton-fued-daylight-savings-posts/"
+        },
+        {
           "domain": "cbsnews.com",
           "lean": "left",
           "firstSeen": "2026-10-03",
@@ -415,6 +422,12 @@
           "url": "https://news.google.com/rss/articles/CBMijgJBVV95cUxPZkUyWmhIV2V3VkRqTGV4OFpPQzU5UUM1dGhyTWRMMXVhTVpSRFBaYTZKZjZOUWtwckdzcEdUdGZ3N1hoWnY5Ry1pMXNmdmRiQ2lUczJSWnlqQ2h6TzdCSlBMS1A4QlhqSzBlOHZ3d2l6VmhmWmUwSnZfQ0lvb0wwMlBEVXVBdFZDT0JHQ1N3czB5RHJKdjZXVkVVV3JRWHI4S1JBYi1UenBsZDJxaUs5cW1PQm0tZ25veExIRElDVDZRekJoNXV6TWJydmF6Tmc0cVo0TWFTVlBQZzcxU21PNVFIZjBjcXBlOEZ6b2N1WDlwcThfd3VYX0NuNUJOZVV4bkJMRkZkZTNhSzRnV3c?oc=5"
         },
         {
+          "domain": "aol.com",
+          "firstSeen": "2026-10-04",
+          "lastSeen": "2026-10-04",
+          "url": "https://news.google.com/rss/articles/CBMigwFBVV95cUxQX0FzSGRfRUhyNGF1UHFLc1JzYk16NGlqUFMyN3h0Umk0b3Q5U283QmdpWHBBRHN0dG1qODZWaGszb1ludWhzTnRuV0w3eFBkUmVrR3o0eHBnSWV0SHJPRUpsaTVJLU1xN3M2MlZuSWdZdmVPTzRhM1FIWi1yeEc5MVlaUQ?oc=5"
+        },
+        {
           "domain": "greatbendpost.com",
           "firstSeen": "2026-10-04",
           "lastSeen": "2026-10-04",
@@ -425,6 +438,12 @@
           "firstSeen": "2026-10-04",
           "lastSeen": "2026-10-04",
           "url": "https://news.google.com/rss/articles/CBMibkFVX3lxTE5raDBzc2psclhJaXZjaHBEemI4VU9yc3ZmZk5QVHp4bHZzMWhZczRFNDg0ZTZpWll1aV9wQ19wQ1ZYSzBoN0VBS0NvZGdJZ1pZQ2l3OFhTY2ZpX1VHUWR4NGZvYmVHTm1tV0xzN1BB?oc=5"
+        },
+        {
+          "domain": "news.ssbcrack.com",
+          "firstSeen": "2026-10-04",
+          "lastSeen": "2026-10-04",
+          "url": "https://news.google.com/rss/articles/CBMipwFBVV95cUxOUXJ5QzA0TUZ5aE5reGhJUzQ4d0Jrc204eXg2dHd5azhFZkRNTVU2anVSQUNQaWwzZ1duaWVoUVdWajJpZ0JxLXZlYXRHLW9kNnNNWldnZF9MREVVMXo4ZXFxWmJ4Z2M4U01vbTh2Q19jZkdVWVdUWFEzOTR2M2VtN2tsNEF4QU51a2Y2LUFjQzNyQ05zbVpkcEJhWFQxVlFNV29wMEdCRQ?oc=5"
         },
         {
           "domain": "salinapost.com",
@@ -756,6 +775,19 @@
           "url": "https://news.google.com/rss/articles/CBMigAFBVV95cUxOYkU0RzlXdGxweWJCZ211dkI3R2o0Ymp2TmRUMWstNDJZOXVQMVFHZ3U1M0p5R2xkbGNGZVJ1OG15QW5iZ1gwdldwd001SGlaN3JrVTE0QkpIQnZ0ZFQzN2d3VWUxYVVYS2ZjSnlxREZCNDhveWtfdUhhVWp3YzRqNg?oc=5"
         }
       ],
+      "mostViewed": null
+    },
+    "hr-5587-119": {
+      "outlets7d": [
+        {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-10-04",
+          "lastSeen": "2026-10-04",
+          "url": "https://www.foxnews.com/politics/cruz-vance-rivalry-heats-texas-senator-suggests-vp-feeling-insecure"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "hr-5631-119": {
@@ -1545,6 +1577,18 @@
           "firstSeen": "2026-10-01",
           "lastSeen": "2026-10-01",
           "url": "https://news.google.com/rss/articles/CBMiwwFBVV95cUxNWWNyT1ZOSHF4R0xQdFFMTHo1d3lDbi1zdzRRMkpOeWZXZU9oN05YV3FKZjZJOE1LcURxWUNPR3RQWWNLZzRWLXdrOUxDb1p2UlR6Z3Q2NUEyN3BnUGhIbWd6Y1Y2bW5UY2o1eTVBNHVYR2FnRnk3ZU44c01rVTVPeXc3ZjVmNFlYZktrNWVhdHQzWkpLNmZOMEFTTjdabGNBZ3l0TFM2S240NGpoQ0kzZjlzTnNTaWFIR1RwYVVkdjJwM0E?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "s-1135-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "tri-cityherald.com",
+          "firstSeen": "2026-10-04",
+          "lastSeen": "2026-10-04",
+          "url": "https://news.google.com/rss/articles/CBMigwFBVV95cUxPVi1sWWdqV2xCc1VMUFJvSTZROXNheUdBR3pRZjU0QV94dllhOXVXQUJCdlZ6MEVxT1U5ZGROOTNHekU2MU9tVEY3S2lUYTJzdENBQjJNcnQ1ZXFDT0FsQm9nZm51cnFtX19qeXhWREwyajNER0t5M0xzZVZlbHZaX2VZRdIBgwFBVV95cUxOUkdkNFhSbVA4WUpQZVNuV09FUWVfd05xUXFhMVBFSzRCSUIxSTZ1clVXaEF4eVJtQTBWbDd0UWxoMFliaXdFY0c0ZVNtRXNvUGVyVHF6OXY4UVp3Wk1kZ1F3UzN4R2JybmRRcDVENGtFUFk1OGFMeGNTY0ZjSHNUYjN6aw?oc=5"
         }
       ],
       "mostViewed": null
