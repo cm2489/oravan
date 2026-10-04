@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-10-03T08:01:19.582Z"
+    "generated_at": "2026-10-04T06:48:49.765Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -321,32 +321,6 @@
         },
         "record": {
           "action_text": "Motion to proceed to consideration of measure agreed to in Senate by Voice Vote. (CR S4448)",
-          "action_code": null,
-          "action_type": "Floor",
-          "source_system": "Senate"
-        },
-        "ai": false
-      },
-      {
-        "id": "u_9d80be00",
-        "class": "floor_action",
-        "vehicle": "hr-6500-119",
-        "day": "2026-08-04",
-        "occurred_at": "2026-08-04",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-25T13:41:33.041Z",
-        "text": {
-          "en": "“Motion to proceed to measure considered in Senate. (CR S4415)”",
-          "es": "Registro oficial, en inglés: “Motion to proceed to measure considered in Senate. (CR S4415)”"
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/house-bill/6500"
-          ]
-        },
-        "record": {
-          "action_text": "Motion to proceed to measure considered in Senate. (CR S4415)",
           "action_code": null,
           "action_type": "Floor",
           "source_system": "Senate"
