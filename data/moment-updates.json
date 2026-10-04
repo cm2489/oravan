@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-10-04T06:48:49.765Z"
+    "generated_at": "2026-10-04T18:21:55.403Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -1275,10 +1275,82 @@
           "reanchor:3d"
         ],
         "model": "claude-sonnet-5-5"
+      },
+      {
+        "id": "s_0cf29b30",
+        "generated_at": "2026-10-04T18:21:59.869Z",
+        "as_of_day": "2026-10-04",
+        "text": {
+          "en": "On September 24, 2026, the Senate voted on H. Con. Res. 89 and it was rejected, by a recorded vote of 49 to 50 (Roll no. 244). Republicans: 4 yea, 49 nay. The same day, the Senate Committee on Foreign Relations was discharged from the measure under the order of 8/8/26, which moved it to the floor for that vote.",
+          "es": "El 24 de septiembre de 2026, el Senado votó sobre la H. Con. Res. 89 y fue rechazada, por votación nominal de 49 a 50 (votación núm. 244). Republicanos: 4 a favor, 49 en contra. Ese mismo día, el Comité de Relaciones Exteriores del Senado quedó relevado de la medida, conforme a la orden del 8/8/26, y la medida pasó al pleno para esa votación."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "hconres-93-119": "passed_chamber",
+            "hconres-89-119": "floor_vote",
+            "hconres-86-119": "passed_chamber",
+            "sjres-185-119": "floor_vote",
+            "sjres-200-119": "committee",
+            "sjres-211-119": "committee",
+            "sjres-180-119": "floor_vote",
+            "sjres-181-119": "floor_vote",
+            "sjres-172-119": "floor_vote",
+            "hconres-38-119": "floor_vote"
+          },
+          "vehicle_status_keys": {
+            "hconres-93-119": "passed_chamber",
+            "hconres-89-119": "rejected",
+            "hconres-86-119": "adopted",
+            "sjres-185-119": "floor_activity",
+            "sjres-200-119": "committee",
+            "sjres-211-119": "committee",
+            "sjres-180-119": "floor_activity",
+            "sjres-181-119": "floor_activity",
+            "sjres-172-119": "floor_activity",
+            "hconres-38-119": "rejected"
+          },
+          "update_ids": [
+            "u_40aa8bf1",
+            "u_fe66be12"
+          ],
+          "roll_calls": [
+            "s-119-2-244"
+          ],
+          "roll_calls_on_record": [
+            "h-119-2-199",
+            "h-119-2-282",
+            "h-119-2-307",
+            "h-119-2-85",
+            "s-119-2-129",
+            "s-119-2-174",
+            "s-119-2-184",
+            "s-119-2-192",
+            "s-119-2-207",
+            "s-119-2-216",
+            "s-119-2-244"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/93",
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/89",
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/86",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/185",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/200",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/211",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/180",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/181",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/172",
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/38",
+            "https://www.congress.gov/crs-report/R42699"
+          ]
+        },
+        "changed_because": [
+          "reanchor:5d"
+        ],
+        "model": "claude-sonnet-5-5"
       }
     ],
     "summary_attempts": {
-      "day": "2026-09-29",
+      "day": "2026-10-04",
       "count": 1
     }
   },
