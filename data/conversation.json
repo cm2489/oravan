@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-04T13:10:10.113Z",
+    "fetched_at": "2026-10-04T17:52:27.920Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-04T13:10:10.113Z"
+        "checked_at": "2026-10-04T17:52:27.920Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-27",
         "week_label": "Most-Viewed Bills - Week of September 27, 2026",
         "entries": 8,
-        "checked_at": "2026-10-04T13:10:10.113Z"
+        "checked_at": "2026-10-04T17:52:27.920Z"
       },
       "leans": {
         "center": {
@@ -393,6 +393,13 @@
           "url": "https://news.google.com/rss/articles/CBMixAFBVV95cUxNeHlWTzFneFluMXJpNmY3RGZFV3QzT0pnRl9vV3AtSzItbFV2VWJpT1AwZXJVREk2M0hkNEVGdVI3TmVZN19FSTdiOWJTWXNLQV9sekctZHRJaWlEbmVGUnhZQzZLTU5RODR2R2NjM01WUWxpLUdCYkJVbUpGRHVraDJ3Z0lBNGlaS0xDQlFoa3FnTXFNdnY1dVUwSUgyR3RLV3JZbzZpSlA1NkMwQU15dk9rUHIxZ1dRTzlOTE1YMmlUZ0h20gHKAUFVX3lxTFBaQTdoXzl3S3VxMC04Q2FwSXlqZkc0RXBKS1hEQmJuQkk1VUNqZkJ2ZEVDMmpGTHppLUQzTThlYnQ1OFFqRExmdV9iZmFua0E1MEpjSVpCZFd3VXhOck5JZHVITFNZTWVyWkhBZjZLcGdqeHNLN0xwRXNpU0s4Zmthc0NOWXgzaC1sMTJwYW5LbVpyamlIdDgtQTFIY1VadzRlQTlMSW5lbHBSM29pRm5iZnJNc2huSlZyUzA4MFdEN3RQTDhsdHhtUXc?oc=5"
         },
         {
+          "domain": "nypost.com",
+          "lean": "right",
+          "firstSeen": "2026-10-04",
+          "lastSeen": "2026-10-04",
+          "url": "https://news.google.com/rss/articles/CBMi0wFBVV95cUxPeHVZTHZXLXhicGdILXpid2kxcVVYd3gwQnlMSEZhQzV1aG8yZ1prcy00QTNtMGJrWWdoSWxVcHhpT2N2YU5tZmZpdHpzSXY5alRqU3dMWGIwc1h1X21EUDlRbTdOeTNSQjJuSHFjM1dBTXhJM3FURVFXa1pvd2hYazZHRW9IR0gzVFNmeVVRTFpWUEFyZXFOajBIZDBZTkFTanBIQTNFSnFkTFdLU2tHVWpuQzBTZWNZWndmNWdnam9HcDUxYXR3RlNFcmx3RkdHNjZR?oc=5"
+        },
+        {
           "domain": "cbsnews.com",
           "lean": "left",
           "firstSeen": "2026-10-03",
@@ -406,6 +413,12 @@
           "firstSeen": "2026-10-04",
           "lastSeen": "2026-10-04",
           "url": "https://news.google.com/rss/articles/CBMijgJBVV95cUxPZkUyWmhIV2V3VkRqTGV4OFpPQzU5UUM1dGhyTWRMMXVhTVpSRFBaYTZKZjZOUWtwckdzcEdUdGZ3N1hoWnY5Ry1pMXNmdmRiQ2lUczJSWnlqQ2h6TzdCSlBMS1A4QlhqSzBlOHZ3d2l6VmhmWmUwSnZfQ0lvb0wwMlBEVXVBdFZDT0JHQ1N3czB5RHJKdjZXVkVVV3JRWHI4S1JBYi1UenBsZDJxaUs5cW1PQm0tZ25veExIRElDVDZRekJoNXV6TWJydmF6Tmc0cVo0TWFTVlBQZzcxU21PNVFIZjBjcXBlOEZ6b2N1WDlwcThfd3VYX0NuNUJOZVV4bkJMRkZkZTNhSzRnV3c?oc=5"
+        },
+        {
+          "domain": "greatbendpost.com",
+          "firstSeen": "2026-10-04",
+          "lastSeen": "2026-10-04",
+          "url": "https://news.google.com/rss/articles/CBMid0FVX3lxTE93c2FPWDNhb3JBZDViT2FEQkh4eWxEWG80V2xnSGZEWktkY0hXQ1VKc0xJVVBqY1l4RTFqSkVCWG9qXzN1SzFYbVh1WFpyWlZHUExGdi1ma3JLV3lOVVgzNW4tNVpTenlWRXNkdndIOEZtM0xlN3Vv?oc=5"
         },
         {
           "domain": "jcpost.com",
@@ -1150,6 +1163,18 @@
       ],
       "mostViewed": null
     },
+    "hr-7212-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "ua.news",
+          "firstSeen": "2026-10-04",
+          "lastSeen": "2026-10-04",
+          "url": "https://news.google.com/rss/articles/CBMiqwFBVV95cUxOcE0zeDdNM09mRUpjOFlSZVVVQUg5LU12Ujd5TExqTlFmbEhHNFVvWERHLS1HYTY0ZmVLSS1NR3o1RjBIMnU4VDVhZFNXcnlkNGNWQ0pDRGJWbUVnVHBMYjBtS0pURXYyN0xDa2tJODhRWTI3a1hGaEJzRnJ3c2o1a3BmeW9RcTdYNHBhbWtwUzdzbl9NMGpfUk9sSWxtTGY1M2k3dS1SMUNaSmM?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-7519-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1371,6 +1396,19 @@
           "url": "https://news.google.com/rss/articles/CBMirwFBVV95cUxPMl8yMXdYUWpzSDBZQmM5Y2NydXIyWmlUSGlVSG5RTWZGRU1raU9lSFZfYTBxMXRKTXFtWGVObGV0bVd2eXFPS25UMWpUN29ZckRMR1BvVUVpY0hiTjIwNzhhMl9wQzVEdkloTGYyUXA4WVB3UklNZzlFcC15RXNQc21ydDhTcGl2MVhGenQ5OG5DQy13UVNlTHFxOEZRSzV4bU5Nb2hvOGh2clNhM01v?oc=5"
         }
       ],
+      "mostViewed": null
+    },
+    "hr-8915-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-10-04",
+          "lastSeen": "2026-10-04",
+          "url": "https://thehill.com/opinion/congress-blog/technology/6124241-congress-no-fakes-act-vote/"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "hr-9019-119": {
