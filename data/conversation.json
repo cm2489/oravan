@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-04T02:10:56.267Z",
+    "fetched_at": "2026-10-04T13:10:10.113Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-04T02:10:56.267Z"
+        "checked_at": "2026-10-04T13:10:10.113Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-27",
         "week_label": "Most-Viewed Bills - Week of September 27, 2026",
         "entries": 8,
-        "checked_at": "2026-10-04T02:10:56.267Z"
+        "checked_at": "2026-10-04T13:10:10.113Z"
       },
       "leans": {
         "center": {
@@ -408,10 +408,28 @@
           "url": "https://news.google.com/rss/articles/CBMijgJBVV95cUxPZkUyWmhIV2V3VkRqTGV4OFpPQzU5UUM1dGhyTWRMMXVhTVpSRFBaYTZKZjZOUWtwckdzcEdUdGZ3N1hoWnY5Ry1pMXNmdmRiQ2lUczJSWnlqQ2h6TzdCSlBMS1A4QlhqSzBlOHZ3d2l6VmhmWmUwSnZfQ0lvb0wwMlBEVXVBdFZDT0JHQ1N3czB5RHJKdjZXVkVVV3JRWHI4S1JBYi1UenBsZDJxaUs5cW1PQm0tZ25veExIRElDVDZRekJoNXV6TWJydmF6Tmc0cVo0TWFTVlBQZzcxU21PNVFIZjBjcXBlOEZ6b2N1WDlwcThfd3VYX0NuNUJOZVV4bkJMRkZkZTNhSzRnV3c?oc=5"
         },
         {
+          "domain": "jcpost.com",
+          "firstSeen": "2026-10-04",
+          "lastSeen": "2026-10-04",
+          "url": "https://news.google.com/rss/articles/CBMibkFVX3lxTE5raDBzc2psclhJaXZjaHBEemI4VU9yc3ZmZk5QVHp4bHZzMWhZczRFNDg0ZTZpWll1aV9wQ19wQ1ZYSzBoN0VBS0NvZGdJZ1pZQ2l3OFhTY2ZpX1VHUWR4NGZvYmVHTm1tV0xzN1BB?oc=5"
+        },
+        {
           "domain": "salinapost.com",
           "firstSeen": "2026-10-04",
           "lastSeen": "2026-10-04",
           "url": "https://news.google.com/rss/articles/CBMic0FVX3lxTE9LcEZxMmlGcXQ0VEhRWHZXUGpEczFuSGRHb0lvaEZwcS10RXRKVHZabHN6WWRabHJNY1ZRTk1zaFU0UU04a1pLd0pfNjZOQzV0dk9rUk5VaHI4aDJUSXdkNVlvTzFRZXNjXzUwV0VTUW5OVjA?oc=5"
+        },
+        {
+          "domain": "soapcentral.com",
+          "firstSeen": "2026-10-04",
+          "lastSeen": "2026-10-04",
+          "url": "https://news.google.com/rss/articles/CBMiygFBVV95cUxOR3VGa0xCVFk5MnA5ejF4VlZNUE43VTBMdkZqc1ZkSDZrWTZ5RkRJc0ZVNlhwek1adlRUeldycWh3cHdwZEJtSGZqRkxrV3ZfYnFOM3hxTWZsdExfNlpNOWtJRUw0YjlVQ3RhZHpucG5TY0ZfRzg3Z3doMEZTTnlkUnlJQnJ4R01ZeDlmSTdxYk5KQTVqMkNPbWRwa1hqUm1Xc09wUTZjSXR0bEJCNjFxMGo0ZDBOdVA2dVJHdzJhZVBWWkEzSjJsdGlB?oc=5"
+        },
+        {
+          "domain": "yahoo.com",
+          "firstSeen": "2026-10-04",
+          "lastSeen": "2026-10-04",
+          "url": "https://news.google.com/rss/articles/CBMilwFBVV95cUxQbzJnRWdSWWhRdEl4eXg0QV9landrSDRCRUtza3VXeHBVVEx2ZXRQeGs2R3NUZF9UQTJuY25ybTZ2cmRXaEZwNndncHAyelpXLTRxN2JLTmt5dkJGUUJPZWE1cHJNSVVtc2VORWQwSVFIWTNQWjBnNERPQ2JiczV2NW56cGVQVy1ZQ0NEWDZ6cVVpRDlHaGZZ?oc=5"
         },
         {
           "domain": "fox23maine.com",
@@ -448,6 +466,12 @@
     "hr-1550-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "nola.com",
+          "firstSeen": "2026-10-04",
+          "lastSeen": "2026-10-04",
+          "url": "https://news.google.com/rss/articles/CBMi1AFBVV95cUxPdHVNdUt6X1RCaGU4cHNMbWtsZmg1ZnFSbVg2dmM1cWZNQWk1blZOUmdoZXRxTkZMeDFUc2hKT21YUEQwUmtTaGxhNi1yVkdYb1ZRNzBNZWRyM0FvUGdfeDRuMmxHUXd6WW8zdHRzTjlnV29RcWEyMzJjeFVYWTF6SUI4ZEpBZ2hvN3RrZ3daLWNOSW5Ic2NIUktWX1A2elUwU2FLVTlrMnRURTRBNFpQckZZWXdNcGt3WE1vLVh2ay1YZ2ZoVkpoUzlXOEZkNXc4VG0xWtIB1AFBVV95cUxPdHVNdUt6X1RCaGU4cHNMbWtsZmg1ZnFSbVg2dmM1cWZNQWk1blZOUmdoZXRxTkZMeDFUc2hKT21YUEQwUmtTaGxhNi1yVkdYb1ZRNzBNZWRyM0FvUGdfeDRuMmxHUXd6WW8zdHRzTjlnV29RcWEyMzJjeFVYWTF6SUI4ZEpBZ2hvN3RrZ3daLWNOSW5Ic2NIUktWX1A2elUwU2FLVTlrMnRURTRBNFpQckZZWXdNcGt3WE1vLVh2ay1YZ2ZoVkpoUzlXOEZkNXc4VG0xWg?oc=5"
+        },
         {
           "domain": "fingerlakesdailynews.com",
           "firstSeen": "2026-10-01",
@@ -707,6 +731,18 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-5505-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "kansascity.com",
+          "firstSeen": "2026-10-04",
+          "lastSeen": "2026-10-04",
+          "url": "https://news.google.com/rss/articles/CBMigAFBVV95cUxOYkU0RzlXdGxweWJCZ211dkI3R2o0Ymp2TmRUMWstNDJZOXVQMVFHZ3U1M0p5R2xkbGNGZVJ1OG15QW5iZ1gwdldwd001SGlaN3JrVTE0QkpIQnZ0ZFQzN2d3VWUxYVVYS2ZjSnlxREZCNDhveWtfdUhhVWp3YzRqNg?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "hr-5631-119": {
