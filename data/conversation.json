@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-04T00:33:52.409Z",
+    "fetched_at": "2026-10-04T02:10:56.267Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-04T00:33:52.409Z"
+        "checked_at": "2026-10-04T02:10:56.267Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-27",
         "week_label": "Most-Viewed Bills - Week of September 27, 2026",
         "entries": 8,
-        "checked_at": "2026-10-04T00:33:52.409Z"
+        "checked_at": "2026-10-04T02:10:56.267Z"
       },
       "leans": {
         "center": {
@@ -385,6 +385,13 @@
     },
     "hr-139-119": {
       "outlets7d": [
+        {
+          "domain": "breitbart.com",
+          "lean": "right",
+          "firstSeen": "2026-10-04",
+          "lastSeen": "2026-10-04",
+          "url": "https://news.google.com/rss/articles/CBMixAFBVV95cUxNeHlWTzFneFluMXJpNmY3RGZFV3QzT0pnRl9vV3AtSzItbFV2VWJpT1AwZXJVREk2M0hkNEVGdVI3TmVZN19FSTdiOWJTWXNLQV9sekctZHRJaWlEbmVGUnhZQzZLTU5RODR2R2NjM01WUWxpLUdCYkJVbUpGRHVraDJ3Z0lBNGlaS0xDQlFoa3FnTXFNdnY1dVUwSUgyR3RLV3JZbzZpSlA1NkMwQU15dk9rUHIxZ1dRTzlOTE1YMmlUZ0h20gHKAUFVX3lxTFBaQTdoXzl3S3VxMC04Q2FwSXlqZkc0RXBKS1hEQmJuQkk1VUNqZkJ2ZEVDMmpGTHppLUQzTThlYnQ1OFFqRExmdV9iZmFua0E1MEpjSVpCZFd3VXhOck5JZHVITFNZTWVyWkhBZjZLcGdqeHNLN0xwRXNpU0s4Zmthc0NOWXgzaC1sMTJwYW5LbVpyamlIdDgtQTFIY1VadzRlQTlMSW5lbHBSM29pRm5iZnJNc2huSlZyUzA4MFdEN3RQTDhsdHhtUXc?oc=5"
+        },
         {
           "domain": "cbsnews.com",
           "lean": "left",
@@ -1162,6 +1169,18 @@
       ],
       "mostViewed": null
     },
+    "hr-7894-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "tribune.net.ph",
+          "firstSeen": "2026-10-04",
+          "lastSeen": "2026-10-04",
+          "url": "https://news.google.com/rss/articles/CBMif0FVX3lxTFBlaktkMXJkOXJNckw4X0NfUzE2eXFSS1o5WU5vaUN3SEhuRlB4WEo2VVVvU3h5RExUWVdYUmdlTmNnWEpFR012Y0x1UnJqSFhlSF92WjlleFM1b3NYVnVNWFRqMTdxNXZPV3dyb0laOVJIdlZTSkpGRk0yb094cWM?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-7966-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1816,6 +1835,18 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "s-4518-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "goodmenproject.com",
+          "firstSeen": "2026-10-04",
+          "lastSeen": "2026-10-04",
+          "url": "https://news.google.com/rss/articles/CBMinAFBVV95cUxPUHRPemNfNTE4djdPVHVyQWIxMjRvYjZucUxfNi1KVThJYi1Mal9MekZBMElvVDZUTlFqMnc0eGFva2pYTUM3S1VGaDVJVkJ4eU1JRXpLUnJuZlJteGl5X3VDLV9WMlI1U21wdGJ5N0hha0gyUXhORk1aMWM4VnpnU3lZUHRNVnNBNE54dW9RQS1UdXdzekV1RzhfTnM?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "s-4591-119": {
