@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-10-04T18:21:55.403Z"
+    "generated_at": "2026-10-05T08:54:36.634Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -243,84 +243,6 @@
         },
         "record": {
           "action_text": "Motion by Senator Thune to commit to Senate Committee on Appropriations with instructions to report back forthwith with the following amendment SA 6740 fell when cloture on amendment SA 6732 was invoked in Senate.",
-          "action_code": null,
-          "action_type": "Floor",
-          "source_system": "Senate"
-        },
-        "ai": false
-      },
-      {
-        "id": "u_449e7991",
-        "class": "floor_action",
-        "vehicle": "hr-6500-119",
-        "day": "2026-08-05",
-        "occurred_at": "2026-08-05",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-25T13:41:33.041Z",
-        "text": {
-          "en": "“Motion to proceed to measure considered in Senate. (CR S4448)”",
-          "es": "Registro oficial, en inglés: “Motion to proceed to measure considered in Senate. (CR S4448)”"
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/house-bill/6500"
-          ]
-        },
-        "record": {
-          "action_text": "Motion to proceed to measure considered in Senate. (CR S4448)",
-          "action_code": null,
-          "action_type": "Floor",
-          "source_system": "Senate"
-        },
-        "ai": false
-      },
-      {
-        "id": "u_aa379090",
-        "class": "floor_action",
-        "vehicle": "hr-6500-119",
-        "day": "2026-08-05",
-        "occurred_at": "2026-08-05",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-25T13:41:33.041Z",
-        "text": {
-          "en": "“Cloture motion on the measure presented in Senate. (CR S4449)”",
-          "es": "Registro oficial, en inglés: “Cloture motion on the measure presented in Senate. (CR S4449)”"
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/house-bill/6500"
-          ]
-        },
-        "record": {
-          "action_text": "Cloture motion on the measure presented in Senate. (CR S4449)",
-          "action_code": null,
-          "action_type": "Floor",
-          "source_system": "Senate"
-        },
-        "ai": false
-      },
-      {
-        "id": "u_b1f77ede",
-        "class": "floor_action",
-        "vehicle": "hr-6500-119",
-        "day": "2026-08-05",
-        "occurred_at": "2026-08-05",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-25T13:41:33.041Z",
-        "text": {
-          "en": "“Motion to proceed to consideration of measure agreed to in Senate by Voice Vote. (CR S4448)”",
-          "es": "Registro oficial, en inglés: “Motion to proceed to consideration of measure agreed to in Senate by Voice Vote. (CR S4448)”"
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/house-bill/6500"
-          ]
-        },
-        "record": {
-          "action_text": "Motion to proceed to consideration of measure agreed to in Senate by Voice Vote. (CR S4448)",
           "action_code": null,
           "action_type": "Floor",
           "source_system": "Senate"
@@ -2255,58 +2177,6 @@
           "source_system": "Senate"
         },
         "ai": true
-      },
-      {
-        "id": "u_78c95249",
-        "class": "floor_action",
-        "vehicle": "s-4668-119",
-        "day": "2026-08-05",
-        "occurred_at": "2026-08-05",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-16T18:11:24.823Z",
-        "text": {
-          "en": "A motion to proceed to consideration of S. 4668 was made in the Senate on August 5, 2026.",
-          "es": "Se presentó una moción para proceder a considerar S. 4668 en el Senado el 5 de agosto de 2026."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
-          ]
-        },
-        "record": {
-          "action_text": "Motion to proceed to consideration of measure made in Senate. (CR S4449)",
-          "action_code": null,
-          "action_type": "Floor",
-          "source_system": "Senate"
-        },
-        "ai": true
-      },
-      {
-        "id": "u_d6d43314",
-        "class": "floor_action",
-        "vehicle": "s-4668-119",
-        "day": "2026-08-05",
-        "occurred_at": "2026-08-05",
-        "occurred_precision": "day",
-        "recorded_at": "2026-08-09T02:25:08.580Z",
-        "text": {
-          "en": "A cloture motion on the motion to proceed to S. 4668 was presented in the Senate on August 5, 2026.",
-          "es": "Una moción de cierre sobre la moción de proceder a S. 4668 fue presentada en el Senado el 5 de agosto de 2026."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
-          ]
-        },
-        "record": {
-          "action_text": "Cloture motion on the motion to proceed to the measure presented in Senate. (CR S4449)",
-          "action_code": null,
-          "action_type": "Floor",
-          "source_system": "Senate"
-        },
-        "ai": true
       }
     ],
     "summary_revisions": [
@@ -2322,9 +2192,7 @@
           "vehicle_statuses": {
             "s-4668-119": "floor_vote"
           },
-          "update_ids": [
-            "u_d6d43314"
-          ],
+          "update_ids": [],
           "refs": [
             "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
           ]
@@ -2346,9 +2214,7 @@
           "vehicle_statuses": {
             "s-4668-119": "floor_vote"
           },
-          "update_ids": [
-            "u_d6d43314"
-          ],
+          "update_ids": [],
           "refs": [
             "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
           ]
