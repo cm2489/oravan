@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-05T18:21:47.146Z",
+    "fetched_at": "2026-10-05T21:30:54.834Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-05T18:21:47.146Z"
+        "checked_at": "2026-10-05T21:30:54.834Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-04",
         "week_label": "Most-Viewed Bills - Week of October 4, 2026",
         "entries": 8,
-        "checked_at": "2026-10-05T18:21:47.146Z"
+        "checked_at": "2026-10-05T21:30:54.834Z"
       },
       "leans": {
         "center": {
@@ -361,6 +361,18 @@
       ],
       "mostViewed": null
     },
+    "hr-10183-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "gazetaexpress.com",
+          "firstSeen": "2026-10-05",
+          "lastSeen": "2026-10-05",
+          "url": "https://news.google.com/rss/articles/CBMivAFBVV95cUxOcUp3WDI2LVI2M0R6NWtqT1l5N2VGMlpRSFppRUVMZmtYd1oydUJrQ3JUejRPelVHak1xbFdUdXB4SDZ0RWtQTjROcG5hSTV4LXlXUXh0enlVN0RjZ1FqMVRZSmhFUnVTckE0cU82NnB1ZkZXX0tMenlyMUZzRVI3QllLSlFETUZHOFlkeXlnSXZENVJBT1lFVHl3S3pOQ3FCTVR2OXhxTHNRS1JESVg0b2pyZHIyLTZHZWxqWQ?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-10319-119": {
       "outlets7d": [],
       "unratedOutlets7d": [],
@@ -386,6 +398,13 @@
     "hr-139-119": {
       "outlets7d": [
         {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-10-04",
+          "lastSeen": "2026-10-05",
+          "url": "https://thehill.com/homenews/6129610-permanent-daylight-saving-time-why-this-republican-senator-disagrees-with-it-despite-trumps-support/"
+        },
+        {
           "domain": "breitbart.com",
           "lean": "right",
           "firstSeen": "2026-10-04",
@@ -400,13 +419,6 @@
           "url": "https://news.google.com/rss/articles/CBMi0wFBVV95cUxPeHVZTHZXLXhicGdILXpid2kxcVVYd3gwQnlMSEZhQzV1aG8yZ1prcy00QTNtMGJrWWdoSWxVcHhpT2N2YU5tZmZpdHpzSXY5alRqU3dMWGIwc1h1X21EUDlRbTdOeTNSQjJuSHFjM1dBTXhJM3FURVFXa1pvd2hYazZHRW9IR0gzVFNmeVVRTFpWUEFyZXFOajBIZDBZTkFTanBIQTNFSnFkTFdLU2tHVWpuQzBTZWNZWndmNWdnam9HcDUxYXR3RlNFcmx3RkdHNjZR?oc=5"
         },
         {
-          "domain": "thehill.com",
-          "lean": "center",
-          "firstSeen": "2026-10-04",
-          "lastSeen": "2026-10-04",
-          "url": "https://thehill.com/homenews/administration/6127691-trump-cotton-fued-daylight-savings-posts/"
-        },
-        {
           "domain": "cbsnews.com",
           "lean": "left",
           "firstSeen": "2026-10-03",
@@ -415,6 +427,12 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "northjersey.com",
+          "firstSeen": "2026-10-05",
+          "lastSeen": "2026-10-05",
+          "url": "https://news.google.com/rss/articles/CBMi8gFBVV95cUxOVTZFbVV4RktzNzg4NThuRHFETUVQaEhPa3pDUW5JLXI4MXhFMGM4SFBCemlzVThqeGQ0YVEwLW9nV2V5T3NlamZyVW43Y0U0dndFUkVSd2k1amI0MHNHUl9OWWdjQ1hwd0QwaU96YV9NcHloSjFtYnFMb2FkV2lFdVdTZlhkam5IZ1RCaEl1bFpoei1HS0VVZloxcUhWQlBqcHVTWE5YNG8tZEZLR3Z2YlNrekhLTjJYWFd6SzFQcHJNZ0tnMms0N1NhV1FCb2x2dEZRZVNNSVkyaWRXV2E1bWxISjBfcFBmQUczTG1RUzdPdw?oc=5"
+        },
         {
           "domain": "vinnews.com",
           "firstSeen": "2026-10-05",
@@ -948,6 +966,12 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "aol.com",
+          "firstSeen": "2026-10-05",
+          "lastSeen": "2026-10-05",
+          "url": "https://news.google.com/rss/articles/CBMie0FVX3lxTFBUaDZrLW4tektWODRpbDF6UmoydE1BRVNkQngyenpFeldHTHo1Z1FWT29nbzhMbmRqNGZudUFabjJGNE12WVUycmY3Y3ZkN3R4ZFg0bGp2ZkV6ckZfTGRvdnM5NUZuc2dMMzNqeW41NkhSc3p2dTZkdGphcw?oc=5"
+        },
+        {
           "domain": "ypradio.org",
           "firstSeen": "2026-10-05",
           "lastSeen": "2026-10-05",
@@ -960,6 +984,32 @@
           "url": "https://news.google.com/rss/articles/CBMizgFBVV95cUxPSjBFbkNQZ2NlUVZxVWkyTmt6Rnl4MElkWFg2SmViYlZvTUI2aGNkY21XNTNVR0tuSkw2bU5Mbm5uaGk5U3ZoYjYwRWlMejEyU3M2U2NSbGltMTZkd1N2Y0h2YThydXc0YjBSUWVJeXY4cDBOcUZSUmdaYm9ldHV2WUdDR2NuVWVnZ0E0VVVZbW5BaE81bHNEamZXWHFGOFpSSTFwX0pNQkxXR0Y2VGhSVnQ2bnpwYVhjekJRUExVbnJRcHd0d0p4R1l6OHhqUQ?oc=5"
         }
       ],
+      "mostViewed": null
+    },
+    "hr-6597-119": {
+      "outlets7d": [
+        {
+          "domain": "newsweek.com",
+          "lean": "left",
+          "firstSeen": "2026-10-05",
+          "lastSeen": "2026-10-05",
+          "url": "https://news.google.com/rss/articles/CBMiekFVX3lxTE9xdmJDUGFXcGk3aFhST19qQVJ4UGhhQjQtb3NyMnFLRUJVRHluMkoxTFo1eHRrUGR1R2haTUdnSnpkaVo2eWlsS25EUC1MUTB5ZS1oMzdLUGJ1LVpIQ3FzWUF5aXBEdU1kMFM1bGZubWhMb1ZvTW84dFNB?oc=5"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-7004-119": {
+      "outlets7d": [
+        {
+          "domain": "cnbc.com",
+          "lean": "center",
+          "firstSeen": "2026-10-05",
+          "lastSeen": "2026-10-05",
+          "url": "https://www.cnbc.com/2026/10/05/don-davis-prediction-market-candidate-trading.html"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "hr-7008-119": {
@@ -1275,6 +1325,18 @@
           "firstSeen": "2026-10-01",
           "lastSeen": "2026-10-02",
           "url": "https://news.google.com/rss/articles/CBMi4wFBVV95cUxQWWNtZWJlMEs3czZ3WDdYbWpWeEpUYkwxS2FjTFhiZXlUNFBwQmxYdC1KVy1JMC1paFRDVVFIY0UzSzVmZ0h1VGhodElkVF9taXBlMkZ0LW5XdzlIYmRVbzdhYjNBNmtkTXVDMXRvVVFGa0h4THIxWW1TdW9GbEJkc3ZSemEyWmRXemJYVWhjMko5TURTeVo4Q2tOVGFEclhhZllaR1otcGFIQ0J5RG5lOWE1bUFhQ3cyVkxoYURUT2pFa1RhMjVPNzFkRmFtRDJUbEZmRjdLNXpCemFKVWJ3bjV2cw?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-7892-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "investopedia.com",
+          "firstSeen": "2026-10-05",
+          "lastSeen": "2026-10-05",
+          "url": "https://news.google.com/rss/articles/CBMilAFBVV95cUxPRnFSb0hLU3F0WVVHRjlBU2NkQkdpVE83Q3RYYXhhakpkZU5hOXNNVmxSdFNIRDlSQ21RU19XbldqSm5RbEtlMVp1c2ozeDlrWnlHaDJZN0VQeFdiVzNqeGhHTGdoVU51d2lBM21Zb3ZKdHg0Qmw0MnhPLXN4cVF0Q2tXSElRTnZIUWlJdjc0RGRCbmxE?oc=5"
         }
       ],
       "mostViewed": null
