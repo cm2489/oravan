@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-05T01:28:48.931Z",
+    "fetched_at": "2026-10-05T01:55:31.008Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-05T01:28:48.931Z"
+        "checked_at": "2026-10-05T01:55:31.008Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-09-27",
         "week_label": "Most-Viewed Bills - Week of September 27, 2026",
         "entries": 8,
-        "checked_at": "2026-10-05T01:28:48.931Z"
+        "checked_at": "2026-10-05T01:55:31.008Z"
       },
       "leans": {
         "center": {
@@ -1976,6 +1976,12 @@
           "url": "https://news.google.com/rss/articles/CBMipgFBVV95cUxOUE5QR2dyMXFFdi10dkVQLW9fYkVJQmRrODNzUXRrMkRSems0VGlPYnRJOTl3SExBenJlOGtYVkQxQ0xXOG84SWJiZ0pnNzV6VzUxdTU1VDZJQndxZTN4QUVXSDRKM0tNVzNiZWJFc1pEOF96VUxydHBXdjR2N2s0S1VqQ0JSY0xUcVZtbk1aTzJ4a2hWNHFSY0Q1ZGJNSEtpUkUzbmJR?oc=5"
         },
         {
+          "domain": "usports.org",
+          "firstSeen": "2026-10-05",
+          "lastSeen": "2026-10-05",
+          "url": "https://news.google.com/rss/articles/CBMilwFBVV95cUxOZVZUS0VYbTlFdDl1bENjcUVxVW1uRjNQMXpLY2RsOXNKRUxnRFA2V1JGMDVnRzNyZFVUQThQU3FKbHZISV96Nm40aWRIQy1TcG13a01aT2xHTWptZnptYklsZUl1djhyR2dLaHNZWUJ1ZzlsRVBUM28xS2NNaUxkZ3dLYUg0VUZwRkduREFfSWdDUFFQOGhF0gGXAUFVX3lxTE5lVlRLRVhtOUV0OXVsQ2NxRXFVbW5GM1AxektjZGw5c0pFTGdEUDZXUkYwNWdHM3JkVVRBOFBTcUpsdkhJX3o2bjRpZEhDLVNwbXdrTVpPbEdNam1mem1iSWxlSXV2OHJHZ0toc1lZQnVnOWxFUFQzbzFLY01pTGRnd0thSDRVRnBGR25EQV9JZ0NQUVA4aEU?oc=5"
+        },
+        {
           "domain": "thermtide.com",
           "firstSeen": "2026-10-03",
           "lastSeen": "2026-10-03",
@@ -2112,12 +2118,6 @@
           "firstSeen": "2026-09-29",
           "lastSeen": "2026-09-29",
           "url": "https://news.google.com/rss/articles/CBMif0FVX3lxTE9HZ2puTGY3TUFVTzFEbVU0RDJ5RnRnaDYxUzg3MlhoeTVoWGxOUlNPNnN5OXd5Tjd4ZGFVa1UwN0hGVFJNdHBZWXpUeXljRHRTWmJQb2xHTENkX1dlUm1fV3dvWEJ0NExobFQ3ZXlHaHh6NkFOTkpDSDdjVjNqbDA?oc=5"
-        },
-        {
-          "domain": "rollcall.com",
-          "firstSeen": "2026-09-29",
-          "lastSeen": "2026-09-29",
-          "url": "https://rollcall.com/2026/09/28/senate-laterals-college-sports-bill-to-house-but-forward-progress-uncertain/"
         }
       ],
       "mostViewed": {
