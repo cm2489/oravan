@@ -167,6 +167,7 @@ import {
   sameActionKey,
   shiftDay,
   summaryRefreshReason,
+  voteCountRecord,
 } from '../lib/moment-updates-gate.mjs';
 import {
   actionToCandidate,
@@ -1277,7 +1278,15 @@ Output STRICT JSON only — {"en":"…","es":"…"} — no prose, no markdown fe
     // grounded_in.roll_calls_on_record — the same number the gate re-lints it
     // with. Never the window's count (`votes`): see ROLL_CALL_ABSENCE.
     const rollCallsOnRecord = Array.isArray(onRecord) ? onRecord.length : undefined;
-    for (const f of lintRevisionText(value, lang, { groundedEvents, rollCallsOnRecord })) {
+    // Every vote count the text states must be one the prompt printed: the
+    // window's roll calls and its record sentences (the vote-count lint). The
+    // gate rebuilds the same record from grounded_in.roll_calls and
+    // grounded_in.update_ids.
+    const voteRecord = voteCountRecord({
+      rollCalls: votes ?? [],
+      actionTexts: recent.filter((u) => u.class !== 'press_cluster').map((u) => u.record?.action_text),
+    });
+    for (const f of lintRevisionText(value, lang, { groundedEvents, rollCallsOnRecord, voteRecord })) {
       failures.push(`${lang}: ${f}`);
     }
   }

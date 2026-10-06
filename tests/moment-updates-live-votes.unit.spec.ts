@@ -115,10 +115,15 @@ const FALSE_ABSENCE = {
   es: 'Cómo están las cosas: cuatro medidas relacionadas se encuentran en distintas etapas, sin actividad de pleno o de comité registrada en los últimos 14 días. S.J.Res. 185 y S.J.Res. 172 muestran actividad en el pleno. H. Con. Res. 38 también muestra actividad en el pleno. H. Con. Res. 89 fue aprobada por una cámara. No se registraron nuevas votaciones, conteos ni números de votación nominal para ninguna de estas medidas en este período. Su estado se mantiene igual al indicado arriba, sin cambios respecto al registro anterior. No aparecen en el registro sesiones de comité, enmiendas ni avisos de calendario durante esta ventana. Los lectores que sigan estas medidas encontrarán la situación actual sin cambios desde la última actualización reportada.',
 };
 
-/** A summary that states the record — what the model is now asked to write. */
+/**
+ * A summary that states the record — what the model is now asked to write.
+ * The House vote of July 23 carries its roll number and no tally: the prompts
+ * here print roll 244 only, and a count the prompt did not print is refused by
+ * the vote-count lint (2026-10-06), however true it is (214 to 208).
+ */
 const GROUNDED_SUMMARY = {
-  en: 'On September 24, 2026, the Senate rejected H. Con. Res. 89 by a recorded vote of 49 to 50 (Roll no. 244). The House agreed to it on July 23, 2026, by a recorded vote of 214 to 208 (Roll no. 282). S.J.Res. 185 and S.J.Res. 172 show floor activity, and H. Con. Res. 38 shows floor activity.',
-  es: 'El 24 de septiembre de 2026, el Senado rechazó H. Con. Res. 89 por votación nominal de 49 a 50 (votación núm. 244). La Cámara la aprobó el 23 de julio de 2026 por votación nominal de 214 a 208 (votación núm. 282). S.J.Res. 185 y S.J.Res. 172 muestran actividad en el pleno, y H. Con. Res. 38 también.',
+  en: 'On September 24, 2026, the Senate rejected H. Con. Res. 89 by a recorded vote of 49 to 50 (Roll no. 244). The House agreed to it on July 23, 2026, by a recorded vote (Roll no. 282). S.J.Res. 185 and S.J.Res. 172 show floor activity, and H. Con. Res. 38 shows floor activity.',
+  es: 'El 24 de septiembre de 2026, el Senado rechazó H. Con. Res. 89 por votación nominal de 49 a 50 (votación núm. 244). La Cámara la aprobó el 23 de julio de 2026 por votación nominal (votación núm. 282). S.J.Res. 185 y S.J.Res. 172 muestran actividad en el pleno, y H. Con. Res. 38 también.',
 };
 
 const IRAN_VEHICLES = ['sjres-185-119', 'sjres-172-119', 'hconres-38-119', 'hconres-89-119'];

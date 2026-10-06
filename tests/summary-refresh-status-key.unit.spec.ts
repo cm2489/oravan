@@ -258,9 +258,13 @@ test.describe('planSummaries · the nightly plan over the real record', () => {
     const [p] = planSummaries({ mode: 'nightly', moments, store: { 'iran-war-powers': entry }, billBySlug, now: new Date(NEXT_NIGHTLY) });
 
     // A stub client with a fixed, record-grounded reply. No model is called.
+    // It states no tally: this window prints no roll call (p.votes is empty),
+    // and a count the prompt did not print is refused by the vote-count lint
+    // (2026-10-06), however true it is.
+    expect(p.votes).toEqual([]);
     const reply = {
-      en: 'On June 23, 2026, the Senate agreed to H. Con. Res. 86 by a recorded vote of 50 to 48, after the House agreed to it on June 3, 2026.',
-      es: 'El 23 de junio de 2026, el Senado aprobó H. Con. Res. 86 por votación nominal de 50 a 48, después de que la Cámara la aprobó el 3 de junio de 2026.',
+      en: 'On June 23, 2026, the Senate agreed to H. Con. Res. 86 by a recorded vote, after the House agreed to it on June 3, 2026.',
+      es: 'El 23 de junio de 2026, el Senado aprobó H. Con. Res. 86 por votación nominal, después de que la Cámara la aprobó el 3 de junio de 2026.',
     };
     const stub = { messages: { create: async () => ({ content: [{ type: 'text', text: JSON.stringify(reply) }] }) } };
     const written = await generateStateSummary(stub, 'iran-war-powers', entry, p.statuses, [], p.records, p.votes, p.rollCallsOnRecord);
