@@ -209,6 +209,18 @@ jobs:
         # already-running one - verified by reading that workflow's
         # concurrency block, not assumed.
         #
+        # BUT IT MUST NOT EVICT A WAITING NIGHTLY (2026-10-05). The group keeps
+        # one running run plus ONE pending run, and a newly queued run evicts
+        # the pending one. On 2026-10-05 the 14:15 nightly fired 7h late at
+        # 21:28, queued behind this job's 21:14 pass, and this step's dispatch
+        # at 21:30 replaced it: run 37376062791 was cancelled before it got a
+        # runner and the corpus missed a day. So when a sync-bills.yml run is
+        # already waiting, this step stands down: the nightly dispatches the
+        # newsdesk itself as its own last step, so the hourly layer loses
+        # nothing. If the lookup itself fails, it dispatches as before. A
+        # nightly that queues in the seconds between the lookup and the
+        # dispatch is still exposed; that window is seconds, not minutes.
+        #
         # `always()` and `continue-on-error` for the same reason in both
         # directions: a hot-bill-refresh failure must never cost the newsdesk
         # its fire, and a dispatch failure here must never fail hot-bills.yml.
@@ -219,4 +231,11 @@ jobs:
         continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh workflow run newsdesk.yml --ref main
+        run: |
+          waiting=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow sync-bills.yml --branch main --limit 20 \
+            --json status --jq '[.[] | select(.status == "queued" or .status == "pending" or .status == "waiting" or .status == "requested")] | length' || echo 0)
+          if [ "${waiting:-0}" != "0" ]; then
+            echo "::notice::A nightly sync is waiting in the data-sync group; not dispatching the newsdesk, which would evict it. The nightly dispatches the newsdesk when it finishes."
+            exit 0
+          fi
+          gh workflow run newsdesk.yml --ref main
