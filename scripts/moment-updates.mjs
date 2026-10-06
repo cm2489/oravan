@@ -1214,7 +1214,7 @@ export async function generateStateSummary(anthropic, momentId, entry, statuses,
       messages: [
         {
           role: 'user',
-          content: `Write a nonpartisan "Where it stands" summary of one congressional fight, in English and Spanish, for an everyday US resident reading at an 8th-grade level.
+          content: `Write a nonpartisan "Where it stands" summary of one question before Congress, in English and Spanish, for an everyday US resident reading at an 8th-grade level.
 
 ${LAW_BRIEF}
 
@@ -1229,7 +1229,7 @@ ${PRESIDENT_STYLE_RULE}
 
 VOICE — "where it stands", not a log:
 - Write only what MOVED: the votes and actions in the record below, each with its date, most important first. Group measures that moved together instead of reciting them one by one.
-- The page prints every measure's current status itself, from the record, right above this summary. Do NOT recite it: never write a sentence whose point is a measure's status or label (not "its status is Floor activity", not "H. Con. Res. 86 is also listed as Passed one chamber"). The phrases given per measure below are context; if a sentence about what happened must say where a measure stands, use only the quoted phrase given for it, never a label of your own. NEVER an internal token like "floor_vote" or "passed_chamber" — if you find yourself writing an underscore, stop.
+- The page prints every measure's current status itself, from the record, right above this summary. Do NOT recite it: never write a sentence whose point is a measure's status or label (not "its status is Floor activity", not "H. Con. Res. 86 is also listed as Passed one chamber"). The phrases given per measure below are context; if a sentence about what happened must say where a measure stands, use only the quoted phrase given for it, never a label of your own. NEVER an internal token like "floor_vote" or "passed_chamber" — if you find yourself writing an underscore, rewrite that sentence in plain words.
 - Dates as a reader says them: "July 23, 2026" in English, "23 de julio de 2026" in Spanish. Never ISO "2026-07-23" in prose.
 - Vote language localized: EN "by a recorded vote of 214 to 208 (Roll no. 282)"; ES "por votacion nominal de 214 a 208 (votacion num. 282)". Never leave "Yeas and Nays" untranslated in Spanish.
 - The Spanish is native-quality Spanish with correct accents and diacritics (aprobó, Cámara, comité, votación, últimos) — not a transliteration.
