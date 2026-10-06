@@ -45,7 +45,7 @@ export function DecodedSections({ bill }: { bill: Bill }) {
 
   return (
     // One bordered stack, hairline-ruled between answers — no nested cards.
-    // `line-strong` is the edge (3.24:1 on paper); `line` never is.
+    // `line-strong` is the edge (4.24:1 on paper); `line` never is.
     <div className="mt-6 divide-y-[1.5px] divide-line-strong rounded-control border-[1.5px] border-line-strong">
       <section className="p-4 md:p-5">
         <h3 className="text-md font-bold text-ink">{t('sec.what')}</h3>

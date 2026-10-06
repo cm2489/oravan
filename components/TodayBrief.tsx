@@ -55,7 +55,7 @@ import { dayCountParts, type Brief, type BriefChamber, type BriefScheduleItem } 
  */
 
 const LINK =
-  'font-semibold text-go underline underline-offset-4 visited:text-go-deep hover:text-go-deep';
+  'font-semibold text-ink underline underline-offset-4 visited:text-ink-2 hover:decoration-[3px]';
 
 function Verbatim({ children, className }: { children: ReactNode; className?: string }) {
   return (
@@ -397,7 +397,7 @@ export async function TodayBrief({ brief, locale }: { brief: Brief; locale: stri
                   <h3 className="text-lg leading-tight font-bold text-ink">
                     <Link
                       href={`/questions/${q.id}`}
-                      className="inline-flex min-h-11 items-center hover:underline hover:decoration-go hover:decoration-[3px]"
+                      className="inline-flex min-h-11 items-center hover:underline hover:decoration-ink hover:decoration-[3px]"
                     >
                       {locale === 'es' ? q.name.es : q.name.en}
                     </Link>

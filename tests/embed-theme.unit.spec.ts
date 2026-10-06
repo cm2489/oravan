@@ -141,6 +141,21 @@ test.describe('resolveEmbedTheme', () => {
     const illegible = resolveEmbedTheme({ accent: '#f0e9da', surface: '#f3ecdd', ink: '#2a2318' });
     expect(illegible.focus).toBe('#2a2318');
   });
+
+  test('accentInk always clears AA, even where neither half of the default pair does', () => {
+    // The default pair is a cream and a warm near-black, not the extremes: on
+    // a mid-tone accent like #d2503c the better of the two is about 4.06:1.
+    // The last fallback is pure white or black, which clears >= 4.58 on any
+    // colour (lib/embed-theme.ts).
+    const accent = '#d2503c';
+    expect(contrastRatio(accent, MODE_DEFAULTS.light.surface)).toBeLessThan(4.5);
+    expect(contrastRatio(accent, MODE_DEFAULTS.light.ink)).toBeLessThan(4.5);
+    const noPair = resolveEmbedTheme({ accent });
+    expect(contrastRatio(accent, noPair.accentInk!)).toBeGreaterThanOrEqual(4.5);
+    // With a tenant pair whose halves also miss on this accent, the floor holds.
+    const tenant = resolveEmbedTheme({ accent, surface: '#f5f0e8', ink: '#2b2b2b' });
+    expect(contrastRatio(accent, tenant.accentInk!)).toBeGreaterThanOrEqual(4.5);
+  });
 });
 
 test.describe('buildThemeCss', () => {
