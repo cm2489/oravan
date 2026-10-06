@@ -587,6 +587,35 @@ test.describe('floorSignalFreshness', () => {
   test('a missing stamp is null, not age 0', () => {
     expect(floorSignalFreshness({}, { now }).ageHours).toBeNull();
   });
+
+  test('a fresh reconfirmation heartbeat keeps an unchanged file out of the alarm (2026-10-04)', () => {
+    const f = floorSignalFreshness(
+      { _meta: { fetched_at: '2026-09-16T07:00:00Z' } },
+      { now, staleHours: SIGNAL_STALE_HOURS, checked: { checked_at: '2026-09-18T08:00:00Z' } }
+    );
+    expect(f.fetchedAt).toBe('2026-09-18T08:00:00Z');
+    expect(f.ageHours).toBeCloseTo(4, 5);
+    expect(f.pastAlarm).toBe(false);
+  });
+
+  test('a stale heartbeat cannot hide a stale file, and an older heartbeat never ages a newer file', () => {
+    const both = floorSignalFreshness(
+      { fetched_at: '2026-09-16T07:00:00Z' },
+      { now, checked: { checked_at: '2026-09-16T10:00:00Z' } }
+    );
+    expect(both.ageHours).toBeCloseTo(50, 5);
+    expect(both.pastAlarm).toBe(true);
+    const older = floorSignalFreshness(
+      { fetched_at: '2026-09-18T09:00:00Z' },
+      { now, checked: { checked_at: '2026-09-17T09:00:00Z' } }
+    );
+    expect(older.ageHours).toBeCloseTo(3, 5);
+  });
+
+  test('the heartbeat alone still yields an age when the file has no stamp', () => {
+    expect(floorSignalFreshness({}, { now, checked: { checked_at: '2026-09-18T10:00:00Z' } }).ageHours).toBeCloseTo(2, 5);
+    expect(floorSignalFreshness({}, { now, checked: { checked_at: 'garbage' } }).ageHours).toBeNull();
+  });
 });
 
 test('danglingConversationSlugs names only the slugs the corpus has lost', () => {
