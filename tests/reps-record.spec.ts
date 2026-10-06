@@ -243,6 +243,45 @@ test('"See your record" lands on Your calls while the ZIP prompt takes focus', a
   await expect(field).toBeFocused();
 });
 
+/*
+ * ON A FULL PAGE LOAD THE FIX STAYS OUT OF THE WAY. The field arrives in the
+ * server HTML with `autofocus`, and the browser (or a reader's tap) may
+ * already have focused it when hydration runs ZipForm's layout effect. That
+ * effect must not blur it then: on a phone a blur can close the keyboard. Every
+ * blur of the field is recorded from the first byte, and the prompt at
+ * /reps?change=1 is used because its field fills with the saved ZIP only once
+ * the page has hydrated, which is the proof that the effect has run. Only
+ * blurs are counted: in parallel runs WebKit sometimes fires a second focus
+ * event on the field after hydration, with no blur and no focus() call
+ * before it (2026-10-06), and that changes nothing for the reader.
+ */
+test('a full load of the ZIP prompt never blurs its field', async ({ page }) => {
+  await page.addInitScript(() => {
+    const w = window as unknown as { zipBlurs: number };
+    w.zipBlurs = 0;
+    document.addEventListener(
+      'focusout',
+      (e) => {
+        if ((e.target as Element | null)?.hasAttribute?.('data-zip-field')) w.zipBlurs += 1;
+      },
+      true
+    );
+  });
+  await page.goto('/privacy');
+  await seedZip(page, ZIP);
+
+  await page.goto('/reps?change=1');
+  const field = page.locator('[data-zip-field]');
+  await expect(field).toHaveValue(ZIP);
+  await expect(field).toBeFocused();
+  await page.evaluate(
+    () => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done)))
+  );
+  const blurs = await page.evaluate(() => (window as unknown as { zipBlurs: number }).zipBlurs);
+  expect(blurs, 'blurs of the ZIP field').toBe(0);
+  await expect(field).toBeFocused();
+});
+
 /* The same record, standalone: /record keeps answering old links, with the
    folded rows open because nothing sits above them there. */
 test('/record renders the same record, rows open', async ({ page }) => {
