@@ -428,6 +428,182 @@ test.describe('the vote-count lint · held and unheld', () => {
 });
 
 /* ------------------------------------------------------------------ *
+ * 2b · the parity table (2026-10-06)
+ *
+ * Three independent checks on 2026-10-06 each found another vote-count form
+ * read in one language and not in its twin. This table is what "both
+ * languages are read the same way" means, and all it means: every twin form
+ * in it is read as the same count in English and Spanish, held when the
+ * record holds it and refused when it is invented; every range in it is read
+ * in neither; every form in UNREAD is read in neither (the code note's WHAT
+ * IT CANNOT SEE, lib/moment-updates-gate.mjs). A form outside this table is
+ * not claimed either way. Every form any of the three checks named is here.
+ * ------------------------------------------------------------------ */
+
+test.describe('the vote-count lint · the parity table: twin forms read the same way in both languages', () => {
+  // Senate roll 244: Yeas 49, Nays 50; Republicans 4 yea, 49 nay.
+  const REC_244 = () => voteCountRecord({ rollCalls: [roll('s-119-2-244')] });
+  type Form = (yeas: number, nays: number) => string;
+  /** [where the form came from, English, Spanish], each written from the yeas and the nays. */
+  const TWINS: [string, Form, Form][] = [
+    ['case D', (y, n) => `by a vote of ${y} to ${n}`, (y, n) => `por una votación de ${y} a ${n}`],
+    ['hyphen', (y, n) => `rejected ${y}-${n}`, (y, n) => `rechazada ${y}-${n}`],
+    ['en dash', (y, n) => `rejected ${y}–${n}`, (y, n) => `rechazada ${y}–${n}`],
+    ['spaced hyphen, the record\'s own', (y, n) => `rejected ${y} - ${n}`, (y, n) => `rechazada ${y} - ${n}`],
+    ['non-breaking hyphen (check 1)', (y, n) => `rejected ${y}‑${n}`, (y, n) => `rechazada ${y}‑${n}`],
+    ['hyphenated adjective (check 3)', (y, n) => `on a ${y}-to-${n} vote`, (y, n) => `en una votación de ${y} a ${n}`],
+    ['hyphenated adverb (check 3)', (y, n) => `it failed ${y}-to-${n}`, (y, n) => `fracasó ${y} a ${n}`],
+    ['bare contra (check 3)', (y, n) => `by ${y} to ${n}`, (y, n) => `por ${y} contra ${n}`],
+    ['against / contra', (y, n) => `${y} against ${n}`, (y, n) => `${y} contra ${n}`],
+    ['versus / frente a', (y, n) => `${y} versus ${n}`, (y, n) => `${y} frente a ${n}`],
+    ['by N votes to M (check 2)', (y, n) => `by ${y} votes to ${n}`, (y, n) => `por ${y} votos a ${n}`],
+    ['N votes against M', (y, n) => `${y} votes against ${n}`, (y, n) => `${y} votos contra ${n}`],
+    ['N votes versus M', (y, n) => `got ${y} votes versus ${n}`, (y, n) => `obtuvo ${y} votos frente a ${n}`],
+    ['yeas and nays', (y, n) => `${y} yeas and ${n} nays`, (y, n) => `${y} sí y ${n} no`],
+    ['yea votes to nay votes (check 1)', (y, n) => `${y} yea votes to ${n} nay votes`, (y, n) => `${y} votos sí contra ${n} votos no`],
+    ['votes in favor and against (check 1)', (y, n) => `${y} votes in favor and ${n} against`, (y, n) => `${y} votos a favor y ${n} votos en contra`],
+    ['votes for and against (check 2)', (y, n) => `${y} votes for and ${n} against`, (y, n) => `${y} votos a favor y ${n} en contra`],
+    ['N for, M against (check 1)', (y, n) => `${y} for, ${n} against`, (y, n) => `${y} a favor, ${n} en contra`],
+    ['N for and M against (check 1)', (y, n) => `${y} for and ${n} against`, (y, n) => `${y} a favor y ${n} en contra`],
+    ['votos en favor (check 3)', (y, n) => `${y} votes in favor and ${n} against`, (y, n) => `${y} votos en favor y ${n} en contra`],
+    ['votos en pro (check 3)', (y, n) => `${y} in favor, ${n} opposed`, (y, n) => `${y} votos en pro, ${n} en contra`],
+    ['label first, the record\'s order', (y, n) => `Yeas ${y}, Nays ${n}`, (y, n) => `A favor: ${y}, en contra: ${n}`],
+    ['label first, in favor', (y, n) => `In favor: ${y}, against: ${n}`, (y, n) => `En favor: ${y}, en contra: ${n}`],
+  ];
+
+  test('every twin reads as the same single count in both languages, in the same order rule', () => {
+    for (const [why, en, es] of TWINS) {
+      const e = statedVoteCounts(en(49, 50), 'en');
+      const s = statedVoteCounts(es(49, 50), 'es');
+      expect(e.length, `${why} · en: ${en(49, 50)}`).toBe(1);
+      expect(s.length, `${why} · es: ${es(49, 50)}`).toBe(1);
+      expect([s[0].kind, s[0].a, s[0].b, s[0].ordered], `${why}: ${es(49, 50)}`).toEqual([e[0].kind, e[0].a, e[0].b, e[0].ordered]);
+    }
+  });
+
+  test('every twin is held when the record holds it and refused when it is invented, in both languages', () => {
+    const rec = REC_244();
+    for (const [why, en, es] of TWINS) {
+      expect(unheldVoteCounts(en(49, 50), 'en', rec), `${why} · held · en`).toEqual([]);
+      expect(unheldVoteCounts(es(49, 50), 'es', rec), `${why} · held · es`).toEqual([]);
+      expect(unheldVoteCounts(en(98, 0), 'en', rec).length, `${why} · invented · en: ${en(98, 0)}`).toBe(1);
+      expect(unheldVoteCounts(es(98, 0), 'es', rec).length, `${why} · invented · es: ${es(98, 0)}`).toBe(1);
+    }
+  });
+
+  test('the party figures, held and invented, in both languages', () => {
+    const rec = REC_244();
+    const held: [string, string][] = [
+      ['Republicans: 4 yea, 49 nay.', 'Republicanos: 4 a favor, 49 en contra.'],
+      ['4 Republicans voted yes.', '4 republicanos votaron a favor.'],
+    ];
+    const invented: [string, string][] = [
+      ['Republicans: 49 yea, 4 nay.', 'Republicanos: 49 a favor, 4 en contra.'],
+      ['5 Republicans voted yes.', '5 republicanos votaron a favor.'],
+    ];
+    for (const [en, es] of held) {
+      const e = statedVoteCounts(en, 'en');
+      const s = statedVoteCounts(es, 'es');
+      expect(s.map((c: Json) => [c.kind, c.a, c.b, c.party]), es).toEqual(e.map((c: Json) => [c.kind, c.a, c.b, c.party]));
+      expect(unheldVoteCounts(en, 'en', rec), en).toEqual([]);
+      expect(unheldVoteCounts(es, 'es', rec), es).toEqual([]);
+    }
+    for (const [en, es] of invented) {
+      expect(unheldVoteCounts(en, 'en', rec).length, en).toBe(1);
+      expect(unheldVoteCounts(es, 'es', rec).length, es).toBe(1);
+    }
+  });
+
+  // Ranges that are not vote counts: read in neither language.
+  const RANGES: [string, string][] = [
+    ['Rule 22 to 24', 'las reglas 22 a 24'],
+    ['roll call votes 244-246', 'las votaciones 244-246'],
+    ['roll calls 244 to 246', 'las votaciones nominales 244 a 246'],
+    ['roll call 244 to 246', 'la votación nominal 244 a 246'],
+    ['grades 9 to 12', 'los grados 9 a 12'],
+    ['Divisions 1 to 3', 'las divisiones 1 a 3'],
+    ['Tier 1-2', 'el nivel 1-2'],
+    ['3 to 5 schools', '3 a 5 escuelas'],
+    ['2 to 3 business days', '2 a 3 días hábiles'],
+    ['paragraphs 3 to 5', 'los apartados 3 a 5'],
+    ['paragraphs 3 to 5', 'las fracciones 3 a 5'],
+    ['clauses 3 to 5', 'las cláusulas 3 a 5'],
+    ['subsections 3 to 5', 'las subsecciones 3 a 5'],
+    ['articles 3 to 5', 'los artículos 3 a 5'],
+    ['ch. 3-5', 'cap. 3-5'],
+    ['support grew from 47 votes to 60', 'el apoyo pasó de 47 votos a 60'],
+    ['it rose from 47 to 60', 'subió de 47 a 60'],
+    ['it fell from 60 to 47', 'bajó de 60 a 47'],
+    ['between 3 and 5', 'entre 3 a 5'],
+    ['5 to 10 points', '5 a 10 puntos'],
+    ['1 to 2 p.m.', '1 a 2 p. m.'],
+  ];
+
+  test('every range in the table is read in neither language', () => {
+    for (const [en, es] of RANGES) {
+      expect(statedVoteCounts(en, 'en'), en).toEqual([]);
+      expect(statedVoteCounts(es, 'es'), es).toEqual([]);
+    }
+  });
+
+  // WHAT IT CANNOT SEE (the code note): read in neither language, so an invented count written this way passes in both.
+  const UNREAD: [string, string][] = [
+    ['It passed ninety-eight to zero.', 'Se aprobó noventa y ocho a cero.'],
+    ['77 senators voted yes.', '77 senadores votaron a favor.'],
+    ['It passed with 60 votes.', 'Se aprobó con 60 votos.'],
+    ['98 senators voted for it and 0 against.', '98 senadores votaron a favor y 0 en contra.'],
+    ['It passed with 98 votes for, and 0 against.', 'Se aprobó con 98 votos a favor, y 0 en contra.'],
+    ['98 affirmative votes to 0 negative.', '98 votos afirmativos y 0 negativos.'],
+    ['It passed 98-0-2.', 'Se aprobó 98-0-2.'],
+  ];
+
+  test('every form the code note says it cannot see is read in neither language', () => {
+    for (const [en, es] of UNREAD) {
+      expect(statedVoteCounts(en, 'en'), en).toEqual([]);
+      expect(statedVoteCounts(es, 'es'), es).toEqual([]);
+    }
+  });
+
+  test('the two it cannot tell from a tally are read in both languages, as the same count: a court split and a singular "vote" range', () => {
+    const both: [string, string][] = [
+      ['The court ruled 6-3.', 'El tribunal falló 6 a 3.'],
+      ['See vote 244 to 246.', 'Véase la votación 244 a 246.'],
+    ];
+    for (const [en, es] of both) {
+      const e = statedVoteCounts(en, 'en');
+      const s = statedVoteCounts(es, 'es');
+      expect(e.length, en).toBe(1);
+      expect(s.map((c: Json) => [c.a, c.b]), es).toEqual(e.map((c: Json) => [c.a, c.b]));
+    }
+  });
+
+  test('the absence lint\'s twins: caught in both languages, or left alone in both', () => {
+    const caught: [string, string][] = [
+      ['Neither measure has advanced.', 'Ninguna de las dos medidas ha avanzado.'],
+      ['Neither measure advanced.', 'Ninguna de las dos medidas avanzó.'],
+      ['Neither measure has moved since July.', 'Ninguna de las dos medidas se ha movido desde julio.'],
+      ['Neither chamber moved it.', 'Ninguna de las cámaras lo movió.'],
+      ['Neither chamber acted.', 'Ninguna cámara actuó.'],
+      ['Neither the House nor the Senate voted.', 'Ni la Cámara ni el Senado votaron.'],
+    ];
+    const leftAlone: [string, string][] = [
+      ['Neither the House nor the Senate voted in favor.', 'Ni la Cámara ni el Senado votaron en favor.'],
+      ['Neither the House nor the Senate voted in favor.', 'Ni la Cámara ni el Senado votaron en pro.'],
+      ['None of the funding for advanced nuclear reactors was cut.', 'Ninguno de los fondos para reactores nucleares avanzados se recortó.'],
+      ['None of the Republicans voted yes.', 'Ninguno de los republicanos votó a favor.'],
+    ];
+    for (const [en, es] of caught) {
+      expect(absenceClaims(en, 'en'), en).not.toEqual([]);
+      expect(absenceClaims(es, 'es'), es).not.toEqual([]);
+    }
+    for (const [en, es] of leftAlone) {
+      expect(absenceClaims(en, 'en'), en).toEqual([]);
+      expect(absenceClaims(es, 'es'), es).toEqual([]);
+    }
+  });
+});
+
+/* ------------------------------------------------------------------ *
  * 3 · the collector refuses, the gate re-checks
  * ------------------------------------------------------------------ */
 
