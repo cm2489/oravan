@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-10-06T15:05:58.309Z"
+    "generated_at": "2026-10-06T19:55:29.197Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -2834,11 +2834,78 @@
           "updates:+1"
         ],
         "model": "claude-sonnet-5-5"
+      },
+      {
+        "id": "s_3ef35035",
+        "generated_at": "2026-10-06T19:55:36.655Z",
+        "as_of_day": "2026-10-06",
+        "text": {
+          "en": "The Senate passed S. 4668, the Protect College Sports Act of 2026, on September 28, 2026, by a recorded vote of 77 to 22 (Roll no. 250). In that vote, 50 Republicans and 26 Democrats voted yes. Earlier that day, the Senate agreed to one amendment, 96 to 1 (Roll no. 245), and rejected four others (Roll nos. 246, 247, 248 and 249). On September 24, 2026, the Senate agreed to amendment S.Amdt. 6776, 77 to 23 (Roll no. 242), and voted 74 to 25 to invoke cloture (Roll no. 243). Cloture on that amendment had passed 70 to 21 on September 22, 2026 (Roll no. 240). On October 5, 2026, the bill was received in the House and held at the desk.",
+          "es": "El Senado aprobó el proyecto S. 4668, la Ley para Proteger los Deportes Universitarios de 2026 (Protect College Sports Act of 2026), el 28 de septiembre de 2026, por votación nominal de 77 a 22 (votación núm. 250). En esa votación, 50 republicanos y 26 demócratas votaron a favor. Ese mismo día, el Senado aprobó una enmienda, por 96 a 1 (votación núm. 245), y rechazó otras cuatro (votaciones núm. 246, 247, 248 y 249). El 24 de septiembre de 2026, el Senado aprobó la enmienda S.Amdt. 6776, por 77 a 23 (votación núm. 242), y votó 74 a 25 para invocar el cierre del debate (votación núm. 243). El cierre del debate sobre esa enmienda se había aprobado por 70 a 21 el 22 de septiembre de 2026 (votación núm. 240). El 5 de octubre de 2026, la Cámara de Representantes recibió el proyecto y quedó en espera en la mesa."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "s-4668-119": "passed_chamber"
+          },
+          "vehicle_status_keys": {
+            "s-4668-119": "passed_chamber"
+          },
+          "update_ids": [
+            "u_9f7caf03",
+            "u_c46f6482",
+            "u_c9918aa9",
+            "u_eda56d8f",
+            "u_eea56f22",
+            "u_eea7adb9",
+            "u_efa570b5",
+            "u_f0a57248",
+            "u_f1a573db",
+            "u_5f348c7a",
+            "u_3385513a",
+            "u_348552cd",
+            "u_d5eaf6d9",
+            "u_fcb078e5",
+            "u_53ca06ca",
+            "u_c6a1ebcb",
+            "u_fa1d2a34"
+          ],
+          "roll_calls": [
+            "s-119-2-250",
+            "s-119-2-249",
+            "s-119-2-248",
+            "s-119-2-247",
+            "s-119-2-246",
+            "s-119-2-245",
+            "s-119-2-243",
+            "s-119-2-242",
+            "s-119-2-240"
+          ],
+          "roll_calls_on_record": [
+            "s-119-2-235",
+            "s-119-2-236",
+            "s-119-2-240",
+            "s-119-2-242",
+            "s-119-2-243",
+            "s-119-2-245",
+            "s-119-2-246",
+            "s-119-2-247",
+            "s-119-2-248",
+            "s-119-2-249",
+            "s-119-2-250"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "changed_because": [
+          "updates:+2"
+        ],
+        "model": "claude-sonnet-5-5"
       }
     ],
     "summary_attempts": {
-      "day": "2026-09-29",
-      "count": 2
+      "day": "2026-10-06",
+      "count": 1
     }
   },
   "annual-defense-policy": {
