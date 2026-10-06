@@ -24,12 +24,19 @@ import {
   absenceClaims,
   checkMomentUpdates,
   etDay,
+  groundingMayBePruned,
+  HARD_DAY_CEILING,
   lintRevisionText,
+  MAX_UPDATES_PER_MOMENT,
+  pruneEntry,
+  RETENTION_DAYS,
+  shiftDay,
   statedVoteCounts,
+  STORED_SUMMARY_WINDOW_DAYS,
   unheldVoteCounts,
   voteCountRecord,
 } from '../lib/moment-updates-gate.mjs';
-import { generateStateSummary } from '../scripts/moment-updates.mjs';
+import { generateStateSummary, SUMMARY_WINDOW_DAYS } from '../scripts/moment-updates.mjs';
 
 // The committed data files are read as plain JSON; their shapes are what the gate checks.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -133,6 +140,35 @@ test.describe('the absence lint · the two shapes with no "no" in them', () => {
     for (const s of es) expect(absenceClaims(s, 'es'), s).toEqual([]);
   });
 
+  test('the rewordings an independent check tried (2026-10-06) are caught in both languages', () => {
+    const en = [
+      'Neither S. 1525 nor H.R. 3074 had a new vote in this window.',
+      'Neither H. Con. Res. 89 nor S.J. Res. 185 was voted on this week.',
+      'Those were the only two votes.',
+    ];
+    const es = [
+      'Ni el S. 1525 ni el H.R. 3074 tuvo una votación nueva en este período.',
+      'Esas fueron las dos únicas votaciones.',
+      'Ninguno de los dos se votó.',
+      'Ni el S. 1525 ni el H.R. 3074 fue votado.',
+    ];
+    for (const s of en) expect(absenceClaims(s, 'en'), s).not.toEqual([]);
+    for (const s of es) expect(absenceClaims(s, 'es'), s).not.toEqual([]);
+  });
+
+  test('a party count with "none" / "ninguno" in it is not an absence claim, in either language', () => {
+    const en = [
+      'Every Democrat and none of the Republicans voted yes.',
+      'None of the Republicans voted for it, and none of the Democrats voted against it.',
+    ];
+    const es = [
+      'Todos los demócratas y ninguno de los republicanos votaron a favor.',
+      'Ninguno de los republicanos votó a favor, y ninguno de los demócratas votó en contra.',
+    ];
+    for (const s of en) expect(absenceClaims(s, 'en'), s).toEqual([]);
+    for (const s of es) expect(absenceClaims(s, 'es'), s).toEqual([]);
+  });
+
   test('no stored revision the gate re-lints trips the wider lint (grounded, over a record that is not empty)', () => {
     // The gate's own condition: the revision carries grounded_in.roll_calls,
     // and its grounding holds a roll call or a record-bearing update.
@@ -170,6 +206,19 @@ test.describe('the vote-count lint · what counts as a vote count', () => {
     ]);
   });
 
+  test('the English reads the worded shapes the Spanish reads, and the non-breaking hyphen', () => {
+    const en = 'It passed with 98 votes in favor and 0 against; then 48 for, 51 against; 98 for and 0 against; 98 yea votes to 0 nay votes; and 98\u20110.';
+    expect(statedVoteCounts(en, 'en').map((c: Json) => [c.text, c.a, c.b, c.ordered])).toEqual([
+      ['98 votes in favor and 0 against', 98, 0, true],
+      ['48 for, 51 against', 48, 51, true],
+      ['98 for and 0 against', 98, 0, true],
+      ['98 yea votes to 0 nay votes', 98, 0, true],
+      ['98\u20110', 98, 0, false],
+    ]);
+    const es = 'Se aprobó con 98 votos a favor y 0 votos en contra, y luego 98\u20110.';
+    expect(statedVoteCounts(es, 'es').map((c: Json) => c.text)).toEqual(['98 votos a favor y 0 votos en contra', '98\u20110']);
+  });
+
   test('the party figures the writers may state read as party counts (lib/party-count-rule.mjs shapes)', () => {
     const en = statedVoteCounts('On that vote, 4 Republicans and 43 Democrats voted yes. Republicans: 4 yea, 49 nay.', 'en');
     expect(en.map((c: Json) => [c.kind, c.text, c.party])).toEqual([
@@ -199,6 +248,9 @@ test.describe('the vote-count lint · what counts as a vote count', () => {
       'The order of 8/8/26, (2/3 required), at 1:45 to 2:30 p.m.',
       'S.Amdt. 6776 to S. 4668, Calendar No. 501, Roll no. 244.',
       'Ages 18 to 24.',
+      'Rule 22 to 24 of the Standing Rules; Rules 5-7.',
+      'See roll call votes 244-246 and votes 244 to 246.',
+      'It drew 12 to 15 cosponsors and 10 to 20 amendments.',
     ];
     for (const s of en) expect(statedVoteCounts(s, 'en'), s).toEqual([]);
     const es = [
@@ -210,6 +262,8 @@ test.describe('the vote-count lint · what counts as a vote count', () => {
       'El texto está en CR H4731-4733.',
       'Se convirtió en la Ley Pública 119-103 (Ley Pública núm. 119-60).',
       'Votaciones núm. 245 a 248; la orden del 8/8/26.',
+      'Las reglas 22 a 24; las votaciones 244-246.',
+      'Reunió de 12 a 15 copatrocinadores y de 10 a 20 enmiendas.',
     ];
     for (const s of es) expect(statedVoteCounts(s, 'es'), s).toEqual([]);
   });
@@ -424,5 +478,105 @@ test.describe('the gate re-checks what is stored (checkMomentUpdates, opts.rollC
     const res = run(file, partial);
     expect(voteViolations(res)).toEqual([]);
     expect(res.warnings.some((w: string) => w.includes('vote counts not checked') && w.includes('s-119-2-244'))).toBe(true);
+  });
+  test('a count the window did not print but the vote file holds on the measures passes on what is stored (the collector stays strict)', () => {
+    // 214 to 208 is House roll 282 on H.Con.Res. 89 (2026-07-23): outside the window of the current revision.
+    const file = structuredClone(STORE);
+    const revs = file['iran-war-powers'].summary_revisions;
+    const r = revs[revs.length - 1];
+    expect(r.grounded_in.roll_calls).not.toContain('h-119-2-282');
+    r.text.en = `${r.text.en} In July, the House agreed to it 214 to 208.`;
+    r.text.es = `${r.text.es} En julio, la Cámara la aprobó 214 a 208.`;
+    expect(voteViolations(run(file, ROLL_BY_ID))).toEqual([]);
+  });
+
+  test('retention never makes the stored check stricter: a tally held only by a pruned record sentence becomes a warning, not a failure', () => {
+    // The independent check's case: the night's votes sync lagged, so the
+    // revision's window held no roll call, and the tally came from the
+    // chamber's sentence alone ("Failed of passage in Senate by Yea-Nay
+    // Vote. 49 - 50"). The vote file is taken to hold no roll call on the
+    // measure either (a roll call whose bill does not map), so nothing but
+    // that sentence holds the count.
+    const file = structuredClone(STORE);
+    const entry = file['iran-war-powers'];
+    const r = entry.summary_revisions.find((x: Json) => x.id === 's_0cf29b30');
+    expect(r).toBeTruthy();
+    expect(r.text.en).toContain('49 to 50');
+    r.grounded_in.roll_calls = [];
+    r.grounded_in.roll_calls_on_record = [];
+    // A count by party is only ever held by a roll call, so the sentence that states one goes with it.
+    r.text.en = r.text.en.replace(' Republicans: 4 yea, 49 nay.', '');
+    r.text.es = r.text.es.replace(' Republicanos: 4 a favor, 49 en contra.', '');
+    expect(r.text.en).not.toContain('Republicans');
+    const noMeasureRolls = new Map([...ROLL_BY_ID].filter(([, rc]) => !MOMENTS['iran-war-powers'].vehicles.some((v: Json) => v.slug === rc.bill)));
+    const voteRows = (res: { violations: string[]; warnings: string[] }) => ({
+      violations: res.violations.filter((v) => v.includes('s_0cf29b30') || (v.includes('vote count') && v.includes('iran-war-powers'))),
+      warnings: res.warnings.filter((w) => w.includes('vote count') && w.includes('49 to 50')),
+    });
+
+    // Today: the sentence is still cited, the count is held.
+    const today = voteRows(checkMomentUpdates(file, MOMENTS, billSlugs, { now, rollCallsById: noMeasureRolls }));
+    expect(today.violations).toEqual([]);
+
+    // 2026-12-20: retention has pruned the cited updates; the revision is kept, citing nothing.
+    const later = Date.parse('2026-12-20T17:00:00Z');
+    const prunedEntry = pruneEntry(entry, { now: later }) as Json;
+    const kept = prunedEntry.summary_revisions.find((x: Json) => x.id === 's_0cf29b30');
+    expect(kept.grounded_in.update_ids).toEqual([]);
+    const prunedFile = { ...file, 'iran-war-powers': prunedEntry };
+    const after = checkMomentUpdates(prunedFile, MOMENTS, billSlugs, { now: later, rollCallsById: noMeasureRolls });
+    expect(after.violations.filter((v) => v.includes('vote count'))).toEqual([]);
+    const w = voteRows(after).warnings;
+    expect(w.length).toBe(1);
+    expect(w[0]).toContain('not enforced: retention may have dropped');
+
+    // With the vote file's roll call on the measure, the same pruned revision is held outright: no warning at all.
+    const held = checkMomentUpdates(prunedFile, MOMENTS, billSlugs, { now: later, rollCallsById: ROLL_BY_ID });
+    expect(held.violations.filter((v) => v.includes('vote count'))).toEqual([]);
+    expect(voteRows(held).warnings).toEqual([]);
+  });
+
+  test('an invented count on a revision retention cannot have touched still fails', () => {
+    const file = structuredClone(STORE);
+    const entry = file['iran-war-powers'];
+    const r = entry.summary_revisions.find((x: Json) => x.id === 's_0cf29b30');
+    r.text.en = r.text.en.replace('49 to 50', '98 to 0');
+    r.text.es = r.text.es.replace('49 a 50', '98 a 0');
+    expect(groundingMayBePruned(r, entry.updates, etDay(now))).toBeNull();
+    const v = voteViolations(run(file, ROLL_BY_ID));
+    expect(v.filter((x) => x.includes('summary_revisions') && x.includes('98'))).toHaveLength(2);
+  });
+});
+
+test.describe('groundingMayBePruned · when retention can have dropped what a revision was written from', () => {
+  const today = '2026-12-20';
+  const safeAge = RETENTION_DAYS - STORED_SUMMARY_WINDOW_DAYS;
+  const upd = (day: string) => ({ id: `u_${day}`, day, class: 'floor_action' });
+
+  test('the window constant is the collector\'s', () => {
+    expect(STORED_SUMMARY_WINDOW_DAYS).toBe(SUMMARY_WINDOW_DAYS);
+  });
+
+  test('by age: safe while the window starts inside retention, from the first day it cannot', () => {
+    expect(groundingMayBePruned({ as_of_day: shiftDay(today, -safeAge) }, [], today)).toBeNull();
+    expect(groundingMayBePruned({ as_of_day: shiftDay(today, -(safeAge + 1)) }, [], today)).toContain('retention');
+    // The boundary is exact: an update on the window's first day is kept by pruneEntry on that day.
+    const asOf = shiftDay(today, -safeAge);
+    const first = { ...upd(shiftDay(asOf, -STORED_SUMMARY_WINDOW_DAYS)), occurred_at: shiftDay(asOf, -STORED_SUMMARY_WINDOW_DAYS), recorded_at: `${asOf}T00:00:00Z` };
+    const pruned = pruneEntry({ updates: [first], summary_revisions: [] }, { now: Date.parse(`${today}T17:00:00Z`) }) as Json;
+    expect(pruned.updates.map((u: Json) => u.id)).toEqual([first.id]);
+  });
+
+  test('by count: a moment at its cap, or a day in the window at the per-day ceiling', () => {
+    const asOf = shiftDay(today, -1);
+    expect(groundingMayBePruned({ as_of_day: asOf }, Array.from({ length: MAX_UPDATES_PER_MOMENT }, () => upd(asOf)), today)).toContain('per-moment');
+    expect(groundingMayBePruned({ as_of_day: asOf }, Array.from({ length: HARD_DAY_CEILING }, () => upd(shiftDay(asOf, -3))), today)).toContain('per-day');
+    // A busy day OUTSIDE the window does not matter.
+    expect(groundingMayBePruned({ as_of_day: asOf }, Array.from({ length: HARD_DAY_CEILING }, () => upd(shiftDay(asOf, -30))), today)).toBeNull();
+    expect(groundingMayBePruned({ as_of_day: asOf }, Array.from({ length: HARD_DAY_CEILING - 1 }, () => upd(asOf)), today)).toBeNull();
+  });
+
+  test('no as_of_day: the window is unknown, so it may', () => {
+    expect(groundingMayBePruned({}, [], today)).toContain('as_of_day');
   });
 });
