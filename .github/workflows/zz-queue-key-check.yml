@@ -1,0 +1,20 @@
+name: Queue key check (temporary)
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/zz-queue-key-check.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: queue-key-check
+  cancel-in-progress: false
+  queue: max
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "queue key accepted"
