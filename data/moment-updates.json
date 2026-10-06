@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-10-05T08:54:36.634Z"
+    "generated_at": "2026-10-06T15:05:58.309Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -1464,6 +1464,58 @@
   },
   "paying-college-athletes": {
     "updates": [
+      {
+        "id": "u_9f7caf03",
+        "class": "floor_action",
+        "vehicle": "s-4668-119",
+        "day": "2026-10-05",
+        "occurred_at": "2026-10-05",
+        "occurred_precision": "day",
+        "recorded_at": "2026-10-06T15:05:58.309Z",
+        "text": {
+          "en": "S. 4668 was held at the desk on October 5, 2026.",
+          "es": "S. 4668 fue retenido en el escritorio el 5 de octubre de 2026."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "record": {
+          "action_text": "Held at the desk.",
+          "action_code": "H15000",
+          "action_type": "Floor",
+          "source_system": "House floor actions"
+        },
+        "ai": true
+      },
+      {
+        "id": "u_c46f6482",
+        "class": "floor_action",
+        "vehicle": "s-4668-119",
+        "day": "2026-10-05",
+        "occurred_at": "2026-10-05",
+        "occurred_precision": "day",
+        "recorded_at": "2026-10-06T15:05:58.309Z",
+        "text": {
+          "en": "S. 4668 was received in the House on October 5, 2026.",
+          "es": "S. 4668 fue recibido en la Cámara el 5 de octubre de 2026."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "record": {
+          "action_text": "Received in the House.",
+          "action_code": "H14000",
+          "action_type": "Floor",
+          "source_system": "House floor actions"
+        },
+        "ai": true
+      },
       {
         "id": "u_c9918aa9",
         "class": "press_cluster",

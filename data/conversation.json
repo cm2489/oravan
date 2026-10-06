@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-06T07:30:41.564Z",
+    "fetched_at": "2026-10-06T15:05:56.669Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -9,15 +9,15 @@
       "press": {
         "status": "ok",
         "feeds_total": 11,
-        "feeds_silent": 1,
-        "checked_at": "2026-10-06T07:30:41.564Z"
+        "feeds_silent": 0,
+        "checked_at": "2026-10-06T15:05:56.669Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-04",
         "week_label": "Most-Viewed Bills - Week of October 4, 2026",
         "entries": 8,
-        "checked_at": "2026-10-06T07:30:41.564Z"
+        "checked_at": "2026-10-06T15:05:56.669Z"
       },
       "leans": {
         "center": {
@@ -387,11 +387,18 @@
     "hr-139-119": {
       "outlets7d": [
         {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-10-06",
+          "lastSeen": "2026-10-06",
+          "url": "https://www.foxnews.com/politics/battle-over-daylight-saving-time-erupts-push-stop-changing-clocks-hits-senate-wall"
+        },
+        {
           "domain": "thehill.com",
           "lean": "center",
           "firstSeen": "2026-10-04",
-          "lastSeen": "2026-10-05",
-          "url": "https://thehill.com/homenews/6129610-permanent-daylight-saving-time-why-this-republican-senator-disagrees-with-it-despite-trumps-support/"
+          "lastSeen": "2026-10-06",
+          "url": "https://thehill.com/homenews/senate/6131222-john-thune-sunshine-protection-act-path-unclear-permanent-daylight-saving-time/"
         },
         {
           "domain": "breitbart.com",
@@ -1316,7 +1323,7 @@
         {
           "domain": "investopedia.com",
           "firstSeen": "2026-10-05",
-          "lastSeen": "2026-10-05",
+          "lastSeen": "2026-10-06",
           "url": "https://news.google.com/rss/articles/CBMilAFBVV95cUxPRnFSb0hLU3F0WVVHRjlBU2NkQkdpVE83Q3RYYXhhakpkZU5hOXNNVmxSdFNIRDlSQ21RU19XbldqSm5RbEtlMVp1c2ozeDlrWnlHaDJZN0VQeFdiVzNqeGhHTGdoVU51d2lBM21Zb3ZKdHg0Qmw0MnhPLXN4cVF0Q2tXSElRTnZIUWlJdjc0RGRCbmxE?oc=5"
         }
       ],
@@ -1835,6 +1842,18 @@
           "firstSeen": "2026-10-01",
           "lastSeen": "2026-10-01",
           "url": "https://news.google.com/rss/articles/CBMinwFBVV95cUxPVjktalBPUHV5RkRKUkVLUDgxbkNsQ0hCMDNYUmpMQm9rd0pkNVV0OHc5SWRQaDYwSklQd2FzUm0zTllhOW9mczl2emNnRVJHY2d3Vy1aTTY0OXZYVzByUU9UMmNHTFRsZTJ4dEs5Rjk5SnpVR1BMUVFrZUNqVnc5RmhLbUE5VzNfdDdYOHpUeXUtSlBiQVVOT0FYMmh1Nlk?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "s-3618-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "unbox.ph",
+          "firstSeen": "2026-10-06",
+          "lastSeen": "2026-10-06",
+          "url": "https://news.google.com/rss/articles/CBMid0FVX3lxTE1UbjJNUi1DMzFpMThnV1VYMzFIQnZGTk1jZ2g1T0JrOHJKRVcxay1IcE12c3dXMC16SlJUaFI3R2I0VWtzTVYzSkhONDF1aW1IY2g2aXdES1VIa0hldGlUeWM3VzFsTEctZWU0dnJob2dwS2Q3Qktr?oc=5"
         }
       ],
       "mostViewed": null
