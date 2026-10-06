@@ -17,7 +17,7 @@
           "text": "Failed of passage in Senate by Yea-Nay Vote. 49 - 50. Record Vote Number: 244."
         },
         "hconres-86-119": {
-          "fingerprint": "recordStep|||2026-06-24",
+          "fingerprint": "bothAgreed|||2026-06-24",
           "text": "Message on Senate action sent to the House."
         },
         "sjres-185-119": {
@@ -76,8 +76,8 @@
       "review_by": "2026-10-05",
       "vehicles": {
         "s-4668-119": {
-          "fingerprint": "onFloor|senate||2026-09-24",
-          "text": "The committee substitute tabled by Voice Vote."
+          "fingerprint": "passedWaiting|house||2026-09-28",
+          "text": "Passed Senate with an amendment by Yea-Nay Vote. 77 - 22. Record Vote Number: 250. (text: CR S5044-5063)"
         }
       }
     },
@@ -107,8 +107,8 @@
       "review_by": "2026-10-05",
       "vehicles": {
         "hr-10167-119": {
-          "fingerprint": "passedWaiting|senate||2026-09-15",
-          "text": "Received in the Senate and Read twice and referred to the Committee on Banking, Housing, and Urban Affairs."
+          "fingerprint": "bothAgreed|||2026-09-28",
+          "text": "Passed Senate without amendment by Unanimous Consent."
         },
         "s-1525-119": {
           "fingerprint": "heldAtDesk|house||2026-08-10",

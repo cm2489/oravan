@@ -204,12 +204,13 @@ test.describe('/today', () => {
   });
   // ── The decided structure (wireframes v2, today.html, 2026-09-29) ──────────
 
-  test('the same-day facts come first: chambers, then the floor schedule, then the record', async ({ page }) => {
+  // The floor schedule leads since 2026-09-30 (owner: "31 a but add floor first").
+  test('the same-day facts come first: the floor schedule, then the chambers, then the record', async ({ page }) => {
     await page.goto('/today');
     const record = (await page.locator('[data-day]').count()) > 0 ? '[data-day]' : '[data-record-empty]';
     expect(await precedes(page, '[aria-labelledby="today-chambers"]', record)).toBe(true);
     if ((await page.locator('[data-block="schedule"]').count()) > 0) {
-      expect(await precedes(page, '[aria-labelledby="today-chambers"]', '[data-block="schedule"]')).toBe(true);
+      expect(await precedes(page, '[data-block="schedule"]', '[aria-labelledby="today-chambers"]')).toBe(true);
       expect(await precedes(page, '[data-block="schedule"]', record)).toBe(true);
     }
     // The per-source stamp line stays, after the record.
@@ -273,19 +274,140 @@ test.describe('/today', () => {
     }
   });
 
-  test('the day list is a rail beside the brief on a wide screen, and follows it on a phone', async ({ page }) => {
+  test('the day list follows the brief at full width, in columns on a wide screen, never sticky', async ({ page }) => {
+    // The grid layout (2026-09-29): no side rail. "Other days" sits under the
+    // record at the page's full width, so no sticky box can clip its rows.
     await page.goto('/today');
     const h1 = (await page.getByRole('heading', { level: 1 }).boundingBox())!;
-    const nav = (await page.locator('nav[data-days]').boundingBox())!;
+    const railEl = page.locator('nav[data-days]');
+    const nav = (await railEl.boundingBox())!;
+    const lastSection = (await page.locator('main section').last().boundingBox())!;
+    expect(nav.y).toBeGreaterThanOrEqual(lastSection.y + lastSection.height);
+    expect(Math.abs(nav.x - h1.x)).toBeLessThan(2);
+    expect(await railEl.evaluate((el) => getComputedStyle(el).position)).not.toBe('sticky');
     const width = page.viewportSize()!.width;
-    if (width >= 992) {
-      // 62rem, the bill page's desk breakpoint: the rail sits to the right,
-      // level with the title.
-      expect(nav.x).toBeGreaterThan(h1.x + 300);
-      expect(Math.abs(nav.y - h1.y)).toBeLessThan(40);
-    } else {
-      const lastSection = (await page.locator('main section').last().boundingBox())!;
-      expect(nav.y).toBeGreaterThanOrEqual(lastSection.y + lastSection.height);
+    const lefts = await railEl
+      .locator('a[data-day-row]')
+      .evaluateAll((els) => new Set(els.map((e) => Math.round(e.getBoundingClientRect().left))).size);
+    // One column on a phone, two from 40rem (sm), three from 64rem (lg).
+    expect(lefts).toBe(width >= 1024 ? 3 : width >= 640 ? 2 : 1);
+  });
+});
+
+/*
+ * CARDS, THE FLOOR-NOTICE TAG AND THE AI LABEL (owner, 2026-09-29: "The
+ * actual Today page needs to have cards similar to the bills page and if
+ * there is a vote this week scheduled it needs to have a yellow tag or
+ * something that explicitly draws attention to it"). Derived from the same
+ * brief the page is built from, so they follow the committed data.
+ */
+test.describe('/today cards', () => {
+  const today = dates[0];
+
+  test('each floor notice is a card with its tag; yellow only where lib/today.ts says so', async ({ page }) => {
+    const brief = buildBrief(today);
+    test.skip(brief.schedule.length === 0, 'the committed schedule names nothing still ahead');
+    for (const prefix of ['', '/es']) {
+      await page.goto(`${prefix}/today`);
+      const block = page.locator('[data-block="schedule"]');
+      await expect(block.locator('[data-floor-card]')).toHaveCount(brief.schedule.length);
+      for (const item of brief.schedule) {
+        const card = block.locator(`[data-floor-card="${item.citation}"]`);
+        await expect(card.locator(`[data-floor-tag="${item.certainty}"]`)).toHaveCount(item.tag ? 1 : 0);
+        const yellow = item.tag?.tone === 'urgent';
+        // Yellow is the "will vote on" notice only, and only with its date.
+        if (yellow) expect(item.certainty).toBe('scheduled_vote');
+        await expect(card.locator('.bg-urgent')).toHaveCount(yellow ? 1 : 0);
+        // The chamber's own words, English on /es too.
+        await expect(card.locator('blockquote [lang="en"]')).toContainText(item.quote);
+        // The headline opens the bill (or nomination) page: truth one click away.
+        await expect(card.getByRole('heading', { level: 3 }).getByRole('link')).toHaveAttribute(
+          'href',
+          `${prefix}${item.href}`
+        );
+      }
+    }
+  });
+
+  test('no yellow on a dated past brief', async ({ page }) => {
+    for (const date of [busyPast, quiet].filter((d): d is string => Boolean(d))) {
+      await page.goto(`/today/${date}`);
+      await expect(page.locator('main .bg-urgent')).toHaveCount(0);
+      await expect(page.locator('[data-floor-tag]')).toHaveCount(0);
+    }
+  });
+
+  test('an empty schedule says so only when its sources vouch for themselves', async ({ page }) => {
+    const brief = buildBrief(today);
+    test.skip(brief.schedule.length > 0, 'the committed schedule has notices (the case above runs)');
+    for (const [prefix, messages] of [
+      ['', en],
+      ['/es', es],
+    ] as const) {
+      await page.goto(`${prefix}/today`);
+      const quietLine = page.locator('[data-schedule-quiet]');
+      if (brief.schedulePosture === 'quiet') {
+        await expect(quietLine).toHaveAttribute('role', 'status');
+        await expect(quietLine).toHaveText(messages.today.scheduleQuiet);
+        await expect(page.locator('[data-floor-tag]')).toHaveCount(0);
+      } else {
+        await expect(page.locator('[data-block="schedule"]')).toHaveCount(0);
+      }
+    }
+  });
+
+  test('the AI label comes before every AI-written word, and only when there is one', async ({ page }) => {
+    for (const [prefix, locale] of [
+      ['', 'en'],
+      ['/es', 'es'],
+    ] as const) {
+      for (const date of [...new Set([today, withVotes, busyPast].filter((d): d is string => Boolean(d)))]) {
+        const brief = buildBrief(date, locale);
+        const shown = brief.days.some((d) => d.rollCalls.length > 0 || d.moved.length > 0) || brief.questions.length > 0;
+        const expected =
+          brief.schedule.filter((i) => i.teaser?.headline).length +
+          (shown
+            ? brief.days.reduce(
+                (n, d) =>
+                  n + d.rollCalls.filter((r) => r.teaser?.headline).length + d.moved.filter((b) => b.teaser?.headline).length,
+                0
+              )
+            : 0) +
+          brief.questions.length;
+        await page.goto(date === today ? `${prefix}/today` : `${prefix}/today/${date}`);
+        const ai = page.locator('[data-ai-text]');
+        await expect(ai, `${prefix} ${date}`).toHaveCount(expected);
+        const labels = page.locator('[data-today-ai]');
+        if (expected === 0) {
+          await expect(labels).toHaveCount(0);
+          continue;
+        }
+        expect(await labels.count()).toBeGreaterThan(0);
+        const unlabeled = await page.evaluate(() => {
+          const marks = [...document.querySelectorAll('[data-today-ai]')];
+          return [...document.querySelectorAll('[data-ai-text]')].filter(
+            (el) => !marks.some((m) => m.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING)
+          ).length;
+        });
+        expect(unlabeled, `${prefix} ${date}`).toBe(0);
+        await expect(labels.first().getByRole('link')).toHaveAttribute('href', `${prefix}/citations#ai-policy`);
+      }
+    }
+  });
+
+  test('/es at 320px: no sideways scroll, and every floor tag fits its card @reflow', async ({ page }) => {
+    for (const path of ['/es/today', ...(withVotes ? [`/es/today/${withVotes}`] : [])]) {
+      await page.goto(path);
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+      expect(overflow, path).toBeLessThanOrEqual(0);
+      const spill = await page.locator('[data-floor-tag]').evaluateAll((els) =>
+        els.filter((el) => {
+          const card = el.closest('[data-floor-card]')!.getBoundingClientRect();
+          const chip = (el.firstElementChild as HTMLElement).getBoundingClientRect();
+          return chip.right > card.right + 0.5 || chip.left < card.left - 0.5;
+        }).length
+      );
+      expect(spill, path).toBe(0);
     }
   });
 });

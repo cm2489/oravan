@@ -36,7 +36,7 @@
  * exactly one of { isCivilian: true } or { isMilitary: true } on every live
  * record — never both, never neither — so the filter is unambiguous.
  */
-import { execCalendarNumber, mapNominationStatus } from '../lib/nomination-status.mjs';
+import { execCalendarNumber, isStageNeutralNominationAction, mapNominationStatus } from '../lib/nomination-status.mjs';
 import { cg } from './congress-fetch.mjs';
 
 /** The Congress this module tracks. Same value, same reason, as
@@ -418,8 +418,11 @@ export function refreshNominationFields(existing, item) {
   const text = action.text;
   existing.last_action_date = action.actionDate ?? existing.last_action_date ?? null;
   existing.last_action_text = text;
-  existing.status = mapNominationStatus(text);
-  existing.exec_calendar_number = execCalendarNumber(text);
+  // A stage-neutral receipt (rule 11b) keeps the stage the record held, and
+  // the calendar number that stage printed: the sentence says neither.
+  const neutral = isStageNeutralNominationAction(text);
+  existing.status = mapNominationStatus(text, Date.now(), existing.status);
+  if (!neutral) existing.exec_calendar_number = execCalendarNumber(text);
   existing.update_date = item.updateDate ?? existing.update_date;
   // The description arrives late for some records (Congress.gov backfills the
   // official sentence after the initial receipt row). Never overwrite one we
