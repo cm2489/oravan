@@ -1,0 +1,79 @@
+name: Social send (manual; posts nothing until the owner turns it on)
+
+# Drafts the day's queue from the committed record (scripts/social-drafts.mjs,
+# which sends nothing), then hands it to scripts/social-send.mjs, which posts
+# to Oravan's own Bluesky account and Telegram channel ONLY when all three
+# layers of its kill switch are on:
+#   (a) this run's `dry_run` input is false (it sets SOCIAL_SEND=on);
+#   (b) data/social-sending.json on main says enabled: true, by the owner
+#       (checked inside the script, not here; the checkout below is pinned to
+#       main so a branch cannot flip it);
+#   (c) all four secrets below are set. None exists yet; the owner creates them.
+# With any layer off, the script prints what it would have sent and exits 0.
+#
+# Manual only. A schedule is a later, separate decision of the owner's.
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Print what would be sent and send nothing (leave on unless the owner has turned sending on)'
+        type: boolean
+        default: true
+      first_run:
+        description: 'This is the very first sending run, so there is no ledger of earlier posts yet (leave off otherwise: a send run with no ledger refuses, so nothing is posted twice)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: social-send
+  cancel-in-progress: false
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+
+      # What was already sent, so the daily cap and the one-post-per-item rule
+      # hold across runs. It holds item ids, dates and the platform's post
+      # reference, nothing about a reader. The platform drops a cache unused
+      # for 7 days; when nothing is restored, the script refuses to send
+      # unless the first_run input is set.
+      - name: Restore the sent ledger
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ runner.temp }}/social-ledger
+          key: social-ledger-${{ github.run_id }}
+          restore-keys: social-ledger-
+
+      - name: Draft the queue from the committed record (sends nothing)
+        run: npx tsx scripts/social-drafts.mjs --out "$RUNNER_TEMP/social-queue"
+
+      - name: Send, or print what would be sent
+        env:
+          SOCIAL_SEND: ${{ inputs.dry_run && 'off' || 'on' }}
+          BLUESKY_HANDLE: ${{ secrets.BLUESKY_HANDLE }}
+          BLUESKY_APP_PASSWORD: ${{ secrets.BLUESKY_APP_PASSWORD }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHANNEL: ${{ secrets.TELEGRAM_CHANNEL }}
+          FIRST_RUN_FLAG: ${{ inputs.first_run && '--first-run' || '' }}
+        run: npx tsx scripts/social-send.mjs --queue-dir "$RUNNER_TEMP/social-queue" --ledger "$RUNNER_TEMP/social-ledger/ledger.json" $FIRST_RUN_FLAG
+
+      - name: Save the sent ledger
+        if: always() && !inputs.dry_run
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ runner.temp }}/social-ledger
+          key: social-ledger-${{ github.run_id }}

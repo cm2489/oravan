@@ -20,6 +20,17 @@ The only *runtime* secrets are:
 
 `CONGRESS_API_KEY` and the optional `NEWS_API_KEY` are build-time only (nightly sync scripts), never shipped to the client.
 
+## Social sending (GitHub Actions secrets)
+
+Read only by `scripts/social-send.mjs` through `.github/workflows/social-send.yml` (manual runs only), sent only to their own platform, never printed. **Not set yet; the owner creates them** (with the accounts). Until all four exist, and `data/social-sending.json` says the owner turned sending on, the sender only prints what it would send.
+
+| Secret | What it is |
+|---|---|
+| `BLUESKY_HANDLE` | The Bluesky account's handle, the sign-in name. |
+| `BLUESKY_APP_PASSWORD` | A Bluesky app password for that account (not the account password). |
+| `TELEGRAM_BOT_TOKEN` | The Telegram bot's token; the bot is an administrator of the channel. |
+| `TELEGRAM_CHANNEL` | The channel to post in, as `@channelname` or its numeric id. Not "oravan", which is taken. |
+
 ## What checks this
 
 `scripts/check-key-namespaces.mjs` confines each Upstash database's env vars and client constructor to its one registry module. Nothing yet checks that no secret reaches the client bundle.
