@@ -6,6 +6,7 @@ import type { EmbedDict, EmbedLocale } from '@/components/embed/embed-dicts';
 import { officeHoursStatus } from '@/lib/office-hours';
 import { SITE_ORIGIN } from '@/lib/site';
 import type { Legislator, Stance } from '@/lib/types';
+import { lookupReps } from '@/lib/reps-lookup';
 
 /*
  * The action-panel embed widget (S19, paid tier only): adapted from
@@ -204,7 +205,7 @@ export function ActionPanelWidget({
   }
 
   function fetchReps(z: string) {
-    fetch(`/api/reps?zip=${z}`)
+    lookupReps(z)
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((d: { reps: Legislator[] }) => {
         setReps(d.reps);

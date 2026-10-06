@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
 import { mirroredPortraitBioguides } from '../lib/core/portraits';
@@ -10,6 +10,13 @@ import { mirroredPortraitBioguides } from '../lib/core/portraits';
  * split-district link-out (F2 - never an address field in-frame), and the
  * privacy/a11y basics that don't depend on being embedded.
  */
+
+/** Type a ZIP into the widget and submit it: the only way a ZIP reaches it
+ *  since the page stopped reading `?zip=` (2026-10-06). */
+async function lookUp(page: Page, zip: string) {
+  await page.getByLabel(en.home.zipLabel).fill(zip);
+  await page.getByRole('button', { name: en.home.zipCta }).click();
+}
 
 test('EN: ZIP lookup renders reps with a working tel link', async ({ page }) => {
   await page.goto('/embed/rep-lookup?locale=en');
@@ -50,7 +57,8 @@ test('the EN/ES toggle is always present and switches locale live, no reload', a
 test('split ZIP: shows both candidate districts plus a link-out, never an address field', async ({
   page,
 }) => {
-  await page.goto('/embed/rep-lookup?locale=en&zip=10001');
+  await page.goto('/embed/rep-lookup?locale=en');
+  await lookUp(page, '10001');
   await expect(page.getByText(en.embed.multiDistrictTitle)).toBeVisible();
   const link = page.getByRole('link', { name: new RegExp(en.embed.openFullLookup) });
   await expect(link).toHaveAttribute('target', '_blank');
@@ -72,7 +80,8 @@ test('split ZIP: shows both candidate districts plus a link-out, never an addres
 test('vacant seat (FL-20): explicit notice, senators still shown, no invented election claim', async ({
   page,
 }) => {
-  await page.goto('/embed/rep-lookup?locale=en&zip=33313');
+  await page.goto('/embed/rep-lookup?locale=en');
+  await lookUp(page, '33313');
   await expect(page.getByText(en.reps.vacantSeat, { exact: true })).toBeVisible();
   await expect(page.getByText(en.reps.vacantSeatBody)).toBeVisible();
   await expect(page.getByRole('link', { name: en.reps.vacantSeatLink })).toHaveAttribute(
@@ -223,7 +232,8 @@ test('the embed CSP carve-out allows framing by any origin (F1 site-wide lock is
 test('S20: a token param never changes the render — identical content and status whether or not it resolves', async ({
   page,
 }) => {
-  const noToken = await page.goto('/embed/rep-lookup?locale=en&zip=78501');
+  const noToken = await page.goto('/embed/rep-lookup?locale=en');
+  await lookUp(page, '78501');
   await expect(page.getByText('Monica De La Cruz')).toBeVisible();
   const noTokenStatus = noToken?.status();
   // The <main> markup only - not the raw response text. Next's own RSC
@@ -234,7 +244,8 @@ test('S20: a token param never changes the render — identical content and stat
   // entire widget - everything a host page's iframe actually shows.
   const noTokenMain = await noToken!.text().then((t) => t.match(/<main[\s\S]*?<\/main>/)?.[0]);
 
-  const garbageToken = await page.goto('/embed/rep-lookup?locale=en&zip=78501&token=totally-made-up-token');
+  const garbageToken = await page.goto('/embed/rep-lookup?locale=en&token=totally-made-up-token');
+  await lookUp(page, '78501');
   await expect(page.getByText('Monica De La Cruz')).toBeVisible();
   expect(garbageToken?.status()).toBe(noTokenStatus);
   await expect(page.locator('a[href^="tel:"]').first()).toBeVisible();
@@ -250,4 +261,34 @@ test('S20: token param renders identically at the zero-ZIP entry state too (no c
   await page.goto('/embed/rep-lookup?locale=en&token=another-made-up-token');
   await expect(page.getByLabel(en.home.zipLabel)).toBeVisible();
   expect(await page.context().cookies()).toHaveLength(0); // still zero cookies with a token present
+});
+
+/*
+ * 2026-10-06: the ZIP stays out of request addresses. The page no longer
+ * reads a `?zip=` (a hand-built iframe could pass one, and the host's request
+ * logs keep the query string), and the widget's own lookup carries the ZIP in
+ * a POST body, never in the /api/reps address.
+ */
+test('a ?zip= in the page address is ignored: no prefill, no lookup', async ({ page }) => {
+  const lookups: string[] = [];
+  page.on('request', (r) => {
+    if (new URL(r.url()).pathname === '/api/reps') lookups.push(r.url());
+  });
+  await page.goto('/embed/rep-lookup?locale=en&zip=78501');
+  await expect(page.getByLabel(en.home.zipLabel)).toHaveValue('');
+  await expect(page.getByText(en.reps.noZip)).toBeVisible();
+  await expect(page.getByText('Monica De La Cruz')).toHaveCount(0);
+  expect(lookups).toEqual([]);
+});
+
+test('the lookup POSTs the ZIP in the body; the request address carries no ZIP', async ({ page }) => {
+  await page.goto('/embed/rep-lookup?locale=en');
+  const lookup = page.waitForRequest((r) => new URL(r.url()).pathname === '/api/reps');
+  await lookUp(page, '78501');
+  const req = await lookup;
+  expect(req.method()).toBe('POST');
+  expect(new URL(req.url()).search).toBe('');
+  expect(req.url()).not.toContain('78501');
+  expect(req.postDataJSON()).toEqual({ zip: '78501' });
+  await expect(page.getByText('Monica De La Cruz')).toBeVisible();
 });

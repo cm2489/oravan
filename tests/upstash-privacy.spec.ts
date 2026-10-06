@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 import { NextRequest } from 'next/server';
 import { POST as districtPost } from '../app/api/district/route';
-import { GET as repsGet } from '../app/api/reps/route';
+import { POST as repsPost } from '../app/api/reps/route';
 import { noteImpression, noteImpressionForToken } from '../lib/impressions';
 import { __resetSaltMemoForTests, createRateLimiter, createTenantRateLimiter } from '../lib/ratelimit';
 import { contentVersion, createScriptCache } from '../lib/scriptcache';
@@ -147,16 +147,17 @@ test('a burst of script/district/MCP traffic leaves both databases clean', async
   );
   expect(districtRes.status, 'district (no-match fixture)').toBe(404);
 
-  // The REAL reps route, with a ZIP in the query string - the second route
-  // in this file driven as the actual handler rather than through the
-  // modules it feeds (it imports only next/server + lib/core, so unlike
-  // script/MCP it can be require()d here). A real NextRequest, not a plain
-  // Request: this handler reads req.nextUrl, which only NextRequest has.
-  // Three real ZIPs across three callers, so both the ZIP and the caller vary.
+  // The REAL reps route, with a ZIP in the POST body (2026-10-06: never the
+  // address) - the second route in this file driven as the actual handler
+  // rather than through the modules it feeds (it imports only next/server +
+  // lib/core, so unlike script/MCP it can be require()d here). Three real ZIPs
+  // across three callers, so both the ZIP and the caller vary.
   for (const [i, zip] of REPS_ZIPS.entries()) {
-    const repsRes = await repsGet(
-      new NextRequest(`http://localhost/api/reps?zip=${zip}`, {
-        headers: { 'x-forwarded-for': CALLER_IPS[i] },
+    const repsRes = await repsPost(
+      new NextRequest('http://localhost/api/reps', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-forwarded-for': CALLER_IPS[i] },
+        body: JSON.stringify({ zip }),
       })
     );
     expect(repsRes.status, `reps lookup for ${zip}`).toBe(200);
