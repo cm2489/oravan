@@ -3,7 +3,14 @@
     "schema": 1,
     "note": "Big Questions status lines as last flagged by scripts/moment-watch.mjs --mode=status. Deleting it re-baselines (no status diff, review dates re-flagged)."
   },
-  "pastReview": [],
+  "pastReview": [
+    "annual-defense-policy",
+    "crypto-oversight-split-between-sec-and-cftc",
+    "iran-war-powers",
+    "paying-college-athletes",
+    "penny-production-and-cash-rounding",
+    "syria-sanctions-repeal"
+  ],
   "questions": {
     "iran-war-powers": {
       "review_by": "2026-10-05",
@@ -76,8 +83,8 @@
       "review_by": "2026-10-05",
       "vehicles": {
         "s-4668-119": {
-          "fingerprint": "passedWaiting|house||2026-09-28",
-          "text": "Passed Senate with an amendment by Yea-Nay Vote. 77 - 22. Record Vote Number: 250. (text: CR S5044-5063)"
+          "fingerprint": "heldAtDesk|house||2026-10-05",
+          "text": "Held at the desk."
         }
       }
     },
