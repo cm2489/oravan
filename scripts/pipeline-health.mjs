@@ -60,6 +60,9 @@ import {
   estimateDaySpend,
   floorSignalFreshness,
   formatHealthSection,
+  isNightly,
+  orderLogTargets,
+  parkedDecodeCount,
   parseCoverageDone,
   parseCoverageLean,
   parseCoverageOutage,
@@ -68,8 +71,11 @@ import {
   parseRedecodeDone,
   parseSyncDone,
   parseT3,
+  portraitsMissingUpstream,
   pressFeedHealth,
+  runThatWroteCursor,
 } from '../lib/pipeline-health.mjs';
+import { RECHECK_DAYS as PORTRAIT_RECHECK_DAYS } from './mirror-portraits.mjs';
 import { QUESTION_PRESS_PATH, questionPressActivity, questionTerms } from '../lib/question-press.mjs';
 
 const REPO = process.env.HEALTH_REPO || 'cm2489/oravan';
@@ -188,7 +194,8 @@ function runLog(entry) {
 
 /**
  * A data file's contents at the commit BEFORE the one that last touched it —
- * the baseline every delta in this report is measured against.
+ * the baseline every delta in this report is measured against. `back = 2`
+ * reaches one touch further (the cursor row's "did the sync before move it").
  *
  * Returns null, loudly, when the history cannot reach two commits that touched
  * the file. That is the normal outcome on a shallow checkout, and it must
@@ -199,15 +206,16 @@ function runLog(entry) {
  * @param {string} path
  * @returns {string | null}
  */
-function previousBlob(path) {
-  const revs = run('git', ['rev-list', '-2', 'HEAD', '--', path]);
+function previousBlob(path, back = 1) {
+  const revs = run('git', ['rev-list', `-${back + 1}`, 'HEAD', '--', path]);
   if (!revs) return null;
-  const [, previousCommit] = revs.trim().split('\n');
-  if (!previousCommit) {
-    warn(`no second commit touching ${path} is reachable (shallow checkout?) — its delta reads "not found", not 0`);
+  const commit = revs.trim().split('\n')[back];
+  if (!commit) {
+    const nth = ['first', 'second', 'third'][back] ?? `${back + 1}th`;
+    warn(`no ${nth} commit touching ${path} is reachable (shallow checkout?) — its delta reads "not found", not 0`);
     return null;
   }
-  return run('git', ['show', `${previousCommit}:${path}`]);
+  return run('git', ['show', `${commit}:${path}`]);
 }
 
 /* ------------------------------------------------------------------ *
@@ -262,9 +270,9 @@ export function buildReport({ now = Date.now() } = {}) {
   if (nightlyRun && nightlyRun.status === 'completed' && !logCandidates.some((r) => r.databaseId === nightlyRun.databaseId)) {
     logCandidates.push(nightlyRun);
   }
-  const logTargets = logCandidates.sort(
-    (a, b) => Number(b.workflowName === 'Nightly bill sync') - Number(a.workflowName === 'Nightly bill sync')
-  );
+  // Newest nightly first (see orderLogTargets): the loop below takes the
+  // night's counters from the first nightly log it reads.
+  const logTargets = orderLogTargets(logCandidates);
   const skippedLogs = Math.max(0, logTargets.length - MAX_LOG_FETCHES);
   const anthropic = { creditBalance: 0, invalidRequestOther: 0, total: 0 };
   const anthropicByWorkflow = {};
@@ -277,6 +285,9 @@ export function buildReport({ now = Date.now() } = {}) {
   let pregen = null;
   let portrait404s = null;
   let upstashCacheFailures = null;
+  let nightlyLogRead = false;
+  /** Every nightly DONE line read today, by run id — the cursor row needs the one that wrote the committed cursor. */
+  const syncDoneByRun = new Map();
 
   for (const r of logTargets.slice(0, MAX_LOG_FETCHES)) {
     const log = runLog(r);
@@ -294,8 +305,12 @@ export function buildReport({ now = Date.now() } = {}) {
     t3.batched += runT3.batched;
     t3.resolved += runT3.resolved;
     t3.runs += runT3.runs;
-    if (r.workflowName === 'Nightly bill sync') {
-      sync = parseSyncDone(log);
+    if (isNightly(r)) {
+      const done = parseSyncDone(log);
+      syncDoneByRun.set(r.databaseId, done);
+      if (nightlyLogRead) continue;
+      nightlyLogRead = true;
+      sync = done;
       redecode = parseRedecodeDone(log);
       coverageDone = parseCoverageDone(log);
       coverageLean = parseCoverageLean(log);
@@ -406,16 +421,36 @@ export function buildReport({ now = Date.now() } = {}) {
   // that last touched data/sync-state.json. This is what turns FROZEN back
   // into the movement test its name claims (see cursorHealth). Unreachable
   // history reads as "not measured", never as "moved".
-  const previousCursor = (() => {
-    const blob = previousBlob('data/sync-state.json');
+  const cursorAt = (back) => {
+    const blob = previousBlob('data/sync-state.json', back);
     if (blob === null) return null;
     try {
       return JSON.parse(blob)?.lastSync ?? null;
     } catch (e) {
-      warn(`the previous data/sync-state.json did not parse (${e.message}) — cursor movement reads "not measured"`);
+      warn(`data/sync-state.json ${back} commit(s) back did not parse (${e.message}) — cursor movement reads "not measured"`);
       return null;
     }
-  })();
+  };
+  const previousCursor = cursorAt(1);
+  // One sync further back: tells "stood still once, after moving" (held for a
+  // parked batch, see cursorHealth) from "stood still twice" (FROZEN).
+  const earlierCursor = cursorAt(2);
+  // Bills waiting on a slow decode batch, committed with the cursor.
+  const parkedDecodes = parkedDecodeCount(readJsonFile('data/decode-batch-parked.json'));
+  // The DONE line of the run that WROTE the committed cursor: the newest
+  // nightly that started before the state's lastRun. Null when that run is
+  // still going (its log cannot be downloaded yet) or its log was not read —
+  // the cursor row then rests on the committed files alone.
+  const producerRun = runThatWroteCursor(allRuns, state?.lastRun);
+  // That run can sit outside the 24h window while a newer nightly is still
+  // going, or past the per-run log cap. Its DONE line is what keeps a cursor
+  // held for a parked batch AND truncated (2026-09-27) reading FROZEN, so read
+  // that one log for this line alone: it adds to no other counter.
+  if (producerRun && producerRun.status === 'completed' && !syncDoneByRun.has(producerRun.databaseId)) {
+    const log = runLog(producerRun);
+    if (log !== null) syncDoneByRun.set(producerRun.databaseId, parseSyncDone(log));
+  }
+  const producerDone = producerRun ? (syncDoneByRun.get(producerRun.databaseId) ?? null) : null;
 
   const staleness = coverage ? coverageStaleness(coverage, { now }) : null;
 
@@ -454,7 +489,15 @@ export function buildReport({ now = Date.now() } = {}) {
       bills: corpusBills,
       delta: corpusBills !== null && previousBills !== null ? corpusBills - previousBills : null,
     },
-    cursor: state ? cursorHealth(state, { now, previousSync: previousCursor }) : null,
+    cursor: state
+      ? cursorHealth(state, {
+          now,
+          previousSync: previousCursor,
+          earlierSync: earlierCursor,
+          parkedDecodes,
+          lastDone: producerDone,
+        })
+      : null,
     coverage: staleness
       ? {
           bills: coverageBills,
@@ -475,6 +518,16 @@ export function buildReport({ now = Date.now() } = {}) {
     pregen,
     upstashCacheFailures,
     portrait404s,
+    // Members with no photo upstream, from the committed record #402 keeps
+    // (scripts/mirror-portraits.mjs). The 404 count above only counts the
+    // members re-asked that night.
+    portraitsMissing: (() => {
+      const missing = portraitsMissingUpstream(
+        readJsonFile('data/portrait-missing.json'),
+        readJsonFile('data/legislators.json')
+      );
+      return missing ? { ...missing, recheckDays: PORTRAIT_RECHECK_DAYS } : null;
+    })(),
     conversation: conversation
       ? { slugs: Object.keys(conversation.slugs ?? {}).length, dangling: danglingConversationSlugs(conversation, billIds) }
       : null,
