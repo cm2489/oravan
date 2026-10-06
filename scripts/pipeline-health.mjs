@@ -71,8 +71,10 @@ import {
   parseRedecodeDone,
   parseSyncDone,
   parseT3,
+  pickNightlyLog,
   portraitsMissingUpstream,
   pressFeedHealth,
+  producerStillRunning,
   runThatWroteCursor,
 } from '../lib/pipeline-health.mjs';
 import { RECHECK_DAYS as PORTRAIT_RECHECK_DAYS } from './mirror-portraits.mjs';
@@ -270,8 +272,8 @@ export function buildReport({ now = Date.now() } = {}) {
   if (nightlyRun && nightlyRun.status === 'completed' && !logCandidates.some((r) => r.databaseId === nightlyRun.databaseId)) {
     logCandidates.push(nightlyRun);
   }
-  // Newest nightly first (see orderLogTargets): the loop below takes the
-  // night's counters from the first nightly log it reads.
+  // Newest nightly first (see orderLogTargets): the night's counters come
+  // from the newest nightly log that carries a DONE line (pickNightlyLog).
   const logTargets = orderLogTargets(logCandidates);
   const skippedLogs = Math.max(0, logTargets.length - MAX_LOG_FETCHES);
   const anthropic = { creditBalance: 0, invalidRequestOther: 0, total: 0 };
@@ -285,7 +287,8 @@ export function buildReport({ now = Date.now() } = {}) {
   let pregen = null;
   let portrait404s = null;
   let upstashCacheFailures = null;
-  let nightlyLogRead = false;
+  /** Every nightly log read today, newest first, with its DONE line. */
+  const nightlyReads = [];
   /** Every nightly DONE line read today, by run id — the cursor row needs the one that wrote the committed cursor. */
   const syncDoneByRun = new Map();
 
@@ -308,17 +311,21 @@ export function buildReport({ now = Date.now() } = {}) {
     if (isNightly(r)) {
       const done = parseSyncDone(log);
       syncDoneByRun.set(r.databaseId, done);
-      if (nightlyLogRead) continue;
-      nightlyLogRead = true;
-      sync = done;
-      redecode = parseRedecodeDone(log);
-      coverageDone = parseCoverageDone(log);
-      coverageLean = parseCoverageLean(log);
-      coverageOutage = parseCoverageOutage(log);
-      pregen = parsePregen(log);
-      portrait404s = countPortrait404s(log);
-      upstashCacheFailures = countUpstashCacheFailures(log);
+      nightlyReads.push({ log, done });
     }
+  }
+  // One log for every nightly counter, so they all describe the same run.
+  const nightlyLog = pickNightlyLog(nightlyReads);
+  if (nightlyLog) {
+    const { log } = nightlyLog;
+    sync = nightlyLog.done;
+    redecode = parseRedecodeDone(log);
+    coverageDone = parseCoverageDone(log);
+    coverageLean = parseCoverageLean(log);
+    coverageOutage = parseCoverageOutage(log);
+    pregen = parsePregen(log);
+    portrait404s = countPortrait404s(log);
+    upstashCacheFailures = countUpstashCacheFailures(log);
   }
 
   /* -- side workflows --------------------------------------------- */
@@ -439,8 +446,10 @@ export function buildReport({ now = Date.now() } = {}) {
   const parkedDecodes = parkedDecodeCount(readJsonFile('data/decode-batch-parked.json'));
   // The DONE line of the run that WROTE the committed cursor: the newest
   // nightly that started before the state's lastRun. Null when that run is
-  // still going (its log cannot be downloaded yet) or its log was not read —
-  // the cursor row then rests on the committed files alone.
+  // still going (its log cannot be downloaded yet), its log could not be read,
+  // or no such run is in the list. Only the first of those lets the cursor
+  // row rest on the committed files alone (producerStillRunning); the others
+  // keep it FROZEN.
   const producerRun = runThatWroteCursor(allRuns, state?.lastRun);
   // That run can sit outside the 24h window while a newer nightly is still
   // going, or past the per-run log cap. Its DONE line is what keeps a cursor
@@ -496,6 +505,7 @@ export function buildReport({ now = Date.now() } = {}) {
           earlierSync: earlierCursor,
           parkedDecodes,
           lastDone: producerDone,
+          producerRunning: producerStillRunning(producerRun, state?.lastRun),
         })
       : null,
     coverage: staleness

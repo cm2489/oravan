@@ -37,8 +37,11 @@ import {
   parseRedecodeDone,
   parseSyncDone,
   parseT3,
+  pickNightlyLog,
   portraitsMissingUpstream,
+  PRODUCER_START_SLACK_MS,
   pressFeedHealth,
+  producerStillRunning,
   runThatWroteCursor,
   stripLogPrefix,
 } from '../lib/pipeline-health.mjs';
@@ -650,9 +653,10 @@ test.describe('cursorHealth — one sync held for a parked batch is not a freeze
   };
 
   test('the false alarm: HELD, no ⛔, and the row says why', () => {
-    // As at 18:17Z the dispatch was still running, so its log could not be
-    // read: the committed files alone decide, and the row says so.
-    const h = cursorHealth(state, { ...base, lastDone: null });
+    // As at 18:17Z the dispatch was still running (run 36750647347, updated
+    // 18:22:39Z), so its log could not be read: the committed files alone
+    // decide, and the row says so.
+    const h = cursorHealth(state, { ...base, lastDone: null, producerRunning: true });
     expect(h.moved).toBe(false);
     expect(h.movedBefore).toBe(true);
     expect(h.behind).toBe(true);
@@ -661,7 +665,7 @@ test.describe('cursorHealth — one sync held for a parked batch is not a freeze
     const r = report(h);
     expect(r.alarms).toEqual([]);
     expect(formatHealthSection(r)).toContain(
-      'cursor              lastSync 2.8d · lastRun 1.0h · BEHIND (held for 10 parked decode(s); moved on the sync before; run log not read, other causes unchecked)'
+      'cursor              lastSync 2.8d · lastRun 1.0h · BEHIND (held for 10 parked decode(s); moved on the sync before; its run is still going, other causes unchecked)'
     );
   });
 
@@ -722,17 +726,67 @@ test.describe('cursorHealth — one sync held for a parked batch is not a freeze
     expect(cursorHealth(state, { ...base, earlierSync: null }).frozen).toBe(true);
   });
 
-  test('a DONE line that describes another cursor is ignored, not trusted', () => {
+  test('a DONE line that describes another cursor excuses nothing: FROZEN', () => {
     // An older run's line (cursor 09-26) says nothing about why 09-28 stood
-    // still, so it neither excuses nor condemns: the committed files decide.
-    const h = cursorHealth(state, { ...base, lastDone: { ...held!, cursor: '2026-09-26T00:00:00Z', queued: 9 } });
-    expect(h.held).toBe(true);
-    expect(h.heldCheckedAgainstLog).toBe(false);
+    // still. The run that wrote 09-28 has finished, so its own line was there
+    // to read and was not: that is not evidence of a hold.
+    const h = cursorHealth(state, { ...base, lastDone: { ...held!, cursor: '2026-09-26T00:00:00Z' } });
+    expect(h.held).toBe(false);
+    expect(h.frozen).toBe(true);
+    expect(report(h).alarms.map((a) => a.code)).toContain('cursor-frozen');
+  });
+
+  test('a missing DONE line keeps FROZEN unless the run that wrote the cursor is still going', () => {
+    // The run finished but its log could not be read, the run list was stale,
+    // or no producing run was found: the collector passes producerRunning
+    // false (producerStillRunning) and the alarm stays on.
+    for (const producerRunning of [false, undefined]) {
+      const h = cursorHealth(state, { ...base, lastDone: null, producerRunning });
+      expect(h.frozen, String(producerRunning)).toBe(true);
+      expect(h.held, String(producerRunning)).toBe(false);
+      expect(report(h).alarms.map((a) => a.code)).toContain('cursor-frozen');
+    }
+  });
+
+  test('a true freeze still alarms: the 2026-09-27 nightly with its log unread', () => {
+    // d165d57's committed state (parked AND truncated window), the run that
+    // wrote it completed, and no readable DONE line. The next sync moved the
+    // cursor (503f7ff), so a HELD here would never have been flagged.
+    const h = cursorHealth(
+      { lastSync: '2026-09-25T00:00:00Z', lastRun: '2026-09-27T18:27:46.844Z' },
+      {
+        now: Date.parse('2026-09-28T20:01:31.693Z'),
+        previousSync: '2026-09-25T00:00:00Z',
+        earlierSync: '2026-09-24T00:00:00Z',
+        parkedDecodes: 3,
+        lastDone: null,
+        producerRunning: producerStillRunning(
+          { status: 'completed', startedAt: '2026-09-27T18:21:36Z' },
+          '2026-09-27T18:27:46.844Z'
+        ),
+      }
+    );
+    expect(h.held).toBe(false);
+    expect(h.frozen).toBe(true);
+    expect(report(h).alarms.map((a) => a.code)).toContain('cursor-frozen');
+  });
+
+  test('a residual false alarm, kept on purpose: a held nightly then a held dispatch is two still syncs', () => {
+    // Both syncs parked decodes and neither moved the cursor. This reads
+    // FROZEN even when the second only waited on the first's batch: two still
+    // syncs in a row are not told apart by cause.
+    const h = cursorHealth(state, { ...base, earlierSync: '2026-09-28T00:00:00Z', lastDone: null, producerRunning: true });
+    expect(h.frozen).toBe(true);
   });
 
   test('the lateness gate does not read any of this: a held cursor past 10 days still reds the run', () => {
     const old = { lastSync: '2026-09-18T00:00:00Z', lastRun: '2026-09-30T17:20:43.817Z' };
-    const h = cursorHealth(old, { ...base, previousSync: old.lastSync, earlierSync: '2026-09-17T00:00:00Z' });
+    const h = cursorHealth(old, {
+      ...base,
+      previousSync: old.lastSync,
+      earlierSync: '2026-09-17T00:00:00Z',
+      producerRunning: true,
+    });
     expect(h.held).toBe(true);
     expect(cursorAgeVerdict({ lastSync: old.lastSync, now }).ok).toBe(false);
   });
@@ -769,6 +823,33 @@ test.describe('which nightly log the digest reads', () => {
 
   test('nightlies first, newest nightly first, so its counters are the ones printed', () => {
     expect(orderLogTargets(runs).map((r) => r.databaseId)).toEqual([3, 2, 1, 4]);
+  });
+
+  test('the newest nightly log WITH a DONE line gives the counters; a newer cancelled one does not blank them', () => {
+    const older = { id: 2, done: parseSyncDone(CURSOR_HELD) };
+    const cancelled = { id: 3, done: null };
+    expect(pickNightlyLog([cancelled, older])?.id).toBe(2);
+    expect(pickNightlyLog([older, cancelled])?.id).toBe(2);
+    // None has a DONE line: the newest log read, so its other lines still parse.
+    expect(pickNightlyLog([cancelled, { id: 2, done: null }])?.id).toBe(3);
+    expect(pickNightlyLog([])).toBeNull();
+  });
+
+  test('the producer counts as still running only when found, not completed, and started just before lastRun', () => {
+    const lastRun = '2026-09-30T17:20:43.817Z';
+    // The 09-30 dispatch as the 18:17:58Z digest saw it.
+    const dispatch = { status: 'in_progress', startedAt: '2026-09-30T17:20:14Z' };
+    expect(producerStillRunning(dispatch, lastRun)).toBe(true);
+    expect(producerStillRunning({ ...dispatch, status: 'completed' }, lastRun)).toBe(false);
+    expect(producerStillRunning(null, lastRun)).toBe(false);
+    expect(producerStillRunning(dispatch, null)).toBe(false);
+    expect(producerStillRunning({ status: 'in_progress' }, lastRun)).toBe(false);
+    // A run list stale enough to show an older run still going is not the producer.
+    const started = Date.parse(lastRun) - PRODUCER_START_SLACK_MS - 1000;
+    expect(producerStillRunning({ status: 'in_progress', startedAt: new Date(started).toISOString() }, lastRun)).toBe(
+      false
+    );
+    expect(producerStillRunning({ status: 'in_progress', startedAt: '2026-09-30T17:21:00Z' }, lastRun)).toBe(false);
   });
 
   test('the run that wrote the cursor is the newest nightly that started by lastRun', () => {
