@@ -1055,6 +1055,54 @@ export function withoutRecordedVoteLines(recent, { votes = [], onRecord = null }
 export const WITHOUT_RECORDED_VOTE_RULE =
   '- A passage by voice vote or by unanimous consent (listed under PASSED WITHOUT A RECORDED VOTE below) has no roll call by its nature. When the record gives no recorded vote for a measure, say how the record says it passed, with its date, using the phrase given for it: EN "by voice vote" / "by unanimous consent", ES "por votación a viva voz" / "por consentimiento unánime". Say nothing about a tally, a count or a roll call for it, in either language: never "with no tally", "no recorded vote", "no roll call"; never "no hay recuento", "no se registró", "sin votación nominal". A sentence like that is rejected automatically.';
 
+/*
+ * A SHORT RECORD MAKES A SHORT SUMMARY (2026-10-01). The prompt asked for 90
+ * to 140 words whatever the window held. The penny question's window holds
+ * two actions, both on 2026-09-28 (H.R. 10167 discharged from committee and
+ * passed by the Senate, by unanimous consent), and two sentences cannot fill
+ * 90 words. So the model padded, and the padding was exactly what the
+ * absence lint exists to refuse: "The record shows no other action on S. 1525
+ * or H.R. 3074", "no other votes", "no muestra". Every nightly from 09-26 to
+ * 09-30 paid for a first summary and threw it away, and the page has never
+ * shown one. Measured against the real model on 2026-10-01 (throwaway
+ * workflow run 36884798035, six calls per prompt, $0.13): the old length
+ * line, 3 of 6 rejected; the line below, 6 of 6 accepted at 43 to 49 words,
+ * each stating the two actions with their date and nothing else.
+ *
+ * A window with more than SHORT_RECORD_MAX_ITEMS lines (record updates,
+ * press clusters and roll calls together) keeps FULL_LENGTH_RULE, byte for
+ * byte, so its prompt is exactly what it was.
+ */
+export const SHORT_RECORD_MAX_ITEMS = 3;
+export const FULL_LENGTH_RULE = '- 90 to 140 words per language. Plain text, no markdown, no headings.';
+export const SHORT_RECORD_LENGTH_RULE =
+  '- Length follows the record: the record below is short, so the summary is short — 40 to 90 words per language, about one or two sentences for each vote or action. Never pad it with measures that did not move or with what did not happen. Plain text, no markdown, no headings.';
+
+/**
+ * The sentence a rejected summary was refused for, one per quoted hit in the
+ * lint's failure lines (`absence claim "no other action" …`, `forbidden
+ * vocabulary "fight" …`), so the run log says what the model wrote. Until
+ * 2026-10-01 a rejection logged only the phrase, and five nights of penny
+ * rejections could not be read back. Exported for the unit suite.
+ *
+ * @param {string} text      the rejected summary in one language
+ * @param {string[]} failures the lint's failure lines for that language
+ * @returns {string[]}
+ */
+export function refusedSentences(text, failures) {
+  const sentences = String(text ?? '').split(/(?<=[.!?])\s+/);
+  const out = [];
+  for (const f of failures ?? []) {
+    const hit = /"([^"]+)"/.exec(String(f))?.[1];
+    if (!hit) continue;
+    const sentence = sentences.find((x) => x.toLowerCase().includes(hit.toLowerCase()));
+    if (!sentence) continue;
+    const shown = sentence.length > 240 ? `${sentence.slice(0, 240)}…` : sentence;
+    if (!out.includes(shown)) out.push(shown);
+  }
+  return out;
+}
+
 /**
  * Exported for the unit suite: the lint-rejection branch below is the whole of
  * the "there is no fallback for a summary" doctrine, and until now it was a
@@ -1135,6 +1183,9 @@ export async function generateStateSummary(anthropic, momentId, entry, statuses,
   // with no such passage: its prompt is exactly what it was.
   const noRollLines = withoutRecordedVoteLines(recent, { votes, onRecord });
   const noRollRule = noRollLines.length ? `\n${WITHOUT_RECORDED_VOTE_RULE}` : '';
+  // How long the summary may be (SHORT_RECORD_LENGTH_RULE above): a window
+  // of a few lines gets a short summary instead of a padded one.
+  const lengthRule = recent.length + (votes ?? []).length <= SHORT_RECORD_MAX_ITEMS ? SHORT_RECORD_LENGTH_RULE : FULL_LENGTH_RULE;
   const noRollSection = noRollLines.length
     ? `\n\nPASSED WITHOUT A RECORDED VOTE, LAST ${SUMMARY_WINDOW_DAYS} DAYS (the record's sentence verbatim → the phrase to use):\n${noRollLines.join('\n')}`
     : '';
@@ -1172,7 +1223,7 @@ RULES:
 ${partyRule({ figures: 'the "by party" figures printed with that roll call under RECORDED VOTES below', allowed: PARTY_COUNTS })}
 - Never use advocacy verbs (fight, resist, stop, save, defend, block) or crisis/attack/scheme framing, in either language.
 - Reproduce every tally and roll-call number exactly as given.
-- 90 to 140 words per language. Plain text, no markdown, no headings.
+${lengthRule}
 ${PRESIDENT_STYLE_RULE}
 
 VOICE — "where it stands", not a log:
@@ -1235,7 +1286,12 @@ Output STRICT JSON only — {"en":"…","es":"…"} — no prose, no markdown fe
     // Oravan's own voice, and no government sentence can stand in for it. The
     // previous revision simply stands — honest, because it is still grounded
     // in a record nothing here has contradicted.
-    console.warn(`  summary ${momentId} REJECTED, the previous revision stands: ${failures.join('; ')}`);
+    const refused = ['en', 'es'].flatMap((lang) =>
+      refusedSentences(parsed[lang], failures.filter((f) => f.startsWith(`${lang}: `))).map((x) => `${lang}: "${x}"`),
+    );
+    console.warn(
+      `  summary ${momentId} REJECTED, the previous revision stands: ${failures.join('; ')}${refused.length ? ` — refused sentence(s): ${refused.join(' | ')}` : ''}`,
+    );
     return null;
   }
 

@@ -18,6 +18,7 @@ import {
   nominationHasCallScript,
   passageState,
   statusBasisText,
+  settledDecision,
   statusKeyFor,
   type LiveCallKey,
 } from '../lib/journey';
@@ -63,6 +64,7 @@ interface CorpusBill {
   last_action_date: string | null;
   last_action_text: string | null;
   status_basis_text?: string | null;
+  status_basis_date?: string | null;
   urgency_score: number;
 }
 
@@ -1197,10 +1199,10 @@ test.describe('deriveJourney', () => {
 
   test('a failed motion reads as failed, in both languages, with the chamber the record named', () => {
     expect(sentence(en, 'sjres', 'floor_vote', DISCHARGE_REJECTED_TEXT)).toBe(
-      'the Senate has not agreed to take it up — the last motion to do so failed.'
+      'the Senate has not agreed to take it up. The last motion to do so failed.'
     );
     expect(sentence(es, 'sjres', 'floor_vote', DISCHARGE_REJECTED_TEXT)).toBe(
-      'el Senado no ha aceptado considerarlo — la última moción para hacerlo fracasó.'
+      'el Senado no ha aceptado considerarlo. La última moción para hacerlo fracasó.'
     );
   });
 
@@ -2059,17 +2061,25 @@ test.describe('scripts/moment-candidates.mjs copy is pinned to lib/journey.ts', 
    * calendar, and that is a true quiet week, not a broken gate. So the fresh
    * bucket is asserted only as "not everything", while the two buckets that
    * cannot honestly empty on this corpus are asserted non-zero.
+   *
+   * A FOURTH BUCKET since 2026-09-29: `rejected`, a measure a chamber voted
+   * down on passage or adoption. Called here without the record, as before,
+   * so the .mjs copy reads the last action text alone; the record-given
+   * reading is pinned corpus-wide above and by fixture below.
    */
-  test('statusKeyFor still splits this corpus three ways — placement, aged placement, activity', () => {
+  test('statusKeyFor still splits this corpus — placement, aged placement, activity, rejected', () => {
     const keyed = floorVote.map((b) =>
       scriptStatusKeyFor(b.status, b.last_action_text, b.last_action_date, SWEEP_NOW)
     );
     const fresh = keyed.filter((k) => k === 'floor_vote');
     const stale = keyed.filter((k) => k === 'floor_vote_stale');
     const activity = keyed.filter((k) => k === 'floor_activity');
+    const rejected = keyed.filter((k) => k === 'rejected');
 
-    // Every floor_vote bill lands in exactly one bucket — no fourth answer.
-    expect(fresh.length + stale.length + activity.length).toBe(floorVote.length);
+    // Every floor_vote bill lands in exactly one bucket — no fifth answer.
+    expect(fresh.length + stale.length + activity.length + rejected.length).toBe(floorVote.length);
+    // Rejections are rare; they must never swallow the activity bucket.
+    expect(rejected.length).toBeLessThan(activity.length);
     // Aged placements are the population this ruling exists for; a corpus
     // reaching back past a year cannot honestly have none.
     expect(stale.length).toBeGreaterThan(0);
@@ -2149,6 +2159,7 @@ test.describe('scripts/moment-candidates.mjs copy is pinned to lib/journey.ts', 
     keys.add('floor_activity');
     keys.add('passed_both');
     keys.add('adopted');
+    keys.add('rejected');
     for (const key of keys) {
       expect((en.bills.status as Record<string, string>)[key], `EN ${key}`).toBeTruthy();
       expect((es.bills.status as Record<string, string>)[key], `ES ${key}`).toBeTruthy();
@@ -2161,7 +2172,120 @@ test.describe('scripts/moment-candidates.mjs copy is pinned to lib/journey.ts', 
     for (const m of [en, es]) {
       const { passed_chamber, passed_both, adopted } = m.bills.status;
       expect(new Set([passed_chamber, passed_both, adopted]).size).toBe(3);
+      // A rejection is not "floor activity", and it is the same word the
+      // site already prints for it on Big Question rows and member pages
+      // (lib/status-word.ts, `bills.statusWord.rejected`).
+      expect(m.bills.status.rejected).not.toBe(m.bills.status.floor_activity);
+      expect(m.bills.status.rejected).toBe(m.bills.statusWord.rejected);
     }
+  });
+
+  /*
+   * THE REJECTION READING (2026-09-29). H.Con.Res. 89's page said "Floor
+   * activity" beside a panel that said "No call to make" and a "Right now:"
+   * sentence that said the Senate rejected it, 49–50. The label now reads
+   * `rejected` on exactly the records settledDecision calls rejected: a
+   * failed vote to pass the measure or to agree to it. Every failed
+   * PROCEDURAL vote keeps `floor_activity` (docs/record-truth.md §7: "Only a
+   * law or a failed final vote counts as finished"). Fixture sentences are
+   * verbatim from data/bills.json as committed on 2026-09-29.
+   */
+  test('statusKeyFor: the rejection reading, pinned by fixture in both copies and against the stepper', () => {
+    const REJECTED_CASES = [
+      // H.Con.Res. 89: the Senate voted it down, the latest step.
+      {
+        bill_type: 'hconres',
+        last_action_text: 'Failed of passage in Senate by Yea-Nay Vote. 49 - 50. Record Vote Number: 244.',
+        last_action_date: '2026-09-24',
+        date: '2026-09-24',
+        step: 3,
+      },
+      // H.R. 2262: the House voted it down; the reconsider line sits over it,
+      // so the reading comes from the status basis and ITS date.
+      {
+        bill_type: 'hr',
+        last_action_text: 'Motion to reconsider laid on the table Agreed to without objection.',
+        last_action_date: '2026-01-14',
+        status_basis_text:
+          'Failed of passage/not agreed to in House On passage Failed by the Yeas and Nays: 209 - 215 (Roll no. 19).',
+        status_basis_date: '2026-01-13',
+        date: '2026-01-13',
+        step: 2,
+      },
+    ] as const;
+    for (const { date, step, ...fields } of REJECTED_CASES) {
+      const b = { status: 'floor_vote' as BillStatus, ...fields };
+      const label = `${fields.bill_type} ${fields.last_action_text}`;
+      expect(statusKeyFor(b), label).toBe('rejected');
+      expect(
+        scriptStatusKeyFor(b.status, b.last_action_text, b.last_action_date, Date.now(), b),
+        `.mjs ${label}`
+      ).toBe('rejected');
+      // Not clocked: a vote that happened does not go stale.
+      expect(statusKeyFor({ ...b, last_action_date: STALE }), `${label} aged`).toBe('rejected');
+      // The label, the panel and the stepper read one record one way.
+      expect(settledDecision(b)?.kind, label).toBe('rejected');
+      const j = deriveJourney(b);
+      expect(j, label).toMatchObject({ nowKey: 'nowFloorPassageRejected', isRejected: true, step, date });
+    }
+
+    // NOT a rejection of the measure: every failed procedural vote keeps
+    // `floor_activity`, and its stepper keeps a current step.
+    const PROCEDURAL = [
+      // S. 3386: cloture on the motion to proceed, not invoked.
+      'Cloture on the motion to proceed to the measure not invoked in Senate by Yea-Nay Vote. 51 - 48. Record Vote Number: 643. (CR S8654)',
+      // S.J.Res. 185: the motion to proceed, rejected.
+      'Motion to proceed to consideration of measure rejected in Senate by Yea-Nay Vote. 47 - 50. Record Vote Number: 192. (CR S3194)',
+      // S.J.Res. 172: the motion to discharge, rejected.
+      'Motion to discharge Senate Committee on Foreign Relations rejected by Yea-Nay Vote. 47 - 48. Record Vote Number: 174.',
+      // S. 2503: a failed two-thirds vote under suspension of the rules.
+      SUSPENSION_FAILED_TEXT,
+      // H.R. 3633: a motion to reconsider a failed cloture vote, entered.
+      'Motion by Senator Tillis to reconsider the vote by which cloture on the motion to proceed to the measure was not invoked (Record Vote No. 234) entered in Senate.',
+    ];
+    for (const text of PROCEDURAL) {
+      for (const bill_type of ['s', 'sjres', 'hr']) {
+        const b = { bill_type, status: 'floor_vote' as BillStatus, last_action_text: text, last_action_date: FRESH };
+        expect(statusKeyFor(b), `${bill_type} ${text}`).toBe('floor_activity');
+        expect(scriptStatusKeyFor(b.status, text, FRESH, Date.now(), b), `.mjs ${bill_type} ${text}`).toBe(
+          'floor_activity'
+        );
+        expect(settledDecision(b), text).toBeNull();
+        expect(deriveJourney(b).isRejected, text).toBe(false);
+      }
+    }
+    // A rejection sentence under any other status is left to that status.
+    expect(
+      statusKeyFor({
+        bill_type: 'hconres',
+        status: 'committee',
+        last_action_text: 'Failed of passage in Senate by Yea-Nay Vote. 49 - 50. Record Vote Number: 244.',
+        last_action_date: FRESH,
+      })
+    ).toBe('committee');
+  });
+
+  test('statusKeyFor over the corpus: the rejected label, settledDecision\'s rejected and the stepper\'s ended state are one set', () => {
+    let rejected = 0;
+    for (const b of corpus) {
+      const r = recordOf(b);
+      const key = statusKeyFor(r, SWEEP_NOW);
+      const settled = settledDecision(r)?.kind === 'rejected';
+      const j = deriveJourney(r);
+      expect(key === 'rejected', slugOf(b)).toBe(settled);
+      expect(j.isRejected, slugOf(b)).toBe(settled);
+      if (key !== 'rejected') continue;
+      rejected++;
+      expect(j.nowKey, slugOf(b)).toBe('nowFloorPassageRejected');
+      // The ended step prints the record's own date for the failed vote.
+      // (lib/settled-votes.ts settledDecisionDate: the basis's own date when
+      // the pipeline wrote a basis, else the last action's.)
+      expect(j.date, slugOf(b)).toBe(r.status_basis_text ? (r.status_basis_date ?? null) : r.last_action_date);
+    }
+    // Nine on 2026-09-29 (docs/record-truth.md §7). A range, never a count:
+    // a rejection can be followed by a newer action.
+    expect(rejected).toBeGreaterThan(0);
+    expect(rejected).toBeLessThan(40);
   });
 
   /*

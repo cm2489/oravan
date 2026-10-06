@@ -25,8 +25,16 @@
  * pipeline says out loud that it can no longer see production, and the data
  * commit above it has already landed either way.
  *
+ * A NEWER BUILD COUNTS (2026-10-04). When main moves on before the host
+ * builds, the host may build only the newest head and skip ours. A
+ * production build that DESCENDS from EXPECT_SHA already carries this run's
+ * commit, so it verifies the deploy too (lib/deploy-descends.mjs, which
+ * answers false on any doubt, so the poll keeps waiting as before).
+ *
  * Stdlib only — runs on a bare Actions runner without npm ci.
  */
+import { buildDescendsFrom } from '../lib/deploy-descends.mjs';
+
 const PROD_URL = process.env.PROD_URL;
 const EXPECT_SHA = process.env.EXPECT_SHA;
 
@@ -54,6 +62,16 @@ function buildIdOf(html) {
 }
 
 let lastSeen = null;
+/** Builds already found NOT to descend from EXPECT_SHA (an older build never will). */
+const notDescended = new Set();
+const verified = (seen) => {
+  if (!seen) return false;
+  if (seen === EXPECT_SHA) return true;
+  if (notDescended.has(seen)) return false;
+  if (buildDescendsFrom(EXPECT_SHA, seen)) return true;
+  notDescended.add(seen);
+  return false;
+};
 while (Date.now() < deadline) {
   try {
     const res = await fetch(PROD_URL, {
@@ -62,8 +80,12 @@ while (Date.now() < deadline) {
     });
     if (res.ok) {
       lastSeen = buildIdOf(await res.text());
-      if (lastSeen === EXPECT_SHA) {
-        console.log(`production is serving build ${EXPECT_SHA} — deploy verified`);
+      if (verified(lastSeen)) {
+        console.log(
+          lastSeen === EXPECT_SHA
+            ? `production is serving build ${EXPECT_SHA} — deploy verified`
+            : `production is serving build ${lastSeen}, which descends from ${EXPECT_SHA} — deploy verified`
+        );
         process.exit(0);
       }
       console.log(`production build is ${lastSeen ?? 'unknown'}, waiting for ${EXPECT_SHA}…`);
