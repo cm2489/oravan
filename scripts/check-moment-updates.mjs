@@ -7,14 +7,15 @@
  *
  *   node scripts/check-moment-updates.mjs
  *
- * Validates data/moment-updates.json against data/moments.json and
- * data/bills.json: root shape and schema version, id derivation and
- * uniqueness, class/source vocabulary, vehicle membership in THAT moment,
- * the legislative-day rule, no future dates, EN/ES parity, the three lint
- * layers of the editorial law (inherited vocabulary, speculation on record
- * classes, attribution on press clusters), press-cluster corroboration,
- * corrections that resolve, the per-day storage ceiling, revision shape and
- * chronology, and the file-size ceiling.
+ * Validates data/moment-updates.json against data/moments.json,
+ * data/bills.json and (for the vote counts summaries state) data/votes.json:
+ * root shape and schema version, id derivation and uniqueness, class/source
+ * vocabulary, vehicle membership in THAT moment, the legislative-day rule, no
+ * future dates, EN/ES parity, the three lint layers of the editorial law
+ * (inherited vocabulary, speculation on record classes, attribution on press
+ * clusters), press-cluster corroboration, corrections that resolve, the
+ * per-day storage ceiling, revision shape and chronology, the absence and
+ * vote-count lints on stored summaries, and the file-size ceiling.
  *
  * Exits 1 on any violation. Warnings (a busy day past the render cap, a long
  * one-liner, a live moment with no summary yet) print without failing.
@@ -63,10 +64,21 @@ const billSlugs = new Set(bills.map((b) => b.full_identifier));
 // collector itself fails closed to rated-only either way.
 const pressPolicy = loadPressOutletPolicy({ readJSON: read, exists: (p) => existsSync(url(p)) });
 
+// The vote file (2026-10-06): every vote count a stored summary states must
+// be one its grounding holds, and the grounding names roll calls by id. A
+// missing file skips the check (a warning), the same posture as a missing
+// moment-updates file above.
+const VOTES_PATH = 'data/votes.json';
+const rollCallsById = existsSync(url(VOTES_PATH))
+  ? new Map((read(VOTES_PATH).rollCalls ?? []).map((r) => [String(r.id), r]))
+  : null;
+if (!rollCallsById) console.warn(`::warning::check-moment-updates: ${VOTES_PATH} does not exist — vote counts in summaries not checked`);
+
 const { violations, warnings } = checkMomentUpdates(updates, moments, billSlugs, {
   fileBytes,
   pressOutletAdmits: pressPolicy.admits,
   pressOutletRated: pressPolicy.isRated,
+  ...(rollCallsById ? { rollCallsById } : {}),
 });
 for (const p of pressPolicy.problems) violations.push(`${PRESS_ALLOWLIST_PATH}: ${p}`);
 
