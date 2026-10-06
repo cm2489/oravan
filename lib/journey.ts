@@ -364,9 +364,12 @@ export function floorCalendarName(actionText: string | null): FloorCalendar | nu
  *   `floor_vote_stale`  a calendar placement the record has shown nothing
  *                       since. "Placed on the calendar" — the same specific
  *                       fact, in the past tense the date supports.
- *   `floor_activity`    no placement at all (cloture, a rejected motion, a
- *                       Rules resolution). Unchanged, and deliberately NOT
- *                       clocked — see the last paragraph.
+ *   `floor_activity`    no placement at all (cloture, a failed procedural
+ *                       motion, a Rules resolution). Unchanged, and
+ *                       deliberately NOT clocked — see the last paragraph.
+ *
+ * And a fourth, read before the three (2026-09-29): `rejected`, see "THE
+ * REJECTION READING" at the end of this header.
  *
  * WHY THE CLOCK CAME HERE AFTER ALL, AND WHAT THE PREVIOUS HEADER GOT WRONG.
  * This function used to argue itself out of a clock on two grounds, and the
@@ -472,6 +475,24 @@ export function floorCalendarName(actionText: string | null): FloorCalendar | nu
  * passed WITH amendments ('back'; none in the corpus on 2026-09-29). It keeps
  * `passed_chamber`.
  *
+ * THE REJECTION READING (2026-09-29). A `floor_vote` record whose own
+ * sentence says the chamber voted the measure down on passage or adoption
+ * ("Failed of passage in Senate by Yea-Nay Vote. 49 - 50." — H.Con.Res. 89)
+ * printed "Floor activity" beside a call panel that said "No call to make"
+ * and a "Right now:" sentence that said "the Senate voted on it and rejected
+ * it, 49–50". It now reads `rejected` ("Rejected", the word lib/status-word.ts
+ * already printed for the same record on Big Question rows and member pages).
+ *
+ * WHICH RECORDS: exactly the ones settledDecision calls `rejected`, read off
+ * the same stepper derivation, so the chip, the stepper and the panel cannot
+ * disagree. That is docs/record-truth.md §7's "failed final vote", and nothing
+ * wider. Every failed PROCEDURAL vote keeps `floor_activity`, as §7 rules for
+ * the call panel: a failed motion to proceed, cloture not invoked, a rejected
+ * motion to discharge, a failed two-thirds vote under suspension of the
+ * House's rules, and a failed vote with a motion to reconsider entered. None
+ * of those is the chamber's final answer on the measure. Not clocked: a vote
+ * that happened does not go stale.
+ *
  * scripts/moment-candidates.mjs carries an import-free copy of this function
  * (it reads the passage readings only when its caller hands it the bill);
  * tests/journey.unit.spec.ts pins the two corpus-wide at a shared `now`.
@@ -486,6 +507,7 @@ export function statusKeyFor(bill: StatusKeyBill, now: number = Date.now()): Sta
     return stage === 'both' || stage === 'second' ? 'passed_both' : 'passed_chamber';
   }
   if (status !== 'floor_vote') return status;
+  if (settledDecision(bill)?.kind === 'rejected') return 'rejected';
   if (!floorCalendarChamber(bill.last_action_text)) return 'floor_activity';
   return isSignalFresh(bill.last_action_date, now) ? 'floor_vote' : 'floor_vote_stale';
 }
@@ -1131,6 +1153,12 @@ export interface JourneyState {
   floorCalendar: FloorCalendar | null;
   isLaw: boolean;
   isVetoed: boolean;
+  /** True only when a chamber voted the measure down on passage or adoption
+   *  and no motion to reconsider is entered — exactly settledDecision's
+   *  `rejected` (2026-09-29). The stepper then marks `step` as where the
+   *  path ended, with `date`, and the steps after it as not reached. A failed
+   *  procedural vote never sets it. */
+  isRejected: boolean;
   /** Whether the "changes send it back" trailer is still ahead. */
   showTrailer: boolean;
   /** The recorded vote the `nowKey` sentence cites, read out of the record's
@@ -1142,9 +1170,11 @@ export interface JourneyState {
   tally: { yeas: number; nays: number } | null;
   /** The record's own date (YYYY-MM-DD) for the sentence the `nowKey`
    *  sentence cites — set ONLY on `nowPointOfOrderUpheld`, the one "Right
-   *  now:" sentence that prints a date, and null there too when the record
-   *  gives none (lib/settled-votes.ts `settledDecisionDate`: never another
-   *  action's date). Formatted by components/BillJourney.tsx. */
+   *  now:" sentence that prints a date, and on a rejected measure
+   *  (`isRejected`), where the stepper prints it on the step the path ended
+   *  at; null there too when the record gives none (lib/settled-votes.ts
+   *  `settledDecisionDate`: never another action's date). Formatted by
+   *  components/BillJourney.tsx. */
   date: string | null;
 }
 
@@ -1246,6 +1276,7 @@ export function deriveJourney(
     floorCalendar: null,
     isLaw: false,
     isVetoed: false,
+    isRejected: false,
     showTrailer: true,
     tally: null,
     date: null,
@@ -1365,6 +1396,15 @@ export function deriveJourney(
         const passage = floorPassageRejectedChamber(record);
         if (passage) {
           const t = recordedTally(record);
+          /*
+           * THE PATH ENDED HERE (2026-09-29). The stepper used to draw this
+           * step as "You are here", with the ending still ahead, beside a
+           * panel that said "No call to make". `isRejected` lets it mark the
+           * step where the measure was voted down, with the record's own date
+           * for that action, and the steps after it as not reached. Same
+           * reconsider guard as settledDecision, so the two cannot disagree.
+           */
+          const ended = !floorReconsiderPendingChamber(record);
           return {
             ...base,
             step: passage === origin ? 2 : 3,
@@ -1373,6 +1413,8 @@ export function deriveJourney(
             nowKey: 'nowFloorPassageRejected',
             showTrailer: false,
             tally: t && t.yeas <= t.nays ? t : null,
+            isRejected: ended,
+            date: ended ? settledDecisionDate(bill) : null,
           };
         }
         /*

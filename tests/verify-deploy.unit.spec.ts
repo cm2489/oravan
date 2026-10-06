@@ -1,7 +1,9 @@
 import { spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
+import { buildDescendsFrom } from '../lib/deploy-descends.mjs';
 
 /*
  * GATE-COVERAGE for the deploy dead-man's switch (N11a, 2026-08-12).
@@ -117,4 +119,79 @@ test('newsdesk.yml only verifies the deploy and dispatches CI on main', () => {
 
   expect(yaml.slice(verifyAt, dispatchAt)).toContain(GUARD);
   expect(yaml.slice(dispatchAt)).toContain(GUARD);
+});
+
+/*
+ * A newer build counts (2026-10-04). The nightly of 2026-10-03 pushed its data
+ * commit, main moved on within minutes, the host built only the newest head,
+ * and the exact-SHA poll timed out red although production carried the data.
+ * These run against real throwaway git repositories — an "origin" whose main
+ * moves on, and a shallow runner-like clone that has only the pushed commit —
+ * so no network and no production poll is involved.
+ */
+test.describe('buildDescendsFrom: a production build that contains the pushed commit', () => {
+  let dir: string;
+  let origin: string;
+  let runner: string;
+  const git = (cwd: string, ...args: string[]) => {
+    const r = spawnSync('git', args, { cwd, encoding: 'utf8' });
+    if (r.status !== 0) throw new Error(`git ${args.join(' ')}: ${r.stderr}`);
+    return r.stdout.trim();
+  };
+  const commit = (cwd: string, msg: string) => {
+    git(cwd, '-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '--allow-empty', '-q', '-m', msg);
+    return git(cwd, 'rev-parse', 'HEAD');
+  };
+  let older: string;
+  let pushed: string;
+  let newer: string;
+  let sideBranch: string;
+
+  test.beforeAll(() => {
+    dir = mkdtempSync(join(tmpdir(), 'verify-deploy-'));
+    origin = join(dir, 'origin');
+    runner = join(dir, 'runner');
+    git(dir, 'init', '-q', '-b', 'main', origin);
+    older = commit(origin, 'older');
+    pushed = commit(origin, 'the data commit this run pushed');
+    // The runner's checkout: shallow, at the pushed commit only.
+    git(dir, 'clone', '-q', '--depth=1', `file://${origin}`, runner);
+    // Main moves on after the push; the runner has never seen these.
+    commit(origin, 'merge one');
+    newer = commit(origin, 'merge two (the build production serves)');
+    git(origin, 'checkout', '-q', '-b', 'side', older);
+    sideBranch = commit(origin, 'a build that never contained the push');
+    git(origin, 'checkout', '-q', 'main');
+  });
+  test.afterAll(() => rmSync(dir, { recursive: true, force: true }));
+
+  test('a newer main head that contains the pushed commit verifies', () => {
+    expect(buildDescendsFrom(pushed, newer, { cwd: runner })).toBe(true);
+  });
+
+  test('the exact pushed commit verifies without asking git', () => {
+    expect(buildDescendsFrom(pushed, pushed, { cwd: '/nonexistent' })).toBe(true);
+  });
+
+  test('an older build does not verify — the deploy has not landed', () => {
+    expect(buildDescendsFrom(pushed, older, { cwd: runner })).toBe(false);
+  });
+
+  test('a build off another line of history does not verify', () => {
+    expect(buildDescendsFrom(pushed, sideBranch, { cwd: runner })).toBe(false);
+  });
+
+  test('anything that is not a full SHA, or any git failure, answers false', () => {
+    expect(buildDescendsFrom(pushed, null, { cwd: runner })).toBe(false);
+    expect(buildDescendsFrom(pushed, 'unknown', { cwd: runner })).toBe(false);
+    expect(buildDescendsFrom(pushed, '--upload-pack=x', { cwd: runner })).toBe(false);
+    expect(buildDescendsFrom(pushed, 'f'.repeat(40), { cwd: runner })).toBe(false);
+    expect(buildDescendsFrom(pushed, newer, { cwd: '/nonexistent' })).toBe(false);
+  });
+
+  test('verify-deploy.mjs accepts a descendant through this helper and nothing looser', () => {
+    const source = readFileSync(join(REPO, 'scripts/verify-deploy.mjs'), 'utf8');
+    expect(source).toContain("import { buildDescendsFrom } from '../lib/deploy-descends.mjs'");
+    expect(source).toMatch(/buildDescendsFrom\(EXPECT_SHA, seen\)/);
+  });
 });
