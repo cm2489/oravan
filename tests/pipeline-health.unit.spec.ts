@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { SIGNAL_STALE_HOURS } from '../lib/docket.mjs';
 import { cursorAgeVerdict } from '../scripts/check-cursor-age.mjs';
+import { SIDE_WORKFLOWS } from '../scripts/pipeline-health.mjs';
 import {
   COVERAGE_KEPT_ZERO_MIN_CHECKED,
   COVERAGE_MASS_DROP,
@@ -721,9 +722,82 @@ test.describe('cursorHealth — one sync held for a parked batch is not a freeze
   });
 
   test('a true freeze still alarms: nothing parked, or no baseline one sync further back', () => {
-    expect(cursorHealth(state, { ...base, parkedDecodes: 0 }).frozen).toBe(true);
-    expect(cursorHealth(state, { ...base, parkedDecodes: null }).frozen).toBe(true);
-    expect(cursorHealth(state, { ...base, earlierSync: null }).frozen).toBe(true);
+    // Each with every other test passing (the run still going, or its DONE
+    // line read and clean), so only the missing piece keeps the alarm on.
+    for (const pass of [{ producerRunning: true }, { lastDone: held }]) {
+      expect(cursorHealth(state, { ...base, ...pass, parkedDecodes: 0 }).frozen).toBe(true);
+      expect(cursorHealth(state, { ...base, ...pass, parkedDecodes: null }).frozen).toBe(true);
+      expect(cursorHealth(state, { ...base, ...pass, earlierSync: null }).frozen).toBe(true);
+      expect(cursorHealth(state, { ...base, ...pass }).held).toBe(true);
+    }
+  });
+
+  test('a cursor that went backwards is never held: FROZEN, bills parked or not', () => {
+    // 09-27 after 09-28 after 09-26: the batch keeps the mark where it was, it
+    // never moves it back.
+    const back = { ...state, lastSync: '2026-09-27T00:00:00Z' };
+    for (const pass of [{ producerRunning: true }, { lastDone: { ...held!, cursor: back.lastSync } }]) {
+      const h = cursorHealth(back, { ...base, ...pass });
+      expect(h.moved).toBe(false);
+      expect(h.held).toBe(false);
+      expect(h.frozen).toBe(true);
+      expect(report(h).alarms.map((a) => a.code)).toContain('cursor-frozen');
+    }
+  });
+
+  test('a second nightly queued behind the producer does not excuse its log: held AND truncated stays FROZEN', () => {
+    // queue: max (#447) lets two nightlies wait at once, and the run list's
+    // startedAt is the creation time. P (d165d57's producer shape) was
+    // created first and wrote the cursor; Q was created while P waited, before
+    // P stamped lastRun, and is still queued or running when the digest
+    // reads. P is the run that wrote the cursor, its DONE line shows the
+    // truncated window, and the alarm stays on.
+    const lastRun = '2026-09-27T18:27:46.844Z';
+    const P = {
+      databaseId: 1,
+      workflowName: 'Nightly bill sync',
+      status: 'completed',
+      createdAt: '2026-09-27T18:21:36Z',
+      startedAt: '2026-09-27T18:21:36Z',
+      updatedAt: '2026-09-27T19:04:00Z',
+    };
+    const truncated = parseSyncDone(CURSOR_TRUNCATED);
+    for (const status of ['in_progress', 'queued', 'pending', 'waiting']) {
+      const Q = {
+        databaseId: 2,
+        workflowName: 'Nightly bill sync',
+        status,
+        createdAt: '2026-09-27T18:25:00Z',
+        startedAt: '2026-09-27T18:25:00Z',
+        updatedAt: '2026-09-27T19:30:00Z',
+      };
+      for (const runs of [
+        [Q, P],
+        [P, Q],
+      ]) {
+        const producer = runThatWroteCursor(runs, lastRun);
+        expect(producer?.databaseId, status).toBe(1);
+        const running = producerStillRunning(producer, lastRun);
+        expect(running, status).toBe(false);
+        // Its log read (truncated), or not read at all: FROZEN either way.
+        for (const lastDone of [truncated, null]) {
+          const h = cursorHealth(
+            { lastSync: '2026-09-25T00:00:00Z', lastRun },
+            {
+              now: Date.parse('2026-09-27T19:40:00Z'),
+              previousSync: '2026-09-25T00:00:00Z',
+              earlierSync: '2026-09-24T00:00:00Z',
+              parkedDecodes: 3,
+              lastDone,
+              producerRunning: running,
+            }
+          );
+          expect(h.held, `${status} ${lastDone ? 'read' : 'unread'}`).toBe(false);
+          expect(h.frozen, `${status} ${lastDone ? 'read' : 'unread'}`).toBe(true);
+          expect(report(h).alarms.map((a) => a.code)).toContain('cursor-frozen');
+        }
+      }
+    }
   });
 
   test('a DONE line that describes another cursor excuses nothing: FROZEN', () => {
@@ -816,8 +890,23 @@ test.describe('parkedDecodeCount — data/decode-batch-parked.json', () => {
 test.describe('which nightly log the digest reads', () => {
   const runs = [
     { databaseId: 1, workflowName: 'Newsdesk headline trigger', createdAt: '2026-09-30T18:00:00Z' },
-    { databaseId: 2, workflowName: 'Nightly bill sync', createdAt: '2026-09-29T19:24:25Z', startedAt: '2026-09-29T19:24:25Z' },
-    { databaseId: 3, workflowName: 'Nightly bill sync', createdAt: '2026-09-30T17:20:14Z', startedAt: '2026-09-30T17:20:14Z' },
+    {
+      databaseId: 2,
+      workflowName: 'Nightly bill sync',
+      status: 'completed',
+      createdAt: '2026-09-29T19:24:25Z',
+      startedAt: '2026-09-29T19:24:25Z',
+      updatedAt: '2026-09-29T20:05:00Z',
+    },
+    // The 09-30 dispatch as the 18:17:58Z digest saw it.
+    {
+      databaseId: 3,
+      workflowName: 'Nightly bill sync',
+      status: 'in_progress',
+      createdAt: '2026-09-30T17:20:14Z',
+      startedAt: '2026-09-30T17:20:14Z',
+      updatedAt: '2026-09-30T18:17:00Z',
+    },
     { databaseId: 4, workflowName: 'Hot-bill refresh', createdAt: '2026-09-30T02:00:00Z' },
   ];
 
@@ -850,13 +939,51 @@ test.describe('which nightly log the digest reads', () => {
       false
     );
     expect(producerStillRunning({ status: 'in_progress', startedAt: '2026-09-30T17:21:00Z' }, lastRun)).toBe(false);
+    // A run that has not started its job cannot have written the stamp.
+    for (const status of ['queued', 'pending', 'waiting', 'requested', undefined]) {
+      expect(producerStillRunning({ ...dispatch, status }, lastRun), String(status)).toBe(false);
+    }
   });
 
-  test('the run that wrote the cursor is the newest nightly that started by lastRun', () => {
+  test('the run that wrote the cursor: a completed nightly alive at lastRun, else the one nightly in progress', () => {
     expect(runThatWroteCursor(runs, '2026-09-30T17:20:43.817Z')?.databaseId).toBe(3);
     expect(runThatWroteCursor(runs, '2026-09-29T19:24:51.321Z')?.databaseId).toBe(2);
     expect(runThatWroteCursor(runs, '2026-09-01T00:00:00Z')).toBeNull();
     expect(runThatWroteCursor(runs, null)).toBeNull();
+  });
+
+  test('the run that wrote the cursor is never a queued run, nor a completed run that ended before lastRun', () => {
+    const lastRun = '2026-09-30T17:20:43.817Z';
+    const nightly = { workflowName: 'Nightly bill sync', createdAt: '2026-09-30T17:20:14Z', startedAt: '2026-09-30T17:20:14Z' };
+    // Only a queued run created by the stamp: no producer, not "still running".
+    expect(runThatWroteCursor([{ ...nightly, databaseId: 5, status: 'queued' }], lastRun)).toBeNull();
+    // A completed run that last updated before the stamp finished before it was written.
+    expect(
+      runThatWroteCursor([{ ...nightly, databaseId: 6, status: 'completed', updatedAt: '2026-09-30T17:20:30Z' }], lastRun)
+    ).toBeNull();
+    // A completed run with no updatedAt cannot be shown alive at the stamp.
+    expect(runThatWroteCursor([{ ...nightly, databaseId: 7, status: 'completed' }], lastRun)).toBeNull();
+    // Two in progress at once is not a state the group allows: no producer.
+    expect(
+      runThatWroteCursor(
+        [
+          { ...nightly, databaseId: 8, status: 'in_progress' },
+          { ...nightly, databaseId: 9, status: 'in_progress', createdAt: '2026-09-30T17:15:00Z', startedAt: '2026-09-30T17:15:00Z' },
+        ],
+        lastRun
+      )
+    ).toBeNull();
+    // Two completed runs alive at the stamp (one waited behind the other and
+    // was cancelled): the older, first in the queue.
+    expect(
+      runThatWroteCursor(
+        [
+          { ...nightly, databaseId: 11, status: 'completed', createdAt: '2026-09-30T17:20:30Z', startedAt: '2026-09-30T17:20:30Z', updatedAt: '2026-09-30T17:40:00Z' },
+          { ...nightly, databaseId: 10, status: 'completed', updatedAt: '2026-09-30T18:22:39Z' },
+        ],
+        lastRun
+      )?.databaseId
+    ).toBe(10);
   });
 });
 
@@ -1433,4 +1560,11 @@ test('the digest body carries the corrected page-view disclaimer too', () => {
   const traffic = readFileSync(join(process.cwd(), 'lib/traffic-metrics.mjs'), 'utf8');
   expect(traffic).toContain('vercel metrics');
   expect(traffic).toContain('does not read it yet');
+});
+
+test('the nightly watchdog is a side workflow of the digest, by its exact name, so a red run shows', () => {
+  const yml = readFileSync(join(process.cwd(), '.github/workflows/nightly-watchdog.yml'), 'utf8');
+  const name = /^name:\s*(.+)$/m.exec(yml)?.[1].trim();
+  expect(name).toBe('Nightly sync watchdog');
+  expect(SIDE_WORKFLOWS).toContain(name);
 });

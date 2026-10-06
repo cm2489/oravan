@@ -115,7 +115,16 @@ const DATA_WORKFLOWS = new Set([
 export const QUESTION_PRESS_WORKFLOW = 'Big Question press counts';
 
 /** Workflows reported as a bare conclusion, no log read needed. */
-export const SIDE_WORKFLOWS = ['Hot-bill refresh', 'Moment watch', 'Weekly legislators refresh', QUESTION_PRESS_WORKFLOW];
+export const SIDE_WORKFLOWS = [
+  'Hot-bill refresh',
+  'Moment watch',
+  'Weekly legislators refresh',
+  QUESTION_PRESS_WORKFLOW,
+  // .github/workflows/nightly-watchdog.yml (#447): red when it could not read
+  // the run list or a run's job list, or its dispatch errored (scripts/nightly-watchdog.mjs).
+  // Like every row here, only the newest run in the window shows.
+  'Nightly sync watchdog',
+];
 
 const warn = (msg) => console.log(`::warning::pipeline-health: ${msg}`);
 
@@ -444,12 +453,13 @@ export function buildReport({ now = Date.now() } = {}) {
   const earlierCursor = cursorAt(2);
   // Bills waiting on a slow decode batch, committed with the cursor.
   const parkedDecodes = parkedDecodeCount(readJsonFile('data/decode-batch-parked.json'));
-  // The DONE line of the run that WROTE the committed cursor: the newest
-  // nightly that started before the state's lastRun. Null when that run is
-  // still going (its log cannot be downloaded yet), its log could not be read,
-  // or no such run is in the list. Only the first of those lets the cursor
-  // row rest on the committed files alone (producerStillRunning); the others
-  // keep it FROZEN.
+  // The DONE line of the run that WROTE the committed cursor (see
+  // runThatWroteCursor: a completed nightly alive at the state's lastRun wins
+  // over any run still going, and a queued run is never taken). Null when
+  // that run is still going (its log cannot be downloaded yet), its log could
+  // not be read, or no such run is in the list. Only the first of those lets
+  // the cursor row rest on the committed files alone (producerStillRunning);
+  // the others keep it FROZEN.
   const producerRun = runThatWroteCursor(allRuns, state?.lastRun);
   // That run can sit outside the 24h window while a newer nightly is still
   // going, or past the per-run log cap. Its DONE line is what keeps a cursor
