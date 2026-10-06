@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-06T00:46:11.909Z",
+    "fetched_at": "2026-10-06T07:30:41.564Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -9,15 +9,15 @@
       "press": {
         "status": "ok",
         "feeds_total": 11,
-        "feeds_silent": 0,
-        "checked_at": "2026-10-06T00:46:11.909Z"
+        "feeds_silent": 1,
+        "checked_at": "2026-10-06T07:30:41.564Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-04",
         "week_label": "Most-Viewed Bills - Week of October 4, 2026",
         "entries": 8,
-        "checked_at": "2026-10-06T00:46:11.909Z"
+        "checked_at": "2026-10-06T07:30:41.564Z"
       },
       "leans": {
         "center": {
@@ -959,6 +959,12 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "osagenews.org",
+          "firstSeen": "2026-10-06",
+          "lastSeen": "2026-10-06",
+          "url": "https://news.google.com/rss/articles/CBMiiwFBVV95cUxOamE4UVRTWThVclpfTEY1T2lQbkV1bjg2dVhsUUNMd0VVd0t4UDNBaktwS2tlV0oxVzY5N0c1ZVFUbENoTTllZWhXNEh3UWExSVJQbnNQSEVMX2RXdU1vTl9vUDJYMUw3Qzc3REctNEhGM2xIaWRnQ2pmSHRvMGZ3amdoZjZyaFpsakVn0gGLAUFVX3lxTE5qYThRVFNZOFVyWl9MRjVPaVBuRXVuODZ1WGxRQ0x3RVV3S3hQM0FqS3BLa2VXSjFXNjk3RzVlUVRsQ2hNOWVlaFc0SHdRYTFJUlBuc1BIRUxfZFd1TW9OX29QMlgxTDdDNzdERy00SEYzbEhpZGdDamZIdG8wZndqZ2hmNnJoWmxqRWc?oc=5"
+        },
+        {
           "domain": "aol.com",
           "firstSeen": "2026-10-05",
           "lastSeen": "2026-10-05",
@@ -1597,12 +1603,31 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "chronline.com",
+          "firstSeen": "2026-10-06",
+          "lastSeen": "2026-10-06",
+          "url": "https://news.google.com/rss/articles/CBMitgFBVV95cUxQcmN0bkNjVlRZc1BRbGJYV24wN2U2Y2FiaU42UmpyaG0xeHR3RmIyQnBjRUo3cEU4N0hmUGRJcHl2Y2NCTDRhZVBVNUY2R3hzVTctdEZja2haNTRxZzI4YW5ha21MOXpzVktZS1RwVzZEZF92ejRNQU9Za1JITGRjWWdkdHVwWkRYSFg4QXI0TjdfVnlnYjdUempnNC1HRFNwMTNzM3paR19OV1BYU3dUaF9GU25xdw?oc=5"
+        },
+        {
           "domain": "tri-cityherald.com",
           "firstSeen": "2026-10-04",
           "lastSeen": "2026-10-04",
           "url": "https://news.google.com/rss/articles/CBMigwFBVV95cUxPVi1sWWdqV2xCc1VMUFJvSTZROXNheUdBR3pRZjU0QV94dllhOXVXQUJCdlZ6MEVxT1U5ZGROOTNHekU2MU9tVEY3S2lUYTJzdENBQjJNcnQ1ZXFDT0FsQm9nZm51cnFtX19qeXhWREwyajNER0t5M0xzZVZlbHZaX2VZRdIBgwFBVV95cUxOUkdkNFhSbVA4WUpQZVNuV09FUWVfd05xUXFhMVBFSzRCSUIxSTZ1clVXaEF4eVJtQTBWbDd0UWxoMFliaXdFY0c0ZVNtRXNvUGVyVHF6OXY4UVp3Wk1kZ1F3UzN4R2JybmRRcDVENGtFUFk1OGFMeGNTY0ZjSHNUYjN6aw?oc=5"
         }
       ],
+      "mostViewed": null
+    },
+    "s-1339-119": {
+      "outlets7d": [
+        {
+          "domain": "cnbc.com",
+          "lean": "center",
+          "firstSeen": "2026-10-06",
+          "lastSeen": "2026-10-06",
+          "url": "https://www.cnbc.com/2026/10/06/hong-kong-fed-fima-dollar-liquidity-china-moolenaar.html"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "s-1498-119": {
@@ -1884,6 +1909,18 @@
           "firstSeen": "2026-10-04",
           "lastSeen": "2026-10-04",
           "url": "https://news.google.com/rss/articles/CBMinAFBVV95cUxPUHRPemNfNTE4djdPVHVyQWIxMjRvYjZucUxfNi1KVThJYi1Mal9MekZBMElvVDZUTlFqMnc0eGFva2pYTUM3S1VGaDVJVkJ4eU1JRXpLUnJuZlJteGl5X3VDLV9WMlI1U21wdGJ5N0hha0gyUXhORk1aMWM4VnpnU3lZUHRNVnNBNE54dW9RQS1UdXdzekV1RzhfTnM?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "s-4559-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "yahoo.com",
+          "firstSeen": "2026-10-06",
+          "lastSeen": "2026-10-06",
+          "url": "https://news.google.com/rss/articles/CBMimwFBVV95cUxPT3dpemgzbEtyOEowS0dqSWtBeVJ0QVl6bjR3dmJsWkRicC1DRTZRODBQZEhfc3B0cnRLOWhRZEhzdVhra2VpdE5VMktWb3NJRWdocmFMX1dMNkg2WUFKRkc0clJ1c1ZmNEVONkxYTTEtamVVdFBlc2VvRFI2bGpHeHJVd053MWU0QUphSTZtYUJBR2dBczdjQU9uWQ?oc=5"
         }
       ],
       "mostViewed": null
