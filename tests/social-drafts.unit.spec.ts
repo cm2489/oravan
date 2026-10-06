@@ -569,7 +569,14 @@ test.describe('on the committed data', () => {
       const bill = getBill(slug);
       return !rollCallSlugs.has(slug) && !signalSlugs.has(slug) && Boolean(bill?.ai_headline?.trim()) && Boolean(bill?.last_action_date);
     });
-    expect(onlyMoved.length).toBeGreaterThan(0);
+    // briefWindow() is the 14 days before the newest data stamp, so it moves
+    // with every nightly sync and NOW does not fix it. In a quiet stretch it
+    // can hold no such bill; the test then has nothing to check and skips,
+    // rather than turning main's unit job red on a recess.
+    test.skip(
+      onlyMoved.length === 0,
+      "no bill in the brief's window moved without a roll call or a floor signal, so there is no moved-bill lookup to check on this data",
+    );
     const { candidates } = collectCandidates({ now: NOW });
     const slugsOf = (kind: string) => new Set(candidates.filter((c) => c.kind === kind).map((c) => (c.ref as { slug?: string }).slug));
     const cards = slugsOf('bill-card');
