@@ -1,6 +1,9 @@
 import { expect, test } from '@playwright/test';
-import { readdirSync, readFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { chmodSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { CURSOR_MAX_AGE_DAYS, cursorAgeVerdict } from '../scripts/check-cursor-age.mjs';
 import {
   ACT_FROM_HOUR_UTC,
@@ -322,15 +325,17 @@ test.describe('the Anthropic preflight', () => {
  * 2d · 2026-09-18 — every data workflow checks out the branch TIP.
  * ------------------------------------------------------------------ */
 test.describe('the stale-checkout race that killed two nightlies', () => {
-  test('sync-bills and newsdesk both pin checkout to the branch, not the event SHA', () => {
+  test('sync-bills, newsdesk and hot-bills all pin checkout to the branch, not the event SHA', () => {
     // Without `ref:`, actions/checkout takes `github.sha` — main's SHA when the
     // RUN WAS CREATED. A run queued in the data-sync group can start long
     // after that, against a corpus another member has already advanced; its
     // commit is then unpushable, because data/bills.json is single-line
     // minified JSON and every concurrent edit to it is a content conflict.
     // Runs 34886281500 (2026-09-14) and 35132794181 (2026-09-16) both died
-    // that way, each throwing away a full night of paid work.
-    for (const [name, yml] of [['sync-bills', syncBills], ['newsdesk', wf('newsdesk.yml')]] as const) {
+    // that way, each throwing away a full night of paid work. hot-bills joined
+    // the pin on 2026-10-06: under `queue: max` a pass that waits behind the
+    // nightly always runs, and it rewrites data/bills.json too.
+    for (const [name, yml] of [['sync-bills', syncBills], ['newsdesk', wf('newsdesk.yml')], ['hot-bills', hotBills]] as const) {
       const checkoutAt = yml.indexOf('- uses: actions/checkout@v7');
       expect(checkoutAt, `${name}: no checkout step`).toBeGreaterThan(0);
       expect(yml.slice(checkoutAt, checkoutAt + 2600), name).toContain('ref: ${{ github.ref_name }}');
@@ -673,7 +678,7 @@ test.describe('data-sync queues, it never replaces', () => {
     const keys: Record<string, string> = {};
     for (const line of block!.split('\n')) {
       const m = /^\s+([a-z-]+):\s*([^#\s]+)/.exec(line);
-      if (m) keys[m[1]] = m[2];
+      if (m) keys[m[1]] = m[2].replace(/^(['"])(.*)\1$/, '$2');
     }
     return keys;
   };
@@ -701,10 +706,50 @@ test.describe('data-sync queues, it never replaces', () => {
     }
   });
 
+  /**
+   * Does this workflow put a run or a job in the group named exactly
+   * `data-sync`? Comments are stripped first; the name may be bare or quoted,
+   * may carry a trailing comment, and may sit under `group:` or be the
+   * one-line `concurrency: data-sync` form. `data-sync-legislators` and the
+   * like are other groups and do not match.
+   */
+  const joinsDataSync = (yml: string) =>
+    /(?:\bgroup|^\s*concurrency)\s*:\s*(['"]?)data-sync\1\s*(?:[,}]|$)/m.test(
+      yml
+        .split('\n')
+        .map((l) => l.replace(/\s#.*$|^#.*$/, ''))
+        .join('\n')
+    );
+
+  test('the membership matcher catches every way of spelling the group, and nothing else', () => {
+    for (const spelled of [
+      'concurrency:\n  group: data-sync\n',
+      "concurrency:\n  group: 'data-sync'\n",
+      'concurrency:\n  group: "data-sync"\n',
+      'concurrency:\n  group: data-sync # shared with the others\n',
+      'concurrency:\n  group: data-sync   \n',
+      'concurrency: data-sync\n',
+      "concurrency: 'data-sync' # one line\n",
+      'concurrency: { group: data-sync, cancel-in-progress: false }\n',
+      'jobs:\n  x:\n    concurrency:\n      group: data-sync\n',
+    ]) {
+      expect(joinsDataSync(spelled), JSON.stringify(spelled)).toBe(true);
+    }
+    for (const other of [
+      'concurrency:\n  group: data-sync-legislators\n',
+      'concurrency:\n  group: data-sync-question-press\n',
+      'concurrency:\n  # group: data-sync\n  group: nightly-watchdog\n',
+      'concurrency:\n  group: nightly-watchdog # not data-sync\n',
+      '        run: echo "waiting in the data-sync group"\n',
+    ]) {
+      expect(joinsDataSync(other), JSON.stringify(other)).toBe(false);
+    }
+  });
+
   test('every workflow that names data-sync is one of the four, so a fifth cannot join with the default queue', () => {
     const inGroup = readdirSync(join(process.cwd(), '.github/workflows'))
       .filter((n) => /\.ya?ml$/.test(n))
-      .filter((n) => /^\s+group:\s*data-sync\s*$/m.test(wf(n)))
+      .filter((n) => joinsDataSync(wf(n)))
       .sort();
     expect(inGroup).toEqual([...members].sort());
   });
@@ -940,5 +985,145 @@ test.describe('nightly watchdog: the workflow and the script', () => {
       .filter((n) => /\.ya?ml$/.test(n))
       .filter((n) => /gh workflow run sync-bills\.yml|nightly-watchdog\.mjs/.test(wf(n)));
     expect(dispatchers).toEqual(['nightly-watchdog.yml']);
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * 10 · 2026-10-06 — the watchdog script itself, run against a stand-in gh.
+ *
+ * Group 9's static pins say where the exits are; these run the script for
+ * real so that skipping the jobs fetch (which turns the 10-05 rescue into a
+ * green "jobs-unknown" stand-down) or dropping the exit after a failed
+ * dispatch (which turns a red run green and prints "dispatched") fails here.
+ *
+ * NOTHING HERE CAN REACH GITHUB. The stand-in `gh` is first on a PATH that is
+ * otherwise only /usr/bin:/bin, and the test checks that `gh` resolves to it
+ * before any run that sets WATCHDOG_DISPATCH=1. Beyond that: the environment
+ * is built from scratch (no GH_TOKEN, no GITHUB_TOKEN, HOME and GH_CONFIG_DIR
+ * are an empty temp folder), and the repository named does not exist. The
+ * clock is fixed at 2026-10-06T03:30Z by a preload, so the band check does
+ * not depend on when CI runs.
+ * ------------------------------------------------------------------ */
+test.describe('nightly watchdog: the script, run against a stand-in gh', () => {
+  const FAKE_REPO = 'oravan-watchdog-test/no-such-repo';
+  const evictedRun = {
+    id: 37376062791,
+    event: 'schedule',
+    status: 'completed',
+    conclusion: 'cancelled',
+    created_at: '2026-10-05T21:28:21Z',
+    head_branch: 'main',
+    triggering_actor: { login: 'cm2489' },
+  };
+  const olderRun = { ...evictedRun, id: 37223269918, conclusion: 'success', created_at: '2026-10-04T18:08:55Z' };
+
+  type Fixture = { runs: unknown[]; jobs: Record<string, unknown[]>; failJobs?: boolean; failDispatch?: boolean };
+
+  const runWatchdog = (fixture: Fixture, dispatch: boolean) => {
+    const dir = mkdtempSync(join(tmpdir(), 'watchdog-gh-'));
+    try {
+      const bin = join(dir, 'bin');
+      const home = join(dir, 'home');
+      mkdirSync(bin);
+      mkdirSync(home);
+      writeFileSync(join(dir, 'fixture.json'), JSON.stringify(fixture));
+      writeFileSync(
+        join(dir, 'fake-gh.mjs'),
+        [
+          "import { appendFileSync, readFileSync } from 'node:fs';",
+          'const args = process.argv.slice(2);',
+          "appendFileSync(process.env.FAKE_GH_LOG, JSON.stringify(args) + '\\n');",
+          "const f = JSON.parse(readFileSync(process.env.FAKE_GH_FIXTURE, 'utf8'));",
+          "if (args[0] === 'api' && /\\/actions\\/workflows\\/sync-bills\\.yml\\/runs\\?/.test(args[1])) {",
+          '  process.stdout.write(JSON.stringify({ workflow_runs: f.runs }));',
+          "} else if (args[0] === 'api' && /\\/actions\\/runs\\/(\\d+)\\/jobs\\?/.test(args[1])) {",
+          "  if (f.failJobs) { process.stderr.write('HTTP 502'); process.exit(1); }",
+          '  const id = /\\/runs\\/(\\d+)\\/jobs/.exec(args[1])[1];',
+          '  process.stdout.write(JSON.stringify({ jobs: f.jobs[id] ?? [] }));',
+          "} else if (args[0] === 'workflow' && args[1] === 'run') {",
+          "  if (f.failDispatch) { process.stderr.write('HTTP 500'); process.exit(1); }",
+          '} else {',
+          "  process.stderr.write('stand-in gh: unexpected call'); process.exit(2);",
+          '}',
+        ].join('\n')
+      );
+      const gh = join(bin, 'gh');
+      writeFileSync(gh, `#!/bin/sh\nexec "${process.execPath}" "${join(dir, 'fake-gh.mjs')}" "$@"\n`);
+      chmodSync(gh, 0o755);
+      const clock = join(dir, 'clock.mjs');
+      writeFileSync(clock, "const n = Date.parse('2026-10-06T03:30:00Z');\nDate.now = () => n;\n");
+      const log = join(dir, 'calls.log');
+      writeFileSync(log, '');
+      const env: NodeJS.ProcessEnv = {
+        NODE_ENV: 'test',
+        PATH: `${bin}:/usr/bin:/bin`,
+        HOME: home,
+        GH_CONFIG_DIR: home,
+        GITHUB_REPOSITORY: FAKE_REPO,
+        FAKE_GH_LOG: log,
+        FAKE_GH_FIXTURE: join(dir, 'fixture.json'),
+        WATCHDOG_DISPATCH: dispatch ? '1' : '0',
+      };
+      if (dispatch) {
+        // The safety check this whole block rests on: `gh` must be the stand-in.
+        const which = spawnSync('/bin/sh', ['-c', 'command -v gh'], { env, encoding: 'utf8' });
+        expect(which.stdout.trim(), 'gh does not resolve to the stand-in; refusing to run with dispatch on').toBe(gh);
+      }
+      const r = spawnSync(
+        process.execPath,
+        ['--import', pathToFileURL(clock).href, join(process.cwd(), 'scripts/nightly-watchdog.mjs')],
+        { env, encoding: 'utf8', timeout: 20_000 }
+      );
+      const calls = readFileSync(log, 'utf8')
+        .split('\n')
+        .filter(Boolean)
+        .map((l) => JSON.parse(l) as string[]);
+      return { status: r.status, out: `${r.stdout}${r.stderr}`, calls };
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  };
+  const dispatchCalls = (calls: string[][]) => calls.filter((c) => c[0] === 'workflow' && c[1] === 'run');
+  const tenFive: Fixture = { runs: [evictedRun, olderRun], jobs: { '37376062791': [] } };
+
+  test('THE 10-05 RESCUE, end to end: it reads the evicted run\'s jobs and would dispatch', () => {
+    const r = runWatchdog(tenFive, false);
+    expect(r.status, r.out).toBe(0);
+    expect(r.out).toContain('WOULD dispatch sync-bills.yml (dropped)');
+    // the jobs of the cancelled main-branch run in the window were read ...
+    expect(r.calls.some((c) => c[0] === 'api' && c[1].includes('/actions/runs/37376062791/jobs'))).toBe(true);
+    // ... the older successful run's were not, and nothing was dispatched
+    expect(r.calls.some((c) => c[1]?.includes('/actions/runs/37223269918/jobs'))).toBe(false);
+    expect(dispatchCalls(r.calls)).toHaveLength(0);
+  });
+
+  test('a jobs lookup that fails turns the run red and dispatches nothing', () => {
+    const r = runWatchdog({ ...tenFive, failJobs: true }, true);
+    expect(r.status, r.out).toBe(1);
+    expect(r.out).toContain('Nothing was dispatched');
+    expect(dispatchCalls(r.calls)).toHaveLength(0);
+  });
+
+  test('a dispatch that errors turns the run red, is tried once, and is never reported as dispatched', () => {
+    const r = runWatchdog({ ...tenFive, failDispatch: true }, true);
+    expect(r.status, r.out).toBe(1);
+    expect(r.out).toContain('errored');
+    expect(r.out).not.toContain('Nightly watchdog dispatched');
+    expect(dispatchCalls(r.calls)).toEqual([['workflow', 'run', 'sync-bills.yml', '--repo', FAKE_REPO, '--ref', 'main']]);
+  });
+
+  test('a dispatch that lands is made once, on main, and reported', () => {
+    const r = runWatchdog(tenFive, true);
+    expect(r.status, r.out).toBe(0);
+    expect(r.out).toContain('::notice::Nightly watchdog dispatched sync-bills.yml on main (dropped)');
+    expect(dispatchCalls(r.calls)).toHaveLength(1);
+  });
+
+  test('a night that succeeded stands it down, with dispatch on', () => {
+    const good = { ...olderRun, id: 7, created_at: '2026-10-05T23:50:00Z' };
+    const r = runWatchdog({ runs: [good, evictedRun, olderRun], jobs: { '37376062791': [] } }, true);
+    expect(r.status, r.out).toBe(0);
+    expect(r.out).toContain('stood down (succeeded)');
+    expect(dispatchCalls(r.calls)).toHaveLength(0);
   });
 });

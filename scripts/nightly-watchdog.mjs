@@ -48,6 +48,9 @@ function main() {
   let runs;
   const jobsByRunId = {};
   try {
+    // The 50 newest nightly runs: every guard in the decision (active, cap,
+    // window) is judged over these. At one to three nightlies a day that is
+    // more than two weeks of runs, and the window and the cap need two days.
     const list = api(`repos/${REPO}/actions/workflows/${NIGHTLY_WORKFLOW}/runs?per_page=50`);
     runs = list?.workflow_runs;
     if (!Array.isArray(runs)) throw new Error('the response has no workflow_runs list');

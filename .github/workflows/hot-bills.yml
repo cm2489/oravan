@@ -89,6 +89,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          # THE BRANCH TIP, NOT THE EVENT SHA - the 2026-09-18 pin sync-bills.yml
+          # and newsdesk.yml already carry (sync-bills.yml's checkout comment has
+          # the two nightlies it cost). Without `ref:`, checkout takes the SHA
+          # main carried when this RUN WAS CREATED. Since 2026-10-06 the
+          # data-sync group queues (`queue: max`), so a pass that waits behind
+          # the nightly or the newsdesk now always runs instead of being
+          # replaced - and this job rewrites data/bills.json, single-line
+          # minified JSON, so a stale base makes its rebase below conflict
+          # every time. Naming the branch checks out its current tip when the
+          # job starts; the rebase-retry loop stays as the backstop for an
+          # outside push.
+          ref: ${{ github.ref_name }}
       - uses: actions/setup-node@v6
         # scripts/hot-bills.mjs and scripts/congress-fetch.mjs are stdlib-only
         # (Node's global fetch + lib/urgency.mjs, a plain .mjs with no npm
