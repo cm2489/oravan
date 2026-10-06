@@ -323,3 +323,31 @@ test('S20: a fully-authorized live render is unaffected by the (unconfigured) co
   await expect(page.getByRole('radio', { name: en.bill.stance.support })).toBeVisible();
   await expect(page.locator('a[href^="tel:"]')).toHaveCount(0); // pre-stance, same as the very first live test above
 });
+
+/*
+ * The widget's ZIP form carries method="post" (2026-10-06): a native
+ * submission (JavaScript off, or before hydration) goes to this same address
+ * with the ZIP in the body, never as ?zip= in the logged /embed/ address.
+ */
+test.describe('a native ZIP submit (no JavaScript) keeps the ZIP out of the address', () => {
+  test.use({ javaScriptEnabled: false });
+
+  test('the submit is a POST to the same address, token and slug kept, no ZIP in any address', async ({ page }) => {
+    const addresses: string[] = [];
+    page.on('request', (r) => addresses.push(r.url()));
+    await page.goto(panelUrl({ locale: 'en', slug: SLUG, token: E2E_TENANT_TOKEN }));
+    await page.getByLabel(en.home.zipLabel).fill('78501');
+    const submit = page.waitForRequest((r) => r.isNavigationRequest() && r.method() === 'POST');
+    await page.getByRole('button', { name: en.home.zipCta }).click();
+    const req = await submit;
+    const url = new URL(req.url());
+    expect(url.pathname).toBe('/embed/action-panel');
+    expect(url.searchParams.get('slug')).toBe(SLUG);
+    expect(url.searchParams.get('token')).toBe(E2E_TENANT_TOKEN);
+    expect(url.searchParams.has('zip')).toBe(false);
+    expect(req.postData() ?? '').toContain('zip=78501');
+    await page.waitForLoadState('load');
+    await expect(page.getByLabel(en.home.zipLabel)).toBeVisible();
+    for (const a of addresses) expect(a, `request address ${a}`).not.toContain('78501');
+  });
+});

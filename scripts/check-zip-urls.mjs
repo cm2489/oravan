@@ -18,21 +18,35 @@
  *
  *   api-address-input   A literal that is an /api/ address (it starts with
  *                       `/api/`, or with an origin or a `${…}` and then
- *                       `/api/`) may not carry a query string (`?`) or an
+ *                       `/api/`, or with `${NAME}` where NAME is a constant
+ *                       bound to an /api/ address, such as REPS_LOOKUP_PATH)
+ *                       may not carry a query string (`?`) or an
  *                       interpolation (`${…}`), and may not be the left side
- *                       of a `+` concatenation. Input to our own APIs goes in
- *                       the body. No route needs an exception today; one that
- *                       does is named in API_ADDRESS_EXCEPTIONS with a reason.
+ *                       of a `+` concatenation; nor may such a constant be.
+ *                       Input to our own APIs goes in the body. This is a
+ *                       policy wider than the ZIP (no query string on any of
+ *                       our /api/ addresses), chosen because it is clean today
+ *                       and the narrower rule is easy to dodge. A route that
+ *                       needs an exception is named in API_ADDRESS_EXCEPTIONS
+ *                       with a reason.
  *   zip-in-address      A literal that is an /api/ or /embed/ address may not
  *                       mention a ZIP at all (`zip=`, `/zip/`, `${zip}` …).
+ *   zip-query           Any literal that writes a `zip=` query parameter
+ *                       (`?zip=`, `&zip=`, or a literal that starts `zip=`),
+ *                       wherever its address comes from, unless that address
+ *                       is the /reps page (out of scope, below) or the literal
+ *                       is named in ZIP_QUERY_EXCEPTIONS with a reason. This
+ *                       catches the shapes whose address the lexer cannot see
+ *                       (`${base}?zip=…`, `u.search = \`zip=…\``).
  *   zip-param-builder   No `.set('zip', …)` / `.append('zip', …)`: the
  *                       URLSearchParams way of writing the same address.
  *   server-reads-zip    No `searchParams.get('zip')` (or getAll/has) anywhere,
- *                       and no `zip` member in a page's `searchParams` type
- *                       under app/api or app/embed: the server side of the
- *                       same shape (the embed page's dormant `?zip=` was
- *                       removed with this gate).
- *   loader-zip-attr     public/embed.js may not name a `zip` attribute: the
+ *                       and, under app/api or app/embed, no `zip` member in a
+ *                       page's `searchParams` type and no `{ zip } = … searchParams`
+ *                       destructuring: the server side of the same shape (the
+ *                       embed page's dormant `?zip=` was removed with this gate).
+ *   loader-zip-attr     public/embed.js may not name a `zip` attribute (as a
+ *                       string or as `dataset.zip`): the
  *                       loader builds the embed's iframe address from a list
  *                       of attribute names, so a 'zip' entry there would put
  *                       the ZIP back in the /embed/ address.
@@ -46,9 +60,17 @@
  * When that lands, add `/reps` to ADDRESS_PREFIXES and the
  * `app/[locale]/reps` page to SERVER_PAGE_DIRS.
  *
+ * Address constants: before scanning, the gate collects every
+ * `const NAME = '/api/…'` (or `/embed/…`, a same-origin path) in the scanned tree, and each
+ * `import { NAME as ALIAS }` of one, so `${REPS_LOOKUP_PATH}?zip=${zip}` and
+ * `REPS_LOOKUP_PATH + '?…'` are read as the /api/ addresses they are.
+ *
  * HONEST LIMITS: a source-text gate. It cannot follow a URL assembled out of
  * variables several lines apart (`const p = '/api/' + name; fetch(p + q)`),
- * a computed property name, or code in node_modules. It is a tripwire for
+ * a constant that is not a plain string literal, a computed property name,
+ * or code in node_modules. A form's native submission (no JavaScript, or
+ * before hydration) is not source text either: the embed widgets' ZIP forms
+ * carry `method="post"` for that, pinned by tests/embed-rep-lookup.spec.ts. It is a tripwire for
  * the realistic regression, not a proof; tests/embed-rep-lookup.spec.ts and
  * tests/reps.spec.ts check the request a browser actually sends.
  *
@@ -76,6 +98,19 @@ const SERVER_PAGE_DIRS = ['app/api/', 'app/embed/'];
  * Shape: { file, literal, reason }.
  */
 const API_ADDRESS_EXCEPTIONS = [];
+
+/**
+ * Literals allowed to write `zip=` although the gate cannot see that their
+ * address is the /reps page, each with its reason. Shape: { file, literal, reason }.
+ */
+const ZIP_QUERY_EXCEPTIONS = [
+  {
+    file: 'lib/core/mcp.ts',
+    literal: '${absoluteUrl(locale, REPS_PATH)}?zip=${zip}',
+    reason:
+      "the MCP envelope's reps_url, a link to the /reps page (REPS_PATH = '/reps'); out of scope with that page address until the owner decides it",
+  },
+];
 
 const KEYWORDS_BEFORE_EXPRESSION = new Set([
   'return', 'case', 'typeof', 'in', 'of', 'else', 'yield', 'await', 'void', 'delete', 'throw', 'new', 'extends', 'do',
@@ -234,21 +269,82 @@ export function literals(src) {
   return out;
 }
 
-/** The literal's address part, if it is addressed to one of our routes: '/api/…' or '/embed/…'. */
-function addressOf(text) {
+const IDENT = '[A-Za-z_$][\\w$]*';
+const ADDRESS_CONST = new RegExp(
+  `\\b(?:const|let|var)\\s+(${IDENT})\\s*(?::[^=;]+)?=\\s*(['"\`])((?:${ADDRESS_PREFIXES.map((p) => p.replaceAll('/', '\\/')).join('|')})[^'"\`$]*)\\2`,
+  'g'
+);
+
+/** Comments blanked out, line count kept. */
+function stripComments(src) {
+  return src.replace(/\/\*[\s\S]*?\*\//g, (m) => '\n'.repeat((m.match(/\n/g) ?? []).length)).replace(/(^|[^:])\/\/.*$/gm, '$1');
+}
+
+/**
+ * Constants in `src` bound to one of our route addresses, as a Map of
+ * NAME -> address ('/api/reps'). Only plain string literals holding a
+ * same-origin path are followed: an absolute URL constant is usually another
+ * service's endpoint (a news API's `/api/v2/…`), not ours.
+ */
+export function addressConstants(src) {
+  const names = new Map();
+  for (const m of stripComments(src).matchAll(ADDRESS_CONST)) {
+    names.set(m[1], m[3]);
+  }
+  return names;
+}
+
+/** `known` plus each `import { NAME as ALIAS }` of a known NAME in `src`. */
+function withAliases(src, known) {
+  const names = new Map(known);
+  for (const [name, address] of known) {
+    for (const m of src.matchAll(new RegExp(`\\b${name.replace(/\$/g, '\\$')}\\s+as\\s+(${IDENT})`, 'g'))) {
+      names.set(m[1], address);
+    }
+  }
+  for (const [name, address] of addressConstants(src)) names.set(name, address);
+  return names;
+}
+
+/**
+ * The literal's address part, if it is addressed to one of our routes:
+ * '/api/…' or '/embed/…'. A leading `${NAME}` whose NAME is a known address
+ * constant is read as that address.
+ */
+function addressOf(text, names) {
+  const lead = text.match(/^\$\{\s*([A-Za-z_$][\w$]*)\s*\}/);
+  if (lead && names.has(lead[1])) return names.get(lead[1]) + text.slice(lead[0].length);
   const rest = text.replace(/^(?:https?:\/\/[^/'"`\s]*|\$\{[^}]*\})/, '');
   return ADDRESS_PREFIXES.some((p) => rest.startsWith(p)) ? rest : null;
 }
 
+/** The /reps page address, out of scope until the owner decides it (see the header). */
+function isRepsPageAddress(text) {
+  return /^\/reps(?:[?#/]|$)/.test(text.replace(/^(?:https?:\/\/[^/'"`\s]*|\$\{[^}]*\})/, ''));
+}
+
 const ZIP_WORD = /zip/i;
 
-/** Scan one file's text; returns violations { rule, file, line, detail }. */
-export function scanText(file, src) {
+/**
+ * Scan one file's text; returns violations { rule, file, line, detail }.
+ * `knownAddresses` is the Map of address constants collected from the whole
+ * tree (addressConstants); the file's own constants and import aliases are
+ * added to it here.
+ */
+export function scanText(file, src, knownAddresses = new Map()) {
   const violations = [];
   const push = (rule, line, detail) => violations.push({ rule, file, line, detail });
+  const names = withAliases(src, knownAddresses);
 
   for (const lit of literals(src)) {
-    const address = addressOf(lit.text);
+    if (
+      /(?:^|[?&])zip=/i.test(lit.text) &&
+      !isRepsPageAddress(lit.text) &&
+      !ZIP_QUERY_EXCEPTIONS.some((e) => e.file === file && e.literal === lit.text)
+    ) {
+      push('zip-query', lit.line, `"${lit.text}" writes a zip= query parameter; the ZIP goes in a request body.`);
+    }
+    const address = addressOf(lit.text, names);
     if (address === null) continue;
     const isApi = address.startsWith('/api/');
     const excepted = API_ADDRESS_EXCEPTIONS.some((e) => e.file === file && e.literal === lit.text);
@@ -272,8 +368,19 @@ export function scanText(file, src) {
     }
   }
 
-  const stripped = src.replace(/\/\*[\s\S]*?\*\//g, (m) => '\n'.repeat((m.match(/\n/g) ?? []).length)).replace(/(^|[^:])\/\/.*$/gm, '$1');
+  const stripped = stripComments(src);
   const lineOf = (idx) => stripped.slice(0, idx).split('\n').length;
+
+  for (const [name, address] of names) {
+    if (!address.startsWith('/api/')) continue;
+    for (const m of stripped.matchAll(new RegExp(`(?<![\\w$])${name.replace(/\$/g, '\\$')}\\s*\\+`, 'g'))) {
+      push(
+        'api-address-input',
+        lineOf(m.index),
+        `${name} (${address}) is concatenated into a longer address. Send the input in the request body instead.`
+      );
+    }
+  }
 
   for (const m of stripped.matchAll(/\.\s*(?:set|append)\(\s*['"`]zip['"`]/gi)) {
     push('zip-param-builder', lineOf(m.index), 'a URL parameter named zip is being written; the ZIP goes in a request body.');
@@ -293,12 +400,18 @@ export function scanText(file, src) {
         push('server-reads-zip', lineOf(m.index), "this page's searchParams accept a zip, so a ZIP can arrive in its address.");
       }
     }
+    for (const m of stripped.matchAll(/\{[^{}]*\bzip\b[^{}]*\}\s*=\s*(?:await\s+)?(?:[\w$]+\s*\.\s*)*searchParams\b/gi)) {
+      push('server-reads-zip', lineOf(m.index), 'a zip is destructured from searchParams, so a ZIP can arrive in this address.');
+    }
   }
   if (file === 'public/embed.js') {
     for (const lit of literals(src)) {
       if (/^(?:data-)?zip$/i.test(lit.text)) {
         push('loader-zip-attr', lit.line, 'the loader names a zip attribute, which would put the ZIP into the embed address.');
       }
+    }
+    for (const m of stripped.matchAll(/\.\s*dataset\s*\.\s*zip\b|\bdataset\s*\[\s*['"`]zip['"`]\s*\]/gi)) {
+      push('loader-zip-attr', lineOf(m.index), 'the loader reads a zip data attribute, which would put the ZIP into the embed address.');
     }
   }
   return violations;
@@ -325,12 +438,18 @@ export function scanRepo(root = ROOT) {
     const full = join(root, f);
     if (existsSync(full)) files.push(full);
   }
+  const sources = files.map((full) => [relative(root, full).replaceAll('\\', '/'), readFileSync(full, 'utf8')]);
+  const known = repoAddressConstants(sources);
   const violations = [];
-  for (const full of files) {
-    const rel = relative(root, full).replaceAll('\\', '/');
-    violations.push(...scanText(rel, readFileSync(full, 'utf8')));
-  }
-  return { files: files.length, violations };
+  for (const [rel, src] of sources) violations.push(...scanText(rel, src, known));
+  return { files: files.length, violations, addressConstants: known };
+}
+
+/** Every address constant declared anywhere in `sources` ([file, text] pairs). */
+export function repoAddressConstants(sources) {
+  const known = new Map();
+  for (const [, src] of sources) for (const [name, address] of addressConstants(src)) known.set(name, address);
+  return known;
 }
 
 // Seeded violations: each must be caught by the named rule. The first six are
@@ -357,7 +476,29 @@ const SELF_TEST_FIXTURES = [
     'server-reads-zip',
   ],
   ['the loader naming a zip attribute', 'public/embed.js', "var THEME_ATTRS = ['accent', 'zip', 'mode'];", 'loader-zip-attr'],
+  // Through the lookup helper's own exported constant (lib/reps-lookup.ts),
+  // the most natural one-line regression; SELF_TEST_KNOWN stands in for the
+  // tree-wide collection that scanRepo does.
+  ['a ZIP query on REPS_LOOKUP_PATH, by template', 'components/ActionPanel.tsx', '    fetch(`${REPS_LOOKUP_PATH}?zip=${zip}`)', 'api-address-input'],
+  ['the same line, by the zip-query rule', 'components/ActionPanel.tsx', '    fetch(`${REPS_LOOKUP_PATH}?zip=${zip}`)', 'zip-query'],
+  ['a ZIP query on REPS_LOOKUP_PATH, by concatenation', 'components/ActionPanel.tsx', '    fetch(REPS_LOOKUP_PATH + `?zip=${zip}`)', 'api-address-input'],
+  ['a ZIP path segment on REPS_LOOKUP_PATH', 'components/ActionPanel.tsx', '    fetch(`${REPS_LOOKUP_PATH}/${zip}`)', 'api-address-input'],
+  ['URLSearchParams on REPS_LOOKUP_PATH', 'components/ActionPanel.tsx', '    fetch(`${REPS_LOOKUP_PATH}?${new URLSearchParams({ zip })}`)', 'api-address-input'],
+  [
+    'REPS_LOOKUP_PATH under an import alias',
+    'components/ActionPanel.tsx',
+    "import { REPS_LOOKUP_PATH as P } from '@/lib/reps-lookup';\nfetch(`${P}?q=${zip}`)",
+    'api-address-input',
+  ],
+  ['an /api/ constant declared in the same file', 'components/Fixture.tsx', "const API = '/api/reps';\nfetch(`${API}/${zip}`)", 'api-address-input'],
+  ['a zip= search string with no visible address', 'components/Fixture.tsx', 'u.search = `zip=${zip}`;', 'zip-query'],
+  ['a zip= query on an address the lexer cannot see', 'components/Fixture.tsx', 'fetch(`${base}?locale=en&zip=${zip}`)', 'zip-query'],
+  ['a zip destructured from an embed page\'s searchParams', 'app/embed/rep-lookup/page.tsx', '  const { locale, zip } = await searchParams;', 'server-reads-zip'],
+  ['the loader reading a zip data attribute', 'public/embed.js', 'var z = el.dataset.zip;', 'loader-zip-attr'],
 ];
+
+/** The tree's real lookup constant, collected the way scanRepo collects it. */
+const SELF_TEST_KNOWN = addressConstants("export const REPS_LOOKUP_PATH = '/api/reps';");
 
 // Clean samples: ordinary code that must NOT trip the gate (a gate that flags
 // everything gets switched off). The /reps page address is here on purpose:
@@ -377,23 +518,32 @@ const SELF_TEST_CLEAN = [
   ],
   ['prose that names the old shape inside a comment', 'components/Fixture.tsx', '// it used to be fetch(`/api/reps?zip=${zip}`)\n/* `/embed/rep-lookup?zip=` */'],
   ['a log message that mentions an API in prose', 'lib/moments-gate.mjs', 'warnings.push(`${vp}.slug: "${v.slug}" has an unclassified status, so /api/script refuses it`);'],
+  ['the helper POSTing to its constant', 'lib/reps-lookup.ts', "fetch(REPS_LOOKUP_PATH, { method: 'POST', body: JSON.stringify({ zip }) });"],
+  ['the embed link-out to the /reps page (out of scope)', 'components/embed/RepLookupWidget.tsx', 'href={`${siteBase}/reps?zip=${zip}`}'],
+  ['the address form return to the /reps page (out of scope)', 'components/AddressForm.tsx', 'router.push(`/reps?zip=${zip}&district=${state}-${district}`);'],
+  ["the MCP envelope's /reps link (named exception)", 'lib/core/mcp.ts', 'const repsUrl = `${absoluteUrl(locale, REPS_PATH)}?zip=${zip}`;'],
+  ['a page destructuring other params', 'app/embed/action-panel/page.tsx', '  const { locale, slug, token } = await searchParams;'],
 ];
 
 function selfTest() {
   let failed = false;
   for (const [name, file, text, rule] of SELF_TEST_FIXTURES) {
-    const hits = scanText(file, text);
+    const hits = scanText(file, text, SELF_TEST_KNOWN);
     if (!hits.some((v) => v.rule === rule)) {
       console.error(`::error::self-test: seeded violation NOT caught: ${name} (expected rule "${rule}", got ${JSON.stringify(hits.map((h) => h.rule))})`);
       failed = true;
     }
   }
   for (const [name, file, text] of SELF_TEST_CLEAN) {
-    const hits = scanText(file, text);
+    const hits = scanText(file, text, SELF_TEST_KNOWN);
     if (hits.length > 0) {
       console.error(`::error::self-test: clean sample flagged (${name}): [${hits[0].rule}] ${hits[0].detail}`);
       failed = true;
     }
+  }
+  if (SELF_TEST_KNOWN.get('REPS_LOOKUP_PATH') !== '/api/reps') {
+    console.error('::error::self-test: the address-constant collector did not read REPS_LOOKUP_PATH');
+    failed = true;
   }
   if (failed) process.exit(1);
   console.log(
@@ -418,6 +568,8 @@ function main() {
   console.log(`zip-urls gate clean: ${files} files, no ZIP in the address of a request to Oravan's own routes`);
 }
 
-if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop())) {
+// No import.meta here: tests/reps-route.unit.spec.ts imports this module, and
+// the test runner loads it as CommonJS (the same guard as indexnow-ping.mjs).
+if (process.argv[1] && process.argv[1].endsWith('check-zip-urls.mjs')) {
   main();
 }

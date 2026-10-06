@@ -207,7 +207,10 @@ export function RepLookupWidget({
         </div>
       </div>
 
-      <form onSubmit={submit} className="re-row" noValidate>
+      {/* method="post": a native submit (no JavaScript, or before hydration)
+          carries the ZIP in the body to this same address, never as ?zip= in
+          the logged /embed/ address (2026-10-06). JS submits stay in onSubmit. */}
+      <form method="post" onSubmit={submit} className="re-row" noValidate>
         <div className="re-field">
           <label htmlFor="re-zip" className="re-label">
             {t.home.zipLabel}

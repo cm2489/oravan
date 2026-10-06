@@ -1,7 +1,11 @@
 import { spawnSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 import { NextRequest } from 'next/server';
-import { GET, POST } from '../app/api/reps/route';
+import { GET, OPTIONS, POST } from '../app/api/reps/route';
+import { __resetSaltMemoForTests } from '../lib/ratelimit';
+import { scanRepo, scanText } from '../scripts/check-zip-urls.mjs';
+import { COUNTERS_URL, MockUpstash, installUpstashFetch, setUpstashEnv } from './upstash-mock';
 
 /*
  * /api/reps takes the ZIP in a POST body, never in its address (2026-10-06).
@@ -119,6 +123,35 @@ test.describe('the rate limit is keyed on the caller, never the ZIP', () => {
     expect(res.status).toBe(429);
   });
 
+  test('behaviour: one caller across five ZIPs touches exactly one counter key, and a second caller its own', async () => {
+    // The counters store mocked (no network), so every key the route's
+    // limiter writes is recorded. Were any limiter call keyed on the ZIP (a
+    // second call on ip + zip, say), five ZIPs would make more than one key.
+    const counters = new MockUpstash();
+    const restoreEnv = setUpstashEnv();
+    const restoreFetch = installUpstashFetch({ [COUNTERS_URL]: counters });
+    __resetSaltMemoForTests();
+    try {
+      const repsKeys = () =>
+        new Set(counters.commands.flatMap((c) => c.slice(1)).filter((k) => typeof k === 'string' && k.includes(':rl:reps:')));
+      const ip = nextIp();
+      const zips = ['78501', '33313', '10001', '20002', '19973'];
+      for (const zip of zips) expect((await post({ zip }, ip)).status).toBe(200);
+      const oneCaller = repsKeys();
+      expect(oneCaller.size).toBe(1);
+      for (const key of oneCaller) {
+        for (const zip of zips) expect(key).not.toContain(zip);
+        expect(key).not.toContain(ip);
+      }
+      expect((await post({ zip: '78501' }, nextIp())).status).toBe(200);
+      expect(repsKeys().size).toBe(2);
+    } finally {
+      restoreFetch();
+      restoreEnv();
+      __resetSaltMemoForTests();
+    }
+  });
+
   test('the route source hands the limiter callerIp() and nothing else', async () => {
     const { readFileSync } = await import('node:fs');
     const source = readFileSync('app/api/reps/route.ts', 'utf8');
@@ -129,15 +162,21 @@ test.describe('the rate limit is keyed on the caller, never the ZIP', () => {
 });
 
 test.describe('GET /api/reps (the decision: refused, so the promise is mechanical)', () => {
-  test('GET is 405 with Allow: POST, whatever the address carries', async () => {
+  test('GET is 405 with Allow: POST, OPTIONS, whatever the address carries', async () => {
     const res = GET();
     expect(res.status).toBe(405);
-    expect(res.headers.get('allow')).toBe('POST');
+    expect(res.headers.get('allow')).toBe('POST, OPTIONS');
     expect(await res.text()).toBe('{"error":"method_not_allowed"}');
   });
 
   test('GET takes no request at all, so it cannot read a ZIP from one', () => {
     expect(GET.length).toBe(0);
+  });
+
+  test('OPTIONS names the same methods as the 405 (the framework default would list GET)', () => {
+    const res = OPTIONS();
+    expect(res.status).toBe(204);
+    expect(res.headers.get('allow')).toBe('POST, OPTIONS');
   });
 });
 
@@ -150,6 +189,26 @@ test.describe('the ZIP-out-of-addresses gate (scripts/check-zip-urls.mjs)', () =
     expect(result.stderr, 'gate must report no violations').toBe('');
     expect(result.status).toBe(0);
     expect(result.stdout).toContain('zip-urls gate clean');
+  });
+
+  test('on the real tree: a ZIP put back on REPS_LOOKUP_PATH in ActionPanel is caught, in each shape', () => {
+    // The tree-wide constant map scanRepo builds, then ActionPanel's real
+    // source with its one lookup line swapped for each regression shape.
+    const { addressConstants } = scanRepo();
+    expect(addressConstants.get('REPS_LOOKUP_PATH')).toBe('/api/reps');
+    const real = readFileSync('components/ActionPanel.tsx', 'utf8');
+    expect(real).toContain('lookupReps(zip)');
+    expect(scanText('components/ActionPanel.tsx', real, addressConstants)).toEqual([]);
+    for (const shape of [
+      'fetch(`${REPS_LOOKUP_PATH}?zip=${zip}`)',
+      'fetch(REPS_LOOKUP_PATH + `?zip=${zip}`)',
+      'fetch(`${REPS_LOOKUP_PATH}/${zip}`)',
+      'fetch(`${REPS_LOOKUP_PATH}?${new URLSearchParams({ zip })}`)',
+    ]) {
+      const seeded = real.replace('lookupReps(zip)', shape);
+      const rules = scanText('components/ActionPanel.tsx', seeded, addressConstants).map((v) => v.rule);
+      expect(rules, shape).toContain('api-address-input');
+    }
   });
 
   test('the gate has teeth: every seeded violation (the six lookups as they shipped among them) is caught', () => {

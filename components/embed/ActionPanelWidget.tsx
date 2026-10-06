@@ -300,7 +300,10 @@ export function ActionPanelWidget({
       </fieldset>
 
       {/* Step 2 - ZIP (F2: ZIP only, never an address field in any iframe) */}
-      <form onSubmit={submitZip} className="re-row" style={{ marginTop: 16 }} noValidate>
+      {/* method="post": a native submit (no JavaScript, or before hydration)
+          carries the ZIP in the body to this same address, never as ?zip= in
+          the logged /embed/ address (2026-10-06). JS submits stay in onSubmit. */}
+      <form method="post" onSubmit={submitZip} className="re-row" style={{ marginTop: 16 }} noValidate>
         <div className="re-field">
           <label htmlFor="ap-zip" className="re-label">
             {t.home.zipLabel}

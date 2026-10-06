@@ -344,15 +344,21 @@ test.describe('per-caller rate limit', () => {
  * address, and the refusal reads nothing from the request.
  */
 test.describe('the ZIP stays out of the address', () => {
-  test('GET is 405 with Allow: POST, and never echoes or answers a ZIP in the query', async ({ request }) => {
+  test('GET is 405 with Allow: POST, OPTIONS, and never echoes or answers a ZIP in the query', async ({ request }) => {
     const res = await request.get('/api/reps?zip=78501', { headers: { 'x-forwarded-for': nextIp() } });
     expect(res.status()).toBe(405);
-    expect(res.headers()['allow']).toBe('POST');
+    expect(res.headers()['allow']).toBe('POST, OPTIONS');
     const raw = await res.text();
     expect(raw).toBe('{"error":"method_not_allowed"}');
     for (const [name, value] of Object.entries(res.headers())) {
       expect(value, `header "${name}" must not echo the ZIP`).not.toContain('78501');
     }
+  });
+
+  test('OPTIONS names the same methods as the 405, not GET', async ({ request }) => {
+    const res = await request.fetch('/api/reps', { method: 'OPTIONS' });
+    expect(res.status()).toBe(204);
+    expect(res.headers()['allow']).toBe('POST, OPTIONS');
   });
 
   test('a POST without a JSON body is a plain 400, not a lookup', async ({ request }) => {

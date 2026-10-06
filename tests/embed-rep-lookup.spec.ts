@@ -292,3 +292,35 @@ test('the lookup POSTs the ZIP in the body; the request address carries no ZIP',
   expect(req.postDataJSON()).toEqual({ zip: '78501' });
   await expect(page.getByText('Monica De La Cruz')).toBeVisible();
 });
+
+/*
+ * The widget's form carries method="post" (2026-10-06). A native submission
+ * (JavaScript off, or a submit before hydration) used to be a GET to this
+ * page, which wrote /embed/rep-lookup?zip=NNNNN into the logged address and
+ * dropped the locale and theme. As a POST it goes to the same address, query
+ * and all, with the ZIP only in the body.
+ */
+test.describe('a native form submit (no JavaScript) keeps the ZIP out of the address', () => {
+  test.use({ javaScriptEnabled: false });
+
+  test('the submit is a POST to the same address; locale and theme survive; no ZIP in any address', async ({ page }) => {
+    const addresses: string[] = [];
+    page.on('request', (r) => addresses.push(r.url()));
+    const start = '/embed/rep-lookup?locale=es&accent=%23112233';
+    await page.goto(start);
+    await page.getByLabel(es.home.zipLabel).fill('78501');
+    const submit = page.waitForRequest((r) => r.isNavigationRequest() && r.method() === 'POST');
+    await page.getByRole('button', { name: es.home.zipCta }).click();
+    const req = await submit;
+    const url = new URL(req.url());
+    expect(url.pathname).toBe('/embed/rep-lookup');
+    expect(url.searchParams.get('locale')).toBe('es');
+    expect(url.searchParams.get('accent')).toBe('#112233');
+    expect(url.searchParams.has('zip')).toBe(false);
+    expect(req.postData() ?? '').toContain('zip=78501');
+    await page.waitForLoadState('load');
+    await expect(page.getByLabel(es.home.zipLabel)).toBeVisible();
+    expect(new URL(page.url()).search).toBe('?locale=es&accent=%23112233');
+    for (const a of addresses) expect(a, `request address ${a}`).not.toContain('78501');
+  });
+});

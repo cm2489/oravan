@@ -13,7 +13,7 @@ import { callerIp, createRateLimiter, readOravanKey } from '@/lib/ratelimit';
  * in those logs, which made the privacy page's "used in memory, never stored"
  * untrue of the host. The ZIP now travels only in the JSON body
  * (lib/reps-lookup.ts is the one client caller), and GET answers 405 with
- * `Allow: POST` rather than still accepting a ZIP in the address: no page of
+ * `Allow: POST, OPTIONS` rather than still accepting a ZIP in the address: no page of
  * ours sends it, no doc promises it, and outside agents have the MCP server's
  * lookup_representatives, whose ZIP also rides in a POST body. Keeping GET
  * "for outside callers" would keep the logged shape alive for exactly the
@@ -113,12 +113,27 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ reps, multiDistrict: districts.length > 1, vacancies });
 }
 
+/** The methods this route answers, named the same way by GET's 405 and by OPTIONS. */
+const ALLOW = 'POST, OPTIONS';
+
 /*
- * GET is refused, with the method that works named in Allow (RFC 9110
+ * GET is refused, with the methods that work named in Allow (RFC 9110
  * 15.5.6). Next.js would answer an unexported GET with a bare 405 and no
  * Allow header; this says which method to use. It reads nothing from the
  * request: a ZIP someone still puts in the address is never looked at.
+ * (Next answers HEAD with this GET handler, so HEAD gets the same 405.)
  */
 export function GET() {
-  return NextResponse.json({ error: 'method_not_allowed' }, { status: 405, headers: { Allow: 'POST' } });
+  return NextResponse.json({ error: 'method_not_allowed' }, { status: 405, headers: { Allow: ALLOW } });
+}
+
+/*
+ * OPTIONS is exported so its Allow matches the 405's. Left to Next, the
+ * automatic OPTIONS lists every exported handler, GET included
+ * (`allow: GET, HEAD, OPTIONS, POST`), which would advertise the method this
+ * route refuses. No CORS headers: the site's pages and the embed iframe call
+ * this route from its own origin.
+ */
+export function OPTIONS() {
+  return new Response(null, { status: 204, headers: { Allow: ALLOW } });
 }
