@@ -85,9 +85,11 @@ on:
     # GitHub's scheduler drifts both of these crons in the same direction (+17
     # min to +3h27m observed on this repo, never early). 2h20m of nominal
     # daylight covers the sync's worst observed run with margin, which is what
-    # keeps this job from sitting PENDING in the shared data-sync group — and a
-    # pending run there is the one that gets evicted when newsdesk's hourly
-    # cron queues behind it (observed 2026-08-08).
+    # keeps this job from sitting PENDING in the shared data-sync group — and,
+    # until the group took `queue: max` on 2026-10-06, a pending run there was
+    # the one that got evicted when newsdesk's hourly cron queued behind it
+    # (observed 2026-08-08). It now waits its turn instead, so the gap is about
+    # not waiting at all, no longer about surviving the wait.
     #
     # NOT :00 AND NOT :30 on hot-bills.yml's measurement: the scheduler's
     # backlog, and therefore its drift, is worst at the top and half of the
@@ -123,8 +125,12 @@ concurrency:
   # the push itself still has to be serialised against theirs.
   # refresh-legislators.yml left this group on 2026-08-12 (disjoint files, and
   # it was the one being evicted while it waited - see its own comment).
+  # `queue: max` since 2026-10-06, in all four members (sync-bills.yml's
+  # concurrency comment has why): a run waiting here is no longer replaced by
+  # the next one to queue, and this run no longer replaces a waiting nightly.
   group: data-sync
   cancel-in-progress: false
+  queue: max
 
 jobs:
   watch:

@@ -134,8 +134,26 @@ permissions:
   issues: write
 
 concurrency:
+  # Shared with hot-bills.yml / newsdesk.yml / moment-watch.yml: two jobs must
+  # never write data/bills.json at the same time.
+  #
+  # `queue: max` (2026-10-06) so a WAITING run is never replaced. Under
+  # GitHub's default (`queue: single`) a group holds one running run and one
+  # pending run, and a newly queued run cancels the pending one. That is how
+  # the nightly of 2026-10-05 was lost: it fired at 21:28, waited behind a
+  # hot-bill pass, and was replaced two minutes later by a newsdesk run (run
+  # 37376062791, cancelled with zero jobs); and how newsdesk run 37142332818
+  # was replaced by the nightly on 2026-10-03. A cron event cannot be guarded
+  # from inside a step, because a workflow-level key applies when the run is
+  # queued. With `queue: max` up to 100 runs wait, taken first-in first-out
+  # by the time each started waiting (GitHub adds that "ordering is not
+  # guaranteed"; which member runs first was never guaranteed before either).
+  # All four members set it, so no member's setting differs from another's.
+  # GitHub forbids it together with `cancel-in-progress: true`.
+  # nightly-watchdog.yml re-dispatches a nightly that was still lost.
   group: data-sync
   cancel-in-progress: false
+  queue: max
 
 jobs:
   sync:
@@ -982,7 +1000,10 @@ jobs:
         # job's own `data-sync` group (cancel-in-progress: false), so a
         # dispatched run queues rather than races a scheduled or
         # already-running one - verified by reading that workflow's
-        # concurrency block, not assumed.
+        # concurrency block, not assumed. And since 2026-10-06 the group
+        # carries `queue: max` in every member, so this dispatch also cannot
+        # replace a hot-bill pass or a moment-watch run that is waiting behind
+        # this job: it queues after them.
         #
         # LAST, after the cursor-progress alarm, and `always()` for the same
         # reason that alarm is last (see its own comment): nothing below this

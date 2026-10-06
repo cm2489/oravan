@@ -1,7 +1,19 @@
 import { expect, test } from '@playwright/test';
-import { readFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { chmodSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { CURSOR_MAX_AGE_DAYS, cursorAgeVerdict } from '../scripts/check-cursor-age.mjs';
+import {
+  ACT_FROM_HOUR_UTC,
+  ACT_UNTIL_HOUR_UTC,
+  MAX_AUTO_DISPATCHES_PER_UTC_DAY,
+  WINDOW_OPENS_HOUR_UTC,
+  decideNightlyRescue,
+  gotARunner,
+  watchdogWindow,
+} from '../lib/nightly-watchdog.mjs';
 
 /*
  * THE SHAPE OF THE NIGHTLY RUN — the three things reshaped on 2026-08-12
@@ -18,8 +30,10 @@ import { CURSOR_MAX_AGE_DAYS, cursorAgeVerdict } from '../scripts/check-cursor-a
  *      complaining about worse. What must never drift back is the ORDER: every
  *      integrity check before the commit, the cursor-age alarm after it.
  *   2. A weekly job sharing a concurrency group with an HOURLY one is not
- *      serialised, it is evicted — a pending run is cancelled the moment a
- *      newer run queues, and a cancelled scheduled run notifies nobody.
+ *      serialised, it is evicted — under GitHub's default (`queue: single`) a
+ *      pending run is cancelled the moment a newer run queues, and a
+ *      cancelled scheduled run notifies nobody. (Since 2026-10-06 the
+ *      data-sync members set `queue: max` instead; test group 8 pins it.)
  *   3. A cron string that a `run:` body matches LITERALLY is load-bearing
  *      twice; moving the cron without moving the match turns moment-watch's
  *      weekly digest into a second push run, silently.
@@ -311,15 +325,17 @@ test.describe('the Anthropic preflight', () => {
  * 2d · 2026-09-18 — every data workflow checks out the branch TIP.
  * ------------------------------------------------------------------ */
 test.describe('the stale-checkout race that killed two nightlies', () => {
-  test('sync-bills and newsdesk both pin checkout to the branch, not the event SHA', () => {
+  test('sync-bills, newsdesk and hot-bills all pin checkout to the branch, not the event SHA', () => {
     // Without `ref:`, actions/checkout takes `github.sha` — main's SHA when the
     // RUN WAS CREATED. A run queued in the data-sync group can start long
     // after that, against a corpus another member has already advanced; its
     // commit is then unpushable, because data/bills.json is single-line
     // minified JSON and every concurrent edit to it is a content conflict.
     // Runs 34886281500 (2026-09-14) and 35132794181 (2026-09-16) both died
-    // that way, each throwing away a full night of paid work.
-    for (const [name, yml] of [['sync-bills', syncBills], ['newsdesk', wf('newsdesk.yml')]] as const) {
+    // that way, each throwing away a full night of paid work. hot-bills joined
+    // the pin on 2026-10-06: under `queue: max` a pass that waits behind the
+    // nightly always runs, and it rewrites data/bills.json too.
+    for (const [name, yml] of [['sync-bills', syncBills], ['newsdesk', wf('newsdesk.yml')], ['hot-bills', hotBills]] as const) {
       const checkoutAt = yml.indexOf('- uses: actions/checkout@v7');
       expect(checkoutAt, `${name}: no checkout step`).toBeGreaterThan(0);
       expect(yml.slice(checkoutAt, checkoutAt + 2600), name).toContain('ref: ${{ github.ref_name }}');
@@ -553,8 +569,10 @@ test.describe('nightly phasing (Congress.gov publishes 13:35-14:00 UTC)', () => 
     expect(nightly, 'no daily moment-watch cron').toBeTruthy();
     // The sync has taken 11-72 minutes across its last 12 runs. The gap has to
     // cover the worst of that, or moment-watch sits PENDING in the shared
-    // data-sync group - and a pending run there is what newsdesk's hourly cron
-    // evicts (observed 2026-08-08).
+    // data-sync group - where, until the group took `queue: max` on
+    // 2026-10-06, a pending run was what newsdesk's hourly cron evicted
+    // (observed 2026-08-08). It now waits its turn; the gap keeps it from
+    // waiting at all.
     expect(nightly!.utcMinutes - sync[0].utcMinutes).toBeGreaterThan(72);
   });
 
@@ -635,5 +653,477 @@ test.describe('newsdesk: intraday roll-call vote sync', () => {
     expect(syncBills).not.toContain('sync-votes.mjs --only-new-rolls');
     // …and the newsdesk still shares the data-sync group, so the two writes serialize.
     expect(newsdesk).toMatch(/concurrency:[\s\S]*?group:\s*data-sync/);
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * 8 · 2026-10-06 — a waiting run in data-sync is never replaced.
+ *
+ * On 2026-10-05 the nightly (run 37376062791) waited behind a hot-bill pass
+ * and was replaced two minutes later by a newsdesk run: cancelled, zero jobs,
+ * no nightly that day. On 2026-10-03 the nightly itself replaced a waiting
+ * scheduled newsdesk (run 37142332818). GitHub's default for a concurrency
+ * group is one running run plus ONE pending run, and a newly queued run
+ * cancels the pending one; a workflow-level key applies when the run is
+ * queued, so a cron event cannot be guarded from inside a step. `queue: max`
+ * lets up to 100 runs wait, first-in first-out. It is pinned on ALL four
+ * members, so no member's setting differs from another's (what GitHub does
+ * with a group whose members disagree is not documented).
+ * ------------------------------------------------------------------ */
+test.describe('data-sync queues, it never replaces', () => {
+  /** The top-level `concurrency:` block's keys, comments stripped. */
+  const concurrencyOf = (yml: string) => {
+    const block = /^concurrency:\n((?:[ \t]+.*\n|[ \t]*\n)*)/m.exec(yml)?.[1];
+    expect(block, 'no top-level concurrency block').toBeTruthy();
+    const keys: Record<string, string> = {};
+    for (const line of block!.split('\n')) {
+      const m = /^\s+([a-z-]+):\s*([^#\s]+)/.exec(line);
+      if (m) keys[m[1]] = m[2].replace(/^(['"])(.*)\1$/, '$2');
+    }
+    return keys;
+  };
+  const members = ['sync-bills.yml', 'hot-bills.yml', 'newsdesk.yml', 'moment-watch.yml'];
+
+  for (const name of members) {
+    test(`${name}: data-sync, queue: max, and never cancel-in-progress`, () => {
+      const c = concurrencyOf(wf(name));
+      expect(c.group).toBe('data-sync');
+      expect(c.queue, `${name} must queue, not replace, a waiting run`).toBe('max');
+      // GitHub rejects queue: max with cancel-in-progress: true, and a running
+      // corpus write must never be cancelled anyway.
+      expect(c['cancel-in-progress']).toBe('false');
+    });
+  }
+
+  test('the key sits at WORKFLOW level, where it applies when a cron run is queued, not inside a job', () => {
+    for (const name of members) {
+      const yml = wf(name);
+      const jobsAt = yml.search(/^jobs:/m);
+      expect(yml.search(/^concurrency:/m), name).toBeGreaterThan(0);
+      expect(yml.search(/^concurrency:/m), name).toBeLessThan(jobsAt);
+      // and no job re-declares a concurrency of its own that could disagree
+      expect(yml.slice(jobsAt), name).not.toMatch(/^\s+concurrency:/m);
+    }
+  });
+
+  /**
+   * Does this workflow put a run or a job in the group named exactly
+   * `data-sync`? Comments are stripped first; the name may be bare or quoted,
+   * may carry a trailing comment, and may sit under `group:` or be the
+   * one-line `concurrency: data-sync` form. `data-sync-legislators` and the
+   * like are other groups and do not match.
+   */
+  const joinsDataSync = (yml: string) =>
+    /(?:\bgroup|^\s*concurrency)\s*:\s*(['"]?)data-sync\1\s*(?:[,}]|$)/m.test(
+      yml
+        .split('\n')
+        .map((l) => l.replace(/\s#.*$|^#.*$/, ''))
+        .join('\n')
+    );
+
+  test('the membership matcher catches every way of spelling the group, and nothing else', () => {
+    for (const spelled of [
+      'concurrency:\n  group: data-sync\n',
+      "concurrency:\n  group: 'data-sync'\n",
+      'concurrency:\n  group: "data-sync"\n',
+      'concurrency:\n  group: data-sync # shared with the others\n',
+      'concurrency:\n  group: data-sync   \n',
+      'concurrency: data-sync\n',
+      "concurrency: 'data-sync' # one line\n",
+      'concurrency: { group: data-sync, cancel-in-progress: false }\n',
+      'jobs:\n  x:\n    concurrency:\n      group: data-sync\n',
+    ]) {
+      expect(joinsDataSync(spelled), JSON.stringify(spelled)).toBe(true);
+    }
+    for (const other of [
+      'concurrency:\n  group: data-sync-legislators\n',
+      'concurrency:\n  group: data-sync-question-press\n',
+      'concurrency:\n  # group: data-sync\n  group: nightly-watchdog\n',
+      'concurrency:\n  group: nightly-watchdog # not data-sync\n',
+      '        run: echo "waiting in the data-sync group"\n',
+    ]) {
+      expect(joinsDataSync(other), JSON.stringify(other)).toBe(false);
+    }
+  });
+
+  test('every workflow that names data-sync is one of the four, so a fifth cannot join with the default queue', () => {
+    const inGroup = readdirSync(join(process.cwd(), '.github/workflows'))
+      .filter((n) => /\.ya?ml$/.test(n))
+      .filter((n) => joinsDataSync(wf(n)))
+      .sort();
+    expect(inGroup).toEqual([...members].sort());
+  });
+
+  test('the hot-bills guard from #444 stays as the second line', () => {
+    // Redundant while queue: max holds, kept so backing it out cannot reopen
+    // 2026-10-05 on that path. Pinned in group 5; re-read here so a reader of
+    // this block sees both lines.
+    expect(hotBills).toContain('gh run list --repo "$GITHUB_REPOSITORY" --workflow sync-bills.yml');
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * 9 · 2026-10-06 — the watchdog re-dispatches a nightly that never ran.
+ *
+ * GitHub's scheduler can drop a scheduled run under load, a runner can fail
+ * to start, and the daily doctor cannot dispatch (HTTP 403). The decision is
+ * lib/nightly-watchdog.mjs; every guard and the cap are pinned below, each
+ * against a case that would dispatch if that guard were removed.
+ * ------------------------------------------------------------------ */
+test.describe('nightly watchdog: the decision', () => {
+  const T = (iso: string) => Date.parse(iso);
+  // 2026-10-06 03:30Z: inside the band; the window opened 2026-10-05 14:00Z.
+  const NOW = T('2026-10-06T03:30:00Z');
+  type Run = {
+    id: number;
+    event: string;
+    status: string;
+    conclusion: string | null;
+    created_at: string;
+    head_branch: string;
+    triggering_actor?: { login?: string } | null;
+  };
+  const run = (over: Partial<Run>): Run => ({
+    id: 1,
+    event: 'schedule',
+    status: 'completed',
+    conclusion: 'success',
+    created_at: '2026-10-04T18:08:55Z',
+    head_branch: 'main',
+    triggering_actor: { login: 'cm2489' },
+    ...over,
+  });
+  // Yesterday's good nightly, outside today's window: on its own it never stands the watchdog down.
+  const older = run({ id: 37223269918 });
+  const evicted = run({ id: 37376062791, conclusion: 'cancelled', created_at: '2026-10-05T21:28:21Z' });
+  const noJobs = { '37376062791': [] };
+
+  test('the constants: window opens 14:00 the day before, acts 02:00-14:00, once a day', () => {
+    expect(WINDOW_OPENS_HOUR_UTC).toBe(14);
+    expect(ACT_FROM_HOUR_UTC).toBe(2);
+    expect(ACT_UNTIL_HOUR_UTC).toBe(14);
+    expect(MAX_AUTO_DISPATCHES_PER_UTC_DAY).toBe(1);
+    // The band starts 11h45m after the 14:15 slot: later than the worst
+    // lateness ever measured on a data-sync member (+9h31m).
+    expect((ACT_FROM_HOUR_UTC + 24) * 60 - (14 * 60 + 15)).toBeGreaterThan(9 * 60 + 31);
+    // and it ends before the next nightly is due
+    expect(ACT_UNTIL_HOUR_UTC * 60).toBeLessThanOrEqual(14 * 60 + 15);
+  });
+
+  test('the window is computed from the clock, never from the runs', () => {
+    const w = watchdogWindow(NOW);
+    expect(new Date(w.windowStart).toISOString()).toBe('2026-10-05T14:00:00.000Z');
+    expect(new Date(w.utcDayStart).toISOString()).toBe('2026-10-06T00:00:00.000Z');
+    expect(w.inBand).toBe(true);
+    expect(watchdogWindow(T('2026-10-06T01:59:59Z')).inBand).toBe(false);
+    expect(watchdogWindow(T('2026-10-06T02:00:00Z')).inBand).toBe(true);
+    expect(watchdogWindow(T('2026-10-06T13:59:59Z')).inBand).toBe(true);
+    expect(watchdogWindow(T('2026-10-06T14:00:00Z')).inBand).toBe(false);
+    expect(() => watchdogWindow(Number.NaN)).toThrow();
+  });
+
+  test('THE CASE IT EXISTS FOR: 2026-10-05, the only nightly evicted with zero jobs -> dispatch', () => {
+    const v = decideNightlyRescue({ now: NOW, runs: [evicted, older], jobsByRunId: noJobs });
+    expect(v).toMatchObject({ dispatch: true, code: 'dropped' });
+  });
+
+  test('a nightly the scheduler never fired -> dispatch', () => {
+    expect(decideNightlyRescue({ now: NOW, runs: [older] })).toMatchObject({ dispatch: true, code: 'never-fired' });
+    expect(decideNightlyRescue({ now: NOW, runs: [] })).toMatchObject({ dispatch: true, code: 'never-fired' });
+  });
+
+  test('a runner that never started (runner_id 0, no steps) is a drop too', () => {
+    const v = decideNightlyRescue({
+      now: NOW,
+      runs: [evicted, older],
+      jobsByRunId: { '37376062791': [{ runner_id: 0, steps: [] }] },
+    });
+    expect(v.dispatch).toBe(true);
+  });
+
+  test('GUARD band: never outside 02:00-14:00 UTC, when a late scheduled nightly may still fire', () => {
+    for (const iso of ['2026-10-06T00:30:00Z', '2026-10-06T01:59:00Z', '2026-10-06T14:00:00Z', '2026-10-06T21:00:00Z']) {
+      const v = decideNightlyRescue({ now: T(iso), runs: [older] });
+      expect(v, iso).toMatchObject({ dispatch: false, code: 'outside-band' });
+    }
+  });
+
+  test('GUARD active: never while ANY nightly is not completed, whatever its branch, age or status', () => {
+    for (const status of ['queued', 'waiting', 'pending', 'requested', 'in_progress', 'a-status-github-adds-later']) {
+      for (const over of [{}, { head_branch: 'some-branch' }, { created_at: '2026-09-01T00:00:00Z' }]) {
+        const active = run({ id: 9, status, conclusion: null, ...over });
+        const v = decideNightlyRescue({ now: NOW, runs: [active, evicted, older], jobsByRunId: noJobs });
+        expect(v, `${status} ${JSON.stringify(over)}`).toMatchObject({ dispatch: false, code: 'active' });
+      }
+    }
+  });
+
+  test('CAP: at most one automatic dispatch per UTC day, even when that dispatch was itself lost', () => {
+    const mine = run({
+      id: 8,
+      event: 'workflow_dispatch',
+      conclusion: 'cancelled',
+      created_at: '2026-10-06T02:24:00Z',
+      triggering_actor: { login: 'github-actions[bot]' },
+    });
+    const v = decideNightlyRescue({ now: NOW, runs: [mine, evicted, older], jobsByRunId: { ...noJobs, '8': [] } });
+    expect(v).toMatchObject({ dispatch: false, code: 'cap' });
+    // an unknown actor counts against the cap (the safe reading) ...
+    const unknown = { ...mine, triggering_actor: null };
+    expect(decideNightlyRescue({ now: NOW, runs: [unknown, evicted, older], jobsByRunId: { ...noJobs, '8': [] } }).code).toBe('cap');
+    // ... a person's own dispatch does not use the watchdog's one
+    const owners = { ...mine, triggering_actor: { login: 'cm2489' } };
+    expect(decideNightlyRescue({ now: NOW, runs: [owners, evicted, older], jobsByRunId: { ...noJobs, '8': [] } }).dispatch).toBe(true);
+    // ... and yesterday's automatic dispatch does not block today
+    const yesterdays = { ...mine, created_at: '2026-10-05T03:00:00Z' };
+    expect(decideNightlyRescue({ now: NOW, runs: [evicted, yesterdays, older], jobsByRunId: noJobs }).dispatch).toBe(true);
+  });
+
+  test('GUARD succeeded: never when a main-branch nightly succeeded in the window', () => {
+    const good = run({ id: 7, created_at: '2026-10-05T23:50:00Z' });
+    expect(decideNightlyRescue({ now: NOW, runs: [good, evicted, older], jobsByRunId: noJobs })).toMatchObject({
+      dispatch: false,
+      code: 'succeeded',
+    });
+    // a success on another branch did not put tonight's data on main
+    const branch = { ...good, head_branch: 'fix/something' };
+    expect(decideNightlyRescue({ now: NOW, runs: [branch, evicted, older], jobsByRunId: noJobs }).dispatch).toBe(true);
+    // the window opens at 14:00 yesterday, not at midnight
+    const justIn = run({ id: 6, created_at: '2026-10-05T14:00:00Z' });
+    expect(decideNightlyRescue({ now: NOW, runs: [justIn] }).code).toBe('succeeded');
+    const justOut = run({ id: 6, created_at: '2026-10-05T13:59:59Z' });
+    expect(decideNightlyRescue({ now: NOW, runs: [justOut] }).dispatch).toBe(true);
+  });
+
+  test('GUARD needs-a-person: a nightly that ended any other way than cancelled is not re-run', () => {
+    for (const conclusion of ['failure', 'timed_out', 'startup_failure', 'action_required', 'neutral', 'skipped', null]) {
+      const red = run({ id: 5, conclusion, created_at: '2026-10-05T18:00:00Z' });
+      const v = decideNightlyRescue({ now: NOW, runs: [red, older] });
+      expect(v, String(conclusion)).toMatchObject({ dispatch: false, code: 'needs-a-person' });
+    }
+  });
+
+  test('GUARD cancelled-after-start: a run that got a runner was stopped, not dropped', () => {
+    const jobs = { '37376062791': [{ runner_id: 1000004215, steps: [{}] }] };
+    expect(decideNightlyRescue({ now: NOW, runs: [evicted, older], jobsByRunId: jobs })).toMatchObject({
+      dispatch: false,
+      code: 'cancelled-after-start',
+    });
+    expect(gotARunner([{ runner_id: 0, steps: [{ name: 'Set up job' }] }])).toBe(true);
+    expect(gotARunner([{ runner_id: 0, steps: [] }])).toBe(false);
+    expect(gotARunner([])).toBe(false);
+  });
+
+  test('FAIL SAFE: unknown jobs stand down, and a malformed run list throws rather than dispatching', () => {
+    expect(decideNightlyRescue({ now: NOW, runs: [evicted, older] })).toMatchObject({ dispatch: false, code: 'jobs-unknown' });
+    expect(gotARunner(undefined)).toBeNull();
+    expect(() => decideNightlyRescue({ now: NOW, runs: undefined as unknown as Run[] })).toThrow();
+    expect(() => decideNightlyRescue({ now: NOW, runs: [run({ created_at: 'not a date' })] })).toThrow();
+  });
+});
+
+test.describe('nightly watchdog: the workflow and the script', () => {
+  const watchdog = wf('nightly-watchdog.yml');
+  const script = readFileSync(join(process.cwd(), 'scripts/nightly-watchdog.mjs'), 'utf8');
+
+  test('its own group, NOT data-sync: it writes nothing, and two watchdog runs never overlap', () => {
+    expect(/^concurrency:\n\s+group:\s*(\S+)/m.exec(watchdog)?.[1]).toBe('nightly-watchdog');
+    expect(watchdog).toContain('cancel-in-progress: false');
+    expect(watchdog).not.toMatch(/git (add|commit|push)/);
+  });
+
+  test('least privilege: contents read, actions write, nothing else; no secret; stdlib only', () => {
+    const perms = /^permissions:\n((?:[ \t]+.*\n|[ \t]*\n)*)/m.exec(watchdog)?.[1] ?? '';
+    const granted = [...perms.matchAll(/^\s+([a-z-]+):\s*(read|write|none)/gm)].map((m) => `${m[1]}:${m[2]}`).sort();
+    expect(granted).toEqual(['actions:write', 'contents:read']);
+    expect(watchdog).not.toMatch(/secrets\./);
+    expect(watchdog).not.toMatch(/run: npm ci/);
+    expect(watchdog).toContain('GH_TOKEN: ${{ github.token }}');
+    expect(watchdog).toMatch(/timeout-minutes: \d+/);
+  });
+
+  test('a branch validation run never dispatches (the main-ref guard every dispatch step here carries)', () => {
+    expect(watchdog).toContain("WATCHDOG_DISPATCH: ${{ github.ref == 'refs/heads/main' && '1' || '0' }}");
+    expect(script).toContain("process.env.WATCHDOG_DISPATCH === '1'");
+    expect(watchdog).toContain('run: node scripts/nightly-watchdog.mjs');
+  });
+
+  test('every slot can land in the 02:00-14:00 band, none on the hour or half hour', () => {
+    const crons = [...watchdog.matchAll(/-\s*cron:\s*'(\d+)\s+([\d,]+)\s+\*\s+\*\s+\*'/g)];
+    expect(crons).toHaveLength(1);
+    const minute = Number(crons[0][1]);
+    expect(minute % 30).not.toBe(0);
+    const hours = crons[0][2].split(',').map(Number);
+    expect(hours.length).toBeGreaterThanOrEqual(2);
+    for (const h of hours) {
+      expect(h).toBeGreaterThanOrEqual(ACT_FROM_HOUR_UTC);
+      expect(h).toBeLessThan(ACT_UNTIL_HOUR_UTC);
+    }
+  });
+
+  test('the script dispatches the nightly ONCE, on main, and never retries a dispatch', () => {
+    expect(script.match(/'workflow', 'run'/g)).toHaveLength(1);
+    expect(script).toContain("['workflow', 'run', NIGHTLY_WORKFLOW, '--repo', REPO, '--ref', NIGHTLY_BRANCH]");
+    expect(script).not.toMatch(/for \(let attempt|ATTEMPTS/);
+  });
+
+  test('a failed lookup exits 1 BEFORE the decision, so it can never reach the dispatch', () => {
+    const lookupFail = script.indexOf("could not read the nightly's runs");
+    const decide = script.indexOf('decideNightlyRescue({ now, runs, jobsByRunId })');
+    const dispatch = script.indexOf("'workflow', 'run'");
+    expect(lookupFail).toBeGreaterThan(0);
+    expect(lookupFail).toBeLessThan(decide);
+    expect(decide).toBeLessThan(dispatch);
+    expect(script.slice(lookupFail, decide)).toContain('process.exit(1)');
+    // the decision's own throw is caught and exits 1 too, before the dispatch
+    expect(script.slice(decide, dispatch)).toContain('process.exit(1)');
+    expect(script.slice(decide, dispatch)).toContain('if (!verdict.dispatch)');
+  });
+
+  test('nothing else dispatches the nightly automatically, so the cap counts every bot dispatch there is', () => {
+    const dispatchers = readdirSync(join(process.cwd(), '.github/workflows'))
+      .filter((n) => /\.ya?ml$/.test(n))
+      .filter((n) => /gh workflow run sync-bills\.yml|nightly-watchdog\.mjs/.test(wf(n)));
+    expect(dispatchers).toEqual(['nightly-watchdog.yml']);
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * 10 · 2026-10-06 — the watchdog script itself, run against a stand-in gh.
+ *
+ * Group 9's static pins say where the exits are; these run the script for
+ * real so that skipping the jobs fetch (which turns the 10-05 rescue into a
+ * green "jobs-unknown" stand-down) or dropping the exit after a failed
+ * dispatch (which turns a red run green and prints "dispatched") fails here.
+ *
+ * NOTHING HERE CAN REACH GITHUB. The stand-in `gh` is first on a PATH that is
+ * otherwise only /usr/bin:/bin, and the test checks that `gh` resolves to it
+ * before any run that sets WATCHDOG_DISPATCH=1. Beyond that: the environment
+ * is built from scratch (no GH_TOKEN, no GITHUB_TOKEN, HOME and GH_CONFIG_DIR
+ * are an empty temp folder), and the repository named does not exist. The
+ * clock is fixed at 2026-10-06T03:30Z by a preload, so the band check does
+ * not depend on when CI runs.
+ * ------------------------------------------------------------------ */
+test.describe('nightly watchdog: the script, run against a stand-in gh', () => {
+  const FAKE_REPO = 'oravan-watchdog-test/no-such-repo';
+  const evictedRun = {
+    id: 37376062791,
+    event: 'schedule',
+    status: 'completed',
+    conclusion: 'cancelled',
+    created_at: '2026-10-05T21:28:21Z',
+    head_branch: 'main',
+    triggering_actor: { login: 'cm2489' },
+  };
+  const olderRun = { ...evictedRun, id: 37223269918, conclusion: 'success', created_at: '2026-10-04T18:08:55Z' };
+
+  type Fixture = { runs: unknown[]; jobs: Record<string, unknown[]>; failJobs?: boolean; failDispatch?: boolean };
+
+  const runWatchdog = (fixture: Fixture, dispatch: boolean) => {
+    const dir = mkdtempSync(join(tmpdir(), 'watchdog-gh-'));
+    try {
+      const bin = join(dir, 'bin');
+      const home = join(dir, 'home');
+      mkdirSync(bin);
+      mkdirSync(home);
+      writeFileSync(join(dir, 'fixture.json'), JSON.stringify(fixture));
+      writeFileSync(
+        join(dir, 'fake-gh.mjs'),
+        [
+          "import { appendFileSync, readFileSync } from 'node:fs';",
+          'const args = process.argv.slice(2);',
+          "appendFileSync(process.env.FAKE_GH_LOG, JSON.stringify(args) + '\\n');",
+          "const f = JSON.parse(readFileSync(process.env.FAKE_GH_FIXTURE, 'utf8'));",
+          "if (args[0] === 'api' && /\\/actions\\/workflows\\/sync-bills\\.yml\\/runs\\?/.test(args[1])) {",
+          '  process.stdout.write(JSON.stringify({ workflow_runs: f.runs }));',
+          "} else if (args[0] === 'api' && /\\/actions\\/runs\\/(\\d+)\\/jobs\\?/.test(args[1])) {",
+          "  if (f.failJobs) { process.stderr.write('HTTP 502'); process.exit(1); }",
+          '  const id = /\\/runs\\/(\\d+)\\/jobs/.exec(args[1])[1];',
+          '  process.stdout.write(JSON.stringify({ jobs: f.jobs[id] ?? [] }));',
+          "} else if (args[0] === 'workflow' && args[1] === 'run') {",
+          "  if (f.failDispatch) { process.stderr.write('HTTP 500'); process.exit(1); }",
+          '} else {',
+          "  process.stderr.write('stand-in gh: unexpected call'); process.exit(2);",
+          '}',
+        ].join('\n')
+      );
+      const gh = join(bin, 'gh');
+      writeFileSync(gh, `#!/bin/sh\nexec "${process.execPath}" "${join(dir, 'fake-gh.mjs')}" "$@"\n`);
+      chmodSync(gh, 0o755);
+      const clock = join(dir, 'clock.mjs');
+      writeFileSync(clock, "const n = Date.parse('2026-10-06T03:30:00Z');\nDate.now = () => n;\n");
+      const log = join(dir, 'calls.log');
+      writeFileSync(log, '');
+      const env: NodeJS.ProcessEnv = {
+        NODE_ENV: 'test',
+        PATH: `${bin}:/usr/bin:/bin`,
+        HOME: home,
+        GH_CONFIG_DIR: home,
+        GITHUB_REPOSITORY: FAKE_REPO,
+        FAKE_GH_LOG: log,
+        FAKE_GH_FIXTURE: join(dir, 'fixture.json'),
+        WATCHDOG_DISPATCH: dispatch ? '1' : '0',
+      };
+      if (dispatch) {
+        // The safety check this whole block rests on: `gh` must be the stand-in.
+        const which = spawnSync('/bin/sh', ['-c', 'command -v gh'], { env, encoding: 'utf8' });
+        expect(which.stdout.trim(), 'gh does not resolve to the stand-in; refusing to run with dispatch on').toBe(gh);
+      }
+      const r = spawnSync(
+        process.execPath,
+        ['--import', pathToFileURL(clock).href, join(process.cwd(), 'scripts/nightly-watchdog.mjs')],
+        { env, encoding: 'utf8', timeout: 20_000 }
+      );
+      const calls = readFileSync(log, 'utf8')
+        .split('\n')
+        .filter(Boolean)
+        .map((l) => JSON.parse(l) as string[]);
+      return { status: r.status, out: `${r.stdout}${r.stderr}`, calls };
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  };
+  const dispatchCalls = (calls: string[][]) => calls.filter((c) => c[0] === 'workflow' && c[1] === 'run');
+  const tenFive: Fixture = { runs: [evictedRun, olderRun], jobs: { '37376062791': [] } };
+
+  test('THE 10-05 RESCUE, end to end: it reads the evicted run\'s jobs and would dispatch', () => {
+    const r = runWatchdog(tenFive, false);
+    expect(r.status, r.out).toBe(0);
+    expect(r.out).toContain('WOULD dispatch sync-bills.yml (dropped)');
+    // the jobs of the cancelled main-branch run in the window were read ...
+    expect(r.calls.some((c) => c[0] === 'api' && c[1].includes('/actions/runs/37376062791/jobs'))).toBe(true);
+    // ... the older successful run's were not, and nothing was dispatched
+    expect(r.calls.some((c) => c[1]?.includes('/actions/runs/37223269918/jobs'))).toBe(false);
+    expect(dispatchCalls(r.calls)).toHaveLength(0);
+  });
+
+  test('a jobs lookup that fails turns the run red and dispatches nothing', () => {
+    const r = runWatchdog({ ...tenFive, failJobs: true }, true);
+    expect(r.status, r.out).toBe(1);
+    expect(r.out).toContain('Nothing was dispatched');
+    expect(dispatchCalls(r.calls)).toHaveLength(0);
+  });
+
+  test('a dispatch that errors turns the run red, is tried once, and is never reported as dispatched', () => {
+    const r = runWatchdog({ ...tenFive, failDispatch: true }, true);
+    expect(r.status, r.out).toBe(1);
+    expect(r.out).toContain('errored');
+    expect(r.out).not.toContain('Nightly watchdog dispatched');
+    expect(dispatchCalls(r.calls)).toEqual([['workflow', 'run', 'sync-bills.yml', '--repo', FAKE_REPO, '--ref', 'main']]);
+  });
+
+  test('a dispatch that lands is made once, on main, and reported', () => {
+    const r = runWatchdog(tenFive, true);
+    expect(r.status, r.out).toBe(0);
+    expect(r.out).toContain('::notice::Nightly watchdog dispatched sync-bills.yml on main (dropped)');
+    expect(dispatchCalls(r.calls)).toHaveLength(1);
+  });
+
+  test('a night that succeeded stands it down, with dispatch on', () => {
+    const good = { ...olderRun, id: 7, created_at: '2026-10-05T23:50:00Z' };
+    const r = runWatchdog({ runs: [good, evictedRun, olderRun], jobs: { '37376062791': [] } }, true);
+    expect(r.status, r.out).toBe(0);
+    expect(r.out).toContain('stood down (succeeded)');
+    expect(dispatchCalls(r.calls)).toHaveLength(0);
   });
 });
