@@ -10,7 +10,7 @@ permissions:
 
 concurrency:
   group: queue-key-check
-  cancel-in-progress: false
+  cancel-in-progress: true
   queue: max
 
 jobs:
