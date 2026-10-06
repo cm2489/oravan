@@ -458,8 +458,9 @@ test('readMcpClientDay: a day with no handshakes is an honest empty list (ok: tr
  * the key builder refuses to carry one even when handed it directly.
  */
 
-test('PAGEVIEW_SURFACES: the exact 11-member closed set, stable order, "other" last', () => {
-  // 'member' and 'today' joined 2026-09-27 (the 2026-09-27 audit, SY-49).
+test('PAGEVIEW_SURFACES: the exact 12-member closed set, stable order, "other" last', () => {
+  // 'member' and 'today' joined 2026-09-27 (the 2026-09-27 audit, SY-49);
+  // 'short' joined 2026-09-29 (short addresses for bills, owner card d3).
   expect(PAGEVIEW_SURFACES).toEqual([
     'home',
     'bills-index',
@@ -471,8 +472,20 @@ test('PAGEVIEW_SURFACES: the exact 11-member closed set, stable order, "other" l
     'record',
     'nominations',
     'today',
+    'short',
     'other',
   ]);
+});
+
+test("'short': the short-address label is a fixed word, and no path ever maps to it", () => {
+  // proxy.ts passes the literal 'short' only for a redirect it made; the
+  // path-to-label mapper never returns it, so a mistyped number that 404s
+  // stays 'other' and the label can never carry which bill was asked for.
+  const locales = ['en', 'es'];
+  expect(pageviewUsageKey('short', '2026-09-29')).toMatch(/:usage:pageview:short:2026-09-29$/);
+  for (const path of ['/hr9340', '/es/hr9340', '/HR-9340', '/s1', '/hres10', '/hr99999']) {
+    expect(pageviewSurfaceForPath(path, locales), path).toBe('other');
+  }
 });
 
 test('pageviewSurfaceForPath: every real route template maps to its own label, locale prefix stripped', () => {
