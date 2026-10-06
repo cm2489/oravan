@@ -13,6 +13,7 @@ import { HouseFinder } from './HouseFinder';
 import { VacantSeatCard } from './VacantSeatCard';
 import { ZipForm } from './ZipForm';
 import { PartyTotals } from './PartyTotals';
+import { lookupReps } from '@/lib/reps-lookup';
 
 /*
  * THE PANEL WHEN NO DECISION IS LEFT — what stands where the call panel
@@ -51,7 +52,7 @@ import { PartyTotals } from './PartyTotals';
  * old "#act" link lands on the answer rather than the page top.
  *
  * THE ZIP LOOKUP is the call panel's own request, made the same way: one
- * same-origin GET /api/reps for the saved ZIP (disclosed on /privacy). The
+ * same-origin POST /api/reps for the saved ZIP, in the body (disclosed on /privacy). The
  * answer is joined here, in the browser, against the positions the server
  * rendered into the page for every visitor alike, and kept only in memory.
  * The split-ZIP House finder (components/HouseFinder.tsx, version A of the
@@ -130,7 +131,7 @@ export function SettledPanel({
       return;
     }
     setLookup({ status: 'loading' });
-    fetch(`/api/reps?zip=${zip}`)
+    lookupReps(zip)
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((d: { reps: Legislator[]; vacancies?: District[]; multiDistrict?: boolean }) => {
         setLookup({

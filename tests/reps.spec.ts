@@ -197,7 +197,7 @@ test.describe('vacant seat (FL-20)', () => {
   test('/api/reps names the vacant seat explicitly (fact only, no since-date exposed)', async ({
     request,
   }) => {
-    const res = await request.get('/api/reps?zip=33313');
+    const res = await request.post('/api/reps', { data: { zip: '33313' } });
     const body = await res.json();
     expect(body.vacancies).toEqual([{ state: 'FL', district: 20 }]);
     const names = (body.reps as Array<{ name: string }>).map((r) => r.name);
@@ -207,7 +207,7 @@ test.describe('vacant seat (FL-20)', () => {
   test('/api/reps returns an empty vacancies array for a fully occupied district', async ({
     request,
   }) => {
-    const res = await request.get('/api/reps?zip=78501');
+    const res = await request.post('/api/reps', { data: { zip: '78501' } });
     const body = await res.json();
     expect(body.vacancies).toEqual([]);
   });
@@ -246,7 +246,7 @@ test.describe('per-caller rate limit', () => {
     for (let sent = 0; sent < REPS_MAX; sent += 30) {
       const batch = await Promise.all(
         Array.from({ length: Math.min(30, REPS_MAX - sent) }, () =>
-          request.get('/api/reps?zip=78501', { headers: { 'x-forwarded-for': ip } })
+          request.post('/api/reps', { data: { zip: '78501' }, headers: { 'x-forwarded-for': ip } })
         )
       );
       for (const res of batch) {
@@ -254,7 +254,8 @@ test.describe('per-caller rate limit', () => {
       }
     }
 
-    const overLimit = await request.get('/api/reps?zip=78501', {
+    const overLimit = await request.post('/api/reps', {
+      data: { zip: '78501' },
       headers: { 'x-forwarded-for': ip },
     });
     expect(overLimit.status()).toBe(429);
@@ -262,7 +263,8 @@ test.describe('per-caller rate limit', () => {
 
     // A different caller is untouched by that caller's saturation - the
     // counter is per-caller-hash, not global.
-    const fresh = await request.get('/api/reps?zip=78501', {
+    const fresh = await request.post('/api/reps', {
+      data: { zip: '78501' },
       headers: { 'x-forwarded-for': nextIp() },
     });
     expect(fresh.status()).toBe(200);
@@ -293,7 +295,8 @@ test.describe('per-caller rate limit', () => {
   test('a valid ZIP under the limit is answered normally, with the ZIP never echoed anywhere but the payload', async ({
     request,
   }) => {
-    const res = await request.get('/api/reps?zip=78501', {
+    const res = await request.post('/api/reps', {
+      data: { zip: '78501' },
       headers: { 'x-forwarded-for': nextIp() },
     });
     expect(res.status()).toBe(200);
@@ -307,7 +310,8 @@ test.describe('per-caller rate limit', () => {
   });
 
   test('a malformed ZIP is still judged on its merits, not rate-limited', async ({ request }) => {
-    const res = await request.get('/api/reps?zip=abcde', {
+    const res = await request.post('/api/reps', {
+      data: { zip: 'abcde' },
       headers: { 'x-forwarded-for': nextIp() },
     });
     expect(res.status()).toBe(400);
@@ -320,13 +324,49 @@ test.describe('per-caller rate limit', () => {
     // The dormant tenancy hook (S18/S19) is recognized by this route as it is
     // by /api/district - and must not change a byte.
     const ip = nextIp();
-    const without = await request.get('/api/reps?zip=78501', {
+    const without = await request.post('/api/reps', {
+      data: { zip: '78501' },
       headers: { 'x-forwarded-for': ip },
     });
-    const with_ = await request.get('/api/reps?zip=78501', {
+    const with_ = await request.post('/api/reps', {
+      data: { zip: '78501' },
       headers: { 'x-forwarded-for': ip, 'x-oravan-key': 'rk_not_a_real_token' },
     });
     expect(with_.status()).toBe(without.status());
     expect(await with_.text()).toBe(await without.text());
+  });
+});
+
+/*
+ * The ZIP travels in the POST body, never in the request's address
+ * (2026-10-06). The host's request logs keep the path with its query string,
+ * so GET is refused outright rather than still answering a ZIP in the
+ * address, and the refusal reads nothing from the request.
+ */
+test.describe('the ZIP stays out of the address', () => {
+  test('GET is 405 with Allow: POST, OPTIONS, and never echoes or answers a ZIP in the query', async ({ request }) => {
+    const res = await request.get('/api/reps?zip=78501', { headers: { 'x-forwarded-for': nextIp() } });
+    expect(res.status()).toBe(405);
+    expect(res.headers()['allow']).toBe('POST, OPTIONS');
+    const raw = await res.text();
+    expect(raw).toBe('{"error":"method_not_allowed"}');
+    for (const [name, value] of Object.entries(res.headers())) {
+      expect(value, `header "${name}" must not echo the ZIP`).not.toContain('78501');
+    }
+  });
+
+  test('OPTIONS names the same methods as the 405, not GET', async ({ request }) => {
+    const res = await request.fetch('/api/reps', { method: 'OPTIONS' });
+    expect(res.status()).toBe(204);
+    expect(res.headers()['allow']).toBe('POST, OPTIONS');
+  });
+
+  test('a POST without a JSON body is a plain 400, not a lookup', async ({ request }) => {
+    const res = await request.post('/api/reps', {
+      headers: { 'x-forwarded-for': nextIp(), 'content-type': 'text/plain' },
+      data: 'zip=78501',
+    });
+    expect(res.status()).toBe(400);
+    expect(await res.json()).toEqual({ error: 'bad_request' });
   });
 });

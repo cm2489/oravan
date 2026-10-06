@@ -197,7 +197,8 @@ export const API_PROBES: Record<string, string> = {
   brand: '/api/brand',
   district: '/api/district',
   mcp: '/api/mcp/mcp',
-  reps: '/api/reps?zip=78501',
+  // GET answers 405 (the lookup is POST-only, ZIP in the body: 2026-10-06).
+  reps: '/api/reps',
   script: '/api/script',
   stripe: '/api/stripe/webhook',
   tenant: '/api/tenant/impressions',
