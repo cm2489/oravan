@@ -4,6 +4,7 @@ import { useTranslations, useFormatter } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { CALL_BUTTON } from '@/components/call-button';
 import { Chip } from '@/components/system';
+import { HeadlineOrTitle } from '@/components/HeadlineOrTitle';
 import { isInPageTarget } from '@/lib/call-tab';
 import type { BillStatus, StatusLabelKey } from '@/lib/types';
 import { isSignalFresh } from '@/lib/signal-window';
@@ -176,7 +177,7 @@ export function MomentVehicleCard({
       </div>
       <h3 className="mt-2 text-lg leading-tight font-bold text-ink">
         <Link href={`/bills/${slug}`} className="hover:underline hover:decoration-ink hover:decoration-[3px]">
-          {headline ?? title}
+          <HeadlineOrTitle headline={headline} title={title} />
         </Link>
       </h3>
       {statusLine && <MomentStatusLine line={statusLine} className="mt-3" />}

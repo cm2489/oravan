@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { useTranslations, useFormatter } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { Chip } from '@/components/system';
+import { HeadlineOrTitle } from '@/components/HeadlineOrTitle';
 import type { BillTeaser } from '@/lib/types';
 
 /*
@@ -107,7 +108,7 @@ export function BillCard({
         )}
       </div>
       <h3 className="mt-2 text-lg leading-tight font-bold text-ink group-hover:underline group-hover:decoration-ink group-hover:decoration-[3px]">
-        {bill.headline ?? bill.title}
+        <HeadlineOrTitle headline={bill.headline} title={bill.title} />
       </h3>
       {/* The counted caption, in ink. It never lights amber and never turns the
           card green: it reports who published what, which is not a floor fact
