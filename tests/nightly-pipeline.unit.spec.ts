@@ -482,6 +482,21 @@ test.describe('newsdesk is dispatched, not only scheduled', () => {
     expect(step).toContain('continue-on-error: true');
   });
 
+  test('hot-bills.yml stands down while a nightly sync is waiting, so its dispatch cannot evict it', () => {
+    // 2026-10-05: a pending nightly (run 37376062791) was evicted by this
+    // step's dispatch. The lookup must run before the dispatch, read
+    // sync-bills.yml's waiting runs, and exit 0 (never fail the job).
+    const step = dispatchStep(hotBills);
+    const lookup = step.indexOf('gh run list --repo "$GITHUB_REPOSITORY" --workflow sync-bills.yml');
+    expect(lookup, 'waiting-nightly lookup not found').toBeGreaterThan(0);
+    expect(lookup).toBeLessThan(step.indexOf('gh workflow run newsdesk.yml --ref main'));
+    for (const status of ['queued', 'pending', 'waiting', 'requested']) {
+      expect(step).toContain(`.status == "${status}"`);
+    }
+    expect(step).toContain('|| echo 0)');
+    expect(step).toContain('exit 0');
+  });
+
   test('sync-bills.yml dispatches it too, and only after the cursor-progress alarm', () => {
     const step = dispatchStep(syncBills);
     expect(step).toContain('gh workflow run newsdesk.yml --ref main');

@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-10-03T08:01:19.582Z"
+    "generated_at": "2026-10-06T15:05:58.309Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -243,110 +243,6 @@
         },
         "record": {
           "action_text": "Motion by Senator Thune to commit to Senate Committee on Appropriations with instructions to report back forthwith with the following amendment SA 6740 fell when cloture on amendment SA 6732 was invoked in Senate.",
-          "action_code": null,
-          "action_type": "Floor",
-          "source_system": "Senate"
-        },
-        "ai": false
-      },
-      {
-        "id": "u_449e7991",
-        "class": "floor_action",
-        "vehicle": "hr-6500-119",
-        "day": "2026-08-05",
-        "occurred_at": "2026-08-05",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-25T13:41:33.041Z",
-        "text": {
-          "en": "“Motion to proceed to measure considered in Senate. (CR S4448)”",
-          "es": "Registro oficial, en inglés: “Motion to proceed to measure considered in Senate. (CR S4448)”"
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/house-bill/6500"
-          ]
-        },
-        "record": {
-          "action_text": "Motion to proceed to measure considered in Senate. (CR S4448)",
-          "action_code": null,
-          "action_type": "Floor",
-          "source_system": "Senate"
-        },
-        "ai": false
-      },
-      {
-        "id": "u_aa379090",
-        "class": "floor_action",
-        "vehicle": "hr-6500-119",
-        "day": "2026-08-05",
-        "occurred_at": "2026-08-05",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-25T13:41:33.041Z",
-        "text": {
-          "en": "“Cloture motion on the measure presented in Senate. (CR S4449)”",
-          "es": "Registro oficial, en inglés: “Cloture motion on the measure presented in Senate. (CR S4449)”"
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/house-bill/6500"
-          ]
-        },
-        "record": {
-          "action_text": "Cloture motion on the measure presented in Senate. (CR S4449)",
-          "action_code": null,
-          "action_type": "Floor",
-          "source_system": "Senate"
-        },
-        "ai": false
-      },
-      {
-        "id": "u_b1f77ede",
-        "class": "floor_action",
-        "vehicle": "hr-6500-119",
-        "day": "2026-08-05",
-        "occurred_at": "2026-08-05",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-25T13:41:33.041Z",
-        "text": {
-          "en": "“Motion to proceed to consideration of measure agreed to in Senate by Voice Vote. (CR S4448)”",
-          "es": "Registro oficial, en inglés: “Motion to proceed to consideration of measure agreed to in Senate by Voice Vote. (CR S4448)”"
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/house-bill/6500"
-          ]
-        },
-        "record": {
-          "action_text": "Motion to proceed to consideration of measure agreed to in Senate by Voice Vote. (CR S4448)",
-          "action_code": null,
-          "action_type": "Floor",
-          "source_system": "Senate"
-        },
-        "ai": false
-      },
-      {
-        "id": "u_9d80be00",
-        "class": "floor_action",
-        "vehicle": "hr-6500-119",
-        "day": "2026-08-04",
-        "occurred_at": "2026-08-04",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-25T13:41:33.041Z",
-        "text": {
-          "en": "“Motion to proceed to measure considered in Senate. (CR S4415)”",
-          "es": "Registro oficial, en inglés: “Motion to proceed to measure considered in Senate. (CR S4415)”"
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/house-bill/6500"
-          ]
-        },
-        "record": {
-          "action_text": "Motion to proceed to measure considered in Senate. (CR S4415)",
           "action_code": null,
           "action_type": "Floor",
           "source_system": "Senate"
@@ -1301,10 +1197,82 @@
           "reanchor:3d"
         ],
         "model": "claude-sonnet-5-5"
+      },
+      {
+        "id": "s_0cf29b30",
+        "generated_at": "2026-10-04T18:21:59.869Z",
+        "as_of_day": "2026-10-04",
+        "text": {
+          "en": "On September 24, 2026, the Senate voted on H. Con. Res. 89 and it was rejected, by a recorded vote of 49 to 50 (Roll no. 244). Republicans: 4 yea, 49 nay. The same day, the Senate Committee on Foreign Relations was discharged from the measure under the order of 8/8/26, which moved it to the floor for that vote.",
+          "es": "El 24 de septiembre de 2026, el Senado votó sobre la H. Con. Res. 89 y fue rechazada, por votación nominal de 49 a 50 (votación núm. 244). Republicanos: 4 a favor, 49 en contra. Ese mismo día, el Comité de Relaciones Exteriores del Senado quedó relevado de la medida, conforme a la orden del 8/8/26, y la medida pasó al pleno para esa votación."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "hconres-93-119": "passed_chamber",
+            "hconres-89-119": "floor_vote",
+            "hconres-86-119": "passed_chamber",
+            "sjres-185-119": "floor_vote",
+            "sjres-200-119": "committee",
+            "sjres-211-119": "committee",
+            "sjres-180-119": "floor_vote",
+            "sjres-181-119": "floor_vote",
+            "sjres-172-119": "floor_vote",
+            "hconres-38-119": "floor_vote"
+          },
+          "vehicle_status_keys": {
+            "hconres-93-119": "passed_chamber",
+            "hconres-89-119": "rejected",
+            "hconres-86-119": "adopted",
+            "sjres-185-119": "floor_activity",
+            "sjres-200-119": "committee",
+            "sjres-211-119": "committee",
+            "sjres-180-119": "floor_activity",
+            "sjres-181-119": "floor_activity",
+            "sjres-172-119": "floor_activity",
+            "hconres-38-119": "rejected"
+          },
+          "update_ids": [
+            "u_40aa8bf1",
+            "u_fe66be12"
+          ],
+          "roll_calls": [
+            "s-119-2-244"
+          ],
+          "roll_calls_on_record": [
+            "h-119-2-199",
+            "h-119-2-282",
+            "h-119-2-307",
+            "h-119-2-85",
+            "s-119-2-129",
+            "s-119-2-174",
+            "s-119-2-184",
+            "s-119-2-192",
+            "s-119-2-207",
+            "s-119-2-216",
+            "s-119-2-244"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/93",
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/89",
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/86",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/185",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/200",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/211",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/180",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/181",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/172",
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/38",
+            "https://www.congress.gov/crs-report/R42699"
+          ]
+        },
+        "changed_because": [
+          "reanchor:5d"
+        ],
+        "model": "claude-sonnet-5-5"
       }
     ],
     "summary_attempts": {
-      "day": "2026-09-29",
+      "day": "2026-10-04",
       "count": 1
     }
   },
@@ -1496,6 +1464,58 @@
   },
   "paying-college-athletes": {
     "updates": [
+      {
+        "id": "u_9f7caf03",
+        "class": "floor_action",
+        "vehicle": "s-4668-119",
+        "day": "2026-10-05",
+        "occurred_at": "2026-10-05",
+        "occurred_precision": "day",
+        "recorded_at": "2026-10-06T15:05:58.309Z",
+        "text": {
+          "en": "S. 4668 was held at the desk on October 5, 2026.",
+          "es": "S. 4668 fue retenido en el escritorio el 5 de octubre de 2026."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "record": {
+          "action_text": "Held at the desk.",
+          "action_code": "H15000",
+          "action_type": "Floor",
+          "source_system": "House floor actions"
+        },
+        "ai": true
+      },
+      {
+        "id": "u_c46f6482",
+        "class": "floor_action",
+        "vehicle": "s-4668-119",
+        "day": "2026-10-05",
+        "occurred_at": "2026-10-05",
+        "occurred_precision": "day",
+        "recorded_at": "2026-10-06T15:05:58.309Z",
+        "text": {
+          "en": "S. 4668 was received in the House on October 5, 2026.",
+          "es": "S. 4668 fue recibido en la Cámara el 5 de octubre de 2026."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "record": {
+          "action_text": "Received in the House.",
+          "action_code": "H14000",
+          "action_type": "Floor",
+          "source_system": "House floor actions"
+        },
+        "ai": true
+      },
       {
         "id": "u_c9918aa9",
         "class": "press_cluster",
@@ -2209,58 +2229,6 @@
           "source_system": "Senate"
         },
         "ai": true
-      },
-      {
-        "id": "u_78c95249",
-        "class": "floor_action",
-        "vehicle": "s-4668-119",
-        "day": "2026-08-05",
-        "occurred_at": "2026-08-05",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-16T18:11:24.823Z",
-        "text": {
-          "en": "A motion to proceed to consideration of S. 4668 was made in the Senate on August 5, 2026.",
-          "es": "Se presentó una moción para proceder a considerar S. 4668 en el Senado el 5 de agosto de 2026."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
-          ]
-        },
-        "record": {
-          "action_text": "Motion to proceed to consideration of measure made in Senate. (CR S4449)",
-          "action_code": null,
-          "action_type": "Floor",
-          "source_system": "Senate"
-        },
-        "ai": true
-      },
-      {
-        "id": "u_d6d43314",
-        "class": "floor_action",
-        "vehicle": "s-4668-119",
-        "day": "2026-08-05",
-        "occurred_at": "2026-08-05",
-        "occurred_precision": "day",
-        "recorded_at": "2026-08-09T02:25:08.580Z",
-        "text": {
-          "en": "A cloture motion on the motion to proceed to S. 4668 was presented in the Senate on August 5, 2026.",
-          "es": "Una moción de cierre sobre la moción de proceder a S. 4668 fue presentada en el Senado el 5 de agosto de 2026."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
-          ]
-        },
-        "record": {
-          "action_text": "Cloture motion on the motion to proceed to the measure presented in Senate. (CR S4449)",
-          "action_code": null,
-          "action_type": "Floor",
-          "source_system": "Senate"
-        },
-        "ai": true
       }
     ],
     "summary_revisions": [
@@ -2276,9 +2244,7 @@
           "vehicle_statuses": {
             "s-4668-119": "floor_vote"
           },
-          "update_ids": [
-            "u_d6d43314"
-          ],
+          "update_ids": [],
           "refs": [
             "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
           ]
@@ -2300,9 +2266,7 @@
           "vehicle_statuses": {
             "s-4668-119": "floor_vote"
           },
-          "update_ids": [
-            "u_d6d43314"
-          ],
+          "update_ids": [],
           "refs": [
             "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
           ]

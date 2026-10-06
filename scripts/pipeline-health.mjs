@@ -362,6 +362,7 @@ export function buildReport({ now = Date.now() } = {}) {
   const state = readJsonFile('data/sync-state.json');
   const coverage = readJsonFile('data/coverage.json');
   const signals = readJsonFile('data/floor-signals.json');
+  const signalsChecked = readJsonFile('data/floor-signals-checked.json');
   const conversation = readJsonFile('data/conversation.json');
 
   // data/bills.json is ~10MB. Read it ONCE: count by marker (cheap, and the
@@ -468,7 +469,7 @@ export function buildReport({ now = Date.now() } = {}) {
     // absent — the same rule every other collector here follows.
     redecode,
     newsdesk: { scheduledRuns: newsdeskScheduled, expectedSlots: NEWSDESK_EXPECTED_SLOTS, t3 },
-    floorSignals: signals ? floorSignalFreshness(signals, { now, staleHours: SIGNAL_STALE_HOURS }) : null,
+    floorSignals: signals ? floorSignalFreshness(signals, { now, staleHours: SIGNAL_STALE_HOURS, checked: signalsChecked }) : null,
     workflows,
     ci,
     pregen,

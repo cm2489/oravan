@@ -1,6 +1,6 @@
 {
   "schema": "floor-signals-checked/v1",
-  "checked_at": "2026-10-03T17:48:52.720Z",
+  "checked_at": "2026-10-06T15:05:00.893Z",
   "in_session": {
     "senate": "out_of_session",
     "house": "out_of_session",
@@ -8,12 +8,12 @@
   },
   "next_meeting": {
     "senate": {
-      "date": "2026-10-05",
-      "label": "4 p.m., Monday, October 5"
+      "date": "2026-10-06",
+      "label": "1:30 p.m., Tuesday, October 6"
     },
     "house": {
-      "date": "2026-10-05",
-      "label": "4:30 p.m., Monday, October 5"
+      "date": "2026-10-06",
+      "label": "4 p.m., Tuesday, October 6"
     }
   }
 }
