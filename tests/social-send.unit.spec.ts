@@ -15,7 +15,7 @@ import { join } from 'node:path';
 //      re-sharing anyone's post, and names only the platform methods it needs;
 //   6. secrets never reach a printed line.
 // Every platform call goes to a fake fetch passed in; no real request is made.
-import { buildQueue } from '../scripts/social-drafts.mjs';
+import { buildQueue, recordContext } from '../scripts/social-drafts.mjs';
 import {
   DAILY_CAP,
   MAX_FACT_AGE_DAYS,
@@ -526,21 +526,36 @@ test.describe('a floor notice after its covered day', () => {
   });
 
   test('on the committed record: the Sep 29 Senate notice is not sent on Sep 30 at 10 am Eastern', async () => {
+    // The Senate's Daily Digest notice for S.J.Res. 197 (published 2026-09-28,
+    // covering the meeting of 2026-09-29) was in data/floor-signals.json when
+    // this test was written; the nightly refresh has since retired it, so the
+    // committed file no longer holds a floor notice for this moment. The
+    // notice's covered day, as that file recorded it, is pinned here and added
+    // to the queue the drafter builds from today's committed data, so the
+    // sender's covered-day rule is still what keeps it back.
+    const RECORDED = { covers: '2026-09-29', source: 'daily-digest' };
     const dir = workdir();
     const at = Date.parse('2026-09-30T14:00:00Z');
-    const q = buildQueue({ now: at });
+    const built = buildQueue({ now: at });
+    const q = { ...built, items: [...built.items, notice] };
     const queuePath = join(dir, 'queue.json');
     writeFileSync(queuePath, JSON.stringify(q));
+    const ctx = recordContext(at);
+    const floorCovers = (i: { id: string; ref?: { slug?: string } }) =>
+      i.id === notice.id ? coveredThrough(RECORDED) : coveredThrough(i?.ref?.slug ? ctx.liveAnnouncement(i.ref.slug) : null);
     const lines: string[] = [];
-    const r = await run({ argv: ['--queue', queuePath, '--dry-run'], env: {}, now: at, log: (l: string) => lines.push(l), rebuild: () => q });
+    const r = await run({
+      argv: ['--queue', queuePath, '--dry-run'],
+      env: {},
+      now: at,
+      log: (l: string) => lines.push(l),
+      rebuild: () => q,
+      floorCovers,
+    });
     const sentIds = [...r.picks!.bluesky, ...r.picks!.telegram].map((p: { id: string }) => p.id);
     expect(sentIds.some((id: string) => id.startsWith('floor-notice:'))).toBe(false);
-    // The drafter's own live rule still holds the notice at this moment, so it
-    // is the sender's covered-day rule that keeps it back.
-    const queued = q.items.filter((i: { kind: string }) => i.kind === 'floor-notice');
-    expect(queued.length).toBeGreaterThan(0);
-    for (const n of queued) {
-      expect(r.refused.find((x: { id: string }) => x.id === n.id)?.reason, n.id).toMatch(/before today/);
-    }
+    expect(r.refused.find((x: { id: string }) => x.id === notice.id)?.reason).toMatch(
+      /covers 2026-09-29, before today \(2026-09-30\)/,
+    );
   });
 });
