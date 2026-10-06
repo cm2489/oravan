@@ -205,6 +205,44 @@ test('the call panel\'s "See your record" lands on Your calls on the Reps tab', 
   await expect(calls.locator('li')).toHaveCount(1);
 });
 
+/*
+ * THE ZIP FIELD'S FOCUS NEVER TAKES THE PAGE AWAY FROM YOUR CALLS. With no
+ * saved ZIP, bare /reps keeps its ZIP prompt, and the prompt focuses its field
+ * on arrival. WebKit scrolls a focused field into view at its next rendering
+ * update, after the router has already scrolled to #your-calls, so the page
+ * used to land on the field at the top instead of on Your calls. With a saved
+ * ZIP the same deferred scroll raced the swap to /reps?zip=, which is what
+ * made the test above fail now and then (components/ZipForm.tsx). Here the
+ * race is gone: the saved ZIP is cleared before the link is followed, so the
+ * prompt stays and its focus lands every time.
+ */
+test('"See your record" lands on Your calls while the ZIP prompt takes focus', async ({ page }) => {
+  await mockScriptApi(page);
+  await page.goto(`/bills/${REF.slug}`);
+  await seedZip(page, ZIP);
+  await page.reload();
+  await page.getByRole('radio', { name: en.bill.stance.support }).click();
+  await expect(page.getByText(MEMBERS[0].name).first()).toBeVisible();
+  await page.getByRole('button', { name: en.bill.outcome.contact }).first().click();
+  await expect(page.getByText(en.bill.loggedFirst)).toBeVisible();
+
+  // The call stays on record; only the saved ZIP goes, so /reps keeps its prompt.
+  await page.evaluate(() => localStorage.removeItem('oravan.prefs'));
+  await page.getByRole('link', { name: en.bill.viewImpact }).click();
+  await expect(page).toHaveURL(/\/reps#your-calls$/);
+  const field = page.locator('[data-zip-field]');
+  await expect(field).toBeFocused();
+  const calls = page.locator('section#your-calls');
+  await expect(calls.locator('li')).toHaveCount(1);
+  // Two rendering updates later, so a deferred scroll to the field has had
+  // its chance to run.
+  await page.evaluate(
+    () => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done)))
+  );
+  await expect(calls).toBeInViewport();
+  await expect(field).toBeFocused();
+});
+
 /* The same record, standalone: /record keeps answering old links, with the
    folded rows open because nothing sits above them there. */
 test('/record renders the same record, rows open', async ({ page }) => {

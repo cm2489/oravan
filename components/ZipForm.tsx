@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useState } from 'react';
+import { useId, useLayoutEffect, useRef, useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useRouter, getPathname } from '@/i18n/navigation';
@@ -88,6 +88,36 @@ export function ZipForm({
   const [typed, setTyped] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const zip = typed ?? prefs.zip ?? '';
+  const fieldRef = useRef<HTMLInputElement>(null);
+
+  /*
+   * THE FIELD'S AUTOFOCUS NEVER MOVES THE PAGE (2026-10-06). On a client-side
+   * arrival React focuses an `autoFocus` field itself, in the same commit that
+   * inserts it, so before the browser has laid it out. WebKit then scrolls to
+   * the focused field at its NEXT rendering update, not at once. The router
+   * has already scrolled to the page's #hash by then (the call panel's "See
+   * your record" lands on /reps#your-calls, under this form), so the late
+   * scroll threw the page back to the top. With a saved ZIP the page goes
+   * straight on to /reps?zip= (SavedZipLookup), and that navigation scrolls
+   * to Your calls again; but when the late scroll came after it rather than
+   * before, the page still ended at the top. That race is why
+   * tests/reps-record.spec.ts failed about one CI run in five.
+   *
+   * So, once the field is laid out, focus is taken off and put back with
+   * preventScroll. Measured in WebKit: that cancels the late scroll and keeps
+   * the focus, while preventScroll on a field not yet laid out does not (the
+   * page still jumps). The field is focused, as before, and where the page
+   * sits is left to the router. A field React did not focus is left alone.
+   * On a full page load the browser's own autofocus runs instead, and it
+   * already skips a page opened at a #hash.
+   */
+  useLayoutEffect(() => {
+    const field = fieldRef.current;
+    if (!autoFocus || !field || document.activeElement !== field) return;
+    field.getBoundingClientRect(); // lay the field out first (see above)
+    field.blur();
+    field.focus({ preventScroll: true });
+  }, [autoFocus]);
 
   function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -145,6 +175,7 @@ export function ZipForm({
         }
       >
         <input
+          ref={fieldRef}
           id={fieldId}
           data-zip-field=""
           name="zip"
