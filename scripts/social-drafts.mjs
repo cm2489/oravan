@@ -848,7 +848,13 @@ export function collectCandidates({ now, replySlugs = null }) {
       const b = getBill(rc.bill.slug);
       if (b) cardBills.set(rc.bill.slug, b);
     }
-    for (const mv of day.moved) cardBills.set(mv.slug, mv.bill);
+    // A moved item carries the bill's reference and its /bills card, not the
+    // stored bill (lib/today.ts BriefMovedBill), so the full record is looked
+    // up by slug, the same way the roll calls above are.
+    for (const mv of day.moved) {
+      const b = getBill(mv.slug);
+      if (b) cardBills.set(mv.slug, b);
+    }
   }
 
   // bill-card: every bill above that has a published headline.
