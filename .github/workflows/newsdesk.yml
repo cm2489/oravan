@@ -48,8 +48,21 @@ concurrency:
   # refresh-legislators.yml LEFT this group on 2026-08-12 (its files are
   # disjoint from every member's, and THIS workflow's hourly cadence was what
   # kept evicting it while it waited - see that file's concurrency comment).
+  #
+  # `queue: max` since 2026-10-06, in all four members (sync-bills.yml's
+  # concurrency comment has why): this workflow's hourly cron and its
+  # dispatches from hot-bills.yml and sync-bills.yml used to REPLACE whichever
+  # run was waiting in the group, the nightly included (2026-10-05). Now they
+  # wait their turn. More hourly runs therefore actually
+  # run than before. Their decodes add nothing, because the decode caps in the
+  # header above are a true daily total. What can add a little are the two
+  # per-run Haiku calls (the t3 disambiguation and the Moment-updates batch),
+  # each made only when its own batch is non-empty: a run that used to be
+  # cancelled may now make them (3 of the 100 newsdesk runs from 2026-09-23
+  # to 10-06 were cancelled).
   group: data-sync
   cancel-in-progress: false
+  queue: max
 
 jobs:
   newsdesk:
