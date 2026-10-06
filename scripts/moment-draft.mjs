@@ -111,8 +111,11 @@ export const DRAFT_MODEL = 'claude-sonnet-5-5';
  *  v6 (2026-09-29): the RECORD BLOCK changed again. statusKeyFor is handed
  *  the bill, so a measure the second chamber passed reads "Passed both
  *  chambers" and a concurrent resolution both chambers agreed to reads
- *  "Adopted by both chambers", where v5 said "Passed one chamber" for both. */
-export const DRAFT_PROMPT_VERSION = 6;
+ *  "Adopted by both chambers", where v5 said "Passed one chamber" for both.
+ *  v7 (2026-10-06): two instructions no longer use a word on the vocabulary
+ *  list they forbid ("… and stop", "… writing an underscore, stop"); same
+ *  meaning, other words. Pinned by tests/prompt-vocabulary.unit.spec.ts. */
+export const DRAFT_PROMPT_VERSION = 7;
 
 /** How many of a measure's recorded votes the record block lists, newest
  *  first. Enough for "the House passed it, the Senate rejected it"; a bill
@@ -487,14 +490,14 @@ WRITE THREE THINGS, each in English and Spanish:
 3. "role" — 2 to 3 sentences per language on what THIS measure does inside that question: what a yes vote does, what a no vote leaves in place, and where the measure sits.
 
 HARD RULES:
-- Use ONLY the record above. Never add a number, date, dollar figure, name, motive, or consequence that is not in it. If the record does not say what the measure would do beyond its title, say what the record does say and stop.
+- Use ONLY the record above. Never add a number, date, dollar figure, name, motive, or consequence that is not in it. If the record does not say what the measure would do beyond its title, say what the record does say and end there.
 - THERE IS NO SCHEDULED VOTE DATE IN THIS RECORD, and none can be derived from it. Never say when a vote will happen, never say a vote is scheduled or awaited, never imply timing the record does not state. A floor-calendar placement is a placement, not a date.
 - No forecasting and no hedging: no "expected to", "likely to", "could", "might", "set to", "poised to", "on track to", "heading to", "headed for"; no "se espera", "probablemente", "podría", "podrían", "estaría", "estarían", "previsto que", "a punto de", "rumbo a", "camino de".
 ${partyRule({ figures: recordedVoteLines(g).length ? 'the "by party" figures of that recorded vote in THE RECORD above' : '', allowed: g.partyCounts })}
 - Never use advocacy verbs — fight, resist, stop, save, defend, block / luchar, resistir, detener, salvar, defender, bloquear — and never crisis, attack, or scheme framing, in either language. This rule and the one above are machine-checked in both languages before the editor sees your draft, and a single hit throws that whole field away in both languages.
 - Describe the question, never a position on it. No urgency the record does not carry.
 - The Spanish is native Latin-American-neutral Spanish at an 8th-grade level, with correct accents (aprobó, Cámara, comité, votación), carrying the same facts — not a gloss of the English. Bill citations keep their English form (S. 3172, H.R. 9770).
-- Dates the way a reader says them: "July 27, 2026" in English, "27 de julio de 2026" in Spanish. Never ISO "2026-07-27" in prose. Never an internal token like "floor_vote" — if you find yourself writing an underscore, stop.
+- Dates the way a reader says them: "July 27, 2026" in English, "27 de julio de 2026" in Spanish. Never ISO "2026-07-27" in prose. Never an internal token like "floor_vote" — if you find yourself writing an underscore, rewrite that sentence in plain words.
 ${PRESIDENT_STYLE_RULE}
 - Plain text. No markdown, no headings, no meta-commentary about this draft.
 
