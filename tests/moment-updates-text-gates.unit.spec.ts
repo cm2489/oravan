@@ -156,6 +156,28 @@ test.describe('the absence lint · the two shapes with no "no" in them', () => {
     for (const s of es) expect(absenceClaims(s, 'es'), s).not.toEqual([]);
   });
 
+  test('a plain "voted" after "neither … nor" / "none" is caught in both languages (a second independent check, 2026-10-06)', () => {
+    const en = ['Neither the House nor the Senate voted.', 'None of them voted.'];
+    const es = ['Ni la Cámara ni el Senado votaron.', 'Ninguno de ellos votó.'];
+    for (const s of en) expect(absenceClaims(s, 'en'), s).not.toEqual([]);
+    for (const s of es) expect(absenceClaims(s, 'es'), s).not.toEqual([]);
+    // …but "voted" with a side is a party count, in both languages.
+    const enSide = ['Neither the House nor the Senate voted for it.', 'Neither Democrats nor Republicans voted against it.'];
+    const esSide = ['Ni la Cámara ni el Senado votaron a favor.', 'Ni los demócratas ni los republicanos votaron en contra.', 'Ninguno de ellos votó con su partido.'];
+    for (const s of enSide) expect(absenceClaims(s, 'en'), s).toEqual([]);
+    for (const s of esSide) expect(absenceClaims(s, 'es'), s).toEqual([]);
+  });
+
+  test('"the only one to vote against it" states a roll call, not an absence, in both languages; "the only ones in the last 14 days" is still caught', () => {
+    const en = ['Senator X was the only one to vote against it.', 'She was the only one who voted no.', 'It was the only one that voted.'];
+    const es = ['El senador X fue el único que votó en contra.', 'Ella fue la única en votar en contra.', 'Fueron los únicos que votaron a favor.'];
+    for (const s of en) expect(absenceClaims(s, 'en'), s).toEqual([]);
+    for (const s of es) expect(absenceClaims(s, 'es'), s).toEqual([]);
+    expect(absenceClaims('These two actions are the only ones in the last 14 days.', 'en')).toEqual(['the only ones']);
+    expect(absenceClaims('Son las únicas de los últimos 14 días.', 'es')).toEqual(['las únicas']);
+    expect(absenceClaims('Es el único que consta.', 'es')).toEqual(['el único']);
+  });
+
   test('a party count with "none" / "ninguno" in it is not an absence claim, in either language', () => {
     const en = [
       'Every Democrat and none of the Republicans voted yes.',
@@ -219,6 +241,20 @@ test.describe('the vote-count lint · what counts as a vote count', () => {
     expect(statedVoteCounts(es, 'es').map((c: Json) => c.text)).toEqual(['98 votos a favor y 0 votos en contra', '98\u20110']);
   });
 
+  test('the press forms "por 98 votos a 0" and "98 votes for and 0 against" read in both languages (a second independent check, 2026-10-06)', () => {
+    expect(statedVoteCounts('Se aprobó por 98 votos a 0, y luego por 77 votos a 22.', 'es').map((c: Json) => [c.text, c.a, c.b])).toEqual([
+      ['98 votos a 0', 98, 0],
+      ['77 votos a 22', 77, 22],
+    ]);
+    expect(statedVoteCounts('It passed with 98 votes for and 0 against, then 77 votes for, 22 against.', 'en').map((c: Json) => [c.text, c.a, c.b, c.ordered])).toEqual([
+      ['98 votes for and 0 against', 98, 0, true],
+      ['77 votes for, 22 against', 77, 22, true],
+    ]);
+    // A single number with "a favor" / "for" after it is still never a count.
+    expect(statedVoteCounts('Obtuvo 30 votos a favor.', 'es')).toEqual([]);
+    expect(statedVoteCounts('It drew the 60 votes for cloture.', 'en')).toEqual([]);
+  });
+
   test('the party figures the writers may state read as party counts (lib/party-count-rule.mjs shapes)', () => {
     const en = statedVoteCounts('On that vote, 4 Republicans and 43 Democrats voted yes. Republicans: 4 yea, 49 nay.', 'en');
     expect(en.map((c: Json) => [c.kind, c.text, c.party])).toEqual([
@@ -251,6 +287,8 @@ test.describe('the vote-count lint · what counts as a vote count', () => {
       'Rule 22 to 24 of the Standing Rules; Rules 5-7.',
       'See roll call votes 244-246 and votes 244 to 246.',
       'It drew 12 to 15 cosponsors and 10 to 20 amendments.',
+      'It covers grades 9 to 12, Divisions 1 to 3 and Tier 1-2, at level 2-3.',
+      'It funds 3 to 5 schools within 2 to 3 business days.',
     ];
     for (const s of en) expect(statedVoteCounts(s, 'en'), s).toEqual([]);
     const es = [
@@ -264,6 +302,8 @@ test.describe('the vote-count lint · what counts as a vote count', () => {
       'Votaciones núm. 245 a 248; la orden del 8/8/26.',
       'Las reglas 22 a 24; las votaciones 244-246.',
       'Reunió de 12 a 15 copatrocinadores y de 10 a 20 enmiendas.',
+      'Abarca los grados 9 a 12, las divisiones 1 a 3 y el nivel 1-2.',
+      'Financia de 3 a 5 escuelas en 2 a 3 días hábiles.',
     ];
     for (const s of es) expect(statedVoteCounts(s, 'es'), s).toEqual([]);
   });
@@ -304,6 +344,18 @@ test.describe('the vote-count lint · held and unheld', () => {
     }
     expect(unheldVoteCounts('by 50 yeas to 49 nays', 'en', rec)).toEqual(['50 yeas to 49 nays']);
     expect(unheldVoteCounts('50 votos a favor y 49 en contra', 'es', rec)).toEqual(['50 votos a favor y 49 en contra']);
+  });
+
+  test('the press forms, held and invented, in both languages: "por 49 votos a 50" / "49 votes for and 50 against"', () => {
+    const rec = REC_244();
+    expect(unheldVoteCounts('Fue rechazada por 49 votos a 50.', 'es', rec)).toEqual([]);
+    expect(unheldVoteCounts('It was rejected with 49 votes for and 50 against.', 'en', rec)).toEqual([]);
+    expect(unheldVoteCounts('Se aprobó por 98 votos a 0.', 'es', rec)).toEqual(['98 votos a 0']);
+    expect(unheldVoteCounts('It passed with 98 votes for and 0 against.', 'en', rec)).toEqual(['98 votes for and 0 against']);
+    // The English names the yeas, so it must match in that order, like every worded pair.
+    expect(unheldVoteCounts('It passed with 50 votes for and 49 against.', 'en', rec)).toEqual(['50 votes for and 49 against']);
+    const f = lintRevisionText('Se aprobó por 98 votos a 0.', 'es', { voteRecord: rec });
+    expect(f.some((x: string) => x.startsWith('vote count "98 votos a 0"'))).toBe(true);
   });
 
   test('party figures must be that party\'s, on a printed roll call', () => {
@@ -488,6 +540,26 @@ test.describe('the gate re-checks what is stored (checkMomentUpdates, opts.rollC
     r.text.en = `${r.text.en} In July, the House agreed to it 214 to 208.`;
     r.text.es = `${r.text.es} En julio, la Cámara la aprobó 214 a 208.`;
     expect(voteViolations(run(file, ROLL_BY_ID))).toEqual([]);
+  });
+
+  test('grounded_in.roll_calls_on_record widens the stored record on its own, for a roll call whose bill is not one of the vehicles', () => {
+    // 214 to 208 is House roll 282 (2026-07-23). Here its `bill` is taken not
+    // to map to a vehicle, so only the revision's roll_calls_on_record can hold it.
+    const file = structuredClone(STORE);
+    const r = file['iran-war-powers'].summary_revisions.at(-1);
+    expect(r.grounded_in.roll_calls).not.toContain('h-119-2-282');
+    expect(r.grounded_in.roll_calls_on_record).toContain('h-119-2-282');
+    r.text.en = `${r.text.en} In July, the House agreed to it 214 to 208.`;
+    r.text.es = `${r.text.es} En julio, la Cámara la aprobó 214 a 208.`;
+    const unmapped = new Map(ROLL_BY_ID);
+    unmapped.set('h-119-2-282', { ...roll('h-119-2-282'), bill: 'hr-0-119' });
+    expect(voteViolations(run(file, unmapped))).toEqual([]);
+    // Without it on the record, the same count is refused, in each language.
+    r.grounded_in.roll_calls_on_record = r.grounded_in.roll_calls_on_record.filter((id: string) => id !== 'h-119-2-282');
+    const v = voteViolations(run(file, unmapped));
+    expect(v).toHaveLength(2);
+    expect(v[0]).toContain('.text.en: vote count "214 to 208"');
+    expect(v[1]).toContain('.text.es: vote count "214 a 208"');
   });
 
   test('retention never makes the stored check stricter: a tally held only by a pruned record sentence becomes a warning, not a failure', () => {
