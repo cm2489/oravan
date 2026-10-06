@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-06T19:15:52.829Z",
+    "fetched_at": "2026-10-06T20:08:40.963Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-06T19:15:52.829Z"
+        "checked_at": "2026-10-06T20:08:40.963Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-04",
         "week_label": "Most-Viewed Bills - Week of October 4, 2026",
         "entries": 8,
-        "checked_at": "2026-10-06T19:15:52.829Z"
+        "checked_at": "2026-10-06T20:08:40.963Z"
       },
       "leans": {
         "center": {
@@ -1313,6 +1313,18 @@
           "firstSeen": "2026-09-28",
           "lastSeen": "2026-09-29",
           "url": "https://news.google.com/rss/articles/CBMifkFVX3lxTE1HT0pqY1M2R0lrT3ZvbFlnMGxSSjA5ZjF6VV9OeWJwQW41Q3dkZlNqMkRHZGNDM1UtOWN2WUVwZGN0LUJtdDJ6cEI0QWVYTVRQT3RxYWxlSmRheGx6U1lTLWJrbld2TDFrRzcwaERZbUdGN3BFX3IzQi1rbkRXUQ?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-7567-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "tech-insider.org",
+          "firstSeen": "2026-10-06",
+          "lastSeen": "2026-10-06",
+          "url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxNSWp3bmdCOFhwVGhOUG9XMEhtWkc3R2lzckRKeV91OEFDcERaTXNjNUVGbmFQR2VkZXJiRS1sMWE4ZjVFNnVyTFdWaVE0OFl0MThvemhCMHJoa3ItVkt6dHJVRmZuM2Q2TkVablgtWE5obFVMbV8wWll2TWl5SkZTcHFB?oc=5"
         }
       ],
       "mostViewed": null
