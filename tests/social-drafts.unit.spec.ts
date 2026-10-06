@@ -3,6 +3,9 @@ import { mkdirSync, mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { getUpdates, groupUpdatesByDay } from '../lib/moment-updates';
+import { getBill } from '../lib/core/bills';
+import { floorSignalsFile } from '../lib/docket';
+import { briefWindow, buildBrief } from '../lib/today';
 // SOCIAL DRAFTS, DRY RUN — scripts/social-drafts.mjs.
 //
 // The script drafts post and reply text from the committed record into a
@@ -20,6 +23,7 @@ import {
   admit,
   assertOutsideRepo,
   buildQueue,
+  collectCandidates,
   composeBillCard,
   composeFloorNotice,
   composeQuestionUpdate,
@@ -547,6 +551,39 @@ test.describe('on the committed data', () => {
       }
       const expectAi = ['bill-card', 'reply-card', 'big-question-update'].includes(item.kind);
       expect(item.aiLabel, item.id).toBe(expectAi);
+    }
+  });
+
+  test('a bill that moved (and had no roll call) becomes a bill card and a reply card', () => {
+    // Pins the lookup of each moved bill by its slug: the brief's moved items
+    // carry a reference and a card, not the stored bill (lib/today.ts).
+    const rollCallSlugs = new Set<string>();
+    const movedSlugs = new Set<string>();
+    for (const date of briefWindow()) {
+      const day = buildBrief(date).days[0];
+      for (const rc of day.rollCalls) rollCallSlugs.add(rc.bill.slug);
+      for (const mv of day.moved) movedSlugs.add(mv.slug);
+    }
+    const signalSlugs = new Set(Object.keys(floorSignalsFile().signals ?? {}));
+    const onlyMoved = [...movedSlugs].filter((slug) => {
+      const bill = getBill(slug);
+      return !rollCallSlugs.has(slug) && !signalSlugs.has(slug) && Boolean(bill?.ai_headline?.trim()) && Boolean(bill?.last_action_date);
+    });
+    // briefWindow() is the 14 days before the newest data stamp, so it moves
+    // with every nightly sync and NOW does not fix it. In a quiet stretch it
+    // can hold no such bill; the test then has nothing to check and skips,
+    // rather than turning main's unit job red on a recess.
+    test.skip(
+      onlyMoved.length === 0,
+      "no bill in the brief's window moved without a roll call or a floor signal, so there is no moved-bill lookup to check on this data",
+    );
+    const { candidates } = collectCandidates({ now: NOW });
+    const slugsOf = (kind: string) => new Set(candidates.filter((c) => c.kind === kind).map((c) => (c.ref as { slug?: string }).slug));
+    const cards = slugsOf('bill-card');
+    const replies = slugsOf('reply-card');
+    for (const slug of onlyMoved) {
+      expect(cards.has(slug), `bill-card ${slug}`).toBe(true);
+      expect(replies.has(slug), `reply-card ${slug}`).toBe(true);
     }
   });
 

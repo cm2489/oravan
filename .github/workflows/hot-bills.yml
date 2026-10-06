@@ -55,12 +55,13 @@ on:
     #    "clear of the nightly sync on both sides" property is therefore
     #    RETIRED by design rather than by accident - the two are adjacent now,
     #    and the shared data-sync concurrency group is what keeps them from
-    #    racing each other's commit to data/bills.json. What that group cannot
-    #    do is protect a PENDING run: if this pass is still executing when the
-    #    nightly queues, the nightly waits, and a waiting run is what newsdesk
-    #    evicts (2026-08-08). The residual risk is small (this pass is minutes
-    #    long, and both crons drift by hours) and is recorded here rather than
-    #    left for someone to rediscover.
+    #    racing each other's commit to data/bills.json. What that group could
+    #    not do, until 2026-10-06, was protect a PENDING run: if this pass was
+    #    still executing when the nightly queued, the nightly waited, and a
+    #    waiting run was what the next run to queue replaced (2026-08-08, and
+    #    the lost nightly of 2026-10-05). Every member now sets `queue: max`,
+    #    so the nightly waits its turn behind this pass instead (see the
+    #    concurrency block below).
     - cron: '47 13 * * *'
     - cron: '47 22 * * *'
   workflow_dispatch:
@@ -76,14 +77,31 @@ concurrency:
   # refresh-legislators.yml left it on 2026-08-12: its files are disjoint from
   # everything here, so serialising it bought nothing and exposed it to
   # pending-run eviction (see that file's concurrency comment).
+  # `queue: max` since 2026-10-06, in all four members (sync-bills.yml's
+  # concurrency comment has why): a waiting run is no longer replaced by the
+  # next one to queue.
   group: data-sync
   cancel-in-progress: false
+  queue: max
 
 jobs:
   hot-refresh:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          # THE BRANCH TIP, NOT THE EVENT SHA - the 2026-09-18 pin sync-bills.yml
+          # and newsdesk.yml already carry (sync-bills.yml's checkout comment has
+          # the two nightlies it cost). Without `ref:`, checkout takes the SHA
+          # main carried when this RUN WAS CREATED. Since 2026-10-06 the
+          # data-sync group queues (`queue: max`), so a pass that waits behind
+          # the nightly or the newsdesk now always runs instead of being
+          # replaced - and this job rewrites data/bills.json, single-line
+          # minified JSON, so a stale base makes its rebase below conflict
+          # every time. Naming the branch checks out its current tip when the
+          # job starts; the rebase-retry loop stays as the backstop for an
+          # outside push.
+          ref: ${{ github.ref_name }}
       - uses: actions/setup-node@v6
         # scripts/hot-bills.mjs and scripts/congress-fetch.mjs are stdlib-only
         # (Node's global fetch + lib/urgency.mjs, a plain .mjs with no npm
@@ -209,17 +227,24 @@ jobs:
         # already-running one - verified by reading that workflow's
         # concurrency block, not assumed.
         #
-        # BUT IT MUST NOT EVICT A WAITING NIGHTLY (2026-10-05). The group keeps
-        # one running run plus ONE pending run, and a newly queued run evicts
-        # the pending one. On 2026-10-05 the 14:15 nightly fired 7h late at
-        # 21:28, queued behind this job's 21:14 pass, and this step's dispatch
-        # at 21:30 replaced it: run 37376062791 was cancelled before it got a
-        # runner and the corpus missed a day. So when a sync-bills.yml run is
-        # already waiting, this step stands down: the nightly dispatches the
-        # newsdesk itself as its own last step, so the hourly layer loses
-        # nothing. If the lookup itself fails, it dispatches as before. A
-        # nightly that queues in the seconds between the lookup and the
-        # dispatch is still exposed; that window is seconds, not minutes.
+        # BUT IT MUST NOT EVICT A WAITING NIGHTLY (2026-10-05). Under GitHub's
+        # default the group kept one running run plus ONE pending run, and a
+        # newly queued run evicted the pending one. On 2026-10-05 the 14:15
+        # nightly fired 7h late at 21:28, queued behind this job's 21:14 pass,
+        # and this step's dispatch at 21:30 replaced it: run 37376062791 was
+        # cancelled before it got a runner and the corpus missed a day. So
+        # when a sync-bills.yml run is already waiting, this step stands down:
+        # the nightly dispatches the newsdesk itself as its own last step, so
+        # the hourly layer loses nothing. If the lookup itself fails, it
+        # dispatches as before.
+        #
+        # SINCE 2026-10-06 THIS IS THE SECOND LINE, NOT THE FIRST. Every
+        # data-sync member now sets `queue: max`, so a dispatched newsdesk
+        # waits behind a pending nightly instead of replacing it, and the
+        # seconds-wide window between this lookup and the dispatch no longer
+        # matters. The lookup stays so that backing `queue: max` out (the
+        # pull request that added it says how) cannot reopen 2026-10-05 on
+        # this path.
         #
         # `always()` and `continue-on-error` for the same reason in both
         # directions: a hot-bill-refresh failure must never cost the newsdesk
@@ -235,7 +260,7 @@ jobs:
           waiting=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow sync-bills.yml --branch main --limit 20 \
             --json status --jq '[.[] | select(.status == "queued" or .status == "pending" or .status == "waiting" or .status == "requested")] | length' || echo 0)
           if [ "${waiting:-0}" != "0" ]; then
-            echo "::notice::A nightly sync is waiting in the data-sync group; not dispatching the newsdesk, which would evict it. The nightly dispatches the newsdesk when it finishes."
+            echo "::notice::A nightly sync is waiting in the data-sync group; not dispatching the newsdesk behind it. The nightly dispatches the newsdesk when it finishes."
             exit 0
           fi
           gh workflow run newsdesk.yml --ref main

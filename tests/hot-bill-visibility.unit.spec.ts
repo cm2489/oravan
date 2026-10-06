@@ -402,12 +402,13 @@ test.describe('hot-bills.yml is phased to the floor-record publication window', 
    * their commits from racing. The second pass keeps a wide separation on the
    * other side.
    *
-   * THE RESIDUAL RISK IS NAMED, not papered over: if the hot pass is still
+   * THE RESIDUAL RISK WAS NAMED, not papered over: if the hot pass is still
    * executing when the nightly queues, the nightly waits — and a waiting run
-   * in that group is what newsdesk's hourly cron evicts (observed 2026-08-08).
-   * This pass is minutes long and both crons drift by hours, so the overlap is
-   * rare; it is recorded in hot-bills.yml's schedule comment (item 5) and in
-   * the PR that made the move.
+   * in that group was what the next run to queue evicted (observed 2026-08-08;
+   * on 2026-10-05 it cost a whole nightly). Since 2026-10-06 every data-sync
+   * member sets `queue: max`, so the nightly waits its turn instead;
+   * tests/nightly-pipeline.unit.spec.ts pins that, and hot-bills.yml's
+   * schedule comment (item 5) records it.
    *
    * Read from sync-bills.yml rather than hard-coded, so the next re-phase
    * cannot leave this file asserting a number nothing uses.
