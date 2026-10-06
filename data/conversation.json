@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-06T15:05:56.669Z",
+    "fetched_at": "2026-10-06T19:15:52.829Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-06T15:05:56.669Z"
+        "checked_at": "2026-10-06T19:15:52.829Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-04",
         "week_label": "Most-Viewed Bills - Week of October 4, 2026",
         "entries": 8,
-        "checked_at": "2026-10-06T15:05:56.669Z"
+        "checked_at": "2026-10-06T19:15:52.829Z"
       },
       "leans": {
         "center": {
@@ -166,6 +166,19 @@
           "firstSeen": "2026-09-30",
           "lastSeen": "2026-09-30",
           "url": "https://news.google.com/rss/articles/CBMilwFBVV95cUxPOVV5VVFnT0RZQ2U3eTU5V3R6VWpxaEI2ZHNSMUE5Tm00aUpvMk5rNndwU2lpdkstd29sdnNvTVZqR3pPN1dhVnRBbEF4R3d1ZTVWcXFFVVdyODFrZVM1d3Z0TTQza0doUWZ3eWY0dE5XWDY2LUNsQVRSbktnNThUUmRieUxSMHFjbW01VU1jUkswbWlKRUQw?oc=5"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hjres-1-119": {
+      "outlets7d": [
+        {
+          "domain": "cnbc.com",
+          "lean": "center",
+          "firstSeen": "2026-10-06",
+          "lastSeen": "2026-10-06",
+          "url": "https://www.cnbc.com/2026/10/06/alito-supreme-court-democrats-senate.html"
         }
       ],
       "unratedOutlets7d": [],
@@ -371,6 +384,18 @@
         "lastSeen": "2026-09-20",
         "lastWeek": "2026-09-13"
       }
+    },
+    "hr-10697-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "quiverquant.com",
+          "firstSeen": "2026-10-06",
+          "lastSeen": "2026-10-06",
+          "url": "https://news.google.com/rss/articles/CBMivwFBVV95cUxOUHd1UlVrV0k4OXRKaVBMbFRRa0ExVDVlZFRjTDBFbng1ci1XZmNKb2RsSjhUajBaRHd0SGlHeDR1LThjUFdJVG5XdDYyY2lNWnJtRkk5V0wzeTVKSlJLNlk1dG1meWZEQ2xsRjgwbWphalNHc2hrZzVfS1pQaHF0R2w2bUl3TUE2UnNHaUMzRWltYWlmLVdPVWNMNk81R3BIX0wtaGpWWVlRZFhOSURVc3FCMkRxVG9JX1lOdEJDOA?oc=5"
+        }
+      ],
+      "mostViewed": null
     },
     "hr-1190-119": {
       "outlets7d": [],
@@ -1365,6 +1390,18 @@
       ],
       "mostViewed": null
     },
+    "hr-8358-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "dailymemphian.com",
+          "firstSeen": "2026-10-06",
+          "lastSeen": "2026-10-06",
+          "url": "https://news.google.com/rss/articles/CBMitgFBVV95cUxPYXhiNkF5YjhMZWdQa2ZqQW9zX3dXTGRqZ0IyVWxQUkxiTmY5WmRENmJYTjZteTV6V2RnUmQ3WlFQNHlYOXRONXNGX0NnUm1QWmdjRHZWaWdHdXFmMFVwWWNDTHgwNndrdGsxa2FXYUxUX2Q1dkNxZWNWWW1NRFEzbTZzNjhWSFJXM085TUE0YkJQdU01aXNTa01oOG1hRDJnOFdSNFBTNHZkSGt3b2F2NEU5UGg3dw?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-8585-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1614,6 +1651,12 @@
           "firstSeen": "2026-10-06",
           "lastSeen": "2026-10-06",
           "url": "https://news.google.com/rss/articles/CBMitgFBVV95cUxQcmN0bkNjVlRZc1BRbGJYV24wN2U2Y2FiaU42UmpyaG0xeHR3RmIyQnBjRUo3cEU4N0hmUGRJcHl2Y2NCTDRhZVBVNUY2R3hzVTctdEZja2haNTRxZzI4YW5ha21MOXpzVktZS1RwVzZEZF92ejRNQU9Za1JITGRjWWdkdHVwWkRYSFg4QXI0TjdfVnlnYjdUempnNC1HRFNwMTNzM3paR19OV1BYU3dUaF9GU25xdw?oc=5"
+        },
+        {
+          "domain": "yakimaherald.com",
+          "firstSeen": "2026-10-06",
+          "lastSeen": "2026-10-06",
+          "url": "https://news.google.com/rss/articles/CBMi-gFBVV95cUxPTFBUOVltNHF6MS1tZzNINE9pV2liTll2ZzhLX1dBMDIxclBOcHVDejRhVzlZNVpIUEd0ZEVObi1QTG1EX0ZTaG9PTU5xYjdkNFk3RmhNSG5xcFhKX3dyS1FnYm8zNDNrX1ZyVnNvQ0cwNGJRTTVGZHdaaUJoY1pMVTFQMHZlWVRMb1RhNU5kSGJjVmRtMGtQUUY5dFhHME0yRHoyNVA1V3VKVzIxd3c1dkg1SkNxTVpPdlVITVdWVG1RbmlDRWZkMnlrX3BwUW9TV3FnRE52cEtNY18xbGdpUjBONVFtLUZQR21jTWxPQ0tmM1NQLVc0d0NR0gH6AUFVX3lxTE9MUFQ5WW00cXoxLW1nM0g0T2lXaWJOWXZnOEtfV0EwMjFyUE5wdUN6NGFXOVk1WkhQR3RkRU5uLVBMbURfRlNob09NTnFiN2Q0WTdGaE1IbnFwWEpfd3JLUWdibzM0M2tfVnJWc29DRzA0YlFNNUZkd1ppQmhjWkxVMVAwdmVZVExvVGE1TmRIYmNWZG0wa1BRRjl0WEcwTTJEejI1UDVXdUpXMjF3dzV2SDVKQ3FNWk92VUhNV1ZUbVFuaUNFZmQyeWtfcHBRb1NXcWdETnZwS01jXzFsZ2lSME41UW0tRlBHbWNNbE9DS2YzU1AtVzR3Q1E?oc=5"
         },
         {
           "domain": "tri-cityherald.com",
@@ -1952,6 +1995,19 @@
           "firstSeen": "2026-09-30",
           "lastSeen": "2026-09-30",
           "url": "https://www.politico.com/live-updates/2026/09/30/congress/cruz-says-no-to-no-fakes-act-01100986"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "s-4602-119": {
+      "outlets7d": [
+        {
+          "domain": "cbsnews.com",
+          "lean": "left",
+          "firstSeen": "2026-10-06",
+          "lastSeen": "2026-10-06",
+          "url": "https://www.cbsnews.com/news/south-carolina-senate-race-fundraising-darline-graham-annie-andrews/"
         }
       ],
       "unratedOutlets7d": [],
