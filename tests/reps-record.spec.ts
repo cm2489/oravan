@@ -205,6 +205,83 @@ test('the call panel\'s "See your record" lands on Your calls on the Reps tab', 
   await expect(calls.locator('li')).toHaveCount(1);
 });
 
+/*
+ * THE ZIP FIELD'S FOCUS NEVER TAKES THE PAGE AWAY FROM YOUR CALLS. With no
+ * saved ZIP, bare /reps keeps its ZIP prompt, and the prompt focuses its field
+ * on arrival. WebKit scrolls a focused field into view at its next rendering
+ * update, after the router has already scrolled to #your-calls, so the page
+ * used to land on the field at the top instead of on Your calls. With a saved
+ * ZIP the same deferred scroll raced the swap to /reps?zip=, which is what
+ * made the test above fail now and then (components/ZipForm.tsx). Here the
+ * race is gone: the saved ZIP is cleared before the link is followed, so the
+ * prompt stays and its focus lands every time.
+ */
+test('"See your record" lands on Your calls while the ZIP prompt takes focus', async ({ page }) => {
+  await mockScriptApi(page);
+  await page.goto(`/bills/${REF.slug}`);
+  await seedZip(page, ZIP);
+  await page.reload();
+  await page.getByRole('radio', { name: en.bill.stance.support }).click();
+  await expect(page.getByText(MEMBERS[0].name).first()).toBeVisible();
+  await page.getByRole('button', { name: en.bill.outcome.contact }).first().click();
+  await expect(page.getByText(en.bill.loggedFirst)).toBeVisible();
+
+  // The call stays on record; only the saved ZIP goes, so /reps keeps its prompt.
+  await page.evaluate(() => localStorage.removeItem('oravan.prefs'));
+  await page.getByRole('link', { name: en.bill.viewImpact }).click();
+  await expect(page).toHaveURL(/\/reps#your-calls$/);
+  const field = page.locator('[data-zip-field]');
+  await expect(field).toBeFocused();
+  const calls = page.locator('section#your-calls');
+  await expect(calls.locator('li')).toHaveCount(1);
+  // Two rendering updates later, so a deferred scroll to the field has had
+  // its chance to run.
+  await page.evaluate(
+    () => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done)))
+  );
+  await expect(calls).toBeInViewport();
+  await expect(field).toBeFocused();
+});
+
+/*
+ * ON A FULL PAGE LOAD THE FIX STAYS OUT OF THE WAY. The field arrives in the
+ * server HTML with `autofocus`, and the browser (or a reader's tap) may
+ * already have focused it when hydration runs ZipForm's layout effect. That
+ * effect must not blur it then: on a phone a blur can close the keyboard. Every
+ * blur of the field is recorded from the first byte, and the prompt at
+ * /reps?change=1 is used because its field fills with the saved ZIP only once
+ * the page has hydrated, which is the proof that the effect has run. Only
+ * blurs are counted: in parallel runs WebKit sometimes fires a second focus
+ * event on the field after hydration, with no blur and no focus() call
+ * before it (2026-10-06), and that changes nothing for the reader.
+ */
+test('a full load of the ZIP prompt never blurs its field', async ({ page }) => {
+  await page.addInitScript(() => {
+    const w = window as unknown as { zipBlurs: number };
+    w.zipBlurs = 0;
+    document.addEventListener(
+      'focusout',
+      (e) => {
+        if ((e.target as Element | null)?.hasAttribute?.('data-zip-field')) w.zipBlurs += 1;
+      },
+      true
+    );
+  });
+  await page.goto('/privacy');
+  await seedZip(page, ZIP);
+
+  await page.goto('/reps?change=1');
+  const field = page.locator('[data-zip-field]');
+  await expect(field).toHaveValue(ZIP);
+  await expect(field).toBeFocused();
+  await page.evaluate(
+    () => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done)))
+  );
+  const blurs = await page.evaluate(() => (window as unknown as { zipBlurs: number }).zipBlurs);
+  expect(blurs, 'blurs of the ZIP field').toBe(0);
+  await expect(field).toBeFocused();
+});
+
 /* The same record, standalone: /record keeps answering old links, with the
    folded rows open because nothing sits above them there. */
 test('/record renders the same record, rows open', async ({ page }) => {
