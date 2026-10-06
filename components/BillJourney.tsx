@@ -32,6 +32,17 @@ import type { FloorCalendar, JourneyEnding, JourneyState } from '@/lib/journey';
  * by the "Right now:" sentence underneath, never by color alone: the
  * reference tinted the current label green, and green in this system is
  * spent on actions and the gauge, never on a label.
+ *
+ * THREE ENDED STATES, none of which has a current step. A law fills every
+ * step. A veto fills the steps before the president's desk. A measure a
+ * chamber voted down (`journey.isRejected`, 2026-09-29) fills the steps it
+ * passed, marks the step where the vote failed with a solid `ink` bar (the
+ * step was reached, and it is not progress, so it is neither `go` nor the
+ * current outline) and a visible caption carrying the outcome and the
+ * record's own date ("Rejected here · Sep 24, 2026"), and captions every step
+ * after it "Not reached" on the `line` track. The captions are text inside
+ * each list item, so a screen reader hears the same thing a sighted reader
+ * sees; no step carries aria-current, because nothing is in progress.
  */
 
 /*
@@ -124,7 +135,7 @@ export function BillJourney({ journey, introducedLabel, currentLabel }: Props) {
     t(STEP_KEY[ending]),
   ];
   const here = journey.step;
-  const { isLaw, isVetoed } = journey;
+  const { isLaw, isVetoed, isRejected } = journey;
 
   // The recorded vote the two settled/cloture sentences cite, read from the
   // record's own sentence in lib/journey.ts (never computed here). Supplied
@@ -148,6 +159,17 @@ export function BillJourney({ journey, introducedLabel, currentLabel }: Props) {
         }),
       }
     : { hasDate: 'none', date: '' };
+  // The ended step's caption prints the record's date for the failed vote in
+  // the short form the page's other step captions use (UTC, like `when`).
+  const endedDate =
+    isRejected && journey.date
+      ? format.dateTime(new Date(journey.date), {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          timeZone: 'UTC',
+        })
+      : null;
 
   // Supplied on every key: the tag only exists inside the two placement
   // messages, and next-intl ignores a handler a message never opens.
@@ -166,7 +188,9 @@ export function BillJourney({ journey, introducedLabel, currentLabel }: Props) {
       <ol className="grid list-none gap-3 md:flex md:gap-1">
         {labels.map((label, i) => {
           const done = isLaw || i < here;
-          const current = !isLaw && !isVetoed && i === here;
+          const current = !isLaw && !isVetoed && !isRejected && i === here;
+          const endedHere = isRejected && i === here;
+          const notReached = isRejected && i > here;
           const note = !current && i === 0 ? introducedLabel : undefined;
           return (
             <li
@@ -177,12 +201,18 @@ export function BillJourney({ journey, introducedLabel, currentLabel }: Props) {
               <span
                 aria-hidden
                 className={`absolute top-0.5 bottom-0.5 left-0 w-[6px] rounded-stamp md:top-0 md:right-1 md:bottom-auto md:h-[6px] md:w-auto ${
-                  done ? 'bg-go' : current ? 'border-2 border-go bg-paper' : 'bg-line'
+                  done
+                    ? 'bg-go'
+                    : current
+                      ? 'border-2 border-go bg-paper'
+                      : endedHere
+                        ? 'bg-ink'
+                        : 'bg-line'
                 }`}
               />
               <span
                 className={`block text-xs break-words ${
-                  current
+                  current || endedHere
                     ? 'font-extrabold text-ink'
                     : done
                       ? 'font-semibold text-ink'
@@ -197,6 +227,13 @@ export function BillJourney({ journey, introducedLabel, currentLabel }: Props) {
                   {currentLabel ? ` · ${currentLabel}` : ''}
                 </span>
               )}
+              {endedHere && (
+                <span className="block text-2xs font-bold text-ink">
+                  {t('endedRejected')}
+                  {endedDate ? ` · ${endedDate}` : ''}
+                </span>
+              )}
+              {notReached && <span className="block text-2xs text-ink-2">{t('notReached')}</span>}
               {note && <span className="block text-2xs text-ink-2 tabular-nums">{note}</span>}
             </li>
           );

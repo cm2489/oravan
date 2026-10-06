@@ -141,7 +141,8 @@ test.describe('the press-count intake logs the evidence for a refusing source', 
     const nt = net(() => refusal());
     const prior = priorCircuit(LIMITS.circuitCooldownMs + 60_000, { lastAnsweredAt: OLD_ANSWER, reopenedAt: '2026-09-27T18:40:00.000Z' });
     const { circuit } = await go(nt, { circuit: prior });
-    expect(nt.count()).toBe(1);
+    // The probe and its two backoff retries (2026-10-01).
+    expect(nt.count()).toBe(1 + LIMITS.backoffMs.length);
     expect(circuit).toMatchObject({ openedAt: FIRST_OPENED, lastAnsweredAt: OLD_ANSWER, reopenedAt: '2026-09-27T18:40:00.000Z', tries: 5 });
   });
 
@@ -242,10 +243,11 @@ test.describe('the press-count intake logs the evidence for a refusing source', 
     expect(a.circuit?.lastTryAt).toBe(b.circuit?.lastTryAt);
     expect(a.circuit).toMatchObject({ open: true, reason: '429', tries: 1 });
     expect(a.lines.some((l) => /GDELT refused a request — HTTP 429.*\(body not yet received\)/.test(l))).toBe(true);
-    // Half-open probe: one request at the start, lastTryAt is that moment, not 30 s later.
+    // Half-open probe (2026-10-01): the same two backoffs as any request, and
+    // lastTryAt is the last retry's moment.
     const probe = net(() => ({ ...refusal(), hang: true }));
     const p = await go(probe, { circuit: priorCircuit(LIMITS.circuitCooldownMs + 60_000) });
-    expect(probe.times).toEqual([0]);
-    expect(p.circuit?.lastTryAt).toBe(new Date(NOW).toISOString());
+    expect(probe.times).toEqual([0, b1, b1 + b2]);
+    expect(p.circuit?.lastTryAt).toBe(new Date(NOW + b1 + b2).toISOString());
   });
 });

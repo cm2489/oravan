@@ -923,6 +923,20 @@ test.describe('the collector (mocked GDELT): every failure mode', () => {
     expect(lines.some((l) => /circuit open/.test(l))).toBe(true);
   });
 
+  // GDELT takes 10-15 s to answer a search. Counted from the send, the 6-s
+  // spacing was no gap at all: every request sent the moment a search had
+  // been answered got a 429 on 2026-09-26 and 2026-09-27 (2026-10-01).
+  test('the spacing counts from the end of the previous answer, not from its send', async () => {
+    const ANSWER_MS = 14_000;
+    const net = fakeNet((url) => ({ ...mixedReply(url), takesMs: ANSWER_MS }));
+    const { stats } = await run(net);
+    expect(stats.done.sort()).toEqual(['iran-war-powers', 'paying-college-athletes']);
+    expect(net.calls).toHaveLength(TERMS_PER_RUN);
+    for (let i = 1; i < net.calls.length; i++) {
+      expect(net.calls[i].at - (net.calls[i - 1].at + ANSWER_MS)).toBeGreaterThanOrEqual(LIMITS.spacingMs);
+    }
+  });
+
   test('429 that clears on retry carries on normally', async () => {
     const net = fakeNet((url, n) => (n === 1 ? { status: 429, body: '' } : mixedReply(url)));
     const { stats, circuit } = await run(net);
@@ -1418,16 +1432,29 @@ test.describe('the collector: the persisted circuit', () => {
     expect(lines.some((l) => /^::warning::.*circuit has been open since .* no request this run/.test(l))).toBe(true);
   });
 
-  test('after the cooldown, HALF-OPEN: a still-refusing GDELT costs ONE request, no backoff, and the circuit stays open', async () => {
+  // The probe gets the same two 429 backoffs as any request (2026-10-01): a
+  // 429 on a shared runner address is normal weather, and a one-shot probe
+  // kept the circuit shut from 2026-09-27 to 2026-10-01 on seven single 429s.
+  test('after the cooldown, HALF-OPEN: a still-refusing GDELT costs the probe and its two retries, and the circuit stays open', async () => {
     const net = fakeNet(() => ({ status: 429, body: '' }));
     const { circuit } = await run(net, { circuit: openAt(LIMITS.circuitCooldownMs + 1) });
-    expect(net.calls).toHaveLength(1);
-    expect(net.sleeps.filter((ms) => LIMITS.backoffMs.includes(ms))).toEqual([]);
-    expect(circuit).toMatchObject({ open: true, reason: '429', tries: 3, openedAt: new Date(NOW - 86_400_000).toISOString(), lastTryAt: new Date(NOW).toISOString() });
+    expect(net.calls).toHaveLength(1 + LIMITS.backoffMs.length);
+    expect(net.sleeps.filter((ms) => LIMITS.backoffMs.includes(ms))).toEqual(LIMITS.backoffMs);
+    const lastTry = NOW + LIMITS.backoffMs[0] + LIMITS.backoffMs[1];
+    expect(circuit).toMatchObject({ open: true, reason: '429', tries: 3, openedAt: new Date(NOW - 86_400_000).toISOString(), lastTryAt: new Date(lastTry).toISOString() });
     const silent = fakeNet(() => 'hang');
     const s = await run(silent, { circuit: openAt(LIMITS.circuitCooldownMs + 1) });
     expect(silent.calls).toHaveLength(1); // one silent answer is enough when half-open
     expect(s.circuit).toMatchObject({ open: true, reason: 'no answer' });
+  });
+
+  test('after the cooldown, HALF-OPEN: a 429 that clears on the probe\'s retry closes the circuit and the run carries on', async () => {
+    const net = fakeNet((url, n) => (n === 1 ? { status: 429, body: '' } : mixedReply(url)));
+    const { circuit, stats } = await run(net, { circuit: openAt(LIMITS.circuitCooldownMs + 1) });
+    expect(net.sleeps).toContain(LIMITS.backoffMs[0]);
+    expect(net.calls).toHaveLength(TERMS_PER_RUN + 1);
+    expect(circuit).toBeNull();
+    expect(stats.done.sort()).toEqual(['iran-war-powers', 'paying-college-athletes']);
   });
 
   test('after the cooldown, HALF-OPEN: an answer closes the circuit and the run carries on', async () => {

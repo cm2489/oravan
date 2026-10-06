@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-09-30T13:38:01.266Z",
+    "fetched_at": "2026-10-06T15:05:56.669Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,29 +10,29 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-09-30T13:38:01.266Z"
+        "checked_at": "2026-10-06T15:05:56.669Z"
       },
       "most_viewed": {
         "status": "ok",
-        "week": "2026-09-27",
-        "week_label": "Most-Viewed Bills - Week of September 27, 2026",
+        "week": "2026-10-04",
+        "week_label": "Most-Viewed Bills - Week of October 4, 2026",
         "entries": 8,
-        "checked_at": "2026-09-30T13:38:01.266Z"
+        "checked_at": "2026-10-06T15:05:56.669Z"
       },
       "leans": {
         "center": {
           "status": "ok",
-          "last_live": "2026-09-30",
+          "last_live": "2026-10-06",
           "dark_days": 0
         },
         "left": {
           "status": "ok",
-          "last_live": "2026-09-30",
+          "last_live": "2026-10-06",
           "dark_days": 0
         },
         "right": {
           "status": "ok",
-          "last_live": "2026-09-30",
+          "last_live": "2026-10-06",
           "dark_days": 0
         }
       },
@@ -42,7 +42,7 @@
           "url": "https://www.cbsnews.com/latest/rss/politics",
           "domain": "cbsnews.com",
           "lean": "left",
-          "last_live": "2026-09-30",
+          "last_live": "2026-10-06",
           "first_dark": null,
           "dark_days": 0,
           "last_error": null
@@ -52,7 +52,7 @@
           "url": "https://www.cnbc.com/id/10000113/device/rss/rss.html",
           "domain": "cnbc.com",
           "lean": "center",
-          "last_live": "2026-09-30",
+          "last_live": "2026-10-06",
           "first_dark": null,
           "dark_days": 0,
           "last_error": null
@@ -62,7 +62,7 @@
           "url": "https://moxie.foxnews.com/google-publisher/politics.xml",
           "domain": "foxnews.com",
           "lean": "right",
-          "last_live": "2026-09-30",
+          "last_live": "2026-10-06",
           "first_dark": null,
           "dark_days": 0,
           "last_error": null
@@ -72,7 +72,7 @@
           "url": "https://news.google.com/rss/search?q=congress%20bill%20when:1d&hl=en-US&gl=US&ceid=US:en",
           "domain": null,
           "lean": null,
-          "last_live": "2026-09-30",
+          "last_live": "2026-10-06",
           "first_dark": null,
           "dark_days": 0,
           "last_error": null
@@ -82,7 +82,7 @@
           "url": "https://feeds.npr.org/1014/rss.xml",
           "domain": "npr.org",
           "lean": "center",
-          "last_live": "2026-09-30",
+          "last_live": "2026-10-06",
           "first_dark": null,
           "dark_days": 0,
           "last_error": null
@@ -92,7 +92,7 @@
           "url": "https://rss.politico.com/congress.xml",
           "domain": "politico.com",
           "lean": "left",
-          "last_live": "2026-09-30",
+          "last_live": "2026-10-06",
           "first_dark": null,
           "dark_days": 0,
           "last_error": null
@@ -102,7 +102,7 @@
           "url": "https://reason.com/latest/feed/",
           "domain": "reason.com",
           "lean": "right",
-          "last_live": "2026-09-30",
+          "last_live": "2026-10-06",
           "first_dark": null,
           "dark_days": 0,
           "last_error": null
@@ -112,7 +112,7 @@
           "url": "https://rollcall.com/feed/",
           "domain": "rollcall.com",
           "lean": null,
-          "last_live": "2026-09-30",
+          "last_live": "2026-10-06",
           "first_dark": null,
           "dark_days": 0,
           "last_error": null
@@ -122,7 +122,7 @@
           "url": "https://thehill.com/homenews/feed/",
           "domain": "thehill.com",
           "lean": "center",
-          "last_live": "2026-09-30",
+          "last_live": "2026-10-06",
           "first_dark": null,
           "dark_days": 0,
           "last_error": null
@@ -132,7 +132,7 @@
           "url": "https://thehill.com/homenews/house/feed/",
           "domain": "thehill.com",
           "lean": "center",
-          "last_live": "2026-09-30",
+          "last_live": "2026-10-06",
           "first_dark": null,
           "dark_days": 0,
           "last_error": null
@@ -142,7 +142,7 @@
           "url": "https://thehill.com/homenews/senate/feed/",
           "domain": "thehill.com",
           "lean": "center",
-          "last_live": "2026-09-30",
+          "last_live": "2026-10-06",
           "first_dark": null,
           "dark_days": 0,
           "last_error": null
@@ -154,58 +154,87 @@
     "hconres-89-119": {
       "outlets7d": [
         {
+          "domain": "reason.com",
+          "lean": "right",
+          "firstSeen": "2026-10-02",
+          "lastSeen": "2026-10-02",
+          "url": "https://reason.com/2026/10/02/want-to-stop-the-iran-war-dont-pay-the-bill/"
+        },
+        {
           "domain": "washingtonexaminer.com",
           "lean": "right",
           "firstSeen": "2026-09-30",
           "lastSeen": "2026-09-30",
           "url": "https://news.google.com/rss/articles/CBMilwFBVV95cUxPOVV5VVFnT0RZQ2U3eTU5V3R6VWpxaEI2ZHNSMUE5Tm00aUpvMk5rNndwU2lpdkstd29sdnNvTVZqR3pPN1dhVnRBbEF4R3d1ZTVWcXFFVVdyODFrZVM1d3Z0TTQza0doUWZ3eWY0dE5XWDY2LUNsQVRSbktnNThUUmRieUxSMHFjbW01VU1jUkswbWlKRUQw?oc=5"
-        },
-        {
-          "domain": "thehill.com",
-          "lean": "center",
-          "firstSeen": "2026-09-28",
-          "lastSeen": "2026-09-28",
-          "url": "https://thehill.com/homenews/senate/6116123-senator-calls-end-iran-conflict/"
         }
       ],
       "unratedOutlets7d": [],
       "mostViewed": null
     },
-    "hjres-1-119": {
+    "hjres-123-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
         {
-          "domain": "kolotv.com",
-          "firstSeen": "2026-09-28",
-          "lastSeen": "2026-09-28",
-          "url": "https://news.google.com/rss/articles/CBMitAFBVV95cUxOOWduaWRkQXUwUnBDdFNSRWVRLV81ZFJzOHkwTDBxcFdlRGtvcEZ2Q0VXY0s5eHJmUVdZU1VfcnZkSGF2Mk5UbzBJTXQzREZ1My1udUpsRWg4clQtM3MyUGZGZW5BM1F5dmEtQnhCYmpQdkZFaDMtdWFMRXRVZWQ2QUlSNVVVUkg0NjZKQ2JVNTYzMkdXQ1NrbGFkcXlnaDFSVVdiZ3BhcFp1ZEkzX1lKemJidzY?oc=5"
+          "domain": "hudsonreporter.com",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMiuwFBVV95cUxPX21ySDZVc19RZ2gzWmZEcDc3eV9LaU4xUHh6RjBYTTBZN2RjT2pPWmhqSFhRbF9KTk9Md0xLT0FaU19UYWdxc0RDTUlJM096WnBHQkNDSEp3UUk0VEJrMk1IUk5ySnRBUmpjNXBsbXRfRUhRWFZVN0JVaEFNRlA2SUZlcTU2YktDZWV4VlcyTzBJdE50aTRIc1Y3SlZfcjFDbV8xMDJGalY2RXdUaVFCU0tNVVNLSWsxZ2tJ?oc=5"
         }
       ],
+      "mostViewed": null
+    },
+    "hjres-152-119": {
+      "outlets7d": [
+        {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-10-03",
+          "lastSeen": "2026-10-03",
+          "url": "https://www.foxnews.com/politics/activist-judge-rules-congress-cannot-bar-noncitizens-voting-federal-elections"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "hr-1-119": {
       "outlets7d": [],
       "unratedOutlets7d": [],
       "mostViewed": {
-        "weeksOnList": 8,
+        "weeksOnList": 9,
         "lastRank": 3,
-        "lastSeen": "2026-09-30",
-        "lastWeek": "2026-09-27"
+        "lastSeen": "2026-10-06",
+        "lastWeek": "2026-10-04"
       }
     },
-    "hr-10118-119": {
-      "outlets7d": [],
+    "hr-10159-119": {
+      "outlets7d": [
+        {
+          "domain": "politico.com",
+          "lean": "left",
+          "firstSeen": "2026-10-06",
+          "lastSeen": "2026-10-06",
+          "url": "https://www.politico.com/live-updates/2026/10/05/congress/democrats-pull-some-north-carolina-senate-ads-01107877"
+        }
+      ],
       "unratedOutlets7d": [
         {
-          "domain": "barrett.house.gov",
-          "firstSeen": "2026-09-25",
-          "lastSeen": "2026-09-25"
+          "domain": "fayobserver.com",
+          "firstSeen": "2026-10-02",
+          "lastSeen": "2026-10-02",
+          "url": "https://news.google.com/rss/articles/CBMi1wFBVV95cUxNSzh6UkEzaFBYWWJ5YU5TTWFEakxmbjBKbHp6WGpDNy1ic0FLaU4xdDVOLXl1aXJOZGNSa3NRS2xtRkpiVzNnNVdtX0RLNXd4UkQ0Rl9wakY4RjNJNG9VdmVySWZiV0dHVVRYbXZlQWp4MVFWV09OcWZQS29XVTAtQ0kyYmcweUx2a2lwVjJVUDFJNERQZnczRHFEM2I1U3BSaXdnNjBPVVBlRWxyMmxsUDhaS0ZObEhiYlpULWc4UWZyLUw3OEY4cDRSdWtoNDZxNC1pRDlIUQ?oc=5"
         }
       ],
       "mostViewed": null
     },
     "hr-10167-119": {
       "outlets7d": [
+        {
+          "domain": "manilatimes.net",
+          "lean": "center",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMi2AFBVV95cUxNSTZoRVIxZVhScDYzNUZJVGpCZHA2S3NNV3FoOGR3Y3p5QTdlVF8wcGlUQURmZVJlQUlLbmVFNnJBQmpfYTZpalNBZUxvbUhNRDRTZFZHMTJuVE1TR09uVTBhdFZXT0xkRG5iX240eGxWcTB3OHdxZEViZWZwd3dhZGVGQTFYdjJjVUcxOUpFM01mRy1PemhwMlYxQ0tWdHBveWh4N3FUcjhJVXFQR2VSOFFXc2loR1dtNUtvVHhoUU9HbnAweE9DbjVMUmFrUFpyOEFla2l6LVfSAd4BQVVfeXFMUEtZY1Vlb1lOYW1GZklvYWcxcUdlUjc1Q1U3RDZpMnk3OFlWV25ibGpfbjd0b1hIenBVYlBlcll4SWRzZHQ3V0dieGluZTEtcW1LNXk1bEpFYk9lTGZQWXpmVFlPWG1NSnJIek5RSWR1UGgtdVdMUml0M1RwQXBTSmRmRVg1akJuT3ZqTjFUWC1XYkF6Rm50VGNTQ1FWSVdSaVM1ZHpGS1dTcXhLVnhjQm1vYzFYQmtBd2ZobmtTODh4ZmpyVk54ZGxVclFNZEVXRFZuelJIUW9DSjdlYm1n?oc=5"
+        },
         {
           "domain": "thehill.com",
           "lean": "center",
@@ -222,6 +251,36 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "yahoo.com",
+          "firstSeen": "2026-10-02",
+          "lastSeen": "2026-10-02",
+          "url": "https://news.google.com/rss/articles/CBMikgFBVV95cUxPbjAxSjlLWGY1bldGcWJrTDlKZk1zZ09ENXNLbzloa3lTbHBOYXFFME1BVUFHRDByZ1FuN0FSZ3lvTFlRaXFGVDJFcHg4aEEwTW90QlhSRnREc2ZnN3c1aV9xQV84aDB6OVZwYmlCbzctNmJwWE9BVjE1OGFNdm9WUlp0UXROd09sMktqTmNvLXAzdw?oc=5"
+        },
+        {
+          "domain": "ktvq.com",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMirwFBVV95cUxNMjhXdktVM19QcllueC1HLWZyMndFeS14RDRVZTR0NmNlSC1fTW5XZi1jNEJtOEhnZ09zNlJVTXFOUlFadHFmYkFDSlV2T3lMR1FuNmd5QU9KYkF0YXozckpmMXJDN3ZsSHB1TklTOGNiM3dOUXFKcXRUQ09od2NFQjNxaXA5UXhyOGR6aXhscjg2SFdlLWxFY2E5Q2JGVkc1eDZuUkVERjJzM19yUEV3?oc=5"
+        },
+        {
+          "domain": "manufacturing.net",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMisgFBVV95cUxQT25sekNqT2RUd0lPWFNnejdvS2dXLUdwZjl2eFdhcVdGeTBvRmR2QU1vaWpVTmhRRk8zY29BMEZWQkVTU2xaa0tsYkRxTTZ6a20xdngtQWdUOUxtTF83bVBQejVIWk5adnhFd21pZVZFS05KREI4MGxwT21PTUpXSFM1Sjk1TW15SmhYTk1KNHYweDRBNVZQR3RzOFJqMWFWcDkwVWc5dTQ1WGg2WjVkOU53?oc=5"
+        },
+        {
+          "domain": "qz.com",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxNckV6Z1A3SGFQajRGR1dKSkpBQkVWNk05Z1RYeTZSOVhKOE5ycTNtLWE2ajZDWjZ4VXNQeXhJeXFDODJNRmlJM0RjR08wcE5XVFViMGxiWmZKT3JzaF9RTmJrY3dPVFZ2WjZNcDM4T1FyVTBMa1RaYzktSzVtbmIwMEZn?oc=5"
+        },
+        {
+          "domain": "scrippsnews.com",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMiuAFBVV95cUxNbURiZEtBaU1YWGgwNW9TZExmSGZ3Q1ctcTd0b011b3djQ2ZnNThxQllBZXhFVE90VU8zSG9rRFBKSk13SFRINmc3UTNEV0NzOW52YnVTRi04RkNRR0hnNHVVZFAwbUlGTEp0dnVPTnF4eFFDNUZZM3FPTXRqSWJSVWQyZ2lKWnNEdE52QzZWLVlCbGJlRHFjUFNoOVNyRVo0WWlpa3QyUUZjUWdabW1Lcnc2dlFZNDFC?oc=5"
+        },
         {
           "domain": "3bmedianews.com",
           "firstSeen": "2026-09-29",
@@ -291,6 +350,18 @@
       ],
       "mostViewed": null
     },
+    "hr-10183-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "gazetaexpress.com",
+          "firstSeen": "2026-10-05",
+          "lastSeen": "2026-10-05",
+          "url": "https://news.google.com/rss/articles/CBMivAFBVV95cUxOcUp3WDI2LVI2M0R6NWtqT1l5N2VGMlpRSFppRUVMZmtYd1oydUJrQ3JUejRPelVHak1xbFdUdXB4SDZ0RWtQTjROcG5hSTV4LXlXUXh0enlVN0RjZ1FqMVRZSmhFUnVTckE0cU82NnB1ZkZXX0tMenlyMUZzRVI3QllLSlFETUZHOFlkeXlnSXZENVJBT1lFVHl3S3pOQ3FCTVR2OXhxTHNRS1JESVg0b2pyZHIyLTZHZWxqWQ?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-10319-119": {
       "outlets7d": [],
       "unratedOutlets7d": [],
@@ -301,168 +372,313 @@
         "lastWeek": "2026-09-13"
       }
     },
-    "hr-10473-119": {
+    "hr-1190-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
         {
-          "domain": "quiverquant.com",
-          "firstSeen": "2026-09-24",
-          "lastSeen": "2026-09-24"
+          "domain": "press-herald.com",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMiwwFBVV95cUxNWWNyT1ZOSHF4R0xQdFFMTHo1d3lDbi1zdzRRMkpOeWZXZU9oN05YV3FKZjZJOE1LcURxWUNPR3RQWWNLZzRWLXdrOUxDb1p2UlR6Z3Q2NUEyN3BnUGhIbWd6Y1Y2bW5UY2o1eTVBNHVYR2FnRnk3ZU44c01rVTVPeXc3ZjVmNFlYZktrNWVhdHQzWkpLNmZOMEFTTjdabGNBZ3l0TFM2S240NGpoQ0kzZjlzTnNTaWFIR1RwYVVkdjJwM0E?oc=5"
         }
       ],
       "mostViewed": null
     },
     "hr-139-119": {
-      "outlets7d": [],
-      "unratedOutlets7d": [
+      "outlets7d": [
         {
-          "domain": "nbcsandiego.com",
-          "firstSeen": "2026-09-25",
-          "lastSeen": "2026-09-25"
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-10-06",
+          "lastSeen": "2026-10-06",
+          "url": "https://www.foxnews.com/politics/battle-over-daylight-saving-time-erupts-push-stop-changing-clocks-hits-senate-wall"
         },
         {
-          "domain": "greenvilleonline.com",
-          "firstSeen": "2026-09-24",
-          "lastSeen": "2026-09-24"
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-10-04",
+          "lastSeen": "2026-10-06",
+          "url": "https://thehill.com/homenews/senate/6131222-john-thune-sunshine-protection-act-path-unclear-permanent-daylight-saving-time/"
+        },
+        {
+          "domain": "breitbart.com",
+          "lean": "right",
+          "firstSeen": "2026-10-04",
+          "lastSeen": "2026-10-04",
+          "url": "https://news.google.com/rss/articles/CBMixAFBVV95cUxNeHlWTzFneFluMXJpNmY3RGZFV3QzT0pnRl9vV3AtSzItbFV2VWJpT1AwZXJVREk2M0hkNEVGdVI3TmVZN19FSTdiOWJTWXNLQV9sekctZHRJaWlEbmVGUnhZQzZLTU5RODR2R2NjM01WUWxpLUdCYkJVbUpGRHVraDJ3Z0lBNGlaS0xDQlFoa3FnTXFNdnY1dVUwSUgyR3RLV3JZbzZpSlA1NkMwQU15dk9rUHIxZ1dRTzlOTE1YMmlUZ0h20gHKAUFVX3lxTFBaQTdoXzl3S3VxMC04Q2FwSXlqZkc0RXBKS1hEQmJuQkk1VUNqZkJ2ZEVDMmpGTHppLUQzTThlYnQ1OFFqRExmdV9iZmFua0E1MEpjSVpCZFd3VXhOck5JZHVITFNZTWVyWkhBZjZLcGdqeHNLN0xwRXNpU0s4Zmthc0NOWXgzaC1sMTJwYW5LbVpyamlIdDgtQTFIY1VadzRlQTlMSW5lbHBSM29pRm5iZnJNc2huSlZyUzA4MFdEN3RQTDhsdHhtUXc?oc=5"
+        },
+        {
+          "domain": "nypost.com",
+          "lean": "right",
+          "firstSeen": "2026-10-04",
+          "lastSeen": "2026-10-04",
+          "url": "https://news.google.com/rss/articles/CBMi0wFBVV95cUxPeHVZTHZXLXhicGdILXpid2kxcVVYd3gwQnlMSEZhQzV1aG8yZ1prcy00QTNtMGJrWWdoSWxVcHhpT2N2YU5tZmZpdHpzSXY5alRqU3dMWGIwc1h1X21EUDlRbTdOeTNSQjJuSHFjM1dBTXhJM3FURVFXa1pvd2hYazZHRW9IR0gzVFNmeVVRTFpWUEFyZXFOajBIZDBZTkFTanBIQTNFSnFkTFdLU2tHVWpuQzBTZWNZWndmNWdnam9HcDUxYXR3RlNFcmx3RkdHNjZR?oc=5"
+        },
+        {
+          "domain": "cbsnews.com",
+          "lean": "left",
+          "firstSeen": "2026-10-03",
+          "lastSeen": "2026-10-03",
+          "url": "https://www.cbsnews.com/news/trump-tom-cotton-daylight-saving-bill/"
+        }
+      ],
+      "unratedOutlets7d": [
+        {
+          "domain": "northjersey.com",
+          "firstSeen": "2026-10-05",
+          "lastSeen": "2026-10-05",
+          "url": "https://news.google.com/rss/articles/CBMi8gFBVV95cUxOVTZFbVV4RktzNzg4NThuRHFETUVQaEhPa3pDUW5JLXI4MXhFMGM4SFBCemlzVThqeGQ0YVEwLW9nV2V5T3NlamZyVW43Y0U0dndFUkVSd2k1amI0MHNHUl9OWWdjQ1hwd0QwaU96YV9NcHloSjFtYnFMb2FkV2lFdVdTZlhkam5IZ1RCaEl1bFpoei1HS0VVZloxcUhWQlBqcHVTWE5YNG8tZEZLR3Z2YlNrekhLTjJYWFd6SzFQcHJNZ0tnMms0N1NhV1FCb2x2dEZRZVNNSVkyaWRXV2E1bWxISjBfcFBmQUczTG1RUzdPdw?oc=5"
+        },
+        {
+          "domain": "vinnews.com",
+          "firstSeen": "2026-10-05",
+          "lastSeen": "2026-10-05",
+          "url": "https://news.google.com/rss/articles/CBMisgFBVV95cUxPTE80bDZqM0pScG9lUGtPQXRFMnd1ZHJLRUg1MVI3amx2cG5DdFZnd2lDc1dIMFloWmNkdjRtWWRvaXFUZkRIRDdjcmNvQnk0bXV6OU9aUHpwUkItMkllRlJtMi02TzJCVFd0dW9kN0xNd2xLbVhzSjc4UXBOZXJTNWdJYWcwalZDZ1R6LWlZcHlBU0dGUWtpQUtlVGNCc21UcWd5U19IOHFBR0lNQWNxbVZB?oc=5"
+        },
+        {
+          "domain": "5newsonline.com",
+          "firstSeen": "2026-10-04",
+          "lastSeen": "2026-10-04",
+          "url": "https://news.google.com/rss/articles/CBMijgJBVV95cUxPZkUyWmhIV2V3VkRqTGV4OFpPQzU5UUM1dGhyTWRMMXVhTVpSRFBaYTZKZjZOUWtwckdzcEdUdGZ3N1hoWnY5Ry1pMXNmdmRiQ2lUczJSWnlqQ2h6TzdCSlBMS1A4QlhqSzBlOHZ3d2l6VmhmWmUwSnZfQ0lvb0wwMlBEVXVBdFZDT0JHQ1N3czB5RHJKdjZXVkVVV3JRWHI4S1JBYi1UenBsZDJxaUs5cW1PQm0tZ25veExIRElDVDZRekJoNXV6TWJydmF6Tmc0cVo0TWFTVlBQZzcxU21PNVFIZjBjcXBlOEZ6b2N1WDlwcThfd3VYX0NuNUJOZVV4bkJMRkZkZTNhSzRnV3c?oc=5"
+        },
+        {
+          "domain": "aol.com",
+          "firstSeen": "2026-10-04",
+          "lastSeen": "2026-10-04",
+          "url": "https://news.google.com/rss/articles/CBMigwFBVV95cUxQX0FzSGRfRUhyNGF1UHFLc1JzYk16NGlqUFMyN3h0Umk0b3Q5U283QmdpWHBBRHN0dG1qODZWaGszb1ludWhzTnRuV0w3eFBkUmVrR3o0eHBnSWV0SHJPRUpsaTVJLU1xN3M2MlZuSWdZdmVPTzRhM1FIWi1yeEc5MVlaUQ?oc=5"
+        },
+        {
+          "domain": "greatbendpost.com",
+          "firstSeen": "2026-10-04",
+          "lastSeen": "2026-10-04",
+          "url": "https://news.google.com/rss/articles/CBMid0FVX3lxTE93c2FPWDNhb3JBZDViT2FEQkh4eWxEWG80V2xnSGZEWktkY0hXQ1VKc0xJVVBqY1l4RTFqSkVCWG9qXzN1SzFYbVh1WFpyWlZHUExGdi1ma3JLV3lOVVgzNW4tNVpTenlWRXNkdndIOEZtM0xlN3Vv?oc=5"
+        },
+        {
+          "domain": "jcpost.com",
+          "firstSeen": "2026-10-04",
+          "lastSeen": "2026-10-04",
+          "url": "https://news.google.com/rss/articles/CBMibkFVX3lxTE5raDBzc2psclhJaXZjaHBEemI4VU9yc3ZmZk5QVHp4bHZzMWhZczRFNDg0ZTZpWll1aV9wQ19wQ1ZYSzBoN0VBS0NvZGdJZ1pZQ2l3OFhTY2ZpX1VHUWR4NGZvYmVHTm1tV0xzN1BB?oc=5"
+        },
+        {
+          "domain": "news.ssbcrack.com",
+          "firstSeen": "2026-10-04",
+          "lastSeen": "2026-10-04",
+          "url": "https://news.google.com/rss/articles/CBMipwFBVV95cUxOUXJ5QzA0TUZ5aE5reGhJUzQ4d0Jrc204eXg2dHd5azhFZkRNTVU2anVSQUNQaWwzZ1duaWVoUVdWajJpZ0JxLXZlYXRHLW9kNnNNWldnZF9MREVVMXo4ZXFxWmJ4Z2M4U01vbTh2Q19jZkdVWVdUWFEzOTR2M2VtN2tsNEF4QU51a2Y2LUFjQzNyQ05zbVpkcEJhWFQxVlFNV29wMEdCRQ?oc=5"
+        },
+        {
+          "domain": "salinapost.com",
+          "firstSeen": "2026-10-04",
+          "lastSeen": "2026-10-04",
+          "url": "https://news.google.com/rss/articles/CBMic0FVX3lxTE9LcEZxMmlGcXQ0VEhRWHZXUGpEczFuSGRHb0lvaEZwcS10RXRKVHZabHN6WWRabHJNY1ZRTk1zaFU0UU04a1pLd0pfNjZOQzV0dk9rUk5VaHI4aDJUSXdkNVlvTzFRZXNjXzUwV0VTUW5OVjA?oc=5"
+        },
+        {
+          "domain": "soapcentral.com",
+          "firstSeen": "2026-10-04",
+          "lastSeen": "2026-10-04",
+          "url": "https://news.google.com/rss/articles/CBMiygFBVV95cUxOR3VGa0xCVFk5MnA5ejF4VlZNUE43VTBMdkZqc1ZkSDZrWTZ5RkRJc0ZVNlhwek1adlRUeldycWh3cHdwZEJtSGZqRkxrV3ZfYnFOM3hxTWZsdExfNlpNOWtJRUw0YjlVQ3RhZHpucG5TY0ZfRzg3Z3doMEZTTnlkUnlJQnJ4R01ZeDlmSTdxYk5KQTVqMkNPbWRwa1hqUm1Xc09wUTZjSXR0bEJCNjFxMGo0ZDBOdVA2dVJHdzJhZVBWWkEzSjJsdGlB?oc=5"
+        },
+        {
+          "domain": "yahoo.com",
+          "firstSeen": "2026-10-04",
+          "lastSeen": "2026-10-04",
+          "url": "https://news.google.com/rss/articles/CBMilwFBVV95cUxQbzJnRWdSWWhRdEl4eXg0QV9landrSDRCRUtza3VXeHBVVEx2ZXRQeGs2R3NUZF9UQTJuY25ybTZ2cmRXaEZwNndncHAyelpXLTRxN2JLTmt5dkJGUUJPZWE1cHJNSVVtc2VORWQwSVFIWTNQWjBnNERPQ2JiczV2NW56cGVQVy1ZQ0NEWDZ6cVVpRDlHaGZZ?oc=5"
+        },
+        {
+          "domain": "fox23maine.com",
+          "firstSeen": "2026-10-03",
+          "lastSeen": "2026-10-03",
+          "url": "https://news.google.com/rss/articles/CBMi8wFBVV95cUxOa2diVjk5RXh0VkdHWHFEY3lOb1lXRzBMbEFjRnAtR3F1SUNZS2l3VGpOYXpsV3QwcEhvOWtmYXYwUGZnRnJqRmVRbVNtRzB6eXIwcHlkOWd5WG9RUjJCRi15SzJrVUxfR2ZxZWw4UDRuaTJCOThxbVhneWtSUVpUUDFDZmxGYVotd0NlSkxKbENFNVJvbFdyRFQwUkRqYU5wRmVyQ3E1RmdMbGhUZktfbThjTmhDSmthNDViWmwzVGxlemZjZ2U4Q2s1ODMzT3RGWVBMLW9rMEtqY2E1RkdkUnJJS2hXOUVVT0Q4NkhncWo5ejA?oc=5"
+        },
+        {
+          "domain": "krcgtv.com",
+          "firstSeen": "2026-10-03",
+          "lastSeen": "2026-10-03",
+          "url": "https://news.google.com/rss/articles/CBMi7gFBVV95cUxPeXRWUVczNjk0RVI1eVB0SmhINVBjQVFQZTFfc2hMOG5FeVdtVTNSZTJGaWJnUXFEVTBBcjZnSDk0NGMzc21UUm9RTHh0bjZxU1dacl9pWVducUFkTHgzMExMaG4tempzeTdJay01dHpmdk1YN3JlU1FJY2ttdG13bGdvMzNXeGQ3bFBFeDNla3N3cU9NVUljM0RCTy1IZnI1MHBZZGYxRlZNRlpoVFBuUTYzX1g4WWQ1WjhyQ1puQWo4ZVRQUnRKcGFMcm9vdEp0QnZiOGU0RjBHRklWYnc0dzFIeTZROVF2TlZ2cHB3?oc=5"
+        },
+        {
+          "domain": "mb.ntd.com",
+          "firstSeen": "2026-10-03",
+          "lastSeen": "2026-10-03",
+          "url": "https://news.google.com/rss/articles/CBMipwFBVV95cUxQYUFkdjNyZ2lDQzlXZjVwR2JFMVd0QzYzdDJnSDhqN3VMcm50UEc4MWNYVDFrTVRTZy1yTl9kTmFiY2tqanRtcjR2eGxpQ21RRy13TTcxNlZGV29PS3pfUmpSYXpZQ2d6VnFWRWg5bnVpTVFYbVNrNnJ0NUdBaUJVZDNkRExvU3I4ZG4yMlV3dlFZNGRzb2xRUW5ja1hyNXRSUDFaTUVsdw?oc=5"
+        },
+        {
+          "domain": "thenationaldesk.com",
+          "firstSeen": "2026-10-02",
+          "lastSeen": "2026-10-03",
+          "url": "https://news.google.com/rss/articles/CBMigAJBVV95cUxOOGJyVXRTRG1MZ3RUUW4wUEZHUWhXeHpyWXdwUU5BQmhaTFFobUxUTGVEN1VHdjg1RTJZdTh5bG92Zk52TkVKRUVCWm1XSnZ6aWZGNDFIOGFzWVJVSjd4RlIxTl9KblhxWUhaQzYwMWhLNm9NSWZGVmU4QnREN2E5dVRUdzZKQmtJcmdGY0pDSEdhMFVidkJLMHZLNkVFQi1NdzdVVkx5V1l6UVZrNzJTUHRIOGRGOFd6cUVNSnB0UlJnMzNzendIYU1lc05rYmtiMHVTaHNqSHcybTBMZXRSOEdaS01LdlJuUGZqX1ZhSDRxUTFpNmJ0aktDd0JYUTFN?oc=5"
         }
       ],
       "mostViewed": {
-        "weeksOnList": 5,
+        "weeksOnList": 1,
         "lastRank": 10,
-        "lastSeen": "2026-09-20",
-        "lastWeek": "2026-09-13"
+        "lastSeen": "2026-10-06",
+        "lastWeek": "2026-10-04"
       }
     },
-    "hr-1403-119": {
+    "hr-1550-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "nola.com",
+          "firstSeen": "2026-10-04",
+          "lastSeen": "2026-10-04",
+          "url": "https://news.google.com/rss/articles/CBMi1AFBVV95cUxPdHVNdUt6X1RCaGU4cHNMbWtsZmg1ZnFSbVg2dmM1cWZNQWk1blZOUmdoZXRxTkZMeDFUc2hKT21YUEQwUmtTaGxhNi1yVkdYb1ZRNzBNZWRyM0FvUGdfeDRuMmxHUXd6WW8zdHRzTjlnV29RcWEyMzJjeFVYWTF6SUI4ZEpBZ2hvN3RrZ3daLWNOSW5Ic2NIUktWX1A2elUwU2FLVTlrMnRURTRBNFpQckZZWXdNcGt3WE1vLVh2ay1YZ2ZoVkpoUzlXOEZkNXc4VG0xWtIB1AFBVV95cUxPdHVNdUt6X1RCaGU4cHNMbWtsZmg1ZnFSbVg2dmM1cWZNQWk1blZOUmdoZXRxTkZMeDFUc2hKT21YUEQwUmtTaGxhNi1yVkdYb1ZRNzBNZWRyM0FvUGdfeDRuMmxHUXd6WW8zdHRzTjlnV29RcWEyMzJjeFVYWTF6SUI4ZEpBZ2hvN3RrZ3daLWNOSW5Ic2NIUktWX1A2elUwU2FLVTlrMnRURTRBNFpQckZZWXdNcGt3WE1vLVh2ay1YZ2ZoVkpoUzlXOEZkNXc4VG0xWg?oc=5"
+        },
+        {
+          "domain": "fingerlakesdailynews.com",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMirAFBVV95cUxNNURpdlBERG85Smc0ekQzS3dXRE1SMlNibWJha2tNd1FsdE5uZ0t2SzYyV3JIQWVScWVUcF9DemdpVDFVbnpLQ2tBZnFJckdtVTNkUnlDN0FmNENLMkRBQ0tWMmtEdXVvRnNPd0llTzRTYjNPaTlvZ3h1RnBLUC1QRjRiSkE1eEhXSllQQlRqQ3RrRWpJTFFyaXNFLUtjS01qVUNTclIxQnBKRlRK?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-1703-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "rollcall.com",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-02",
+          "url": "https://news.google.com/rss/articles/CBMilgFBVV95cUxNQjJNNnYxa3FGVkJqUWN0Tm1uYnpFWDZ3ckxpT25mRFhZbUd1T1c2SHhPN3o2RHA4SElRWWJwbVBHQkJmSVNYM2hfVXRpVUpyOXlKVmFVOE84dHV0bEJ6Nnh1X3Y1QVFRVHB2cjVGUGdZd1FEekFXVG1mZ2x2TkhTZzNFbDhHcEF6UWRXWE9kNlY0TllWa1E?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-1945-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "kq2.com",
+          "firstSeen": "2026-10-05",
+          "lastSeen": "2026-10-05",
+          "url": "https://news.google.com/rss/articles/CBMizAFBVV95cUxOMGg3WlF3NmRWYWhXaEF2TUdiS01IQ1F0R1hoRG1rdzNTaFA4RWNIVmQxU203d240YjZLMG9PdjFlTVhDcS1BalplV1l5eVROeUJidFBaQ040b2c0OXo5azRmSUZ2SnN5VHVRNXJiZVhKWVItdzB1X0JET3dJcDhvRG5qVEtRM0k0dXVOVjctWTdiNHhOT3UyYnhqWjZtemhWdENiMEhaZ0lmaldKWGhYS0Y0SmkzQkZWU1l3OGhJdUZwQUZIV1RVcy1hNGI?oc=5"
+        },
+        {
+          "domain": "kcur.org",
+          "firstSeen": "2026-10-03",
+          "lastSeen": "2026-10-03",
+          "url": "https://news.google.com/rss/articles/CBMioAFBVV95cUxOOUtqRHRuZC1hUXJESjNnMFdHZUdyZF9ZRTRmcWxpc3FGQUFQMXN2eVJQVFpvR0FiQklHZ1dSR3FlRkVhR0RrN1YweWs1QUQwWmVERkdvSk9CVEw4Sk5FYktmU0JGU0pDYjNPVFFPMXpCbHBnampxZ2tnSVlVa3RGWnRoaEpoTkg5Wm9xMnZqbkNRNHJ5cW9tdnpwbHl4Rnp1?oc=5"
+        },
+        {
+          "domain": "ksdk.com",
+          "firstSeen": "2026-10-03",
+          "lastSeen": "2026-10-03",
+          "url": "https://news.google.com/rss/articles/CBMi-AFBVV95cUxPUGdYYUhLY0FES29xcTJGcVJxVlFmMi1sRUowQ1hqWHBTS3ktUGR0ajh5MENZTTgzWVIxMUJSQnhHRUk3aXR6Y05pT0ZoRFlTSUZleHhyd3V1VE1wQXBSVUVSZUYzeVRNWTZrZTQtcWRiYzlXTmx2Y2V3bEZPTGFzVzZxR01Dc1hRd0dCbVBUeVBiZzNhS0JUd3BvZWEzMUZ2UFNqbTl5VVNfY3R2U2xqNjVZNjM0S1ZFNWFCZWl4X0Vfam9MblZZWWQ0ZFBzR1pGMG9wdkp2V0JxV3hRdmxJSUhWVmRVaUlJZXN5aENoNWkxUjNROC15bA?oc=5"
+        },
+        {
+          "domain": "anglotopia.net",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-02",
+          "url": "https://news.google.com/rss/articles/CBMirwFBVV95cUxPXzZybGdFZkJnZ0NhbmE0TzB1UUc4UUxFdjZQS3V2bmJUQTBIbGNkM19TMmtJMzdIejRWLWs1dzNHZ2FDX2l2Xzh3Q1hrRmhldVp5Z1NncDNHZTJpWTlrOXd1WmhnbFZBUnpEYWJFTS1pdkR5M2EzbEFuUmlBY3U2cnEwT1VUbF9Hdzl5V2ZTQV9fVm5VOEJpcm1GaUZHWHB2QW1xMG1WeWNwMFBzSmRz?oc=5"
+        },
+        {
+          "domain": "kbia.org",
+          "firstSeen": "2026-10-02",
+          "lastSeen": "2026-10-02",
+          "url": "https://news.google.com/rss/articles/CBMixwFBVV95cUxQUkx4anV2SmpoMTRKcHE3NzNWa3E3Mms1UmVqZ1VGYlBJeXctNWZ5dS0xbFdqb0YxWFRzWW9lLVY2LURpNnRfSlN5dEh6ZW1xVmlvanA2akM4b0ZPTjlCWkcxbXo0eVppaXBhMVBnRG1wVEozNmpUNmFOTG5nelktQzFaQWs3b2Rhc01BRlNIMHJGNVpFU1FTSVcxOEE4VDE3UGVuMC16UkNTZ0ZianYydi15bWxPcVgxajlZcXlWYUhObXEtYVVr?oc=5"
+        },
+        {
+          "domain": "sedaliademocrat.com",
+          "firstSeen": "2026-10-02",
+          "lastSeen": "2026-10-02",
+          "url": "https://news.google.com/rss/articles/CBMixwFBVV95cUxOc2EtUkhFem5EU28zV1NzR2dpbnF5Z1pJOWhaZ3RvSlRWY0VlM0dYZkRTRU1nQTVzM3hyTjA4QU5EQUhwMi1FaVpEdVd5XzhHWjViQkE2RU5FT1ByNl9pU0VmOFdMN2c1QmlRNFBlVHM3V293czJGSjNmN0hDd1NKTnBfZ2RNSHdVZEg5bGJvS1FFeFc3MUd2eFdJeGdTcGNRN3A2VU04clo4VDFVbXJSdElNd0lrSF9odUxHLVJERVVIM2g5TjlR?oc=5"
+        },
+        {
+          "domain": "columbiamissourian.com",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMiiwJBVV95cUxOXzRSTzNqVDdsejZORG9NUnpXODJYZ21SX3huaTNiai1nS2xaMmpPMURiY29OZjJoSmFHbWxBMGdSRVVKUk1VRkVpQUhIWlh2VWtzZTlFV3VYblNZRHlDeXI3MC0zTDNMM1JQNmpsZVE5TDVhZ01UWmxZblh4empYZ1NxakNsd3p5QXQxWWpSVWtEX0JwQnlNU1h4OUJNM0FJTWpVMzlyNUE4V1BpWU9VcndwSHFWd0dMRVJ1UV8tRDlTWndfV1JQdEoxYkxmQXVRUEJkVmtqTFota1dtTDdfTjhOUmljYjFuNGdENzBuZHo0ZThiSzFSM2p6RUJXLVozQUdMNlJyUmhsMGM?oc=5"
+        },
+        {
+          "domain": "krcgtv.com",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMivAFBVV95cUxNb2ZuM25mZzZ3aXljb3U5TWJzMlp3VE13UTJTRnZTbzhhRWoyd3JRQy1CY2pMcHRQZk1JQkg2R01ZX216VEc3UXR3VmlXejQ1S2xSWWhTZGNRamVMd0ZZT3YzOEo0RndEQTlVeHI5aUVPbnNDRllIdTNCUkZoSVpQYjd2QUhIU1cyWC1PU3JNN29QVDR2aGQ3a2pnNm9HcGhIa1Q0V3BWN1NoOXh6SFRQT0FVVWUzR2FuVWtWWg?oc=5"
+        },
+        {
+          "domain": "missouriindependent.com",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMixAFBVV95cUxQNU1MaUhMTnhwQ3RRQjc5b3BNc3o2M09HVl9Ka0Vnc19MbnRJUXFHSFZVc0JTUW5ucGRjOWZUVTVWRFRtWkJBTmFkOVVTbEU5SDdzT3cxcEtkS0lmZ2IzVHZOSmxlU2FoeXlaeFhoWmR6UlYzSjFxR1VmUF9icEcxODZyci12M0M4eHA5aXNBV3hNOXQ5bEJyUFAxdFlrUTF4OWY2eUtyajBTY01QYmQ0cE9XRkRRbHM2ODdtdHRWeUZNaWFs?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-227-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "alreporter.com",
+          "firstSeen": "2026-10-02",
+          "lastSeen": "2026-10-03",
+          "url": "https://news.google.com/rss/articles/CBMiswFBVV95cUxPaGhkWVFUZ1N1UERnc1dPMENlZDNVeUN2c182WFFwTEI1R245MlB5RWFNOHBQdVc1QzI4V2pMRjlnOXA5UjdZclRadlN2X2M4NFNDMVktUUJSemtqT1hjcmVlLUQwRnYxZHp5aGJtTHFKc0phTi1HamVfemdjQklhazNZMURrMC1rOF9NZU9HWDR4YlNQOVl1eFlEWWRIRlZXLS1HMUNWUS1WOUtBaU1ObEtkaw?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-2316-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "theapopkavoice.com",
+          "firstSeen": "2026-10-06",
+          "lastSeen": "2026-10-06",
+          "url": "https://news.google.com/rss/articles/CBMirwFBVV95cUxNSDlnT2x1aUZ1YmNOc0VqdVNCejhNeHBTLUJhTEFkWUo0Q0ZJSFQyVFUxMzBIX2FpUXdyR3ZkRWtJdnFvMUJLVkRFWV9hOEJ1WEdBZW00YjFPNnJLLTVVeWd1cDF0R3U2M0pQU3lNOGxCeElXRDR4WFBSdWxOM0E1czd6YTV5dFNaQ29idGtLRVAxN3Vvb1NXaHVTYld6dVdWd2dZYzM0N1RnSm9rU1NZ?oc=5"
+        },
+        {
+          "domain": "floridaphoenix.com",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMisAFBVV95cUxPZXZoWGVjNWtDS0p5Um5IWEt5MENCX0FVcjVOTmlBdWptNlhTZkxHZHlZSTZlM3JSS0R4UTN3Z3AwdVZIWjZnZ25ELUVxSkxUdVZrNVlISU4wR0kwdFhacWstNExyWGp2SkI0ODZzUW5CSDNjckJfN3I0dW1TR3NEVGtrSTVVd1ZNVVJIMmxLTkNWVHFNVkpjX2h4OWVrT3VjQXpxejhqRWdyZklPRE9iYg?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-2347-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "augustafreepress.com",
+          "firstSeen": "2026-10-02",
+          "lastSeen": "2026-10-02",
+          "url": "https://news.google.com/rss/articles/CBMiwgFBVV95cUxQNGQwY1R3LVNmdG8yTnN3aTZLdEpSMzZNemh3UGRmeDVJMjJUQjJQblg5WXhMNjFzdTJITWZYTkVsM25HQlUtMEJ6aUFDUER0Zm9hSFNld3YwTUFXbmVrbjZMb19TYmJJNmExVE51V2hhbnp3bVhxRWphSzZNOGcwSml5WlRCRFpySHNUMllZY056STVnTDJBRWRrQ0RUVDFoT0IyWGJOMDB2QlkwZnlyaXpZZzZ1LUE5LURfeVhkeXdhQQ?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-2406-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "augustafreepress.com",
+          "firstSeen": "2026-10-02",
+          "lastSeen": "2026-10-02",
+          "url": "https://news.google.com/rss/articles/CBMiwgFBVV95cUxQNGQwY1R3LVNmdG8yTnN3aTZLdEpSMzZNemh3UGRmeDVJMjJUQjJQblg5WXhMNjFzdTJITWZYTkVsM25HQlUtMEJ6aUFDUER0Zm9hSFNld3YwTUFXbmVrbjZMb19TYmJJNmExVE51V2hhbnp3bVhxRWphSzZNOGcwSml5WlRCRFpySHNUMllZY056STVnTDJBRWRrQ0RUVDFoT0IyWGJOMDB2QlkwZnlyaXpZZzZ1LUE5LURfeVhkeXdhQQ?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-3049-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
         {
           "domain": "democrata.es",
-          "firstSeen": "2026-09-22",
-          "lastSeen": "2026-09-23"
+          "firstSeen": "2026-10-03",
+          "lastSeen": "2026-10-03",
+          "url": "https://news.google.com/rss/articles/CBMi1gFBVV95cUxNb0UwVTlzN0U3d2VRYnltQXRjcDZqX3lQbGw4NFVhaE5kU2I3NVd3S2E5dTcyU0YyejJjazhCbzlMWWJ4emhVWlE3V0ltTUx4bWo1TlZDdzdRaDc5bUtTS0c2dThrN1RkX1dKaTFaN0QyRy1XWEQtNlNIb18xUmFmd1lzLWx4ekxoWTJ5eXZyZi1JZS1XaFNMRzU5TkZiVVlzdnllU1FhbTBrSjZfU0Z3aGN0YUVzVEJ1UlVROXJSWi1rckp0dnNMV2JBVVgwdjNsYUFKMnlR0gHbAUFVX3lxTE1FTV85emZ4cnlXWGxaVkRwcFI1WFRCMHc2b3ZudHBueWVZbFFueWtrZzB5b0cxbzNZUVA3VHMwMV80dkJjbW91Z1E3LXlsQ3J6SGUzNVMxbUl3SjkwallBQ2FOSkREc0dJRVFCTzVQT3ozdWhZbXVpWDZ6OTdNVUpYaFpELS1iQXZmakFHY2luckM0V21lbWVKUlphanlDWWVpWU9qQTNzSG12bmxxS3hsUkpUSHB0MklOSnMyVUUyQkEtQmR3NWlUenU3YTdSU0loWjRJWDNGLTFsMA?oc=5"
         }
       ],
-      "mostViewed": null
-    },
-    "hr-1424-119": {
-      "outlets7d": [
-        {
-          "domain": "thehill.com",
-          "lean": "center",
-          "firstSeen": "2026-09-24",
-          "lastSeen": "2026-09-24"
-        }
-      ],
-      "unratedOutlets7d": [],
-      "mostViewed": null
-    },
-    "hr-1657-119": {
-      "outlets7d": [],
-      "unratedOutlets7d": [
-        {
-          "domain": "wsaw.com",
-          "firstSeen": "2026-09-24",
-          "lastSeen": "2026-09-24"
-        }
-      ],
-      "mostViewed": null
-    },
-    "hr-1700-119": {
-      "outlets7d": [
-        {
-          "domain": "cnbc.com",
-          "lean": "center",
-          "firstSeen": "2026-09-23",
-          "lastSeen": "2026-09-24"
-        },
-        {
-          "domain": "newsweek.com",
-          "lean": "left",
-          "firstSeen": "2026-09-24",
-          "lastSeen": "2026-09-24"
-        }
-      ],
-      "unratedOutlets7d": [
-        {
-          "domain": "aol.com",
-          "firstSeen": "2026-09-24",
-          "lastSeen": "2026-09-25"
-        }
-      ],
-      "mostViewed": null
-    },
-    "hr-2385-119": {
-      "outlets7d": [
-        {
-          "domain": "pbs.org",
-          "lean": "center",
-          "firstSeen": "2026-09-24",
-          "lastSeen": "2026-09-24"
-        }
-      ],
-      "unratedOutlets7d": [
-        {
-          "domain": "gasiantimes.com",
-          "firstSeen": "2026-09-25",
-          "lastSeen": "2026-09-25"
-        },
-        {
-          "domain": "abcnews.com",
-          "firstSeen": "2026-09-23",
-          "lastSeen": "2026-09-23"
-        }
-      ],
-      "mostViewed": null
-    },
-    "hr-2756-119": {
-      "outlets7d": [
-        {
-          "domain": "thehill.com",
-          "lean": "center",
-          "firstSeen": "2026-09-22",
-          "lastSeen": "2026-09-23"
-        }
-      ],
-      "unratedOutlets7d": [],
-      "mostViewed": null
-    },
-    "hr-28-119": {
-      "outlets7d": [],
-      "unratedOutlets7d": [
-        {
-          "domain": "thealaskastory.com",
-          "firstSeen": "2026-09-26",
-          "lastSeen": "2026-09-26",
-          "url": "https://news.google.com/rss/articles/CBMiwwFBVV95cUxQQXpoQ2VFelE1S0RyZlFwNU4zb0tUUDFYcUlkMENkcU1SWHZWQVlOdGhiSmJjRFRqT0dqenNlYVJWQzZiZnRwd3NvR3VTbXFad044NmQzM3dZTWFYT3NjWHZtMzI1TGh2cnpUSlh0N0tlaXhKbGZlOWRnaHBGN3V5QnNQWF80clUxcmlPNU85Z0hzSWZoOXEwV2tTQ3JRcmFadUdFa3RMcGdNN0tDRnRJSXpsRWtuNHhsc3VhWWY5RDhlcEE?oc=5"
-        }
-      ],
-      "mostViewed": null
-    },
-    "hr-3452-119": {
-      "outlets7d": [
-        {
-          "domain": "thehill.com",
-          "lean": "center",
-          "firstSeen": "2026-09-23",
-          "lastSeen": "2026-09-23"
-        }
-      ],
-      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "hr-3633-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
         {
-          "domain": "tradersunion.com",
-          "firstSeen": "2026-09-25",
-          "lastSeen": "2026-09-26",
-          "url": "https://news.google.com/rss/articles/CBMiswFBVV95cUxQSTFuUmN4OEt6OWZ3cEVxUVc3VnIxVVZJZEQtbkd0QVI0U084dWlUbnVqTXR2bDR1aUc3WXpvQXZ1ZmZMYmZ6emlubG1oVTBTWkt6QXFpbW1UZGNodkZhYmg5enh3a2Zld3I0cTBxanZzUks2WDhyWjB3WDdlZTZnbndpN3pVYVhIMXNpQWdKUnc4T3RUbk9OTFhlZ2tvZVFrdm9ReGdIWkcySnhMYXdLaHJrYw?oc=5"
-        },
-        {
-          "domain": "cryptonews.net",
-          "firstSeen": "2026-09-20",
-          "lastSeen": "2026-09-25"
+          "domain": "memeburn.com",
+          "firstSeen": "2026-10-03",
+          "lastSeen": "2026-10-04",
+          "url": "https://news.google.com/rss/articles/CBMiVEFVX3lxTFBvVHhFbm1tTmpPS1VEaTNGcUt4ZDhNUVE0VnBXQi1IVlIteTd3ZkR3dU1CYzIxNUlOclp6TkV6UkVfMGVBaHN5TXZuclAyQkJiSEJTSQ?oc=5"
         }
       ],
       "mostViewed": {
@@ -472,139 +688,84 @@
         "lastWeek": "2026-09-20"
       }
     },
-    "hr-4123-119": {
-      "outlets7d": [],
-      "unratedOutlets7d": [
-        {
-          "domain": "manilastandard.net",
-          "firstSeen": "2026-09-23",
-          "lastSeen": "2026-09-23"
-        }
-      ],
-      "mostViewed": null
-    },
-    "hr-4405-119": {
-      "outlets7d": [],
-      "unratedOutlets7d": [
-        {
-          "domain": "desmoinesregister.com",
-          "firstSeen": "2026-09-23",
-          "lastSeen": "2026-09-23"
-        }
-      ],
-      "mostViewed": null
-    },
-    "hr-4624-119": {
-      "outlets7d": [],
-      "unratedOutlets7d": [
-        {
-          "domain": "boxinginsider.com",
-          "firstSeen": "2026-09-23",
-          "lastSeen": "2026-09-23"
-        }
-      ],
-      "mostViewed": null
-    },
-    "hr-4795-119": {
-      "outlets7d": [],
-      "unratedOutlets7d": [],
-      "mostViewed": {
-        "weeksOnList": 1,
-        "lastRank": 4,
-        "lastSeen": "2026-09-14",
-        "lastWeek": "2026-09-06"
-      }
-    },
-    "hr-4840-119": {
+    "hr-4305-119": {
       "outlets7d": [
         {
-          "domain": "washingtonexaminer.com",
-          "lean": "right",
-          "firstSeen": "2026-09-25",
-          "lastSeen": "2026-09-25"
-        },
-        {
-          "domain": "thehill.com",
-          "lean": "center",
-          "firstSeen": "2026-09-24",
-          "lastSeen": "2026-09-24"
+          "domain": "latimes.com",
+          "lean": "left",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMi0gFBVV95cUxPb29NMnVxZmQzRGdtcXpHVnRnQzdfbVl4OENybzJ3eEtrRmFULTVaVVRtZ2RONWxqNklxQzRDY1gyandYQ3N4TEZQeHJzcXJSX1p5U0gxNWQ3SDV3TEJoVlgxVURpRWp3T1E1WGhUR0xVWlF4MWJvelg1NjhPMWxyMDNwY1kzVUhLLXFfdFJJZmV0NDJSOGtXOHJqUFRWVVJBUERrYmRmclo0S2djN3Y0Vm55ZjVXT3ItS1hITUNRLVNuUmlVLTVyQVlnbWRoRVBsNVE?oc=5"
         }
       ],
-      "unratedOutlets7d": [
-        {
-          "domain": "gov.ca.gov",
-          "firstSeen": "2026-09-25",
-          "lastSeen": "2026-09-25"
-        },
-        {
-          "domain": "imdb.com",
-          "firstSeen": "2026-09-24",
-          "lastSeen": "2026-09-25"
-        },
-        {
-          "domain": "indiewire.com",
-          "firstSeen": "2026-09-25",
-          "lastSeen": "2026-09-25"
-        },
-        {
-          "domain": "michaelfairmantv.com",
-          "firstSeen": "2026-09-25",
-          "lastSeen": "2026-09-25"
-        },
-        {
-          "domain": "sagaftra.org",
-          "firstSeen": "2026-09-24",
-          "lastSeen": "2026-09-25"
-        },
-        {
-          "domain": "thewrap.com",
-          "firstSeen": "2026-09-24",
-          "lastSeen": "2026-09-25"
-        },
-        {
-          "domain": "hollywoodreporter.com",
-          "firstSeen": "2026-09-24",
-          "lastSeen": "2026-09-24"
-        },
-        {
-          "domain": "yahoo.com",
-          "firstSeen": "2026-09-24",
-          "lastSeen": "2026-09-24"
-        }
-      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
-    "hr-4889-119": {
+    "hr-4307-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
         {
-          "domain": "northgwinnettvoice.com",
-          "firstSeen": "2026-09-23",
-          "lastSeen": "2026-09-23"
+          "domain": "thesuntimesnews.com",
+          "firstSeen": "2026-10-05",
+          "lastSeen": "2026-10-05",
+          "url": "https://news.google.com/rss/articles/CBMigAFBVV95cUxPelpld1ROZXoyMm8wbno3bk1qQjRpNmVfY1JnNktlc3pGWkRGc2o3SGl6SGRCWjJNaFZ5TS1PRkpTbmpkWl9zTUFDMXNrOHRiSGw4RUJ4RHVJNjVLSUJIbHo5NzZJdnBEaUhDZUtZZ1FMTkNzTFUxTkpRaXBFaWpzZQ?oc=5"
         }
       ],
       "mostViewed": null
     },
-    "hr-5068-119": {
+    "hr-4509-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
         {
           "domain": "marijuanamoment.net",
-          "firstSeen": "2026-09-15",
-          "lastSeen": "2026-09-23"
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMi5gFBVV95cUxPVGdYUHgxdUtjb2pfRkVfTTgyZElqMzJQdlQ0OWhJU2FOTmZ3SUpnTVRuNzNQRGZWQUZ0bUhncEpNdkpza2FSVF9mc3k2NzIxSW5VSkFIMjlERHQyYUQ2Qzk4ampjYXFGdGdWcUVlTWRuZm5RbFlDMUZjN1IxQy0yM085aF9OeFhfUGRQejlvYWs5Z2ZBckJ1WThZc2VlTktNLVhJYV9pTlVySE5GRXY3T0s4RmVZVnA5cXNwUTZvZDVzR0dqNDFrSE9JMEkwcE5oRm5YcmVaN0hCZDRhRm5NTDdvNVIzUQ?oc=5"
         }
       ],
       "mostViewed": null
     },
     "hr-5269-119": {
-      "outlets7d": [],
+      "outlets7d": [
+        {
+          "domain": "politico.com",
+          "lean": "left",
+          "firstSeen": "2026-10-06",
+          "lastSeen": "2026-10-06",
+          "url": "https://www.politico.com/live-updates/2026/10/05/congress/thompson-rebuts-altman-01107885"
+        }
+      ],
       "unratedOutlets7d": [],
       "mostViewed": {
         "weeksOnList": 1,
         "lastRank": 10,
-        "lastSeen": "2026-09-30",
+        "lastSeen": "2026-10-05",
         "lastWeek": "2026-09-27"
       }
+    },
+    "hr-5284-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "aol.com",
+          "firstSeen": "2026-10-02",
+          "lastSeen": "2026-10-02",
+          "url": "https://news.google.com/rss/articles/CBMihAFBVV95cUxNZTd0WkE1WjZBMEZ4dVJqaW81dTdSVG9lN0YwSWR6VXVpd21VWFo0bGJDTC1GWHEzNllmSEZZaVZTQXJpaklYSEpJMHlHQU9LMWFlU1BXQk5IZi1KTmVUeVhHenMxOGhFZUplNlItLUtZckMzSW5tek9VRjR2YnNIcmZFOHI?oc=5"
+        },
+        {
+          "domain": "newsnationnow.com",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMigAFBVV95cUxOLV9KMGh0RkZfRTliLWxNdTJvY2tKd1U1aDFCdGphMTRfbXljZl81UlotU3dWOXZYcGZCQ2FCMTA4aXlpbmxLY2NFcWxxZjJGX1l4eDMxbWNEMUE0eHItZUlUWnFuS3ZUdDh4WDFqWG0walFUOVk4enZVbHZybllkTNIBhgFBVV95cUxPVkZyNWc1Vl9kLVQtNzJ2a2NnX0ZrQktSSWxuR280cFNCVzhtX2dyZ3FwRjloYk12TWFWdnNKQ2JKTnJlTEg0aVhpWDV4S211aDhkNGxuYWFtblJYUmZMQzB3QTNTS09kSVhER1hjWXVzMG8yX3JMZUREQlVUSG5xeS0wSTBHdw?oc=5"
+        },
+        {
+          "domain": "planadviser.com",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMiTkFVX3lxTE8xT0V6RVJqN0RiOFJQZ1ZScnFrcnlsYnhadTQ0em9ZVC1uamZHR041dGEyenBRUUFwYUZueWg4OW0wS0x1MGNYQ3hxUG9tUQ?oc=5"
+        }
+      ],
+      "mostViewed": null
     },
     "hr-5316-119": {
       "outlets7d": [],
@@ -612,73 +773,81 @@
       "mostViewed": {
         "weeksOnList": 1,
         "lastRank": 8,
-        "lastSeen": "2026-09-30",
+        "lastSeen": "2026-10-05",
         "lastWeek": "2026-09-27"
       }
     },
     "hr-5334-119": {
       "outlets7d": [],
-      "unratedOutlets7d": [
-        {
-          "domain": "theindianeye.com",
-          "firstSeen": "2026-09-27",
-          "lastSeen": "2026-09-27",
-          "url": "https://news.google.com/rss/articles/CBMie0FVX3lxTE93cE9fWnUzaVlXTzd4Z1YwckdWcHJTM01wdWNucHMxR0pCd1pnTF9jM0NGd2o4U1FHWmRpajdUcnd1ZmZFTE1WdkMzNGh5akFvUVNjSlhuQWVjZ2MtcldwSWZDZk0wVUQ2VlE1cGhXanpYSlVmT2xwVW9mOA?oc=5"
-        }
-      ],
+      "unratedOutlets7d": [],
       "mostViewed": {
         "weeksOnList": 2,
         "lastRank": 5,
-        "lastSeen": "2026-09-30",
+        "lastSeen": "2026-10-05",
         "lastWeek": "2026-09-27"
       }
     },
-    "hr-5345-119": {
+    "hr-5344-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-01",
+          "url": "https://thehill.com/opinion/congress-blog/the-administration/6120575-congress-investigate-trump-corruption/"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-5505-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
         {
-          "domain": "cpapracticeadvisor.com",
-          "firstSeen": "2026-09-24",
-          "lastSeen": "2026-09-24"
+          "domain": "kansascity.com",
+          "firstSeen": "2026-10-04",
+          "lastSeen": "2026-10-04",
+          "url": "https://news.google.com/rss/articles/CBMigAFBVV95cUxOYkU0RzlXdGxweWJCZ211dkI3R2o0Ymp2TmRUMWstNDJZOXVQMVFHZ3U1M0p5R2xkbGNGZVJ1OG15QW5iZ1gwdldwd001SGlaN3JrVTE0QkpIQnZ0ZFQzN2d3VWUxYVVYS2ZjSnlxREZCNDhveWtfdUhhVWp3YzRqNg?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-5587-119": {
+      "outlets7d": [
+        {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-10-04",
+          "lastSeen": "2026-10-04",
+          "url": "https://www.foxnews.com/politics/cruz-vance-rivalry-heats-texas-senator-suggests-vp-feeling-insecure"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-5631-119": {
+      "outlets7d": [
+        {
+          "domain": "nytimes.com",
+          "lean": "left",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxOVU1SQ3Nud1Q0a01GWWF2bGVLY0EyLUE4VTg1WkNObVJ1ak1oTGFPX1R2VFQyOGpoTGxTWFU4YVhUWVZaTVhubk9QQ1I1cmFrQ01Pb2NYZ2Z0eTFoTHJRZ28wY3lwQk41X3pCbjNNSi1vaU1Jc1hodjNFUVpzQ1B1dVFYa0t2T1ZO?oc=5"
         },
         {
-          "domain": "quiverquant.com",
-          "firstSeen": "2026-09-24",
-          "lastSeen": "2026-09-24"
+          "domain": "reuters.com",
+          "lean": "center",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMiyAFBVV95cUxNTmphT052eEZvV1JCb3JYVG43QzRHSzZURUtsRk5Lclo3VDF3bE55RTZ1bEp1UUFvTklyeWNRd0k1bXdENUFGaThfUTVQZXZTUjBYck5YYy1qNEdtV040SkZObzY5QlRYbnJ2dFBVRTBUdlB6bFZVdlZMOU9uSkxTbHR1MElGbjZUQTF1blBrc1h4OFJOUGlleEQ0aVBCUEZzQ1FtNUVYSnhwRGZtbU5Vb012YVRuZ1hlSFFGSngzSmN2bDBZVWprUg?oc=5"
         }
       ],
-      "mostViewed": null
-    },
-    "hr-5490-119": {
-      "outlets7d": [],
       "unratedOutlets7d": [
         {
-          "domain": "tomshardware.com",
-          "firstSeen": "2026-09-26",
-          "lastSeen": "2026-09-26",
-          "url": "https://news.google.com/rss/articles/CBMimAJBVV95cUxQZnJFb25uMFRtVlppcmlrRjNEWEp6X0FldFpQc3FyN3dscC01aXRYT1ZTb3lKY2VROEFlNjY5X1ZZeDZQZFdQQWMwS0J6Y3VUdGhpUmlnMm40SGpiNGZRcnNWQm5FaTIyWkhKUEx1M0l5NEFtX0hxT3ozZ1JPOHZBWVg1c0h2Nlg0QldPWkFvSmhQQ01OalJ0YjUxM2JsU3lxMjZYbVp0d3ZNRDZORUg0REIyenJrYVA2U1FHSFk2cUhVNkxWOGtJS2ZONW9TU3p0Nl9jR0FZNDRxTlJPbUlZMTBuUlQ0SU8wQ2N5SUdOc3ZSck16akpNVGZFOUFFWlVySzUyWVhZS3BkV0VQZWxsd1ZmNDI2Zk5E?oc=5"
-        }
-      ],
-      "mostViewed": null
-    },
-    "hr-5768-119": {
-      "outlets7d": [],
-      "unratedOutlets7d": [
-        {
-          "domain": "medtechdive.com",
-          "firstSeen": "2026-09-25",
-          "lastSeen": "2026-09-25"
-        }
-      ],
-      "mostViewed": null
-    },
-    "hr-5772-119": {
-      "outlets7d": [],
-      "unratedOutlets7d": [
-        {
-          "domain": "wdet.org",
-          "firstSeen": "2026-09-24",
-          "lastSeen": "2026-09-24"
+          "domain": "mb.ntd.com",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMisgFBVV95cUxOc21TRThjQXB2dDVCNnotMnE2WjR1UU45bzdrWEpabmZoeE5vSU9PWmRYYU9wdGRLbGF5dkhvODN6QWhZNVRTdDJ5NXNnQzJVRnVHMjZzOEFyRDE2MTFGQlNldDFuaW5aMWN0d1dpMVJjN0ZPSUZ3ck1sVVNpRTRRaWR5ekUtV3BTUnhMcUJkN293Qllka0RjNF9uMXpCZGZNTFA3Q2tCU3J4Yjdfcnp1UTh3?oc=5"
         }
       ],
       "mostViewed": null
@@ -687,39 +856,16 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
-          "domain": "northeastlivetv.com",
-          "firstSeen": "2026-09-27",
-          "lastSeen": "2026-09-27",
-          "url": "https://news.google.com/rss/articles/CBMi1AFBVV95cUxPNVQwWXpraWlycU93allSSEdpY3htdzkwN0RJRTVoLTFjSC11UXM4NXliWk9xQlY4ZVB4ckx5cVZfS29KNXRPZVUzb1ROb3djWmhyeWtTdWRNLWFOUGVmT3FPeWsyUU5RVDdIcUlsZWpFRlI1Y3QtcUFiaWZBRUhVM2NpNXFUbTZqT3BLR0YxNkcyelRaME9sTmxvOHlsaEVNdnNSQWZBcW5wV0FqUnFXektJdlEwbUNycHh1T0dQU1NQb2pCRlhDVXIwUVBCX2tGNmFETw?oc=5"
-        }
-      ],
-      "mostViewed": null
-    },
-    "hr-5961-119": {
-      "outlets7d": [],
-      "unratedOutlets7d": [
-        {
-          "domain": "chippewa.com",
-          "firstSeen": "2026-09-26",
-          "lastSeen": "2026-09-26",
-          "url": "https://news.google.com/rss/articles/CBMiogFBVV95cUxOel93Zk5mSWpBTU8zbzV1VG1RMmN1QUpmSzRheGtsd0ZqaFRMQXBCNl9sbG1JVU9RSm9DWVNNMUtPaUhXODJBX1VfR2I4SDVuU21jY0RkRkIzRkxwZ3JKRFhDR200eEQyZzVtNVVheTYyUzVvNlJEeXpwLUFHdmc1Z2RMRlN6T2lkUjgyS0wyWlRSS2ZkRzdwNG9waDJNNFZhblE?oc=5"
+          "domain": "ommcomnews.com",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMiowFBVV95cUxPSkpuQWFyVl94Nmxqc3JCY3dMVnEtTE1pWUVZWl9tZTZKcnJVVEVINUJSLWpyMTJ4SnV2YnlfX1RWWGU2T0VsRmctQTZFYTZEeDdjcGF1eXdOdGszcXY5cGVuSDJzTm9BalRGQVFYZ1U0MkUyVkdQaUZZdXBSS0lXRWVuVmhaVExlczZjTWxuSno1dURZZWw0Mm9mcER0ekdac0JN?oc=5"
         },
         {
-          "domain": "wisfarmer.com",
-          "firstSeen": "2026-09-26",
-          "lastSeen": "2026-09-26",
-          "url": "https://news.google.com/rss/articles/CBMivgFBVV95cUxOOUhWbHBTWk1VamxOeUw2NHlOcy1zcE5Yb0ExcWNBb2FSdWVfRlJGWnhQa3BLc0trSnROMnJ0aE1aSHppT3hORWVvRDBxZkloZnE5VDRvZXpDaVVibVdXU3JUSE0wOF9rMnN2aDB4NTF6MWFyRFhzdV85LTZiTmhpWVZqTEMzeGlIXzhScDJNeUlRZlFHYXNMYWI5RkZ6MURYMGZpTm1ac081TmJHZ0JYU242S2hyX3NoN1RoUzh3?oc=5"
-        }
-      ],
-      "mostViewed": null
-    },
-    "hr-6145-119": {
-      "outlets7d": [],
-      "unratedOutlets7d": [
-        {
-          "domain": "sunstar.com.ph",
-          "firstSeen": "2026-09-25",
-          "lastSeen": "2026-09-25"
+          "domain": "socialnews.xyz",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMirgFBVV95cUxNTmlURUhMNG5KeDhqNU5lV254UzJIdGRoeG9mSjF0eVVFa196NGlyWkhySl9PdG1OWUtYRlRLRVN5dFl5YktWRGc4bmVsU3YwTzlROEM4dThjaV9CTGEtYmg5cEdBakdnUWhhVFpuNUpLNlhneUpOX2xaZGJRZzdQOU5uZ0VwTWJmSFg1Uk5kVlZBMnBCMFVpY1YtM0pZbFBHY1hXdUk5cHZpdFVKaVE?oc=5"
         }
       ],
       "mostViewed": null
@@ -749,25 +895,20 @@
       ],
       "mostViewed": null
     },
-    "hr-6373-119": {
-      "outlets7d": [
-        {
-          "domain": "thehill.com",
-          "lean": "center",
-          "firstSeen": "2026-09-25",
-          "lastSeen": "2026-09-25"
-        }
-      ],
-      "unratedOutlets7d": [],
-      "mostViewed": null
-    },
-    "hr-642-119": {
+    "hr-6380-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
         {
-          "domain": "yoursun.com",
-          "firstSeen": "2026-09-23",
-          "lastSeen": "2026-09-23"
+          "domain": "azcentral.com",
+          "firstSeen": "2026-10-02",
+          "lastSeen": "2026-10-03",
+          "url": "https://news.google.com/rss/articles/CBMizAFBVV95cUxNcmRRQjBZREYyWWJ0cHl2LW9LaE5BSEcwV2U0OWxoQWx1UWFuM0p0VGh2V250N0VJUDlyTExyLTk2M2lJNXRlUFNLRno1MEQ4NTloc1dtU3J2MklubUttZnFxMVNQOUpVdUVtWHVxTjF0VzFlLTBYY3g0bGVYcGlMM3VWdC1QRExuSVJBakxVaEpOUUZ6dUVYdEt5NnZkaEloemwxempTWjMwQ0pBSk5ZcHVRYU9XQ1Y3OFZLb3J1WkljZ0dlVGs1NWpfSlA?oc=5"
+        },
+        {
+          "domain": "coppercourier.com",
+          "firstSeen": "2026-10-03",
+          "lastSeen": "2026-10-03",
+          "url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxQOWtPdzBiUF9ubGtwLWtXWVNwQ0k5SXMxOUxWSVZkR25qb3FwN21jXzB3QnozejJWbmR5dFFOTGRUSjBWSUhsTkhrZFNmcHlGNDZBZ09RUlFDMnV2c0RQRV9ibHhyMVhJSzE4amx4WGw2YUpoaHpMS0dWU1U3RDZQWXVB?oc=5"
         }
       ],
       "mostViewed": null
@@ -786,14 +927,28 @@
       "outlets7d": [],
       "unratedOutlets7d": [],
       "mostViewed": {
-        "weeksOnList": 8,
+        "weeksOnList": 9,
         "lastRank": 1,
-        "lastSeen": "2026-09-30",
-        "lastWeek": "2026-09-27"
+        "lastSeen": "2026-10-06",
+        "lastWeek": "2026-10-04"
       }
     },
     "hr-6529-119": {
       "outlets7d": [
+        {
+          "domain": "npr.org",
+          "lean": "center",
+          "firstSeen": "2026-10-05",
+          "lastSeen": "2026-10-05",
+          "url": "https://news.google.com/rss/articles/CBMiqAFBVV95cUxNd2RKeE04R1d5TkhDcm5BZ0x6M1VqLWMxZy1qVnRSd3QxUmRhZzJRS1ZkOGs5UlJnWGxsUmZzSE9wazg0MHFlYkVXbUd4U2ZHeXNsVmMyZm9Nbm5iRGRhV0RSQzFtNU9mVm15clRaN2owdHhWN2JYRzFPY2huVkNhejdIQTEtOFB0T1V5d1Q1d3dmWGd3cjNBT1NQcW1Sa1pocEs2WFJnMFc?oc=5"
+        },
+        {
+          "domain": "cbsnews.com",
+          "lean": "left",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMid0FVX3lxTE9YWkVKVXJ6Z29CNGFZMnUwenlmQnJNOXpOUldnMnB6N1l2VG81ei1ySHVzdkJkcDlfU2s2dWJUUHFDbE9tazF0UXhDZnRSR1B0NVQyNG9Ib3R1TXhrcXhnbmh4NUpCYnppWTBBVGtvcUZ1am5pbzBR?oc=5"
+        },
         {
           "domain": "newsweek.com",
           "lean": "left",
@@ -807,72 +962,120 @@
           "firstSeen": "2026-09-29",
           "lastSeen": "2026-09-29",
           "url": "https://thehill.com/policy/energy-environment/6117779-schumer-gop-ai-data-center-bill/"
-        },
-        {
-          "domain": "foxnews.com",
-          "lean": "right",
-          "firstSeen": "2026-09-17",
-          "lastSeen": "2026-09-23"
-        },
-        {
-          "domain": "politico.com",
-          "lean": "left",
-          "firstSeen": "2026-09-10",
-          "lastSeen": "2026-09-23"
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "osagenews.org",
+          "firstSeen": "2026-10-06",
+          "lastSeen": "2026-10-06",
+          "url": "https://news.google.com/rss/articles/CBMiiwFBVV95cUxOamE4UVRTWThVclpfTEY1T2lQbkV1bjg2dVhsUUNMd0VVd0t4UDNBaktwS2tlV0oxVzY5N0c1ZVFUbENoTTllZWhXNEh3UWExSVJQbnNQSEVMX2RXdU1vTl9vUDJYMUw3Qzc3REctNEhGM2xIaWRnQ2pmSHRvMGZ3amdoZjZyaFpsakVn0gGLAUFVX3lxTE5qYThRVFNZOFVyWl9MRjVPaVBuRXVuODZ1WGxRQ0x3RVV3S3hQM0FqS3BLa2VXSjFXNjk3RzVlUVRsQ2hNOWVlaFc0SHdRYTFJUlBuc1BIRUxfZFd1TW9OX29QMlgxTDdDNzdERy00SEYzbEhpZGdDamZIdG8wZndqZ2hmNnJoWmxqRWc?oc=5"
+        },
+        {
+          "domain": "aol.com",
+          "firstSeen": "2026-10-05",
+          "lastSeen": "2026-10-05",
+          "url": "https://news.google.com/rss/articles/CBMie0FVX3lxTFBUaDZrLW4tektWODRpbDF6UmoydE1BRVNkQngyenpFeldHTHo1Z1FWT29nbzhMbmRqNGZudUFabjJGNE12WVUycmY3Y3ZkN3R4ZFg0bGp2ZkV6ckZfTGRvdnM5NUZuc2dMMzNqeW41NkhSc3p2dTZkdGphcw?oc=5"
+        },
+        {
+          "domain": "ypradio.org",
+          "firstSeen": "2026-10-05",
+          "lastSeen": "2026-10-05",
+          "url": "https://news.google.com/rss/articles/CBMiqAFBVV95cUxNczVncnAtWjRKVnFraGctYkc5MUVRUXczSVYxbTF2clFTVjdXQ0lnVVRyRmN3UWZxcmZhbmY0VEd1SnU3VHpZdUVyZ0VCUDNJSGcwREkyU3o5YVdrQmxJZXJwQUJfT2dYUzV1X1ZfSUFvdDNpRE8tSVZXRU0tbnNQeWdqNUtVc0l5aHdNNzR4QlBLZHJXdU4yaDJ3M2tuQTRtbkZNWEtHazY?oc=5"
+        },
         {
           "domain": "kgou.org",
           "firstSeen": "2026-09-29",
           "lastSeen": "2026-09-29",
           "url": "https://news.google.com/rss/articles/CBMizgFBVV95cUxPSjBFbkNQZ2NlUVZxVWkyTmt6Rnl4MElkWFg2SmViYlZvTUI2aGNkY21XNTNVR0tuSkw2bU5Mbm5uaGk5U3ZoYjYwRWlMejEyU3M2U2NSbGltMTZkd1N2Y0h2YThydXc0YjBSUWVJeXY4cDBOcUZSUmdaYm9ldHV2WUdDR2NuVWVnZ0E0VVVZbW5BaE81bHNEamZXWHFGOFpSSTFwX0pNQkxXR0Y2VGhSVnQ2bnpwYVhjekJRUExVbnJRcHd0d0p4R1l6OHhqUQ?oc=5"
-        },
-        {
-          "domain": "thealaskacurrent.com",
-          "firstSeen": "2026-09-26",
-          "lastSeen": "2026-09-26",
-          "url": "https://news.google.com/rss/articles/CBMicEFVX3lxTE8yajRzY0F6czBPWUZ4MkFPdkxOTm4xNk5PUmkySXpJSTIwcThUR0RkYzlwcnhqa2JhenFzR1kyLWJnVk01V21VZHBGelB0OE5mUWhXb2pUd3MyM3d2RGNvaTNBV0JfdkhtTndqeWRWSjU?oc=5"
-        },
-        {
-          "domain": "wcpo.com",
-          "firstSeen": "2026-09-25",
-          "lastSeen": "2026-09-26",
-          "url": "https://news.google.com/rss/articles/CBMiwwFBVV95cUxPMlFqaWVwWmNBUWFkbGtqQkpJQXRKOUoyWXdmeHJDWXZ4VTdSY2Z6bFd6b2tDUlpOemt5VmVoWkNiVXczRmJWLWhYbnpmbFVxVGFVcGZycUtTUWgyakdaQW5NOWZ1a3VPblR5dm96dDNuX1puZThmdXJLNE5yekJmMHV5RFdPTVBGX2VVaFZ1ZzkzMEV3QWpiSnN0ZUNVel95ZTdOU3BzWTQ2Wko2UlJfNnptX3hvMFFfd0I1bDVtaW4yeEk?oc=5"
-        },
-        {
-          "domain": "njspotlightnews.org",
-          "firstSeen": "2026-09-25",
-          "lastSeen": "2026-09-25"
         }
       ],
       "mostViewed": null
     },
-    "hr-6832-119": {
-      "outlets7d": [],
-      "unratedOutlets7d": [
+    "hr-6597-119": {
+      "outlets7d": [
         {
-          "domain": "hoodline.com",
-          "firstSeen": "2026-09-27",
-          "lastSeen": "2026-09-27",
-          "url": "https://news.google.com/rss/articles/CBMiqgFBVV95cUxPSFk1XzRZeFZjMEhVaWRIN293Rmg3TGRLTU8yak1UdXN6S2xiZVZYNWlKNThMWXVWWlJCOVVENW5TN18xSWx0X2gtNDF1X2VYa2x1b0htQ1ZaVWdVaVlKbmUwM2RzMHBIUnl1Y3pidFdNU1NiTzcwVXR4WkZSb2tJZ1lZa28zMnU1b0t2WGxFbHdHQlZoMkQ3SjZDMmswZkg4cFBCdWtsZGdKUQ?oc=5"
+          "domain": "newsweek.com",
+          "lean": "left",
+          "firstSeen": "2026-10-05",
+          "lastSeen": "2026-10-05",
+          "url": "https://news.google.com/rss/articles/CBMiekFVX3lxTE9xdmJDUGFXcGk3aFhST19qQVJ4UGhhQjQtb3NyMnFLRUJVRHluMkoxTFo1eHRrUGR1R2haTUdnSnpkaVo2eWlsS25EUC1MUTB5ZS1oMzdLUGJ1LVpIQ3FzWUF5aXBEdU1kMFM1bGZubWhMb1ZvTW84dFNB?oc=5"
         }
       ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
-    "hr-6856-119": {
-      "outlets7d": [],
-      "unratedOutlets7d": [
+    "hr-7004-119": {
+      "outlets7d": [
         {
-          "domain": "easternherald.com",
-          "firstSeen": "2026-09-25",
-          "lastSeen": "2026-09-25"
+          "domain": "cnbc.com",
+          "lean": "center",
+          "firstSeen": "2026-10-05",
+          "lastSeen": "2026-10-05",
+          "url": "https://www.cnbc.com/2026/10/05/don-davis-prediction-market-candidate-trading.html"
         }
       ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "hr-7008-119": {
       "outlets7d": [
+        {
+          "domain": "reuters.com",
+          "lean": "center",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMiogFBVV95cUxQZ05ZTWN6RUNvTGVETzdsejlqam1USDRBUHdSWlJpNE9FZEw2UENFb2hqeUk1bXZ6RlpYTWVJQjR6djYwLTNkMk1RSlhfNjFqMWt4Y1VPNTlHLW1Kb3BTTloxQ1o4NmVkQUs2QlJpTDU3blpKM3EyX1I2WU4zN2hUMVgtMk84YVdzVUttNVp6a2FMWnBXVE12endUYWNmNTh3MFE?oc=5"
+        },
+        {
+          "domain": "cnbc.com",
+          "lean": "center",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://www.cnbc.com/2026/09/30/senate-stock-trading-ban-data-center-election.html"
+        },
+        {
+          "domain": "cnn.com",
+          "lean": "left",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMifEFVX3lxTFB2VGpWMW5vcy1UUzZ1WTc2ZW1kYU92QjMySGkwNVhQTWF0ZlVCMkZ6NUEtM2lHdVhLcXhxWVJxX1lsMkFPMWQ0Zlh0QmFoQnFUVzR5Z05naTJfUWtzemNYUl9SbTU0NVZ2ZWZzMmNLYmlGTUxlQXhUcVNlb1k?oc=5"
+        },
+        {
+          "domain": "newsmax.com",
+          "lean": "right",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMif0FVX3lxTE1qNWpkU21nTmwxNThsdnpzeG02NVFNQmNaUHBRZWNWOHdQQ1R1TmE3TzVfUkE1MHh6eFRRTUp4M2VRcGZGY1RnanJMUjRNOG9uN2JqUFFIMEFOUFRQTWtmWUVFYTlBWTQzd3prd1dVRUpMV2YxQVRYU1hSQXdkQms?oc=5"
+        },
+        {
+          "domain": "newsweek.com",
+          "lean": "left",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMipAFBVV95cUxOcnBNRmdaazFJdnFSbGUyWEVTVjlYRFdmUHh2MlpiZE9rM3BiMVM5NndXU1EyQ1gxY2VrMUdBYTFjZzZsdV9LWDk1T0lsemh4Y2JSRkNsUklnV1RoeEVlRDJRR2VBeGs2UmFSbUZSemJyRDFBV29OZ2VPZXRsUGNOM2x0NklVTVJhZ0hBZmhWRDNJSnF2N2tKalh3WlZYX0ZMbjNBUw?oc=5"
+        },
+        {
+          "domain": "nypost.com",
+          "lean": "right",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMingFBVV95cUxPOU5JMTBWVWtONklqYUlMdUxUUXRrV3RUUHpGSzR2YWxSWUR6RklwSEtpMDhNTWdIVjdkOHVaYWNUQUZIaVU3S2w5ZUlTWGFXYWRKTm1TVFpvS3UxazRwYnJVRWl4OFJtQUJmUUFsbXlwMXdjbGVkb1JBbGtOcWhCSUszVXBGZ0V2c3BUa2VyaWc2ZmhRUUw4ZU43S29MZw?oc=5"
+        },
+        {
+          "domain": "nytimes.com",
+          "lean": "left",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMijwFBVV95cUxOSVRucWl0b3MwaEVNam45R0hqQXVCdktWOW1mbFdMdC10NEthNENTb1p0cndUWG1kMkxua0VEczdYcTV6SDhFZGJ3Y3JQakwxTkV6NXhxNkY3QnAtNmNKUXV0NWZyVHRuUXYxc2hJUVVlYW8xMFNsd0UzYWNjOVpQNk56Zk55aElWZDlyYm5iZw?oc=5"
+        },
+        {
+          "domain": "politico.com",
+          "lean": "left",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://www.politico.com/live-updates/2026/09/30/congress/senate-stock-trading-vote-01099912"
+        },
         {
           "domain": "thehill.com",
           "lean": "center",
@@ -881,8 +1084,164 @@
           "url": "https://thehill.com/homenews/administration/6119378-live-updates-trump-ai-tariffs-hegseth-pentagon-cuts/"
         }
       ],
-      "unratedOutlets7d": [],
-      "mostViewed": null
+      "unratedOutlets7d": [
+        {
+          "domain": "nrcc.org",
+          "firstSeen": "2026-10-02",
+          "lastSeen": "2026-10-03",
+          "url": "https://news.google.com/rss/articles/CBMiswFBVV95cUxQUEJXOUJOSUh2dkJFa3BXOXNLVWF6RXJOenUzcUxFOFJCS05sS2xsWWNrbjI4ZEJGUi1VSk01elF0Q09IZE5Wa2tKODBHNGktWkx0SFNnU2NiZTJqRFlKS1hZSmxnU1Y5R3JwTkdyV2kzX0tXRERhVHg5TEN0VlNwX3ZXT3dMSURDR1hEQ3NpUnVEOHNUcmhCUUZDblFyeC1PY0FFRjFaZUxOdi0wNjRXRG9TRQ?oc=5"
+        },
+        {
+          "domain": "latintimes.com",
+          "firstSeen": "2026-10-02",
+          "lastSeen": "2026-10-02",
+          "url": "https://news.google.com/rss/articles/CBMixwFBVV95cUxPenZPa3dhTjhSV3ZSTlNZbjU0RjNPVTU4SDFuUklaSVIxa0FjOUJkTlluUXZySy0zTEQ5dTRxZVQzc1dOVmE5YTU1dXhLWGxtdEFXNDUzT3hZWGpvZmU3Y2ozUTN4NkVTczYybGJjckY3WVBmaFctU21GYXpZOGR1MDZ6WlhIbnJDeTNvNDRtMHd6em44Y2ZIS2cxa0VqeUhQLWlCVlBoN0FwV1o3S1hwUVpTYTd2Qll5Rm1tcTd1S2RGaDRfVEZj?oc=5"
+        },
+        {
+          "domain": "wispolitics.com",
+          "firstSeen": "2026-10-02",
+          "lastSeen": "2026-10-02",
+          "url": "https://news.google.com/rss/articles/CBMirwFBVV95cUxPazFDMS1qU1MxelkyMlJ5ZjRGREJyREh2YTh3TzF1VlRaS3IySGZEMGk5V3hkV0hZNy14OHRjZkJnY2MzWHlXVldXbjV3Vk5mT3NlZnJLUnJoQS00S3VBVUQyZlJhUlY2YjdJMGdoNGJLTi1BNGxVU0JGbWdFU3NoZ2tkRDF2b21GdERvUjgwNndIMkx6UlpfRlVOZlpsekdlZXBOMU5TYzVEcnVNN2hN?oc=5"
+        },
+        {
+          "domain": "247wallst.com",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMiqwFBVV95cUxNa0g0cF8xWGhKNGVTVncxWkhSQTFVRXNzM3N6M1UzdjgyRmg4R2dIOHBWZXJHaks5ZU9TellxVXZUWl9zRm90dHBUZW5ma1pCZjdTVDZhZElkN2xwVmd0X2JjbmthVnpwb2NOQmJCb0VvYnpYTGxkUXE5Q0w4c2F6Z1djVE9SWk4ycnlMdU1UUnRWanNGQUlISF9VbmhxeDFyVHAwbkl2cWhrN1U?oc=5"
+        },
+        {
+          "domain": "benzinga.com",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMi8wFBVV95cUxNRWZ0Rnk3bXlKRjl4cXVKVXlnRHg5OHdNSV82Z2pqOWRxalYwWV9zdEplV21RbWJoYlFXUmZLSjd3bUMtV1hjTV9vZHRoRmM3a0JXdHFQSmlkbWhYQlpLMUIycjNmYm5nb3JqQlhDX3Z6S0x0aVoya1A4SFNZdU5BOGNoQThXR2M4Y1dfajkxU0RVM2J2dmFmeGxlZDk0X194TU94Y21BOWYyS0E2VFFKQTRrdU1WSE05TGdSa3ZWQkJTQjlVN2t6VjNTejAxQXItRVpEUEdjTkg0bVJMNkNGbmtDU3hHLUR3amZWY3M1ZTlEaFk?oc=5"
+        },
+        {
+          "domain": "bigcountrynewsconnection.com",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMiwAFBVV95cUxPOWc5V04zbXlSTVIxajdnVzAzZnpKVmRXSTY1aV9CUXpZMlEyVkI4TVJZWDZhQ19rbHYzWHYtS0hnbDJxSW0zbmFicEl2QlBSeDRYQUJVYmQwUFE3N3AtbWpkaVZKbDloaU9ETFZSNFZjWGFVNjk4U3I4X1dTTngxaEVtMm5ITHlfTFZQUU5MUWk4cjlaQ084Y3JLdEMxMUIzRUpEUUFocy1IVjVnLXI1SnMyTzNPRGI2UXRUZXRkblE?oc=5"
+        },
+        {
+          "domain": "cobbcountycourier.com",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMivAFBVV95cUxOMU9EeHZ0S1BoRWR2bFpwbG5MbkF2RnZ2NzNTZ0NhYnZabTIwQ2paXzV2ZHVMNDZNZmtVN3ZuMGpFT1Q4NmRXQVJkMi0weWZOcktFTjdzRzlXQ09lVGhnTFViZTVsVXAxRHA5WmVnQ1FtTWRhcW1IZWpqcV9vTlhEUGxNNE5Sb0V3SjNZTWhQYzRFYm5SRGtwdzk0TlZqTjZ3d1pyZ2MyNkM0a1N4T1hFQ0VORHFTY2ZEcVRPUA?oc=5"
+        },
+        {
+          "domain": "denvergazette.com",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMinAFBVV95cUxNWTFjdFdEdjhRYzU4RjRDVVdCaUQ3WEU5NW1zd2VyWldNRm1pZjBjeHQ5LUtvZ1pWamZKZkVPcVFfV1J4RzJNbjRZWHFRVi1oeWIzV0NOMUVOdGVUU1VPSTNQMDQzYWZBQkluMzFoSGM2Vnd3WHhfZmxSZ2VMQXFHb3R5ZHI2Z2ppTV9keW9pSzQ3by1EWXFlRUNFUng?oc=5"
+        },
+        {
+          "domain": "heartlandernews.com",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMingFBVV95cUxOQ0N0NE51TW9uNktXMVpGYWx4OHk0Mi1GVkFTekdkWGZFV2RfbE93ZWprQnIxZjRQZFFmQzF0Rkt6QmRwMFV5WWNHZHFkcnhta2hvU0RqYUhNSDlqeFNsbi1pWVFvTzJFYjRvdnRtNWM3R25FelM3U25sdEIxMXM3RWJjcjdmNTNWbXQxVDNHa1hROWNGN0xwQzdsNHh5dw?oc=5"
+        },
+        {
+          "domain": "merkley.senate.gov",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMivwFBVV95cUxNaHRwNHFUdTdWZmV0cVRUVXRnaDBHdlFXdDhmVTYyc3NkeWdzb0x3YWtDd3hSbmRVTXZ1R3kzaWg2QS1UTjVteE1xZldwM0pieG9VY2pnSHVReTNqMmNWd0hWZEROZ3ZSbjhKY01BSmFZOFVJMjN1NGJ0TkllN0JkSUVTYndYSVVvS3luU01DUVJrOFZtMHN0X2RSM2ZUU3BoYmZTX0VjUEJWcmNJbnV1S3oxX0N0WjJKekVnUGgxMA?oc=5"
+        },
+        {
+          "domain": "ntd.com",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMijwFBVV95cUxPVjA3RlFWUm1jbU4taFRXZzNQS1R0WkV2a3dZTmhPaXRseXI1NTY3UC1lVkZCRXQ0RE1EY2ZEUFlycGMwUjRPN2tBcU5ZeXh4c3psRl9XOS0zN2k2VHE5c28xOVZUNVJJZFFYNUhxbVBQVWxrTnhzUk9TX3RUT2o4cWZVRTZCWUM4SEM0Mm15NA?oc=5"
+        },
+        {
+          "domain": "politicalwire.com",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMilgFBVV95cUxQUXZpTGlJNGE1Z3ExdUhBdHpqX3hoRzJsQnBHSkd2N2JsNmY2dzJ2b1FLUUVIbXU5dGE4OFhYNVhwTThVdUdKZkF2ZUl4MWhoT0w3TmxXbkVSd21QNFFFcU5vNTFqMFNBZzhiRHBDbFZnWTkwLV90RG9LVHNjbTV2X1F0eEd3bzgzOEFGWXY1SzB0Q09DNlE?oc=5"
+        },
+        {
+          "domain": "sundayguardianlive.com",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMikgJBVV95cUxOQXRBNG9oVnZvWUJpaEd3b0pIMHNMc2JROGFpb1NzWklRbHROMVZ3bV9ld0hXSUFOOWZnWWJmb2drTERJQ0ljcXZJOUNMRVdIU0xtS2JqUzBNclRTemlOejMzVnY2Q2FnVDl2QmVqMHZqZTBNVXY5VEU5U3VhV0pEQy1EcklTblpMbnI4WXVERkN2VVZPOHBsekxJdGVUQjhMMy1aMzNGRkpFLWVnTHFoSTBralo2eU1LY244cjJDdEhMdW1taTlPOFZIYlZBUGR2ZkVtWFdLX0RNdk55M2Z2WFhuZ20tblZpS3FEbzFjU3gwRURkQVBaLWhKQV8yQUJ6MEo2QlhtbFFmamI2RkVRUDBR?oc=5"
+        },
+        {
+          "domain": "tradingview.com",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMi1wFBVV95cUxPeHB0YXFLNVMwZEFUQm0tN2F0OVBHUHB1V1pxeTBydWY2WmdMQUhDbG1oQUFiNWdvSVZiUE8zWmxIeF9IYm9FejhPUGh5YjdnSWZIMVVzUzlRRUQwRmppWUdIemJIdlo5LVhuNEFGa2s1OXI2cjVKaG8zYnllVFdNcVBuQXYza1hTcmV1RkZ2NDNwYWlkV0czaGZ6YVpUNnVuZS05Znk0RjVmNXRMd3dkSFlqM25QY3hZUlJhSWhVaUlxUVRKa1VXbjk1bVFPMXpWZTEycFRfNA?oc=5"
+        },
+        {
+          "domain": "wionews.com",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMiqwFBVV95cUxNSjVaYnZqZl9GM1RNbXVZa3lXUkg5cUcyNmFIeGdsUlU3MFlFdXc5eVdqMGlEa2gzUzFTSFJHMVduYjViNFk5X1JBU08xMTgwOUtidW5Jb3V2QkNNZHN6enNNN2hxb2xWenpXUEV1RmJDajNuN2JFd2VlcHA0QVdqYmNqZFkxSnlYci1EZVhTVVFjMzNISDZlWDNiNHQzc3dPcTdKc2p2dVhEaGfSAbABQVVfeXFMTUtXRTBnS2JOY0hIXzItbTdfNkdqSzNGRHBaUGZITndSWHdyRGhGM3pCcXBXd3dWRlJGZWdOWFI0VHh3Y0FpcDBwTGNkUjlPcVJZZW9PZFBOaVJqQWx2TjZBRm9iYVhlRVVQNEFCaUpPQWNWV0RpeXJfOUVzUlFyakpqSlpTZkltVWpSSHZkQWpGbzZOYUFCQ2lGbmJYYlY5cURweWNwV1NCamFVT3VyOUc?oc=5"
+        },
+        {
+          "domain": "forth.news",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMiYkFVX3lxTE5sWnNjaV80a2pmN3pncUJtNGQ0X3otN0J3QTNwVGhXWXBLcjNoYVdTM29DOTRkSVU2NUx2eW1qRi1GN0tyX1JZME4zYzZaekVQeDJIZEcxUUhmZjUtM19zRkhB?oc=5"
+        },
+        {
+          "domain": "investing.com",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMixgFBVV95cUxNc3VNVjduM0puWkZuX3RmVnFVN2RubVJsc1NVSXR0dHYzME1oZWxGRmdUVFNBOEpDQTloMHFFUlNqT2IyczFnYjlWMktBTmxFcEtfVUs1c1BVTV83SDgxek92WnM1c2VmdWRIek1CblcwRWdTb3oxQjBHNXVGQmFYZDRMWDE5VzZvcXp0RmRTeDJYckxqUVI3Y3FLazhKQXc2RUxVazR5X0FmNzJXcUowbmhybHF5cUpSZjF5X21LVW1sZmp5OHc?oc=5"
+        },
+        {
+          "domain": "lufkindailynews.com",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMi8gFBVV95cUxQVjhkSms2MXNqdVFrakFhcFF5bTlwSkJFbGhQd21IQVl5RUN0SDVnYjZNcXRDUVdEZERWRGNTYWlYLWdManJlNUpHbW50Ukp4Ukt0ZUd5S1ptb0sxeFFBZlNaRXA5V0ROc0RjMUZtUmY4dmRjbmdQYmQyUzNVNHhTUW1lVTlKOWoyMkxIdjFYVGpWRkNYQ1pUcTJYM0d3c3M5UTlmaTFoNUlxdnVUN2N4NHJYc1k3R1ZRYjVEckZFNGlwVThXd2Jxbk0xTTNEV2oxR2FUNVVzRF9Ecnh1QU40bWczMmxzX3doWVhQMVNNNHNrUQ?oc=5"
+        },
+        {
+          "domain": "mezha.net",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMiZEFVX3lxTFBqZ0l3aWF4cmI0eVdsaWNMUnd4eUxZOWNTN3hpdUg2V2JUVTF1M0doWGZZd2ZZUTFJR294emlyWFJ4OXdmZDh0WmwzU2k2YlViMGZ4UEpJcHkzS3VFZlVlcEhtWkw?oc=5"
+        },
+        {
+          "domain": "newsfromthestates.com",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMiwAFBVV95cUxNbUZGX1MzSGhDYm1UYm9xNzRQWEY4X09QNTJ3M3hENUtPeTU3aG9tTjh1Xzk3VVFXYUFrYkFsVmZTTV9KdWxOa0gtcFkxdFlSck1odDVueVpDVkd6aHRqYzg1RDdSM2hqdmtHVjdwRmdFNlA3UnZ6Z2VGRWZZUXpxSGxrQUlac1RhekZ0NVNLbm1MYm9WcFJMZTJaQm0tSEU0SWNxdGRvU2VsQ2s3N3ptZEdySFdSeXJJR0hTaVpJdkU?oc=5"
+        },
+        {
+          "domain": "northpennnow.com",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMitAFBVV95cUxOa3BhQk5uZ3pETVFfMHQzbkVOdTNjZWxaT25BYjRLbzhYbFczTUUxYXZVakZ5akxSUmFST3dZZkxNRE1zTWx3eHR5TnlSSll4LWpOVUVfZFdPZXU4aEd5VW9iVEtVbGFwTTJLb0U0SE0weWhtR0VqYjFyODRQQ3FiRmtXUFhCVndReUxWcHl3ajZfYnk0ZHJ0S3J1VjBvQ2pOc0lEbWl5X0dPN1d0ckNwWGdvcGk?oc=5"
+        },
+        {
+          "domain": "qz.com",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMid0FVX3lxTE1EcTIzSmxBU2RROW9ueWV6czFuYWplb2d5Y3A3TUpUeWpyZWNRajBDOUFDbld3RmFRNjZsWGZxdkZfb1JZX2lGSHVnckV1WFUwQ1JuR0pOallBWDlDSV9wOG04bEZYb1JmVnJsT05paW10WFpGbTFZ?oc=5"
+        },
+        {
+          "domain": "rollcall.com",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMiiwFBVV95cUxPMEhVaHVSQmxoVlFCcUhEeWg5YlNtWkdBM3VyZWVST3JoVVN1ZFg4NUp0aEMwLTctMnNfTjZtdmVpZmlWQ2N0SDNVdlV6b1ptWXBfNW1jTTE1U0otNUZmSVowUXExbVVXNGtvSXctZHV3VDdhRHhwWWRMU3BNRkdWNE96dTVMaUkzRkE4?oc=5"
+        },
+        {
+          "domain": "timesnews.net",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMipAFBVV95cUxObElDSVpQTlZyQ2dzMmlTWXlwcWRBMUhwQTl5WUlyc3NJWkdnQVo5TnpOR1JfcGY1bXlZRDRqZTFpQWNYdmdXOFFHaEFjalJQZ3pJMGtZSzJ2Ml9ZdldpVXVPaFpJR1hVSmY1NW1CQnA2cTlMSmtkc0xscUl3SDl6MjJjTm9teDNtdkdOSzV2dnZUWUpZOGNUOTlhMHIxMzhHVkd1bg?oc=5"
+        },
+        {
+          "domain": "ua.news",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMioAFBVV95cUxNa0pITE03cGVBbVJRYm1jQlBTdXByQ1lxRFdwUk1XTFk3TUxZa2dHRjYwSk8zTklHQjZHVngzdUhFREdzNWtjcXJTdmYyUm5xRFR2M0x3NHNKTW9ZVlVIbktkMTQ5QlEwSjFVQmlUN0ZkNzJFdlJzT3laTnlwQ3V0LTNxY2pQbkRvZ196MzZBV1VsdlhZZlRBUTFjYlNBVEh2?oc=5"
+        }
+      ],
+      "mostViewed": {
+        "weeksOnList": 1,
+        "lastRank": 4,
+        "lastSeen": "2026-10-06",
+        "lastWeek": "2026-10-04"
+      }
     },
     "hr-7039-119": {
       "outlets7d": [
@@ -897,27 +1256,28 @@
       "unratedOutlets7d": [],
       "mostViewed": null
     },
-    "hr-726-119": {
+    "hr-7128-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
         {
-          "domain": "quiverquant.com",
-          "firstSeen": "2026-09-25",
-          "lastSeen": "2026-09-25"
+          "domain": "insurancebusinessmag.com",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMi0gFBVV95cUxQYkloNW5zNWFWTncyT0ZuZzF2UDhCMl9OOVdsckdoZkZEU2ZmZUxPSWRhRUNhdzRiTGdjYmI5LWotazN5ekl0bzVmaG1sWEZreTBBa1dtVW1FbjcwcWtqeWlFSGkyTENKTUNMVmkxUjlOb3FHTUM2WnFfaW1FbXZkNUNIc0RWVm1MMTY2YUgyR0tSWEJ4cVg4c0tweGhHMkJESV9xcFlrbUx2azgyQXR3akZienh4emgtMnF0Q19DTm5pVDlmVjN6YTVxSXRyVk95Wnc?oc=5"
         }
       ],
       "mostViewed": null
     },
-    "hr-7436-119": {
-      "outlets7d": [
+    "hr-7212-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
         {
-          "domain": "washingtonexaminer.com",
-          "lean": "right",
-          "firstSeen": "2026-09-23",
-          "lastSeen": "2026-09-23"
+          "domain": "ua.news",
+          "firstSeen": "2026-10-04",
+          "lastSeen": "2026-10-04",
+          "url": "https://news.google.com/rss/articles/CBMiqwFBVV95cUxOcE0zeDdNM09mRUpjOFlSZVVVQUg5LU12Ujd5TExqTlFmbEhHNFVvWERHLS1HYTY0ZmVLSS1NR3o1RjBIMnU4VDVhZFNXcnlkNGNWQ0pDRGJWbUVnVHBMYjBtS0pURXYyN0xDa2tJODhRWTI3a1hGaEJzRnJ3c2o1a3BmeW9RcTdYNHBhbWtwUzdzbl9NMGpfUk9sSWxtTGY1M2k3dS1SMUNaSmM?oc=5"
         }
       ],
-      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "hr-7519-119": {
@@ -932,121 +1292,102 @@
       ],
       "mostViewed": null
     },
-    "hr-7545-119": {
-      "outlets7d": [],
-      "unratedOutlets7d": [
-        {
-          "domain": "antiwar.com",
-          "firstSeen": "2026-09-28",
-          "lastSeen": "2026-09-28",
-          "url": "https://news.google.com/rss/articles/CBMirgFBVV95cUxOUlVobWZtZThUZjI3d1Bkak5vOHA1ZkVIMWpVN1BlSlROZXN1anFTME5OM1BpeVZFaEZ5YXBMbWpZWXFLTUx1LURIUFozYjdmRGVVVnFrdlhwR1hPd0dKcklvQUl5Z21ZNzRlTm5MTmpHZ3AxQTQ4eDllMVpFYkdGZ2FrV0JiU2d1NUlKb3pZbFhIbkk0TVVKYkxYX1ByT1Y5NU04Q1V2eV9hUktYSmc?oc=5"
-        },
-        {
-          "domain": "counterpunch.org",
-          "firstSeen": "2026-09-28",
-          "lastSeen": "2026-09-28",
-          "url": "https://news.google.com/rss/articles/CBMirgFBVV95cUxOZHNST2FNSnc3QUwwVkFtbzVPS0pURGdzekN3aGhDTHdMMWxQX2pSYU9QOVAydG1SeGh5ZGtyWUV3bWhDVExWaHhITWZCaHNHczBIM2RoaGpUOUR5RHU2SWpYR3R1Y1g2Y0hHdkE4NHlZT1BLQXdSYzdFRjhIeklBNVRra0dVMXZNYXRrdlR5NTBFQkFBRzFQU0FCdVFKb0luZDgyaTBOTlMxNk1nNnc?oc=5"
-        }
-      ],
-      "mostViewed": null
-    },
-    "hr-7567-119": {
-      "outlets7d": [],
-      "unratedOutlets7d": [
-        {
-          "domain": "legis1.com",
-          "firstSeen": "2026-09-25",
-          "lastSeen": "2026-09-25"
-        }
-      ],
-      "mostViewed": null
-    },
-    "hr-7890-119": {
-      "outlets7d": [],
-      "unratedOutlets7d": [
-        {
-          "domain": "edweek.org",
-          "firstSeen": "2026-09-24",
-          "lastSeen": "2026-09-24"
-        },
-        {
-          "domain": "kptv.com",
-          "firstSeen": "2026-09-23",
-          "lastSeen": "2026-09-23"
-        },
-        {
-          "domain": "localnewslive.com",
-          "firstSeen": "2026-09-23",
-          "lastSeen": "2026-09-23"
-        },
-        {
-          "domain": "wlfi.com",
-          "firstSeen": "2026-09-23",
-          "lastSeen": "2026-09-23"
-        },
-        {
-          "domain": "wowt.com",
-          "firstSeen": "2026-09-23",
-          "lastSeen": "2026-09-23"
-        }
-      ],
-      "mostViewed": null
-    },
-    "hr-8136-119": {
-      "outlets7d": [],
-      "unratedOutlets7d": [
-        {
-          "domain": "manilastandard.net",
-          "firstSeen": "2026-09-23",
-          "lastSeen": "2026-09-23"
-        }
-      ],
-      "mostViewed": null
-    },
-    "hr-8463-119": {
+    "hr-7674-119": {
       "outlets7d": [
         {
-          "domain": "nationalreview.com",
+          "domain": "foxnews.com",
           "lean": "right",
-          "firstSeen": "2026-09-24",
-          "lastSeen": "2026-09-24"
+          "firstSeen": "2026-10-02",
+          "lastSeen": "2026-10-02",
+          "url": "https://www.foxnews.com/politics/dems-demanding-venezuela-brief-face-state-dept-fury-senators-leave-town-without-answers"
         }
       ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-7831-119": {
+      "outlets7d": [],
       "unratedOutlets7d": [
         {
-          "domain": "thedesertreview.com",
-          "firstSeen": "2026-09-23",
-          "lastSeen": "2026-09-24"
+          "domain": "quiverquant.com",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-02",
+          "url": "https://news.google.com/rss/articles/CBMi4wFBVV95cUxQWWNtZWJlMEs3czZ3WDdYbWpWeEpUYkwxS2FjTFhiZXlUNFBwQmxYdC1KVy1JMC1paFRDVVFIY0UzSzVmZ0h1VGhodElkVF9taXBlMkZ0LW5XdzlIYmRVbzdhYjNBNmtkTXVDMXRvVVFGa0h4THIxWW1TdW9GbEJkc3ZSemEyWmRXemJYVWhjMko5TURTeVo4Q2tOVGFEclhhZllaR1otcGFIQ0J5RG5lOWE1bUFhQ3cyVkxoYURUT2pFa1RhMjVPNzFkRmFtRDJUbEZmRjdLNXpCemFKVWJ3bjV2cw?oc=5"
         }
       ],
       "mostViewed": null
     },
-    "hr-8495-119": {
+    "hr-7892-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
         {
-          "domain": "presstv.co.uk",
-          "firstSeen": "2026-09-26",
-          "lastSeen": "2026-09-26",
-          "url": "https://news.google.com/rss/articles/CBMi1AFBVV95cUxNY3RpanRGM0I5dy05RDMwR1hwUnpoNHpOQWttVC1jSjFBOHlUR0QyZjZXQ0hjV1NEbUtjQUtXVC16VVZ1MlRwNVZfbWR3NHIwS094bUFWc19WdzNpTDVsWGUwNnZiV3pWTk1zM2EzNDFRQXBmZXhFMGY5NV9BSUxTa2VoVEs5UWxYLWpDSTA2MU9FamQxRWpqLTUyeXdzdVRqUm5XdnhjbDZkRXpzOHpwYkpjZFp3M19tTGpPNkFnZG1QWmNlWWNVMldTYzFtWVR0VlFvVQ?oc=5"
+          "domain": "investopedia.com",
+          "firstSeen": "2026-10-05",
+          "lastSeen": "2026-10-06",
+          "url": "https://news.google.com/rss/articles/CBMilAFBVV95cUxPRnFSb0hLU3F0WVVHRjlBU2NkQkdpVE83Q3RYYXhhakpkZU5hOXNNVmxSdFNIRDlSQ21RU19XbldqSm5RbEtlMVp1c2ozeDlrWnlHaDJZN0VQeFdiVzNqeGhHTGdoVU51d2lBM21Zb3ZKdHg0Qmw0MnhPLXN4cVF0Q2tXSElRTnZIUWlJdjc0RGRCbmxE?oc=5"
         }
       ],
       "mostViewed": null
     },
-    "hr-8570-119": {
+    "hr-7894-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
         {
-          "domain": "thecentersquare.com",
-          "firstSeen": "2026-09-25",
-          "lastSeen": "2026-09-25"
-        },
-        {
-          "domain": "timesnews.net",
-          "firstSeen": "2026-09-25",
-          "lastSeen": "2026-09-25"
+          "domain": "tribune.net.ph",
+          "firstSeen": "2026-10-04",
+          "lastSeen": "2026-10-04",
+          "url": "https://news.google.com/rss/articles/CBMif0FVX3lxTFBlaktkMXJkOXJNckw4X0NfUzE2eXFSS1o5WU5vaUN3SEhuRlB4WEo2VVVvU3h5RExUWVdYUmdlTmNnWEpFR012Y0x1UnJqSFhlSF92WjlleFM1b3NYVnVNWFRqMTdxNXZPV3dyb0laOVJIdlZTSkpGRk0yb094cWM?oc=5"
         }
       ],
+      "mostViewed": null
+    },
+    "hr-7966-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "hospicenews.com",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMikwFBVV95cUxNeUJ1cDVpVVZqbExqZ3QzaDR2TXpFMm5VZk8tUHd4ajBTUzVBNzVEWHppYzV1NEhFRloxd2FCYnRIa2dBWEsyS0ZXb2VYVEd6Tzh4UWtISjlwWUM4dHlscmtsUnBFTkhZY1NIOGpIX3BMSjRhNEFBMmhLYkVaOG0tLXlRano0bkxuSEUyOTZfcTdzREk?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-8341-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "lc.org",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMidkFVX3lxTE5hcy1La1ZVazdUZVlmZUNCRHNOLXNldUdrZjN2QTR4NlhhSUtQRTFSTlhfVE93ZVo3Wk51UTg3VS1Xb2x4LWtxeGhOT1BHTDZfOS1ONDVrRGFQVDlvNmNUWG5ndW1mYi1qZVQzN1lnS3pfU2E0MGc?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-8585-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "yonkerstimes.com",
+          "firstSeen": "2026-10-03",
+          "lastSeen": "2026-10-03",
+          "url": "https://news.google.com/rss/articles/CBMiswFBVV95cUxQTVhzLVU1Vzl6U3hPZ1lQakotUm1FMXVMQ2REaGVyU1ZiemtFN0M4NVZUTGRNdWludUU1ZUlxS2VZeWVPLTFJTGR4eFloY19ibXBVeXc2TEdVaTBELUQ0dk1HS1VUWEtHdDdJMktKYnRpME9BMG4zRDU4WENBeVQ3ZllYNEVCNmRnM0hNdm1PR1VBX0kyM2g2ak9WX3BsUmh4WmVwWWxMbkNMdkU4a3RmNTV1bw?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-8756-119": {
+      "outlets7d": [
+        {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://www.foxnews.com/politics/gop-lawmakers-fraud-crusade-takes-dramatic-turn-scandal-engulfs-his-own-career"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "hr-8770-119": {
@@ -1065,83 +1406,33 @@
           "firstSeen": "2026-09-29",
           "lastSeen": "2026-09-29",
           "url": "https://news.google.com/rss/articles/CBMi0AFBVV95cUxQX1hVZG9JTWtsNVhoMU1KUjhmYXV2S21FdmJIaHpDSlZMOS16Z01TSWQ1Z29sc2ZnVERtNjdxcVhHSWZDY2J1dEdES096RlBlQzFQaEdRSWlyWFBQTEN1MXlvc3B0VkpRSWNjYzdGQnF1bzBSeThYV19LSjkzVlBZSGVTbWJsQjNWT3czQ01JR1RuUG0xak5vREh3RWNWVUd1ck1KWjNQSkRkLURONUxnZ21KWEJJVkdvVnhwaV9FLTZEU0tvcHR5M0E2RlVxb3Bj?oc=5"
-        },
-        {
-          "domain": "azat.tv",
-          "firstSeen": "2026-09-28",
-          "lastSeen": "2026-09-28",
-          "url": "https://news.google.com/rss/articles/CBMieEFVX3lxTE15aWgzQmR0aGk3cmxlcm52Y0hiTjNyU2wzeDdYQ1RHUDFaTnFBNXNZa3NSbkNRMlpReVh6b0NLZ0N1aWtJVHJfZUFfRDJjS2N1LVZBZVVhZnBzRmdXdE5qR2ZWRHY4WG9zZTZCYzRlUks0aHJlWlpPWg?oc=5"
-        },
-        {
-          "domain": "ndtv.com",
-          "firstSeen": "2026-09-28",
-          "lastSeen": "2026-09-28",
-          "url": "https://news.google.com/rss/articles/CBMisAFBVV95cUxOQXE2eE5DbGd1ZTNnT3hHbkluaGxCRzZKYU93RC00RUlBTm1ZSDgtNDI1UTM0MDdaUW9BVFZmY3pBclBoa3BWZjRJaFd5OHhNSzRXZTliNERLblBZaHMxcTZ6emFXbDVJOGNKdGJtTjA0blMzdFFJRzh2dlhPa3pSZWw5T3lET2Z2SklvMEt1ZllYZVIweXVHNEZndk5Hdk9GQTdnbDNnaUw1a2NHQVNZQtIBuAFBVV95cUxNcEN1ejBrY1lPWFNDOGlyQ0FrdlUxc19ISEU3RDZUaDVoMnF6Z29jRUNyeTRIaVlTQ2l6Ri1ZNHZXQTlkc3BBU1ZIb0NfYm1DQmk3OURMV3NFcGFCX0NBUnJkUW5wb0d1ZXB4RlpfZjR2eXFlSTFGaXdaaXpZanQ2T2FCM245YTRyWmF3VTdVUFpLanJPaU5VMU82MFd1a0tpd3Byd0x0bG9aa1RwazE4V0xwWnM1Y1R2?oc=5"
-        },
-        {
-          "domain": "cbc.ca",
-          "firstSeen": "2026-09-27",
-          "lastSeen": "2026-09-27",
-          "url": "https://news.google.com/rss/articles/CBMickFVX3lxTE1JejBZd3A0dWx0MHZHbnN3bnZzenB2OTV2SnpXaGhYSUEyQ01yeVBjdElQQllDWDNDbVdTam9kc0pVRTNzNm5RQW5DSWFkSXBZdmk3Y282MTExaGVNalpMTHcwb1dqRVV2WmVWRndTWHQ0QQ?oc=5"
-        },
-        {
-          "domain": "newscord.org",
-          "firstSeen": "2026-09-27",
-          "lastSeen": "2026-09-27",
-          "url": "https://news.google.com/rss/articles/CBMi6gFBVV95cUxPYVF3MFlhME1HR1hQaHdramh6eFpPY0ttbnVUOEpNeEgwYWNZREQ5WWlHYXRWbTJVVmdPVnVMWnhoVFBSN01oNW0waFNCa1Y2aWZycU5OQmp3UmFVVnJ5ZFZXM2VrTS11eXhIZ1pidlp5NWF0dGZZVUFJdmVseUZPa1dORmk5Nk9hMEpaSzFUcy1UVkxRSGRqTW56VFczYXRuVGZsR2R4Q1RhMDl5d2xqOW00QUhfS2JBdXRoUkcyZWlPXzZsSU1YRjhWRnRkbF9FaFBWV0xpcjFvMTFwem1lWl9OMXBXVWZsX2c?oc=5"
-        },
-        {
-          "domain": "pymnts.com",
-          "firstSeen": "2026-09-27",
-          "lastSeen": "2026-09-27",
-          "url": "https://news.google.com/rss/articles/CBMikwFBVV95cUxPR0RJTFl3X2lvdUlFbmlDVjZ0Q3h2Rm1RbXdTVDMwdGtlS0VkdjJRaTl5MzczS2QwMlV1SC14UVdfQ19aeVh2QmoyRXR1akZscWJGRGFhMUcxdm04WDZ1OS1xbkNzTGJ5QzBMTkJPcDBEOFVSRm9HbFFGcFFGWlhKeEt5SGpyRG5ybkFzeTBDZWYtQkk?oc=5"
         }
       ],
-      "mostViewed": null
-    },
-    "hr-8772-119": {
-      "outlets7d": [
-        {
-          "domain": "thehill.com",
-          "lean": "center",
-          "firstSeen": "2026-09-23",
-          "lastSeen": "2026-09-23"
-        }
-      ],
-      "unratedOutlets7d": [],
-      "mostViewed": null
-    },
-    "hr-8793-119": {
-      "outlets7d": [],
-      "unratedOutlets7d": [
-        {
-          "domain": "shawlocal.com",
-          "firstSeen": "2026-09-27",
-          "lastSeen": "2026-09-28",
-          "url": "https://news.google.com/rss/articles/CBMiqwFBVV95cUxQMjBXcGtqMEtWS3BpaHVqVlRTNzJfa0VGbFlla1FCVW52TTZhT3VFR3BXMlFmT1RQbU44M2V2cHZjMkM4UUVkcmZWN2pBTDRwMkVKVThLOTlJWHRST2FqeGJnUmZHS2RJaDZtSTVoZDZJMmtjNmpObDdrbnMwb3pQRHhLcXdYdXVScVNiajV5MS1kZFpQUmh6ZzdsX093QUk3TXhoTEV5OWYtdFU?oc=5"
-        }
-      ],
-      "mostViewed": null
-    },
-    "hr-8862-119": {
-      "outlets7d": [
-        {
-          "domain": "thehill.com",
-          "lean": "center",
-          "firstSeen": "2026-09-23",
-          "lastSeen": "2026-09-23"
-        }
-      ],
-      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "hr-8885-119": {
-      "outlets7d": [],
+      "outlets7d": [
+        {
+          "domain": "politico.com",
+          "lean": "left",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://www.politico.com/live-updates/2026/09/30/congress/blocked-from-thwarting-trumps-funding-move-01101581"
+        },
+        {
+          "domain": "washingtonpost.com",
+          "lean": "left",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMirAFBVV95cUxPTi1KelZlN2pnTHROYVZrSGpib2w5c1NSRkpldEZNOTFIOEsydVI4T0Rsc2ZHbnJmMkNoR3VmQlFzV1BtcWI3TnkzNmVEMFVFcmN1Mi1YTFUzbWJtSzA4Z3VXS3FZNGNSWEQzTnJZT0JSdU1VMHkxTktHa1RPQnZxNXIxRVhZX2l2cWk0bXBkNXptS2NNRE01UWNNb1czV2JmbHAxSkUydmpCTUNE?oc=5"
+        }
+      ],
       "unratedOutlets7d": [
         {
-          "domain": "en.cryptonomist.ch",
-          "firstSeen": "2026-09-25",
-          "lastSeen": "2026-09-25"
+          "domain": "talkingpointsmemo.com",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMiuwFBVV95cUxNaVJGNWFHVUJpc2RCZzdfQmlRel8zeTJ2OXUwcjFhb3JpYnhnTUhNQUZYY09ncTdiUl9ZRzVuSjlmZ0VRVkZaMUpPTE1xNUYwdkZCVkFnVE11dzA5elBsRVdnTHhXNF9Lc3czTHlKaEhwMUNFNHFPUXd3ODlGdTE0RGFkX3ZWQzNLa3U1WE5HazIwNGRrOGxzY0xacWxpd3dGbm1YdHhvb3M1TTBxdkxxSGZwTzBnUzJUUms4?oc=5"
         }
       ],
       "mostViewed": null
@@ -1164,58 +1455,228 @@
       ],
       "mostViewed": null
     },
+    "hr-8915-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-10-04",
+          "lastSeen": "2026-10-04",
+          "url": "https://thehill.com/opinion/congress-blog/technology/6124241-congress-no-fakes-act-vote/"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-9019-119": {
+      "outlets7d": [
+        {
+          "domain": "cbsnews.com",
+          "lean": "left",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://www.cbsnews.com/news/senate-data-center-bill-vote-democrats/"
+        },
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://thehill.com/policy/energy-environment/6119834-senate-data-center-bill-ratepayer-protection-act/"
+        }
+      ],
+      "unratedOutlets7d": [
+        {
+          "domain": "financialexpress.com",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMiygFBVV95cUxQaEs2N2ZsRkNiV0Q0U2FFVm5oeFVLQk5NSnlWZkpQelg4cV9hVGZIU2pHQXJSbEZUR3g4ckp1TS10Ylg2b2RhSjktM2RhdlQ2c1Z0d1BJc2ZZZXRDSGhKR3VzOEF3LWdZam5MNUZUZWFwTWN3NEVGLVZDd0hxMXQybk56VEwtU0c4bVlVTVAxd3M2ZjBSN1lxQTJ1V0R2aVBKMU1pUTN2bGRhd1ZmMTRSeTlsQVZ1Z1l4ZC1wTVo5SUtITjVUQmtINGZ30gHQAUFVX3lxTE5XR1VCLTlUbnk2MEZ0ZWk4M3BVU1dIX1pHM1FRTWJvV0RyRXBqSWU2ZjlibzMtU2Rvc24zdEh3QTlFQ3lIVTgxYkJTWER1akFBbHZSSDEwTDFqTTBuaUljSXlKMG1RSGVpd3BXaFNONXZFT1liX1dOSnVaemFhTVhaNDdMbUFsYndQc2J1SG11b3BGNDVRUnl6S2F3eElFQ25uYWRQWXRMdWVWTTlfYmhyTzFKWnZ0a3MzX2FRYkh2dUlQVGVIUElWb1RoWHE5UEo?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-9062-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "postandcourier.com",
+          "firstSeen": "2026-10-02",
+          "lastSeen": "2026-10-02",
+          "url": "https://news.google.com/rss/articles/CBMi1gFBVV95cUxQYl9LT3BpcDZ6cFp2aWxiSmJkUTN1aE1fUHRjWFJ5T09jTWdWU0VOWDBvV2xvQVdOWWt4Z016MEFwUVJPSjdGVDlBeGZEMHlXRG9WM2dHUGV6dWtvZEFRYldGb250YWhDT1BPZFByaFRwd0pVYkRJRDB0M0FndUMxanlfeEhQWVFFdmp4UktVYnRvMjJQektSN1BOdUw2UFBGZWxYc2FVRFVTTlA3WnhhYW9jdTNjbnFwT1ExYlpMWXJGRVlWbG5qOW9mUGFWdHNMZ1FZMTl3?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-9340-119": {
       "outlets7d": [],
-      "unratedOutlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "rollcall.com",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://rollcall.com/2026/09/30/voluntary-ratepayer-protection-bill-blocked-in-senate-again/"
+        }
+      ],
       "mostViewed": {
         "weeksOnList": 1,
         "lastRank": 8,
-        "lastSeen": "2026-09-28",
-        "lastWeek": "2026-09-20"
+        "lastSeen": "2026-10-06",
+        "lastWeek": "2026-10-04"
       }
     },
-    "hr-9497-119": {
-      "outlets7d": [],
-      "unratedOutlets7d": [
-        {
-          "domain": "nemonews.net",
-          "firstSeen": "2026-09-23",
-          "lastSeen": "2026-09-23"
-        }
-      ],
-      "mostViewed": null
-    },
-    "hr-9576-119": {
+    "hr-9363-119": {
       "outlets7d": [
         {
-          "domain": "foxnews.com",
-          "lean": "right",
-          "firstSeen": "2026-09-23",
-          "lastSeen": "2026-09-23"
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://thehill.com/homenews/senate/6120658-watch-live-senate-homeland-security-panel-rogue-ai/"
         }
       ],
       "unratedOutlets7d": [],
       "mostViewed": null
     },
-    "s-1257-119": {
-      "outlets7d": [],
+    "hr-9367-119": {
+      "outlets7d": [
+        {
+          "domain": "cbsnews.com",
+          "lean": "left",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://www.cbsnews.com/news/senate-stock-trading-voter-id-bill-democrats-block/"
+        },
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://thehill.com/homenews/senate/6120528-senate-blocks-gop-stock-bill/"
+        }
+      ],
       "unratedOutlets7d": [
         {
-          "domain": "cbc.ca",
-          "firstSeen": "2026-09-27",
-          "lastSeen": "2026-09-27",
-          "url": "https://news.google.com/rss/articles/CBMitwFBVV95cUxORnZkQWRycG9zeFB5T25CN25yeG9xeTBrNlJfalk4bXN4QkJpNEJOVnNvamJ0bjRPMlNKMkt3Um8xd1J5RHpOLVVwNUo2VXlMOEloOC1kSFNQNHJ6d1NTR0VVQnE0SGtCVktLNEEybERKX2Fmb1ZKeWp0b2R1SVdGakVXYl8zT0ZmTVl3bkJuMzFfU09rLVdkZWotNW05bWN5Z3lHRXdUWTRBckFuaDczcm5MbFVIcE0?oc=5"
+          "domain": "washingtonsun.com",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMiiwFBVV95cUxQUS1oTnROYWVsdktQT0VjdUMzMkNNM3pRVTU1dlkwNDFTR09zcFdmRlg0U3M0SUxOWVV6Vjg3RmNVUDlNQV8xcXZseXFGTVRmTDNuSWZkbzFSTUhaU0t4MmpGWk1Gc0ZOU0hnWXpkaEhRd2E3RmswN2NNaHlBeUdlazhpZDBNUWNDU044?oc=5"
         }
       ],
       "mostViewed": null
     },
-    "s-1378-119": {
+    "hr-9372-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
         {
-          "domain": "cpr.org",
-          "firstSeen": "2026-09-24",
-          "lastSeen": "2026-09-24"
+          "domain": "news.bgov.com",
+          "firstSeen": "2026-10-02",
+          "lastSeen": "2026-10-02",
+          "url": "https://news.google.com/rss/articles/CBMinAFBVV95cUxOemJGcFV4c181TF9LcEd1VG9MTkNlOXI3aXM5UnczQTZwRXRicElHOFFnZFlWMjlfcVVrVzJnd255OUlaa0E5MG42VWFKNm00SEgyY0NzVzR6aU1KYzJoRkNadm5wZTN3c0R5VEthT1BaU0MzUE4tS3AtVC0wSkhEbmhSN2pHZmN4MkR2SUJVQjRhN2xfeGpPaVJQSVc?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-9496-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "thedailynewsonline.com",
+          "firstSeen": "2026-10-03",
+          "lastSeen": "2026-10-03",
+          "url": "https://news.google.com/rss/articles/CBMi-gFBVV95cUxQVllldEVzeUwxUEVUMllRYjRZbmk3VUx1VXh5MG5CdlUzOHVqelg0cHg4QXhJQUFmbklhTjRrQzhGeVEzazhsYTF4UlF3SU1fQVV1WU15N0M4cmNlbjB2YzgyazY5U2hqdFhKbDZ0Nk90d3F1QTBGcUYtWGlZS29zYWZFTDNxOS0tSXIybzhaZ2w5M1lfOEY3azlZb0ZmMVFFUTh4aUt2Y3YycnlHZllsbzRDNkdzX2ZRaWlseGRKWG5XVGYwODhaUnQwQWZic3VQeFJERjVGeU5tNGlpbVQ1Tm50UG1VV25pZzJNakVzWmdOMmNqYkNoWWN3?oc=5"
+        },
+        {
+          "domain": "oswegocountynewsnow.com",
+          "firstSeen": "2026-10-02",
+          "lastSeen": "2026-10-02",
+          "url": "https://news.google.com/rss/articles/CBMi-wFBVV95cUxOWjBJZnlGdHBDR3p2TzIzb2pyWFB5NFNJSzNnOVplTF96XzEweno1MVdVZU9VcGc0a1REMm5qanVLVVVxajFOMk91aUVhUndqTnpXTXQ4bmZpWDZuRjczbVhrXzMtZ0hVcXY3THBvSVl4MnZSYVRQdWUyVUp4ODBPQUV4RjZyRXB4VXdHWmNTNXF5VmRJQVNDWjV6djVjeFJpMzh0NTBnT0FwUmpMMzdKWEVyQ2NEN196UF82N1JaN0c5ak5kSklTSmZKdHVpaUVJbjlUbkVmLWhtYUFuUUhmQ1VqeDlsUTdERHR3Uk04YmtzX21zRHpXOTBWSQ?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "s-1093-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "press-herald.com",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMiwwFBVV95cUxNWWNyT1ZOSHF4R0xQdFFMTHo1d3lDbi1zdzRRMkpOeWZXZU9oN05YV3FKZjZJOE1LcURxWUNPR3RQWWNLZzRWLXdrOUxDb1p2UlR6Z3Q2NUEyN3BnUGhIbWd6Y1Y2bW5UY2o1eTVBNHVYR2FnRnk3ZU44c01rVTVPeXc3ZjVmNFlYZktrNWVhdHQzWkpLNmZOMEFTTjdabGNBZ3l0TFM2S240NGpoQ0kzZjlzTnNTaWFIR1RwYVVkdjJwM0E?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "s-1135-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "chronline.com",
+          "firstSeen": "2026-10-06",
+          "lastSeen": "2026-10-06",
+          "url": "https://news.google.com/rss/articles/CBMitgFBVV95cUxQcmN0bkNjVlRZc1BRbGJYV24wN2U2Y2FiaU42UmpyaG0xeHR3RmIyQnBjRUo3cEU4N0hmUGRJcHl2Y2NCTDRhZVBVNUY2R3hzVTctdEZja2haNTRxZzI4YW5ha21MOXpzVktZS1RwVzZEZF92ejRNQU9Za1JITGRjWWdkdHVwWkRYSFg4QXI0TjdfVnlnYjdUempnNC1HRFNwMTNzM3paR19OV1BYU3dUaF9GU25xdw?oc=5"
+        },
+        {
+          "domain": "tri-cityherald.com",
+          "firstSeen": "2026-10-04",
+          "lastSeen": "2026-10-04",
+          "url": "https://news.google.com/rss/articles/CBMigwFBVV95cUxPVi1sWWdqV2xCc1VMUFJvSTZROXNheUdBR3pRZjU0QV94dllhOXVXQUJCdlZ6MEVxT1U5ZGROOTNHekU2MU9tVEY3S2lUYTJzdENBQjJNcnQ1ZXFDT0FsQm9nZm51cnFtX19qeXhWREwyajNER0t5M0xzZVZlbHZaX2VZRdIBgwFBVV95cUxOUkdkNFhSbVA4WUpQZVNuV09FUWVfd05xUXFhMVBFSzRCSUIxSTZ1clVXaEF4eVJtQTBWbDd0UWxoMFliaXdFY0c0ZVNtRXNvUGVyVHF6OXY4UVp3Wk1kZ1F3UzN4R2JybmRRcDVENGtFUFk1OGFMeGNTY0ZjSHNUYjN6aw?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "s-1339-119": {
+      "outlets7d": [
+        {
+          "domain": "cnbc.com",
+          "lean": "center",
+          "firstSeen": "2026-10-06",
+          "lastSeen": "2026-10-06",
+          "url": "https://www.cnbc.com/2026/10/06/hong-kong-fed-fima-dollar-liquidity-china-moolenaar.html"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "s-1498-119": {
+      "outlets7d": [
+        {
+          "domain": "dailywire.com",
+          "lean": "right",
+          "firstSeen": "2026-10-02",
+          "lastSeen": "2026-10-02",
+          "url": "https://news.google.com/rss/articles/CBMikAFBVV95cUxOUGlnX0pyR2M5bzVCNkJ1aDBYMGJ2Q2U3M1E5M0hRUHdxUkVmOUFxYVZZQnZTSFBQek5TSVRmOXA5blZDY1ZoUTNjWFNrOWp0dVRoSTlRaHJFWElZRTFpMTdqY2tKTlNIZjFDUjFGU1MzR2NGcEI1VDBsTmNTWkZLSHdUS215YTVxUUprM1RsTnA?oc=5"
+        }
+      ],
+      "unratedOutlets7d": [
+        {
+          "domain": "themainewire.com",
+          "firstSeen": "2026-10-02",
+          "lastSeen": "2026-10-02",
+          "url": "https://news.google.com/rss/articles/CBMitwFBVV95cUxPeWxqcHJ3SDliYmJva0N5T1BOU1JYSUYwaFBzX3ZqclVRUG9ONEFrZUtpRzdrSVdoQkJLX1lqLVNzdEpEc1hleUxsN2tFWjA3UGNTM1VMQkRJcGNDRjIyRFNtOEN4R3g4SDByYVlhY0kydm1RV1otOThOQjUtMUZnNkNWM1lNLUFwMUg0MU0zZGFZRjVxMFlJcXVfUXFKSWpOcVR4Sl96bjdFNWtmV2dkQXRGeC1yRXM?oc=5"
+        },
+        {
+          "domain": "wionews.com",
+          "firstSeen": "2026-10-02",
+          "lastSeen": "2026-10-02",
+          "url": "https://news.google.com/rss/articles/CBMiqwFBVV95cUxNSjVaYnZqZl9GM1RNbXVZa3lXUkg5cUcyNmFIeGdsUlU3MFlFdXc5eVdqMGlEa2gzUzFTSFJHMVduYjViNFk5X1JBU08xMTgwOUtidW5Jb3V2QkNNZHN6enNNN2hxb2xWenpXUEV1RmJDajNuN2JFd2VlcHA0QVdqYmNqZFkxSnlYci1EZVhTVVFjMzNISDZlWDNiNHQzc3dPcTdKc2p2dVhEaGfSAbABQVVfeXFMTUtXRTBnS2JOY0hIXzItbTdfNkdqSzNGRHBaUGZITndSWHdyRGhGM3pCcXBXd3dWRlJGZWdOWFI0VHh3Y0FpcDBwTGNkUjlPcVJZZW9PZFBOaVJqQWx2TjZBRm9iYVhlRVVQNEFCaUpPQWNWV0RpeXJfOUVzUlFyakpqSlpTZkltVWpSSHZkQWpGbzZOYUFCQ2lGbmJYYlY5cURweWNwV1NCamFVT3VyOUc?oc=5"
+        },
+        {
+          "domain": "dailyjournal.net",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMiugFBVV95cUxOQmFXZ1V4VWwwaDFkcmdqZ0hENFhQUUpSYXhPVGp5Qnk1WTVkV2xVYUpXSkdpbGZiMnRmY0JTYUdrNW80QjJhelZiaG1YckpuQXFxNmIzcHYxZjI0RUtOYUUtSVFZVVBSMFFDREhSS3NZY1FGQlhyVDFuVUhvTW12TkkxT09GS3hnODg4SHlEWnAtTUN5N2JGX29yQWpZbHZKbWxiSzZIRWh2RlhWQXdabzV0MTRQZTBoYVE?oc=5"
+        },
+        {
+          "domain": "heartlandernews.com",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMingFBVV95cUxOQ0N0NE51TW9uNktXMVpGYWx4OHk0Mi1GVkFTekdkWGZFV2RfbE93ZWprQnIxZjRQZFFmQzF0Rkt6QmRwMFV5WWNHZHFkcnhta2hvU0RqYUhNSDlqeFNsbi1pWVFvTzJFYjRvdnRtNWM3R25FelM3U25sdEIxMXM3RWJjcjdmNTNWbXQxVDNHa1hROWNGN0xwQzdsNHh5dw?oc=5"
+        },
+        {
+          "domain": "wispolitics.com",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMirwFBVV95cUxPazFDMS1qU1MxelkyMlJ5ZjRGREJyREh2YTh3TzF1VlRaS3IySGZEMGk5V3hkV0hZNy14OHRjZkJnY2MzWHlXVldXbjV3Vk5mT3NlZnJLUnJoQS00S3VBVUQyZlJhUlY2YjdJMGdoNGJLTi1BNGxVU0JGbWdFU3NoZ2tkRDF2b21GdERvUjgwNndIMkx6UlpfRlVOZlpsekdlZXBOMU5TYzVEcnVNN2hN?oc=5"
         }
       ],
       "mostViewed": null
@@ -1233,66 +1694,62 @@
       "unratedOutlets7d": [],
       "mostViewed": null
     },
-    "s-1682-119": {
+    "s-1748-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://thehill.com/policy/technology/6121648-paul-blocks-kosa-kids-safety-bill/"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "s-1837-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
         {
-          "domain": "business-standard.com",
-          "firstSeen": "2026-09-28",
-          "lastSeen": "2026-09-28",
-          "url": "https://news.google.com/rss/articles/CBMi3AFBVV95cUxPcURJNnhwVUp0dzQxN1dHa1V1MDdMUmNOa21ZdGF4dTgwY1NfclR5cXU0eURDOU1YYXo3YjloZ29lMmtkV0pramlrU1pFREJfYy1ZWjBRdGc5Vk5LVUp6UFhQRk03cEVMSUNKTXFfM0tNd1JYcnVWTzdEQm4yZWpfeEdzR0YyM1p4MDhfNEZNYkV6NDU2NHBxc1o5N0RlR3J5dDNkNWs3N0ZuMmZVOHhzbFhOQkpQMFk4dkgzc3R4ZFFoSmwzVUlFemdYd0E3dkREU2hfS3pVRFJuWFMx0gHiAUFVX3lxTFBUeWFXVEU2MTdnZWltQUFJZ2RveE8zX09pcUNzek4wUXQ4QmVuZVV0LUZQYXVoRjNyQUFKOUU1YnBNZFUzd2NTZHNlTktXa2RSdTVNVjNQQzhIZC1ZSGdHUXhCSVNma0hZeHVkTDBQSzlJZDBUa3c2Nmo4TG1sYm9xcU5RTWU0NkxCaGNTLUQ2bENYWEVYMEh0MEE1RXpHbWFGdVRLcTFjeTVSM1Q5MTMxOXRKTjZDc094Rm96U0ZuNHBSNnRNcm9EMkx4Z3dGQ3h2WnlDR01BWVZiQWllTjBaWGc?oc=5"
-        },
-        {
-          "domain": "informat.ro",
-          "firstSeen": "2026-09-28",
-          "lastSeen": "2026-09-28",
-          "url": "https://news.google.com/rss/articles/CBMirwFBVV95cUxQRDJCdmlqSnEyazBPN2NqMEJRVzZvaUhWejg4Vk5nNDNaSEh6a3c2ZDRlbDNMa3VkaTlJdTNpdUFiU25WcGJXSVl0R2FJZnZKazlid1JnS1pvUUFXcG5DR3FkY2YxSUJPc0VHTzljdzVwWFhZNFhtX0NOZElGM3I3RXV1WENVZkZ6Njl1eGhFUjZvcDh1ODZpdTlOTUsxNUIwWTNfSFRMWEtDcGdoZFBv?oc=5"
-        },
-        {
-          "domain": "businesslive.co.za",
-          "firstSeen": "2026-09-27",
-          "lastSeen": "2026-09-27",
-          "url": "https://news.google.com/rss/articles/CBMiuwFBVV95cUxPcnFoNjV3Q3l5N2JJaGNxSGtwbGpsdHVEWTJQeGxvOERZc0ZGbGttV3RyV3NvN0FidGdZdzFDUjJGSTZDRVhiZzJMUHd0c1U1MWZweXNXZk1SbFJDZnRaREVaODhaY2lvNzl1NndZZ2lZZWdpRWZ0ZGdjZTREaUFkb2hLb0hwSUIxYlFTVkNrMTRkZ01xY3hlV1MyY01DeWdHeVNBNmEzakhfX3RrRGtxQWdNaEVCVHBIUnM0?oc=5"
-        },
-        {
-          "domain": "finance.biggo.com",
-          "firstSeen": "2026-09-25",
-          "lastSeen": "2026-09-25"
+          "domain": "politiko.com.ph",
+          "firstSeen": "2026-10-02",
+          "lastSeen": "2026-10-02",
+          "url": "https://news.google.com/rss/articles/CBMimwFBVV95cUxPcVl5SHpMLTZZQ053Sy11dko4amp2LWdseVJCVDdsV2JpX3YwRzFoczY3cXFFUV8wTV8wYWZjd05scGliSTJ0dzg0U3ltMmhsNC00VzRsN2tjWlhuc1ZwbktmcEJ6TWNnZTIwSTZWdm1oUUNGbmJ3d2daMVU1dVM2RzB0UFo3U1dsYXMtN3l3NENBa3kxNUx6SVR4NA?oc=5"
         }
       ],
+      "mostViewed": null
+    },
+    "s-2132-119": {
+      "outlets7d": [
+        {
+          "domain": "politico.com",
+          "lean": "left",
+          "firstSeen": "2026-10-06",
+          "lastSeen": "2026-10-06",
+          "url": "https://www.politico.com/live-updates/2026/10/05/congress/john-thune-daylight-saving-clocks-01107875"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "s-2296-119": {
       "outlets7d": [],
       "unratedOutlets7d": [],
       "mostViewed": {
-        "weeksOnList": 8,
-        "lastRank": 4,
-        "lastSeen": "2026-09-30",
-        "lastWeek": "2026-09-27"
+        "weeksOnList": 9,
+        "lastRank": 5,
+        "lastSeen": "2026-10-06",
+        "lastWeek": "2026-10-04"
       }
     },
-    "s-2378-119": {
-      "outlets7d": [
-        {
-          "domain": "reuters.com",
-          "lean": "center",
-          "firstSeen": "2026-09-27",
-          "lastSeen": "2026-09-27",
-          "url": "https://news.google.com/rss/articles/CBMisAFBVV95cUxQQmNRNTdyaGdENWhHUlEzVFpTVnRndmtXcDBfZlVmTVZpWWF2SEF6M1FwXzBtbFZRdWJWOGNKc2JfYll1aEZxamJYYTJwZ2pXMUZ0NW1wWjEyQXRObnRJa29BbzhrLWxXOTFmSVZlRlkyS1Z3endodzAyYm9Sc0NOYlE5REhwbnZQbERfdWc2Mi1LbWVyaGpiOGtjZ1dVWGQ2cTJib1FVM1ZJYkVZbmRJWA?oc=5"
-        }
-      ],
-      "unratedOutlets7d": [],
-      "mostViewed": null
-    },
-    "s-2403-119": {
+    "s-2398-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
         {
-          "domain": "aol.com",
-          "firstSeen": "2026-09-26",
-          "lastSeen": "2026-09-26",
-          "url": "https://news.google.com/rss/articles/CBMidkFVX3lxTFBhc2tUY3dPUkx5c2dOc0lkN2xvMHd3M3Q5UmVOUTJYV3QydFZiaU5RRWlCd0RfeVZYRDZ6WG40UjlqZFF6Q0RlZDA2XzNYclptR2xKOFRROHJCX28wcW1tME1ZOTVsRERvTmhmZTI1WFdpSTJJakE?oc=5"
+          "domain": "thetelegraph.com",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMihgFBVV95cUxNOXhVMzlrUF93SGhQUVdaOElLa293Y01FS19vLWtVZ3l1YTM5aEN6VkJnTmFpOHFXN1NiOWdaaDZlMEg2bVg3YjNkTkdmcGEza29KV0pEWDlNYzZEQWlMV1A0R1UyVDNqYzkwU0cyRjF5b3d3WHhnemRiVzRHc2ViRURUQzVYZw?oc=5"
         }
       ],
       "mostViewed": null
@@ -1300,10 +1757,11 @@
     "s-252-119": {
       "outlets7d": [
         {
-          "domain": "thehill.com",
-          "lean": "center",
-          "firstSeen": "2026-09-23",
-          "lastSeen": "2026-09-23"
+          "domain": "newsmax.com",
+          "lean": "right",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMijwFBVV95cUxNTF81djRPSDlmODE0NDRYdl9OUlZTWE9iMFNoaVRkTW9QZ0ZyYlRXQnd6WnBmRWZLaGJOampGajloSDJsLXRLdTZCVEhjTmZOamFLeWNDVk9PcGNfZkluOEFROWZ2Z21SWng0YXQwUXBZYTlkUEt0bGFkUVBWMlVjeklrN3BYTXJ2MnVNUHZoOA?oc=5"
         }
       ],
       "unratedOutlets7d": [],
@@ -1329,70 +1787,19 @@
           "firstSeen": "2026-09-30",
           "lastSeen": "2026-09-30",
           "url": "https://thehill.com/homenews/senate/6119354-senate-blocks-west-bank-resolution/"
-        },
-        {
-          "domain": "jpost.com",
-          "lean": "center",
-          "firstSeen": "2026-09-23",
-          "lastSeen": "2026-09-23"
         }
       ],
       "unratedOutlets7d": [],
-      "mostViewed": null
-    },
-    "s-2745-119": {
-      "outlets7d": [],
-      "unratedOutlets7d": [
-        {
-          "domain": "dakotanewsnow.com",
-          "firstSeen": "2026-09-25",
-          "lastSeen": "2026-09-25"
-        }
-      ],
       "mostViewed": null
     },
     "s-2754-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
         {
-          "domain": "grantspasstribune.com",
-          "firstSeen": "2026-09-26",
-          "lastSeen": "2026-09-26",
-          "url": "https://news.google.com/rss/articles/CBMirwFBVV95cUxOQlozZDhsRzNmUTd1emV3eFRSOWZ5RWt2aE1uZzVId3lBRTlWZXZISnp5cXN0X0RYb3NnZVBMNHVZTW1rYTZwelVRcllMN3U4SnF6QWtGYXk3b0tobEtSRWg5b1hqSUZGend4V2NXNjVwVmxNMzdSVUdyb0RZeGhuMjFaaVdfUGxxcTloSjY3dVM3T3Bocm9pelF6TGtSUWs1SGxQWEhIeU00T1FfYUow?oc=5"
-        }
-      ],
-      "mostViewed": null
-    },
-    "s-283-119": {
-      "outlets7d": [],
-      "unratedOutlets7d": [
-        {
-          "domain": "seafoodsource.com",
-          "firstSeen": "2026-09-25",
-          "lastSeen": "2026-09-25"
-        }
-      ],
-      "mostViewed": null
-    },
-    "s-2867-119": {
-      "outlets7d": [
-        {
-          "domain": "newsmax.com",
-          "lean": "right",
-          "firstSeen": "2026-09-24",
-          "lastSeen": "2026-09-24"
-        }
-      ],
-      "unratedOutlets7d": [
-        {
-          "domain": "realtor.com",
-          "firstSeen": "2026-09-24",
-          "lastSeen": "2026-09-24"
-        },
-        {
-          "domain": "yahoo.com",
-          "firstSeen": "2026-09-23",
-          "lastSeen": "2026-09-23"
+          "domain": "ouraynews.com",
+          "firstSeen": "2026-10-03",
+          "lastSeen": "2026-10-03",
+          "url": "https://news.google.com/rss/articles/CBMinwFBVV95cUxQTEViRTgzbW5TNDBFZVJPVTBZOHVDSnluQXgzX09ZZ1hEbGRsQ25rMmJjZmxNQmZPM1hmNHBDclhqQnFRSEdlMjZKR0tWSnZaZVdrdUhYMklBbmdhUDFVMGlySzZMRXQ2TWdSSGFqMnRabER4VUpEZjEwX2NweWZNNzRyWVJWN0RSNjl5YUZqNmF5Y0R0bE1NZEVQYTMzYmc?oc=5"
         }
       ],
       "mostViewed": null
@@ -1401,45 +1808,52 @@
       "outlets7d": [],
       "unratedOutlets7d": [],
       "mostViewed": {
-        "weeksOnList": 3,
+        "weeksOnList": 4,
         "lastRank": 6,
-        "lastSeen": "2026-09-30",
-        "lastWeek": "2026-09-27"
+        "lastSeen": "2026-10-06",
+        "lastWeek": "2026-10-04"
       }
     },
-    "s-32-119": {
+    "s-3170-119": {
+      "outlets7d": [
+        {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-10-03",
+          "lastSeen": "2026-10-03",
+          "url": "https://www.foxnews.com/politics/trump-drops-republican-senators-phone-number-social-post-fury-stalled-bill"
+        },
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-10-03",
+          "lastSeen": "2026-10-03",
+          "url": "https://thehill.com/homenews/administration/6127587-trump-posts-tom-cotton-phone-number/"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "s-3589-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
         {
-          "domain": "guampdn.com",
-          "firstSeen": "2026-09-28",
-          "lastSeen": "2026-09-28",
-          "url": "https://news.google.com/rss/articles/CBMi6wFBVV95cUxPdG9XUWtrNklsY0h1S1k5WGVSbjBJVWFUeXlDNkc0UG5zQ0NHR3Q4Z3FDTUxlMzVhbnVTTUJiRUl5c3N0elh4cXZWbUY5Y1diS01tcWozdVJNdFlPUVY5TDBTWmpVOHFfZDl4N0I0UF9tcFFybVQ0Z0xEaUxsZGNoV1hzTVV6OXVScFk4endhVHAyS3lTQm9qV2FiRlBwS0RlYkswQ3c3a283dDFNcVo0QWhhWmdteFFnZmFZcjZrVkJBSUtCZV9FVm50RTZCWDJqeVl1Ny01cjdFUHd2SlQ3d0ZuWHc0ajQ3THZB?oc=5"
+          "domain": "news.kalshi.com",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMinwFBVV95cUxPVjktalBPUHV5RkRKUkVLUDgxbkNsQ0hCMDNYUmpMQm9rd0pkNVV0OHc5SWRQaDYwSklQd2FzUm0zTllhOW9mczl2emNnRVJHY2d3Vy1aTTY0OXZYVzByUU9UMmNHTFRsZTJ4dEs5Rjk5SnpVR1BMUVFrZUNqVnc5RmhLbUE5VzNfdDdYOHpUeXUtSlBiQVVOT0FYMmh1Nlk?oc=5"
         }
       ],
       "mostViewed": null
     },
-    "s-3257-119": {
-      "outlets7d": [
-        {
-          "domain": "thehill.com",
-          "lean": "center",
-          "firstSeen": "2026-09-25",
-          "lastSeen": "2026-09-25"
-        }
-      ],
+    "s-3618-119": {
+      "outlets7d": [],
       "unratedOutlets7d": [
         {
-          "domain": "ainonline.com",
-          "firstSeen": "2026-09-27",
-          "lastSeen": "2026-09-27",
-          "url": "https://news.google.com/rss/articles/CBMiugFBVV95cUxPV2pDbDJFdTV3Yk1idHBDbHlmVUk0enNKWjFLQWJmWlhwQXowMjVBMGR6bGR6TEs0cjZaaklKaENTM2Y1UlFlcFYtazJTa2pLUkVMV0ZpOUNMaU1tMXF3aTZmaG9wSkZhdC1ZWVZJeGJLaXdqbF94cGlEY0VvcVc4Q2VoRF9mbjJtT0pMY2laRm5PLUoyRjk2dS1fUFRQYW96Z2h1bjZQNnZBemgtblN6eTE1RUQ2LWVJSUE?oc=5"
-        },
-        {
-          "domain": "avclub.com",
-          "firstSeen": "2026-09-26",
-          "lastSeen": "2026-09-26",
-          "url": "https://news.google.com/rss/articles/CBMijwFBVV95cUxPbzQyQjk0QkpWc2x5MFoxQlNzYnpEN2hvaGVsUUFxdkd3eXN2c3RzS1gxS2N5OG9Hb3U0LXJLQ3plUW5TQXdFNzNTTVZXTDdGdGdwVjg4dHZZc2dobU1JSDJpbG5rbWlWc1VkZ3VsZ0pvNXg2QWJsMnQ4d29BV2NTQ1hWVUc1ajRXaEZ0Szlzdw?oc=5"
+          "domain": "unbox.ph",
+          "firstSeen": "2026-10-06",
+          "lastSeen": "2026-10-06",
+          "url": "https://news.google.com/rss/articles/CBMid0FVX3lxTE1UbjJNUi1DMzFpMThnV1VYMzFIQnZGTk1jZ2g1T0JrOHJKRVcxay1IcE12c3dXMC16SlJUaFI3R2I0VWtzTVYzSkhONDF1aW1IY2g2aXdES1VIa0hldGlUeWM3VzFsTEctZWU0dnJob2dwS2Q3Qktr?oc=5"
         }
       ],
       "mostViewed": null
@@ -1468,6 +1882,19 @@
       ],
       "mostViewed": null
     },
+    "s-3900-119": {
+      "outlets7d": [
+        {
+          "domain": "reason.com",
+          "lean": "right",
+          "firstSeen": "2026-10-02",
+          "lastSeen": "2026-10-03",
+          "url": "https://news.google.com/rss/articles/CBMipAFBVV95cUxOZVhVc0JsLVJyODVwZ1l5TEVlWGM5UEd5Ti1lR1l6VzBhd280aWVkUUxDcU5DTHRCRmFqakNVdDJONTJKelZJU1hoSHhJRGhPcDY2ZmNncW5rYmVLOTdHazFfdkV3Zy1jcmhYR2tqWjctd2F4LUZoTnZMS0FycU5yM0htaFBheURuUmptNXE3ZGhXRGxSVGdELXFJcmlSYUZVLU5lRw?oc=5"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "s-4053-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1478,79 +1905,6 @@
           "url": "https://news.google.com/rss/articles/CBMid0FVX3lxTE43SUN6cUpab0x5YzYtSnU1SGFNMmJxS3IxS3FhOUFsNTQ4bDJVTUItS1hhaE1hOUlvMmg0cWUxU0xvZGRCLTRBQkEwSUJ1QmZic0QwQUYyb0RhWHdmb0t3aVROdkpvNkdLcC16aXJ6ZlJqZzQ1T3VZ?oc=5"
         }
       ],
-      "mostViewed": null
-    },
-    "s-4189-119": {
-      "outlets7d": [],
-      "unratedOutlets7d": [
-        {
-          "domain": "nola.com",
-          "firstSeen": "2026-09-27",
-          "lastSeen": "2026-09-27",
-          "url": "https://news.google.com/rss/articles/CBMigAJBVV95cUxOMUp5bFF5MGpmQi1sMFRzZWoyUWlESG51RjJfdENBMkJjMVpxSkZPNnVTYktkQ0ZfZ202d0JBNFp4Q3VQcTEtTWJQNnRZZTB4RjBtb2tEeWtjMXpiaVV0Ymd5SktSYW9rdDhNX3U5Y1c1bDNtVXAyZVVjbUswTXNSR05VS0pHb1ZEN0JWUEJlTjJpcVJsc3JmeVhzQmFQRmplMUFHZ2ZTSGU3eVBFTVE4MklWM3g5YnYxTkZsR1JBeG1FUjlxc0Q0Mld1TndfdGtNR1luTElaa3pxNldiREhIUmNMMkVVQTlrUW9UQXFEME5oZThDN2V3QmxtRHNBUHdz0gGAAkFVX3lxTE4xSnlsUXkwamZCLWwwVHNlajJRaURIbnVGMl90Q0EyQmMxWnFKRk82dVNiS2RDRl9nbTZ3QkE0WnhDdVBxMS1NYlA2dFllMHhGMG1va0R5a2MxemJpVXRiZ3lKS1Jhb2t0OE1fdTljVzVsM21VcDJlVWNtSzBNc1JHTlVLSkdvVkQ3QlZQQmVOMmlxUmxzcmZ5WHNCYVBGamUxQUdnZlNIZTd5UEVNUTgySVYzeDlidjFORmxHUkF4bUVSOXFzRDQyV3VOd190a01HWW5MSVprenE2V2JESEhSY0wyRVVBOWtRb1RBcUQwTmhlOEM3ZXdCbG1Ec0FQd3M?oc=5"
-        },
-        {
-          "domain": "theadvocate.com",
-          "firstSeen": "2026-09-27",
-          "lastSeen": "2026-09-27",
-          "url": "https://news.google.com/rss/articles/CBMilAJBVV95cUxNMWZnejdESXh3YTdLUVBBTWxPVnN3d21pZnVsX3VQRTRSNk03ZndPWTRkakpqX3pMcTR6QlhMMzlLckxnbDBGd25mMWxERjNaT3pyWS1RLWJnSTNYTFFBQTdBQzFyZ2M0MnNabkxFMklDOW1YSEhCLTM5TWdXSnh0cFd2NENmUFBGOE9FQzdVd0Y3V3Q1dGZFVXB4YnotWkdSbEx6dTVfaHdLRGpxdGVPa1BDMFh6a1pEaHdPTFVMTzBOSTVhQXo0djJlZm84Y1ZwYUNEMlJZLUhzcmpHb0J3NDY2TjdaZFNreTdBTnRySWJqY20tNXNoQ1pUdUluT1ZjcDJwSXZSVW5QSDc3TUt6WEdTOVQ?oc=5"
-        }
-      ],
-      "mostViewed": null
-    },
-    "s-4259-119": {
-      "outlets7d": [
-        {
-          "domain": "cbsnews.com",
-          "lean": "left",
-          "firstSeen": "2026-09-27",
-          "lastSeen": "2026-09-27",
-          "url": "https://www.cbsnews.com/news/alexander-yui-taiwan-representative-face-the-nation-transcript-09-27-2026/"
-        }
-      ],
-      "unratedOutlets7d": [],
-      "mostViewed": null
-    },
-    "s-4430-119": {
-      "outlets7d": [
-        {
-          "domain": "cbsnews.com",
-          "lean": "left",
-          "firstSeen": "2026-09-19",
-          "lastSeen": "2026-09-24"
-        },
-        {
-          "domain": "npr.org",
-          "lean": "center",
-          "firstSeen": "2026-09-19",
-          "lastSeen": "2026-09-24"
-        },
-        {
-          "domain": "thehill.com",
-          "lean": "center",
-          "firstSeen": "2026-09-14",
-          "lastSeen": "2026-09-24"
-        },
-        {
-          "domain": "cnbc.com",
-          "lean": "center",
-          "firstSeen": "2026-09-19",
-          "lastSeen": "2026-09-23"
-        }
-      ],
-      "unratedOutlets7d": [],
-      "mostViewed": null
-    },
-    "s-4432-119": {
-      "outlets7d": [
-        {
-          "domain": "foxnews.com",
-          "lean": "right",
-          "firstSeen": "2026-09-23",
-          "lastSeen": "2026-09-23"
-        }
-      ],
-      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "s-4512-119": {
@@ -1566,42 +1920,52 @@
       "unratedOutlets7d": [],
       "mostViewed": null
     },
+    "s-4518-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "goodmenproject.com",
+          "firstSeen": "2026-10-04",
+          "lastSeen": "2026-10-04",
+          "url": "https://news.google.com/rss/articles/CBMinAFBVV95cUxPUHRPemNfNTE4djdPVHVyQWIxMjRvYjZucUxfNi1KVThJYi1Mal9MekZBMElvVDZUTlFqMnc0eGFva2pYTUM3S1VGaDVJVkJ4eU1JRXpLUnJuZlJteGl5X3VDLV9WMlI1U21wdGJ5N0hha0gyUXhORk1aMWM4VnpnU3lZUHRNVnNBNE54dW9RQS1UdXdzekV1RzhfTnM?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "s-4559-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
         {
-          "domain": "rollcall.com",
-          "firstSeen": "2026-09-25",
-          "lastSeen": "2026-09-25"
+          "domain": "yahoo.com",
+          "firstSeen": "2026-10-06",
+          "lastSeen": "2026-10-06",
+          "url": "https://news.google.com/rss/articles/CBMimwFBVV95cUxPT3dpemgzbEtyOEowS0dqSWtBeVJ0QVl6bjR3dmJsWkRicC1DRTZRODBQZEhfc3B0cnRLOWhRZEhzdVhra2VpdE5VMktWb3NJRWdocmFMX1dMNkg2WUFKRkc0clJ1c1ZmNEVONkxYTTEtamVVdFBlc2VvRFI2bGpHeHJVd053MWU0QUphSTZtYUJBR2dBczdjQU9uWQ?oc=5"
         }
       ],
       "mostViewed": null
     },
-    "s-4630-119": {
-      "outlets7d": [],
-      "unratedOutlets7d": [
+    "s-4591-119": {
+      "outlets7d": [
         {
-          "domain": "quiverquant.com",
-          "firstSeen": "2026-09-25",
-          "lastSeen": "2026-09-25"
+          "domain": "politico.com",
+          "lean": "left",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://www.politico.com/live-updates/2026/09/30/congress/cruz-says-no-to-no-fakes-act-01100986"
         }
       ],
-      "mostViewed": null
-    },
-    "s-4665-119": {
-      "outlets7d": [],
-      "unratedOutlets7d": [
-        {
-          "domain": "theautowire.com",
-          "firstSeen": "2026-09-27",
-          "lastSeen": "2026-09-27",
-          "url": "https://news.google.com/rss/articles/CBMiiwFBVV95cUxObHpOMjhDRXRIT0FULUhoS0xtbTZ6ZGQzYkptTFkwM3Zya0xaTHpBR2FfQ3hlOEpsV3lzMUxKcmpKTnlsV3M3cEpwb29Da2N6WkQ4MG1XeXlNTWljdG1MLU5EYXNPNkZYWWlESlBIU3lqeFZOWDgzTGlEa1JlR0lCYU1ZTHZjOEd6U2Uw?oc=5"
-        }
-      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "s-4668-119": {
       "outlets7d": [
+        {
+          "domain": "axios.com",
+          "lean": "center",
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://news.google.com/rss/articles/CBMie0FVX3lxTE9kNW1Yb2MxckNXeVZFMnBDSTBNWGZXVUphcnFSM0dPNXp6bUJPZ2FtSThBUEU2UW1taXVPcFJUWjFkTW0xLU4wWU90LWNBTHNsNGdiZGxMdzl6U1VwYTlGSlpaTFZ1ZGhQR3NGWGZKQ3pEMS1hdUw1SlJNOA?oc=5"
+        },
         {
           "domain": "nytimes.com",
           "lean": "left",
@@ -1671,41 +2035,63 @@
           "firstSeen": "2026-09-29",
           "lastSeen": "2026-09-29",
           "url": "https://news.google.com/rss/articles/CBMirwFBVV95cUxOYkdkZ1YwTEt2ME9YbFV1RElfR3BJOThfSTBLUHBJRG1XZmo2TzAyTjM3UzdFWWc1RTVjQjFJVTI0aDVIUDdoU044N1R4RkMwS1hxYW9aenZTcmhNTlpEQmVKakh0Qm9MQVhGVHZyR3FnYlY4czl3b0J2X2FZTFk0ZjNyNk83Z3F6bUUzNmNGMk5kRnNLM01lTUQ4Q0RYTXpTc3AzRTAxek02YnExd0RB?oc=5"
-        },
-        {
-          "domain": "deseret.com",
-          "lean": "center",
-          "firstSeen": "2026-09-26",
-          "lastSeen": "2026-09-26",
-          "url": "https://news.google.com/rss/articles/CBMivAFBVV95cUxQXzhKOG04aklPamo0Uks4czJTTWNuX2dRS0hQWEx0SnpFYm5rT09DLWluekw1ZWowVThMSDM0eFJVSDMwMUZBNmRPQVQxNVVBdGJPSFl5N1h2X3JLRjctRGh0NkVqTjlXOUE3UXR5WkpQNXBjSUc1U0Jka2dadHh6d0w1Nktvc2FYVnJVTTI1b08xbnl4Y2tCVFoxMGQ2a0xSZXBoUkNvWkxyLUszTW9JaWlVdGpCZEIwV3FJdA?oc=5"
-        },
-        {
-          "domain": "washingtonexaminer.com",
-          "lean": "right",
-          "firstSeen": "2026-09-24",
-          "lastSeen": "2026-09-26",
-          "url": "https://news.google.com/rss/articles/CBMiqgFBVV95cUxQSWRhRVJLLV9CbTd1YW5uZjF3QXBRVnBFRzlKTDJsV2xDWGJrSUZzX0tnT0J1QzJ5T0dWMDZoV3lQdGpYUUtHZXRhRWpkWGJ0Y2xlc1FHU05FZnAzUHdQUnVRTkRnaTNhSWJYX0J5TFp6akt0dzdVVG5Ic1dWYTNKZ3BDTmNMY2FLX0FXUm9wQkd6TDkyRUd6OE1jd29wRVR5TWlLSGVFRFVHZw?oc=5"
-        },
-        {
-          "domain": "thefederalist.com",
-          "lean": "right",
-          "firstSeen": "2026-09-25",
-          "lastSeen": "2026-09-25"
-        },
-        {
-          "domain": "wsj.com",
-          "lean": "center",
-          "firstSeen": "2026-09-25",
-          "lastSeen": "2026-09-25"
-        },
-        {
-          "domain": "foxnews.com",
-          "lean": "right",
-          "firstSeen": "2026-09-24",
-          "lastSeen": "2026-09-24"
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "espn.com",
+          "firstSeen": "2026-09-23",
+          "lastSeen": "2026-10-05",
+          "url": "https://news.google.com/rss/articles/CBMiwwFBVV95cUxOV25iTDE0V0toV2JqbW9QbTBUbElzRjA0LVpGYi1ZV0g5OWE5bW1UMFpFa05fSnRES1ZMRjV0RHRXN3gweDlCb3VQRGhmWlZZNXJzczZSYUg4VTh4WDVFR3VtbThxN2JiTUhwMnVZUjB3T0c2MGhWNmNCRTlRc0xXeVpDVXhTYWk5RC1IS2IySHlEX3MxWWNqUnJ5UHJOLW9NTGstbExNbkxIajN2Nnc2RUdRWHNvcXBBVE9heVk0anlhQUE?oc=5"
+        },
+        {
+          "domain": "mychamplainvalley.com",
+          "firstSeen": "2026-10-05",
+          "lastSeen": "2026-10-05",
+          "url": "https://news.google.com/rss/articles/CBMipgFBVV95cUxOUE5QR2dyMXFFdi10dkVQLW9fYkVJQmRrODNzUXRrMkRSems0VGlPYnRJOTl3SExBenJlOGtYVkQxQ0xXOG84SWJiZ0pnNzV6VzUxdTU1VDZJQndxZTN4QUVXSDRKM0tNVzNiZWJFc1pEOF96VUxydHBXdjR2N2s0S1VqQ0JSY0xUcVZtbk1aTzJ4a2hWNHFSY0Q1ZGJNSEtpUkUzbmJR?oc=5"
+        },
+        {
+          "domain": "rollcall.com",
+          "firstSeen": "2026-10-05",
+          "lastSeen": "2026-10-05",
+          "url": "https://rollcall.com/2026/10/05/employee-question-could-stall-senate-college-sports-bill-at-midfield-in-house/"
+        },
+        {
+          "domain": "usports.org",
+          "firstSeen": "2026-10-05",
+          "lastSeen": "2026-10-05",
+          "url": "https://news.google.com/rss/articles/CBMilwFBVV95cUxOZVZUS0VYbTlFdDl1bENjcUVxVW1uRjNQMXpLY2RsOXNKRUxnRFA2V1JGMDVnRzNyZFVUQThQU3FKbHZISV96Nm40aWRIQy1TcG13a01aT2xHTWptZnptYklsZUl1djhyR2dLaHNZWUJ1ZzlsRVBUM28xS2NNaUxkZ3dLYUg0VUZwRkduREFfSWdDUFFQOGhF0gGXAUFVX3lxTE5lVlRLRVhtOUV0OXVsQ2NxRXFVbW5GM1AxektjZGw5c0pFTGdEUDZXUkYwNWdHM3JkVVRBOFBTcUpsdkhJX3o2bjRpZEhDLVNwbXdrTVpPbEdNam1mem1iSWxlSXV2OHJHZ0toc1lZQnVnOWxFUFQzbzFLY01pTGRnd0thSDRVRnBGR25EQV9JZ0NQUVA4aEU?oc=5"
+        },
+        {
+          "domain": "thermtide.com",
+          "firstSeen": "2026-10-03",
+          "lastSeen": "2026-10-03",
+          "url": "https://news.google.com/rss/articles/CBMiiwFBVV95cUxPTlBSVGhsRllkLURJNFEwN2tsMDFvaGkxY1haSDdwYWxVTUJaZnYxSWFTcmxOUVdmSE9QZ0lSU090RFFzQUZQR1pSeUlQMU9vT1pLVnRBVjktWElWVjRTS1VNekNIQjFad0d2d3ZzUXBCS0xhUGtfODE0b2M4XzYtNDMtdEwzRFN6Y0dr?oc=5"
+        },
+        {
+          "domain": "tomahawknation.com",
+          "firstSeen": "2026-10-02",
+          "lastSeen": "2026-10-03",
+          "url": "https://news.google.com/rss/articles/CBMihgJBVV95cUxPYmtPREszZ0dYNlI4WlYweEFlMjdHdlU5QWQzS0VBb0h3WlRNWkxoWUcwNC00QS1qRnRFak9RbmFUR3ZMUGdZNjZHLWFsbE5IVnpCcjJQRjU4VjRxQUkycW1oUUdkZU9uMUxJaDhUXy1BM0xhaW9lSndGVHY3bk5PYXB1SDZxOE0zWjVCeDBQRFRLM0EzbG1RLWhjS1k1ZkFTc0piLXNNZTJONXNKVHJHMDVXUkx4UERWalJUWDBnOVB3bUEycHhYQndSMWxBYzFPWVY0OG1MdVNGSjZ1cTVfR0IyM1FHcVdfQVV1TUI0WFIwanFKSUN4dDQ4YXg5N3lDbkhLblRR?oc=5"
+        },
+        {
+          "domain": "wral.com",
+          "firstSeen": "2026-10-02",
+          "lastSeen": "2026-10-03",
+          "url": "https://news.google.com/rss/articles/CBMizgFBVV95cUxPQWthdmVWT0xOUkdYVE91UkdLY1FoX2x4Q3VNVjdVNlA4Rk44enBTSFZNQkRVbE9MUXVQUGdleWxWcGR2anNrNG1YUTlibGlrbkxIYTkyb3FnZVpGcHAtSWtvMmFnankzNDR3alpSbFhVVFloWXQtWGZnanZfZVoxMEc1UmpnTzRMZnV6QThLUXRTcXdtVFZlYVNBOExfRHpmUmk4NUc1X2RkOGptRHQ0ckh4NUlfUHBJSXBZc3FwclMxbEJKMGU3YTNySGg4UQ?oc=5"
+        },
+        {
+          "domain": "kscj.com",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMimgFBVV95cUxPZkVhb1lUb0JQRVhUUHJLZ0xHZkZYUmFoOUxOU1RwU05wZlloWnNOdTVpUlJLZFhNek15bzFBUE1zeU91TkZJWFpRdHFjLXZJN0J4RjJSZ29xdUI1cEQ5blZ4bjdWNUZPdVoxX2dCZ21iUV9sRWhvVGE4RGtWa3dxS3RNUUljblFORlV2NVJ1c3FjR2dXNkVYQVVB?oc=5"
+        },
+        {
+          "domain": "washingtonsun.com",
+          "firstSeen": "2026-09-29",
+          "lastSeen": "2026-10-01",
+          "url": "https://news.google.com/rss/articles/CBMiqgFBVV95cUxQM3NqaEdKLVdLOGx6VXZnYVhCSTZJUUNpemNlcXJxMEM1RGtJX19hbmdnbFljTjBvLU9pZmtaNjZxT0VlZkxWb1dLRW1Fd2ZzSGJXNm0zYW5aMnd2OVBfQzFUaDFael82MlNnRWg5eW1VLThyVXhsMlFsc29RNjU1WHVVdTR2VEZMQVBrUWRxUFlkR20wRXpFOVdUdE9Nc0N0TGZFSVJVN3lSZw?oc=5"
+        },
         {
           "domain": "africa.espn.com",
           "firstSeen": "2026-09-30",
@@ -1761,12 +2147,6 @@
           "url": "https://news.google.com/rss/articles/CBMixwFBVV95cUxOSjBqMXFuNVM4SE9DY1RrRUgwdWM0eVdRN0tUeXJaWTFPWmJzX3BENTdMYThHbmRRck90QlNfNGUtQWkzekEzNUlINFZaTFBBQVBkcVVKVFBSTUxsX05VOWg5aERGTFJTUndFUjdobUZveTRmbGtCc3gtbHVoaFpQeUJ4bmVudGw3R3pwRTROU18wQkxvYm5uVV9RakNER2R4aUdlM2dvRERVUWgtQzhOV3RCWnk5TmpDZjNScjFVMC1RVkJ3MGI0?oc=5"
         },
         {
-          "domain": "espn.com",
-          "firstSeen": "2026-09-23",
-          "lastSeen": "2026-09-29",
-          "url": "https://news.google.com/rss/articles/CBMiqgFBVV95cUxPOXhNX2pINmY1REp2Q19BMXpLZGRmQnR4R3JDMlhFWlRnRnBqdXV0N2twQ1ZNa0IxN3d0R1FLZGp5b0QzMGtGRVV0bVVTSnF1bUR4dVBKVnZjN3ZNQ1ZxbEFTUlc5R3dIQjlhSVhSWXpfLU9YcmVycGVjeWp2ZktGby1PU0FXeWpiVDRrTlc1VnhsV29CVS10dVpuM1pJOGR3ZllDMERhMU8zUQ?oc=5"
-        },
-        {
           "domain": "fox59.com",
           "firstSeen": "2026-09-29",
           "lastSeen": "2026-09-29",
@@ -1807,72 +2187,18 @@
           "firstSeen": "2026-09-29",
           "lastSeen": "2026-09-29",
           "url": "https://news.google.com/rss/articles/CBMiyAFBVV95cUxOd29jeERZcWZJYjRacGtabTZwWjJ1dXU4YUNBMGljbkNTT3Zkbm15Q0Q2aGRzR2JaNEhDRFRRTm5iRWYzdTg0YzJKTkEtZ1c0X3lVbk1hVGdIbERBWENNbE1ENlZFTER1Z0xqVmd3V2lOeWpFQ01hSHZyMHhMY1hNOS1IQU1yZUVsTUZ2aHJQZUtjTzJVVjluRmJwOUVfNUpmdF9sTTVlS2xLZWV6WjZaY2tUblVNekZCVUM0eXlNWXItaXE2S05YbtIByAFBVV95cUxOd29jeERZcWZJYjRacGtabTZwWjJ1dXU4YUNBMGljbkNTT3Zkbm15Q0Q2aGRzR2JaNEhDRFRRTm5iRWYzdTg0YzJKTkEtZ1c0X3lVbk1hVGdIbERBWENNbE1ENlZFTER1Z0xqVmd3V2lOeWpFQ01hSHZyMHhMY1hNOS1IQU1yZUVsTUZ2aHJQZUtjTzJVVjluRmJwOUVfNUpmdF9sTTVlS2xLZWV6WjZaY2tUblVNekZCVUM0eXlNWXItaXE2S05Ybg?oc=5"
-        },
-        {
-          "domain": "pressreader.com",
-          "firstSeen": "2026-09-29",
-          "lastSeen": "2026-09-29",
-          "url": "https://news.google.com/rss/articles/CBMif0FVX3lxTE9HZ2puTGY3TUFVTzFEbVU0RDJ5RnRnaDYxUzg3MlhoeTVoWGxOUlNPNnN5OXd5Tjd4ZGFVa1UwN0hGVFJNdHBZWXpUeXljRHRTWmJQb2xHTENkX1dlUm1fV3dvWEJ0NExobFQ3ZXlHaHh6NkFOTkpDSDdjVjNqbDA?oc=5"
-        },
-        {
-          "domain": "rollcall.com",
-          "firstSeen": "2026-09-29",
-          "lastSeen": "2026-09-29",
-          "url": "https://rollcall.com/2026/09/28/senate-laterals-college-sports-bill-to-house-but-forward-progress-uncertain/"
-        },
-        {
-          "domain": "wane.com",
-          "firstSeen": "2026-09-29",
-          "lastSeen": "2026-09-29",
-          "url": "https://news.google.com/rss/articles/CBMi0gFBVV95cUxOMy1lUjlYRFNZZm1CblFkT05UQTlEMVdvUDNVYURSWVZnNDFqVUJmTWUwZlFBTm1meDlTQm9SbWtoU0JuaWJ4eDE3VzhjOVlfZUZ2aERsZUxlZEdzNlVDVkNCN21MUk9IUVdTb0FWWFp2d2hiU0o1N1BOOFV4OU5LRW9aQ3I5LXlUNmgwR0dneS1HdjVMYThwVUxKQ2JFZm05blh4Ykgxc2Y3UHFPZEFZQWtsRjhucC1fZ0hkZjFMNnRDMjl5WmxEeVdPallLMzIybVHSAdIBQVVfeXFMTjMtZVI5WERTWWZtQm5RZE9OVEE5RDFXb1AzVWFEUllWZzQxalVCZk1lMGZRQU5tZng5U0JvUm1raFNCbmlieHgxN1c4YzlZX2VGdmhEbGVMZWRHczZVQ1ZDQjdtTFJPSFFXU29BVlhadndoYlNKNTdQTjhVeDlOS0VvWkNyOS15VDZoMEdHZ3ktR3Y1TGE4cFVMSkNiRWZtOW5YeGJIMXNmN1BxT2RBWUFrbEY4bnAtX2dIZGYxTDZ0QzI5eVpsRHlXT2pZSzMyMm1R?oc=5"
-        },
-        {
-          "domain": "washingtonsun.com",
-          "firstSeen": "2026-09-29",
-          "lastSeen": "2026-09-29",
-          "url": "https://news.google.com/rss/articles/CBMihgFBVV95cUxNdEhNZ1lBY3V1S2diNndGdXlSRDdKOTVWUEJWSGNoT3cwNTluMmY0MmRfUXhLdUtnSEVXSktnbDVvS1dPalNZQXRwcXd4WmJZNFY0ZC1NSWxibVJkTGJMYW50eXFGYUtvNW9QbnVIMVRUdXJzLTZsR01JdXlSSUVza2poazFxUQ?oc=5"
-        },
-        {
-          "domain": "wjbf.com",
-          "firstSeen": "2026-09-29",
-          "lastSeen": "2026-09-29",
-          "url": "https://news.google.com/rss/articles/CBMi3wFBVV95cUxQaUticFB3WHJsajdMVk9ZbWZDVm5yVUt6Ny00bDB5LUxVcUJYb1JEa1I3alRMN2hwNDdWOXJ2Qkg5LTZKYWZEMF9OQWhtUXFTdVFtN2dwX1pOMEVxSV94dE1sVkRCMTBzXzlKaF9CUTBrbnhvc2dhMnlDYkRJLTdJUGlvNUxLTGh1RVEyY1VWaHpETWkwdzNMd0hFUXhzM1lIc2JFa1EtQ1BOb0luZzJQLUFNbUFTay1KX2VvclZCcUxSM3lQRV9wM3k5SjJsLVFwWlZmOW1sT3lPYTNrbUM40gHfAUFVX3lxTFBpS2JwUHdYcmxqN0xWT1ltZkNWbnJVS3o3LTRsMHktTFVxQlhvUkRrUjdqVEw3aHA0N1Y5cnZCSDktNkphZkQwX05BaG1RcVN1UW03Z3BfWk4wRXFJX3h0TWxWREIxMHNfOUpoX0JRMGtueG9zZ2EyeUNiREktN0lQaW81TEtMaHVFUTJjVVZoekRNaTB3M0x3SEVReHMzWUhzYkVrUS1DUE5vSW5nMlAtQU1tQVNrLUpfZW9yVkJxTFIzeVBFX3AzeTlKMmwtUXBaVmY5bWxPeU9hM2ttQzg?oc=5"
-        },
-        {
-          "domain": "1819news.com",
-          "firstSeen": "2026-09-28",
-          "lastSeen": "2026-09-28",
-          "url": "https://news.google.com/rss/articles/CBMi4wFBVV95cUxQaEFhYnM5eDVSRWNxalN1TVk2Z2RuWFRZWEVEWFA1OWlsVVc0VThBbTRoS1I1S3lSVVdGOC1adGI0Zk8xT3NGWUM1bEJqQkpVVWdRYkpQaURSNG96ejdYS2ZabUNiWXMybF81YTZCUDdVeUx3ZUI0d2lyNFZ1UW1nVTAxdzhoTWs2ZEwxRGRhdXVaZmRFblFINkdxczVoVlVYLW5qR2o0RFNjcEtjRGEzc1ZVcDhkSDFtR0JtQ2lwc2JvM3llcTBXYkVEcHlSZklINjVyaEJ0ZHJoLWVfNWtiOUdKQQ?oc=5"
-        },
-        {
-          "domain": "bvmsports.com",
-          "firstSeen": "2026-09-28",
-          "lastSeen": "2026-09-28",
-          "url": "https://news.google.com/rss/articles/CBMi1gFBVV95cUxOT2FycFg4ZkhfVlBTQ3JUZFlpZGhhejA4Vjk1RE1qUHBsWHEwWk9XdnFydzFkMWFBOUI5djFycVpFTGFlVDYxbXRzNjhyUEVUd2s3MElodVYyNnR2dXY2Wm5fTUVUV2pxUTdnbG9SOFFfZS1nQU9LemtwbTNuVzBfMW1EeXk3NHFZVVlobXlucWJWSzNTZXpkRzBXaFZfN2phYnZGb1cyQ2tDaTgwOFB6MVEtY2VXU25YS0tmWFg2X3FSZTdPYlVQVTRMN2xJS3JXcnNBc2t3?oc=5"
-        },
-        {
-          "domain": "kcur.org",
-          "firstSeen": "2026-09-28",
-          "lastSeen": "2026-09-28",
-          "url": "https://news.google.com/rss/articles/CBMivAFBVV95cUxQaDNwb3ZXb3ptSllvQm1oYmdreHAwRF9CU0hnX2lOcTRBS0dXbmFZRi1tT0hMRjV6QUhycVl3YjZ2MjFROFlwNnN0T0p2czRJQjM3cVlYWENpRnFQTFpoTFJmM2Q4Vjl3emRmZm9DQWxhdUFtRGcxeUdCakkwV2xtRTBCcVgtUVBaUTY3MjRLMWJPUWdtaS1ldTJWMHQ4T3VYbUhyOW5MZ0c1OTdwMkZYcjBBNElKYWNLb2ozYQ?oc=5"
         }
       ],
       "mostViewed": {
-        "weeksOnList": 3,
+        "weeksOnList": 4,
         "lastRank": 2,
-        "lastSeen": "2026-09-30",
-        "lastWeek": "2026-09-27"
+        "lastSeen": "2026-10-06",
+        "lastWeek": "2026-10-04"
       }
     },
     "s-5025-119": {
       "outlets7d": [],
-      "unratedOutlets7d": [
-        {
-          "domain": "conference-board.org",
-          "firstSeen": "2026-09-24",
-          "lastSeen": "2026-09-24"
-        }
-      ],
+      "unratedOutlets7d": [],
       "mostViewed": {
         "weeksOnList": 1,
         "lastRank": 6,
@@ -1880,123 +2206,26 @@
         "lastWeek": "2026-09-20"
       }
     },
-    "s-737-119": {
-      "outlets7d": [],
-      "unratedOutlets7d": [
-        {
-          "domain": "vpncompare.co.uk",
-          "firstSeen": "2026-09-22",
-          "lastSeen": "2026-09-23"
-        }
-      ],
-      "mostViewed": null
-    },
-    "s-766-119": {
-      "outlets7d": [
-        {
-          "domain": "cbsnews.com",
-          "lean": "left",
-          "firstSeen": "2026-09-26",
-          "lastSeen": "2026-09-26",
-          "url": "https://www.cbsnews.com/news/trump-cancels-billion-spending-pocket-rescission/"
-        }
-      ],
-      "unratedOutlets7d": [],
-      "mostViewed": null
-    },
-    "sconres-38-119": {
-      "outlets7d": [],
-      "unratedOutlets7d": [
-        {
-          "domain": "colombiaone.com",
-          "firstSeen": "2026-09-24",
-          "lastSeen": "2026-09-24"
-        }
-      ],
-      "mostViewed": null
-    },
-    "sjres-172-119": {
-      "outlets7d": [
-        {
-          "domain": "nbcnews.com",
-          "lean": "left",
-          "firstSeen": "2026-09-25",
-          "lastSeen": "2026-09-25"
-        }
-      ],
-      "unratedOutlets7d": [],
-      "mostViewed": null
-    },
     "sjres-185-119": {
-      "outlets7d": [
-        {
-          "domain": "politico.com",
-          "lean": "left",
-          "firstSeen": "2026-09-24",
-          "lastSeen": "2026-09-24"
-        },
-        {
-          "domain": "reuters.com",
-          "lean": "center",
-          "firstSeen": "2026-09-24",
-          "lastSeen": "2026-09-24"
-        },
-        {
-          "domain": "thehill.com",
-          "lean": "center",
-          "firstSeen": "2026-09-16",
-          "lastSeen": "2026-09-23"
-        }
-      ],
-      "unratedOutlets7d": [
-        {
-          "domain": "abcnews.com",
-          "firstSeen": "2026-09-25",
-          "lastSeen": "2026-09-25"
-        },
-        {
-          "domain": "bostonherald.com",
-          "firstSeen": "2026-09-25",
-          "lastSeen": "2026-09-25"
-        },
-        {
-          "domain": "orlandosentinel.com",
-          "firstSeen": "2026-09-24",
-          "lastSeen": "2026-09-25"
-        }
-      ],
-      "mostViewed": null
-    },
-    "sjres-192-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
         {
-          "domain": "medlearn.com",
-          "firstSeen": "2026-09-24",
-          "lastSeen": "2026-09-24"
+          "domain": "realclearpolicy.com",
+          "firstSeen": "2026-10-04",
+          "lastSeen": "2026-10-04",
+          "url": "https://news.google.com/rss/articles/CBMiogFBVV95cUxQWTA5bEFuWG1HanRrTUt2X1kwTk13WmhYYjh0bXF2ODNsV1N5ZGlYS2xOMkhON28zeFVvYVF5eFFSd1ZXMjdUTHduSHNqTm9tVzhBWFUtNTE2V25JT1FOWXJjU3hXY2QwWm5PcGtINTJqdXRvQmsxcjNCRlJ3YmRtamQ4anRQOGVGX2d2RUY0NmhWWE5MVWJiNTQ1ekZBUnJ5Rmc?oc=5"
         }
       ],
       "mostViewed": null
     },
-    "sjres-200-119": {
+    "sjres-195-119": {
       "outlets7d": [
         {
-          "domain": "pbs.org",
-          "lean": "center",
-          "firstSeen": "2026-09-24",
-          "lastSeen": "2026-09-25"
-        }
-      ],
-      "unratedOutlets7d": [],
-      "mostViewed": null
-    },
-    "sjres-213-119": {
-      "outlets7d": [
-        {
-          "domain": "washingtonexaminer.com",
+          "domain": "reason.com",
           "lean": "right",
-          "firstSeen": "2026-09-24",
-          "lastSeen": "2026-09-24"
+          "firstSeen": "2026-09-30",
+          "lastSeen": "2026-09-30",
+          "url": "https://reason.com/volokh/2026/09/30/journalists-publishing-information-about-sealed-arrest-protected-by-first-amendment/"
         }
       ],
       "unratedOutlets7d": [],
