@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-07T20:40:50.948Z",
+    "fetched_at": "2026-10-07T21:15:31.372Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-07T20:40:50.948Z"
+        "checked_at": "2026-10-07T21:15:31.372Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-04",
         "week_label": "Most-Viewed Bills - Week of October 4, 2026",
         "entries": 8,
-        "checked_at": "2026-10-07T20:40:50.948Z"
+        "checked_at": "2026-10-07T21:15:31.372Z"
       },
       "leans": {
         "center": {
@@ -949,6 +949,19 @@
           "firstSeen": "2026-10-01",
           "lastSeen": "2026-10-01",
           "url": "https://thehill.com/opinion/congress-blog/the-administration/6120575-congress-investigate-trump-corruption/"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-5408-119": {
+      "outlets7d": [
+        {
+          "domain": "washingtonpost.com",
+          "lean": "left",
+          "firstSeen": "2026-10-07",
+          "lastSeen": "2026-10-07",
+          "url": "https://news.google.com/rss/articles/CBMiqAFBVV95cUxOb3BmWUVtSE16aXFmZmxYT3FRRDdCYUhTWWRaNzlucXgtVHlMdXk1dzNMa0FzZ1QzNkJOb3I2bDA0Um9XZUpFMjhrWFdTWXlPMVpreFVZX3l3djZTaWRzT212dWNEN1BlaEVHYWExMWNob3gxZmRWYjU4LVo2QjJGalVCS25pZFhBMzNhdmkwZVhiNWs0SWZSSjY4SmRCcUJLb1ViOGloOG4?oc=5"
         }
       ],
       "unratedOutlets7d": [],
@@ -2019,6 +2032,18 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "s-3314-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "tcpaworld.com",
+          "firstSeen": "2026-10-07",
+          "lastSeen": "2026-10-07",
+          "url": "https://news.google.com/rss/articles/CBMitAFBVV95cUxPcFZZNkF2bV96Q1hSYkljVVA1eTFydE9FS19CZ1JQbmRGWGd3ejVJc3NCSVRZSGhmR3R6Rl9STXR5UUJ2dWVUTkMwaF9FUXBISFpZd2tDVGhWb1VDd0lXUG1hV3dRSmFsanBrUTEyWTZiMHJnbGNNMzk5LVdtM05VRXhORDZGeF9lU1pIVlZ0N3hCR0VrMHNQVEQ5V3FPOGVOUEl4UmotU2hFMldwTkhmdFBROHDSAbQBQVVfeXFMT3BWWTZBdm1fekNYUmJJY1VQNXkxcnRPRUtfQmdSUG5kRlhnd3o1SXNzQklUWUhoZkd0ekZfUk10eVFCdnVlVE5DMGhfRVFwSEhaWXdrQ1RoVm9VQ3dJV1BtYVd3UUphbGpwa1ExMlk2YjByZ2xjTTM5OS1XbTNOVUV4TkQ2RnhfZVNaSFZWdDd4QkdFazBzUFREOVdxTzhlTlBJeFJqLVNoRTJXcE5IZnRQUThw?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "s-3589-119": {
