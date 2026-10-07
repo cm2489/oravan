@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-07T15:31:18.293Z",
+    "fetched_at": "2026-10-07T19:43:10.200Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-07T15:31:18.293Z"
+        "checked_at": "2026-10-07T19:43:10.200Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-04",
         "week_label": "Most-Viewed Bills - Week of October 4, 2026",
         "entries": 8,
-        "checked_at": "2026-10-07T15:31:18.293Z"
+        "checked_at": "2026-10-07T19:43:10.200Z"
       },
       "leans": {
         "center": {
@@ -263,6 +263,12 @@
           "url": "https://news.google.com/rss/articles/CBMivAFBVV95cUxQTnYxOGJyZTFBaF96alZjd0NSRHhhczhoenZWVmQ1aVJrajQtb2ZiU3dRV3lBWXJHNnNiNVBrQmNLdC1SY1Z6cHBFMUw5SWNUVVhqeV9YaXV4dEh0UnhzZk1nN25OOG9STElZZ2ljbjNBZDU2UHk0Y0Rzc1pIR3EyX1NobXk2N1BsT001SmFfdnRjNjU4NlQwbEMtaGhOMDNqTXpIaTBhcW9vN1I3aFpfeW9ZTHVnWkxVTERMUdIB0AFBVV95cUxNRlJnZzJUeE4zSUQzZjMzSExUd1YtanRyQXFwdzZpQWd0NXJjR1B4a3BhRWlyNG5pVnBRZG5TZ3BiTmUwWGhoY0xiOWFnOUxXR2tjay1yemc0NjZhdTN0Y1ZyMnlZTzR0Q0pkN2UxRjE3WUJuaW5MMzZ0a0xwb0ktMDFteHZHTHNWQXM4RVBrLWhKcVNvSkx3QzBfM0RkeG1vampteHN5NTZnV0xaNWgzTTd5OWFqZ0JkY0xGSlFCWnFfZWlnOHRhZDUwNGI4djFH?oc=5"
         },
         {
+          "domain": "yahoo.com",
+          "firstSeen": "2026-10-07",
+          "lastSeen": "2026-10-07",
+          "url": "https://news.google.com/rss/articles/CBMilgFBVV95cUxQdnpEVDdScGtaRnFlcVRrMnBxZE9OZmlhN00yNURtODFiQUdvMHNEUHB2RUpkR293SF9QbnNPZXpBWXNyakNwUFg1eXNGcWF1RmNZajF3M013WEVKMllnbWI4czhyVGtIWkREOV9xLUZpclNmVEx1LVVNYlBESmVKQ09GRXVIcEtUdDdoZllNNGY1dmhXQUE?oc=5"
+        },
+        {
           "domain": "fayobserver.com",
           "firstSeen": "2026-10-02",
           "lastSeen": "2026-10-02",
@@ -289,6 +295,12 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "fox35orlando.com",
+          "firstSeen": "2026-10-07",
+          "lastSeen": "2026-10-07",
+          "url": "https://news.google.com/rss/articles/CBMihgFBVV95cUxNWEdsOFh6MWhIVXVoMlM5WXVRLTFLdUVBUENJN0w4YTBoOFR5eXJYSldFZHo3aXIyTldVVXVTQS1hSHlnRFZXYm5xV3J3Z3E2ZTJzenZnNVZwU2hNQ0JCR0pTRHg4dkV4X1dNSHUwZl9jemdCMjJJTjYwV1JWb2EyNktZWG5mUQ?oc=5"
+        },
         {
           "domain": "ktvu.com",
           "firstSeen": "2026-10-07",
@@ -386,6 +398,19 @@
           "url": "https://news.google.com/rss/articles/CBMivAFBVV95cUxOcUp3WDI2LVI2M0R6NWtqT1l5N2VGMlpRSFppRUVMZmtYd1oydUJrQ3JUejRPelVHak1xbFdUdXB4SDZ0RWtQTjROcG5hSTV4LXlXUXh0enlVN0RjZ1FqMVRZSmhFUnVTckE0cU82NnB1ZkZXX0tMenlyMUZzRVI3QllLSlFETUZHOFlkeXlnSXZENVJBT1lFVHl3S3pOQ3FCTVR2OXhxTHNRS1JESVg0b2pyZHIyLTZHZWxqWQ?oc=5"
         }
       ],
+      "mostViewed": null
+    },
+    "hr-1028-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-10-07",
+          "lastSeen": "2026-10-07",
+          "url": "https://thehill.com/policy/sports-gaming/6134523-lawmakers-probe-sex-abuse-aau/"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "hr-10319-119": {
@@ -583,6 +608,18 @@
       ],
       "mostViewed": null
     },
+    "hr-1700-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "aol.com",
+          "firstSeen": "2026-10-07",
+          "lastSeen": "2026-10-07",
+          "url": "https://news.google.com/rss/articles/CBMif0FVX3lxTE1wU0E1NkFFSzNNcWxCQ2RRVUZULTJVckRKUzJHQ3FFNGZEQzJhMkI1NVduTGJib0xVRmtnUTJlNFpQTFIyb2Z2SmhQZWI4WEFmQWxyYUUwSWJKYUpzQUhwRDVrZmZhdV9wZTNxNVp5VjB1OGM4Y3kwM2ZwNkdDN3c?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-1703-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -733,6 +770,19 @@
       ],
       "mostViewed": null
     },
+    "hr-28-119": {
+      "outlets7d": [
+        {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-10-07",
+          "lastSeen": "2026-10-07",
+          "url": "https://www.foxnews.com/politics/imperiled-house-democrat-gets-ripped-left-right-after-flip-flop-transgender-sports"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hr-3049-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -759,6 +809,12 @@
           "firstSeen": "2026-10-07",
           "lastSeen": "2026-10-07",
           "url": "https://news.google.com/rss/articles/CBMiwwFBVV95cUxPVTNrdGVzd1FLdERYYXpVTlU5aUVzeU9mbktzRUc3d2ctM1BGX0pMWERYRVJyX0RnU2VRNXFZTHBucUR6UTIwekpVd1ZrZk9JTGtHcUlrNmpQY2Z5dTNKWHQ5M1d6RDJjSWRmWnZNU3ZYbjlPbm9qTHNYZXZRM1RacXhQSEtzaE8yRjYxWmZzMU50blZjRXdYN3hwRUJlNGQyb2dsMWJEZUUzUVRCTUhmZWEyY0poYUJZUGxLYlJpNmhMWlU?oc=5"
+        },
+        {
+          "domain": "tradingview.com",
+          "firstSeen": "2026-10-07",
+          "lastSeen": "2026-10-07",
+          "url": "https://news.google.com/rss/articles/CBMi4wFBVV95cUxOVDl2dVpWU251ZkEwZHd6U3VxZW03OXN2XzNKRms3UlpSaHlwN1BFRzltajFYTWdxTmlLem1aTXd1a1VUNHBPem53RjNXcnRUUF9naGdyaU9kV0VCcUVXZ1dhZFFYSk9PSjNfYmc5QkFXYldiWk1jS2pkalZxTTJGVlo4bUh0SHhIeC1xUExlLWJ2SDc4bWh0THk2c1VxWlRnMlNhRlgyZnhnQy1yTnJDZ0dwVmVFWHhVREdjVE1tLTBMT0xndDBXTnNXWVBEWHF2MWNlMk1xSzRoRTRNNk9nd1hYUQ?oc=5"
         },
         {
           "domain": "memeburn.com",
@@ -790,6 +846,12 @@
     "hr-4307-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "hoodline.com",
+          "firstSeen": "2026-10-07",
+          "lastSeen": "2026-10-07",
+          "url": "https://news.google.com/rss/articles/CBMiuwFBVV95cUxORjZXMWhpM3ladEJqVVhGbGZCSGFwbVdpdjZfMG1WSDBBNk5KYlNmbHBoTnlPVEU3U3JFOVB2SjZuS2tldXBMc1hhbG5mVzl3T0cyTV9EZi1yWXZSX3NzXzBIQW9Ncld2dUU2czE3cnBNLW1fLTkzQ1VuMTR6aXZfU240WnlYeWU4dWJMZDJnOTFucVBfTVN6eF9VcDA2Yl9Oa09tM01iNzk3OFM1a3hUWFdNS2t6X1F2X25z?oc=5"
+        },
         {
           "domain": "wowo.com",
           "firstSeen": "2026-10-07",
