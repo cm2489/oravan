@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-10-07T07:11:17.445Z"
+    "generated_at": "2026-10-07T20:26:53.038Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -3083,6 +3083,40 @@
           "updates:+1"
         ],
         "model": "claude-sonnet-5-5"
+      },
+      {
+        "id": "s_967b6943",
+        "generated_at": "2026-10-07T20:26:54.153Z",
+        "as_of_day": "2026-10-07",
+        "text": {
+          "en": "The latest action in the official record on these measures is dated September 14, 2026.",
+          "es": "La última acción del registro oficial sobre estas medidas es del 14 de septiembre de 2026."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "hr-8800-119": "passed_chamber",
+            "s-4784-119": "floor_vote"
+          },
+          "vehicle_status_keys": {
+            "hr-8800-119": "passed_chamber",
+            "s-4784-119": "floor_activity"
+          },
+          "update_ids": [],
+          "roll_calls": [],
+          "roll_calls_on_record": [
+            "h-119-2-277",
+            "h-119-2-278",
+            "s-119-2-195"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/8800",
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4784"
+          ]
+        },
+        "changed_because": [
+          "reanchor:7d"
+        ],
+        "model": "record-only"
       }
     ],
     "summary_attempts": {
