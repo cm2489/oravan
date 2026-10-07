@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-07T07:11:16.304Z",
+    "fetched_at": "2026-10-07T15:31:18.293Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -9,15 +9,15 @@
       "press": {
         "status": "ok",
         "feeds_total": 11,
-        "feeds_silent": 1,
-        "checked_at": "2026-10-07T07:11:16.304Z"
+        "feeds_silent": 0,
+        "checked_at": "2026-10-07T15:31:18.293Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-04",
         "week_label": "Most-Viewed Bills - Week of October 4, 2026",
         "entries": 8,
-        "checked_at": "2026-10-07T07:11:16.304Z"
+        "checked_at": "2026-10-07T15:31:18.293Z"
       },
       "leans": {
         "center": {
@@ -171,8 +171,28 @@
       "unratedOutlets7d": [],
       "mostViewed": null
     },
+    "hconres-93-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-10-07",
+          "lastSeen": "2026-10-07",
+          "url": "https://thehill.com/homenews/campaign/6133643-paxton-iran-war-campaign/"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hjres-1-119": {
       "outlets7d": [
+        {
+          "domain": "politico.com",
+          "lean": "left",
+          "firstSeen": "2026-10-07",
+          "lastSeen": "2026-10-07",
+          "url": "https://www.politico.com/news/2026/10/07/senate-supreme-court-lame-duck-01109203"
+        },
         {
           "domain": "cnbc.com",
           "lean": "center",
@@ -237,6 +257,12 @@
           "url": "https://news.google.com/rss/articles/CBMilwFBVV95cUxPcGRZeWFsX0xEQmpiSnZGM3ZIY0VuVzFqOFBkajdpOUxiOVN3cVctd0tzdk9XRWtGTUR0SVV1d1A2Z1pSeDJJaTNfYzFabzhtQzlqeThPeFR5Q1dFZzY1QlY4Qm5YeG80NzA5cm9KNWhjNXA0aVFhcno0eGxxQnFQVE1rOW1YUUxoZ2QydkhKSGJMS1R4WVJj0gGcAUFVX3lxTE5pS05UQnhVQ3Y1MTFjWlAxUjhtY0ZNb3ljNlZlRlhrTWZPaHlDd2hxUElhR3JrdGNlakhUN0ZmV1ozZmZNTTJ0UjRWWTNGeG9ySFJCeF9KZ2FlVVVUaEVuVFB5bXdTVk55V1V0dVhvTU5Ga2dfVGhRelcyOE1aYk1aVjAwdXRSY2ZQNkpTaEwxSWVTWHdqZGV6Q0VuYg?oc=5"
         },
         {
+          "domain": "wsoctv.com",
+          "firstSeen": "2026-10-07",
+          "lastSeen": "2026-10-07",
+          "url": "https://news.google.com/rss/articles/CBMivAFBVV95cUxQTnYxOGJyZTFBaF96alZjd0NSRHhhczhoenZWVmQ1aVJrajQtb2ZiU3dRV3lBWXJHNnNiNVBrQmNLdC1SY1Z6cHBFMUw5SWNUVVhqeV9YaXV4dEh0UnhzZk1nN25OOG9STElZZ2ljbjNBZDU2UHk0Y0Rzc1pIR3EyX1NobXk2N1BsT001SmFfdnRjNjU4NlQwbEMtaGhOMDNqTXpIaTBhcW9vN1I3aFpfeW9ZTHVnWkxVTERMUdIB0AFBVV95cUxNRlJnZzJUeE4zSUQzZjMzSExUd1YtanRyQXFwdzZpQWd0NXJjR1B4a3BhRWlyNG5pVnBRZG5TZ3BiTmUwWGhoY0xiOWFnOUxXR2tjay1yemc0NjZhdTN0Y1ZyMnlZTzR0Q0pkN2UxRjE3WUJuaW5MMzZ0a0xwb0ktMDFteHZHTHNWQXM4RVBrLWhKcVNvSkx3QzBfM0RkeG1vampteHN5NTZnV0xaNWgzTTd5OWFqZ0JkY0xGSlFCWnFfZWlnOHRhZDUwNGI4djFH?oc=5"
+        },
+        {
           "domain": "fayobserver.com",
           "firstSeen": "2026-10-02",
           "lastSeen": "2026-10-02",
@@ -248,6 +274,13 @@
     "hr-10167-119": {
       "outlets7d": [
         {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-10-07",
+          "lastSeen": "2026-10-07",
+          "url": "https://www.foxnews.com/politics/congress-killed-penny-now-its-coming-13-cent-nickel"
+        },
+        {
           "domain": "manilatimes.net",
           "lean": "center",
           "firstSeen": "2026-09-30",
@@ -256,6 +289,18 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "ktvu.com",
+          "firstSeen": "2026-10-07",
+          "lastSeen": "2026-10-07",
+          "url": "https://news.google.com/rss/articles/CBMie0FVX3lxTFBLWWdIby1MZlRJSXpTSG9qT2RXeXhTN1puX3Q2LVlyclVpUXU5NVd5R1NDWFp3MzBRLTNDNXl2andaZ0d3T193TmVXVnBERnA2OXhJa1psQ1QycnBKaTZ1V3I2SXUtZDlHaTJwRU9uTzNCMDM3VHhxOU1CNA?oc=5"
+        },
+        {
+          "domain": "wfmd.com",
+          "firstSeen": "2026-10-07",
+          "lastSeen": "2026-10-07",
+          "url": "https://news.google.com/rss/articles/CBMinAFBVV95cUxQRzlUOGZCOFVRTnBVSzMwb3dZX18zSklFenNQbGFmVVFSbzdyaDh4Ry1fRmtGZ2kyczVheHIxdmZGVWFxYnVUQTRwVDE2bTdUT0VmUFIxLV93NDVsWnZtZFRZSGk5bEJwTEhDcjNxOTBKZVJKMk9MbU9qZExrcmhoYjJUaHFvMGRHd1NFby1HTHR5WEdibzZqVVNIYWk?oc=5"
+        },
         {
           "domain": "yahoo.com",
           "firstSeen": "2026-10-02",
@@ -383,8 +428,8 @@
           "domain": "foxnews.com",
           "lean": "right",
           "firstSeen": "2026-10-06",
-          "lastSeen": "2026-10-06",
-          "url": "https://www.foxnews.com/politics/battle-over-daylight-saving-time-erupts-push-stop-changing-clocks-hits-senate-wall"
+          "lastSeen": "2026-10-07",
+          "url": "https://www.foxnews.com/politics/trumps-daylight-saving-push-gets-new-pressure-campaign-from-house-gop-leaders"
         },
         {
           "domain": "thehill.com",
@@ -704,6 +749,12 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "247wallst.com",
+          "firstSeen": "2026-10-07",
+          "lastSeen": "2026-10-07",
+          "url": "https://news.google.com/rss/articles/CBMikwJBVV95cUxNa0daTE9TM0hwVkY2SnJJOFUzcDZONGNuRmJ1ODNubmRWakdJMlRpNUt6NU9HUm9yeXdvbzczUGltQ25nWGlGNmdHTGt5TGdqYTY3Q204Rkg5WS1FVHcwMjZwQzU2SVlaN3Q2UzE3bXNWbVdYZVdmN3BjeUxLSnpmODE5a1ZhWVJBOWxlUFEtZy03S3JjWjhJN0hTMVRScS1TejNWZkFSUTE5ZnV1NUt5NVlaRWE0M0hUblVncTVfRnk0M0k1TlUzUndYN2FJOTVuV0pkRlVrVUhNUmtIdGRlTkZGYkF0STBYMGNlVW42UXJ2MDdRQ1FkRk5DTDNISlgySEJGanE2V0NYek9MQlhvR0ZyQQ?oc=5"
+        },
+        {
           "domain": "kucoin.com",
           "firstSeen": "2026-10-07",
           "lastSeen": "2026-10-07",
@@ -739,6 +790,12 @@
     "hr-4307-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "wowo.com",
+          "firstSeen": "2026-10-07",
+          "lastSeen": "2026-10-07",
+          "url": "https://news.google.com/rss/articles/CBMigAFBVV95cUxNUTBtY3IyQTVTOHJxS2VxM3lLMDV3T2Z1S3dNMG1SYlVFSmhzWXQ0RXQ4UVJLOFZ5MGhUYm1tclp2SjJIVTEzcWI1RlYtb2x2V1BEcmZpcTh0Tzc3RlpGVnVGcGhoU3J5WmtPWEVtdmRoYTBscXpUQVl6NlRvbzFJNg?oc=5"
+        },
         {
           "domain": "thesuntimesnews.com",
           "firstSeen": "2026-10-05",
@@ -833,6 +890,18 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-5436-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "commercialappeal.com",
+          "firstSeen": "2026-10-07",
+          "lastSeen": "2026-10-07",
+          "url": "https://news.google.com/rss/articles/CBMiuwFBVV95cUxPLS1hZHdFRXFMVFY4UjktaG5CcVdmRkJwSmdLcVMwNmlCNkhRY2RRSEpDc3JrZ1B0TE5ONXB2N1BiNk9rNGhhazJ2YXB1aWdmMDZVNGJDUVJFU2Q1b3FtS0cydHBtQldaX2trSjBkWXFiR19yQ2sxbDZiWktDWVNxTnpBdnVSTTlGaUQzSzlEMEd3WGhsX0k5SW5od2tPZmhNR1VDZHNjMGlPNnIwbF9DbnNkYkRaMDFkNHlV?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "hr-5505-119": {
@@ -1266,6 +1335,18 @@
           "firstSeen": "2026-09-30",
           "lastSeen": "2026-09-30",
           "url": "https://news.google.com/rss/articles/CBMi0gFBVV95cUxQYkloNW5zNWFWTncyT0ZuZzF2UDhCMl9OOVdsckdoZkZEU2ZmZUxPSWRhRUNhdzRiTGdjYmI5LWotazN5ekl0bzVmaG1sWEZreTBBa1dtVW1FbjcwcWtqeWlFSGkyTENKTUNMVmkxUjlOb3FHTUM2WnFfaW1FbXZkNUNIc0RWVm1MMTY2YUgyR0tSWEJ4cVg4c0tweGhHMkJESV9xcFlrbUx2azgyQXR3akZienh4emgtMnF0Q19DTm5pVDlmVjN6YTVxSXRyVk95Wnc?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-7187-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "insurancebusinessmag.com",
+          "firstSeen": "2026-10-07",
+          "lastSeen": "2026-10-07",
+          "url": "https://news.google.com/rss/articles/CBMizAFBVV95cUxQbkZtNkh0U19Sb3J0MXBVV29qZ0xvbERVMS1OMzMzLW94eFR2UDVqYW16OGxEMlNkSGY3Nzh0bHdaRlhVVEpCM2NuNDFBX1JBeHdUX1VWYVRMamtLU0xuWXlITV9mbGd6bWdqX2V0OUstNlFiMndfaVJ6MWlra3VzdnhrSjRNR3ExUFY3NFhya2FPY3JIRWpCZXdEY1pFeXVWd3hwTWRkZjNhcFhDWElDeUdVUzhxZEJBLWpWelJxOF9RdndEZmpIVlc5Ylo?oc=5"
         }
       ],
       "mostViewed": null
@@ -1797,6 +1878,18 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "s-2578-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "aol.co.uk",
+          "firstSeen": "2026-10-07",
+          "lastSeen": "2026-10-07",
+          "url": "https://news.google.com/rss/articles/CBMijAFBVV95cUxPZnJBc29YeVVpcU9xVWN6X2ZJczdfdDhGaDc1SzBOQlhCYWM2aTJCay1ncVJaM056MTl1OXc1eHVROGM2YWhFNFdzWXFneVdObm9oUUtkdkVoaVA2VTNGNnVhbkdWUGNOVWRKNFB4VFR6UDR1Y3FRR3NkNWRtZUJRbWFoS2p5SV9LUnNPUQ?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "s-2666-119": {
