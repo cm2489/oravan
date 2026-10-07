@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-07T19:43:10.200Z",
+    "fetched_at": "2026-10-07T20:40:50.948Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-07T19:43:10.200Z"
+        "checked_at": "2026-10-07T20:40:50.948Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-04",
         "week_label": "Most-Viewed Bills - Week of October 4, 2026",
         "entries": 8,
-        "checked_at": "2026-10-07T19:43:10.200Z"
+        "checked_at": "2026-10-07T20:40:50.948Z"
       },
       "leans": {
         "center": {
@@ -2068,6 +2068,18 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "s-4315-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "thedakotascout.com",
+          "firstSeen": "2026-10-07",
+          "lastSeen": "2026-10-07",
+          "url": "https://news.google.com/rss/articles/CBMikAFBVV95cUxPdmZEa0doQlp1N2lUYWJ2akFoZTFfLXVPVVpKdWFnZXJ3aktEdmJDQzNkcG84RWdheW0wYTg5RG5mSDc4ZFp0V2xQdk81Vi03TmI3QkFnNnNqQzBDRkZVM2VBcDVacWJCSHJTYkRDelZPRnZtMXRJZ1phRHVaYzZEbVFJSFVIOGcxMVVxcERxLWw?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "s-4518-119": {
