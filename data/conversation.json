@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-08T19:40:11.519Z",
+    "fetched_at": "2026-10-08T20:24:36.537Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-08T19:40:11.519Z"
+        "checked_at": "2026-10-08T20:24:36.537Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-04",
         "week_label": "Most-Viewed Bills - Week of October 4, 2026",
         "entries": 8,
-        "checked_at": "2026-10-08T19:40:11.519Z"
+        "checked_at": "2026-10-08T20:24:36.537Z"
       },
       "leans": {
         "center": {
@@ -1128,6 +1128,13 @@
     },
     "hr-6529-119": {
       "outlets7d": [
+        {
+          "domain": "time.com",
+          "lean": "left",
+          "firstSeen": "2026-10-08",
+          "lastSeen": "2026-10-08",
+          "url": "https://news.google.com/rss/articles/CBMifkFVX3lxTE5KSVpoU292dmpYRXBNR3ZUN1RLRlBqWjhZSDNiWmNrTTFqNVFNYUQwcmdBNUoyampFUm1MdTBzOHd6R2dySm8zbmdsYmZTNUkxYW5ZTmhrWVRPdExtM1RweFlfU0RFUHFJS1BMZmthVVlOLXRkdFNJS052QXZwUQ?oc=5"
+        },
         {
           "domain": "npr.org",
           "lean": "center",
