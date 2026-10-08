@@ -12,6 +12,66 @@
     "stores": "Per question: the exact search terms, the day it was last checked, and for each AllSides-rated outlet GDELT found, its domain, lean, the days GDELT saw it and up to five article links. Never titles, article text, tone or sentiment."
   },
   "questions": {
+    "annual-defense-policy": {
+      "checkedOn": "2026-10-08",
+      "terms": [
+        "national defense authorization act"
+      ],
+      "counts": {
+        "outlets": {
+          "left": 0,
+          "center": 3,
+          "right": 0
+        },
+        "articles": {
+          "left": 0,
+          "center": 4,
+          "right": 0
+        }
+      },
+      "outlets": [
+        {
+          "domain": "jpost.com",
+          "lean": "center",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-01",
+          "articles": [
+            {
+              "url": "http://www.jpost.com/international/article-910244",
+              "seen": "2026-10-01"
+            },
+            {
+              "url": "https://www.jpost.com/international/article-910244",
+              "seen": "2026-10-01"
+            }
+          ]
+        },
+        {
+          "domain": "justsecurity.org",
+          "lean": "center",
+          "firstSeen": "2026-10-01",
+          "lastSeen": "2026-10-01",
+          "articles": [
+            {
+              "url": "https://www.justsecurity.org/159351/how-will-congress-public-learn-trump-venezuela-oil-deal/",
+              "seen": "2026-10-01"
+            }
+          ]
+        },
+        {
+          "domain": "militarytimes.com",
+          "lean": "center",
+          "firstSeen": "2026-10-02",
+          "lastSeen": "2026-10-02",
+          "articles": [
+            {
+              "url": "https://www.militarytimes.com/news/pentagon-congress/2026/10/01/gao-calls-on-coast-guard-congress-to-step-up-marine-firefighting/",
+              "seen": "2026-10-02"
+            }
+          ]
+        }
+      ]
+    },
     "crypto-oversight-split-between-sec-and-cftc": {
       "checkedOn": "2026-10-01",
       "terms": [
