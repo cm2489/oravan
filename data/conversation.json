@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-08T20:24:36.537Z",
+    "fetched_at": "2026-10-08T22:01:54.656Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-08T20:24:36.537Z"
+        "checked_at": "2026-10-08T22:01:54.656Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-04",
         "week_label": "Most-Viewed Bills - Week of October 4, 2026",
         "entries": 8,
-        "checked_at": "2026-10-08T20:24:36.537Z"
+        "checked_at": "2026-10-08T22:01:54.656Z"
       },
       "leans": {
         "center": {
@@ -831,6 +831,18 @@
         "lastWeek": "2026-09-20"
       }
     },
+    "hr-3683-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "animalwellnessaction.org",
+          "firstSeen": "2026-10-08",
+          "lastSeen": "2026-10-08",
+          "url": "https://news.google.com/rss/articles/CBMiigFBVV95cUxOazVRQlBMZnJZcGVldkkwdHl2NVFHTDNsbHVRYl9xQWlKQ29sQVNmU28zQ2ZWME0wdm5sSDhJMUVOdEhqU29iZ1BXU2h5QkswdURqTGI1dDFtYnlXUG1YaTJSM3VaX242TkRxREVJQWlLejNVaFFmVklpaTZwWThFYzc5aTZ3bzlNWkE?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-4305-119": {
       "outlets7d": [
         {
@@ -1458,6 +1470,18 @@
       ],
       "mostViewed": null
     },
+    "hr-8141-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "tradingview.com",
+          "firstSeen": "2026-10-08",
+          "lastSeen": "2026-10-08",
+          "url": "https://news.google.com/rss/articles/CBMixAFBVV95cUxQVEtrbENYdzhwOFB4RXZ5QUJLMVFMd1F6a2N5d1hBQ0dUb1RQVnl2cGZHcVREa0V5NmIxeG14OW54amdNZmZhTWFrYkZRSDk5bmM5NXcydng2R2dCUnhid0RDOVR3UGN0TE1MQmJHLUJBbmtjTXBMbWFVWlN3NE9OZW1oUE5JOG9hNzl5c1cxRlFaT21OamZPUDhYR1JwS01PSFlqSk40SWpmeEZtZkdmSFBETGd6NGZEVVVFbThQUVVnQ1A0?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-8322-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1875,6 +1899,18 @@
       ],
       "mostViewed": null
     },
+    "s-3732-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "ksjd.org",
+          "firstSeen": "2026-10-08",
+          "lastSeen": "2026-10-08",
+          "url": "https://news.google.com/rss/articles/CBMirwFBVV95cUxPR0oyUzd6bDRUck9EWWRnUmFQbXE2OU5KdlpQYlVVQXZiSlVHSXFPZzEzaXUzVW9Zd1gtQ1Q1U2RaaW5CRXZwWndmdFdmSzNwMkdLbXVFd2xCd01rVTFJS25yd0d5LWZMTmNYYWJrN2lTdUd4WE1GYUJfTFNJR1lGbmVTSXhkSURkQ0RTOE5mWFpmbkZqWXZ6b3ZRcWJrVUdPb2dEUXNXR19lemYzbUpV?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "s-3900-119": {
       "outlets7d": [
         {
@@ -1896,6 +1932,18 @@
           "firstSeen": "2026-10-07",
           "lastSeen": "2026-10-07",
           "url": "https://news.google.com/rss/articles/CBMikAFBVV95cUxPdmZEa0doQlp1N2lUYWJ2akFoZTFfLXVPVVpKdWFnZXJ3aktEdmJDQzNkcG84RWdheW0wYTg5RG5mSDc4ZFp0V2xQdk81Vi03TmI3QkFnNnNqQzBDRkZVM2VBcDVacWJCSHJTYkRDelZPRnZtMXRJZ1phRHVaYzZEbVFJSFVIOGcxMVVxcERxLWw?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "s-4465-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "mb.ntd.com",
+          "firstSeen": "2026-10-08",
+          "lastSeen": "2026-10-08",
+          "url": "https://news.google.com/rss/articles/CBMitwFBVV95cUxOWFQxai02TlhBMnVLaGphbVl6Q01ZQ0Mtd0hPbVRiT2JLVzlwYl8zMHJYc1Fmal9YOE9VRDZQUXZLLWltY0RUdFBjLUZnUzlrUXZnc1BEOXRhSVROUkxhbXRLZ2dKVk5HNnlOcU43NVBzbmdoVDhIRmhSY19MSFBzTXFqSXpoMkdrYTM4QS00TWVxem5LR0J2a0Y1cXlYTXhHMV9sZHV2RlJiUmZtRWtxNXBxVlVrUlU?oc=5"
         }
       ],
       "mostViewed": null
