@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-08T08:53:01.527Z",
+    "fetched_at": "2026-10-08T16:25:32.166Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-08T08:53:01.527Z"
+        "checked_at": "2026-10-08T16:25:32.166Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-04",
         "week_label": "Most-Viewed Bills - Week of October 4, 2026",
         "entries": 8,
-        "checked_at": "2026-10-08T08:53:01.527Z"
+        "checked_at": "2026-10-08T16:25:32.166Z"
       },
       "leans": {
         "center": {
@@ -224,7 +224,14 @@
     },
     "hr-1-119": {
       "outlets7d": [],
-      "unratedOutlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "theunion.com",
+          "firstSeen": "2026-10-08",
+          "lastSeen": "2026-10-08",
+          "url": "https://news.google.com/rss/articles/CBMi-gFBVV95cUxQQlh4XzlWOGFPS1JnT2FWMlVuOUVpOU00YmV6ZmExMXJyUVBKVUdVNTZhMTRkR0E0Nzl5NjlKblA1QXZIOEpYLXBLWGtsb3ZkYUxHMUYwcHllcTltTjY5VHU4Wk41WG1KUVRabTNuZldpM1l4bU9qWDRRRW9PeG10c2VKRHlCM2ExNmQtd3pBNEZPOWJIeExQZ2F2OEJXMlk1NTFtV3ZvbHJ6aURJOE5LTzF2eE5fUGdOZEhaNHdGWTJvZTVTRjZyTnROVks1bXVVRWdTX2tUbUlUVzhpUlpLSWI5WmZzYkFEeWtHS1U3N0JFMVc1SUU1UmFB?oc=5"
+        }
+      ],
       "mostViewed": {
         "weeksOnList": 9,
         "lastRank": 3,
@@ -582,6 +589,19 @@
       ],
       "mostViewed": null
     },
+    "hr-1919-119": {
+      "outlets7d": [
+        {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-10-08",
+          "lastSeen": "2026-10-08",
+          "url": "https://www.foxnews.com/politics/house-republican-warns-communist-money-lead-us-dystopian-future"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hr-1945-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -650,6 +670,18 @@
           "firstSeen": "2026-10-02",
           "lastSeen": "2026-10-03",
           "url": "https://news.google.com/rss/articles/CBMiswFBVV95cUxPaGhkWVFUZ1N1UERnc1dPMENlZDNVeUN2c182WFFwTEI1R245MlB5RWFNOHBQdVc1QzI4V2pMRjlnOXA5UjdZclRadlN2X2M4NFNDMVktUUJSemtqT1hjcmVlLUQwRnYxZHp5aGJtTHFKc0phTi1HamVfemdjQklhazNZMURrMC1rOF9NZU9HWDR4YlNQOVl1eFlEWWRIRlZXLS1HMUNWUS1WOUtBaU1ObEtkaw?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-2283-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "capitalgazette.com",
+          "firstSeen": "2026-10-08",
+          "lastSeen": "2026-10-08",
+          "url": "https://news.google.com/rss/articles/CBMijwFBVV95cUxOdXZOcjVJTjNGbG0xMFZLRUVWNk1JUzNINXJpc2V2eVM0MG83Z1ZsOGtiQXFuNG1oX2VPX25GcVVvSzRTcmxJX0ZVRVkyb3BJbW5lYTF5SEoxRW5xM0NVS0hxc3ptb2VWNkhFdC13MVdXcGU3YWU5MC1lbi01dWU5ZXRJc2VHWjU1QzRPa3VyUQ?oc=5"
         }
       ],
       "mostViewed": null
@@ -837,6 +869,26 @@
           "firstSeen": "2026-10-01",
           "lastSeen": "2026-10-01",
           "url": "https://news.google.com/rss/articles/CBMi5gFBVV95cUxPVGdYUHgxdUtjb2pfRkVfTTgyZElqMzJQdlQ0OWhJU2FOTmZ3SUpnTVRuNzNQRGZWQUZ0bUhncEpNdkpza2FSVF9mc3k2NzIxSW5VSkFIMjlERHQyYUQ2Qzk4ampjYXFGdGdWcUVlTWRuZm5RbFlDMUZjN1IxQy0yM085aF9OeFhfUGRQejlvYWs5Z2ZBckJ1WThZc2VlTktNLVhJYV9pTlVySE5GRXY3T0s4RmVZVnA5cXNwUTZvZDVzR0dqNDFrSE9JMEkwcE5oRm5YcmVaN0hCZDRhRm5NTDdvNVIzUQ?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-4710-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-10-08",
+          "lastSeen": "2026-10-08",
+          "url": "https://thehill.com/policy/healthcare/6136385-lower-premiums-faster-payments-act/"
+        }
+      ],
+      "unratedOutlets7d": [
+        {
+          "domain": "familiesusa.org",
+          "firstSeen": "2026-10-08",
+          "lastSeen": "2026-10-08",
+          "url": "https://news.google.com/rss/articles/CBMi1gFBVV95cUxOTXJhcTloWU9nTlNFT1NKVm9KYlhRNmJ3UVhNdVhZeHZORzVXSkxHNnd4SldNcmM4cGxtMWJ6OUhsNzAzLTNuU2FGWm5VbzBNNWpwLUFyS1NUU0FvRmxybVZNd2ZRVW1nbFJTbTVjWDlGU2dPOHNPWkxGMGc1cHdibkh0NXhiVVJoRm0ycGJUVXBKOHk5WUJEa25rWF95cVY2YVJzVVNwd3VvMkM0cl83b1VLZlZEQVdpOWVHR2cxX3o4ODhCOXV2Q21TR1NEbDhMSUhlZm5R?oc=5"
         }
       ],
       "mostViewed": null
@@ -1287,6 +1339,12 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "neatowncourier.com",
+          "firstSeen": "2026-10-08",
+          "lastSeen": "2026-10-08",
+          "url": "https://news.google.com/rss/articles/CBMiwgFBVV95cUxOa0o3NkhRNUpfcjV6SHBhZ2RpUDI4Tlo3RzIxellTUHlaZFFrcC15ZUlPY0g2enNkLVNEcE1ENXB5YWJETFNSVVEzeXl0emJaZTVFTE8wMUhoQlp2UDZJMDVfZC1EYy0tbVNJTDNVcEwtVUhBY1IyU19rSmxHVzZ1V1QwN00xUThJTEg1OVFJNU96bURSekFxOUNiSUlwU05xajlFUDVCdjdGYW83b25RekF4R0lBaVFScmlJTDBIaldudw?oc=5"
+        },
+        {
           "domain": "tech-insider.org",
           "firstSeen": "2026-10-06",
           "lastSeen": "2026-10-07",
@@ -1575,6 +1633,18 @@
       ],
       "mostViewed": null
     },
+    "s-1525-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "audacy.com",
+          "firstSeen": "2026-10-08",
+          "lastSeen": "2026-10-08",
+          "url": "https://news.google.com/rss/articles/CBMiqgFBVV95cUxQZFh3SjFkcHMxQktCOENRbWhwNDhrVXZNckxfcnc4SlNGSjFiZTVkT2JaSUJ2OWQ0eG5ERTFBZ2JQZVdETDF5V0dkU0hXNzd2c01UZ1dyQkJuRUtZOElXdmJRMVNYeHpSNnhTeTQyUmg5TGgyYWNtZEE0b0NSSnpBa0M0WDZUY3JFYVVKQmswU0tqT05kN1ZNUFZtNHIxZDhlVURKSUp2UzFTUQ?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "s-1748-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1802,6 +1872,12 @@
     "s-4668-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "myfox8.com",
+          "firstSeen": "2026-10-08",
+          "lastSeen": "2026-10-08",
+          "url": "https://news.google.com/rss/articles/CBMi2gFBVV95cUxQOEtIcGNuSmJsWmlKeWtOMkloMHAyMDV6NlA5clZEV1NqS2RQb01uM2szUWdwV1FsYmhrTVRuMndqQnN5bmlFdERVZ2llT1ZKNGxiSWMwckNmSkF1RktJTnNVeHZNSEFCdmJjVXdUaWRIUEZGMi1UZy1JZm0wV0dRUm8yc1JKdF8wV1dQZ0FlOGQyY1dWUExDR3J2QTJwTmNsamlFYVpaN1R2a2QybU1LRkJNUGRZYUIzM192ZGlBQ0hWTDZ0STZiYmN5NkE0VjJ4ZkJOaENzeTZId9IB3wFBVV95cUxPWjJhYWxiTGhHeXUwdVprSmN0d2ZzcGtRM3o2YUktZzg4NUlGWEtzanpZR3dIYlNpUGN5bWVTbnRaZ0QwX280WHFDdFl2bGp3LXVUcDY4M1p2T0EyQ0ZTMmpCMU1UYXJyUlp1aWd2c1lZZlFVaGdnTmFWbXFPandoMDhucjB2bmpUSVU3aU93R1dpRC02TzlRUThSRWE3UGdiN3JyU09OTjEwajdhUDFMbmFwTEN0UU5UUnF6MERLdXBNdHU5VkthLTlENFNGZUtHRnozeEk2R3R1bXBidHpZ?oc=5"
+        },
         {
           "domain": "prospect.org",
           "firstSeen": "2026-10-07",
