@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-08T16:25:32.166Z",
+    "fetched_at": "2026-10-08T19:40:11.519Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-08T16:25:32.166Z"
+        "checked_at": "2026-10-08T19:40:11.519Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-04",
         "week_label": "Most-Viewed Bills - Week of October 4, 2026",
         "entries": 8,
-        "checked_at": "2026-10-08T16:25:32.166Z"
+        "checked_at": "2026-10-08T19:40:11.519Z"
       },
       "leans": {
         "center": {
@@ -752,6 +752,19 @@
       ],
       "mostViewed": null
     },
+    "hr-2694-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-10-08",
+          "lastSeen": "2026-10-08",
+          "url": "https://thehill.com/homenews/house/6136767-bipartisan-lawmakers-2026-midterm-election-results/"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hr-28-119": {
       "outlets7d": [
         {
@@ -889,6 +902,12 @@
           "firstSeen": "2026-10-08",
           "lastSeen": "2026-10-08",
           "url": "https://news.google.com/rss/articles/CBMi1gFBVV95cUxOTXJhcTloWU9nTlNFT1NKVm9KYlhRNmJ3UVhNdVhZeHZORzVXSkxHNnd4SldNcmM4cGxtMWJ6OUhsNzAzLTNuU2FGWm5VbzBNNWpwLUFyS1NUU0FvRmxybVZNd2ZRVW1nbFJTbTVjWDlGU2dPOHNPWkxGMGc1cHdibkh0NXhiVVJoRm0ycGJUVXBKOHk5WUJEa25rWF95cVY2YVJzVVNwd3VvMkM0cl83b1VLZlZEQVdpOWVHR2cxX3o4ODhCOXV2Q21TR1NEbDhMSUhlZm5R?oc=5"
+        },
+        {
+          "domain": "rollcall.com",
+          "firstSeen": "2026-10-08",
+          "lastSeen": "2026-10-08",
+          "url": "https://rollcall.com/2026/10/08/pallone-bill-would-drop-surprise-billing-laws-arbitration-process/"
         }
       ],
       "mostViewed": null
@@ -914,6 +933,12 @@
     "hr-5284-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "mb.ntd.com",
+          "firstSeen": "2026-10-08",
+          "lastSeen": "2026-10-08",
+          "url": "https://news.google.com/rss/articles/CBMikAFBVV95cUxOM3VTSVFuRndNMDhwaGFsZS1qWURCQVJhTzZHcHNEbHlnRzlnd25BSlZDSFNlaTFNWTRyNGQyeEQyTGpKNzdIVkU4ZWtUU3FNSEZIQXI1NHdlYnh4UldNYmhMc2hvbTRydUVvUlZlWm02cFNrX2hCcEQ3LWpDWXcwc2F4bnRMZHh1ZlRERjEyNUs?oc=5"
+        },
         {
           "domain": "aol.com",
           "firstSeen": "2026-10-02",
@@ -1196,6 +1221,12 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "conventionofstates.com",
+          "firstSeen": "2026-10-08",
+          "lastSeen": "2026-10-08",
+          "url": "https://news.google.com/rss/articles/CBMikwFBVV95cUxPVjBYR3dPa3FyN25mbk8zUUZ4dFprMEthNlFiUlF6c3ZfVnNYQTNGcmR4VGpNZVpOd3UwRHpYZVZ6OEtYT2tmeTkwVDl3bzlUVHZQYnh4S29HYWdnZlJzUE9NT3FIRkRhNGNuZnVtMURMd2VXeExtVEstZm5aS0pfa29RdU9NRDBXbFBUaTNRTl92bDg?oc=5"
+        },
+        {
           "domain": "nrcc.org",
           "firstSeen": "2026-10-02",
           "lastSeen": "2026-10-03",
@@ -1345,6 +1376,12 @@
           "url": "https://news.google.com/rss/articles/CBMiwgFBVV95cUxOa0o3NkhRNUpfcjV6SHBhZ2RpUDI4Tlo3RzIxellTUHlaZFFrcC15ZUlPY0g2enNkLVNEcE1ENXB5YWJETFNSVVEzeXl0emJaZTVFTE8wMUhoQlp2UDZJMDVfZC1EYy0tbVNJTDNVcEwtVUhBY1IyU19rSmxHVzZ1V1QwN00xUThJTEg1OVFJNU96bURSekFxOUNiSUlwU05xajlFUDVCdjdGYW83b25RekF4R0lBaVFScmlJTDBIaldudw?oc=5"
         },
         {
+          "domain": "osceolatimes.com",
+          "firstSeen": "2026-10-08",
+          "lastSeen": "2026-10-08",
+          "url": "https://news.google.com/rss/articles/CBMiwAFBVV95cUxPYzBBVHcyYXFFdV9ReDBBMlAyMmtmQ2otUkcxdlVPLWpEQmJUcTB2VXBoeUZsSndGY1VUQTh3WGpqRUk1d1JSbWhTY1BIUzlZckNVa0NDYWlsQjJtb1d1eGlsel9fcW9GTTF4aVBzNzVnS2xiN3lDNkhfVnYtRnNYQ1d2MGlSeThOUjNnOUVUTlR6WGVIWTlWakc4MGdFdzhZeHJUNXR0Y2t6NkY4VEhyMjNudURuRTFodnBHUUEtTnU?oc=5"
+        },
+        {
           "domain": "tech-insider.org",
           "firstSeen": "2026-10-06",
           "lastSeen": "2026-10-07",
@@ -1410,6 +1447,30 @@
           "firstSeen": "2026-10-01",
           "lastSeen": "2026-10-01",
           "url": "https://news.google.com/rss/articles/CBMikwFBVV95cUxNeUJ1cDVpVVZqbExqZ3QzaDR2TXpFMm5VZk8tUHd4ajBTUzVBNzVEWHppYzV1NEhFRloxd2FCYnRIa2dBWEsyS0ZXb2VYVEd6Tzh4UWtISjlwWUM4dHlscmtsUnBFTkhZY1NIOGpIX3BMSjRhNEFBMmhLYkVaOG0tLXlRano0bkxuSEUyOTZfcTdzREk?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-8322-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "ntd.com",
+          "firstSeen": "2026-10-08",
+          "lastSeen": "2026-10-08",
+          "url": "https://news.google.com/rss/articles/CBMiuAFBVV95cUxPdFI4UlRmeG5xTUwyM2hVcjVxbml1OENLWWwwX3ZFRS1QcTZtcVpSd0tWQkUxS2xaVmx2cWVPLVFnUDQyby1JUThkNElSSmFWZHVfS2tDbkd3ZWVzdkY1Y1VNM3RHcmVRNFhINkVuN0tjZkx5TkJXbzVtZDJ0d2VjNWN2VU5KSDNCY1dzNGJjalEyeDZPVVlKcGF5Z2RCdWJyNmJWdXBxQXNxYlBpaS1ZclQyOVF3eVI3?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-8336-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "baynews9.com",
+          "firstSeen": "2026-10-08",
+          "lastSeen": "2026-10-08",
+          "url": "https://news.google.com/rss/articles/CBMitwFBVV95cUxOcURtM2FvbmE0SWFyVEVOaTV5X2N6WG9ZVF83ZXRCV2dDWWhCWkFVa21fZkViZE5PUnVPWmNSZHR6c2RJa2VBdnJYMnNFZ0ZZTTlOVWFsaXMzQm5Xbmh5Q1B5MzQwUmhucFJFaHNWS2FQQ3FycE9PSHpGdWVmMFYyWlRjNG9SemZqYld6RFFJRC1famI5ZVctUTBWajBKLW9hcDhOVDdXdHFpLWJSdG1MQ1pXTTZkV1U?oc=5"
         }
       ],
       "mostViewed": null
@@ -1971,6 +2032,12 @@
     "sjres-185-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "lansingcitypulse.com",
+          "firstSeen": "2026-10-08",
+          "lastSeen": "2026-10-08",
+          "url": "https://news.google.com/rss/articles/CBMi9AFBVV95cUxPYjBhNUF1NHRIcEFqRGxDNTJOTFM5Q0NhcXdlSEpFaWUwUjBUWkx0NWp1ZU9vSlRkOVR4NWNVdWNTNEVjQ2h5RnVSc1FVejdyN3Rkc2tVUTFKNlg5SVVBRTdiNExYUnlhN3JUZ1dBZGVSc3d6YWFJb1RXQnBucFZzc2VYVE9FempDZkU1RUFhVldwOEo3dHhMRHA2UUdoVXZGYVRIbkhia0RhaVl5QUdsdl9iVC1VR0J2NnVaSTk4VE4wbGVrd2hmZ0JYRi11WGNORVEwWFRyYVIxbGc0bDBTRzVNaXluV3pybHUzUlIyU1d6cVhU?oc=5"
+        },
         {
           "domain": "realclearpolicy.com",
           "firstSeen": "2026-10-04",
