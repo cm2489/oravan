@@ -4,7 +4,7 @@
     "source": "GDELT DOC 2.0 API (https://api.gdeltproject.org/api/v2/doc/doc), ArtList mode — one search per term in the query shape below, over the days since the question was last checked; the rated outlets are picked out of GDELT’s results using the AllSides table, never named in the query",
     "attribution": "Article discovery by the GDELT Project (https://www.gdeltproject.org/), used under its terms of use with citation and link. Outlet leans by AllSides (https://www.allsides.com/media-bias/ratings), CC BY-NC 4.0.",
     "window_days": 7,
-    "as_of": "2026-10-01",
+    "as_of": "2026-10-08",
     "outlet_policy": "allsides-rated-only",
     "bias_table": "data/media-bias.json",
     "query_shape": "\"<term>\" (congress OR senate OR representatives OR lawmakers)",
@@ -12,10 +12,11 @@
     "stores": "Per question: the exact search terms, the day it was last checked, and for each AllSides-rated outlet GDELT found, its domain, lean, the days GDELT saw it and up to five article links. Never titles, article text, tone or sentiment."
   },
   "questions": {
-    "annual-defense-policy": {
-      "checkedOn": "2026-09-26",
+    "crypto-oversight-split-between-sec-and-cftc": {
+      "checkedOn": "2026-10-01",
       "terms": [
-        "national defense authorization act"
+        "digital asset market clarity act",
+        "damc act"
       ],
       "counts": {
         "outlets": {
@@ -31,11 +32,10 @@
       },
       "outlets": []
     },
-    "crypto-oversight-split-between-sec-and-cftc": {
-      "checkedOn": "2026-10-01",
+    "paying-college-athletes": {
+      "checkedOn": "2026-10-08",
       "terms": [
-        "digital asset market clarity act",
-        "damc act"
+        "protect college sports act"
       ],
       "counts": {
         "outlets": {
