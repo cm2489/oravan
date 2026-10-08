@@ -225,10 +225,17 @@ test.describe('settledDecision — which pages show the record, not the call', (
   test('a concurrent resolution only ONE chamber agreed to keeps the call', () => {
     const firstOnly = rec('hconres', 'passed_chamber', 'Received in the Senate and referred to the Committee on Foreign Relations.');
     expect(settledDecision(firstOnly)).toBeNull();
-    // Agreed WITH an amendment: back to the House, not finished.
-    const amended = rec('hconres', 'passed_chamber', 'Resolution agreed to in Senate with an amendment by Unanimous Consent.');
+    // Agreed WITH an amendment: back to the House, not finished. Dated
+    // today so the live wording holds; a fixed date ages past the 14-day
+    // signal window and flips it to nowPassedBackStale (CI red 2026-10-08).
+    const today = new Date().toISOString().slice(0, 10);
+    const amended = rec('hconres', 'passed_chamber', 'Resolution agreed to in Senate with an amendment by Unanimous Consent.', today);
     expect(settledDecision(amended)).toBeNull();
     expect(deriveJourney(amended).nowKey).toBe('nowPassedBack');
+    // The aged twin keeps the call too; only the wording drops its imminence.
+    const agedAmended = rec('hconres', 'passed_chamber', 'Resolution agreed to in Senate with an amendment by Unanimous Consent.', '2026-01-02');
+    expect(settledDecision(agedAmended)).toBeNull();
+    expect(deriveJourney(agedAmended).nowKey).toBe('nowPassedBackStale');
   });
 
   test('every open stage keeps the call', () => {
