@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-08T01:53:03.158Z",
+    "fetched_at": "2026-10-08T08:53:01.527Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-08T01:53:03.158Z"
+        "checked_at": "2026-10-08T08:53:01.527Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-04",
         "week_label": "Most-Viewed Bills - Week of October 4, 2026",
         "entries": 8,
-        "checked_at": "2026-10-08T01:53:03.158Z"
+        "checked_at": "2026-10-08T08:53:01.527Z"
       },
       "leans": {
         "center": {
@@ -749,6 +749,12 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "kucoin.com",
+          "firstSeen": "2026-10-07",
+          "lastSeen": "2026-10-08",
+          "url": "https://news.google.com/rss/articles/CBMivgFBVV95cUxNSUZoWFozVDdiTllHRzJpU3pzdnR5ajQ2WndSTmNac3Qtb08zSE51cHd5MDhFd2xoVEN2S3Mxa0tqcTViSmZyelpyVElKMXdzT04xSnZBSVltS0hub1FvV29rUGtHREdKdkF6UWNzRkVVTERIbW84M3MyTjVWM3BkUnJfRlJZNE1sUnE1T3JwX2JlS3l6UkVCQmVXXzZtUXI4SGRrSVJyUmRQaHFpdl9fRENSNGptbzIxc0lrUmRn?oc=5"
+        },
+        {
           "domain": "menafn.com",
           "firstSeen": "2026-10-08",
           "lastSeen": "2026-10-08",
@@ -759,12 +765,6 @@
           "firstSeen": "2026-10-07",
           "lastSeen": "2026-10-07",
           "url": "https://news.google.com/rss/articles/CBMikwJBVV95cUxNa0daTE9TM0hwVkY2SnJJOFUzcDZONGNuRmJ1ODNubmRWakdJMlRpNUt6NU9HUm9yeXdvbzczUGltQ25nWGlGNmdHTGt5TGdqYTY3Q204Rkg5WS1FVHcwMjZwQzU2SVlaN3Q2UzE3bXNWbVdYZVdmN3BjeUxLSnpmODE5a1ZhWVJBOWxlUFEtZy03S3JjWjhJN0hTMVRScS1TejNWZkFSUTE5ZnV1NUt5NVlaRWE0M0hUblVncTVfRnk0M0k1TlUzUndYN2FJOTVuV0pkRlVrVUhNUmtIdGRlTkZGYkF0STBYMGNlVW42UXJ2MDdRQ1FkRk5DTDNISlgySEJGanE2V0NYek9MQlhvR0ZyQQ?oc=5"
-        },
-        {
-          "domain": "kucoin.com",
-          "firstSeen": "2026-10-07",
-          "lastSeen": "2026-10-07",
-          "url": "https://news.google.com/rss/articles/CBMiwwFBVV95cUxPVTNrdGVzd1FLdERYYXpVTlU5aUVzeU9mbktzRUc3d2ctM1BGX0pMWERYRVJyX0RnU2VRNXFZTHBucUR6UTIwekpVd1ZrZk9JTGtHcUlrNmpQY2Z5dTNKWHQ5M1d6RDJjSWRmWnZNU3ZYbjlPbm9qTHNYZXZRM1RacXhQSEtzaE8yRjYxWmZzMU50blZjRXdYN3hwRUJlNGQyb2dsMWJEZUUzUVRCTUhmZWEyY0poYUJZUGxLYlJpNmhMWlU?oc=5"
         },
         {
           "domain": "tradingview.com",
@@ -1256,6 +1256,12 @@
     "hr-7206-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "aginfo.net",
+          "firstSeen": "2026-10-08",
+          "lastSeen": "2026-10-08",
+          "url": "https://news.google.com/rss/articles/CBMiuwFBVV95cUxNdE94YXF2TFVpa2FGLTZBRU9CWDJSd01sRWxSMEo4T1NIa2RZRHBSY25jSS1oNUFPQXlYQlktWHl0TjdfWHBiNGRpT0hwcUNZNVU3ekI0N3lxbkFCNnZVaHJMOVpWcFVfVGZZMXM1cWczVFZ3TUJQOXE2Z3FNTlRFTDM3MjFrZmZfbF9HcWdUOV9hUmZnYW5fbnludlVHZGlMakFlakNuQ2NidlVqNU54aV9LWGlMOVVrTEUw?oc=5"
+        },
         {
           "domain": "floridianpress.com",
           "firstSeen": "2026-10-07",

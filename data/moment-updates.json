@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-10-07T20:26:53.038Z"
+    "generated_at": "2026-10-08T08:53:03.113Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -110,76 +110,6 @@
           "roll_call": {
             "chamber": "house",
             "number": 286
-          }
-        },
-        "ai": false
-      },
-      {
-        "id": "u_1a49a743",
-        "class": "vote",
-        "vehicle": "hr-6500-119",
-        "day": "2026-08-08",
-        "occurred_at": "2026-08-08",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-25T13:41:33.041Z",
-        "text": {
-          "en": "Senate roll call vote 227: “On the Motion to Table S.Amdt. 6747 to S.Amdt. 6732 to H.R. 6500 (No short title on file)” — “Motion to Table Agreed to”; Yeas 61, Nays 32, Not Voting 7.",
-          "es": "Votación nominal 227 del Senado, registro oficial en inglés: “On the Motion to Table S.Amdt. 6747 to S.Amdt. 6732 to H.R. 6500…” — “Motion to Table Agreed to”; a favor 61, en contra 32, no votaron 7."
-        },
-        "source": {
-          "kind": "roll_call",
-          "refs": [
-            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00227.xml",
-            "https://www.congress.gov/bill/119th-congress/house-bill/6500"
-          ]
-        },
-        "record": {
-          "action_text": "On the Motion to Table S.Amdt. 6747 to S.Amdt. 6732 to H.R. 6500 (No short title on file): Motion to Table Agreed to. Yeas 61, Nays 32, Not Voting 7. Senate roll call vote 227.",
-          "action_code": null,
-          "action_type": "roll_call_vote",
-          "source_system": "senate.gov roll call vote record",
-          "roll_call": {
-            "chamber": "senate",
-            "number": 227
-          },
-          "question": "On the Motion to Table S.Amdt. 6747 to S.Amdt. 6732 to H.R. 6500 (No short title on file)",
-          "result": "Motion to Table Agreed to",
-          "totals": {
-            "yea": 61,
-            "nay": 32,
-            "present": 0,
-            "notVoting": 7
-          }
-        },
-        "ai": false
-      },
-      {
-        "id": "u_2749bbba",
-        "class": "vote",
-        "vehicle": "hr-6500-119",
-        "day": "2026-08-08",
-        "occurred_at": "2026-08-08",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-25T13:41:33.041Z",
-        "text": {
-          "en": "“Passed Senate with an amendment and an amendment to the Title by Yea-Nay Vote. 90 - 6. Record Vote Number: 228.”",
-          "es": "Registro oficial, en inglés: “Passed Senate with an amendment and an amendment to the Title by Yea-Nay Vote. 90 - 6. Record Vote Number: 228.”"
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/house-bill/6500",
-            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00228.xml"
-          ]
-        },
-        "record": {
-          "action_text": "Passed Senate with an amendment and an amendment to the Title by Yea-Nay Vote. 90 - 6. Record Vote Number: 228.",
-          "action_code": null,
-          "action_type": "Floor",
-          "source_system": "Senate",
-          "roll_call": {
-            "chamber": "senate",
-            "number": 228
           }
         },
         "ai": false
@@ -3182,58 +3112,6 @@
           "source_system": "Senate"
         },
         "ai": true
-      },
-      {
-        "id": "u_456d8e0c",
-        "class": "floor_action",
-        "vehicle": "hr-3633-119",
-        "day": "2026-08-08",
-        "occurred_at": "2026-08-08",
-        "occurred_precision": "day",
-        "recorded_at": "2026-08-12T15:11:17.692Z",
-        "text": {
-          "en": "On August 8, 2026, the Senate presented a cloture motion on the motion to proceed to H.R. 3633.",
-          "es": "El 8 de agosto de 2026, el Senado presentó una moción de cierre sobre la moción de proceder a H.R. 3633."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/house-bill/3633"
-          ]
-        },
-        "record": {
-          "action_text": "Cloture motion on the motion to proceed to the measure presented in Senate. (CR S4557)",
-          "action_code": null,
-          "action_type": "Floor",
-          "source_system": "Senate"
-        },
-        "ai": true
-      },
-      {
-        "id": "u_f62494fd",
-        "class": "floor_action",
-        "vehicle": "hr-3633-119",
-        "day": "2026-08-08",
-        "occurred_at": "2026-08-08",
-        "occurred_precision": "day",
-        "recorded_at": "2026-08-12T15:11:17.692Z",
-        "text": {
-          "en": "On August 8, 2026, the Senate made a motion to proceed to consideration of H.R. 3633.",
-          "es": "El 8 de agosto de 2026, el Senado hizo una moción para proceder a considerar H.R. 3633."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/house-bill/3633"
-          ]
-        },
-        "record": {
-          "action_text": "Motion to proceed to consideration of measure made in Senate. (CR S4557)",
-          "action_code": null,
-          "action_type": "Floor",
-          "source_system": "Senate"
-        },
-        "ai": true
       }
     ],
     "summary_revisions": [
@@ -3249,10 +3127,7 @@
           "vehicle_statuses": {
             "hr-3633-119": "floor_vote"
           },
-          "update_ids": [
-            "u_456d8e0c",
-            "u_f62494fd"
-          ],
+          "update_ids": [],
           "refs": [
             "https://www.congress.gov/bill/119th-congress/house-bill/3633"
           ]
@@ -3274,10 +3149,7 @@
           "vehicle_statuses": {
             "hr-3633-119": "floor_vote"
           },
-          "update_ids": [
-            "u_456d8e0c",
-            "u_f62494fd"
-          ],
+          "update_ids": [],
           "refs": [
             "https://www.congress.gov/bill/119th-congress/house-bill/3633"
           ]
