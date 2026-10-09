@@ -1,22 +1,22 @@
 {
   "_meta": {
     "schema": "floor-signals/v1",
-    "fetched_at": "2026-10-07T15:31:11.355Z",
+    "fetched_at": "2026-10-09T21:38:46.214Z",
     "sources": {
       "daily-digest": {
         "status": "quiet",
         "detail": "Senate program: pro forma session",
-        "checked_at": "2026-10-07T15:31:11.355Z",
-        "url": "https://www.congress.gov/119/crec/2026/10/06/d06oc6-1.htm",
+        "checked_at": "2026-10-09T21:38:46.214Z",
+        "url": "https://www.govinfo.gov/content/pkg/CREC-2026-10-06/html/CREC-2026-10-06-pt1-PgD967-5.htm",
         "published": "2026-10-06",
         "covers": "2026-10-09",
         "covers_label": "1:30 p.m., Friday, October 9",
-        "via": "congress.gov"
+        "via": "govinfo"
       },
       "billsthisweek": {
         "status": "quiet",
         "detail": "no schedule published for this week (404)",
-        "checked_at": "2026-10-07T15:31:11.355Z",
+        "checked_at": "2026-10-09T21:38:46.214Z",
         "url": "https://docs.house.gov/billsthisweek/20261005/20261005.xml",
         "published": "2026-10-05",
         "covers": "2026-10-05",

@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-09T20:04:34.960Z",
+    "fetched_at": "2026-10-09T21:41:42.687Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-09T20:04:34.960Z"
+        "checked_at": "2026-10-09T21:41:42.687Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-04",
         "week_label": "Most-Viewed Bills - Week of October 4, 2026",
         "entries": 8,
-        "checked_at": "2026-10-09T20:04:34.960Z"
+        "checked_at": "2026-10-09T21:41:42.687Z"
       },
       "leans": {
         "center": {
@@ -636,6 +636,12 @@
           "firstSeen": "2026-10-09",
           "lastSeen": "2026-10-09",
           "url": "https://news.google.com/rss/articles/CBMiuwFBVV95cUxNa1lQZnJLMm9SMTRVUF92OWZGbUpKOGtZUnhMMzFObHF0cllXWEJCS3Utdk1XTFRmckwyM3ZRRDdNSHlJaGJRakdpNUp2ZzZEbzNlUEVJX0k0a1kyMzJoU0dia1NwSy1uRXI3a0hjTG5uT1l6LVpQOTFRQTdpNHNxODdEN0MxMU9BOURQZUNaSnVaQ2YwbDRaOVcwNkg3em1pWW04UEpac3hYQ3d3Vm1zMktaVVhZWmVxcDE0?oc=5"
+        },
+        {
+          "domain": "bignewsnetwork.com",
+          "firstSeen": "2026-10-09",
+          "lastSeen": "2026-10-09",
+          "url": "https://news.google.com/rss/articles/CBMitAFBVV95cUxNcjRNNkZmbzQ3a3NVZlk5MVgtVy12d1FqWUhGazlLb2Q3cWY2c21aNmhDZjlGMEJUbmtyZjdOU1NrcHR4M0hNVWZVS0ZzLVMxdm9zM3hVZUQyRFVoRVhCNFFfZnNqMUdqTVlqMks4Z2lIV3Y4TXRIWHpCN2ItMnluM1pPZDFuUVl2blEyUlJEU2hwOHR4Mno5QjkxQWRTVjNBdUc5bTZsME82T2VZU3BwSjRheUQ?oc=5"
         }
       ],
       "mostViewed": null
@@ -868,6 +874,12 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "fiercehealthcare.com",
+          "firstSeen": "2026-10-09",
+          "lastSeen": "2026-10-09",
+          "url": "https://news.google.com/rss/articles/CBMiuwFBVV95cUxNbDdjSjhRc3RzY21ILThvZW16N2pFLWlTQnUxM3l0MXRSaVdVdXNGVDZCeUZjNkxYLXpuN1hBRUQ3MTNNOHc3bTEyWFRLMjVuaVZ4dXdoNTJtcUZhSy00X3cxOW5zVzRrcVE0TkcwZ2JHQnlJSUZUb1l4UHNGclJVaE1wS0I4Tlgta2pzSEsyMEM2S0JxQnpfUk80a1dOOTNPX1RPYTc0VkVDcDI3VlRaUkpNWnBWY3REOFhN?oc=5"
+        },
         {
           "domain": "radiologybusiness.com",
           "firstSeen": "2026-10-09",
@@ -1679,6 +1691,18 @@
           "firstSeen": "2026-10-07",
           "lastSeen": "2026-10-07",
           "url": "https://news.google.com/rss/articles/CBMitAFBVV95cUxPcFZZNkF2bV96Q1hSYkljVVA1eTFydE9FS19CZ1JQbmRGWGd3ejVJc3NCSVRZSGhmR3R6Rl9STXR5UUJ2dWVUTkMwaF9FUXBISFpZd2tDVGhWb1VDd0lXUG1hV3dRSmFsanBrUTEyWTZiMHJnbGNNMzk5LVdtM05VRXhORDZGeF9lU1pIVlZ0N3hCR0VrMHNQVEQ5V3FPOGVOUEl4UmotU2hFMldwTkhmdFBROHDSAbQBQVVfeXFMT3BWWTZBdm1fekNYUmJJY1VQNXkxcnRPRUtfQmdSUG5kRlhnd3o1SXNzQklUWUhoZkd0ekZfUk10eVFCdnVlVE5DMGhfRVFwSEhaWXdrQ1RoVm9VQ3dJV1BtYVd3UUphbGpwa1ExMlk2YjByZ2xjTTM5OS1XbTNOVUV4TkQ2RnhfZVNaSFZWdDd4QkdFazBzUFREOVdxTzhlTlBJeFJqLVNoRTJXcE5IZnRQUThw?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "s-3315-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "ebglaw.com",
+          "firstSeen": "2026-10-09",
+          "lastSeen": "2026-10-09",
+          "url": "https://news.google.com/rss/articles/CBMijgJBVV95cUxOQVp2ZWZtVUhjY3prOUNxaTduak0xMmJxSnBSUVZhSnVObVhheVcxaWlTMXZ5NE1wVjloZlpyQ0JTSFBiRUEwS3d2VnVYblNoRmhDcTZ4cFJWRVJnTGVzNjBYc3BHekZ1bHU2SGMzTl91M0xIX0Mxd2Ftc3J1Z21MdGEzM2VkXzYyWUdWUDg2cDJtUldQMXAxZjdfU3kyTWF0aFlsb28yWUpkY2dsNV9fM1YyajBQQW1LNTV3VndyWXh5eFh6cjJHdHlKV240RFJFQ1p0dFB4UDJUbXhqa1EtU1g3V3k3SV94d3dtY0h2VEVtb3Rhc3RjSXMyWGlRYVRNcGtmX0JiNUdYdVpMREE?oc=5"
         }
       ],
       "mostViewed": null
