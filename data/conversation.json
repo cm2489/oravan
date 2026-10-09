@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-09T02:05:56.571Z",
+    "fetched_at": "2026-10-09T02:36:15.161Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-09T02:05:56.571Z"
+        "checked_at": "2026-10-09T02:36:15.161Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-04",
         "week_label": "Most-Viewed Bills - Week of October 4, 2026",
         "entries": 8,
-        "checked_at": "2026-10-09T02:05:56.571Z"
+        "checked_at": "2026-10-09T02:36:15.161Z"
       },
       "leans": {
         "center": {
@@ -1464,6 +1464,18 @@
           "firstSeen": "2026-10-08",
           "lastSeen": "2026-10-08",
           "url": "https://news.google.com/rss/articles/CBMiqgFBVV95cUxQZFh3SjFkcHMxQktCOENRbWhwNDhrVXZNckxfcnc4SlNGSjFiZTVkT2JaSUJ2OWQ0eG5ERTFBZ2JQZVdETDF5V0dkU0hXNzd2c01UZ1dyQkJuRUtZOElXdmJRMVNYeHpSNnhTeTQyUmg5TGgyYWNtZEE0b0NSSnpBa0M0WDZUY3JFYVVKQmswU0tqT05kN1ZNUFZtNHIxZDhlVURKSUp2UzFTUQ?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "s-1547-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "kttc.com",
+          "firstSeen": "2026-10-09",
+          "lastSeen": "2026-10-09",
+          "url": "https://news.google.com/rss/articles/CBMitAFBVV95cUxPckJuOHBOVXBIQ0pOTVVyQms3TDE3Y1k1Z05BOUNoOWZkYXJNR0k1bW9tVE5HdW9CYXA2enQ5WXBBb0tmS0xid0g0d0JfQjhBY0Y0TXJZR0V6YUY5MUJtbWF4YnVZREN6VnMyRnlNNmlvYld0WmhhWG9QYWN6R2ZwUm4zS3ZkSUxKTWVwTmNGZ1ktNjF4WjhjRUY0VUxvd3F3MkRaT2N6eGJERlNScFpYYUg0eUY?oc=5"
         }
       ],
       "mostViewed": null
