@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-09T16:08:38.717Z",
+    "fetched_at": "2026-10-09T20:04:34.960Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-09T16:08:38.717Z"
+        "checked_at": "2026-10-09T20:04:34.960Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-04",
         "week_label": "Most-Viewed Bills - Week of October 4, 2026",
         "entries": 8,
-        "checked_at": "2026-10-09T16:08:38.717Z"
+        "checked_at": "2026-10-09T20:04:34.960Z"
       },
       "leans": {
         "center": {
@@ -351,6 +351,18 @@
         "lastWeek": "2026-09-13"
       }
     },
+    "hr-10375-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "michiganadvance.com",
+          "firstSeen": "2026-10-09",
+          "lastSeen": "2026-10-09",
+          "url": "https://news.google.com/rss/articles/CBMisgFBVV95cUxNaFRqNk9EM21UUG1XRk9JbW41SjJ0dEZQYkQ5c2ZxUFdQZ3FneUtkQWFROXNCb3AwbnhXaUNpNmNsVzlJdEFCLVdJREY2Q2tzbDhLSjhjdUx5T2dIanNpbWZlVFFLZkFzYTVyVmF4LXota3RkM1d5Q0xHYjJKajVqay0zM1Vxc0c0R29BaWdOQnF0eW5nVnZCLVhCdkxmOC14SnRabVdkX1ExZWtydFBNaGxn?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-10697-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -415,6 +427,12 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "managedhealthcareexecutive.com",
+          "firstSeen": "2026-10-09",
+          "lastSeen": "2026-10-09",
+          "url": "https://news.google.com/rss/articles/CBMioAFBVV95cUxOdXM4dG8zWm1OWThYX0pZMWtFRDNLQzRyVHpKUEhRSzU3WTZ2VEx6WTcwU0dCRm1VemY5cnpUZzFNR1pZYU1ESEFQbWM1M0ZodldQbDFTaGNJc2VLQkl1em5EajNkV04zWFBXU01mZUhKSVlDY3J2bW5yV0IxdmRLMzlNSUV6N01hdFBpbm5JOGVmU09fMTZfdVpoVXhNUXo4?oc=5"
+        },
         {
           "domain": "foreignpolicyjournal.com",
           "firstSeen": "2026-10-07",
@@ -610,6 +628,18 @@
       ],
       "mostViewed": null
     },
+    "hr-2158-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "aninews.in",
+          "firstSeen": "2026-10-09",
+          "lastSeen": "2026-10-09",
+          "url": "https://news.google.com/rss/articles/CBMiuwFBVV95cUxNa1lQZnJLMm9SMTRVUF92OWZGbUpKOGtZUnhMMzFObHF0cllXWEJCS3Utdk1XTFRmckwyM3ZRRDdNSHlJaGJRakdpNUp2ZzZEbzNlUEVJX0k0a1kyMzJoU0dia1NwSy1uRXI3a0hjTG5uT1l6LVpQOTFRQTdpNHNxODdEN0MxMU9BOURQZUNaSnVaQ2YwbDRaOVcwNkg3em1pWW04UEpac3hYQ3d3Vm1zMktaVVhZWmVxcDE0?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-227-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -666,6 +696,18 @@
           "firstSeen": "2026-10-02",
           "lastSeen": "2026-10-02",
           "url": "https://news.google.com/rss/articles/CBMiwgFBVV95cUxQNGQwY1R3LVNmdG8yTnN3aTZLdEpSMzZNemh3UGRmeDVJMjJUQjJQblg5WXhMNjFzdTJITWZYTkVsM25HQlUtMEJ6aUFDUER0Zm9hSFNld3YwTUFXbmVrbjZMb19TYmJJNmExVE51V2hhbnp3bVhxRWphSzZNOGcwSml5WlRCRFpySHNUMllZY056STVnTDJBRWRrQ0RUVDFoT0IyWGJOMDB2QlkwZnlyaXpZZzZ1LUE5LURfeVhkeXdhQQ?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-2385-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "quiverquant.com",
+          "firstSeen": "2026-10-09",
+          "lastSeen": "2026-10-09",
+          "url": "https://news.google.com/rss/articles/CBMitgFBVV95cUxOWGMxRHVxeENHbHpXdnh2ZHM3Z2NkRnY0V1F4SWQ2ZGlrQ1lOd1FhMl9odkVNaG9oOXRkQzF4czhHZzRZTjVmSDFQZDd5cmtXOERJQVdFLXV2TlAzanJsMUxlZ29reTlhdlNSLTRYOXpjMGplZDd1QXBEbHdGTmZlOWpya2xFNVdGSE9WV2tHUWRoeDVneEotWFJhdTdwNFpSZGlGbHcyQUMtS3Faai1xdXBVNVFKdw?oc=5"
         }
       ],
       "mostViewed": null
@@ -1101,6 +1143,12 @@
     "hr-7008-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "troymessenger.com",
+          "firstSeen": "2026-10-09",
+          "lastSeen": "2026-10-09",
+          "url": "https://news.google.com/rss/articles/CBMixAFBVV95cUxOVTBEeF83TUNoc0dVMy1PZ2NScExXX2NNamtwcmIwZTBOQTNPWl96OWpYU00zZEN5MWI2ZjVGWlVxY240WjdGTWljWnAxd0YyeEgza3hrcUpQT0t5dnU3QWNSY1Z3N1lPNUNRZUNkVjFBdUhJOERzNmRhalpvYzIzS0lqamJEN1RCU0tNOEx2OV9CVlpkdWtjU3h1eTVOVXZWb0xROUJBd1Y1UmV3dEw3UE5sTVl1bGNLVWFMa0QyOHdqN1Vj?oc=5"
+        },
         {
           "domain": "conventionofstates.com",
           "firstSeen": "2026-10-08",
@@ -1659,6 +1707,18 @@
       ],
       "mostViewed": null
     },
+    "s-3791-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "quiverquant.com",
+          "firstSeen": "2026-10-09",
+          "lastSeen": "2026-10-09",
+          "url": "https://news.google.com/rss/articles/CBMi1gFBVV95cUxPNUdqODhyTHVQQ2t3Wm0wNm85M1VmeU43V1VGbmNtTW5hNFJfQzVIU2k4R3p5dG1XcEZxS1JIZlRLUXBseDM2b1QyRGFEeGc1cDB6dUI4MVBUZmUta01tTkdhcVNaV3VxMTAzbVJENzh4WlZJcTNaaWdsUFJwNWY0QjZzbVZKZC1PLVlwcE8zbjlFY0Z4WlRhOGZUVG9QcFVLLTg3amVTQlVaVkNGS0JIS1Z5UUFlZFFWaFRuSjk2WlQtY3ZLdjRPY1RIcm51ZGJNbWdfckJR?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "s-3900-119": {
       "outlets7d": [
         {
@@ -1753,6 +1813,12 @@
           "firstSeen": "2026-10-09",
           "lastSeen": "2026-10-09",
           "url": "https://news.google.com/rss/articles/CBMigAFBVV95cUxQc3hXOTAzdnU1STdmR0FFQXJJVHg3bHo1Tmh0dHFqNVc5LWlpQ0dfSGxka2p3OHM0VWVaZU5KcEV0VTNNdXJraWRBUFZWN3BOcENVOWs3SW90enh3ZWFxRVliNklfVmlmOVlBMThlYTh6d1RWZlpFWXQxT0VULTBXdA?oc=5"
+        },
+        {
+          "domain": "wfmynews2.com",
+          "firstSeen": "2026-10-09",
+          "lastSeen": "2026-10-09",
+          "url": "https://news.google.com/rss/articles/CBMi_AFBVV95cUxQSG16bXNwVkdMRmhRZHh2aVlkZzR6b1hBb1dwVWFZRHdjZFVsOC16VDNEYWlQWlNSekwySXhKam12X0pMY1Ridm55SkZNVlh4RzdMQ1l4dG5WZVVYRWVucG5ycmpDSk53QWg2T3B1eUNyYlJVQVlHQkdNWnREMEczcldLVjNfU21WVThKS2dOdy10cnlrUjFBUnBhZEZabVRyTThlSVBVNXhqWGhMM1RVaDllQy1HVHhVUHNQQWxwZkt2MUhrUXVwWWE1S0tJZnFMV196bEYtTEU3bVhSSHlvTnYzYk12cmpxZkN4a3VRSV9lWllzQnVpOWVQOUg?oc=5"
         },
         {
           "domain": "myfox8.com",
