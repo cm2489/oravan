@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-10T18:12:58.152Z",
+    "fetched_at": "2026-10-10T20:01:32.364Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-10T18:12:58.152Z"
+        "checked_at": "2026-10-10T20:01:32.364Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-04",
         "week_label": "Most-Viewed Bills - Week of October 4, 2026",
         "entries": 8,
-        "checked_at": "2026-10-10T18:12:58.152Z"
+        "checked_at": "2026-10-10T20:01:32.364Z"
       },
       "leans": {
         "center": {
@@ -1285,6 +1285,19 @@
           "firstSeen": "2026-10-09",
           "lastSeen": "2026-10-09",
           "url": "https://www.politico.com/live-updates/2026/10/08/congress/aipac-and-the-michigan-senate-race-01113266"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-8884-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-10-10",
+          "lastSeen": "2026-10-10",
+          "url": "https://thehill.com/opinion/criminal-justice/6139594-congress-clean-slate-act/"
         }
       ],
       "unratedOutlets7d": [],
