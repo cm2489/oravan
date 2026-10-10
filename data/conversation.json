@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-10T08:26:08.813Z",
+    "fetched_at": "2026-10-10T15:18:41.686Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-10T08:26:08.813Z"
+        "checked_at": "2026-10-10T15:18:41.686Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-04",
         "week_label": "Most-Viewed Bills - Week of October 4, 2026",
         "entries": 8,
-        "checked_at": "2026-10-10T08:26:08.813Z"
+        "checked_at": "2026-10-10T15:18:41.686Z"
       },
       "leans": {
         "center": {
@@ -1529,6 +1529,18 @@
       ],
       "mostViewed": null
     },
+    "s-356-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "eastoregonian.com",
+          "firstSeen": "2026-10-10",
+          "lastSeen": "2026-10-10",
+          "url": "https://news.google.com/rss/articles/CBMiqAFBVV95cUxNSDlzUmFtVFMwYWx3dXZJQnNNRHNLSkNXM2NhNVRHT0Z1cjI4cEpIeXNpdEIyMml5OGh6dWpmZmFNS1pnYl9BNktwR3QtOWJoM1dPRTZIUElNa0RoblNWRWlwaXFTM3huQTR5VVJVYjJaalRTVkFjcTUwaEgyTFlSZjhFRjUwd1VTa0ZFVFFsNno4TXZTNDNienpxYmRXWVg4czA2eFZsdWQ?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "s-3618-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1586,6 +1598,18 @@
           "firstSeen": "2026-10-07",
           "lastSeen": "2026-10-07",
           "url": "https://news.google.com/rss/articles/CBMikAFBVV95cUxPdmZEa0doQlp1N2lUYWJ2akFoZTFfLXVPVVpKdWFnZXJ3aktEdmJDQzNkcG84RWdheW0wYTg5RG5mSDc4ZFp0V2xQdk81Vi03TmI3QkFnNnNqQzBDRkZVM2VBcDVacWJCSHJTYkRDelZPRnZtMXRJZ1phRHVaYzZEbVFJSFVIOGcxMVVxcERxLWw?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "s-4340-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "heartlandernews.com",
+          "firstSeen": "2026-10-10",
+          "lastSeen": "2026-10-10",
+          "url": "https://news.google.com/rss/articles/CBMisgFBVV95cUxOcHVhTS1Dd2J4RzNic1JXLTUxVTQyWlduNHVQUWxXV0FNRVpfVnk1aUM3X3BnM3E0b3BFZWRHQzYySFdfdWIxYzl0bnZ3R2NVemRBVkJVUFpYRVNRZGFVaVlJS2FKRXRibERYOWNicTRCSjNablByTjRDNzF6LXhkSG5xRkN2X0hsQ19kU21QQ0dyTkZ1bmMyczFhSTh0SnROQ2tnN3VvVUE3LVhqVGE5UUdn?oc=5"
         }
       ],
       "mostViewed": null
@@ -1654,6 +1678,12 @@
     "s-4668-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "gridironheroics.com",
+          "firstSeen": "2026-10-10",
+          "lastSeen": "2026-10-10",
+          "url": "https://news.google.com/rss/articles/CBMitgFBVV95cUxQLXJwbVlRZ01pdVd1cGhQQy1QWnFvM2tXQ0JFSWhOS3RDWXl2RWZtSEt6OFRTRFkxNHZZWU0wWDE0VHUzQ0FfZG1aSFRGV3kyMkNKUFRJQm9abjMteFNkQm9NcjVvVk9KVlhpRG1EeGcyUmpMRU5fNE53WmM1TW41T0hqYk45c3dKUzBMMUVKMzUxVmNmOWNOZEtha29OdHB2Y3JicWcybTVJX2RIc0t5dDl6U19TUQ?oc=5"
+        },
         {
           "domain": "aol.com",
           "firstSeen": "2026-10-09",
