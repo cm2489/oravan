@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-10T15:18:41.686Z",
+    "fetched_at": "2026-10-10T18:12:58.152Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-10T15:18:41.686Z"
+        "checked_at": "2026-10-10T18:12:58.152Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-04",
         "week_label": "Most-Viewed Bills - Week of October 4, 2026",
         "entries": 8,
-        "checked_at": "2026-10-10T15:18:41.686Z"
+        "checked_at": "2026-10-10T18:12:58.152Z"
       },
       "leans": {
         "center": {
@@ -808,6 +808,12 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "inkl.com",
+          "firstSeen": "2026-10-10",
+          "lastSeen": "2026-10-10",
+          "url": "https://news.google.com/rss/articles/CBMi0wFBVV95cUxPSEhVUTRYeXNpT1VNVTgwUHZEUnVGMmNhaHpScG83dUlrd1c3OXRGRkFWNFFqY3ZoRG4xTk9uTkI4ejM3QU44Z21DRzdDdVBaYzBwZjdhQnVlblNSZzFFWXJmUVVXUEh0c1lRaFg4V1RSY2NBZ21fdzktRDNhY0plcXZiQ3BkbnRNcVphWlpIcWxjWWRlWjZVVUtHXzNDcmVMdlkzdmpkRGNvQXV3QlRlSGIySGlaeEZYWXpVTkx2WjhfMUVLcnNUOGY4TkdJMlRrTGNV?oc=5"
+        },
+        {
           "domain": "fiercehealthcare.com",
           "firstSeen": "2026-10-09",
           "lastSeen": "2026-10-09",
@@ -1565,6 +1571,18 @@
       ],
       "mostViewed": null
     },
+    "s-3755-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "cryptobriefing.com",
+          "firstSeen": "2026-10-10",
+          "lastSeen": "2026-10-10",
+          "url": "https://news.google.com/rss/articles/CBMifEFVX3lxTE93VlN0T2xJRXVNNllYZlZ4TU0waUVYZkg5LU9kZHc2REVtR01iQ3BBT3lTdGZaZTNCa1doRUVmY2FTS2hVeVE5MktyZURoZ0JWSHFibHh1MHh2VlQ3MlhDa3Q5dmkycDd2NjNlTW5rQXh4anIxaGZKX04tVUg?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "s-3791-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1683,6 +1701,12 @@
           "firstSeen": "2026-10-10",
           "lastSeen": "2026-10-10",
           "url": "https://news.google.com/rss/articles/CBMitgFBVV95cUxQLXJwbVlRZ01pdVd1cGhQQy1QWnFvM2tXQ0JFSWhOS3RDWXl2RWZtSEt6OFRTRFkxNHZZWU0wWDE0VHUzQ0FfZG1aSFRGV3kyMkNKUFRJQm9abjMteFNkQm9NcjVvVk9KVlhpRG1EeGcyUmpMRU5fNE53WmM1TW41T0hqYk45c3dKUzBMMUVKMzUxVmNmOWNOZEtha29OdHB2Y3JicWcybTVJX2RIc0t5dDl6U19TUQ?oc=5"
+        },
+        {
+          "domain": "yahoo.com",
+          "firstSeen": "2026-10-10",
+          "lastSeen": "2026-10-10",
+          "url": "https://news.google.com/rss/articles/CBMimgFBVV95cUxPYnRLZE9XWVhUamFaelEtZjNNSy1HYkJ6UFFWY0NQdDJibVFidmpoUTdUd1RvYWxFdHdlY00yOVVMOTM1am5zUlB3TDZ3Qi12V2JGdmxPU0VkSHBXUEZvVnZZSGVSV1lWUnV0NW9lb1VkRTdlc1NhRldCbzc0clBsd0hCMGxERWczb0FPbnQyYldyZW40eUNGcVd3?oc=5"
         },
         {
           "domain": "aol.com",
