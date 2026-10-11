@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-11T01:20:19.767Z",
+    "fetched_at": "2026-10-11T12:42:02.180Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-11T01:20:19.767Z"
+        "checked_at": "2026-10-11T12:42:02.180Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-04",
         "week_label": "Most-Viewed Bills - Week of October 4, 2026",
         "entries": 8,
-        "checked_at": "2026-10-11T01:20:19.767Z"
+        "checked_at": "2026-10-11T12:42:02.180Z"
       },
       "leans": {
         "center": {
@@ -517,6 +517,18 @@
       ],
       "mostViewed": null
     },
+    "hr-2071-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "houmatimes.com",
+          "firstSeen": "2026-10-11",
+          "lastSeen": "2026-10-11",
+          "url": "https://news.google.com/rss/articles/CBMirwFBVV95cUxQVXhPRHBMLURIcUE0d3NsNEdnX2M4RWZPUDQyMEJNYjlZUG83XzRYdTZoVVM1OVhNeTVQOXBDWVF2bzBfZFk4aEZHVEp1Zy02QzJ0Q05oTTU5WTJvUDgwbWZZYXdVM0ZjdDkya2FjU0FRRGhyUXRsOERZUkh4cURXSDNZQklrTlJqamlHQTlKSnZ6MlM1dHlJdmRZazZxNURDVWJNOTRuOWF0M2FFWGtr?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-2158-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -802,7 +814,20 @@
     },
     "hr-5334-119": {
       "outlets7d": [],
-      "unratedOutlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "pravda.com.ua",
+          "firstSeen": "2026-10-11",
+          "lastSeen": "2026-10-11",
+          "url": "https://news.google.com/rss/articles/CBMiZEFVX3lxTE1zVmdHSXhKRUdwanFsWlZOVWZNWWQ1em16N1pSc3NtZC1pQ1JRNk10SzlYTlQzNExxOERpd1gydEVxaTFZMVFtV1RmTkUxZHFNOExZY1pPRFV4eERkZ0lkOHFWNWnSAXBBVV95cUxORlZKN3BPajhOZ0xscmhZUUo3dWt1eDlGbXJrQVBoZGFmT2tVcXNjSmdDUkFSOHdoNHVXLXFUcTFndDctdE5jaUNXdmdleDR3QXozUkxJeVpiVnJBUWdwTlpoS2hMazlDcGMtNGhWWlIy?oc=5"
+        },
+        {
+          "domain": "ua.news",
+          "firstSeen": "2026-10-11",
+          "lastSeen": "2026-10-11",
+          "url": "https://news.google.com/rss/articles/CBMirwFBVV95cUxQdU8zOWZhQ2lpNGtZd1Y0N1lVZEk4c0hFZEJ0dDhtZnVhbmVfUnZHWWk1NzRMakdrOXJmZXo0eFJiVmY0ODlHTWp0TkJVZDdoOTRQNkJVUDJKeXE0WGhkV3BNNy0wWGFMWk9LeEFwWEJWVHNXU1IxQW54aWZiQVdVdUNZcWZaS0g4WGstcURVek51RktlTkNRT1dTRHNwSGYtTGNxZHpJTVZGYzhpOVNV?oc=5"
+        }
+      ],
       "mostViewed": {
         "weeksOnList": 2,
         "lastRank": 5,
@@ -875,6 +900,12 @@
     "hr-5631-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "fortune.com",
+          "firstSeen": "2026-10-11",
+          "lastSeen": "2026-10-11",
+          "url": "https://news.google.com/rss/articles/CBMimwFBVV95cUxQZGpZNkRJRndXVkdJN3VnQ0c1NDlrbkdPLVZQVzU1Z1BRN1NDUVQwN21Fb2p5aEpPV1U4NXRBdjMyMG41Zlh3N3c2V2JiMmdGcGNpcGlfNjNwWHVMVzlTMjdGcDRjZXhpSTBUUFhRRUVNbkRDT3FvaVFOQTB1eFdlWldfQnZTbWlzdmNlYUVLWG9rcWFIaFNIcVZoaw?oc=5"
+        },
         {
           "domain": "nm.news",
           "firstSeen": "2026-10-09",
@@ -970,6 +1001,18 @@
           "firstSeen": "2026-10-07",
           "lastSeen": "2026-10-07",
           "url": "https://news.google.com/rss/articles/CBMioAFBVV95cUxOSEFIUFhfSjBXOVNaWEJqSGJ0Vm5Rc0tiMmkzYXEwMmxQNFdfTFNXSFVQaDQ2ZlM5N0lDOFhQTU5JMDV5LVBBY19xamFNWDJsR2VjeGxqREU4Zi1zQXpkME9kbDJCVU5DQkhJM18xMU9xdGNwQmhwUHZSSWpNdGlsNnNBcHotc3NRbW5pMV9jNGxtRDhPNFZtV0VyRmZBSnFK?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-6856-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "ukranews.com",
+          "firstSeen": "2026-10-11",
+          "lastSeen": "2026-10-11",
+          "url": "https://news.google.com/rss/articles/CBMizgFBVV95cUxNRE5iTjhpR2l6LUNSd3dMdUpCcFEySWFzY2g2dVRxdGQtQkstcXdfYUhuNmZDYk1odEdtaGZ4dktaNFF4YmkwZlB3ZFVWUUE4SU4zUnZ5OFZETkFXQzc2UlN2Rm5NaDdsVjBWQW03by1PRm10ZnREczR3RFA0TjBVMDFIZTgtYXpIS1hBWDhJd0dyVzliMXJBZWJuN2pyLUYwa1ZHcFltb3U0ZU5KYUhXTk9LaXZ1LTRFTnRrTm1pRTlSWkxPa0d6M2RuYmQtZ9IB0wFBVV95cUxOOTU3VUVWNkl2ejV6LXhKMmJyZXViZ1hCODR2c1ozQV9USkpqUUp3U3l5a3lWTmlGNjZqbHBwV2NNSkZ4WktmQi1MS1ZCY3lCa1BYbll5Y3VSRXdlNGloaFZuaUo3RmNXNUtSNzcwOW5oc3F2SkZkNVlIMUZOOXVMbjRqVnV6YkdXVVl5SXlxdjExN19wZ3lndm52VVlkanBOYjEzOVBJYncwcUdsdkJ1VW9RMG9LNXdtMzdJLTg1QTd0X2hWanByTjFNZWlDLUNub2Fv?oc=5"
         }
       ],
       "mostViewed": null
