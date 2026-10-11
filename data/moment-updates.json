@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-10-10T08:26:09.791Z"
+    "generated_at": "2026-10-11T19:05:37.909Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -1134,6 +1134,73 @@
           "reanchor:5d"
         ],
         "model": "claude-sonnet-5-5"
+      },
+      {
+        "id": "s_88097250",
+        "generated_at": "2026-10-11T19:05:42.052Z",
+        "as_of_day": "2026-10-11",
+        "text": {
+          "en": "The latest action in the official record on these measures is dated September 24, 2026.",
+          "es": "La última acción del registro oficial sobre estas medidas es del 24 de septiembre de 2026."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "hconres-93-119": "passed_chamber",
+            "hconres-89-119": "floor_vote",
+            "hconres-86-119": "passed_chamber",
+            "sjres-185-119": "floor_vote",
+            "sjres-200-119": "committee",
+            "sjres-211-119": "committee",
+            "sjres-180-119": "floor_vote",
+            "sjres-181-119": "floor_vote",
+            "sjres-172-119": "floor_vote",
+            "hconres-38-119": "floor_vote"
+          },
+          "vehicle_status_keys": {
+            "hconres-93-119": "passed_chamber",
+            "hconres-89-119": "rejected",
+            "hconres-86-119": "adopted",
+            "sjres-185-119": "floor_activity",
+            "sjres-200-119": "committee",
+            "sjres-211-119": "committee",
+            "sjres-180-119": "floor_activity",
+            "sjres-181-119": "floor_activity",
+            "sjres-172-119": "floor_activity",
+            "hconres-38-119": "rejected"
+          },
+          "update_ids": [],
+          "roll_calls": [],
+          "roll_calls_on_record": [
+            "h-119-2-199",
+            "h-119-2-282",
+            "h-119-2-307",
+            "h-119-2-85",
+            "s-119-2-129",
+            "s-119-2-174",
+            "s-119-2-184",
+            "s-119-2-192",
+            "s-119-2-207",
+            "s-119-2-216",
+            "s-119-2-244"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/93",
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/89",
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/86",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/185",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/200",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/211",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/180",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/181",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/172",
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/38",
+            "https://www.congress.gov/crs-report/R42699"
+          ]
+        },
+        "changed_because": [
+          "reanchor:7d"
+        ],
+        "model": "record-only"
       }
     ],
     "summary_attempts": {
