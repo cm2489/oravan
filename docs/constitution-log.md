@@ -8,6 +8,18 @@ The history behind `CLAUDE.md`'s hard rules: every dated amendment and the wordi
 
 ---
 
+<a id="session-contract-2026-10-09"></a>
+
+## 2026-10-09 — The session contract, version 1.2: Haiku 5.5 allowed for mechanical stages
+
+Sections touched: `CLAUDE.md` (the session contract at the top: the version line and one sentence in item 1, "Models"). No numbered hard rule changed, and no gate or public copy changed. The global copy (`~/.claude/CLAUDE.md`) and the canonical file (`~/.claude/session-contract/contract-v1.2.md`) changed the same day; the owner's Agent-tool hook now allows `haiku` beside `opus` and `sonnet`.
+
+- The owner's words, typed, verbatim, his typing kept:
+  - 2026-10-08: "Use ultracode and give some more emphasis on Haiku 5.5 where applicable for speed and compute reasons. I trust your decisions on that front."
+  - 2026-10-09: "I'd also like you to update the hook to include Haiku 5.5" (in a longer answer about the session's web-search budget), and, on a picker whose option text Claude wrote, he picked "Apply the one-line edit to both copies", which read: "You authorize it here in words; I change the model sentence in ~/.claude/CLAUDE.md and the repo's CLAUDE.md to 'Sonnet 5.5, Opus 5.5 or Haiku 5.5 (Haiku for mechanical stages only), never Fable', and the canonical v1.1 file, and log it. The repo copy goes in a PR you merge."
+- The sentence before: "Subagents run on Sonnet 5.5 or Opus 5.5, never Fable." The sentence after: "Subagents run on Sonnet 5.5, Opus 5.5 or Haiku 5.5 (Haiku for mechanical stages only), never Fable."
+- Why "mechanical stages only": on 2026-10-08 Haiku 5.5 split his notes into 87 items with every quote matched to the source, and ran citation and format checks, at a fraction of the cost; research, synthesis and judging stay on Sonnet 5.5 or Opus 5.5.
+
 <a id="session-contract-2026-09-29"></a>
 
 ## 2026-09-29 — The session contract: how every session runs; Merging and conflicts changed to match
