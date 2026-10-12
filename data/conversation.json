@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-12T09:06:17.459Z",
+    "fetched_at": "2026-10-12T19:01:07.426Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-12T09:06:17.459Z"
+        "checked_at": "2026-10-12T19:01:07.426Z"
       },
       "most_viewed": {
         "status": "ok",
-        "week": "2026-10-04",
-        "week_label": "Most-Viewed Bills - Week of October 4, 2026",
-        "entries": 8,
-        "checked_at": "2026-10-12T09:06:17.459Z"
+        "week": "2026-10-11",
+        "week_label": "Most-Viewed Bills - Week of October 11, 2026",
+        "entries": 9,
+        "checked_at": "2026-10-12T19:01:07.426Z"
       },
       "leans": {
         "center": {
@@ -202,10 +202,10 @@
         }
       ],
       "mostViewed": {
-        "weeksOnList": 9,
+        "weeksOnList": 10,
         "lastRank": 3,
         "lastSeen": "2026-10-12",
-        "lastWeek": "2026-10-04"
+        "lastWeek": "2026-10-11"
       }
     },
     "hr-10159-119": {
@@ -390,10 +390,10 @@
         }
       ],
       "mostViewed": {
-        "weeksOnList": 1,
-        "lastRank": 10,
+        "weeksOnList": 2,
+        "lastRank": 4,
         "lastSeen": "2026-10-12",
-        "lastWeek": "2026-10-04"
+        "lastWeek": "2026-10-11"
       }
     },
     "hr-1700-119": {
@@ -463,6 +463,16 @@
       ],
       "mostViewed": null
     },
+    "hr-22-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [],
+      "mostViewed": {
+        "weeksOnList": 1,
+        "lastRank": 10,
+        "lastSeen": "2026-10-12",
+        "lastWeek": "2026-10-11"
+      }
+    },
     "hr-2283-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -531,6 +541,19 @@
           "firstSeen": "2026-10-08",
           "lastSeen": "2026-10-08",
           "url": "https://thehill.com/homenews/house/6136767-bipartisan-lawmakers-2026-midterm-election-results/"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-2743-119": {
+      "outlets7d": [
+        {
+          "domain": "newsweek.com",
+          "lean": "left",
+          "firstSeen": "2026-10-12",
+          "lastSeen": "2026-10-12",
+          "url": "https://news.google.com/rss/articles/CBMijgFBVV95cUxOSDhQVFktNHlXZkc1MVpMV1FFbC1QOUs5S2RERW0xblZGM2tBUDBFTVZkb3VJTDVkSldMVlZKaDVfZGF4Rk50QU1wdWlHMXNObWNzUWQ3MDNLNWRwcU0waWVoWkRMWEpTV1JpU18tYno0Vll3ZFA3MERGWGVwaHRLLW1PLUhMaDdvRWJiVDNR?oc=5"
         }
       ],
       "unratedOutlets7d": [],
@@ -682,6 +705,18 @@
       ],
       "mostViewed": null
     },
+    "hr-5199-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "nurse.org",
+          "firstSeen": "2026-10-12",
+          "lastSeen": "2026-10-12",
+          "url": "https://news.google.com/rss/articles/CBMic0FVX3lxTFBsTWRUZ0NRQjRINGVBZkl2U0tQU1BOUU1tV01tdWR0YVdEaldtOFUwX0VhNFBreW1abFBTaWhHeHUxMEUyUm9FUFlRckVldlBnUEx0TWUxYUl4RGFaV2s1anV1MVlrUjBGMzI3THdlSGlBQkE?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-5269-119": {
       "outlets7d": [
         {
@@ -695,14 +730,20 @@
       "unratedOutlets7d": [],
       "mostViewed": {
         "weeksOnList": 1,
-        "lastRank": 10,
-        "lastSeen": "2026-10-05",
-        "lastWeek": "2026-09-27"
+        "lastRank": 8,
+        "lastSeen": "2026-10-12",
+        "lastWeek": "2026-10-11"
       }
     },
     "hr-5284-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "myjournalcourier.com",
+          "firstSeen": "2026-10-12",
+          "lastSeen": "2026-10-12",
+          "url": "https://news.google.com/rss/articles/CBMilwFBVV95cUxPQmpHVVdVd0wtaWN2WEpqVEI3d1VlOXYwUHJwMFhZWVNsSUxWY2wzZmR6bVk2TDBYWGVEaGp4OVVPREV3NWdlRjRRRVZZVjRXRjFET3NEMm5ZYVJaS1hmcXJVOUV1eUd6dzB6NTZLcFZod0ZzbkxjeU0yMmhoVUZyd1dPY09IWnhTcUFuU3dRMXpnU1hLSzFR?oc=5"
+        },
         {
           "domain": "mb.ntd.com",
           "firstSeen": "2026-10-08",
@@ -717,9 +758,9 @@
       "unratedOutlets7d": [],
       "mostViewed": {
         "weeksOnList": 1,
-        "lastRank": 8,
-        "lastSeen": "2026-10-05",
-        "lastWeek": "2026-09-27"
+        "lastRank": 6,
+        "lastSeen": "2026-10-12",
+        "lastWeek": "2026-10-11"
       }
     },
     "hr-5334-119": {
@@ -804,10 +845,10 @@
       "outlets7d": [],
       "unratedOutlets7d": [],
       "mostViewed": {
-        "weeksOnList": 9,
+        "weeksOnList": 10,
         "lastRank": 1,
         "lastSeen": "2026-10-12",
-        "lastWeek": "2026-10-04"
+        "lastWeek": "2026-10-11"
       }
     },
     "hr-6529-119": {
@@ -1086,6 +1127,16 @@
       "unratedOutlets7d": [],
       "mostViewed": null
     },
+    "hr-8800-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [],
+      "mostViewed": {
+        "weeksOnList": 1,
+        "lastRank": 9,
+        "lastSeen": "2026-10-12",
+        "lastWeek": "2026-10-11"
+      }
+    },
     "hr-8809-119": {
       "outlets7d": [
         {
@@ -1218,11 +1269,23 @@
       "outlets7d": [],
       "unratedOutlets7d": [],
       "mostViewed": {
-        "weeksOnList": 9,
-        "lastRank": 5,
+        "weeksOnList": 10,
+        "lastRank": 2,
         "lastSeen": "2026-10-12",
-        "lastWeek": "2026-10-04"
+        "lastWeek": "2026-10-11"
       }
+    },
+    "s-2403-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "law.com",
+          "firstSeen": "2026-10-12",
+          "lastSeen": "2026-10-12",
+          "url": "https://news.google.com/rss/articles/CBMi2wFBVV95cUxNb0p4aUxiaWhtU0lNM2NhUlltR0FBWEgtV3ZvNGxKZG9SZjZILTlJNTduMnR1REJaSUx1SHU2QjNTN3ZGbHhkSzBrbnhTN3Bia0x1NFBPT2tFWGFIU25tT3RFRXRGRklrOTNnRzl1QlVoZkRra1FOSEc4ME5XRlpnWTNnak9BM0UxM000TmJlemtVcjQtZGp6T0dESFdJS2xva0V0TEg5NFd5UzRyQWt2SGFqcjdMcDdlYkxVTzhXQ3A1RjBwX1hvYWpjSHk2MnFpVjcyUEdBSHh2MEE?oc=5"
+        }
+      ],
+      "mostViewed": null
     },
     "s-2578-119": {
       "outlets7d": [],
@@ -1492,10 +1555,10 @@
         }
       ],
       "mostViewed": {
-        "weeksOnList": 4,
-        "lastRank": 2,
+        "weeksOnList": 5,
+        "lastRank": 5,
         "lastSeen": "2026-10-12",
-        "lastWeek": "2026-10-04"
+        "lastWeek": "2026-10-11"
       }
     },
     "s-4784-119": {
@@ -1519,6 +1582,18 @@
         "lastSeen": "2026-09-28",
         "lastWeek": "2026-09-20"
       }
+    },
+    "s-5354-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "inman.com",
+          "firstSeen": "2026-10-12",
+          "lastSeen": "2026-10-12",
+          "url": "https://news.google.com/rss/articles/CBMieEFVX3lxTE1mektPRkVBUmNRclFKN2VYWWdGRHI3YzlsaHZFT2xoUkJmWkhnTGpMTGJ3RzlSZXB1WktaRUJVRUhjWG1CNWI2bEwzdTVoSzNMQlE1ZXl3YzM2TUo1aUdpV1VpUjhxQjRRVFRSajh3WVJEMno2U05Xaw?oc=5"
+        }
+      ],
+      "mostViewed": null
     },
     "s-5602-119": {
       "outlets7d": [],
