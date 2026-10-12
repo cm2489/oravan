@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-12T21:53:25.850Z",
+    "fetched_at": "2026-10-12T22:41:03.870Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-12T21:53:25.850Z"
+        "checked_at": "2026-10-12T22:41:03.870Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-11",
         "week_label": "Most-Viewed Bills - Week of October 11, 2026",
         "entries": 9,
-        "checked_at": "2026-10-12T21:53:25.850Z"
+        "checked_at": "2026-10-12T22:41:03.870Z"
       },
       "leans": {
         "center": {
@@ -744,6 +744,12 @@
     "hr-5284-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "mrt.com",
+          "firstSeen": "2026-10-12",
+          "lastSeen": "2026-10-12",
+          "url": "https://news.google.com/rss/articles/CBMihgFBVV95cUxQX0FEOGtGUzFFRlBDSm9mUzhLOFRZbEpWRUw4UjRBRGNEajhSOWUwQTB2a3JtYUg0aUdNQkhTYVN5REtpeGVkbXM4dHlkZldKSWdqcldxd3ZQMXMydGV2a1prR0VFSk1MODloTXVGdWVJUlczcGk2NTQ4dFZ2WGYtSFp2NTRPQQ?oc=5"
+        },
         {
           "domain": "myjournalcourier.com",
           "firstSeen": "2026-10-12",
