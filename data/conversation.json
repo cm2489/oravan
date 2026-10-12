@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-12T19:01:07.426Z",
+    "fetched_at": "2026-10-12T21:53:25.850Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-12T19:01:07.426Z"
+        "checked_at": "2026-10-12T21:53:25.850Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-11",
         "week_label": "Most-Viewed Bills - Week of October 11, 2026",
         "entries": 9,
-        "checked_at": "2026-10-12T19:01:07.426Z"
+        "checked_at": "2026-10-12T21:53:25.850Z"
       },
       "leans": {
         "center": {
@@ -576,6 +576,12 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "tokenpost.com",
+          "firstSeen": "2026-10-12",
+          "lastSeen": "2026-10-12",
+          "url": "https://news.google.com/rss/articles/CBMiW0FVX3lxTE4ydFlELXltOGc0dE83UUczY1dLY1c3WFRYckdOaWRwaHR5SFkzUWZrSThHTXE4V3dGQThtNWloaWo4QVRueExvY0J3MEVXcjVHQWlMeUI0aEZjZGM?oc=5"
+        },
+        {
           "domain": "kucoin.com",
           "firstSeen": "2026-10-07",
           "lastSeen": "2026-10-08",
@@ -837,6 +843,18 @@
           "firstSeen": "2026-10-09",
           "lastSeen": "2026-10-09",
           "url": "https://news.google.com/rss/articles/CBMiugFBVV95cUxNWnl6WF9BVE9ldm54SHJsbWNGRDdMMDJvMWlLUnF6TktzeURuSXRTcnRvQkczMHNBZDloR0NFdWlWVzNmazZ0TnhjdDdCQk5ZS2Rfc25mS1BCT0k5Um1jc2tCTGlCaGhfUERrelE3cEQ1blpncm52N1JmVFkzMmFhM19mOFdBX3k1SzZMd0w4X2dvTUl1aTd4V2NyNDl0V2NvNkJRbzZwYnNZM19BRXc0bU9HckFOaVV5WWc?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-6240-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "flatwaterfreepress.org",
+          "firstSeen": "2026-10-12",
+          "lastSeen": "2026-10-12",
+          "url": "https://news.google.com/rss/articles/CBMiowFBVV95cUxOcWtMeGtsNUJtbWlqcUFuRFc1ZExSY2ZvaTB0R3VPaThEd3VEekN1NnhYX0JINzJWTjZuTERzaFdXMFdqX0N5VGhDaWtTLTV0emVMalN4bTNYUGpXd0xBQXFUVGM1bUh6MW1OVmJsaVpkQnJHMi1VdVJMeGtSZmRXOVdPYnpWcTBjTE9JU1VoZDNlTTNEWUJ0aURPcGtqQ1Nnd0N3?oc=5"
         }
       ],
       "mostViewed": null
@@ -1184,6 +1202,18 @@
         "lastSeen": "2026-10-12",
         "lastWeek": "2026-10-04"
       }
+    },
+    "hr-979-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "radioiowa.com",
+          "firstSeen": "2026-10-12",
+          "lastSeen": "2026-10-12",
+          "url": "https://news.google.com/rss/articles/CBMiqwFBVV95cUxNTkY3ZEUxSHlqOW5pcEtKM2VPaUtnTkJzMU9NdDZFNGNPTnhBRlhOeTUyVTYxV1FnbV94ZnQtMHBqUzdWVTR4SjZiYlZIU2phdF9xME85NGpuYmhRYXZXZE1iVWNXUGg2RTVZd2RuY3N0a2NiVldMeUc2QzB5clhkU2R1ZUJ1NndJVFV4S1o5eUFodV9nUmhfMExDRl9Oa2NqQTJRNjhWTjlIRDg?oc=5"
+        }
+      ],
+      "mostViewed": null
     },
     "s-1135-119": {
       "outlets7d": [],
