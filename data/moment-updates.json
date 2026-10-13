@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-10-11T19:05:37.909Z"
+    "generated_at": "2026-10-13T20:38:30.211Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -2833,6 +2833,49 @@
           "updates:+2"
         ],
         "model": "claude-sonnet-5-5"
+      },
+      {
+        "id": "s_ddf570d8",
+        "generated_at": "2026-10-13T20:38:32.166Z",
+        "as_of_day": "2026-10-13",
+        "text": {
+          "en": "The latest action in the official record on this measure is dated October 5, 2026.",
+          "es": "La última acción del registro oficial sobre esta medida es del 5 de octubre de 2026."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "s-4668-119": "passed_chamber"
+          },
+          "vehicle_status_keys": {
+            "s-4668-119": "passed_chamber"
+          },
+          "update_ids": [
+            "u_9f7caf03",
+            "u_c46f6482",
+            "u_c9918aa9"
+          ],
+          "roll_calls": [],
+          "roll_calls_on_record": [
+            "s-119-2-235",
+            "s-119-2-236",
+            "s-119-2-240",
+            "s-119-2-242",
+            "s-119-2-243",
+            "s-119-2-245",
+            "s-119-2-246",
+            "s-119-2-247",
+            "s-119-2-248",
+            "s-119-2-249",
+            "s-119-2-250"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "changed_because": [
+          "reanchor:7d"
+        ],
+        "model": "record-only"
       }
     ],
     "summary_attempts": {
