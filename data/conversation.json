@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-13T09:20:29.571Z",
+    "fetched_at": "2026-10-13T17:33:51.895Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-13T09:20:29.571Z"
+        "checked_at": "2026-10-13T17:33:51.895Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-11",
         "week_label": "Most-Viewed Bills - Week of October 11, 2026",
         "entries": 9,
-        "checked_at": "2026-10-13T09:20:29.571Z"
+        "checked_at": "2026-10-13T17:33:51.895Z"
       },
       "leans": {
         "center": {
@@ -509,6 +509,18 @@
       ],
       "mostViewed": null
     },
+    "hr-2493-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "northcarolinahealthnews.org",
+          "firstSeen": "2026-10-13",
+          "lastSeen": "2026-10-13",
+          "url": "https://news.google.com/rss/articles/CBMid0FVX3lxTE91N3FWZllOSnlPR1hld1BEaXBGeGVsTy1iZVhvOVpRY1dFZWk5MjBCTDMtWkVfQnpJWmNTRHRrSldkX0NjdW1oZERYaDhnYnVGZ2F6OTJ3TTRPNnlCWGs5UGhZbjNtb2lsbS1saUxQNWtxRHRHcDk0?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-2694-119": {
       "outlets7d": [
         {
@@ -681,6 +693,19 @@
       ],
       "mostViewed": null
     },
+    "hr-4911-119": {
+      "outlets7d": [
+        {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-10-13",
+          "lastSeen": "2026-10-13",
+          "url": "https://www.foxnews.com/politics/trump-vanishes-from-gop-senators-campaign-website-poll-numbers-plunge-weeks-before-election"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hr-5199-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -714,6 +739,12 @@
     "hr-5284-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "thetelegraph.com",
+          "firstSeen": "2026-10-13",
+          "lastSeen": "2026-10-13",
+          "url": "https://news.google.com/rss/articles/CBMikgFBVV95cUxOVWZZZ3RqRzA1cUVWT2ZLOWktaUp1bHZDOHFRTmNqb2k0M2QwOU10RlV0dTBJNjRDOXIwZFVudWkwN0hmZEt6ZzhHbXNXcDR6aTZsNTdzeGhMWk5sOG1xNkFTM0MzVHNJallRdHRpWmNJNjhMWkJkSVcwVDQtQ3YtWlhWbmp6S2RoaC1FTlh4VnZidw?oc=5"
+        },
         {
           "domain": "mrt.com",
           "firstSeen": "2026-10-12",
@@ -868,6 +899,12 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "biologicaldiversity.org",
+          "firstSeen": "2026-10-13",
+          "lastSeen": "2026-10-13",
+          "url": "https://news.google.com/rss/articles/CBMiywFBVV95cUxPVjNoUGZQNk94MVQ3Si0tV0pDVkRiR0VtbDduYXM0YmdZM2t0RlplTHdhRWRlSXkwYmJSUk5fSjg4aVRwNjh0Q3BkWGpOcThDaUxSLXNrdXhMQkVReGJ4X2NRcE9ZTDhzZmtPQzloZ2ZOc2ZubGk2RE1GWVJJNzFhNHRUN3BPNmVRb09mS3pLQ3U3Q2ZKTDFMblAySFJFVHpDTlF2R0tIMFNIUDhwSWNrQmtDc1dHaFFiVEtVVmp1MWQ0SUlqMDRCbnc0WQ?oc=5"
+        },
         {
           "domain": "finance.yahoo.com",
           "firstSeen": "2026-10-07",
@@ -1078,6 +1115,12 @@
     "hr-8358-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "localnewslive.com",
+          "firstSeen": "2026-10-13",
+          "lastSeen": "2026-10-13",
+          "url": "https://news.google.com/rss/articles/CBMiqgFBVV95cUxNcVpTY3ptbVNuU3JDQTdLOHNoQXpJUlNGR1NtSHcyR3NaUEhnNndUZ2hNVHhEMVV5ckxPemJYOUh1LThRY0ZoU1p3OW9XdEhTUWh5U2RxQUZyOU9vaExEeHR5MFM5aW03bExOdHpoY3RWUV95ZHh5QTgzZ2VKb09uTVhyMXlLX3R6UkFNQTBxYTRQdlBXTlR0U1BJblFoWTA0aV9Fb01oMzBldw?oc=5"
+        },
         {
           "domain": "wbbjtv.com",
           "firstSeen": "2026-10-13",
@@ -1490,6 +1533,12 @@
     "s-4668-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "thenewsenterprise.com",
+          "firstSeen": "2026-10-13",
+          "lastSeen": "2026-10-13",
+          "url": "https://news.google.com/rss/articles/CBMikwJBVV95cUxPT0thSzAwbG8zejFNUlVIV3lUaTM4blFGZ1pyZWVaTzVHZ0Q5VHVLVHZRVnVQYTdmQzVzMGRjNGFRdXlxYUhCMWlwWmRJN3FibVRtY1ppTnpya25zSHhYMkcxNUJqek12NGR4X3V3clFoZVVNLWtWNHdQamM3TWdLb09sV1RnZldNX1VRRExqOEZlWXpjWmM3RVJoeTYxaXBJQ1BQS09BRWRZcHlmUl9ObHJHSEZFVGFiSlRkRHpxRDh4RUk2MFU4elhNck1JU1RZYTRfQkhyQUhLS21QV2J3alNPVUpoSzJ5Tm5vTEVscHB2OVhlMnpERXNHUFU1aFdhN0Y0cHRncjlrTWVyblNya0JHVQ?oc=5"
+        },
         {
           "domain": "gridironheroics.com",
           "firstSeen": "2026-10-10",
