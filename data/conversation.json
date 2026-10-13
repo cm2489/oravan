@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-13T20:06:35.698Z",
+    "fetched_at": "2026-10-13T20:46:06.924Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-13T20:06:35.698Z"
+        "checked_at": "2026-10-13T20:46:06.924Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-11",
         "week_label": "Most-Viewed Bills - Week of October 11, 2026",
         "entries": 9,
-        "checked_at": "2026-10-13T20:06:35.698Z"
+        "checked_at": "2026-10-13T20:46:06.924Z"
       },
       "leans": {
         "center": {
@@ -1550,6 +1550,12 @@
           "firstSeen": "2026-10-13",
           "lastSeen": "2026-10-13",
           "url": "https://news.google.com/rss/articles/CBMipwFBVV95cUxPLUdkdnlXbEk4XzZNZmVQOU1CTW16ZmpTZE5YVFU5WDJCMGtoQnh2b3lDaEsySndaektMQmZxYlVqel9yR2RJeUlWWlpfWHNMd1c4c29qYnFWeG9oZzZMbV9zaWh4NEs0UmdpVTJEeHNyNXF0bVA3YlgwNmRVWGJSZFRHbjBCbG5zdXFCRmZlWXppZW5mZEJ1U3hMc0MxcVdmYTZxVHhGWQ?oc=5"
+        },
+        {
+          "domain": "newsfromthestates.com",
+          "firstSeen": "2026-10-13",
+          "lastSeen": "2026-10-13",
+          "url": "https://news.google.com/rss/articles/CBMimgFBVV95cUxNY2x3VHRST2pMcnB6S2I2b3FwQVBjMFN4anoxWndyd3A0YUtGcGZXLUQ3M2FIRTRaY3hVc0xoWVhVUlRYMzM1djd3bll6ZVhmcmVDYjZZdUw5eVBfR052MlphbHcyVmhJRDFPZEtrSC1LZUdMZlJXYmZ6NEExbUtkanAyQ25RcmxmdUZJMGZVZDFYZ1RIY3E1MERB?oc=5"
         },
         {
           "domain": "thenewsenterprise.com",
