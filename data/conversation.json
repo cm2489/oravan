@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-13T17:33:51.895Z",
+    "fetched_at": "2026-10-13T20:06:35.698Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-13T17:33:51.895Z"
+        "checked_at": "2026-10-13T20:06:35.698Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-11",
         "week_label": "Most-Viewed Bills - Week of October 11, 2026",
         "entries": 9,
-        "checked_at": "2026-10-13T17:33:51.895Z"
+        "checked_at": "2026-10-13T20:06:35.698Z"
       },
       "leans": {
         "center": {
@@ -323,6 +323,18 @@
           "firstSeen": "2026-10-06",
           "lastSeen": "2026-10-06",
           "url": "https://news.google.com/rss/articles/CBMivwFBVV95cUxOUHd1UlVrV0k4OXRKaVBMbFRRa0ExVDVlZFRjTDBFbng1ci1XZmNKb2RsSjhUajBaRHd0SGlHeDR1LThjUFdJVG5XdDYyY2lNWnJtRkk5V0wzeTVKSlJLNlk1dG1meWZEQ2xsRjgwbWphalNHc2hrZzVfS1pQaHF0R2w2bUl3TUE2UnNHaUMzRWltYWlmLVdPVWNMNk81R3BIX0wtaGpWWVlRZFhOSURVc3FCMkRxVG9JX1lOdEJDOA?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-1180-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "federalnewsnetwork.com",
+          "firstSeen": "2026-10-13",
+          "lastSeen": "2026-10-13",
+          "url": "https://news.google.com/rss/articles/CBMisgFBVV95cUxNVWdaVkd6UEJQaXhEa0pXOEZoYm5IODNwWGpsLUZnLUdPZ0hoXzhXV3NmbWVYNUZCRmNIcVpFMEdGMXRFN3dTVzJBN3JKNEQ3bk5sTjBDX25RUHVqc0YyQWc0cEktWnJLSDJjaHJzd3hqRWRNSUZsZTctSFIxMUVsbDl5Y080T1Y5T1poZ1BIWWU4QVQtMV9GR28xN1BDMkxkTEh6NktrMU1jU0RyOFZjM1JR?oc=5"
         }
       ],
       "mostViewed": null
@@ -1533,6 +1545,12 @@
     "s-4668-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "campusreform.org",
+          "firstSeen": "2026-10-13",
+          "lastSeen": "2026-10-13",
+          "url": "https://news.google.com/rss/articles/CBMipwFBVV95cUxPLUdkdnlXbEk4XzZNZmVQOU1CTW16ZmpTZE5YVFU5WDJCMGtoQnh2b3lDaEsySndaektMQmZxYlVqel9yR2RJeUlWWlpfWHNMd1c4c29qYnFWeG9oZzZMbV9zaWh4NEs0UmdpVTJEeHNyNXF0bVA3YlgwNmRVWGJSZFRHbjBCbG5zdXFCRmZlWXppZW5mZEJ1U3hMc0MxcVdmYTZxVHhGWQ?oc=5"
+        },
         {
           "domain": "thenewsenterprise.com",
           "firstSeen": "2026-10-13",
