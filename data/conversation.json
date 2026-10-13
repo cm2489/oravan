@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-13T20:46:06.924Z",
+    "fetched_at": "2026-10-13T22:39:43.678Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-13T20:46:06.924Z"
+        "checked_at": "2026-10-13T22:39:43.678Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-11",
         "week_label": "Most-Viewed Bills - Week of October 11, 2026",
         "entries": 9,
-        "checked_at": "2026-10-13T20:46:06.924Z"
+        "checked_at": "2026-10-13T22:39:43.678Z"
       },
       "leans": {
         "center": {
@@ -1127,6 +1127,12 @@
     "hr-8358-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "live5news.com",
+          "firstSeen": "2026-10-13",
+          "lastSeen": "2026-10-13",
+          "url": "https://news.google.com/rss/articles/CBMipAFBVV95cUxOUV80RDl1bHp0OWhjQW93Sl82cEdIOGJQUkVERXBsWlhORWdKVGtkTDFEZk1jY3cxN0x0Q1otc3h3NnRxamxiVkxHdmlmd2NfQkVUekdTZ085UzFYSldfdGVfazVPZFRkSlVTMmgwQ0VuRWN6VlBDQTQwRVJibEtmSjdJYXZYSk0tYWpOT1hsYU42alA4MnNuajRSYW4tX0hsMUJyY9IBuAFBVV95cUxQNlBPaXhDYjdVMFE1endaVF9FSTVETHFxNWIwMHo4Q19LR2VucjZ6a25SVTlLQUluWjhTVUM4NXAtX1RveHFkMjhXRGw5Sl9faGh2aEU1MGJxdERSTG42cnlWZmphc2JIX0IxNVdvOWdhZkkxSXh0S3A5d2toN0g1M09lM1hqZmstRGpVUXpxUUgxMFlpckJVejROZ3JOR2swYUZnY3o4UWNKeF9wdHV0VXh5VF9ZQURj?oc=5"
+        },
         {
           "domain": "localnewslive.com",
           "firstSeen": "2026-10-13",
