@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-13T01:18:16.323Z",
+    "fetched_at": "2026-10-13T09:20:29.571Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-13T01:18:16.323Z"
+        "checked_at": "2026-10-13T09:20:29.571Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-11",
         "week_label": "Most-Viewed Bills - Week of October 11, 2026",
         "entries": 9,
-        "checked_at": "2026-10-13T01:18:16.323Z"
+        "checked_at": "2026-10-13T09:20:29.571Z"
       },
       "leans": {
         "center": {
@@ -151,6 +151,18 @@
     }
   },
   "slugs": {
+    "hconres-113-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "newsfromthestates.com",
+          "firstSeen": "2026-10-13",
+          "lastSeen": "2026-10-13",
+          "url": "https://news.google.com/rss/articles/CBMisgFBVV95cUxPLXh6cjlsNVE0OFpVMjBOeEc2TEg3LWl2cGNqcE9kRFZWZ2IyZ1F5ZmlVRzl2NWtFdlpjTGNEeUIyMVlhUEhoU3dVMVFZNmtXNllIaHVoV0l3azRBVTYtM214cmc1c1ZzUVJGMjFvRHhCR3I4UDFwVm1wR3RIVGlEYzg4VXctdFdvSFdrM2QxSG4tZUdHOHI5aFFIa0NGYXpITDFtcTdUbVdhZzJYYjd1bnJB?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hconres-93-119": {
       "outlets7d": [
         {
@@ -1071,6 +1083,12 @@
           "firstSeen": "2026-10-13",
           "lastSeen": "2026-10-13",
           "url": "https://news.google.com/rss/articles/CBMioAFBVV95cUxQUEx2LXdzY3hvdzduVU96aFR0bDdtUEFNemNnQ1RsRzBTV0x4ZVVib3BiVnkyOV9iQ3pTTmFSTWk4UDQ3UmdHa240UkJZc3NYNjBmNDI5OVpJTjVrb0tBbE9OeGIyQjBuWUNXTUVZWXo1ekw0Qmo5aVRPcksxdU9hLW5SUWYxTlJrclcwVUw2NllUaWZZU2pmT0p5UHZ3UzdM0gG0AUFVX3lxTFBFQ2NJaHpZTlE4WXFZM0V2Unk0RF9ENFhqN3B4R3N0Y2FfRW1ub2stbVc5cjNiN2xod0w1NkxhYmVtTVQ0Qnd5WURHMHF6TGJkNzFVNWJYbllhQ1plUGtlQjRfMVZIdGpiQmJ3bGVHTklyOVJmNmJpZHR3a2pPSXEzYnVTNjlEaVJsNkQ5YWtzVWswTUw4NHFONkZBcFJudmN6WEw1cVJZRTdaZ0xBX24zWmcxTw?oc=5"
+        },
+        {
+          "domain": "wsaz.com",
+          "firstSeen": "2026-10-13",
+          "lastSeen": "2026-10-13",
+          "url": "https://news.google.com/rss/articles/CBMingFBVV95cUxNU0huZEZKTDY4TnVJdHNtY0N4R1haOVE0OXRaSHRFQUwyNmVGMzBINV84cFZtRkZuSXlZVVFpZmU1b3FsRUd2SzhVLXVXeFJFcHFCNDVCRzhwX3p3WGxLN0RkQ0FZRTkxUm1jWmRmblRRT20xeWxLSHFMODhqUU51SzJNQ2dkeWljM1hMYTAzLW1jeGF0TDQ0cDkxUDJtUdIBsgFBVV95cUxPY0tPRUpDVUVnVElIb2VxV2kxMUlPN2htYnhoaU11RHh6Z3NwRDBoZHNwZlJONXF5RHhmT1hJOHBETDZIT1hCVW5tVzdlb0x5WHpwSC16ZFBLdDRlc25MTE96VHpVMnlnMFZTdTdmem8yMDN3ZTZRT3VfLWV5NmpRMVVkUjBWNzd5U1BOV1NZSGVXYTczVGNsVlA3UHkweW1mckF1VWJuQmlJRndhOGRaQnZR?oc=5"
         },
         {
           "domain": "dailymemphian.com",
