@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-14T13:38:54.359Z",
+    "fetched_at": "2026-10-14T18:19:13.557Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-14T13:38:54.359Z"
+        "checked_at": "2026-10-14T18:19:13.557Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-11",
         "week_label": "Most-Viewed Bills - Week of October 11, 2026",
         "entries": 9,
-        "checked_at": "2026-10-14T13:38:54.359Z"
+        "checked_at": "2026-10-14T18:19:13.557Z"
       },
       "leans": {
         "center": {
@@ -375,6 +375,19 @@
         "lastWeek": "2026-10-11"
       }
     },
+    "hr-1684-119": {
+      "outlets7d": [
+        {
+          "domain": "reason.com",
+          "lean": "right",
+          "firstSeen": "2026-10-14",
+          "lastSeen": "2026-10-14",
+          "url": "https://reason.com/volokh/2026/10/14/second-amendment-rights-not-forfeited-by-past-drunk-driving-conviction/"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hr-1700-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -496,6 +509,18 @@
           "firstSeen": "2026-10-13",
           "lastSeen": "2026-10-13",
           "url": "https://news.google.com/rss/articles/CBMid0FVX3lxTE91N3FWZllOSnlPR1hld1BEaXBGeGVsTy1iZVhvOVpRY1dFZWk5MjBCTDMtWkVfQnpJWmNTRHRrSldkX0NjdW1oZERYaDhnYnVGZ2F6OTJ3TTRPNnlCWGs5UGhZbjNtb2lsbS1saUxQNWtxRHRHcDk0?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-2617-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "billygraham.org",
+          "firstSeen": "2026-10-14",
+          "lastSeen": "2026-10-14",
+          "url": "https://news.google.com/rss/articles/CBMi3AFBVV95cUxNTUFIZjVWSmhsa2RCdGFLeEFmV3dGRk83Z2NNS2IyZ0d5Qk5BRF9sclltWnVmQ0ozdHpkWi1WWC1tdDU2aGhweXgya3ZvQzhuTzFSdEJ5T2FfMzdDMjNidE1jcE1tRndfaDYwOWRkNmRqejB4NmVjeG0xZFpHM3VzaExsc0s2ckVvS2Ytam5ZR0owc3BsX1BSY0otZ1VLeko1WnhmcTVBYmlTd0x1a3pwLUhiVFZZNng5NlNPNEtNQWdndUxrcVJ6UGtJanlXYXFKRjBJSEllalA3U0NR?oc=5"
         }
       ],
       "mostViewed": null
@@ -837,6 +862,18 @@
       ],
       "mostViewed": null
     },
+    "hr-5999-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "democrata.es",
+          "firstSeen": "2026-10-14",
+          "lastSeen": "2026-10-14",
+          "url": "https://news.google.com/rss/articles/CBMi4AFBVV95cUxOdHR5MFFvb1lMSjBmdWJseWJEeW9fck13cDJpU3VTLTVNOXJIUUhCS3FHN3JLWGp5LUY0Y1E2QThMclVtNDg5QXczQUtUOEZIM0toQXh5OU1QWVRfQ3RjaDh2aE4wVElsVGwxQmI0bmNnb0lyeHdrQmpIaGkyRjVsSFo5MFJTMWZVZ2lGX3pTS1Nnc0V1MDVySmVrQkNOd3BxNWk3ckdmX1Boc3dzWG1hMF9US1ctbVhBVzNhVUVDVGE5YzNfNXZILVNKcm1HdE1taEFTTzIxRkRNcnNLWUZMddIB4AFBVV95cUxOdHR5MFFvb1lMSjBmdWJseWJEeW9fck13cDJpU3VTLTVNOXJIUUhCS3FHN3JLWGp5LUY0Y1E2QThMclVtNDg5QXczQUtUOEZIM0toQXh5OU1QWVRfQ3RjaDh2aE4wVElsVGwxQmI0bmNnb0lyeHdrQmpIaGkyRjVsSFo5MFJTMWZVZ2lGX3pTS1Nnc0V1MDVySmVrQkNOd3BxNWk3ckdmX1Boc3dzWG1hMF9US1ctbVhBVzNhVUVDVGE5YzNfNXZILVNKcm1HdE1taEFTTzIxRkRNcnNLWUZMdQ?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-6240-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -954,6 +991,12 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "nfu.org",
+          "firstSeen": "2026-10-14",
+          "lastSeen": "2026-10-14",
+          "url": "https://news.google.com/rss/articles/CBMif0FVX3lxTE42TWIxazVIYlhNWjlhbTlSQTg5SFhsVzFicmxlSXFMQ1NwaW5tUXBpeEhzckVEdmNzUkY0emt5NG5KSTBGN0Y0TnFwd2lGZFRHVXNLNXFCbHZpVUd1NXZNajZBckpvYUg3NnB0NEk3NElyMjdLUHRXU29lclRrWXc?oc=5"
+        },
+        {
           "domain": "aginfo.net",
           "firstSeen": "2026-10-08",
           "lastSeen": "2026-10-08",
@@ -976,6 +1019,18 @@
           "firstSeen": "2026-10-14",
           "lastSeen": "2026-10-14",
           "url": "https://news.google.com/rss/articles/CBMi1gFBVV95cUxQX3dVNk80a3ZLSGFFaUVCMkhKTzg0TkFlZGRnbDgwMlJ1VW95U3JPNFA0dWVvRmZ3S1FMVUpiMVR2YUNwNTc0TnM0MlBCb1lNWDlONVZ5TklKeVZsblZIOHBvbjR2TDVqZmVjZkJyLTRnVHZjM2FBT1BTdFAxWUdTTURnN3QyR05aZkpGMVZGQmxzS1hha1BfX3oweGxERU1BMXVXeDhHRS13UTJ6VEIwaXZ1c2RZT0c3WVpnTDFwV2s1QzNLVWdPY09NdHRhVkxQSWZzazBR?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-7257-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "coindesk.com",
+          "firstSeen": "2026-10-14",
+          "lastSeen": "2026-10-14",
+          "url": "https://news.google.com/rss/articles/CBMisgFBVV95cUxNR3BoNjBERWNvV1M3NVZOSHJiNnBQamVqQkFGX1dBa1JDRTVXdmxSMGFiOVdoY1FtVTJqNlRhQVZMMmxaUjB2Z3ZoUXl6N0tBNllYUGNUbEIySFhiWnVUNzFPUEZsWkw3aDVVbUtJQXpkQlZCbDl0ZWROQ0FmazNLcWNSMlBlZlBCWUg2cjZtX0x1MzRrRkZWZ1hxX2J5RHFrWm1IQml2VHNBWUY0X1dtRklR?oc=5"
         }
       ],
       "mostViewed": null
