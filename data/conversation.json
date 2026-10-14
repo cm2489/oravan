@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-14T07:31:25.884Z",
+    "fetched_at": "2026-10-14T13:38:54.359Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-14T07:31:25.884Z"
+        "checked_at": "2026-10-14T13:38:54.359Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-11",
         "week_label": "Most-Viewed Bills - Week of October 11, 2026",
         "entries": 9,
-        "checked_at": "2026-10-14T07:31:25.884Z"
+        "checked_at": "2026-10-14T13:38:54.359Z"
       },
       "leans": {
         "center": {
@@ -968,6 +968,18 @@
       ],
       "mostViewed": null
     },
+    "hr-7212-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "cannabisbusinesstimes.com",
+          "firstSeen": "2026-10-14",
+          "lastSeen": "2026-10-14",
+          "url": "https://news.google.com/rss/articles/CBMi1gFBVV95cUxQX3dVNk80a3ZLSGFFaUVCMkhKTzg0TkFlZGRnbDgwMlJ1VW95U3JPNFA0dWVvRmZ3S1FMVUpiMVR2YUNwNTc0TnM0MlBCb1lNWDlONVZ5TklKeVZsblZIOHBvbjR2TDVqZmVjZkJyLTRnVHZjM2FBT1BTdFAxWUdTTURnN3QyR05aZkpGMVZGQmxzS1hha1BfX3oweGxERU1BMXVXeDhHRS13UTJ6VEIwaXZ1c2RZT0c3WVpnTDFwV2s1QzNLVWdPY09NdHRhVkxQSWZzazBR?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-7567-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1126,6 +1138,19 @@
           "firstSeen": "2026-10-09",
           "lastSeen": "2026-10-09",
           "url": "https://www.politico.com/live-updates/2026/10/08/congress/aipac-and-the-michigan-senate-race-01113266"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-8872-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-10-14",
+          "lastSeen": "2026-10-14",
+          "url": "https://news.google.com/rss/articles/CBMif0FVX3lxTE9laXUwZVBHOWZScHNPRS1PeWNaZWMtRDM5U21HQzc5aXVTNjBGTkh2VGNuU09IRXB1amotWU44U0xRaU0yUEhtVjFBUHRSNHZsOTVZZW5CSXhkLURJYTVyTEVocHAzV3ZYcUpUQnRRYnJqQi10QUo0bmhpVjhXSVHSAYQBQVVfeXFMT3VXNmFjRDNsXzlDMUd3cnA2bVZ2QWRGcU05T3JOQUVfOGp5c3dpNlV3cWNIOG1qNGpwZVU1S1Ata09YbEVaTFFhNHl6LV9TQzcyWUFQX0d5WFBFR3R2UEFUcWJzS3VOU3ZfN3NwdWRmTEJ3ck5RV1lWRmRuLURoT245cVlv?oc=5"
         }
       ],
       "unratedOutlets7d": [],
@@ -1525,6 +1550,19 @@
       ],
       "mostViewed": null
     },
+    "s-60-119": {
+      "outlets7d": [
+        {
+          "domain": "politico.com",
+          "lean": "left",
+          "firstSeen": "2026-10-14",
+          "lastSeen": "2026-10-14",
+          "url": "https://www.politico.com/live-updates/2026/10/14/congress/some-republicans-write-off-house-01117735"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "sconres-40-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1538,7 +1576,15 @@
       "mostViewed": null
     },
     "sjres-185-119": {
-      "outlets7d": [],
+      "outlets7d": [
+        {
+          "domain": "cnbc.com",
+          "lean": "center",
+          "firstSeen": "2026-10-14",
+          "lastSeen": "2026-10-14",
+          "url": "https://www.cnbc.com/2026/10/14/mike-rogers-trump-tariffs-michigan-senate-election.html"
+        }
+      ],
       "unratedOutlets7d": [
         {
           "domain": "lansingcitypulse.com",
