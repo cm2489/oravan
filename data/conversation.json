@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-14T01:35:17.059Z",
+    "fetched_at": "2026-10-14T07:31:25.884Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-14T01:35:17.059Z"
+        "checked_at": "2026-10-14T07:31:25.884Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-11",
         "week_label": "Most-Viewed Bills - Week of October 11, 2026",
         "entries": 9,
-        "checked_at": "2026-10-14T01:35:17.059Z"
+        "checked_at": "2026-10-14T07:31:25.884Z"
       },
       "leans": {
         "center": {
@@ -298,6 +298,19 @@
           "url": "https://news.google.com/rss/articles/CBMisgFBVV95cUxNaFRqNk9EM21UUG1XRk9JbW41SjJ0dEZQYkQ5c2ZxUFdQZ3FneUtkQWFROXNCb3AwbnhXaUNpNmNsVzlJdEFCLVdJREY2Q2tzbDhLSjhjdUx5T2dIanNpbWZlVFFLZkFzYTVyVmF4LXota3RkM1d5Q0xHYjJKajVqay0zM1Vxc0c0R29BaWdOQnF0eW5nVnZCLVhCdkxmOC14SnRabVdkX1ExZWtydFBNaGxn?oc=5"
         }
       ],
+      "mostViewed": null
+    },
+    "hr-10782-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-10-14",
+          "lastSeen": "2026-10-14",
+          "url": "https://thehill.com/homenews/campaign/6147032-trump-pardons-alaska-diesel-mechanics/"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "hr-1180-119": {
@@ -1361,6 +1374,18 @@
           "firstSeen": "2026-10-10",
           "lastSeen": "2026-10-10",
           "url": "https://news.google.com/rss/articles/CBMisgFBVV95cUxOcHVhTS1Dd2J4RzNic1JXLTUxVTQyWlduNHVQUWxXV0FNRVpfVnk1aUM3X3BnM3E0b3BFZWRHQzYySFdfdWIxYzl0bnZ3R2NVemRBVkJVUFpYRVNRZGFVaVlJS2FKRXRibERYOWNicTRCSjNablByTjRDNzF6LXhkSG5xRkN2X0hsQ19kU21QQ0dyTkZ1bmMyczFhSTh0SnROQ2tnN3VvVUE3LVhqVGE5UUdn?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "s-4384-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "sanjuandailystar.com",
+          "firstSeen": "2026-10-14",
+          "lastSeen": "2026-10-14",
+          "url": "https://news.google.com/rss/articles/CBMiugFBVV95cUxQMW8wdkRic25oWEF6NzA0UTFuc3A1QjFhNTE1TG5DNkxzZFI2RG8xNkVxRmdkZEtqaGJXQTh5SkJDelZkeUd1NTJUNFJhWDFiVGh3MFVOQ01qZmtzdG1FbXliX01jLVZyUmVsZWczR2xHaWdpbVZQbDR3RWlURDRQZ3ctV0R5SXl0dUlpb0tXQ1ZZNTRnSTlhX3pIM1dhLVNmeGhfX3UzQlBJTFpremV4YUVNV19VQUQ1ekE?oc=5"
         }
       ],
       "mostViewed": null
