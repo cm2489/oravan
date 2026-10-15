@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-15T01:07:39.040Z",
+    "fetched_at": "2026-10-15T07:21:39.352Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-15T01:07:39.040Z"
+        "checked_at": "2026-10-15T07:21:39.352Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-11",
         "week_label": "Most-Viewed Bills - Week of October 11, 2026",
         "entries": 9,
-        "checked_at": "2026-10-15T01:07:39.040Z"
+        "checked_at": "2026-10-15T07:21:39.352Z"
       },
       "leans": {
         "center": {
@@ -1254,6 +1254,12 @@
     "s-4668-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "bozemandailychronicle.com",
+          "firstSeen": "2026-10-15",
+          "lastSeen": "2026-10-15",
+          "url": "https://news.google.com/rss/articles/CBMikgJBVV95cUxNM3BzMG4xdWN6c0EtaWd0NXZTZy1PSC1kd0dSWjR2UG9ubVNBbkNvUXM5Z1lZWnVOVzc5Q0h3S0t4NHVITW5Ma0VSdjh0T2hGZEoxblJnWnhrNjEzNkNaQU9acHZWbS1tdzhyTWFtY3l3OV9qV2I0dTZXNlpwRDZhT3pjX2Q5N3BFOTZGLTY4X21LeERseW0zdDNPTGpoMGtCa1VIWGQ3TUllcEdZNFdvcVRzVDAxeWRkYV9ZQkk0ZzBzQTFPXzltekZTVzZHUzMzdm9GbzBiSm1TaGFhcUVpZWljczhUTWRMSkdsNjV3d1ZuZXR3VzFGM2xoQkxiRTRqQlRIN0NQRUJkbm1wZWFDeDVn?oc=5"
+        },
         {
           "domain": "audacy.com",
           "firstSeen": "2026-10-14",
