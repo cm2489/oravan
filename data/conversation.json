@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-15T13:21:59.250Z",
+    "fetched_at": "2026-10-15T18:04:41.955Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-15T13:21:59.250Z"
+        "checked_at": "2026-10-15T18:04:41.955Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-11",
         "week_label": "Most-Viewed Bills - Week of October 11, 2026",
         "entries": 9,
-        "checked_at": "2026-10-15T13:21:59.250Z"
+        "checked_at": "2026-10-15T18:04:41.955Z"
       },
       "leans": {
         "center": {
@@ -176,7 +176,15 @@
       "mostViewed": null
     },
     "hr-1-119": {
-      "outlets7d": [],
+      "outlets7d": [
+        {
+          "domain": "politico.com",
+          "lean": "left",
+          "firstSeen": "2026-10-15",
+          "lastSeen": "2026-10-15",
+          "url": "https://www.politico.com/live-updates/2026/10/15/congress/bernie-moreno-reconciliation-01120469"
+        }
+      ],
       "unratedOutlets7d": [
         {
           "domain": "theunion.com",
@@ -535,6 +543,18 @@
       ],
       "mostViewed": null
     },
+    "hr-4776-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "legis1.com",
+          "firstSeen": "2026-10-15",
+          "lastSeen": "2026-10-15",
+          "url": "https://news.google.com/rss/articles/CBMifEFVX3lxTE80a01KTU5OTlRaM2tFd0hwc3c1eXczRGF5bWlydTRwOURHWlJRLWY3aUFkaVFZTkQ1VU82SnMwR09ldlhiMTVhanpQZGdaZ3IwMlhWTGp4RGxrUWJ6eDIyQllkWVF0U05qZTZKZ28yR2d5NGVWclJ3bG9vMjc?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-4911-119": {
       "outlets7d": [
         {
@@ -611,7 +631,15 @@
       }
     },
     "hr-5334-119": {
-      "outlets7d": [],
+      "outlets7d": [
+        {
+          "domain": "politico.com",
+          "lean": "left",
+          "firstSeen": "2026-10-15",
+          "lastSeen": "2026-10-15",
+          "url": "https://www.politico.com/live-updates/2026/10/15/congress/house-lawmakers-trump-russia-diesel-deal-01120231"
+        }
+      ],
       "unratedOutlets7d": [
         {
           "domain": "pravda.com.ua",
@@ -861,6 +889,18 @@
       ],
       "mostViewed": null
     },
+    "hr-7890-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "wsaw.com",
+          "firstSeen": "2026-10-15",
+          "lastSeen": "2026-10-15",
+          "url": "https://news.google.com/rss/articles/CBMijAFBVV95cUxQeFUxU0xueEVpWDQ5dTRpWVhzUkNYWTdhbE42dHo0aUdFOXJqOTlzcngtZVBfUHlxSTZ3aVBPYlJnVzFEMVlVWEdqRjZIdy1ZZFNnMlRaN3AzMVlmSlhNVXYtdHNkdzFCTTBzbXMzVkxJbHRGZ2lETzRtZEpIbzNVVzBfVFVnZG1hRzlCaw?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-8127-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -949,6 +989,19 @@
           "url": "https://news.google.com/rss/articles/CBMingFBVV95cUxNU0huZEZKTDY4TnVJdHNtY0N4R1haOVE0OXRaSHRFQUwyNmVGMzBINV84cFZtRkZuSXlZVVFpZmU1b3FsRUd2SzhVLXVXeFJFcHFCNDVCRzhwX3p3WGxLN0RkQ0FZRTkxUm1jWmRmblRRT20xeWxLSHFMODhqUU51SzJNQ2dkeWljM1hMYTAzLW1jeGF0TDQ0cDkxUDJtUdIBsgFBVV95cUxPY0tPRUpDVUVnVElIb2VxV2kxMUlPN2htYnhoaU11RHh6Z3NwRDBoZHNwZlJONXF5RHhmT1hJOHBETDZIT1hCVW5tVzdlb0x5WHpwSC16ZFBLdDRlc25MTE96VHpVMnlnMFZTdTdmem8yMDN3ZTZRT3VfLWV5NmpRMVVkUjBWNzd5U1BOV1NZSGVXYTczVGNsVlA3UHkweW1mckF1VWJuQmlJRndhOGRaQnZR?oc=5"
         }
       ],
+      "mostViewed": null
+    },
+    "hr-8485-119": {
+      "outlets7d": [
+        {
+          "domain": "reason.com",
+          "lean": "right",
+          "firstSeen": "2026-10-15",
+          "lastSeen": "2026-10-15",
+          "url": "https://reason.com/2026/10/15/jury-nullification-is-not-a-crime/"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "hr-8580-119": {
@@ -1056,6 +1109,19 @@
           "url": "https://news.google.com/rss/articles/CBMiqwFBVV95cUxNTkY3ZEUxSHlqOW5pcEtKM2VPaUtnTkJzMU9NdDZFNGNPTnhBRlhOeTUyVTYxV1FnbV94ZnQtMHBqUzdWVTR4SjZiYlZIU2phdF9xME85NGpuYmhRYXZXZE1iVWNXUGg2RTVZd2RuY3N0a2NiVldMeUc2QzB5clhkU2R1ZUJ1NndJVFV4S1o5eUFodV9nUmhfMExDRl9Oa2NqQTJRNjhWTjlIRDg?oc=5"
         }
       ],
+      "mostViewed": null
+    },
+    "s-1377-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-10-15",
+          "lastSeen": "2026-10-15",
+          "url": "https://thehill.com/opinion/congress-blog/6149812-blm-wild-horse-slaughter-oversight/"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "s-1525-119": {
@@ -1448,6 +1514,12 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "nowgeorgia.com",
+          "firstSeen": "2026-10-15",
+          "lastSeen": "2026-10-15",
+          "url": "https://news.google.com/rss/articles/CBMiswFBVV95cUxQaVhBcURIQ2o1dlFYaU5LRHdFLTd6bHpkN01rYjk2SDNlV1kxOTY1M1BFaDhsYkFSSy0zeFNya0QyaUFjZ2R2T2pIUmdueXRaUzVFdmpVUVU0NHRQMlZFQkMzWXlMVVVtdVJyOENOZGlfRVdyeW1ISUhTRlhHU3hYemNKdDBQYjVOWUtqbDllY1dseHlJb2FLa3JONWdjdWJmbTFwRmZXQ0hRSUxmLXVjUTJGcw?oc=5"
+        },
         {
           "domain": "newsfromthestates.com",
           "firstSeen": "2026-10-14",
