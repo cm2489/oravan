@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-15T18:04:41.955Z",
+    "fetched_at": "2026-10-15T18:14:23.025Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-15T18:04:41.955Z"
+        "checked_at": "2026-10-15T18:14:23.025Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-11",
         "week_label": "Most-Viewed Bills - Week of October 11, 2026",
         "entries": 9,
-        "checked_at": "2026-10-15T18:04:41.955Z"
+        "checked_at": "2026-10-15T18:14:23.025Z"
       },
       "leans": {
         "center": {
@@ -430,6 +430,18 @@
           "firstSeen": "2026-10-15",
           "lastSeen": "2026-10-15",
           "url": "https://news.google.com/rss/articles/CBMilwFBVV95cUxNeUpWVU1IY0ZQLXFNNE9ieklLRjR0Z24wVmJxUUl4RV9BVEJqUEx5aXdibTRtcE92QzUwNDhvclM1ZzlNTjBucDktY1hpRVpsVTUyalB5U2RobHdkRDJ2YmVPZnNCV01iMi1UNkxJcTVXMWNlUWJkQmhlWmpVMmVNWHpua2Vvb1F3ekxCLUJ1YUlvbWo1dDdj?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-3620-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "buenosairesherald.com",
+          "firstSeen": "2026-10-15",
+          "lastSeen": "2026-10-15",
+          "url": "https://news.google.com/rss/articles/CBMirgFBVV95cUxQU3FJeXlJRW1PbThoc0hCZzE0MDh0Z2RJcjZUR3U3RnJnb2w4YTB1S05iREVMNFVfR3NDX091eXR4cVVMREptSUx5RGRyNkNTaHJCYnFpRHJVQVJoT0FWVTlfWE43dC0zdkthNzRIVjVtLTZjU3JXQ0dpVzF6QWtuQWxrMFMzcG9FS1hmc0xvbU9mVTdTQkUyZHBTOXhySUIzY3VDWGtYckZqSXhkblE?oc=5"
         }
       ],
       "mostViewed": null
