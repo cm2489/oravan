@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-15T07:21:39.352Z",
+    "fetched_at": "2026-10-15T13:21:59.250Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-15T07:21:39.352Z"
+        "checked_at": "2026-10-15T13:21:59.250Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-11",
         "week_label": "Most-Viewed Bills - Week of October 11, 2026",
         "entries": 9,
-        "checked_at": "2026-10-15T07:21:39.352Z"
+        "checked_at": "2026-10-15T13:21:59.250Z"
       },
       "leans": {
         "center": {
@@ -416,7 +416,14 @@
           "url": "https://news.google.com/rss/articles/CBMijgFBVV95cUxOSDhQVFktNHlXZkc1MVpMV1FFbC1QOUs5S2RERW0xblZGM2tBUDBFTVZkb3VJTDVkSldMVlZKaDVfZGF4Rk50QU1wdWlHMXNObWNzUWQ3MDNLNWRwcU0waWVoWkRMWEpTV1JpU18tYno0Vll3ZFA3MERGWGVwaHRLLW1PLUhMaDdvRWJiVDNR?oc=5"
         }
       ],
-      "unratedOutlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "snm.rs",
+          "firstSeen": "2026-10-15",
+          "lastSeen": "2026-10-15",
+          "url": "https://news.google.com/rss/articles/CBMilwFBVV95cUxNeUpWVU1IY0ZQLXFNNE9ieklLRjR0Z24wVmJxUUl4RV9BVEJqUEx5aXdibTRtcE92QzUwNDhvclM1ZzlNTjBucDktY1hpRVpsVTUyalB5U2RobHdkRDJ2YmVPZnNCV01iMi1UNkxJcTVXMWNlUWJkQmhlWmpVMmVNWHpua2Vvb1F3ekxCLUJ1YUlvbWo1dDdj?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "hr-3633-119": {
@@ -1109,6 +1116,18 @@
       ],
       "mostViewed": null
     },
+    "s-2578-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "hurriyetdailynews.com",
+          "firstSeen": "2026-10-15",
+          "lastSeen": "2026-10-15",
+          "url": "https://news.google.com/rss/articles/CBMiiwFBVV95cUxORVZQYno0SHFJRWVNbkx4bThIR2dUZk4tTEpUZEtiRDFnQlBQR3RCQ0tncERQenlHWXZpZ3k1ZEZEODY2SDRONkl5Y0Q4WXNsWFNDMFpqeUZvRFNoanoxWWVKbk4wVjY5NjhzckNJclhWV3MyRm8xUkhrM2Z3U3ZnOURlYTRUMzNMRVJJ?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "s-2658-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1247,6 +1266,31 @@
           "firstSeen": "2026-10-09",
           "lastSeen": "2026-10-09",
           "url": "https://news.google.com/rss/articles/CBMieEFVX3lxTE5oeDVUUHF5ek9HV241Q2J0TGdVVTQycFdQd2ZnR1Z2S1VSTERQOTg2RS1xUzJTLV9oU2ZON2o1WE9Hd1huMUtaUE9SYVFIMUhUMnYta0p0cjdCSnpuZDVhMkZsZmg1V09CUjhMUUF1a2MxVENlN05oOA?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "s-4581-119": {
+      "outlets7d": [
+        {
+          "domain": "nationalreview.com",
+          "lean": "right",
+          "firstSeen": "2026-10-15",
+          "lastSeen": "2026-10-15",
+          "url": "https://news.google.com/rss/articles/CBMimwFBVV95cUxQSnpPSC1hUmtjdzRRcDAyS1hBNzloTnEtVmthYk1xVHVwN1daMDE4V01SVVc1UkpvZTUzZTl3S3hCdDlFYmJjV1BXaUJBNzJEVFNnVHZBVTc3NnBJVTR5SVJsNndDU2xRN1VBM0cyRDFqMzliM0dNa1FUNnFMQjVnelZTRjNqb2xpWno5aEI1ZWJqbTM1emdmMGR3WdIBoAFBVV95cUxQWElUaE51enQ5bFFGci1XaTFraUtyZnVkMUVZNE9NMU9pdVEwc1J2b1NZMlpFQUctNWNKemFXX1hlSGRTbDVhUFIzZnVHdlVTY28xTEdHUnN2Y2pKeURwRXZGTXNIWGN4cjJ4TUZpSHQ4dGJ3VjJaVEZfdFMtQTRVU29GUzVnbjFkV1N6dzVmMHppT3hXM2YtMTB4MC1jYTli?oc=5"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "s-4610-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "aninews.in",
+          "firstSeen": "2026-10-15",
+          "lastSeen": "2026-10-15",
+          "url": "https://news.google.com/rss/articles/CBMiggJBVV95cUxNSS1FVTBhMXhZcXZRNnZPY0xpM29hTS1lZE14Wm5qYWJSOVFqSUFJelRQVXFuNk1OOFV1Q3hVcE1GZEx6SVY2VkNINEEtM2QtYmdpMW1oWTV5RmxQNTF3ZGxvSzlOX0NQMnpUdFlGam53M2t2Zkl5WkhvQ0R1YU5CTm9GU0szcWVtYkg0Rk9KWXdaX2ZfZWcwUGtyMVpvTnJuRkhYdkNSLWEyYXlWZW1GUlctS1QxSDhSdTVneG1kQ0Yyd25VYjB0TmFQRWlKMElOU09EbDdCcXB6YVdvWXhFR0FaWlJJYmpYa1ljNjRoZWEwcXJ1cF9JQ3pRUWI2M01NeFE?oc=5"
         }
       ],
       "mostViewed": null
