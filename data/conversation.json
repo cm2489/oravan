@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-15T18:14:23.025Z",
+    "fetched_at": "2026-10-15T18:49:31.570Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-15T18:14:23.025Z"
+        "checked_at": "2026-10-15T18:49:31.570Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-11",
         "week_label": "Most-Viewed Bills - Week of October 11, 2026",
         "entries": 9,
-        "checked_at": "2026-10-15T18:14:23.025Z"
+        "checked_at": "2026-10-15T18:49:31.570Z"
       },
       "leans": {
         "center": {
@@ -450,6 +450,12 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "binance.com",
+          "firstSeen": "2026-10-15",
+          "lastSeen": "2026-10-15",
+          "url": "https://news.google.com/rss/articles/CBMiogFBVV95cUxObzItX29GSllDNU1GUzJDdU9jV2MxRy0yVlZ2dXFfa0NUbmhSNjR4ZUpYcWZQdUZZeUswT3lKcFNSRE5yYlExMFhVeVMyZ0F1UTJPVmkxR2lLS3I3eFJBUVFBNHRMeW1tSTZPRzZIMWl4Ym00X2dGZEZDUkE4eFBuSkVfQ2hiV3ZhTm1jOUxJQVloUkRreTVPY295Ri03Sl96ZVE?oc=5"
+        },
+        {
           "domain": "tokenpost.com",
           "firstSeen": "2026-10-12",
           "lastSeen": "2026-10-12",
@@ -507,6 +513,18 @@
           "firstSeen": "2026-10-10",
           "lastSeen": "2026-10-10",
           "url": "https://news.google.com/rss/articles/CBMi1AFBVV95cUxQVlRiUU9RRFhrU0ZhdmoyeGtmQk4xQWNnX25rVXpyNnJTR1V0b1RKZENCYzZhX2ttSjA0UTJzOVVsblV1cC1XTldJb2RNZWtDb01FUVk4YklGTFFjMjJ6WEF6VUlNeU9tNVk0amtabm44MXZPVi1hWnRhbkJJTDAxLVhUVXYzUUt1MGhSblp5dC1MQzlvZENvRW4wckJ1bVdUcllJR21EVmhNaVFOY0VjRm84LVVDSkZqNXhiUmN5VXRwcTNvUzlrdjZPM3kxazhUaldDcA?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-4405-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "quiverquant.com",
+          "firstSeen": "2026-10-15",
+          "lastSeen": "2026-10-15",
+          "url": "https://news.google.com/rss/articles/CBMi1gFBVV95cUxOQ2hUNzhMaGZRRFhmSlBtWjhkT3p2VVdzWml4TGFvc0gwZ0R0T3A2ZjdCTjNSaGxHdm9vSkZTZTQzT0REc3RWQk5Oc1lDd1JWV2NhY1ZZQy13QWp2YUV4U3V5MW94Wmt3bjVqNWl2bzRwYm1aUzJ2Nng3SmlPV1Y4ZFl1T3RhM2g2eXhyNm5TUHpaN0t0V3AzT3pEV0dmb19OVUdiWTZ3a19jaHd6RDNrMUFtbHN1Q0VuQXZXb1BBNEQ0ZWl2MTM2Zjc2SVU4bkQyVy1OaUdB?oc=5"
         }
       ],
       "mostViewed": null
@@ -1332,6 +1350,18 @@
           "firstSeen": "2026-10-08",
           "lastSeen": "2026-10-08",
           "url": "https://news.google.com/rss/articles/CBMitwFBVV95cUxOWFQxai02TlhBMnVLaGphbVl6Q01ZQ0Mtd0hPbVRiT2JLVzlwYl8zMHJYc1Fmal9YOE9VRDZQUXZLLWltY0RUdFBjLUZnUzlrUXZnc1BEOXRhSVROUkxhbXRLZ2dKVk5HNnlOcU43NVBzbmdoVDhIRmhSY19MSFBzTXFqSXpoMkdrYTM4QS00TWVxem5LR0J2a0Y1cXlYTXhHMV9sZHV2RlJiUmZtRWtxNXBxVlVrUlU?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "s-4505-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "quiverquant.com",
+          "firstSeen": "2026-10-15",
+          "lastSeen": "2026-10-15",
+          "url": "https://news.google.com/rss/articles/CBMixwFBVV95cUxPUWJSZ25kTU9sTy1ZdTFlR3FfLVBBOFhqV0h3a0NFamFBYlFTRG9EN2pPbEpzSkJISlp4aTdSTlcxdFFJYTFTeEpFZVpzNXhlRTMxcnJYcWVzZVRBX1VRVHN1aGpYbmhNY29lQTVSS1NfTjYzakE1anlfSGxCODFpamVCbkpMOGstRVhITzJMR3lVMnp5MWVGX25paFRnSDktajh6OTNhQWEybGRValBVOVBJS2xXQ29vT01oRDhuU3lneU16dl80?oc=5"
         }
       ],
       "mostViewed": null
