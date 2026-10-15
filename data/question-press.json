@@ -4,7 +4,7 @@
     "source": "GDELT DOC 2.0 API (https://api.gdeltproject.org/api/v2/doc/doc), ArtList mode — one search per term in the query shape below, over the days since the question was last checked; the rated outlets are picked out of GDELT’s results using the AllSides table, never named in the query",
     "attribution": "Article discovery by the GDELT Project (https://www.gdeltproject.org/), used under its terms of use with citation and link. Outlet leans by AllSides (https://www.allsides.com/media-bias/ratings), CC BY-NC 4.0.",
     "window_days": 7,
-    "as_of": "2026-10-08",
+    "as_of": "2026-10-15",
     "outlet_policy": "allsides-rated-only",
     "bias_table": "data/media-bias.json",
     "query_shape": "\"<term>\" (congress OR senate OR representatives OR lawmakers)",
@@ -16,67 +16,6 @@
       "checkedOn": "2026-10-08",
       "terms": [
         "national defense authorization act"
-      ],
-      "counts": {
-        "outlets": {
-          "left": 0,
-          "center": 3,
-          "right": 0
-        },
-        "articles": {
-          "left": 0,
-          "center": 4,
-          "right": 0
-        }
-      },
-      "outlets": [
-        {
-          "domain": "jpost.com",
-          "lean": "center",
-          "firstSeen": "2026-10-01",
-          "lastSeen": "2026-10-01",
-          "articles": [
-            {
-              "url": "http://www.jpost.com/international/article-910244",
-              "seen": "2026-10-01"
-            },
-            {
-              "url": "https://www.jpost.com/international/article-910244",
-              "seen": "2026-10-01"
-            }
-          ]
-        },
-        {
-          "domain": "justsecurity.org",
-          "lean": "center",
-          "firstSeen": "2026-10-01",
-          "lastSeen": "2026-10-01",
-          "articles": [
-            {
-              "url": "https://www.justsecurity.org/159351/how-will-congress-public-learn-trump-venezuela-oil-deal/",
-              "seen": "2026-10-01"
-            }
-          ]
-        },
-        {
-          "domain": "militarytimes.com",
-          "lean": "center",
-          "firstSeen": "2026-10-02",
-          "lastSeen": "2026-10-02",
-          "articles": [
-            {
-              "url": "https://www.militarytimes.com/news/pentagon-congress/2026/10/01/gao-calls-on-coast-guard-congress-to-step-up-marine-firefighting/",
-              "seen": "2026-10-02"
-            }
-          ]
-        }
-      ]
-    },
-    "crypto-oversight-split-between-sec-and-cftc": {
-      "checkedOn": "2026-10-01",
-      "terms": [
-        "digital asset market clarity act",
-        "damc act"
       ],
       "counts": {
         "outlets": {
@@ -96,6 +35,25 @@
       "checkedOn": "2026-10-08",
       "terms": [
         "protect college sports act"
+      ],
+      "counts": {
+        "outlets": {
+          "left": 0,
+          "center": 0,
+          "right": 0
+        },
+        "articles": {
+          "left": 0,
+          "center": 0,
+          "right": 0
+        }
+      },
+      "outlets": []
+    },
+    "penny-production-and-cash-rounding": {
+      "checkedOn": "2026-10-15",
+      "terms": [
+        "common cents act"
       ],
       "counts": {
         "outlets": {
