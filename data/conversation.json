@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-16T12:22:25.667Z",
+    "fetched_at": "2026-10-16T17:22:14.761Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-16T12:22:25.667Z"
+        "checked_at": "2026-10-16T17:22:14.761Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-11",
         "week_label": "Most-Viewed Bills - Week of October 11, 2026",
         "entries": 9,
-        "checked_at": "2026-10-16T12:22:25.667Z"
+        "checked_at": "2026-10-16T17:22:14.761Z"
       },
       "leans": {
         "center": {
@@ -205,6 +205,18 @@
       ],
       "mostViewed": null
     },
+    "hr-10780-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "quiverquant.com",
+          "firstSeen": "2026-10-16",
+          "lastSeen": "2026-10-16",
+          "url": "https://news.google.com/rss/articles/CBMivAFBVV95cUxPUTBMRUlUX19DR3RZcGhIS3k3Y280Tm1sZHFQZ0FpbzBwVlRCRzFqSmRGS05fZzlpU3VSVjBmSXcxM3lFVjhuZkJnWGN2WHFrYU1sMzE2NGF5VHRSc0FKVHRsbUVxVG5FQ3RDX2JXTUlMTTluSmN3azFWMDhyM01uckl3aFRhWml3VDlhNmZYUUdta3ZIem1mUEFqZ2VSQTN2WlYwQUwteTFacmJIOTJHTXNUUmFZUnJTcUVkaw?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-10782-119": {
       "outlets7d": [
         {
@@ -216,6 +228,18 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-10817-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "quiverquant.com",
+          "firstSeen": "2026-10-16",
+          "lastSeen": "2026-10-16",
+          "url": "https://news.google.com/rss/articles/CBMiuwFBVV95cUxQVEZEeC1lZ3NJcUQ0UXlOWEdmcW84RGw0aDFPN0xwQnFhTmo3S2tUeVdVVDFnQy10cHEyblFGbU1Td09lVldBempUWGMzX1hUWmJtYkYxMGl1SkxDMWo2bklrcWtVMmpkNDVsbWtQVzM3S25UU0pqV1hwdkJzMEw1QTJnNDE2c0pjTERCX2dVU0NtV1RZVEplWnN0R0I3YnNSQ05lYlVCM3BYb2FiWXBxMmpUZ01XbjJvUTZJ?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "hr-1180-119": {
@@ -1053,6 +1077,18 @@
         "lastWeek": "2026-10-11"
       }
     },
+    "s-240-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "quiverquant.com",
+          "firstSeen": "2026-10-16",
+          "lastSeen": "2026-10-16",
+          "url": "https://news.google.com/rss/articles/CBMixwFBVV95cUxNSlFJUEY0S3JiLTNhd3ZoSmYxOUJybnR4cHNyNlBiZUJNX1VRRHBqWjRnalNHeHN4TEhyWEd4SWVybE8yT3VuU3hCaGhHLThCMXlPTnVONjNoY0hOaHhkS08tR3dMUDhPZFB5amlSeEY3MnBSVUlBWFVtd3dxZVUwc2N0cTlWeEhHbVdFakxpNW1mN2dRZ29icE41S1hXNVFyUktRamhYazVPSkJuQXAzT2NpVjFnOEM0a3hjSklwYzk2UGpVaUE0?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "s-2403-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1143,6 +1179,18 @@
           "firstSeen": "2026-10-09",
           "lastSeen": "2026-10-09",
           "url": "https://news.google.com/rss/articles/CBMi1gFBVV95cUxPNUdqODhyTHVQQ2t3Wm0wNm85M1VmeU43V1VGbmNtTW5hNFJfQzVIU2k4R3p5dG1XcEZxS1JIZlRLUXBseDM2b1QyRGFEeGc1cDB6dUI4MVBUZmUta01tTkdhcVNaV3VxMTAzbVJENzh4WlZJcTNaaWdsUFJwNWY0QjZzbVZKZC1PLVlwcE8zbjlFY0Z4WlRhOGZUVG9QcFVLLTg3amVTQlVaVkNGS0JIS1Z5UUFlZFFWaFRuSjk2WlQtY3ZLdjRPY1RIcm51ZGJNbWdfckJR?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "s-3900-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "iranwire.com",
+          "firstSeen": "2026-10-16",
+          "lastSeen": "2026-10-16",
+          "url": "https://news.google.com/rss/articles/CBMiqgFBVV95cUxQcDBhTXozVE5LX2hqM3dVcHNxQTg4T2htMU9kOXRoeU13SGF2RENPNXYya1NlNVAzWGdoSmNMQlR0MVFTVEFNd3FHb2N5Uzh4WDVnbmJONVpheXA2RDFJc0U3ZDJuQm10VHYxRjQ4OTRkekN2d1BqcnVMSXlGaVU0TFdQLTQ2OFJNTkFkNlpMaENhUDE5ZW8yWnhYajZjMmliTm1XbVU5QUtOdw?oc=5"
         }
       ],
       "mostViewed": null
@@ -1273,6 +1321,12 @@
     "s-4668-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "spotlightdelaware.org",
+          "firstSeen": "2026-10-16",
+          "lastSeen": "2026-10-16",
+          "url": "https://news.google.com/rss/articles/CBMitAFBVV95cUxPYllCV19wMU9BcVJ1SUo5Q1lGdzZ4bzZZTzk5aU5UZjBYTGxQTXdRZVVjOXVGNWVtQ21laGtZSDdHdlI2d2pkaVJKdHNUcGhybWM3WFRsbjRuMWhGenAtX0x3dFRvam9aTFgyUVpCNVZSWk9feWtBRHFHVnJXUi14RXVvSjFjSGNrWmQ1aG1mRWxGTlRNaGdyXzE1WGZVZlNDdE5GbWROSTRsR3RkdUdMaEFLaGU?oc=5"
+        },
         {
           "domain": "timesfreepress.com",
           "firstSeen": "2026-10-16",
@@ -1449,6 +1503,19 @@
           "url": "https://news.google.com/rss/articles/CBMiugFBVV95cUxNQ2IyX25UblVjOG1rTmVPUzFGY1ZxVmxXUWlQRndyQ2VoTjFYSnVDbEdYdS1EQ0c4Mlo3eHd1d0NfcjM4RVQyWDNVWDZsdzlmNFBhZFNmQzlscjRmRFFJZVF1U3k2Zmpvbm1Ib0xMSE9SYnB0LXZ1QWRKQTh0U2tkV29YclN1elJ2VF9OSDRLczBya0pPaFF3SnhPTXhQVlpoQkVDano1WkRzMEc5NVJTd1o4NlZ2THpCMXc?oc=5"
         }
       ],
+      "mostViewed": null
+    },
+    "sjres-186-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-10-16",
+          "lastSeen": "2026-10-16",
+          "url": "https://thehill.com/opinion/campaign/6151677-trump-poverty-measure-dispute/"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "sjres-189-119": {
