@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-16T21:01:07.663Z",
+    "fetched_at": "2026-10-16T23:31:53.062Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-16T21:01:07.663Z"
+        "checked_at": "2026-10-16T23:31:53.062Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-11",
         "week_label": "Most-Viewed Bills - Week of October 11, 2026",
         "entries": 9,
-        "checked_at": "2026-10-16T21:01:07.663Z"
+        "checked_at": "2026-10-16T23:31:53.062Z"
       },
       "leans": {
         "center": {
@@ -696,6 +696,18 @@
       ],
       "mostViewed": null
     },
+    "hr-6380-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "azfamily.com",
+          "firstSeen": "2026-10-16",
+          "lastSeen": "2026-10-16",
+          "url": "https://news.google.com/rss/articles/CBMiogFBVV95cUxOckU0R0llMEY2ejBpTFdlN1g1UE1XODUtRnp1ZkNhZjBTdV9lOHZSTm1hY19QNDhDLUR6U1lkUzg3SG5qdm11Y2c2S1ZDS2phZ0VvTVpValBBMkQ4azQyZE85OGU0VmlVUHFHS0EwOEttZFlnX2Nsd2tmVzdQNTBqeXhVa01MVEUydmYzc0dNVUlvOGhYa0ltNWNOaDBCVktDdVE?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-6509-119": {
       "outlets7d": [],
       "unratedOutlets7d": [],
@@ -1249,6 +1261,19 @@
       ],
       "mostViewed": null
     },
+    "s-4482-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-10-16",
+          "lastSeen": "2026-10-16",
+          "url": "https://thehill.com/newsletters/healthcare/6155303-senate-democrats-unveil-new-plans-for-strengthening-medicare/"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "s-4505-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1556,6 +1581,12 @@
           "firstSeen": "2026-10-16",
           "lastSeen": "2026-10-16",
           "url": "https://news.google.com/rss/articles/CBMi1AFBVV95cUxQTE4tUVJqbDFzbUpWSWU1ZVJHb0xncV9UMFFnYm1WdlYxRDNJa05ZZkRTQm5OZ25IdE1PbFNiN0RjUEJOR3lZZV9FLVFTc05zd3pSdGg0TUg3RFB3UWY5WUlUSTlDUEZJZ0x1eWRXTVRISVM4S2pHRDZvRnBqcUlSblJfeTZaS0Y2c0w2NEFrREdDdTV1dTRQUEljekczdVMwNFZBWFR5MFhBZ0JqLTZrV0JvT0w5ZGdBcFRDOXBVWXAwMm41SjNDQU5wVS13eDFEZ1ViYw?oc=5"
+        },
+        {
+          "domain": "wusf.org",
+          "firstSeen": "2026-10-16",
+          "lastSeen": "2026-10-16",
+          "url": "https://news.google.com/rss/articles/CBMi2gFBVV95cUxPZml5OFl6bUd1cV96QUtUVXIxTzVyYXl0eXV6X0N2YnVyRTNVOHA5UEtOajIzVFFsdHd3ckFOTTY1ckkyU2IwelU2VlZiYk9PNlhnWGVQc05EcG91V05NZEh5TGhPQnFDTTFSbEhKbGxhQU5Ha2dsS2xSdlQ1QjhzNFdkNFI3eWVfQlBvOHF3S3RiYlhvQ1hxN0FScVE2NjViS21Jb09xS2hlS041REJQaUF0d0xva2M3bWdCQWVNWFpIOHJEcDluYW1qc09WRVpXXzhlWEtybUZjUQ?oc=5"
         }
       ],
       "mostViewed": null
