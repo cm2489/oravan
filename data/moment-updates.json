@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-10-13T20:38:30.211Z"
+    "generated_at": "2026-10-16T18:16:49.072Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -3594,6 +3594,39 @@
         },
         "changed_because": [
           "reanchor:7d"
+        ],
+        "model": "record-only"
+      },
+      {
+        "id": "s_56a3ce6d",
+        "generated_at": "2026-10-16T18:16:51.691Z",
+        "as_of_day": "2026-10-16",
+        "text": {
+          "en": "The latest action in the official record on these measures is dated October 14, 2026.",
+          "es": "La última acción del registro oficial sobre estas medidas es del 14 de octubre de 2026."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "hr-10167-119": "passed_chamber",
+            "s-1525-119": "passed_chamber",
+            "hr-3074-119": "passed_chamber"
+          },
+          "vehicle_status_keys": {
+            "hr-10167-119": "passed_both",
+            "s-1525-119": "passed_chamber",
+            "hr-3074-119": "passed_chamber"
+          },
+          "update_ids": [],
+          "roll_calls": [],
+          "roll_calls_on_record": [],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/10167",
+            "https://www.congress.gov/bill/119th-congress/senate-bill/1525",
+            "https://www.congress.gov/bill/119th-congress/house-bill/3074"
+          ]
+        },
+        "changed_because": [
+          "reanchor:8d"
         ],
         "model": "record-only"
       }
