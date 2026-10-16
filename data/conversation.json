@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-16T07:05:22.138Z",
+    "fetched_at": "2026-10-16T12:22:25.667Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-16T07:05:22.138Z"
+        "checked_at": "2026-10-16T12:22:25.667Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-11",
         "week_label": "Most-Viewed Bills - Week of October 11, 2026",
         "entries": 9,
-        "checked_at": "2026-10-16T07:05:22.138Z"
+        "checked_at": "2026-10-16T12:22:25.667Z"
       },
       "leans": {
         "center": {
@@ -1208,6 +1208,18 @@
       "unratedOutlets7d": [],
       "mostViewed": null
     },
+    "s-4556-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "dailyherald.com",
+          "firstSeen": "2026-10-16",
+          "lastSeen": "2026-10-16",
+          "url": "https://news.google.com/rss/articles/CBMivgFBVV95cUxOMHFLc2J0bGJyeXdEZ0VKZzlrbUZnLWRxckVvQlNPQVhhTjBBbDZMSm00U2szRkRrLW5aNTVEaVFiVENWcF9TXzduRm5CSGpGcUhQY242cHA5VWtTaVJvQnQzOUpFX0FtZ0M5MmZaMkJHV1pOQnFnV3NtQW95cHFuUmw1eW94TWhxWFNTRkw2bU1kS203aDBSWnVrU2FBbEdBcFduRXJ0UlMzNXVqMS1PN0dhUlE4TEYyMzl3YUJn?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "s-4567-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1228,6 +1240,19 @@
           "firstSeen": "2026-10-15",
           "lastSeen": "2026-10-15",
           "url": "https://news.google.com/rss/articles/CBMimwFBVV95cUxQSnpPSC1hUmtjdzRRcDAyS1hBNzloTnEtVmthYk1xVHVwN1daMDE4V01SVVc1UkpvZTUzZTl3S3hCdDlFYmJjV1BXaUJBNzJEVFNnVHZBVTc3NnBJVTR5SVJsNndDU2xRN1VBM0cyRDFqMzliM0dNa1FUNnFMQjVnelZTRjNqb2xpWno5aEI1ZWJqbTM1emdmMGR3WdIBoAFBVV95cUxQWElUaE51enQ5bFFGci1XaTFraUtyZnVkMUVZNE9NMU9pdVEwc1J2b1NZMlpFQUctNWNKemFXX1hlSGRTbDVhUFIzZnVHdlVTY28xTEdHUnN2Y2pKeURwRXZGTXNIWGN4cjJ4TUZpSHQ4dGJ3VjJaVEZfdFMtQTRVU29GUzVnbjFkV1N6dzVmMHppT3hXM2YtMTB4MC1jYTli?oc=5"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "s-4602-119": {
+      "outlets7d": [
+        {
+          "domain": "cnbc.com",
+          "lean": "center",
+          "firstSeen": "2026-10-16",
+          "lastSeen": "2026-10-16",
+          "url": "https://www.cnbc.com/2026/10/15/elon-musk-senate-leadership-fund-fundraising.html"
         }
       ],
       "unratedOutlets7d": [],
