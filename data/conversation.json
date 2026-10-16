@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-16T01:15:57.137Z",
+    "fetched_at": "2026-10-16T07:05:22.138Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-16T01:15:57.137Z"
+        "checked_at": "2026-10-16T07:05:22.138Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-11",
         "week_label": "Most-Viewed Bills - Week of October 11, 2026",
         "entries": 9,
-        "checked_at": "2026-10-16T01:15:57.137Z"
+        "checked_at": "2026-10-16T07:05:22.138Z"
       },
       "leans": {
         "center": {
@@ -432,6 +432,12 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "fingerlakes1.com",
+          "firstSeen": "2026-10-16",
+          "lastSeen": "2026-10-16",
+          "url": "https://news.google.com/rss/articles/CBMiogFBVV95cUxOaWJuRklNenhGS01GVTBCelBXN19hQzVqUTNwZWxJcnVQcTVDdHJ0Z1VjREZCVGRJWDJCYnVPd3BIVTJla2daRExzWU1KZUxfUzFlNzVhSkJjblY4eXRkTXJHRlUzbFpKSkFXdFNZZjRyMXBnMTJGc3lOb1p5LVE5UDA3MDFGY000TkhDRXk2UjhrakJtQ1BxZVBOcFpFMEMwMEE?oc=5"
+        },
+        {
           "domain": "quiverquant.com",
           "firstSeen": "2026-10-15",
           "lastSeen": "2026-10-15",
@@ -603,6 +609,12 @@
     "hr-5631-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "bigcountrynewsconnection.com",
+          "firstSeen": "2026-10-16",
+          "lastSeen": "2026-10-16",
+          "url": "https://news.google.com/rss/articles/CBMizAFBVV95cUxOMUtXLTlnTmtVNHRsa2NJLWFrdDZ5Q3hfQ0RIMVdhd0dwYWdnN3BOMG1oN1ZmXzkycjNkYk43TGh2ejAxa0RaR0hFOUpjdERrU2pYbzR2T3pJRjk4MEZqcFBKYVJDdU5fcExtMGlLeWdaaHVHSVpQUzR0SFBobDNfWFhsX2RDNnNLcTljR2hxQ0hZUkdEcWdUMF9uVmk2NWxLNmZlZ3haRkVnS0pfSThDUTVMbEw0XzlCQW9oNUlKdlduUHE2Q2R0bGRTdW4?oc=5"
+        },
         {
           "domain": "dailyfly.com",
           "firstSeen": "2026-10-16",
@@ -960,6 +972,18 @@
       ],
       "mostViewed": null
     },
+    "hr-8908-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "techspot.com",
+          "firstSeen": "2026-10-16",
+          "lastSeen": "2026-10-16",
+          "url": "https://news.google.com/rss/articles/CBMilwFBVV95cUxObVdERG1ITnd4LUI5UTA1bFdDQTV6OTE2dDJmamctZHI5OERVaDBrVVRPMS02cm1XVUg3VS1RUFo5emxzbE90MU9XU29ENTM3SWtsY0M5cHMtQ2pzdld0MGFnMWZHbHJPR2xvNjh3bV9lNnBNeFN2anJKcGtGbzhEWVB1NDRoVDdqSFpXbFM0eDJyTEVWeDI4?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-9340-119": {
       "outlets7d": [],
       "unratedOutlets7d": [],
@@ -1123,6 +1147,18 @@
       ],
       "mostViewed": null
     },
+    "s-4338-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "americanbanker.com",
+          "firstSeen": "2026-10-16",
+          "lastSeen": "2026-10-16",
+          "url": "https://news.google.com/rss/articles/CBMinAFBVV95cUxNSFpYYzBLMks3VDhxVDFDUU4wYjdxMEdkSzJDa0xROGlqVFBwb2pSalFkZ0pONkwzS19aRklBOFFOOXBQUVM1QThYT1VyRXF3ZjFHOHI5aGxYRE9IZDdZLWxxTTJDS25MZFhrZDlVX2tYdWYtUE5YdVB6NC1uQnF4eFN5ekM5YjZmdDg5NFVCWGRiQXNWbGFtcmtocmY?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "s-4340-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1157,6 +1193,19 @@
           "url": "https://news.google.com/rss/articles/CBMixwFBVV95cUxPUWJSZ25kTU9sTy1ZdTFlR3FfLVBBOFhqV0h3a0NFamFBYlFTRG9EN2pPbEpzSkJISlp4aTdSTlcxdFFJYTFTeEpFZVpzNXhlRTMxcnJYcWVzZVRBX1VRVHN1aGpYbmhNY29lQTVSS1NfTjYzakE1anlfSGxCODFpamVCbkpMOGstRVhITzJMR3lVMnp5MWVGX25paFRnSDktajh6OTNhQWEybGRValBVOVBJS2xXQ29vT01oRDhuU3lneU16dl80?oc=5"
         }
       ],
+      "mostViewed": null
+    },
+    "s-455-119": {
+      "outlets7d": [
+        {
+          "domain": "reason.com",
+          "lean": "right",
+          "firstSeen": "2026-10-16",
+          "lastSeen": "2026-10-16",
+          "url": "https://reason.com/volokh/2026/10/15/second-amendment-roundup-sensitive-places-issue-coming-to-a-head/"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "s-4567-119": {
@@ -1199,6 +1248,12 @@
     "s-4668-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "timesfreepress.com",
+          "firstSeen": "2026-10-16",
+          "lastSeen": "2026-10-16",
+          "url": "https://news.google.com/rss/articles/CBMimwFBVV95cUxPTUV6RExvWEQxZzRSUlA3N0F1bVJKZUlucFRvWUhqODE3aTZORUNocWo4Nm1vMkhNN0lkQlI3MnVFaW5DbTVRYXNMUHB1cXV3b1lIMzZmMHJ2SFpRRWNTWlVJTGdPNEszUWtpM3ozQ0c2SEVDZnJMQXJWUG51Mm1kbFNJTXV0aGRUS3E5NHdUVUZzQWNWTkpuWDl0VQ?oc=5"
+        },
         {
           "domain": "bozemandailychronicle.com",
           "firstSeen": "2026-10-15",
@@ -1367,6 +1422,18 @@
           "firstSeen": "2026-10-14",
           "lastSeen": "2026-10-14",
           "url": "https://news.google.com/rss/articles/CBMiugFBVV95cUxNQ2IyX25UblVjOG1rTmVPUzFGY1ZxVmxXUWlQRndyQ2VoTjFYSnVDbEdYdS1EQ0c4Mlo3eHd1d0NfcjM4RVQyWDNVWDZsdzlmNFBhZFNmQzlscjRmRFFJZVF1U3k2Zmpvbm1Ib0xMSE9SYnB0LXZ1QWRKQTh0U2tkV29YclN1elJ2VF9OSDRLczBya0pPaFF3SnhPTXhQVlpoQkVDano1WkRzMEc5NVJTd1o4NlZ2THpCMXc?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "sjres-189-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "postguam.com",
+          "firstSeen": "2026-10-16",
+          "lastSeen": "2026-10-16",
+          "url": "https://news.google.com/rss/articles/CBMikwJBVV95cUxNcmlOZXJxS2pfNnhGVHFZbFV4aEF6WjZEUlZCbTd1NTU1eGl1X1l5anJEcktvb1VjSHBoQ1FtcUVPYy1DX29SVkthblVBYnV2TW9HVVoyaGw2cmI3c2xfUVBKak9GUGhzM0dwZUprRmJqYWJhZEROZ21OOFMxYXBUaTAxSFNYUW93RWc2UTBrTUUyRXk0YzVJU3ZFaE1YZFNBaVhYTHpUWFA4RExzWk1CRWl3eXAwOXdWUHJxcGdQOGxsaEdaaWdxWTdvYmdiMHZ6MUlLaWZUTmFfa29OYjJlX3R3TnliWUNVOVQ0Nk54OVRIY1RiVkdONkVPUURveWxwX3NVYVFaUGVhVmxIMkFWTXZQUQ?oc=5"
         }
       ],
       "mostViewed": null
