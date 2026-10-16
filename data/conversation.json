@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-16T00:50:18.662Z",
+    "fetched_at": "2026-10-16T01:15:57.137Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-16T00:50:18.662Z"
+        "checked_at": "2026-10-16T01:15:57.137Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-11",
         "week_label": "Most-Viewed Bills - Week of October 11, 2026",
         "entries": 9,
-        "checked_at": "2026-10-16T00:50:18.662Z"
+        "checked_at": "2026-10-16T01:15:57.137Z"
       },
       "leans": {
         "center": {
@@ -722,6 +722,18 @@
         "lastSeen": "2026-10-12",
         "lastWeek": "2026-10-04"
       }
+    },
+    "hr-7024-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "alreporter.com",
+          "firstSeen": "2026-10-16",
+          "lastSeen": "2026-10-16",
+          "url": "https://news.google.com/rss/articles/CBMimAFBVV95cUxNZzZpSVc5Qzl6andVa05YWEttTHFKYVJjUVgyWFdZeXlxVWljV1NjRnlCYnN6LWZ1UzdBZGMyazNNWEJ4bjBaS1VjbWNzMkNEdkNPeWZ6b0ZYUXl5ZE4zNF9hSTNub25CZnJHVm5xVkNtcThHWnpjaWNNSDRocFBQM3QyQTN0T3hTVHRZU3lncFlfYXctaXI3Wg?oc=5"
+        }
+      ],
+      "mostViewed": null
     },
     "hr-7206-119": {
       "outlets7d": [],
