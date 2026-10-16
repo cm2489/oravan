@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-16T17:50:05.555Z",
+    "fetched_at": "2026-10-16T21:01:07.663Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-16T17:50:05.555Z"
+        "checked_at": "2026-10-16T21:01:07.663Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-11",
         "week_label": "Most-Viewed Bills - Week of October 11, 2026",
         "entries": 9,
-        "checked_at": "2026-10-16T17:50:05.555Z"
+        "checked_at": "2026-10-16T21:01:07.663Z"
       },
       "leans": {
         "center": {
@@ -1092,6 +1092,12 @@
     "s-2403-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "planadviser.com",
+          "firstSeen": "2026-10-16",
+          "lastSeen": "2026-10-16",
+          "url": "https://news.google.com/rss/articles/CBMibEFVX3lxTE16aUlTYXQ5Q2hfVnJ5aW1TQVVicFNuclQxNjVWMlNOS0NxaXdYaUZKOHl5SWhCYm5aSjJuZ2Jzb0t3cmFLZk55a0pTbDVBeWVtWEpuMjI3VlViQ0VReFJRWjhYNDdQanp6S2hSYg?oc=5"
+        },
         {
           "domain": "law.com",
           "firstSeen": "2026-10-12",
