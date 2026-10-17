@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-17T00:56:13.517Z",
+    "fetched_at": "2026-10-17T04:17:29.243Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-17T00:56:13.517Z"
+        "checked_at": "2026-10-17T04:17:29.243Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-11",
         "week_label": "Most-Viewed Bills - Week of October 11, 2026",
         "entries": 9,
-        "checked_at": "2026-10-17T00:56:13.517Z"
+        "checked_at": "2026-10-17T04:17:29.243Z"
       },
       "leans": {
         "center": {
@@ -492,6 +492,27 @@
     "hr-5334-119": {
       "outlets7d": [
         {
+          "domain": "mediaite.com",
+          "lean": "left",
+          "firstSeen": "2026-10-17",
+          "lastSeen": "2026-10-17",
+          "url": "https://news.google.com/rss/articles/CBMiwAFBVV95cUxOR1VZTExfYV9vRlJrWWxxOXZJelV5RmhqamVvd0FScmoteUVIUjJ1dTVmV3RHeTNZRkNwWDdIemM1Yi1PQ0paS0tDWmEtbHU5NXVrN0VES2ZKdmpPSDFyUG83SU9TUTcxYmdjNG1pMlpTWW1palRTamMzbTByb2w5RUNDemRDMmtJY2lfSkZCcVc3bS0xa19iTFd0XzBZRVlnUWFhUWQ4UVhuR0ZocGNWVy0waDNSNVN1dXFrYmIxdUI?oc=5"
+        },
+        {
+          "domain": "nbcnews.com",
+          "lean": "left",
+          "firstSeen": "2026-10-17",
+          "lastSeen": "2026-10-17",
+          "url": "https://news.google.com/rss/articles/CBMi0AFBVV95cUxQSUF6amxpY2lMcWdiQ09tRkNjZjZGWjFyemRBN2kyQmx3RUl2ZlN6cDJLN3ZOeFBYZEJucUpHNWpNRHpsZFh4UmkxMFZ6ak1OQ1pVemhGaEtSOGJENXljeVItbGlZUUxMNG5LSmNacXZHSjVoOTRyLTZrcTJmZ2prSWctNkE2eEYwcG15bWJnQVlWUkNKdUZKODVZSHhYellTLWNFZnkzMEFiT1FKak1adHVqV25DLUFWWC1uMDIyc0dYX0lSVFRmdDRnUVlEd094?oc=5"
+        },
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-10-17",
+          "lastSeen": "2026-10-17",
+          "url": "https://thehill.com/homenews/administration/6155621-trump-waives-russian-sanctions-act-tariffs/"
+        },
+        {
           "domain": "politico.com",
           "lean": "left",
           "firstSeen": "2026-10-15",
@@ -500,6 +521,18 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "abcnews.com",
+          "firstSeen": "2026-10-17",
+          "lastSeen": "2026-10-17",
+          "url": "https://news.google.com/rss/articles/CBMimwFBVV95cUxNWnpEUXFJVXk4V3FmVi1zOURtT1NBVFQxZjZFcGdLTEdES0tSdE9pcEpNOE1GMEQ3M01zQjZIQ0N3QzY3aTdoQlBLM3M3T3JCTE5COTlHS2o0S2JWRTBSR21tVEhLMDFGVHB5SHU1RllSOGtnWVQtRVlYMl8wbmZpM3BQUkFyVWpXQndKZTJGRUlJNVhuOTZxMTBEY9IBoAFBVV95cUxNd0pLRDdoOHF6NVhTemJPSEZSeHVtbk1iWlIzY05Bc1FmRFZXWkNLdnVGYXY5aVpXVVN0Y1k5Yi11LTN5R2dySDJZVFNDdmRneWJEX3Q2eU8tVEZSd00yQ1JxS3JQN051UmhXYTF0VDU0UFYzVWJzNUtCWXRycUM1cWYtZXBmdlhXMFZHcnVPc1B0LWNLeFIycGFtcWV1OGZT?oc=5"
+        },
+        {
+          "domain": "audacy.com",
+          "firstSeen": "2026-10-17",
+          "lastSeen": "2026-10-17",
+          "url": "https://news.google.com/rss/articles/CBMirAFBVV95cUxPdzhQYjRPc2JiUzBvZWVVcTN0cEJrN3M5VTZGbmxUc2ExS1FJQ2wwZ0RpaGRwZ1lHb1hwTTZuekpEYXU1UTlYRjlFN2tFOXNjZ1V5dlE3NXlMMzBKRzU3cVp4Sm5oSVlEWUZxX1hfVDRaNFVqZjVCM2lKVmFPZndkNjFfQ3phWFcwLUdOX0pRUUYxWjFwcHpUQ1NlckVjcTlva1hEdlktbjdBNFdI?oc=5"
+        },
         {
           "domain": "pravda.com.ua",
           "firstSeen": "2026-10-11",
@@ -600,6 +633,18 @@
           "firstSeen": "2026-10-16",
           "lastSeen": "2026-10-16",
           "url": "https://news.google.com/rss/articles/CBMiogFBVV95cUxOckU0R0llMEY2ejBpTFdlN1g1UE1XODUtRnp1ZkNhZjBTdV9lOHZSTm1hY19QNDhDLUR6U1lkUzg3SG5qdm11Y2c2S1ZDS2phZ0VvTVpValBBMkQ4azQyZE85OGU0VmlVUHFHS0EwOEttZFlnX2Nsd2tmVzdQNTBqeXhVa01MVEUydmYzc0dNVUlvOGhYa0ltNWNOaDBCVktDdVE?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-6461-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "interestingengineering.com",
+          "firstSeen": "2026-10-17",
+          "lastSeen": "2026-10-17",
+          "url": "https://news.google.com/rss/articles/CBMikwFBVV95cUxQaXRHMGNiYk1nUzItb3VzLXI4VnZQU2pGbE1UU2VVeVNiVkdOSV9SbV9ldHVTSEZpZ1hZenZIemY2SkpwNXhQRVVXbkE5VWx6MWkxXzJ4LVJpaXpZNm1CWEJON09BRDdGR1dWM3QybTNvdjJpZmpNVnh2dkxUUkhpbnNxWHdfQTM4T0dEUkswQTZUREU?oc=5"
         }
       ],
       "mostViewed": null
@@ -719,6 +764,18 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-7814-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "kimt.com",
+          "firstSeen": "2026-10-17",
+          "lastSeen": "2026-10-17",
+          "url": "https://news.google.com/rss/articles/CBMizAFBVV95cUxNT3JoS2pEbUdoT09pZ1lzRUZMT1ZHR3lPdnhhblYxUWg1TkF4UUxqS2J1QlYzVXBrV1JMT3dnRXBCT05SYVYwQzNUVHhxWlphQVZZd1NTQ2x5RFltOXZ5WlltNWlfSFFORzZzdnZ0LUlaalEzbVlNXzFGUHhFMmt1WkYzc0hfcU8wdVN6Y1phM0VUYTYzNGRNTkJuanFkNzgwc0JJcDhvVmN4WlRBWEdRSDJFbks4LUw0N2E5dmM3WkIzUUt1ZnhYN1pMM0U?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "hr-7845-119": {
