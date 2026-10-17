@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-17T13:41:42.629Z",
+    "fetched_at": "2026-10-17T16:40:41.816Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-17T13:41:42.629Z"
+        "checked_at": "2026-10-17T16:40:41.816Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-11",
         "week_label": "Most-Viewed Bills - Week of October 11, 2026",
         "entries": 9,
-        "checked_at": "2026-10-17T13:41:42.629Z"
+        "checked_at": "2026-10-17T16:40:41.816Z"
       },
       "leans": {
         "center": {
@@ -549,6 +549,12 @@
           "url": "https://news.google.com/rss/articles/CBMimwFBVV95cUxNWnpEUXFJVXk4V3FmVi1zOURtT1NBVFQxZjZFcGdLTEdES0tSdE9pcEpNOE1GMEQ3M01zQjZIQ0N3QzY3aTdoQlBLM3M3T3JCTE5COTlHS2o0S2JWRTBSR21tVEhLMDFGVHB5SHU1RllSOGtnWVQtRVlYMl8wbmZpM3BQUkFyVWpXQndKZTJGRUlJNVhuOTZxMTBEY9IBoAFBVV95cUxNd0pLRDdoOHF6NVhTemJPSEZSeHVtbk1iWlIzY05Bc1FmRFZXWkNLdnVGYXY5aVpXVVN0Y1k5Yi11LTN5R2dySDJZVFNDdmRneWJEX3Q2eU8tVEZSd00yQ1JxS3JQN051UmhXYTF0VDU0UFYzVWJzNUtCWXRycUM1cWYtZXBmdlhXMFZHcnVPc1B0LWNLeFIycGFtcWV1OGZT?oc=5"
         },
         {
+          "domain": "abcnews4.com",
+          "firstSeen": "2026-10-17",
+          "lastSeen": "2026-10-17",
+          "url": "https://news.google.com/rss/articles/CBMiswFBVV95cUxONHh6N0ZhMnVVczFBUlhqRFA5STQxcnJRbjNqcmtENTVXdnVrUXdEX1hBU1RmeElPSHpjQnNVa3UzRndtYlRCQ1V3dWlHSUJoa3YwYzdfX1JGOHlKcFZLWkxaM0ZpN2Y2c0FpcnF5MUNpellJdWt0ZHd1Wl9nMUZyS2JQbDl3dmk2c0RKLTFhNnZMZ09uZFBHdFItSEd0c3BSNXNmTXd2LVFZQ0ktdUNUQ0VtUQ?oc=5"
+        },
+        {
           "domain": "audacy.com",
           "firstSeen": "2026-10-17",
           "lastSeen": "2026-10-17",
@@ -999,6 +1005,18 @@
       ],
       "mostViewed": null
     },
+    "hr-9089-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "foxbusiness.com",
+          "firstSeen": "2026-10-17",
+          "lastSeen": "2026-10-17",
+          "url": "https://news.google.com/rss/articles/CBMimwFBVV95cUxNTjVIMUJjbDVWd3RKNV9LVVBHOTdPenlHaVN1RDdWZ0FPTEF5T2dSNXRkbHl1RjZEU3ZmcnR1Ql9FdFdyTUs3MzFMNzdzU21CRG1nM3hvYUNjMGVycndXSDQ5Z2lYUE44MFNxOENMY2MtX25sODljamZEc3N5NXZqZHp5cHVBbVFfeHRUUWMtX2FWbUM2bTZwWjJiUdIBmwFBVV95cUxNTjVIMUJjbDVWd3RKNV9LVVBHOTdPenlHaVN1RDdWZ0FPTEF5T2dSNXRkbHl1RjZEU3ZmcnR1Ql9FdFdyTUs3MzFMNzdzU21CRG1nM3hvYUNjMGVycndXSDQ5Z2lYUE44MFNxOENMY2MtX25sODljamZEc3N5NXZqZHp5cHVBbVFfeHRUUWMtX2FWbUM2bTZwWjJiUQ?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-9340-119": {
       "outlets7d": [],
       "unratedOutlets7d": [],
@@ -1012,6 +1030,12 @@
     "hr-979-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "cronkitenews.azpbs.org",
+          "firstSeen": "2026-10-17",
+          "lastSeen": "2026-10-17",
+          "url": "https://news.google.com/rss/articles/CBMidkFVX3lxTFBva0FvdjJHLV9qNjNFbGNRWHRVOVkyRVR0Tk84NlNka0cwVkVQWm9XZk9sSVN6VXBqSnhPbnFXWlVuWElfZzYteGxMb1VHd1ZhRHRSR0VWYmI0Z2FqOURUQmttVmNILURZZ2M0RTNmWUFPRmhKamc?oc=5"
+        },
         {
           "domain": "radioiowa.com",
           "firstSeen": "2026-10-12",
@@ -1159,6 +1183,12 @@
     "s-4338-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "okmagazine.com",
+          "firstSeen": "2026-10-17",
+          "lastSeen": "2026-10-17",
+          "url": "https://news.google.com/rss/articles/CBMiqAFBVV95cUxQajgxSmI3TGE3YnRRdjQxLTBpZXN4cGx0dTFQMm43blhiVFBva1pYYVRsREVscDA4eHRpRlQ1ai1uaEY1T2dOekNKd0YzVDdPSm13VVJoalZ4SzJmMkxoeHFxSGxUY01qWjRmZzVPSjdCRmpJRDFYZGJLMG5JakVNS0EwQTkzTlkwQ0dadWRac2xxSS1KRjVoSGRnc2g5V0RSckM0V1czVkc?oc=5"
+        },
         {
           "domain": "americanbanker.com",
           "firstSeen": "2026-10-16",
