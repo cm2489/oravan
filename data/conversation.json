@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-17T04:17:29.243Z",
+    "fetched_at": "2026-10-17T09:16:42.967Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-17T04:17:29.243Z"
+        "checked_at": "2026-10-17T09:16:42.967Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-11",
         "week_label": "Most-Viewed Bills - Week of October 11, 2026",
         "entries": 9,
-        "checked_at": "2026-10-17T04:17:29.243Z"
+        "checked_at": "2026-10-17T09:16:42.967Z"
       },
       "leans": {
         "center": {
@@ -506,18 +506,32 @@
           "url": "https://news.google.com/rss/articles/CBMi0AFBVV95cUxQSUF6amxpY2lMcWdiQ09tRkNjZjZGWjFyemRBN2kyQmx3RUl2ZlN6cDJLN3ZOeFBYZEJucUpHNWpNRHpsZFh4UmkxMFZ6ak1OQ1pVemhGaEtSOGJENXljeVItbGlZUUxMNG5LSmNacXZHSjVoOTRyLTZrcTJmZ2prSWctNkE2eEYwcG15bWJnQVlWUkNKdUZKODVZSHhYellTLWNFZnkzMEFiT1FKak1adHVqV25DLUFWWC1uMDIyc0dYX0lSVFRmdDRnUVlEd094?oc=5"
         },
         {
-          "domain": "thehill.com",
-          "lean": "center",
+          "domain": "nypost.com",
+          "lean": "right",
           "firstSeen": "2026-10-17",
           "lastSeen": "2026-10-17",
-          "url": "https://thehill.com/homenews/administration/6155621-trump-waives-russian-sanctions-act-tariffs/"
+          "url": "https://news.google.com/rss/articles/CBMi1wFBVV95cUxNTmdqelFfdEhueFNsYklTTnp2aFpsZDN0UjRUeW0wOW5sMlZNcEk1c1lEa2Rha0FOaDBzdmMwUXF1LXRjUHR2d1UyU0dQazF0aGVrc0pFZ3I1Sko5QjNnZkdOUW5xNkg0WHlnV09pcDFQV3ZDMDhtNE9HaDJoc19hcExFUFA1LXRtWS1DeDh1a0k5OFM3Y3p2UnNqemNIMGhYc0ZhcXF5dGZXUDZYT1RZNXRzelM5SGR0dFM2a0RRMGt6TEVtb0pJaHlVSGRnTGpKSzVXRkRIWQ?oc=5"
         },
         {
           "domain": "politico.com",
           "lean": "left",
           "firstSeen": "2026-10-15",
-          "lastSeen": "2026-10-15",
-          "url": "https://www.politico.com/live-updates/2026/10/15/congress/house-lawmakers-trump-russia-diesel-deal-01120231"
+          "lastSeen": "2026-10-17",
+          "url": "https://news.google.com/rss/articles/CBMizwFBVV95cUxNb2tsZ2VhNUJDSGh1RHJ3WUdIZUliTUJhWDhQazUwSzJWcFdjYXdtQzZLbjRpaFQ4bEFZbDBEQmRfcmxydEJEeF96YUVKNUlONnlrUlR1TzROY05fNmZUYVQ0N1g1VmtNV3dKYk1NOG9FUEc4UTQwNzR0dkUwR2hVNUpqZG8tQndVR1hJd0tkb19zOWZ0cE13cE12LW5ld0s1blphZEJIeVBFbXhFMGppMzhIR0w1Tk55Nkk5ZkNWZ1YwNGRIUVJ2MjBLOEZrSFk?oc=5"
+        },
+        {
+          "domain": "theguardian.com",
+          "lean": "left",
+          "firstSeen": "2026-10-17",
+          "lastSeen": "2026-10-17",
+          "url": "https://news.google.com/rss/articles/CBMi1AFBVV95cUxOX2luakxEaEVyTXo5MTktaTdoVzd4Zk1EX1NoYk8zZGE4bDNoYVpBS3FZeXJnMU1jazRhVkVfT2hSZ3pPY1JmSlotWVY3LWFjcDdGeDV2eU12bHhMM2E3QWI1aVczdmxiYjhBNlhGU1RCeE9hakdKN3hmTlZvTEgwSmxQam1lNVdJOUVFemlueXNwcFVUS3hYckNfb0UwbVJrZ0ticnctYmlueFR0MHRBR0cwZ1ZJc3VlNVFNcGw5SndCczR4VVhrNndabWptMGcwMF9aVQ?oc=5"
+        },
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-10-17",
+          "lastSeen": "2026-10-17",
+          "url": "https://thehill.com/homenews/administration/6155621-trump-waives-russian-sanctions-act-tariffs/"
         }
       ],
       "unratedOutlets7d": [
@@ -532,6 +546,12 @@
           "firstSeen": "2026-10-17",
           "lastSeen": "2026-10-17",
           "url": "https://news.google.com/rss/articles/CBMirAFBVV95cUxPdzhQYjRPc2JiUzBvZWVVcTN0cEJrN3M5VTZGbmxUc2ExS1FJQ2wwZ0RpaGRwZ1lHb1hwTTZuekpEYXU1UTlYRjlFN2tFOXNjZ1V5dlE3NXlMMzBKRzU3cVp4Sm5oSVlEWUZxX1hfVDRaNFVqZjVCM2lKVmFPZndkNjFfQ3phWFcwLUdOX0pRUUYxWjFwcHpUQ1NlckVjcTlva1hEdlktbjdBNFdI?oc=5"
+        },
+        {
+          "domain": "politicalwire.com",
+          "firstSeen": "2026-10-17",
+          "lastSeen": "2026-10-17",
+          "url": "https://news.google.com/rss/articles/CBMilgFBVV95cUxQODV2VjFIMGltbl9VM2hzSkxJM29JMkk2QW1JUDl6MTZadUt4ZzFVT2M3N3RtWW5sWXN6cTFCd1hLWnp2anh4WkExeG1LVEtzWW43YzRLVkVLbDRydkNXaVAtSGpqZjg1bHMxMS16UGJfdjVMMGhPaDlTbWY3XzVydmlhTFNMRUFQclFaWVJDQ3NydnB6ZUE?oc=5"
         },
         {
           "domain": "pravda.com.ua",
@@ -852,6 +872,18 @@
           "firstSeen": "2026-10-13",
           "lastSeen": "2026-10-13",
           "url": "https://news.google.com/rss/articles/CBMingFBVV95cUxNU0huZEZKTDY4TnVJdHNtY0N4R1haOVE0OXRaSHRFQUwyNmVGMzBINV84cFZtRkZuSXlZVVFpZmU1b3FsRUd2SzhVLXVXeFJFcHFCNDVCRzhwX3p3WGxLN0RkQ0FZRTkxUm1jWmRmblRRT20xeWxLSHFMODhqUU51SzJNQ2dkeWljM1hMYTAzLW1jeGF0TDQ0cDkxUDJtUdIBsgFBVV95cUxPY0tPRUpDVUVnVElIb2VxV2kxMUlPN2htYnhoaU11RHh6Z3NwRDBoZHNwZlJONXF5RHhmT1hJOHBETDZIT1hCVW5tVzdlb0x5WHpwSC16ZFBLdDRlc25MTE96VHpVMnlnMFZTdTdmem8yMDN3ZTZRT3VfLWV5NmpRMVVkUjBWNzd5U1BOV1NZSGVXYTczVGNsVlA3UHkweW1mckF1VWJuQmlJRndhOGRaQnZR?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-8469-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "sofx.com",
+          "firstSeen": "2026-10-17",
+          "lastSeen": "2026-10-17",
+          "url": "https://news.google.com/rss/articles/CBMiqgFBVV95cUxPQVhNVlRGYmxQZGxBU1BqOUh5Nl9Pb1VjTWNkd2hOSUVfZnVRMTBwQlpxWm9YRjMtLXpCWnJUMDRKUVVjc0Y4dU9mMnRGZEJaYUJOcmtIY2dpRWRQZ3ZmWGpyS0NrOURQRzBqXzJEWkRYTjJUT0ZTUFVySGtjOFEzX3RPVEhUN01TeE9HalBoNnRyc0NhSEMycV8zRGF6UnQ5UWFLYTRaM2lWdw?oc=5"
         }
       ],
       "mostViewed": null
