@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-17T09:16:42.967Z",
+    "fetched_at": "2026-10-17T13:41:42.629Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-17T09:16:42.967Z"
+        "checked_at": "2026-10-17T13:41:42.629Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-11",
         "week_label": "Most-Viewed Bills - Week of October 11, 2026",
         "entries": 9,
-        "checked_at": "2026-10-17T09:16:42.967Z"
+        "checked_at": "2026-10-17T13:41:42.629Z"
       },
       "leans": {
         "center": {
@@ -492,6 +492,13 @@
     "hr-5334-119": {
       "outlets7d": [
         {
+          "domain": "cnbc.com",
+          "lean": "center",
+          "firstSeen": "2026-10-17",
+          "lastSeen": "2026-10-17",
+          "url": "https://www.cnbc.com/2026/10/17/trump-waives-russia-related-sanctions-tariffs-before-they-take-effect-.html"
+        },
+        {
           "domain": "mediaite.com",
           "lean": "left",
           "firstSeen": "2026-10-17",
@@ -552,6 +559,12 @@
           "firstSeen": "2026-10-17",
           "lastSeen": "2026-10-17",
           "url": "https://news.google.com/rss/articles/CBMilgFBVV95cUxQODV2VjFIMGltbl9VM2hzSkxJM29JMkk2QW1JUDl6MTZadUt4ZzFVT2M3N3RtWW5sWXN6cTFCd1hLWnp2anh4WkExeG1LVEtzWW43YzRLVkVLbDRydkNXaVAtSGpqZjg1bHMxMS16UGJfdjVMMGhPaDlTbWY3XzVydmlhTFNMRUFQclFaWVJDQ3NydnB6ZUE?oc=5"
+        },
+        {
+          "domain": "tradingview.com",
+          "firstSeen": "2026-10-17",
+          "lastSeen": "2026-10-17",
+          "url": "https://news.google.com/rss/articles/CBMimwJBVV95cUxPeUFuZ0kzbllGTGdhZERyY3hEcjRyMTBKak12Z3RYa1drbHUtc1JRdHExSHAyUXA5NmY2XzUxOWdiRmMtZkZLdm1sb2tKWHZkUnRPUGJ0akRfVldZRkpiYnozRDE5aXJYQnQyMzhpcVc5MkZHWF9FeEMyVk1mMnZ6VE1ock9selpuREJ5b3BTNVI5R2tmR0xIbl9zV255Ui1RYnUyRzY5cHd6eWxCY1VqbmhFZXZUMllXVGUxX2p4OFlNMExxY2hwakpKU2tSUGZFZnNZVF9DNGw2NEE5R19lSTV2TWhnMzhQc29rQ1RySTloakZ6ZFlQR3lCbk5pbW5nbHNQUllrVHhhRFBuMTEwUHZ1Ni14d0xZNHkw?oc=5"
         },
         {
           "domain": "pravda.com.ua",
@@ -735,6 +748,19 @@
           "url": "https://news.google.com/rss/articles/CBMimAFBVV95cUxNZzZpSVc5Qzl6andVa05YWEttTHFKYVJjUVgyWFdZeXlxVWljV1NjRnlCYnN6LWZ1UzdBZGMyazNNWEJ4bjBaS1VjbWNzMkNEdkNPeWZ6b0ZYUXl5ZE4zNF9hSTNub25CZnJHVm5xVkNtcThHWnpjaWNNSDRocFBQM3QyQTN0T3hTVHRZU3lncFlfYXctaXI3Wg?oc=5"
         }
       ],
+      "mostViewed": null
+    },
+    "hr-7204-119": {
+      "outlets7d": [
+        {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-10-17",
+          "lastSeen": "2026-10-17",
+          "url": "https://www.foxnews.com/politics/bumper-sticker-help-flock-cameras-track-new-bill-aims-stop"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "hr-7206-119": {
