@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-18T17:45:03.400Z",
+    "fetched_at": "2026-10-18T23:05:05.480Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-18T17:45:03.400Z"
+        "checked_at": "2026-10-18T23:05:05.480Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-11",
         "week_label": "Most-Viewed Bills - Week of October 11, 2026",
         "entries": 9,
-        "checked_at": "2026-10-18T17:45:03.400Z"
+        "checked_at": "2026-10-18T23:05:05.480Z"
       },
       "leans": {
         "center": {
@@ -473,6 +473,13 @@
           "firstSeen": "2026-10-17",
           "lastSeen": "2026-10-18",
           "url": "https://news.google.com/rss/articles/CBMi4gFBVV95cUxPY0tBVExRQUFoVGtEQ2UtWmVOS2JCRjFCeEYzNVFmOW9SQkhmc2I3cjhPUDJVdWgtZF9zNXBjRS1tUF9YbzNBeWJKM3ptUmJoYzhUQmJ3TS1hSDJZYnlvelhGbUJvSjdJc0VYa0tNTXh2WE1CRXF4Q0liRlI4b1ViTi1naElRal9fVkVjck1jUjZXN0dqX3E5Q0JZR1Y4SmlPT2F2bVVVSlR0NDhuUWk0UFlOY3ltamQzMjhESGJ0QVd4QXhQZ2xfSHg0VUpNNHhZcnRzVWZSOHRuYTJpbVByZDZ3?oc=5"
+        },
+        {
+          "domain": "npr.org",
+          "lean": "center",
+          "firstSeen": "2026-10-18",
+          "lastSeen": "2026-10-18",
+          "url": "https://www.npr.org/2026/10/18/nx-s1-6007363/congress-reacts-to-executive-order-exempting-russia-from-economic-sanctions"
         },
         {
           "domain": "cnbc.com",
@@ -1043,6 +1050,18 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "s-1547-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "wral.com",
+          "firstSeen": "2026-10-18",
+          "lastSeen": "2026-10-18",
+          "url": "https://news.google.com/rss/articles/CBMiqgFBVV95cUxQMnlBa1lHa0lqSnNNNmNUZVRnTmZUTjBOQTVTdzdsTkF4Q3laMUdpdEVObzBCb0pWLV9EUHQ2MzZoNEsxNXh4bndJRnRhNE1ZZFNTSXVKcFNvcDJwSGlral9RNXNYT1FzY0dCNThTX1JmZmJnMlFzZVJaUVVKVjg5Y3ViLWh4cFN3SEk1TWNoRDd2b1ZWSnZjUTdmbHhuZDFYQkVVUjlWV1BEZw?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "s-195-119": {
