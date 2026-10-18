@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-18T00:36:29.812Z",
+    "fetched_at": "2026-10-18T05:50:05.157Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-18T00:36:29.812Z"
+        "checked_at": "2026-10-18T05:50:05.157Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-11",
         "week_label": "Most-Viewed Bills - Week of October 11, 2026",
         "entries": 9,
-        "checked_at": "2026-10-18T00:36:29.812Z"
+        "checked_at": "2026-10-18T05:50:05.157Z"
       },
       "leans": {
         "center": {
@@ -468,18 +468,18 @@
     "hr-5334-119": {
       "outlets7d": [
         {
+          "domain": "mediaite.com",
+          "lean": "left",
+          "firstSeen": "2026-10-17",
+          "lastSeen": "2026-10-18",
+          "url": "https://news.google.com/rss/articles/CBMi4gFBVV95cUxPY0tBVExRQUFoVGtEQ2UtWmVOS2JCRjFCeEYzNVFmOW9SQkhmc2I3cjhPUDJVdWgtZF9zNXBjRS1tUF9YbzNBeWJKM3ptUmJoYzhUQmJ3TS1hSDJZYnlvelhGbUJvSjdJc0VYa0tNTXh2WE1CRXF4Q0liRlI4b1ViTi1naElRal9fVkVjck1jUjZXN0dqX3E5Q0JZR1Y4SmlPT2F2bVVVSlR0NDhuUWk0UFlOY3ltamQzMjhESGJ0QVd4QXhQZ2xfSHg0VUpNNHhZcnRzVWZSOHRuYTJpbVByZDZ3?oc=5"
+        },
+        {
           "domain": "cnbc.com",
           "lean": "center",
           "firstSeen": "2026-10-17",
           "lastSeen": "2026-10-17",
           "url": "https://www.cnbc.com/2026/10/17/trump-waives-russia-related-sanctions-tariffs-before-they-take-effect-.html"
-        },
-        {
-          "domain": "mediaite.com",
-          "lean": "left",
-          "firstSeen": "2026-10-17",
-          "lastSeen": "2026-10-17",
-          "url": "https://news.google.com/rss/articles/CBMiwAFBVV95cUxOR1VZTExfYV9vRlJrWWxxOXZJelV5RmhqamVvd0FScmoteUVIUjJ1dTVmV3RHeTNZRkNwWDdIemM1Yi1PQ0paS0tDWmEtbHU5NXVrN0VES2ZKdmpPSDFyUG83SU9TUTcxYmdjNG1pMlpTWW1palRTamMzbTByb2w5RUNDemRDMmtJY2lfSkZCcVc3bS0xa19iTFd0XzBZRVlnUWFhUWQ4UVhuR0ZocGNWVy0waDNSNVN1dXFrYmIxdUI?oc=5"
         },
         {
           "domain": "nbcnews.com",
@@ -518,6 +518,12 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "newsbreak.com",
+          "firstSeen": "2026-10-18",
+          "lastSeen": "2026-10-18",
+          "url": "https://news.google.com/rss/articles/CBMihwNBVV95cUxQUmNFYnU1T3NWZVBJQm92YzlwNFRzd1FCdTQ5T244UTNYQzFLT0xTOE0xZEZDamlGdEhRMUFjRXRsRkowN3pLSEx6eXZ4T2Z4UTBQek15ZjVYYjAwYUtVZVVvS19XZlVQcFF4OFlTRmUwYmd2cS0yZFkyT0lXSXBkclVSaXR3eEhlcXFRV2xKb3l2TTgtT2pMM24wUjVhQU5BZXdvdHJISmc2T2EyMUhXNjRwXzNtZ0QtLVZVMnlQODM2MzFQdkVYNWkwZlBrWHFnTkMzWS1UaEdnXzBzM0RodHZYaUFRajZiWEdjcHFBeE5YRS1jbGZlSXhRUzNTblc2Y29wRW1XdF9OYjJ0VFhJSWNrcXg3bndEeVgyYTZka2liemc3aWZtUFVQVEJOSE43Ykk1X2s4cnRpelg0TVp0bXo2ak12bnZNZFQ2OWRGV20waVMwbDlvR3ZhZEJfQnpWSF9jOU9aVW4tTHFRTm1vS29pbmNZQXhqLVFvVEdzNWp0bU9ZaGs4?oc=5"
+        },
         {
           "domain": "abcnews.com",
           "firstSeen": "2026-10-17",
