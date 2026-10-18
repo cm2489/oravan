@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-18T14:32:19.984Z",
+    "fetched_at": "2026-10-18T16:57:56.019Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-18T14:32:19.984Z"
+        "checked_at": "2026-10-18T16:57:56.019Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-11",
         "week_label": "Most-Viewed Bills - Week of October 11, 2026",
         "entries": 9,
-        "checked_at": "2026-10-18T14:32:19.984Z"
+        "checked_at": "2026-10-18T16:57:56.019Z"
       },
       "leans": {
         "center": {
@@ -607,6 +607,12 @@
     "hr-5631-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "kiowacountypress.net",
+          "firstSeen": "2026-10-18",
+          "lastSeen": "2026-10-18",
+          "url": "https://news.google.com/rss/articles/CBMivAFBVV95cUxQc1NLVWc4eWpHcGtac1pCLUNPYVYtUFU2Y3hHLVpueVVTSWJkVUc2S3BuWWpvZkl5aHRqa1kxQjR4ZGZYT1BldFVzOUFoeFpYZWFzOVllRXpfUDY4R3kxVmRTLVhseVRWODJRS20yMmxLUGNaSmZ5bFhlR0dlQUJXR0lKVDFLalprcG1IMVNTYnJBOEtlTmZrdzlIT3JBVF9IcWh5N214YV9DaUV1Sm1yblVjVXBGanE0enZSaQ?oc=5"
+        },
         {
           "domain": "bigcountrynewsconnection.com",
           "firstSeen": "2026-10-16",
