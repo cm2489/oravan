@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-18T10:57:08.817Z",
+    "fetched_at": "2026-10-18T14:32:19.984Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-18T10:57:08.817Z"
+        "checked_at": "2026-10-18T14:32:19.984Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-11",
         "week_label": "Most-Viewed Bills - Week of October 11, 2026",
         "entries": 9,
-        "checked_at": "2026-10-18T10:57:08.817Z"
+        "checked_at": "2026-10-18T14:32:19.984Z"
       },
       "leans": {
         "center": {
@@ -529,6 +529,12 @@
           "firstSeen": "2026-10-18",
           "lastSeen": "2026-10-18",
           "url": "https://news.google.com/rss/articles/CBMinAFBVV95cUxNN1JFSnZJQldUdXdCVGtqbXJ4NVF5bVB2aHk0YXh3OEhQRXVydk9nTEl2TDk4M0k0NUNIMGZZdTVxUGxieTFnYm1sTVR6elZ6S2dKcnpuWW92aDAwblRBbGtXdFZwbWtvQmNQUW1BaHFTTVNfYUNmRkJOdkZBM3BuR3RqX05xNjRIQkxYLWZ6SG5ZME5ZczNwMTFBXzY?oc=5"
+        },
+        {
+          "domain": "wach.com",
+          "firstSeen": "2026-10-18",
+          "lastSeen": "2026-10-18",
+          "url": "https://news.google.com/rss/articles/CBMipAFBVV95cUxOa0NtV0dJd2VMN0Y3RFdvWVF3TjAyQXlwNzd1VVk2YVhFSV9hWEIwZWRIRkpGazVkNTd3LWxqaFVZZnB6Ml9RY2I1c2x1aFMtNjhPRWhzS3dRSUVZeTVteHZUdk5TUmhnNzVUdW9TTzRubVVXbnNvQkVHay10MC10VmtnaVFCYUl5bm9NWFBkZWVUOFdkZFE3NlFhTEYwbHN6bHRwRQ?oc=5"
         },
         {
           "domain": "abcnews.com",
