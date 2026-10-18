@@ -6,6 +6,7 @@ import { Link } from '@/i18n/navigation';
 import { usePrefs } from '@/lib/local';
 import { shareRepLookup, useSharedRepLookup } from '@/lib/rep-lookup-share';
 import { crossesStateLine, nameWithState } from '@/lib/state-line';
+import { lookupReps } from '@/lib/reps-lookup';
 
 /*
  * THE CALL HUB'S PER-VISITOR HALF (wireframes v2, call-hub.html): who a call
@@ -72,7 +73,7 @@ export function CallHubReach() {
     // State is set only from the lookup's own callbacks, never in the effect
     // body (react-hooks/set-state-in-effect); a lookup for an older ZIP is
     // ignored at render time by comparing `lookup.zip`.
-    fetch(`/api/reps?zip=${zip}`)
+    lookupReps(zip)
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((d: { reps?: HubRep[]; multiDistrict?: boolean; vacancies?: { state: string; district: number }[] }) => {
         if (cancelled) return;

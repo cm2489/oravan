@@ -26,12 +26,18 @@ function normalizeLocale(value: string | undefined): 'en' | 'es' {
 }
 
 /*
- * The rep-lookup embed (S13). `locale` and `zip` are the only inputs a host
- * page's iframe src (built by public/embed.js) ever supplies - both plain
- * query params, both public/non-sensitive (a ZIP code, a language choice),
- * consistent with the rest of the API surface's "never a caller-originating
- * content identifier" posture. Everything else (results, errors, the
- * EN/ES toggle) is component state in RepLookupWidget - see that file.
+ * The rep-lookup embed (S13). `locale` (plus the theme and white-label knobs)
+ * is what a host page's iframe src (built by public/embed.js) supplies.
+ * Everything else (the ZIP, results, errors, the EN/ES toggle) is component
+ * state in RepLookupWidget - see that file.
+ *
+ * NO `?zip=` (2026-10-06). This page used to accept an initial ZIP in its own
+ * address. public/embed.js never sent one and the configurator never built
+ * one; only hand-built iframes could, and every such page load left the
+ * visitor's ZIP in the host's request logs (which keep the path with its
+ * query string). The visitor types the ZIP into the widget, and the widget
+ * POSTs it to /api/reps in the request body. scripts/check-zip-urls.mjs fails
+ * CI if this page starts reading a `zip` param again.
  *
  * S20 (F6): an OPTIONAL `token` param. Absent -> byte-for-byte unchanged
  * (no lookup, no write, nothing new touches the request). Present -> a
@@ -45,7 +51,6 @@ export default async function RepLookupEmbedPage({
 }: {
   searchParams: Promise<{
     locale?: string;
-    zip?: string;
     token?: string;
     accent?: string;
     surface?: string;
@@ -57,10 +62,9 @@ export default async function RepLookupEmbedPage({
     attribution?: string;
   }>;
 }) {
-  const { locale: localeParam, zip, token, accent, surface, ink, mode, radius, font, brandless, attribution } =
+  const { locale: localeParam, token, accent, surface, ink, mode, radius, font, brandless, attribution } =
     await searchParams;
   const locale = normalizeLocale(localeParam);
-  const initialZip = zip && /^\d{5}$/.test(zip) ? zip : null;
 
   if (token) {
     const ip = callerIp(await headers());
@@ -72,7 +76,6 @@ export default async function RepLookupEmbedPage({
       <EmbedThemeStyle theme={resolveEmbedTheme({ accent, surface, ink, mode, radius, font })} />
       <RepLookupWidget
         initialLocale={locale}
-        initialZip={initialZip}
         availablePortraits={mirroredPortraitBioguides()}
         brandless={safeBrandless(brandless)}
         attribution={safeAttribution(attribution)}

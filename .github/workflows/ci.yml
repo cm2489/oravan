@@ -140,6 +140,13 @@ jobs:
         run: |
           node scripts/check-embed-fingerprinting.mjs --self-test
           node scripts/check-embed-fingerprinting.mjs
+      - name: ZIP-out-of-addresses gate (no ZIP in the address of a request to our own routes)
+        # The host's request logs keep each path with its query string; the
+        # ZIP travels in a POST body instead (2026-10-06, lib/reps-lookup.ts).
+        # Same self-test-first convention.
+        run: |
+          node scripts/check-zip-urls.mjs --self-test
+          node scripts/check-zip-urls.mjs
       - name: Client-import gate (no 'use client' module may reach data/)
         # The pre-build half of the client-bundle rule (2026-09-27 audit,
         # card a6): one pure function imported from a corpus-reading module

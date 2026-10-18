@@ -26,6 +26,7 @@ import { CALL_BUTTON } from './call-button';
 import { OfficeHoursNote } from './OfficeHoursNote';
 import { VacantSeatCard } from './VacantSeatCard';
 import { ZipForm } from './ZipForm';
+import { lookupReps } from '@/lib/reps-lookup';
 
 /*
  * THE CALL RAIL — a control panel, not a card.
@@ -636,7 +637,7 @@ export function ActionPanel({
       return;
     }
     setLookup({ status: 'loading' });
-    fetch(`/api/reps?zip=${zip}`)
+    lookupReps(zip)
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((d) => {
         setLookup({
