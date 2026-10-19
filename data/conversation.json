@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-19T07:42:04.736Z",
+    "fetched_at": "2026-10-19T15:32:52.467Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-19T07:42:04.736Z"
+        "checked_at": "2026-10-19T15:32:52.467Z"
       },
       "most_viewed": {
         "status": "ok",
-        "week": "2026-10-11",
-        "week_label": "Most-Viewed Bills - Week of October 11, 2026",
-        "entries": 9,
-        "checked_at": "2026-10-19T07:42:04.736Z"
+        "week": "2026-10-18",
+        "week_label": "Most-Viewed Bills - Week of October 18, 2026",
+        "entries": 7,
+        "checked_at": "2026-10-19T15:32:52.467Z"
       },
       "leans": {
         "center": {
@@ -175,10 +175,10 @@
       ],
       "unratedOutlets7d": [],
       "mostViewed": {
-        "weeksOnList": 10,
+        "weeksOnList": 11,
         "lastRank": 3,
         "lastSeen": "2026-10-19",
-        "lastWeek": "2026-10-11"
+        "lastWeek": "2026-10-18"
       }
     },
     "hr-10780-119": {
@@ -234,10 +234,10 @@
       "outlets7d": [],
       "unratedOutlets7d": [],
       "mostViewed": {
-        "weeksOnList": 2,
-        "lastRank": 4,
+        "weeksOnList": 3,
+        "lastRank": 6,
         "lastSeen": "2026-10-19",
-        "lastWeek": "2026-10-11"
+        "lastWeek": "2026-10-18"
       }
     },
     "hr-1684-119": {
@@ -348,6 +348,18 @@
         "lastWeek": "2026-09-20"
       }
     },
+    "hr-3898-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "legis1.com",
+          "firstSeen": "2026-10-19",
+          "lastSeen": "2026-10-19",
+          "url": "https://news.google.com/rss/articles/CBMiekFVX3lxTE9NWGo4WG41czhVSlhMVXdVbVBQWEhDQllmV3UxVkVySC1lemRnZVJOM3VHRHMzWEFDenNEQ2VLOWdSV3E2NmRVWTBxOWd2Y281d2xQeTJBZEw0d05vNlNkY1gwNHdNRlpobzNEWnBGNktNZFY1MnozQUpn?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-4385-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -419,10 +431,10 @@
       "outlets7d": [],
       "unratedOutlets7d": [],
       "mostViewed": {
-        "weeksOnList": 1,
-        "lastRank": 8,
+        "weeksOnList": 2,
+        "lastRank": 7,
         "lastSeen": "2026-10-19",
-        "lastWeek": "2026-10-11"
+        "lastWeek": "2026-10-18"
       }
     },
     "hr-5284-119": {
@@ -642,7 +654,15 @@
       "mostViewed": null
     },
     "hr-6145-119": {
-      "outlets7d": [],
+      "outlets7d": [
+        {
+          "domain": "politico.com",
+          "lean": "left",
+          "firstSeen": "2026-10-19",
+          "lastSeen": "2026-10-19",
+          "url": "https://www.politico.com/live-updates/2026/10/19/congress/what-were-watching-01125931"
+        }
+      ],
       "unratedOutlets7d": [
         {
           "domain": "michigandaily.com",
@@ -656,6 +676,12 @@
     "hr-6149-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "genocidewatch.com",
+          "firstSeen": "2026-10-19",
+          "lastSeen": "2026-10-19",
+          "url": "https://news.google.com/rss/articles/CBMirwFBVV95cUxQalFkLTdIamJudFRvbWxHd1NjMmRhdzF5S3d6MGd6VU84YTRhVU9CcVdOMVVQa0cyRllkOXMyTW1RYkpHOXFSYU1wME1MNEQ1dEVtY0lyeDVzV2VHWTEtSG44d0p3dDJaVVd2Q3BQSXBXODZ6UkZQZW9IUWo0dmczNjVBQVhzVHQxYzZHNnBQcGFtZENsb043WDU1THp5RVVFWEZ6VkdUeXVWS1BtbUg4?oc=5"
+        },
         {
           "domain": "mwakilishi.com",
           "firstSeen": "2026-10-19",
@@ -693,6 +719,12 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "app.dealroom.co",
+          "firstSeen": "2026-10-19",
+          "lastSeen": "2026-10-19",
+          "url": "https://news.google.com/rss/articles/CBMi3gFBVV95cUxOVmVQUG9mN25fVkF0b2NzQW1IcnhIdVJyR0dyaW5kTTlNM3d5cXN5WW02YkJOMnRYZzZkY0REbm5EejZLS2FlWHd2RG1qdFV4a0wwMHZRWHNvOUhSNEYySnNrQUlJTW03RXJuUFhjRzhQWi1mMFY0YVM4NHdnRUlkbTVuSElFSGpwMVJSZXpoXy1sLTY3RjY4TFhSbmhUaXhkem1oTG1HbnhQcEY3QnB3Q1ZvY1lpSENkWUNQSmZCc29ORnlxalRRTkM0b3BucWUxZTBMLUlMYlpoWWNrN3c?oc=5"
+        },
+        {
           "domain": "interestingengineering.com",
           "firstSeen": "2026-10-17",
           "lastSeen": "2026-10-17",
@@ -705,10 +737,10 @@
       "outlets7d": [],
       "unratedOutlets7d": [],
       "mostViewed": {
-        "weeksOnList": 10,
+        "weeksOnList": 11,
         "lastRank": 1,
         "lastSeen": "2026-10-19",
-        "lastWeek": "2026-10-11"
+        "lastWeek": "2026-10-18"
       }
     },
     "hr-6529-119": {
@@ -996,6 +1028,19 @@
         "lastWeek": "2026-10-04"
       }
     },
+    "hr-9773-119": {
+      "outlets7d": [
+        {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-10-19",
+          "lastSeen": "2026-10-19",
+          "url": "https://www.foxnews.com/politics/trump-takes-border-crackdown-deep-red-state-shock-senate-battle-threatens-gop-stronghold"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hr-979-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1061,10 +1106,10 @@
       "outlets7d": [],
       "unratedOutlets7d": [],
       "mostViewed": {
-        "weeksOnList": 10,
+        "weeksOnList": 11,
         "lastRank": 2,
         "lastSeen": "2026-10-19",
-        "lastWeek": "2026-10-11"
+        "lastWeek": "2026-10-18"
       }
     },
     "s-240-119": {
@@ -1314,10 +1359,10 @@
         }
       ],
       "mostViewed": {
-        "weeksOnList": 5,
-        "lastRank": 5,
+        "weeksOnList": 6,
+        "lastRank": 9,
         "lastSeen": "2026-10-19",
-        "lastWeek": "2026-10-11"
+        "lastWeek": "2026-10-18"
       }
     },
     "s-5025-119": {
@@ -1353,6 +1398,16 @@
         }
       ],
       "mostViewed": null
+    },
+    "s-5653-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [],
+      "mostViewed": {
+        "weeksOnList": 1,
+        "lastRank": 10,
+        "lastSeen": "2026-10-19",
+        "lastWeek": "2026-10-18"
+      }
     },
     "s-60-119": {
       "outlets7d": [
