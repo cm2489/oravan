@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-19T00:33:41.662Z",
+    "fetched_at": "2026-10-19T01:12:42.973Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-19T00:33:41.662Z"
+        "checked_at": "2026-10-19T01:12:42.973Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-11",
         "week_label": "Most-Viewed Bills - Week of October 11, 2026",
         "entries": 9,
-        "checked_at": "2026-10-19T00:33:41.662Z"
+        "checked_at": "2026-10-19T01:12:42.973Z"
       },
       "leans": {
         "center": {
@@ -596,6 +596,12 @@
     "hr-5631-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "rbnenergy.com",
+          "firstSeen": "2026-10-19",
+          "lastSeen": "2026-10-19",
+          "url": "https://news.google.com/rss/articles/CBMirwFBVV95cUxOYzlnaGNfTVpMN0ptVGJ1OEs2dkVGS1ltczVGSFBwTDJXTGpzeUxKNWFQMzh0ZFBYSG5UUHVpdlYtR3pJdmczWjVWUEFpS3QwZjZ1N3lzUzlXNWRObWUyQlVXUDZ0bU1xSjAzY2JtMTdzaEhKalJTcV9tNTdnSWwxc25xWW5rQXhKc01uWlB4RUw4RGd3eDhtb2UxbG1qSm1SamlKOHpSUHg4d0NyNmVz?oc=5"
+        },
         {
           "domain": "kiowacountypress.net",
           "firstSeen": "2026-10-18",
