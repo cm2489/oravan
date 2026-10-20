@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-20T18:15:52.213Z",
+    "fetched_at": "2026-10-20T20:32:56.515Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-20T18:15:52.213Z"
+        "checked_at": "2026-10-20T20:32:56.515Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-18",
         "week_label": "Most-Viewed Bills - Week of October 18, 2026",
         "entries": 7,
-        "checked_at": "2026-10-20T18:15:52.213Z"
+        "checked_at": "2026-10-20T20:32:56.515Z"
       },
       "leans": {
         "center": {
@@ -270,6 +270,18 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-2045-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "hearingreview.com",
+          "firstSeen": "2026-10-20",
+          "lastSeen": "2026-10-20",
+          "url": "https://news.google.com/rss/articles/CBMiuAFBVV95cUxNNVdSczBfYmV4NlJ2TXdYd2YxcVJVN0pLMFQwckI5N3haVUtLOG5tOTZ0NWNmcG1kMkQ4QzI1MHhRWjIxMmN5XzBmRkRhTnQtYWRwQkJqRlluX00xTUVKQUlBSVNWRzc5ZWhnbW1UTnMyR0tSM2xfcmV0QUx4NUhKOEN2Y21GdE1nQU1nN0VQaDA1LURqLXBxV3JRRGRBNy1hdE1pcndLUC1wN0w3bmRHNkthUjJLUjBB?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "hr-22-119": {
@@ -1066,6 +1078,12 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "gilaherald.com",
+          "firstSeen": "2026-10-20",
+          "lastSeen": "2026-10-20",
+          "url": "https://news.google.com/rss/articles/CBMickFVX3lxTFA3TzB3V3UtUEhneDZZWWZlVEk3MkZjMFR5NzhSeUtyZEVtdlBzanZpb1VnWXhLUG1UREhNNVBZVms2dmhTek5JX2I4bUM1UTVQMVYyNVJieHBuWFI0ZzNEekRUdFdBMkI1ZmNVUkxBMHNvQQ?oc=5"
+        },
+        {
           "domain": "arizonadailyindependent.com",
           "firstSeen": "2026-10-19",
           "lastSeen": "2026-10-19",
@@ -1172,6 +1190,24 @@
         "lastSeen": "2026-10-12",
         "lastWeek": "2026-10-04"
       }
+    },
+    "s-3456-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "roundtable.io",
+          "firstSeen": "2026-10-20",
+          "lastSeen": "2026-10-20",
+          "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxQQUJJQ0QzeHZQWThBZnBpekxNY1B0UUR6dTRkcGhyV2pTa0wtTXlaeno5dDRPaTR5dmJFd1ZYajF5U2RyaUcyTnl4cU9FSG1MU1lQaDdBRExqbEFUZkhMbm9tdnFFUENORUNreTdXWFNwdG8xUWNDb2RjeHRuYndlYURYdWJsbk1j?oc=5"
+        },
+        {
+          "domain": "thestreet.com",
+          "firstSeen": "2026-10-20",
+          "lastSeen": "2026-10-20",
+          "url": "https://news.google.com/rss/articles/CBMimwFBVV95cUxPYlVLNVZfRE90ZkxoODVxbXZxVEp6U2dLcXY0Vjl5amNBbU9tV1pEUzc5TUNKYjdzWkt6TzJtRDV6TFBubkludU1sX3J5Z19IcmdRTm5LSUZpZFdPblhkNHRYNEI5WFMyVDNaaG9DSXhqRll4eUc1QlBUNE84eUdFeHA4dmJmamNLMnRkaVNLSTZfQWprQjc2YV91NA?oc=5"
+        }
+      ],
+      "mostViewed": null
     },
     "s-3658-119": {
       "outlets7d": [],
