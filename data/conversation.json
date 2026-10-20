@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-20T16:55:20.861Z",
+    "fetched_at": "2026-10-20T18:15:52.213Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-20T16:55:20.861Z"
+        "checked_at": "2026-10-20T18:15:52.213Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-18",
         "week_label": "Most-Viewed Bills - Week of October 18, 2026",
         "entries": 7,
-        "checked_at": "2026-10-20T16:55:20.861Z"
+        "checked_at": "2026-10-20T18:15:52.213Z"
       },
       "leans": {
         "center": {
@@ -180,6 +180,18 @@
         "lastSeen": "2026-10-20",
         "lastWeek": "2026-10-18"
       }
+    },
+    "hr-10766-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "devdiscourse.com",
+          "firstSeen": "2026-10-20",
+          "lastSeen": "2026-10-20",
+          "url": "https://news.google.com/rss/articles/CBMiwgFBVV95cUxNaTJaTHhXckFSU1lBajFlY1FveVl1clhpY0d6T2hVVndjaC1nVms2ZjlUdW1rdGpvSVFBbzhqdndqQ0laWlBWMG5QSnZ1aExyNktJRXVReDFiX3pDV010RXp3WWVYZzVGVFVQbmltQXd1SnotMVlDcHhmMmlVTnh0aVZJcWNSM1cyMzZDR2NNZzJINTFkM0R0NmNobUlYbXNiQ1pPNU9WVGVxcHlzenZvZDdSMmFaOGl2Ynd3VGFHUzZ4Z9IBxwFBVV95cUxOeFdyUzBwVnNQejZIQmRxMW9UdFlkRkJOaGpWbnhCdkJaQnBHVkpHSzNyR1dmWnVyOXE3VzFvUHRNU2pzOEt0V2s3ZFdvLWwyRFVZWlJaaENGNjR3ZUR1RFh6VUtQS1pBTDFpSHZlenpMby04STBiVmNXSi1mY0otTC1mdjBXZzhMeGxnQThidl9oSHlHaFVmMFV4NTVBNDNJWGU3M2ZMdV9raEp5VzFHbldRYmxDT0FlLUpscFE5am1lYmZscUk4?oc=5"
+        }
+      ],
+      "mostViewed": null
     },
     "hr-10780-119": {
       "outlets7d": [],
