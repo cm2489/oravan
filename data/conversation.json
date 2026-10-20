@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-20T01:27:20.099Z",
+    "fetched_at": "2026-10-20T05:58:17.090Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-20T01:27:20.099Z"
+        "checked_at": "2026-10-20T05:58:17.090Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-18",
         "week_label": "Most-Viewed Bills - Week of October 18, 2026",
         "entries": 7,
-        "checked_at": "2026-10-20T01:27:20.099Z"
+        "checked_at": "2026-10-20T05:58:17.090Z"
       },
       "leans": {
         "center": {
@@ -232,7 +232,14 @@
     },
     "hr-139-119": {
       "outlets7d": [],
-      "unratedOutlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "northjersey.com",
+          "firstSeen": "2026-10-20",
+          "lastSeen": "2026-10-20",
+          "url": "https://news.google.com/rss/articles/CBMiuAFBVV95cUxPZ0pWNVlQVEt5Y0pUM1BkR2pJT3g0c1NjbGhsS1lLLXBMNFhIc3NBb1hldERQSmNXYzZEU2Q5MDhNNUVCVFhSRTBBenliaG9MSHZsSDdlNGxRNlBDV3RFeXRTTXRTaXdtandSdmVMMmJnZ0FYaGlwakpPSWdCaF9mWUotT2xpODAwRS1nb3pxQllmcW5jcExVV0xPY05zR05fSWpGaUUwVVVKQThlNlZrRWJEMkxfVVJ3?oc=5"
+        }
+      ],
       "mostViewed": {
         "weeksOnList": 3,
         "lastRank": 6,
@@ -1008,6 +1015,18 @@
       ],
       "mostViewed": null
     },
+    "hr-9174-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "digitaltoday.co.kr",
+          "firstSeen": "2026-10-20",
+          "lastSeen": "2026-10-20",
+          "url": "https://news.google.com/rss/articles/CBMiswFBVV95cUxPSS1COWt2WnpfNXozSTZDc2ZjWFhXdjM0NnZUbXJ3Ul83dzlyTHFVM2dCNnFSWU8tRnFyakdfbS1hcVJmMXdvMXR4Y0V4SklzUXFaS3JKSlZFS1pmSzJaN1VhTmNxR0oxZkg1TFRqYXhlLVNwU2JlZ3VwTWlqOTJUcFpWMkNzQ2R2eFRQVjZRV01nZXhSN1d2Tlk2NS1QbGt0cGZnYjNSSHFrSFR1UHEwU2J6RQ?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-9340-119": {
       "outlets7d": [],
       "unratedOutlets7d": [],
@@ -1169,6 +1188,12 @@
     "s-4338-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "lawcommentary.com",
+          "firstSeen": "2026-10-20",
+          "lastSeen": "2026-10-20",
+          "url": "https://news.google.com/rss/articles/CBMikwFBVV95cUxPUGlHQWRGb0NXZ3JCM09EbEtodjl2Vk1MakVhY1ExT0x0Z3RRYjUyX3NDNk5XMlpHc3hDWU84Y1E3M2Vwa0JSaHJfalJFWnlJQnN2Um82Nko1a1pHelQ0WExWNWtYQ2NYS09DWElNdEJpcjBBWE5uQUNBb3l5UU83MTk5STRjWmt1MmhGTnVaTUNiOG8?oc=5"
+        },
         {
           "domain": "okmagazine.com",
           "firstSeen": "2026-10-17",
