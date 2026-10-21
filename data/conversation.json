@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-21T15:12:16.076Z",
+    "fetched_at": "2026-10-21T18:24:09.266Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-21T15:12:16.076Z"
+        "checked_at": "2026-10-21T18:24:09.266Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-18",
         "week_label": "Most-Viewed Bills - Week of October 18, 2026",
         "entries": 7,
-        "checked_at": "2026-10-21T15:12:16.076Z"
+        "checked_at": "2026-10-21T18:24:09.266Z"
       },
       "leans": {
         "center": {
@@ -820,6 +820,19 @@
           "url": "https://news.google.com/rss/articles/CBMijAFBVV95cUxQeFUxU0xueEVpWDQ5dTRpWVhzUkNYWTdhbE42dHo0aUdFOXJqOTlzcngtZVBfUHlxSTZ3aVBPYlJnVzFEMVlVWEdqRjZIdy1ZZFNnMlRaN3AzMVlmSlhNVXYtdHNkdzFCTTBzbXMzVkxJbHRGZ2lETzRtZEpIbzNVVzBfVFVnZG1hRzlCaw?oc=5"
         }
       ],
+      "mostViewed": null
+    },
+    "hr-8313-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-10-21",
+          "lastSeen": "2026-10-21",
+          "url": "https://thehill.com/homenews/senate/6163408-moreno-to-expand-trump-accounts/"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "hr-8469-119": {
