@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-22T04:35:07.366Z",
+    "fetched_at": "2026-10-22T10:05:45.997Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-22T04:35:07.366Z"
+        "checked_at": "2026-10-22T10:05:45.997Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-18",
         "week_label": "Most-Viewed Bills - Week of October 18, 2026",
         "entries": 7,
-        "checked_at": "2026-10-22T04:35:07.366Z"
+        "checked_at": "2026-10-22T10:05:45.997Z"
       },
       "leans": {
         "center": {
@@ -181,6 +181,19 @@
       ],
       "mostViewed": null
     },
+    "hr-10355-119": {
+      "outlets7d": [
+        {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-10-22",
+          "lastSeen": "2026-10-22",
+          "url": "https://www.foxnews.com/politics/trump-pushback-biden-disaster-gender-surprise-5-key-moments-from-kansas-senate-debate"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hr-10766-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -322,6 +335,18 @@
       ],
       "mostViewed": null
     },
+    "hr-4099-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "indiasnews.net",
+          "firstSeen": "2026-10-22",
+          "lastSeen": "2026-10-22",
+          "url": "https://news.google.com/rss/articles/CBMixgFBVV95cUxQMHdZcDJaUUw0TUlGWE1lREI5RWhELXBnQ2NpZ3ZaMnlfZlg1TjlkSGhIUmNPS0Z1MTZBRUZyOUNVX0ptRUJ1aG1mLXVfWlF3LXA5SUlUMjBHSWhscGxNSUZ5ME01UXlIVm82U01vckwybFBhdW9QTkhVT0V6ZE1LdFNPZkNtRXhzWXh0cmpnTWxvMmxIUVBZalJ1N2lQNF9zQlNLTVk2X0g5dmVuRFowMFJZNEI2ZXVFSU9WNFRoNnpNbFlwREE?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-4385-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -342,6 +367,13 @@
           "firstSeen": "2026-10-22",
           "lastSeen": "2026-10-22",
           "url": "https://www.foxnews.com/politics/el-sayed-erupts-gop-rival-over-muslim-brotherhood-accusations-fiery-senate-debate"
+        },
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-10-22",
+          "lastSeen": "2026-10-22",
+          "url": "https://thehill.com/homenews/campaign/6164202-abdul-el-sayed-michigan-senate-republican-attacks/"
         }
       ],
       "unratedOutlets7d": [],
@@ -821,7 +853,14 @@
           "url": "https://thehill.com/homenews/senate/6163408-moreno-to-expand-trump-accounts/"
         }
       ],
-      "unratedOutlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "justthenews.com",
+          "firstSeen": "2026-10-22",
+          "lastSeen": "2026-10-22",
+          "url": "https://news.google.com/rss/articles/CBMiwAFBVV95cUxNUzFNVzRzNWYwZDFMeXB6RDY4NlRUNXlmcU5nR2Fta1BzUVBRYVlHc192SGh4WXBZenJ0dHptODJBS3RGRjMtZG9sSkFfaFROdE1WLUJmR0V3WWZHRzRhTUJWRWxBVUc1SUJWNGRRTllZUzR0WDhvem0zNnJaWnpyVUlJemFIcm94LVEyaGJsa3VIdVNHbFVlMkpsUTBrN0I2cnJycXZyOHE3MUFBWVN2SDY5QXJidFdNcEIxVy0yRmk?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "hr-8469-119": {
@@ -913,6 +952,18 @@
       ],
       "mostViewed": null
     },
+    "hr-9010-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "newsinfo.inquirer.net",
+          "firstSeen": "2026-10-22",
+          "lastSeen": "2026-10-22",
+          "url": "https://news.google.com/rss/articles/CBMisgFBVV95cUxQX1NkX04xQm1UOGFRc3lJM1l3UFhHUE40YmY2VjdvU0dmYjkzN1JoT1VnVC02R29ZTUJUMk5CVDk4LWhZTEwxV0RJMkNXLVpUbUFkTC1WU055eERwdFNsa2NDVTdydFdROFhQZ3lVeEVXTWQ3R1l2Y2daZTFXYlEwa3RkeGMwTDNDdzZGZVJOSHdtd0VodENsZWJwZlZxcG5MTkxSMlRNZ0t3Q3Y0czEtZFZ30gG3AUFVX3lxTFBNUUhVOHItaEhaWjFMcnAycHM5YU1wMFBYNUhmc3Q1WjFwVG1RRXRENUU2c2tyTGFfZ2FvYUJ5OVRjVzZfV0FOejJvTEU1R0xfak8tQXU1d29iX1Q4ZkUtMXJrcjZaRmN1UWI1TFJKLWhNeGVyTDcyUnJCMGc0NXVPcW9ZcGRiZTM1XzFrX0xnUGdYOXNXRXliYXZpZzNsWVZjaG5PR1ByTmdxMUZtX1QzWk4yYkhQMA?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-9089-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -933,6 +984,18 @@
           "firstSeen": "2026-10-20",
           "lastSeen": "2026-10-20",
           "url": "https://news.google.com/rss/articles/CBMiswFBVV95cUxPSS1COWt2WnpfNXozSTZDc2ZjWFhXdjM0NnZUbXJ3Ul83dzlyTHFVM2dCNnFSWU8tRnFyakdfbS1hcVJmMXdvMXR4Y0V4SklzUXFaS3JKSlZFS1pmSzJaN1VhTmNxR0oxZkg1TFRqYXhlLVNwU2JlZ3VwTWlqOTJUcFpWMkNzQ2R2eFRQVjZRV01nZXhSN1d2Tlk2NS1QbGt0cGZnYjNSSHFrSFR1UHEwU2J6RQ?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-9228-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "keyt.com",
+          "firstSeen": "2026-10-22",
+          "lastSeen": "2026-10-22",
+          "url": "https://news.google.com/rss/articles/CBMi0wFBVV95cUxNd1FtaUszUkFLQ2gwUlFvRWtxVHZhQ2psV0ZLOXhQSXBfWk12WjluUFI2NnZEY3l4MmxxN3VZRTJMNUc3c2hoSERHLURoZ3E4U0VNZjNNNFNfNHVCYjZySnpiQ2ZMSC1EUl9tMUxHcVRsUVV4TFROYVFMQURKRVlHTEczSGVyZmwwOTFaODhXNmJJWXZ1WGl6WkFiU0JKYVNJY3l2Vm13dHVZbmlybUdHM0dZX1BycDVKOWxaVmVWUGE2SGxiazlKWUFYQ0RwMGZqeVVz?oc=5"
         }
       ],
       "mostViewed": null
@@ -1157,6 +1220,18 @@
           "firstSeen": "2026-10-16",
           "lastSeen": "2026-10-16",
           "url": "https://news.google.com/rss/articles/CBMinAFBVV95cUxNSFpYYzBLMks3VDhxVDFDUU4wYjdxMEdkSzJDa0xROGlqVFBwb2pSalFkZ0pONkwzS19aRklBOFFOOXBQUVM1QThYT1VyRXF3ZjFHOHI5aGxYRE9IZDdZLWxxTTJDS25MZFhrZDlVX2tYdWYtUE5YdVB6NC1uQnF4eFN5ekM5YjZmdDg5NFVCWGRiQXNWbGFtcmtocmY?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "s-4443-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "rollcall.com",
+          "firstSeen": "2026-10-22",
+          "lastSeen": "2026-10-22",
+          "url": "https://rollcall.com/2026/10/22/defense-production-act-funds-steered-to-gop-backed-energy-projects/"
         }
       ],
       "mostViewed": null
