@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-22T18:11:07.590Z",
+    "fetched_at": "2026-10-22T19:08:12.379Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-22T18:11:07.590Z"
+        "checked_at": "2026-10-22T19:08:12.379Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-18",
         "week_label": "Most-Viewed Bills - Week of October 18, 2026",
         "entries": 7,
-        "checked_at": "2026-10-22T18:11:07.590Z"
+        "checked_at": "2026-10-22T19:08:12.379Z"
       },
       "leans": {
         "center": {
@@ -314,6 +314,12 @@
     "hr-3633-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "theblock.co",
+          "firstSeen": "2026-10-22",
+          "lastSeen": "2026-10-22",
+          "url": "https://news.google.com/rss/articles/CBMixAFBVV95cUxQV1JPQ1JsMGc3UllvQzkxTkhWRDZtMWxKeTcwdGo4Wm5DT29FRnlIWHZ2NnVtMjBhb0tiSi1FdFNzeWp3ZUktQU5SQWMzWHo5M2NRZjIzbXBuUkZ5ek40amE1eklQZ2dQSXpzZ0loajJIV1lBMWlTY1VxYjQ1VkQwelMwRTZObGpid1VxcllwSkpDcW1MekhHbllrZm5ScVVzdTN1NEpSQ2xVZkFUaTNJRHowei1yRWRUVlVEdmMzenhwRGls?oc=5"
+        },
         {
           "domain": "coinmarketcap.com",
           "firstSeen": "2026-10-19",
@@ -1505,6 +1511,18 @@
           "firstSeen": "2026-10-15",
           "lastSeen": "2026-10-15",
           "url": "https://news.google.com/rss/articles/CBMiwAFBVV95cUxOUW94cXpHSzNQcFpaaUVELXl6YlljaURjb2VVRW5SUmZNMnJ1MUxtVFFVSVpDQUlFV0ZGNnhTbnBVcjRVTDBUUlZhVEJDVzRhSHdmdkxwdFRRdHB6OWFEV0s0bF9RanRWNlBsdUU4Y3ZnVmM4bDdjdnQzaE9vc1lHd1ZkLVVweEZrREFFN00yRWxFWXJQWDNkSXU2R1BZM0xMNnluOEVJYndSSFJHRGNWSGt4d0Vlb1NkWXJBcXZUcmY?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "s-909-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "solarbuildermag.com",
+          "firstSeen": "2026-10-22",
+          "lastSeen": "2026-10-22",
+          "url": "https://news.google.com/rss/articles/CBMimgFBVV95cUxPeHN0cU5VVTlYbTVmdWRuZUFVY3ZEeEJHVW5qZ2pzUUpzeS03RGhSMERqalM2azZsNkhIcktoNFlZYy1qaXEyUE5aYWI1TVp5aHJaMEs5cWU4cFdFMl9xNFNxdVB1SW1EblRZX3h4YnZmQzAxYTdYOHRPZkc5TzlOUVBTYWZGcjhmSzBxS0lOc1M3X1U2LVdsVHB3?oc=5"
         }
       ],
       "mostViewed": null
