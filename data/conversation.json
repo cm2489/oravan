@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-22T19:08:12.379Z",
+    "fetched_at": "2026-10-22T20:01:43.836Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -9,15 +9,15 @@
       "press": {
         "status": "ok",
         "feeds_total": 11,
-        "feeds_silent": 0,
-        "checked_at": "2026-10-22T19:08:12.379Z"
+        "feeds_silent": 1,
+        "checked_at": "2026-10-22T20:01:43.836Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-18",
         "week_label": "Most-Viewed Bills - Week of October 18, 2026",
         "entries": 7,
-        "checked_at": "2026-10-22T19:08:12.379Z"
+        "checked_at": "2026-10-22T20:01:43.836Z"
       },
       "leans": {
         "center": {
@@ -640,6 +640,12 @@
     "hr-5631-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "subscriber.politicopro.com",
+          "firstSeen": "2026-10-22",
+          "lastSeen": "2026-10-22",
+          "url": "https://news.google.com/rss/articles/CBMixwFBVV95cUxQVEljYXdGSml2UHp1MDNKLW5kUm4zcEVZMllwUGY5aGNBY0tkMTZQOE93Q0F3RkRDbFBLd2djSUlwOEJQclNLak9rd0xsd1ktYXFMOXctQXFiQVRLVFFLY3R4SVgydjBhVmszdEtVbzBfSGNBSG43Qk5VLW14RWlyQmVlOE5PalRERnEtcTgwcnoxWDcwY3FZLUsyNHlMbVFzSVhIb2xjUVpOeDZDTVRYZmc5cGFxaTFUcjFBclpZR25sUHBucE5j?oc=5"
+        },
         {
           "domain": "rbnenergy.com",
           "firstSeen": "2026-10-19",
