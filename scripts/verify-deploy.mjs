@@ -53,10 +53,14 @@ if (!EXPECT_SHA) {
 // by 10-22, when three deploys that did land ran past the old 12-min deadline
 // and painted their runs red (newsdesk 10-21 15:11Z, 10-22 18:10Z and 19:07Z).
 // 20 min leaves room for the corpus to keep growing; a dropped deploy still
-// reds the run, just 8 minutes later.
+// reds the run, just 8 minutes later. So the longer deadline cannot hide a
+// slowing build, every pass prints how long it waited, and a pass past the
+// old 12 min prints a ::warning:: as well.
 const TIMEOUT_MS = 20 * 60 * 1000;
+const SLOW_MS = 12 * 60 * 1000;
+const startedAt = Date.now();
 const INTERVAL_MS = 20_000;
-const deadline = Date.now() + TIMEOUT_MS;
+const deadline = startedAt + TIMEOUT_MS;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 function buildIdOf(html) {
@@ -86,11 +90,18 @@ while (Date.now() < deadline) {
     if (res.ok) {
       lastSeen = buildIdOf(await res.text());
       if (verified(lastSeen)) {
+        const waited = Date.now() - startedAt;
+        const after = `after ${Math.floor(waited / 60000)}m${String(Math.floor((waited % 60000) / 1000)).padStart(2, '0')}s`;
         console.log(
           lastSeen === EXPECT_SHA
-            ? `production is serving build ${EXPECT_SHA} — deploy verified`
-            : `production is serving build ${lastSeen}, which descends from ${EXPECT_SHA} — deploy verified`
+            ? `production is serving build ${EXPECT_SHA} — deploy verified ${after}`
+            : `production is serving build ${lastSeen}, which descends from ${EXPECT_SHA} — deploy verified ${after}`
         );
+        if (waited > SLOW_MS) {
+          console.log(
+            `::warning::The deploy landed, but only ${after}, past the ${SLOW_MS / 60000}-min mark — production builds are slowing; check the Vercel build durations.`
+          );
+        }
         process.exit(0);
       }
       console.log(`production build is ${lastSeen ?? 'unknown'}, waiting for ${EXPECT_SHA}…`);
