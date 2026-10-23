@@ -49,7 +49,12 @@ if (!EXPECT_SHA) {
   process.exit(1);
 }
 
-const TIMEOUT_MS = 12 * 60 * 1000; // Vercel builds of this site take a few minutes
+// Vercel builds of this site took about 7 min in early October and about 10
+// by 10-22, when three deploys that did land ran past the old 12-min deadline
+// and painted their runs red (newsdesk 10-21 15:11Z, 10-22 18:10Z and 19:07Z).
+// 20 min leaves room for the corpus to keep growing; a dropped deploy still
+// reds the run, just 8 minutes later.
+const TIMEOUT_MS = 20 * 60 * 1000;
 const INTERVAL_MS = 20_000;
 const deadline = Date.now() + TIMEOUT_MS;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));

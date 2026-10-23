@@ -32,7 +32,7 @@
  * serves the new build could point that crawl at the OLD page and spend the
  * signal. So the step runs only after
  * scripts/verify-deploy.mjs has seen production serve this exact SHA (its
- * 12-minute poll is the wait). If that check fails or times out, the step is
+ * 20-minute poll is the wait). If that check fails or times out, the step is
  * skipped and nothing is pinged for that commit — the pages stay in
  * sitemap.xml, and their next change pings them. No fixed sleep anywhere.
  *
