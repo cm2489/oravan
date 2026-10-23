@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-23T04:40:25.226Z",
+    "fetched_at": "2026-10-23T14:59:59.162Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-23T04:40:25.226Z"
+        "checked_at": "2026-10-23T14:59:59.162Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-18",
         "week_label": "Most-Viewed Bills - Week of October 18, 2026",
         "entries": 7,
-        "checked_at": "2026-10-23T04:40:25.226Z"
+        "checked_at": "2026-10-23T14:59:59.162Z"
       },
       "leans": {
         "center": {
@@ -279,9 +279,27 @@
         "lastWeek": "2026-10-11"
       }
     },
+    "hr-3474-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "legis1.com",
+          "firstSeen": "2026-10-23",
+          "lastSeen": "2026-10-23",
+          "url": "https://news.google.com/rss/articles/CBMiekFVX3lxTE1iVWV0eEJ0N2lUdFpHNnJKSVRaQUY5X3ZnWVRZWmh6Mm9qelJiWHlwcGtXWEN3blUwb2F5Vk1uQjNXZDFRUFFGYWdfN1NxMzFiSHgwc1VZZGxQdzRBdEZpckExSFBxOGNfUWhaWFdfVkJ3UWNnamdaVjNn?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-3633-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "cryptorank.io",
+          "firstSeen": "2026-10-23",
+          "lastSeen": "2026-10-23",
+          "url": "https://news.google.com/rss/articles/CBMigwFBVV95cUxQdU1NNnRDQjdnR2xQNzZIQktBUGZCSHQ5X21JYk1nMjZBaDhkaFdueEtfcC1BZU9GVWlxWTZweGZGRDdHeXMxc295VjY4VkFtRHlmSEZzSXk4RFlCYl9JYlRRcUxlTkppa0tsTlhQVDdzMHV2ZTRhQXplMW0tcUdVWDNJYw?oc=5"
+        },
         {
           "domain": "theblock.co",
           "firstSeen": "2026-10-22",
@@ -715,6 +733,19 @@
       ],
       "mostViewed": null
     },
+    "hr-6771-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-10-23",
+          "lastSeen": "2026-10-23",
+          "url": "https://thehill.com/homenews/senate/6166745-gen-z-housing-affordability/"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hr-6791-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -866,6 +897,18 @@
       ],
       "mostViewed": null
     },
+    "hr-8076-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "thelines.com",
+          "firstSeen": "2026-10-23",
+          "lastSeen": "2026-10-23",
+          "url": "https://news.google.com/rss/articles/CBMiwwFBVV95cUxQdWUxWmJSRU85ZFM0NGpkUFpSTjh4aGlOU3JfdXZPZEV5Q0xpZzFWbVRUNkF4aFc2YUpUUEJIZHlGUktWNFJVckUxUkxJNVU0R0NCWldDUWRtVW9YZ1Mza2tjUGFRSU9kQklMR1ZnX2dSYUprQ3R3cWt2MnhsR1o4WXJYQm5YV1RPRm1pMlEzVnRQS0JZSEQ3VDdFZ3RuT1BnamhFRUNJMFctSG1rLUx0d3JEU09CYm5Na1VYRm5NQktLRnc?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-8313-119": {
       "outlets7d": [
         {
@@ -916,6 +959,12 @@
           "firstSeen": "2026-10-23",
           "lastSeen": "2026-10-23",
           "url": "https://news.google.com/rss/articles/CBMifkFVX3lxTE5YN2d2ZjhEazBSWXY3NE1wcnYxQXlNQWoxazI0WFExUlZmRXlYTElXS1c2YUhkM2pjbVJjazkzZUpvVWM3dG5jR2czZGVIend3YVVuakhabXY0bmgtcDl4RXFnQlh5SjlLUVM3aTBqQ09ib0I5YlYyM3ViN0ZGQQ?oc=5"
+        },
+        {
+          "domain": "pcworld.com",
+          "firstSeen": "2026-10-23",
+          "lastSeen": "2026-10-23",
+          "url": "https://news.google.com/rss/articles/CBMiqgFBVV95cUxQOTNrNzJlbGVTZ2syRGNDeGR3dHBOTzdtSnVmY1hrWHN1WVNtUjdrVnR6VUo4RmtxU3BUN0poVHYxMWVRRGRLXzlBYkpVaHZscHY1RWo0OVVZRW9EUVZvVzBwVkhmSG9yMjNMSXRjU3lCaG1ROTNDLTdaOGtrcFMwQkpkRXZydEEzNmZ4dF9LVzJwLXhYQlNaYXgwVTAtNEpTYVlxOWczaWxodw?oc=5"
         },
         {
           "domain": "analyticsinsight.net",
@@ -1066,6 +1115,12 @@
     "s-1547-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "biologicaldiversity.org",
+          "firstSeen": "2026-10-23",
+          "lastSeen": "2026-10-23",
+          "url": "https://news.google.com/rss/articles/CBMi1wFBVV95cUxNODQwQWhpNmpPc29PRmRYZUlVQ0lnMF83TjdUX3FieFU3bGxvVVFyNTA5WlRSTzFydkhWUEtzNWEwaEYzQmRVMFU3VklWMUNhWUZSaWhDNGY0UTE3ZjVKZWYxZjF0eExEc2h0SnQtb2dkRU9hV21xMElTX1F0aE85NWZOekF5eFB6dExWSjlqYjU4NlhoTHlQNDlMakotWlRpU3JJa2hqYXVYcFlaSnM3R1Z6MFZlQzR0bDJfaU5LV2E1RHptMy1jSm9raWo4ZDF1OEZCQmFHdw?oc=5"
+        },
         {
           "domain": "blackchronicle.com",
           "firstSeen": "2026-10-22",
@@ -1256,6 +1311,13 @@
     "s-4602-119": {
       "outlets7d": [
         {
+          "domain": "politico.com",
+          "lean": "left",
+          "firstSeen": "2026-10-23",
+          "lastSeen": "2026-10-23",
+          "url": "https://www.politico.com/live-updates/2026/10/22/congress/senate-dems-big-haul-01132834"
+        },
+        {
           "domain": "cnbc.com",
           "lean": "center",
           "firstSeen": "2026-10-16",
@@ -1264,6 +1326,18 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "s-4662-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "thecentersquare.com",
+          "firstSeen": "2026-10-23",
+          "lastSeen": "2026-10-23",
+          "url": "https://news.google.com/rss/articles/CBMilwFBVV95cUxNYlQxUFBzdzZJeWdWcmRIc2NadFRtZ000Q0FqbWpNOUpDLWFHX2R5SU94N3hzSG1HbjE3Ynl2NlpST0RGWFJNOUQ0N05hLWVIUWkyUkFFbWVyaktaczg4LTludkM4OEFOWUdjU2hSZG1LSVM5WUlfb2ZTdTJHLW4wNGlCQ01hQm9rYjdveXhBQldsNGtjTFBR0gGcAUFVX3lxTE9EenFuWXZrMlROT3ZPd3hkR1dLVm1qdWh1eUlsVmVTaDcxSHEtWXdNMEpXaUttdGdyTzQ4TkxpS0hfU29oR3pZVWtSX2RsaUp0YklqVEdxVXB1bENXT0pXQ3h3a1JCcjZQX0tDNWtILWFPTFdZelVpdVpzMVN6TzBPSFRfRnYyYUpVYkV2SndQY3VYbS16Q3FIbzRuYw?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "s-4668-119": {
