@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-23T14:59:59.162Z",
+    "fetched_at": "2026-10-23T18:07:13.854Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-23T14:59:59.162Z"
+        "checked_at": "2026-10-23T18:07:13.854Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-18",
         "week_label": "Most-Viewed Bills - Week of October 18, 2026",
         "entries": 7,
-        "checked_at": "2026-10-23T14:59:59.162Z"
+        "checked_at": "2026-10-23T18:07:13.854Z"
       },
       "leans": {
         "center": {
@@ -385,6 +385,18 @@
           "firstSeen": "2026-10-16",
           "lastSeen": "2026-10-16",
           "url": "https://news.google.com/rss/articles/CBMiogFBVV95cUxOaWJuRklNenhGS01GVTBCelBXN19hQzVqUTNwZWxJcnVQcTVDdHJ0Z1VjREZCVGRJWDJCYnVPd3BIVTJla2daRExzWU1KZUxfUzFlNzVhSkJjblY4eXRkTXJHRlUzbFpKSkFXdFNZZjRyMXBnMTJGc3lOb1p5LVE5UDA3MDFGY000TkhDRXk2UjhrakJtQ1BxZVBOcFpFMEMwMEE?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-478-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "legis1.com",
+          "firstSeen": "2026-10-23",
+          "lastSeen": "2026-10-23",
+          "url": "https://news.google.com/rss/articles/CBMie0FVX3lxTE1tZ0tJdEd6dXdkSUpFeWZJWTJWMEhBbjZvSHRmSnpDckZyaU9SNFZPSkNiNGlwRlYzd3dPc1E5dUo4ZEtTWGFhMlU1REh3S2k2b2tqSk41aEZVMWYxZEVEMU5mY3U4a2lkWkpoQkVjM3NyRWh0RmZEMnFJYw?oc=5"
         }
       ],
       "mostViewed": null
@@ -1112,6 +1124,18 @@
       ],
       "mostViewed": null
     },
+    "s-1498-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "tcu360.com",
+          "firstSeen": "2026-10-23",
+          "lastSeen": "2026-10-23",
+          "url": "https://news.google.com/rss/articles/CBMipgFBVV95cUxPMnpsalcwMEx2QXJtcnNfMHM1cG5iUGQyS3NaWjJ5dUdVUVhSVW5JQUxYd1VxTldwV1MwZTFuYkFUVVI0RjhUdExPcDVEelNUUTJWN3U3VkhGZ19HZmVVNkNDaVo0dGw0QjR4cWtFZXlEMlAzaGM0akZqTkpZU2VMcUZPeHBPeUR2d1N1YjhGX0FRTGloY09EMXllX0Qwd0E4aHNtYzRR?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "s-1547-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1218,6 +1242,18 @@
           "firstSeen": "2026-10-16",
           "lastSeen": "2026-10-16",
           "url": "https://news.google.com/rss/articles/CBMiakFVX3lxTE4wOFZCQUpUN2hYYWJtMF8zR1o1c19OSFpSamNfNlV3Yl92SFFNc05MenpSMGNWZ25IcjRweWgtcGZRRzdEWWR5TlktRnJfOW9lU3NRbnd0R2VTTkdBRm9iX2lzNXNZUklHM0E?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "s-3741-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "animalwellnessaction.org",
+          "firstSeen": "2026-10-23",
+          "lastSeen": "2026-10-23",
+          "url": "https://news.google.com/rss/articles/CBMi8gFBVV95cUxPTFUweW94dmJBTlNrc3hWWkZjUDJ2b1FabWF1bmpVb09LQkFDdG10Y1lyMU9mWnAwbXdfbjJ3ZTM1NjBkNmMtejEtUDVMNnVHVHZwUFpxeENLTV92al9mcUltWFQ2RUExVFo2RGNoQXFmSW0yRjdzb3JTWmZ0Mmd1NG9SenZKUk54ZVN6SndqbmNhLUNVb2xLaGZuMGIxS083S3VGMXV6WVExdEJvYTBQaWtTWGV1cHZ6U2NFNWZhWFdXYzRPWEhyVGR6U0xoUlp1N2NXOWJTc0pQZXVtajFLNjY1SFhqeFJURGowOEVGSTlJUQ?oc=5"
         }
       ],
       "mostViewed": null
@@ -1388,6 +1424,18 @@
         "lastSeen": "2026-10-23",
         "lastWeek": "2026-10-18"
       }
+    },
+    "s-5602-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "abcnews.com",
+          "firstSeen": "2026-10-23",
+          "lastSeen": "2026-10-23",
+          "url": "https://news.google.com/rss/articles/CBMirwFBVV95cUxOeTNOVkExSHYxeXVDNTB6cWVLeklRTjJ5UERhdk13T01sWHFnVFk2RzZLQ09YX0NFY0RSclRreXNaazU2MjNzbTFNc290QXhjNXFFQ3NsT3dUamNQZzZVRlYzNlV3Nzl1bUw5ajduQmZMWElxZTJJZ2QydTIwdV8xalBCVHlMWjRxS1p2MlhUT183ZkJoUTZ2SzBveTY3cU5xYnpZUXNTYU81eG14bVYw0gGvAUFVX3lxTE55M05WQTFIdjF5dUM1MHpxZUt6SVFOMnlQRGF2TXdPTWxYcWdUWTZHNktDT1hfQ0VjRFJyVGt5c1prNTYyM3NtMU1zb3RBeGM1cUVDc2xPd1RqY1BnNlVGVjM2VXc3OXVtTDlqN25CZkxYSXFlMklnZDJ1MjB1XzFqUEJUeUxaNHFLWnYyWFRPXzdmQmhRNnZLMG95NjdxTnFiellRc1NhTzV4bXhtVjA?oc=5"
+        }
+      ],
+      "mostViewed": null
     },
     "s-5653-119": {
       "outlets7d": [],
