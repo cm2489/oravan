@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-23T19:01:49.344Z",
+    "fetched_at": "2026-10-23T23:05:49.573Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-23T19:01:49.344Z"
+        "checked_at": "2026-10-23T23:05:49.573Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-18",
         "week_label": "Most-Viewed Bills - Week of October 18, 2026",
         "entries": 7,
-        "checked_at": "2026-10-23T19:01:49.344Z"
+        "checked_at": "2026-10-23T23:05:49.573Z"
       },
       "leans": {
         "center": {
@@ -257,6 +257,18 @@
         "lastWeek": "2026-10-18"
       }
     },
+    "hr-161-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "westernpriorities.org",
+          "firstSeen": "2026-10-23",
+          "lastSeen": "2026-10-23",
+          "url": "https://news.google.com/rss/articles/CBMiswFBVV95cUxQU1lhTmxkN0tzMlNVN2FQMVg5UDFLaUd4cVUwZThnYm1ORGc2S1FzYUJCVVphREE3NG1QZkRNelU1N1k5WjRFS3pNVDN6QnExRnY2UUdOanVFNzlmel9ReUdXS1FBbW9rV19ibFk4ODZibXNpVjdabDRsUXYwUVhuTHlldU4tcHFHMnJod0RUNUd6RGhpYW5lbjlQQjRfNVNKVGg0Q2F1d3lhUFpyQXBrWFp1UQ?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-2045-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -278,6 +290,18 @@
         "lastSeen": "2026-10-19",
         "lastWeek": "2026-10-11"
       }
+    },
+    "hr-2853-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "legis1.com",
+          "firstSeen": "2026-10-23",
+          "lastSeen": "2026-10-23",
+          "url": "https://news.google.com/rss/articles/CBMifEFVX3lxTE04VTVOSzI4YVJXX2sybHlfc0FuWUxvUk42Yy1CakU1NzNMb3hvaDBSLXNPVzNfS3VOckdZQjg5UmRCemJBSlR0enN3M1AxTGNqWG95R3FPUUpUNnZIRWV4TEs0X0k4YjFPNlc4WVZSMHNQLUx3YjdBZTZOcUQ?oc=5"
+        }
+      ],
+      "mostViewed": null
     },
     "hr-3474-119": {
       "outlets7d": [],
@@ -446,6 +470,12 @@
     "hr-5284-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "aol.com",
+          "firstSeen": "2026-10-23",
+          "lastSeen": "2026-10-23",
+          "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxQc0h5RFdLblZMb3FQZThlcFd2UTlKTGJKd2VXWmYzMlh1dWJPSllMWDdSYUg2SWhlRE1hZ2xTVmtsb2pZeUtOLUdseWU1cV9qT1FBRGh4OVVXTXdfSzJERHhLa3NHM2tqMjZXUU5jZnZBUHZ5QXYzSnMtbkhJS1NQZjVQSW90MWM1?oc=5"
+        },
         {
           "domain": "finance.yahoo.com",
           "firstSeen": "2026-10-22",
@@ -772,6 +802,18 @@
           "firstSeen": "2026-10-22",
           "lastSeen": "2026-10-22",
           "url": "https://news.google.com/rss/articles/CBMiwgFBVV95cUxPQW9jQTVIdk42bXM1UTFZTHJJMjRMdkRHdGVvWTdzWHRHZWRicENkNzRMZ2dvU1o3dkkwdGh4Y0JOc0V2WlFEamx4eGExZVE4bG5YSTctdnhvUHg4TzUtazNjS0dzZnFZQWlaVE9TaE41Y2hvczBoSWZ1d3lWWW1pbDJXVkZSSGNwRjFUeDVGb2N2eDhTUGUwQWdVN0JwVm1yUmZhRjZaZE9XWXZUaW9EMlNwbFdYMVlOMU5sQzZkWV9wUQ?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-6986-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "myfederalretirement.com",
+          "firstSeen": "2026-10-23",
+          "lastSeen": "2026-10-23",
+          "url": "https://news.google.com/rss/articles/CBMickFVX3lxTE1uN0tJVzlETHN4elM5QjA3WmVkUFJLcXJRVmR3dEJiY1phN3hrY1NDc0oyaHlsbmNNWXRwenl5WGQ3d3ZfU04yVmJmQlY5RF9LOFNZWGwxSlhSRnJ5cUxFTU91X0ZxcDFSazdyRjNWTDF5QQ?oc=5"
         }
       ],
       "mostViewed": null
@@ -1160,6 +1202,19 @@
       ],
       "mostViewed": null
     },
+    "s-1748-119": {
+      "outlets7d": [
+        {
+          "domain": "reason.com",
+          "lean": "right",
+          "firstSeen": "2026-10-23",
+          "lastSeen": "2026-10-23",
+          "url": "https://reason.com/2026/10/23/the-u-k-s-online-safety-act-has-been-a-failure-regulators-want-to-broaden-it-anyway/"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "s-1814-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1445,6 +1500,12 @@
           "firstSeen": "2026-10-23",
           "lastSeen": "2026-10-23",
           "url": "https://news.google.com/rss/articles/CBMirwFBVV95cUxOeTNOVkExSHYxeXVDNTB6cWVLeklRTjJ5UERhdk13T01sWHFnVFk2RzZLQ09YX0NFY0RSclRreXNaazU2MjNzbTFNc290QXhjNXFFQ3NsT3dUamNQZzZVRlYzNlV3Nzl1bUw5ajduQmZMWElxZTJJZ2QydTIwdV8xalBCVHlMWjRxS1p2MlhUT183ZkJoUTZ2SzBveTY3cU5xYnpZUXNTYU81eG14bVYw0gGvAUFVX3lxTE55M05WQTFIdjF5dUM1MHpxZUt6SVFOMnlQRGF2TXdPTWxYcWdUWTZHNktDT1hfQ0VjRFJyVGt5c1prNTYyM3NtMU1zb3RBeGM1cUVDc2xPd1RqY1BnNlVGVjM2VXc3OXVtTDlqN25CZkxYSXFlMklnZDJ1MjB1XzFqUEJUeUxaNHFLWnYyWFRPXzdmQmhRNnZLMG95NjdxTnFiellRc1NhTzV4bXhtVjA?oc=5"
+        },
+        {
+          "domain": "sandhillsexpress.com",
+          "firstSeen": "2026-10-23",
+          "lastSeen": "2026-10-23",
+          "url": "https://news.google.com/rss/articles/CBMizAFBVV95cUxOdHBhUHFROWZ5dUkzRzZBVGo0X25aSkpGWkxGZWJLQzZYSlVaeUhhRlhJME9HNDA0VnJoY0xJV2J4NXFVT2lhTFM1el9JTUlxTUx6NkROcGI3S2lVRklHaEZNREppUE5OcVpfeHFyMmw4VkFZNW81bk0xb3RqZkNIQTZfU2g2c0RNd1EyU2dzWThlME5iMm12dzd0cW0wRFdxN19CaVpiRkVxT2RFakpnSXZFMnQ0S3gwWXBtanNDWU9uZzlFcTVUb2RFMFk?oc=5"
         }
       ],
       "mostViewed": null
