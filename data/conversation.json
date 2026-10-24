@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-24T16:33:35.559Z",
+    "fetched_at": "2026-10-24T17:01:15.121Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-24T16:33:35.559Z"
+        "checked_at": "2026-10-24T17:01:15.121Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-18",
         "week_label": "Most-Viewed Bills - Week of October 18, 2026",
         "entries": 7,
-        "checked_at": "2026-10-24T16:33:35.559Z"
+        "checked_at": "2026-10-24T17:01:15.121Z"
       },
       "leans": {
         "center": {
@@ -287,6 +287,18 @@
           "firstSeen": "2026-10-23",
           "lastSeen": "2026-10-23",
           "url": "https://news.google.com/rss/articles/CBMifEFVX3lxTE04VTVOSzI4YVJXX2sybHlfc0FuWUxvUk42Yy1CakU1NzNMb3hvaDBSLXNPVzNfS3VOckdZQjg5UmRCemJBSlR0enN3M1AxTGNqWG95R3FPUUpUNnZIRWV4TEs0X0k4YjFPNlc4WVZSMHNQLUx3YjdBZTZOcUQ?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-2913-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "rferl.org",
+          "firstSeen": "2026-10-24",
+          "lastSeen": "2026-10-24",
+          "url": "https://news.google.com/rss/articles/CBMinwFBVV95cUxQU3FNTWhDTW1iblFpWkJmVGF0VkVaNU1CUnNJYmd1VU5oSDY0RDRsWnh1WVUzRHoxTWFuNmdHY1ZjRmZ6X1NQckN4QjU0N3NRMDJiaDhBV24zUDRoWEwwSDNaT3k0NGNPSVZOREh4OE13RXI1bEFWQmlYckJGX1NrbE1hUmVCT0JyY1ktcXhGMWoxWXlMTlVzYXRCQk8wRGPSAaIBQVVfeXFMTzN3bGJnczdyWlJnMV9GcVowQmVlLVE1TzF3eWU2djRuQUEtZDE1aURLSnBkaTNDTzBFQmtsZU11VjYwdE1GdEt1VDI0X2paT2xBTnVaQWlkenVuLWJsNE1wLS04enM4UldrNnFJTmRGWUFwMlM0UTFLcjAtMW8xby1JZXJqYldtRkdtZ1Roa3RUdEpyN3BKbjVmOWw5bHUwd25R?oc=5"
         }
       ],
       "mostViewed": null
@@ -1295,6 +1307,18 @@
       ],
       "mostViewed": null
     },
+    "s-446-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "providencejournal.com",
+          "firstSeen": "2026-10-24",
+          "lastSeen": "2026-10-24",
+          "url": "https://news.google.com/rss/articles/CBMi2gFBVV95cUxPRGVPeWhCQTFRQjFNelRSZUJhcEhjVm9ucU9DdGhoVHlPcDV5Z3hkZm5zN3lON0dqNmxCVVIyZUhGN1pORVNUOGxETm5QUERnRGhpX2NQZk9FcVBUTFROdDFtenJjVXJ5LXdzMHZ2SDk2RFBmUlFfd3ZzRTg1NVpyb3BDa1c4NUpzdXZsWU9JUkx6c1NjTXpFME9LekxScThGSWRjenNqZnlSQjZacTVDc3Y2dEE4SjF1VXlIQ0ViT0ZhWll3R3hURnFqcXBoUmtfOGtkUHRCY25sQQ?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "s-4602-119": {
       "outlets7d": [
         {
@@ -1435,6 +1459,18 @@
           "firstSeen": "2026-10-22",
           "lastSeen": "2026-10-22",
           "url": "https://news.google.com/rss/articles/CBMimgFBVV95cUxPeHN0cU5VVTlYbTVmdWRuZUFVY3ZEeEJHVW5qZ2pzUUpzeS03RGhSMERqalM2azZsNkhIcktoNFlZYy1qaXEyUE5aYWI1TVp5aHJaMEs5cWU4cFdFMl9xNFNxdVB1SW1EblRZX3h4YnZmQzAxYTdYOHRPZkc5TzlOUVBTYWZGcjhmSzBxS0lOc1M3X1U2LVdsVHB3?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "sjres-182-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "miningjournal.net",
+          "firstSeen": "2026-10-24",
+          "lastSeen": "2026-10-24",
+          "url": "https://news.google.com/rss/articles/CBMiekFVX3lxTE04U3llR1FaSzFXQkFIMjFpRzkyMllyc1dYaGptclRtcmh3c21ORDRfcVhFTDQ1eWZtTzN6aTBxNldUUHZwZjBxNTZidmJ1YVdEX2JDcG9ZMFh5TWNydjVCZV9TU1VTbnFDa01mSVNQX3VkLWVXTUlkWmx3?oc=5"
         }
       ],
       "mostViewed": null
