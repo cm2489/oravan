@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-25T17:14:52.029Z",
+    "fetched_at": "2026-10-25T18:15:06.990Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-25T17:14:52.029Z"
+        "checked_at": "2026-10-25T18:15:06.990Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-18",
         "week_label": "Most-Viewed Bills - Week of October 18, 2026",
         "entries": 7,
-        "checked_at": "2026-10-25T17:14:52.029Z"
+        "checked_at": "2026-10-25T18:15:06.990Z"
       },
       "leans": {
         "center": {
@@ -1130,6 +1130,12 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "goldrushcam.com",
+          "firstSeen": "2026-10-25",
+          "lastSeen": "2026-10-25",
+          "url": "https://news.google.com/rss/articles/CBMikwJBVV95cUxQWHJuQ09nd2EtaFpvODg5MmtYMWFKSUlRdUUyQzRtR0liaVNmeFAwR2I4LUZaajNBXzAydmZGR1AtYlhQQ3lBRHhfa2F4YUJTTkNlM3pWVXVfSWczY05JQ29uRDFjdHZRX2pjR2Z2Vmt4dExkODJsSTRCVW43TXdFc3c3OXpSNVdLRTNreThVREY4Sk0tNWFRcVpMaDhkVkZSSV9yaUQ2TE8tRDg2ZHJ4WDRqcUd1Y0c5TUdtcmNkaGJQSWJsWVZicFNmRVJqeTlMRUFoTkc5MEIydkFxSl9zdDdnYkdPZ0pIeFowc1hsbUlEUE5iN0lFdlphdmJCY0dTckJCbjJIeTF1X1V0Tk5Ja29lbw?oc=5"
+        },
         {
           "domain": "biologicaldiversity.org",
           "firstSeen": "2026-10-23",
