@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-25T00:43:35.636Z",
+    "fetched_at": "2026-10-25T16:07:02.725Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-25T00:43:35.636Z"
+        "checked_at": "2026-10-25T16:07:02.725Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-18",
         "week_label": "Most-Viewed Bills - Week of October 18, 2026",
         "entries": 7,
-        "checked_at": "2026-10-25T00:43:35.636Z"
+        "checked_at": "2026-10-25T16:07:02.725Z"
       },
       "leans": {
         "center": {
@@ -253,6 +253,18 @@
           "firstSeen": "2026-10-23",
           "lastSeen": "2026-10-23",
           "url": "https://news.google.com/rss/articles/CBMiswFBVV95cUxQU1lhTmxkN0tzMlNVN2FQMVg5UDFLaUd4cVUwZThnYm1ORGc2S1FzYUJCVVphREE3NG1QZkRNelU1N1k5WjRFS3pNVDN6QnExRnY2UUdOanVFNzlmel9ReUdXS1FBbW9rV19ibFk4ODZibXNpVjdabDRsUXYwUVhuTHlldU4tcHFHMnJod0RUNUd6RGhpYW5lbjlQQjRfNVNKVGg0Q2F1d3lhUFpyQXBrWFp1UQ?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-2002-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "medcitynews.com",
+          "firstSeen": "2026-10-25",
+          "lastSeen": "2026-10-25",
+          "url": "https://news.google.com/rss/articles/CBMilAFBVV95cUxPa2JvVUpZN2tGTTVLQTMxaF8teW14Q2JFWkwwSGdad3N0T1RJSi01N2ZEVkppNVlQWHFmUm8wVEhXMFhsbVFhbHBCR19hLUw1aXFnYmQxSTFFcm1GcGh4RnV5U2h6TnNzZk5vbkU3a2FUVExQcUIyOFdfbFRXdHkwNFNiLXlzenBKZndUc1FXLXk1cGxo?oc=5"
         }
       ],
       "mostViewed": null
@@ -757,6 +769,18 @@
       ],
       "mostViewed": null
     },
+    "hr-7024-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "wfaa.com",
+          "firstSeen": "2026-10-25",
+          "lastSeen": "2026-10-25",
+          "url": "https://news.google.com/rss/articles/CBMi0gFBVV95cUxNQjBxXzY3QW5qR0J4bml6T2dGYTVxaWJlM0J2RXFqVWJLRzVOdUZpbHJMU05JMmVPRHZrRnhLUDBZejRXNXRJaGdYV1JQY2FNb0xQOFJaNXpiTUw0czNKTnNYSnNlY0U4bWZRYV85bUJsT2p6UHVYZXlqMHNlNm93MDJ3aERWSGM2ZWd0ODYtcUtqd19YeVRMeEdVelRYZ01QQUNITkdJZHZ4Y3l5NGtjM3hiaDg2a29GaGJlWXg2SENmWnB3c1NNeVd0OW1QeFFVM3c?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-7212-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -784,6 +808,12 @@
     "hr-7545-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "jfeed.com",
+          "firstSeen": "2026-10-25",
+          "lastSeen": "2026-10-25",
+          "url": "https://news.google.com/rss/articles/CBMiUEFVX3lxTFBaNlo0VS1KZ0JuajBISnZhSDlMM18wNUhZM2ttTGVtelQwSFFFTFZOaWM1aHFSTEgwc2JLSnY2TC1hN1psaDlHRi1kcy1aclFN?oc=5"
+        },
         {
           "domain": "en.yenisafak.com",
           "firstSeen": "2026-10-22",
@@ -895,6 +925,18 @@
           "firstSeen": "2026-10-24",
           "lastSeen": "2026-10-24",
           "url": "https://news.google.com/rss/articles/CBMinwFBVV95cUxPZGhkX0hkdnNOMUctRk4ybk1CTFlDWk1wUEdEdXYxN0I0R2VIUEYwVkt5bHRJM2tiWGhCbV9FaTZKZ0ZvRUdSdWdiSXZybUxTdU1Zek8taXpFZ25OMlJXY0FOQm5GSEVXTVZGMmRPcHlWNEEyVjJabWVqcXVUN0VLVzQ4VVQ1dnBVS2dCbmdORG1ILUVpblF3UDY4dVRzOGc?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-8580-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "woodcentral.com.au",
+          "firstSeen": "2026-10-25",
+          "lastSeen": "2026-10-25",
+          "url": "https://news.google.com/rss/articles/CBMiYkFVX3lxTE11ZjNWSTF2SjU3MndzZGJQWHFrdTk1SVJoN1Vpb3A3SHFvRnlfYzBCek00SVl5VVdoSl9nalZIb24yRC1NM1h2RWQ1TVFRTllBY3pfWXl6T3JBZDhOc3NMdDVR?oc=5"
         }
       ],
       "mostViewed": null
@@ -1071,7 +1113,22 @@
       "mostViewed": null
     },
     "s-1547-119": {
-      "outlets7d": [],
+      "outlets7d": [
+        {
+          "domain": "salon.com",
+          "lean": "left",
+          "firstSeen": "2026-10-25",
+          "lastSeen": "2026-10-25",
+          "url": "https://news.google.com/rss/articles/CBMilAFBVV95cUxQLWVHV2xVbDNXWjI4OFNEM3NQQXN2UEp3OTZ5YVFYZ29RYlBhSHZDUzlieUxJN3pPYXV3dDdNQ1VRMTdZUTNPTGNaWG5SSWdON1Y2VkFYMDNYQ1ZhX1VJcGU0ZndGSnFoc05uWkFvbndXWU5HYzNwSHRSSThlMm4zRkpJWHdPQnNRRG5TTTd2bXNuRWot?oc=5"
+        },
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-10-25",
+          "lastSeen": "2026-10-25",
+          "url": "https://thehill.com/opinion/energy-environment/6169510-national-park-maintenance-bill/"
+        }
+      ],
       "unratedOutlets7d": [
         {
           "domain": "biologicaldiversity.org",
@@ -1128,6 +1185,19 @@
         "lastSeen": "2026-10-25",
         "lastWeek": "2026-10-18"
       }
+    },
+    "s-2523-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-10-25",
+          "lastSeen": "2026-10-25",
+          "url": "https://thehill.com/opinion/campaign/6168815-supreme-court-voting-restrictions/"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
     },
     "s-2976-119": {
       "outlets7d": [],
@@ -1369,6 +1439,18 @@
           "firstSeen": "2026-10-24",
           "lastSeen": "2026-10-24",
           "url": "https://news.google.com/rss/articles/CBMiekFVX3lxTE04U3llR1FaSzFXQkFIMjFpRzkyMllyc1dYaGptclRtcmh3c21ORDRfcVhFTDQ1eWZtTzN6aTBxNldUUHZwZjBxNTZidmJ1YVdEX2JDcG9ZMFh5TWNydjVCZV9TU1VTbnFDa01mSVNQX3VkLWVXTUlkWmx3?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "sjres-185-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "sundayguardianlive.com",
+          "firstSeen": "2026-10-25",
+          "lastSeen": "2026-10-25",
+          "url": "https://news.google.com/rss/articles/CBMilAJBVV95cUxPRGdUQnh3MHZTeGFnbHo2QWJra1JqZGdsX2VpTG9oQlNkSGxyaTZ3bXh3cEY1QUpYRjlxdExveGJGazhIRWZXZmk4RGxVMndOMUlTSnBiTU4wU19aY1oyM0JwV2doWjl4bXh0cUVEdXpQZlNuOGRmNnp6cmdfSV9NWW01Z1lMY2FUV1AzOG5IRU9lTHdLQjNhUE9RTXNzcUpHdEs0a3hVclNCZlpXRFM2Y0h5SU9JMVFBUV9WUVV5c3JJUDdJZ0Y2SmhDWDZwWS0wMnVoM1psbzFrdDhuYnN4Y09WT1lPbGt2UEg0TjA1Q0lLa0ZaT3I4NXVMQmo5c3hkcFBxYngxTXdVRWQ0WVhqQVg4cjbSAZQCQVVfeXFMT0RnVEJ4dzB2U3hhZ2x6NkFia2tSamRnbF9laUxvaEJTZEhscmk2d214d3BGNUFKWEY5cXRMb3hiRms4SEVmV2ZpOERsVTJ3TjFJU0pwYk1OMFNfWmNaMjNCcFdnaFo5eG14dHFFRHV6UGZTbjhkZjZ6enJnX0lfTVltNWdZTGNhVFdQMzhuSEVPZUx3S0IzYVBPUU1zc3FKR3RLNGt4VXJTQmZaV0RTNmNIeUlPSTFRQVFfVlFVeXNySVA3SWdGNkpoQ1g2cFktMDJ1aDNabG8xa3Q4bmJzeGNPVk9ZT2xrdlBINE4wNUNJS2tGWk9yODV1TEJqOXN4ZHBQcWJ4MU13VUVkNFlYakFYOHI2?oc=5"
         }
       ],
       "mostViewed": null
