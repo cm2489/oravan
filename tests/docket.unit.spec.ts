@@ -700,7 +700,10 @@ test.describe('the typed door onto the committed file', () => {
   test('floorSessionSource attributes the verdict to the digest itself', () => {
     const src = floorSessionSource();
     const digest = floorSignalsFile()._meta?.sources?.['daily-digest'];
-    if (!digest) {
+    // A digest the collector could not read (status `error`) is stored with a
+    // null url and a null published date: there is no document to attribute
+    // to, so the door answers null, exactly as when the source is absent.
+    if (!digest || (!digest.url && !digest.published)) {
       expect(src).toBeNull();
       return;
     }
