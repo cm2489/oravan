@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-26T19:13:43.013Z",
+    "fetched_at": "2026-10-26T19:42:51.006Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-26T19:13:43.013Z"
+        "checked_at": "2026-10-26T19:42:51.006Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-25",
         "week_label": "Most-Viewed Bills - Week of October 25, 2026",
         "entries": 7,
-        "checked_at": "2026-10-26T19:13:43.013Z"
+        "checked_at": "2026-10-26T19:42:51.006Z"
       },
       "leans": {
         "center": {
@@ -657,6 +657,12 @@
           "firstSeen": "2026-10-26",
           "lastSeen": "2026-10-26",
           "url": "https://news.google.com/rss/articles/CBMilAFBVV95cUxQS3dweGV0bVlTSTdrLXhHNDlnM0pHQy1YNjFJVTMtX2dKbzhSeE9yODNFNEJpbnBVcnFkeUlZeEcycTM3Q29NR19mN0lOdWJVZ2pQS3c0QWZGVHhLOEtDcFE5TFhWS2hhZ25YVVpwdVB6TlhvMU83QTVwRF9Ec0lNYlhEWHJoM0l3VGN6QWRDVHRFR0Jz?oc=5"
+        },
+        {
+          "domain": "mtstandard.com",
+          "firstSeen": "2026-10-26",
+          "lastSeen": "2026-10-26",
+          "url": "https://news.google.com/rss/articles/CBMilAFBVV95cUxNS0pISmFOVVE5a2hBc1NUUDVhQ3ZORTdva19xSlpuVjBYQWxrb3VvOXdnZkRVcklSc3U0MkpHYktERmVHeUpnMzZXdHJLY1QzSVpTRTVMdWJZLXhILXhJeThGTzlNYUZKWC1kUzZLbkdaT1FTY0IyRlpLcmFsX3lsZ2poZXVteG5QcHpKMmR6N0VkQi1u?oc=5"
         },
         {
           "domain": "themountaineer.com",
