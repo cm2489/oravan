@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-26T20:37:16.477Z",
+    "fetched_at": "2026-10-26T23:49:16.601Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-26T20:37:16.477Z"
+        "checked_at": "2026-10-26T23:49:16.601Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-25",
         "week_label": "Most-Viewed Bills - Week of October 25, 2026",
         "entries": 7,
-        "checked_at": "2026-10-26T20:37:16.477Z"
+        "checked_at": "2026-10-26T23:49:16.601Z"
       },
       "leans": {
         "center": {
@@ -257,6 +257,18 @@
       ],
       "mostViewed": null
     },
+    "hr-1761-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "abcnews.com",
+          "firstSeen": "2026-10-26",
+          "lastSeen": "2026-10-26",
+          "url": "https://news.google.com/rss/articles/CBMiqAFBVV95cUxOR2NmbTVQVUxOTEJtaXI4VlhjM2t4cm9EZVotRDk0elh4MFhPanhXMGNfbGM1cjYzU0I5OERZZXNKUzBJOE43ZmtKRF9rT3VuU0NadzFXcjZGVUVFd1RiQm05Z3psMjJGM0JYLVhoaTRqWWJ4d082OEpuaGFVR0VMRmpxY24yOHpwTU1wZkY5VzdReVNBbHhuVnh4amNSX3NkaFNycWx2SUbSAa4BQVVfeXFMTUFEUFV3dS0wM0c3ZzBFUmJMdFJISUhJWDFidmE3dFl4MExOVmFQQlFtU0tGWkZEUk80U3ZaOENmVWRsUm1sQ29PNlpfdENqc1NGX3FMOFMzczR0NW81UVVZOVJEczhTbk10WTR4QjkzVjdlbUQ0ZDdsUW40Rkk4XzdFSms5eEZqSjVoMldnQndiaUc1WEpHbFlqQ1JqMGxMTFFSdFY1M3ZKV3VZS2dn?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-2002-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -325,6 +337,19 @@
           "url": "https://news.google.com/rss/articles/CBMinwFBVV95cUxQU3FNTWhDTW1iblFpWkJmVGF0VkVaNU1CUnNJYmd1VU5oSDY0RDRsWnh1WVUzRHoxTWFuNmdHY1ZjRmZ6X1NQckN4QjU0N3NRMDJiaDhBV24zUDRoWEwwSDNaT3k0NGNPSVZOREh4OE13RXI1bEFWQmlYckJGX1NrbE1hUmVCT0JyY1ktcXhGMWoxWXlMTlVzYXRCQk8wRGPSAaIBQVVfeXFMTzN3bGJnczdyWlJnMV9GcVowQmVlLVE1TzF3eWU2djRuQUEtZDE1aURLSnBkaTNDTzBFQmtsZU11VjYwdE1GdEt1VDI0X2paT2xBTnVaQWlkenVuLWJsNE1wLS04enM4UldrNnFJTmRGWUFwMlM0UTFLcjAtMW8xby1JZXJqYldtRkdtZ1Roa3RUdEpyN3BKbjVmOWw5bHUwd25R?oc=5"
         }
       ],
+      "mostViewed": null
+    },
+    "hr-3447-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-10-26",
+          "lastSeen": "2026-10-26",
+          "url": "https://thehill.com/newsletters/technology/6173519-ai-safety-advocates-urge-trump-to-support-chip-security-act/"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "hr-3474-119": {
@@ -657,6 +682,12 @@
           "firstSeen": "2026-10-26",
           "lastSeen": "2026-10-26",
           "url": "https://news.google.com/rss/articles/CBMilAFBVV95cUxQS3dweGV0bVlTSTdrLXhHNDlnM0pHQy1YNjFJVTMtX2dKbzhSeE9yODNFNEJpbnBVcnFkeUlZeEcycTM3Q29NR19mN0lOdWJVZ2pQS3c0QWZGVHhLOEtDcFE5TFhWS2hhZ25YVVpwdVB6TlhvMU83QTVwRF9Ec0lNYlhEWHJoM0l3VGN6QWRDVHRFR0Jz?oc=5"
+        },
+        {
+          "domain": "knsiradio.com",
+          "firstSeen": "2026-10-26",
+          "lastSeen": "2026-10-26",
+          "url": "https://news.google.com/rss/articles/CBMipgFBVV95cUxOZG9zNUx0Zm5kZ0FHNUFqQ25Yenp3Zktvek1EWFFaelBJM0ZvOWhkU3gwZGF1emZ1ZFdsQlVNSURSVFVzZmV6S1MzTnJCamFwcnJOdVc1YnlCQ2tjWWF3cUNCazd5NmNTRDJ5dWFqMHVEYTJ5LURhWXBtTEFrUS1NWXZQWXNCdFVQX0NuOWtJV0lVc2plWlg4MGh2ckdiRHBNVWlWZGV3?oc=5"
         },
         {
           "domain": "mtstandard.com",
