@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-26T12:55:21.916Z",
+    "fetched_at": "2026-10-26T19:13:43.013Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-26T12:55:21.916Z"
+        "checked_at": "2026-10-26T19:13:43.013Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-25",
         "week_label": "Most-Viewed Bills - Week of October 25, 2026",
         "entries": 7,
-        "checked_at": "2026-10-26T12:55:21.916Z"
+        "checked_at": "2026-10-26T19:13:43.013Z"
       },
       "leans": {
         "center": {
@@ -418,7 +418,15 @@
       "mostViewed": null
     },
     "hr-4405-119": {
-      "outlets7d": [],
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-10-26",
+          "lastSeen": "2026-10-26",
+          "url": "https://thehill.com/homenews/house/6172897-house-democrats-trump-epstein-special-counsel/"
+        }
+      ],
       "unratedOutlets7d": [
         {
           "domain": "spectrumlocalnews.com",
@@ -578,6 +586,30 @@
       ],
       "mostViewed": null
     },
+    "hr-5775-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "hubnetwork.in",
+          "firstSeen": "2026-10-26",
+          "lastSeen": "2026-10-26",
+          "url": "https://news.google.com/rss/articles/CBMiswFBVV95cUxNdzNBdm9GYWYxQjZvOGdCSEFJdFdkaDRhZV9acUFHVUZZVkt5cXdZUFFBQVl3eklmNlRrTlJNbW83WTdfNlNQbjZYU1AtUWtuMmVXUTZ6STdsSmpQeUduN091WWdCczZxTDZ6a0duclJQTWZyQm9LR0daM05Zbjkwc0IxcHA1NHlyb19SSFo4aml3T0VxVHVTb2xWbXNjNWExc3NSSjZsek9zd05TVlIwRGtTUQ?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-6018-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "legis1.com",
+          "firstSeen": "2026-10-26",
+          "lastSeen": "2026-10-26",
+          "url": "https://news.google.com/rss/articles/CBMifkFVX3lxTE9WYXlHT1hSUEx2VXQwSElRbXBLa1MtaXZUT0JTQXpfcmh2bXNaeDNTSGg1WUk5TDBJejg0OE5tSGVmQ0gzdFlUNTc2LWZCV1VTZmh3eHRobjBTQUF4MFdDTExxYUV3aWZCMUxULVE5MTRlRXBoTGM3ZzFaVk5xUQ?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-6145-119": {
       "outlets7d": [
         {
@@ -613,6 +645,24 @@
           "firstSeen": "2026-10-19",
           "lastSeen": "2026-10-19",
           "url": "https://news.google.com/rss/articles/CBMirgFBVV95cUxPUG9zOGxtYi1tZWRKTXB0X2c5Ml9fREJGNXB2VXA2SDBGdnhtMklESmRudU4xMmFGM3BxaGZEM2V3bkVfcWtJY0pDa0RYZk9XUk9UWDdheG8ydkdxSS1jeG54cGtiZzFOSTA0ZjQwY1UwY0tZX3dGSzRiTnhuUnRjLXhVZnZ6YnprdWE4TjVQRUlKV3lYd3V0ZXhCZExUOVdiS0NLM0JGd25LNWllWkE?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-6240-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "greensboro.com",
+          "firstSeen": "2026-10-26",
+          "lastSeen": "2026-10-26",
+          "url": "https://news.google.com/rss/articles/CBMilAFBVV95cUxQS3dweGV0bVlTSTdrLXhHNDlnM0pHQy1YNjFJVTMtX2dKbzhSeE9yODNFNEJpbnBVcnFkeUlZeEcycTM3Q29NR19mN0lOdWJVZ2pQS3c0QWZGVHhLOEtDcFE5TFhWS2hhZ25YVVpwdVB6TlhvMU83QTVwRF9Ec0lNYlhEWHJoM0l3VGN6QWRDVHRFR0Jz?oc=5"
+        },
+        {
+          "domain": "themountaineer.com",
+          "firstSeen": "2026-10-26",
+          "lastSeen": "2026-10-26",
+          "url": "https://news.google.com/rss/articles/CBMi9wFBVV95cUxNVjVtRUhUX001dDFRT1NLay1XUWVPZFJkT1NuRndZdlNZQTBRX2xoWkRRMmVfRERCZWcxZXlNTWtyM012bWhxVDdvTTNwMXRTU0o4bWdzd2ltS2t3TTRrVHpHMmZjaXVBX1A0TUZ1a3pnOTc5TXhaX0lSOWxmQmFrTC1QSnJlMXlBMHkyUEU4UmVzbUxMQUdNcVBVZFdpcjFsNU1pSk1CZjBENGRTV3VLSHR4UzJqdU8wX0ttX2taeEc5Sks3dXRaN1phTHMwbHg0VE1ZdFZMRjhDMjJfVDRsVTA2Qm5zdmh5c3pIODlNSWtjaEV1bmx3?oc=5"
         }
       ],
       "mostViewed": null
@@ -690,6 +740,18 @@
           "firstSeen": "2026-10-22",
           "lastSeen": "2026-10-22",
           "url": "https://news.google.com/rss/articles/CBMiwgFBVV95cUxPQW9jQTVIdk42bXM1UTFZTHJJMjRMdkRHdGVvWTdzWHRHZWRicENkNzRMZ2dvU1o3dkkwdGh4Y0JOc0V2WlFEamx4eGExZVE4bG5YSTctdnhvUHg4TzUtazNjS0dzZnFZQWlaVE9TaE41Y2hvczBoSWZ1d3lWWW1pbDJXVkZSSGNwRjFUeDVGb2N2eDhTUGUwQWdVN0JwVm1yUmZhRjZaZE9XWXZUaW9EMlNwbFdYMVlOMU5sQzZkWV9wUQ?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-6808-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "seattlered.com",
+          "firstSeen": "2026-10-26",
+          "lastSeen": "2026-10-26",
+          "url": "https://news.google.com/rss/articles/CBMilgFBVV95cUxQdUlsYXFDYVBXaURxVmhNV2NmRnl0S0tzQmNTcTdNekNCcVFkWnBYdVdZSnVWOUJVSzdKajVJV0dReFNyTF9iY0JkSE5IekFVZkJIRDRlWWRiT0tsamI2SlZoNnp2cU1HYTBsT3ljTlRZT1hsT0NrWVo5Z1dVQVc1U0J6ekxKX08ydnVxSlN4UXJhVnJ4N1E?oc=5"
         }
       ],
       "mostViewed": null
@@ -881,6 +943,19 @@
           "url": "https://news.google.com/rss/articles/CBMiwAFBVV95cUxNUzFNVzRzNWYwZDFMeXB6RDY4NlRUNXlmcU5nR2Fta1BzUVBRYVlHc192SGh4WXBZenJ0dHptODJBS3RGRjMtZG9sSkFfaFROdE1WLUJmR0V3WWZHRzRhTUJWRWxBVUc1SUJWNGRRTllZUzR0WDhvem0zNnJaWnpyVUlJemFIcm94LVEyaGJsa3VIdVNHbFVlMkpsUTBrN0I2cnJycXZyOHE3MUFBWVN2SDY5QXJidFdNcEIxVy0yRmk?oc=5"
         }
       ],
+      "mostViewed": null
+    },
+    "hr-8365-119": {
+      "outlets7d": [
+        {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-10-26",
+          "lastSeen": "2026-10-26",
+          "url": "https://www.foxnews.com/politics/inside-house-gops-unprecedented-push-monitor-midterm-elections-prepare-legal-fights"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "hr-8403-119": {
@@ -1096,6 +1171,12 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "electric.coop",
+          "firstSeen": "2026-10-26",
+          "lastSeen": "2026-10-26",
+          "url": "https://news.google.com/rss/articles/CBMioAFBVV95cUxNQkJDdEJUQmN1SGI1Mk9JOFU0QTdkOVZqekNDV0NQTk0yZmRzZTQwdUt4bmc4RWhySmFkazBOVjk0V0FEaEZQaG13VWoxLWtOUldOSC1jVzdXLXhDSE1Cb2dnY2s1SUVLTzVVenl6VDF2LV9nNmNRbEY3eThjVVdONTJHTzFYWThydmczbWJ2RER3MkdOb24zc2VIdmtEa2xi?oc=5"
+        },
         {
           "domain": "goldrushcam.com",
           "firstSeen": "2026-10-25",
@@ -1393,6 +1474,18 @@
           "firstSeen": "2026-10-20",
           "lastSeen": "2026-10-20",
           "url": "https://news.google.com/rss/articles/CBMiuAFBVV95cUxOTGFmZlRlSnF2MTNCWlZuSkdhVHRCeFA2MFhiU0wxSkpxaGdGQjNQS3BpOGJNdUw0M19uSFU2UkRmdEtUSTdDUjJXaFROR0taQUxfeWVUaWRaWFdKNE1UQU15YUlnN0phZDFhdkljZVNYdGQyUEFxUUl2OHJLM29vcnVhVHc0UHM3S1ZwVnZHWlV0VGg2S19vLXVZR1p1Z3JSdVlPVHBuNmtZdmY1ZUNKSDNuajRjMGxX?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "s-71-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "qz.com",
+          "firstSeen": "2026-10-26",
+          "lastSeen": "2026-10-26",
+          "url": "https://news.google.com/rss/articles/CBMiYkFVX3lxTFBtR19CNVV4c01iWDFpa2FuWFdVRFZWOFZnN3Q3cGNGVnpfdnhJLUhoWkdoY2hiZ1AtX0psRTdKcG44dDNsQXF6aUtDNzI0Rm9URDZCeTZlMUxMaW9IbF9tenBB?oc=5"
         }
       ],
       "mostViewed": null
