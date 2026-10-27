@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-27T19:09:03.020Z",
+    "fetched_at": "2026-10-27T21:16:20.259Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-27T19:09:03.020Z"
+        "checked_at": "2026-10-27T21:16:20.259Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-25",
         "week_label": "Most-Viewed Bills - Week of October 25, 2026",
         "entries": 7,
-        "checked_at": "2026-10-27T19:09:03.020Z"
+        "checked_at": "2026-10-27T21:16:20.259Z"
       },
       "leans": {
         "center": {
@@ -599,6 +599,18 @@
       ],
       "mostViewed": null
     },
+    "hr-5961-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "hollandsentinel.com",
+          "firstSeen": "2026-10-27",
+          "lastSeen": "2026-10-27",
+          "url": "https://news.google.com/rss/articles/CBMi1gFBVV95cUxNMXBEZFFJWlIzYkxldVlvV3d6SDBkZjBkeGJJanA3dFhFSUNsbHZHWUJsSDJEM185STY3clRjR1J6bURJVDFsWXN3NWlTMFlTdmFNR0RQWHVKc1Q2RERxaVZTX0RYTFBFcm54MllpSF9MREg3VFhvWTBpTjgwV0VEcW5mNDVpQUh0MTgwTUZaNFgxakxsSFJDZERtbzI3YmJEZWpocXBhSVF1QWtQQW4xN1dtZkdtQ2ZRRzluQ1ZiVUN0c2p6TGEyUlpISnlOVmJVSmZJSTRn?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-6018-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1087,6 +1099,12 @@
     "s-1498-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "stamfordadvocate.com",
+          "firstSeen": "2026-10-27",
+          "lastSeen": "2026-10-27",
+          "url": "https://news.google.com/rss/articles/CBMinwFBVV95cUxPNDE5QzBudVpWQkFUcEY5YU9ZOWVWcWY5NW9BYmdXMUZQcDJVNUpRR05FTGkxSzhYNjlDR1pGVndhcFdZVkpsdjcxY2VBZTBfQUpjdzUtX25PemlvaEdQR1FpakI4NEVsUlQtdzhmaWhTdlhpSmZHcHh5N2lMVjRlR2EyMjEtY1lXVTE2YWZzdTYtNTJKeVVZZ3NhYzNPRTQ?oc=5"
+        },
         {
           "domain": "tcu360.com",
           "firstSeen": "2026-10-23",
