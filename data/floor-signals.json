@@ -1,22 +1,22 @@
 {
   "_meta": {
     "schema": "floor-signals/v1",
-    "fetched_at": "2026-10-27T10:28:41.806Z",
+    "fetched_at": "2026-10-27T16:32:13.155Z",
     "sources": {
       "daily-digest": {
-        "status": "error",
-        "detail": "no Formatted Text URL in the Daily Digest section of 2026-10-26; fallback: HTTP 500 for https://api.govinfo.gov/packages/CREC-2026-10-22/granules?offset=0&pageSize=100&api_key=REDACTED",
-        "checked_at": "2026-10-27T10:28:41.806Z",
-        "url": null,
-        "published": null,
-        "covers": null,
-        "covers_label": null,
-        "via": null
+        "status": "quiet",
+        "detail": "Senate program: pro forma session",
+        "checked_at": "2026-10-27T16:32:13.155Z",
+        "url": "https://www.govinfo.gov/content/pkg/CREC-2026-10-26/html/CREC-2026-10-26-pt1-PgD981-6.htm",
+        "published": "2026-10-26",
+        "covers": "2026-10-29",
+        "covers_label": "2 p.m., Thursday, October 29",
+        "via": "govinfo"
       },
       "billsthisweek": {
-        "status": "unknown",
+        "status": "quiet",
         "detail": "no schedule published for this week (404)",
-        "checked_at": "2026-10-27T10:28:41.806Z",
+        "checked_at": "2026-10-27T16:32:13.155Z",
         "url": "https://docs.house.gov/billsthisweek/20261026/20261026.xml",
         "published": "2026-10-26",
         "covers": "2026-10-26",
@@ -25,13 +25,19 @@
       }
     },
     "in_session": {
-      "senate": "unknown",
-      "house": "unknown",
+      "senate": "out_of_session",
+      "house": "out_of_session",
       "basis": "Daily Digest \"Program for\" blocks"
     },
     "next_meeting": {
-      "senate": null,
-      "house": null
+      "senate": {
+        "date": "2026-10-29",
+        "label": "2 p.m., Thursday, October 29"
+      },
+      "house": {
+        "date": "2026-10-29",
+        "label": "12 noon, Thursday, October 29"
+      }
     },
     "dropped": []
   },
