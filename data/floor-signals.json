@@ -1,12 +1,12 @@
 {
   "_meta": {
     "schema": "floor-signals/v1",
-    "fetched_at": "2026-10-27T01:46:54.289Z",
+    "fetched_at": "2026-10-27T10:28:41.806Z",
     "sources": {
       "daily-digest": {
         "status": "error",
-        "detail": "no Formatted Text URL in the Daily Digest section of 2026-10-22; fallback: no \"Next Meeting of the SENATE\" granule in CREC-2026-10-22",
-        "checked_at": "2026-10-27T01:46:54.289Z",
+        "detail": "no Formatted Text URL in the Daily Digest section of 2026-10-26; fallback: HTTP 500 for https://api.govinfo.gov/packages/CREC-2026-10-22/granules?offset=0&pageSize=100&api_key=REDACTED",
+        "checked_at": "2026-10-27T10:28:41.806Z",
         "url": null,
         "published": null,
         "covers": null,
@@ -16,7 +16,7 @@
       "billsthisweek": {
         "status": "unknown",
         "detail": "no schedule published for this week (404)",
-        "checked_at": "2026-10-27T01:46:54.289Z",
+        "checked_at": "2026-10-27T10:28:41.806Z",
         "url": "https://docs.house.gov/billsthisweek/20261026/20261026.xml",
         "published": "2026-10-26",
         "covers": "2026-10-26",

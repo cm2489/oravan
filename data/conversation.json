@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-27T04:56:03.228Z",
+    "fetched_at": "2026-10-27T10:28:46.641Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-27T04:56:03.228Z"
+        "checked_at": "2026-10-27T10:28:46.641Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-25",
         "week_label": "Most-Viewed Bills - Week of October 25, 2026",
         "entries": 7,
-        "checked_at": "2026-10-27T04:56:03.228Z"
+        "checked_at": "2026-10-27T10:28:46.641Z"
       },
       "leans": {
         "center": {
@@ -842,6 +842,18 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-7894-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "rollcall.com",
+          "firstSeen": "2026-10-27",
+          "lastSeen": "2026-10-27",
+          "url": "https://rollcall.com/2026/10/27/transmission-overhaul-threads-careful-needle-in-permitting-bill/"
+        }
+      ],
       "mostViewed": null
     },
     "hr-8076-119": {
