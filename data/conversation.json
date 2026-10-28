@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-28T15:58:09.423Z",
+    "fetched_at": "2026-10-28T19:17:33.338Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-28T15:58:09.423Z"
+        "checked_at": "2026-10-28T19:17:33.338Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-25",
         "week_label": "Most-Viewed Bills - Week of October 25, 2026",
         "entries": 7,
-        "checked_at": "2026-10-28T15:58:09.423Z"
+        "checked_at": "2026-10-28T19:17:33.338Z"
       },
       "leans": {
         "center": {
@@ -151,6 +151,19 @@
     }
   },
   "slugs": {
+    "hconres-93-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-10-28",
+          "lastSeen": "2026-10-28",
+          "url": "https://news.google.com/rss/articles/CBMikwFBVV95cUxNWGN5NHVUMFZKR3VPVDJiTFA0ZkZhUnBTd3UwTmJHRmdac0xjOVR2ZVZVQ0RQeXhlZ1pfWDhRTUhNNE1xM29DQnBHWkYxQjgzTEJVMEhUcU5xaFBxRUotSGVTaHBwU2d6UkdKeFFLWXZLel80aWRaV0lrRHU2SWs0X1A5OHVoNEVyNHkxMTB5bWg5cFnSAZgBQVVfeXFMTi1mX1FpZ3hsTV9DVVpvcXMxU0lDX0pKbmIzdENOMG1QWTFjTzU2YnRMOU9vNUdJYVVjRnVSX0o2SG1QdWt1ai1JVFA5QXJmQ1RZSFlsUDh6VkttZDd0MEhjb2JicVVHV0k1ZzktSUZzeThCWGRsM0U0TF8zUFEzekVGUXFITENpZlRoYVZaVlAtVUNoWGFpcjQ?oc=5"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hr-1-119": {
       "outlets7d": [],
       "unratedOutlets7d": [],
@@ -201,6 +214,12 @@
     "hr-139-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "missoulacurrent.com",
+          "firstSeen": "2026-10-28",
+          "lastSeen": "2026-10-28",
+          "url": "https://news.google.com/rss/articles/CBMiYEFVX3lxTE44S0lTSmxzOENYSGZYQVVHTFRqaFZOQ0dJRDFKZkJIWFFKTlFyR2pWZnluWG1mMHFGNWhTYzdXUHRXNURMaE1QcXZnR1BVXzhBdC1JOFhCbDVDMFE0WFNsRg?oc=5"
+        },
         {
           "domain": "cleveland.com",
           "firstSeen": "2026-10-24",
@@ -454,6 +473,13 @@
     "hr-4911-119": {
       "outlets7d": [
         {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-10-28",
+          "lastSeen": "2026-10-28",
+          "url": "https://thehill.com/homenews/campaign/6175607-what-to-know-voter-registration-midterms/"
+        },
+        {
           "domain": "foxnews.com",
           "lean": "right",
           "firstSeen": "2026-10-21",
@@ -577,6 +603,18 @@
           "firstSeen": "2026-10-27",
           "lastSeen": "2026-10-27",
           "url": "https://news.google.com/rss/articles/CBMi1gFBVV95cUxNMXBEZFFJWlIzYkxldVlvV3d6SDBkZjBkeGJJanA3dFhFSUNsbHZHWUJsSDJEM185STY3clRjR1J6bURJVDFsWXN3NWlTMFlTdmFNR0RQWHVKc1Q2RERxaVZTX0RYTFBFcm54MllpSF9MREg3VFhvWTBpTjgwV0VEcW5mNDVpQUh0MTgwTUZaNFgxakxsSFJDZERtbzI3YmJEZWpocXBhSVF1QWtQQW4xN1dtZkdtQ2ZRRzluQ1ZiVUN0c2p6TGEyUlpISnlOVmJVSmZJSTRn?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-5967-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "marijuanamoment.net",
+          "firstSeen": "2026-10-28",
+          "lastSeen": "2026-10-28",
+          "url": "https://news.google.com/rss/articles/CBMiwwFBVV95cUxNcFltVVozd2F2dEE4TGZheGZDRGF5c0tpaXJwdkR1SVpmb0dzUHZPWFJ1eGE2dU1oOXVvZ2k4ejA1RHBzT3d6cG1tb09ldkp6TlpPNUM0SDZrWVJHUzBhVlIzUWpxWklxekh5Q1NERkh6QlU3dGFhd2s5ZV9zd0RTSlB2ckY5bHZ5NW1pdkRKWV9qVkdQNlN3ZmROV0tBbjYtalctZlV6OVY3a01yYmxSU0gzcEFyZVlWRThJZ0ExVDczWWM?oc=5"
         }
       ],
       "mostViewed": null
@@ -761,6 +799,18 @@
           "firstSeen": "2026-10-25",
           "lastSeen": "2026-10-25",
           "url": "https://news.google.com/rss/articles/CBMi0gFBVV95cUxNQjBxXzY3QW5qR0J4bml6T2dGYTVxaWJlM0J2RXFqVWJLRzVOdUZpbHJMU05JMmVPRHZrRnhLUDBZejRXNXRJaGdYV1JQY2FNb0xQOFJaNXpiTUw0czNKTnNYSnNlY0U4bWZRYV85bUJsT2p6UHVYZXlqMHNlNm93MDJ3aERWSGM2ZWd0ODYtcUtqd19YeVRMeEdVelRYZ01QQUNITkdJZHZ4Y3l5NGtjM3hiaDg2a29GaGJlWXg2SENmWnB3c1NNeVd0OW1QeFFVM3c?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-7212-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "greenstate.com",
+          "firstSeen": "2026-10-28",
+          "lastSeen": "2026-10-28",
+          "url": "https://news.google.com/rss/articles/CBMid0FVX3lxTE9sSzE3UUxuVXlzeW9PSWZoa0wzZzlzNWVBMlR4X1FNX0N3blQ4SzRSM1l5bzVhZTEtVk1PMHhGSkVpR0JhTHhyTG85UVBWdWprU1F3UTdBQTc5R0pyOUVveXJSZnNMQjhiZ0FJcjZ3VUduLThkeXFF?oc=5"
         }
       ],
       "mostViewed": null
@@ -975,6 +1025,19 @@
       "unratedOutlets7d": [],
       "mostViewed": null
     },
+    "hr-8771-119": {
+      "outlets7d": [
+        {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-10-28",
+          "lastSeen": "2026-10-28",
+          "url": "https://www.foxnews.com/politics/democrat-house-candidate-hit-felony-summons-campaign-event"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hr-8800-119": {
       "outlets7d": [],
       "unratedOutlets7d": [],
@@ -1144,6 +1207,18 @@
           "firstSeen": "2026-10-28",
           "lastSeen": "2026-10-28",
           "url": "https://news.google.com/rss/articles/CBMiqgFBVV95cUxNbHVNSzZOVFJtdXZfNkswTHRseV9makQxcDdnRzZJUVI1VHE3a3Z5elIta1hrOUpQUUFsTUpYMnJxTjV0UjhENWxqeVg3ck51dUtQcFo0eFlBN0lpVUg2RnZyZXBzSmpEeUpVZjJjMEdGUTVfRFpkQ0tvdVlxQ3o1TVhsX21TaC1jQmY1NGRCaUU4ZndsSzZQRGVITktLRjlGYU9INGFJT0R4UQ?oc=5"
+        },
+        {
+          "domain": "newsfromthestates.com",
+          "firstSeen": "2026-10-28",
+          "lastSeen": "2026-10-28",
+          "url": "https://news.google.com/rss/articles/CBMiowFBVV95cUxOd21KRnd1Q0JwZXdrVHU1SndOOUdBUnBnUldfMVZud3dISU5IdW5hN1dtOTZINU44UTBWdWd3eWhvSmZhaUxEUmNrMG5DVXk1TXg3d3d6MDFpRmRKVGZrMmVPRU9UQXhRN0MxRTRsRXhTVkF5SVVab2dXRFhLSFZMRC1nYTE3RGZNb0w1aHdFM21fUmVTOVliWWYwZWZOdlhxY1pF?oc=5"
+        },
+        {
+          "domain": "wymt.com",
+          "firstSeen": "2026-10-28",
+          "lastSeen": "2026-10-28",
+          "url": "https://news.google.com/rss/articles/CBMiiwFBVV95cUxQNUp5YXRSQmhLbk11X1ZMbDVXd2V2WFRlTHdVR0ZQM3hUSkR5NHpUVXlkR1hCRGs1VkQ3UnExN3FiTFk5c1ZWd25wcXhscmowOUp0Ni1JS1hWZG4zdW9sSEtwX0cxSU15RmxiVUNCTnQtU0FoQ3lTdVI2OVl3SnplWTAteWNkT0FzOUtZ0gGfAUFVX3lxTFBsaE4ydVBqb1NBX2pyR0phZnUwZ2Y0aXFxZEtuNUFZcFZVX28tVnVGdklBTndKWUlUb19tclI2TnJKY01RSVRGWjQ2UjdkN213bFlNd0NPSGNJS1huQkd2UG5wYW03aFFxX0R1VElfN1U4NVlTWkdkVEVRc0lONGlJUDJlNTE3YUxjYWVhanN2aTJCZHh3TlNIbVJyVWZDRQ?oc=5"
         },
         {
           "domain": "electric.coop",
