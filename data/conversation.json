@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-28T08:22:13.790Z",
+    "fetched_at": "2026-10-28T15:58:09.423Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-28T08:22:13.790Z"
+        "checked_at": "2026-10-28T15:58:09.423Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-25",
         "week_label": "Most-Viewed Bills - Week of October 25, 2026",
         "entries": 7,
-        "checked_at": "2026-10-28T08:22:13.790Z"
+        "checked_at": "2026-10-28T15:58:09.423Z"
       },
       "leans": {
         "center": {
@@ -960,6 +960,19 @@
           "url": "https://news.google.com/rss/articles/CBMid0FVX3lxTE96ZDhtOGstRUdranF5c2ZPbFh2WmdfeWxaMVp3QzJqcmVJNF84VWZpSkEzci1iM2dyd0d1WTR3ZWlyNVRtOWNHNmtoNUd1aXA3TXl3czNXdkNmSml2WUVZbEtHMHpNU1NiQjJXdVhmSGF2amtwaEdn?oc=5"
         }
       ],
+      "mostViewed": null
+    },
+    "hr-8720-119": {
+      "outlets7d": [
+        {
+          "domain": "npr.org",
+          "lean": "center",
+          "firstSeen": "2026-10-28",
+          "lastSeen": "2026-10-28",
+          "url": "https://www.npr.org/2026/10/28/nx-s1-5940017/senate-campaign-fundraising-actblue-winred-ossoff"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "hr-8800-119": {
