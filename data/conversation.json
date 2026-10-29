@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-29T14:11:57.854Z",
+    "fetched_at": "2026-10-29T19:24:20.889Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-29T14:11:57.854Z"
+        "checked_at": "2026-10-29T19:24:20.889Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-25",
         "week_label": "Most-Viewed Bills - Week of October 25, 2026",
         "entries": 7,
-        "checked_at": "2026-10-29T14:11:57.854Z"
+        "checked_at": "2026-10-29T19:24:20.889Z"
       },
       "leans": {
         "center": {
@@ -259,6 +259,18 @@
     "hr-139-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "abcnews.com",
+          "firstSeen": "2026-10-29",
+          "lastSeen": "2026-10-29",
+          "url": "https://news.google.com/rss/articles/CBMiqAFBVV95cUxNVzJSNTVRQlZtWGtCSFI0c1FwVDVIN1YzYzF3eGJtZGdCdnctUGFoaGZsejd2SlFVYzNnTzZQZEl5RXYxNkFOb2oyc1MxNUptcnBFU1g4djJhdTg3RFhwS2R2WU1OSXBtMS15OXIwRzNmZEdNQWVpcmlEdFU2aF9CR0NkRWVjVkF2cjdmWk5yRFgxOVQ4U3RnaGl0Tk9QY044RS12OHdtS1_SAa4BQVVfeXFMTjZfNkxKT0JqU2F0TWRlMHBwa1RMYnNNbjYzb1FYcWE5Mk1rSGh6dUhtekdlR1pSSjBQOXlHYXF5UUNESl9TNkZabTZCYW0wNVJ4N2NJSFJQTmpOUWhNSlNnUnhxNEM0c081RklhZTVrRzV4THBvZzZ6X0dFVkpDblNfbWotam5vanpCNER2VWF5aC1PNkxYcnJiLVl6M3liVmpha2ktbWwyNXBldHVB?oc=5"
+        },
+        {
+          "domain": "wthitv.com",
+          "firstSeen": "2026-10-29",
+          "lastSeen": "2026-10-29",
+          "url": "https://news.google.com/rss/articles/CBMirAFBVV95cUxQa0Noc21WTTEya0xqUExnb2o5Nmt4b0FBZFB2N0ttOE4wX2tuTk90QmpoV0ZjTnVVNUlPbHoxV25PMDB6dFBOUHdQaWt5TWJsTXItVTV5RlJCRUhDYnVBZS1GbURRNTNIaG1odGQxT0E1clZhT1RBMlp5bkIzbEdjdXAyRUVhdmJWamJOTkdDbUYzdVVQc1pmX3BmaHV5eC1vT0hDUU54MzBSN0dq0gHAAUFVX3lxTFBZaF9wdkRSbS1Ra1hQaXRfdTZNOHFtazU4Q3E2aHl2ZktXdTRwaFVRUUVyTHR1aFYyRkZmbmtkQktxU2pRUEFkWlpTZjlKWmhEZjR1QWgwVGZnM0dReGtrU1lEa0ZZdG5GNXdidjRMbDJjelVQWmxyUkpBSjFOYWpEUHVNLWlzZUVYWmJiaFRUTnlQOElRSlpCRVd1cjVCcUtiMy1wckJVek1IXy13Sk9ZV3dGUmtZeXVzUnJrbGpObw?oc=5"
+        },
         {
           "domain": "missoulacurrent.com",
           "firstSeen": "2026-10-28",
@@ -623,6 +635,19 @@
           "url": "https://news.google.com/rss/articles/CBMi-gFBVV95cUxOeWc1NGlCWTVobWZBWW4waTVCa29BMk1wU2lmUUxuRy1JYWdJX2E1Z2wtTGpzbUdCdTlRanRrNFNra0xvYVdfd1NsZFd2VXRpNEtqdnFmR1A1N2dKWkZhTDdEMFJZOVJqQjB6dlh3MEhyb0dZQk9IQ21tam9wU3ZmU205SmIxaUtVUWl1X05XLTktaGJhaFpldURsTENMU20zei1zcXplMnJ6MjR4dWt2MlVoMlRzdzdEMlVKVzNGR1VTcFM3RFpKeG9vbEhxSzdZOUxqWHJFY3l2M2RVUmpGYmZCQWhDdlR4UlJOQ1dGbEl5cFlHT0VtTXFR?oc=5"
         }
       ],
+      "mostViewed": null
+    },
+    "hr-5602-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-10-29",
+          "lastSeen": "2026-10-29",
+          "url": "https://thehill.com/homenews/house/6181949-comer-investigates-peltola-senate-allegations/"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "hr-5631-119": {
@@ -1118,6 +1143,19 @@
       ],
       "mostViewed": null
     },
+    "hr-8902-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-10-29",
+          "lastSeen": "2026-10-29",
+          "url": "https://thehill.com/video-clips/6181487-watch-live-jd-vance-texas-gop-rally-ken-paxton-senate-midterms/"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hr-8908-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1205,6 +1243,18 @@
         "lastSeen": "2026-10-12",
         "lastWeek": "2026-10-04"
       }
+    },
+    "hr-9773-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "fairus.org",
+          "firstSeen": "2026-10-29",
+          "lastSeen": "2026-10-29",
+          "url": "https://news.google.com/rss/articles/CBMikAFBVV95cUxPQ2cyM3k1dUhtWms5U211MUxIYlpMaG1KcktlVDdvN1BIejNHLVVSclZSY2dLcWdrZEctRnM4VVp2dWI4bVo3OWl6MVVaUGtYN0dDbTlsZWdJWFBFMHZndXJZdjVnMHR1SWF1amFHMnVzenpKZVZaaWQwemU1bWJ1b0ZQUnpHaFF1WU1kVFRjVkk?oc=5"
+        }
+      ],
+      "mostViewed": null
     },
     "s-1095-119": {
       "outlets7d": [],
@@ -1311,6 +1361,19 @@
       ],
       "mostViewed": null
     },
+    "s-162-119": {
+      "outlets7d": [
+        {
+          "domain": "reason.com",
+          "lean": "right",
+          "firstSeen": "2026-10-29",
+          "lastSeen": "2026-10-29",
+          "url": "https://reason.com/volokh/2026/10/29/the-law-and-democrats-allegedly-recruiting-second-dan-sullivan-to-run-in-alaska-senate-race/"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "s-1748-119": {
       "outlets7d": [
         {
@@ -1409,6 +1472,30 @@
           "firstSeen": "2026-10-27",
           "lastSeen": "2026-10-27",
           "url": "https://news.google.com/rss/articles/CBMi7gFBVV95cUxNNEFBRlktZFRnVE9ubTd6UzdzemtkUnBxUVhCbXUxUnVKTUxoTFBwMzNYMGo5ZGw3RTNvdlN1MVNQcTJJUUFLZ081OW5KZ3lRaUpIOVJlNHBpOTRmNFByeS1tU1lWLVZRU2RkRk82b25ITm1zR2ttWGlsakJ4M2tUZVQ3YU5pUnlOYnhCYllNRUcwelFtdkhFNFRTS3VnT0RGYUR5MWNXVmpSMFlVNXFESVNJSC1jaXRsbjg5UHZPN0pxcjl0VTdieFZhRHc4QTA1c1RvNWRTTmtZaXJ1QWFVcXBiaDdoNlVzalVUMjBn?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "s-4345-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "marijuanamoment.net",
+          "firstSeen": "2026-10-29",
+          "lastSeen": "2026-10-29",
+          "url": "https://news.google.com/rss/articles/CBMi5wFBVV95cUxOZ25udXFEcmlFWjcwR0JlUHAzVkdwZk9WODdyQ1dMNFpSeWs0ZlEyWFY1M3JVbWxZdDluTEtYMWd1a1VSRnpzdW1xa3pzVy1DQ0ZvSS0zcGRNeVdFbV83WHBaTVVHTFVKVHc2eGhtc3U4YVhrU25YRG1tdHA0eUJsXzQwZ0I4THRqWmFUODFyXzRVVWFMb3BmR3VFNzJEY1I4RjJLRFdkcHpqbERpNjFuenhqa1pfSm5xa0RQUzdSZklmSnFFekVBdlFneWFnZnZxa2tnMXV1WVpQOEVheGV0RXdvX3M2QWs?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "s-4370-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "niskanencenter.org",
+          "firstSeen": "2026-10-29",
+          "lastSeen": "2026-10-29",
+          "url": "https://news.google.com/rss/articles/CBMinAFBVV95cUxOUUQ2WEZPcThaU2thQ2V3cVN6R0ZJZmtuWm9vM3FlTkFIRi16UUUtVC13WjdfRDltRlJYbk5xYVFjVFdEaXlQenFBTDUxOEk1N3VQT1FWLXFMSjl2bWJadDZnc21GSnN6Y0JrT3hoSUJjc25PSkt3eVR4YVo3ZUwwVmk0cEVXSWhicjhFU3BIYU4wOGhwVUNfdnVEbHA?oc=5"
         }
       ],
       "mostViewed": null
@@ -1558,6 +1645,19 @@
           "url": "https://news.google.com/rss/articles/CBMixwFBVV95cUxPTm1MaHJ1elA0U1A5c0hwSXQ4N3NSQ0Z3NEU5dkFJME1ONUZhcXhpVDhsRkNGbWR6c3Z3RnpXb3NTa3hqMXZSdENIbUs1elVBX2o5RmhiRzlfZHpFZW5qb3RuRHluclJvNnFuTjE4X0FOTjh2OFFHU2dYUlJVVHk1Ykh2WUJrNDAzc2I0dl9wUGJhR1NJbHYxLU9nR1lPOTVzTTd0MjBZa1pnZ3lkeGdDREVudVVPd2NLTHBGLTZHd2F2b1dYRUpj?oc=5"
         }
       ],
+      "mostViewed": null
+    },
+    "s-4938-119": {
+      "outlets7d": [
+        {
+          "domain": "npr.org",
+          "lean": "center",
+          "firstSeen": "2026-10-29",
+          "lastSeen": "2026-10-29",
+          "url": "https://www.npr.org/2026/10/29/nx-s1-6018248/fishing-is-a-key-issue-in-alaskas-tight-u-s-senate-race"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "s-5025-119": {
