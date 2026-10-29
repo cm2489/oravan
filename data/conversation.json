@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-29T02:07:17.517Z",
+    "fetched_at": "2026-10-29T14:11:57.854Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-29T02:07:17.517Z"
+        "checked_at": "2026-10-29T14:11:57.854Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-25",
         "week_label": "Most-Viewed Bills - Week of October 25, 2026",
         "entries": 7,
-        "checked_at": "2026-10-29T02:07:17.517Z"
+        "checked_at": "2026-10-29T14:11:57.854Z"
       },
       "leans": {
         "center": {
@@ -234,6 +234,12 @@
           "firstSeen": "2026-10-29",
           "lastSeen": "2026-10-29",
           "url": "https://news.google.com/rss/articles/CBMi6AFBVV95cUxNdXNDa0ZzbzgtdlFub3M0UGNrSzFxdGl1TTRmU0pvaWtLR0VrV3RISXJtRW9CVWpJZy05UWdUSXJaOWp3ZFZobDhxS3ZrYXVrVnE3WTJ6dDhubkZQMWdac3VzcUNVQUdRaUFNU2FkVWlrQjRla0FIeS1OS0hYLTlsbGVDb256V0x0bzFvQjVPaHFETGRiWi1mYlR0MVQ0Q1ppTjlDYU1YRWNGVFFIVVAzQXNBZU4yT2M4NXk0Z2wyR2FvcHZ2QjJ1MENIb0JZN2hhV3BqcUtFRWhIbU9wcVY0VVVSU1g1dklq?oc=5"
+        },
+        {
+          "domain": "prnewswire.com",
+          "firstSeen": "2026-10-29",
+          "lastSeen": "2026-10-29",
+          "url": "https://news.google.com/rss/articles/CBMi4gFBVV95cUxQWUE0UjVUTUJnVi04VVg3SUhZdVVOYmxsMW9lQTgwU2xrUjIxWkRDejBqaHhnX0x2ZHl6cmdoTlh6MkduQjlnUlZsLVQtSjRIT3ZFNkhTdW9UaldMSHhMM0l0a1BXUTNTQzhxeGlraVdlWVVUOWg5MUs5SjdFWm9kT3FwRk12Wmwxa1VySU9yTkF1TEppYjdpUHZxSlNkNWFtb2NGV1UtS3lrcUZBbGhwRFlUYThBc3NIS3FDbjUwOUNlVk9YcC1HUmVOTE0zb05FOXJkTE9GUlRtZ05NY20xS3JR?oc=5"
         }
       ],
       "mostViewed": null
@@ -488,6 +494,30 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-4684-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "tapinto.net",
+          "firstSeen": "2026-10-29",
+          "lastSeen": "2026-10-29",
+          "url": "https://news.google.com/rss/articles/CBMinAFBVV95cUxObUpQa0hLS2tiSEFKdEFmeDUyeldDOFBLeDdJMVc1M2U4MUJFb2VUbGUyeHROLV9QZkc2Y2wyelhOWS1nVF9WQ0dvR01uTXpYdUlnSWs0S3p6M2xOb0h3Q3FjeGJpbnp5bS03R2pWYkNYd0V5UThwTVJ5WFZnbHJmcTYybVJrTmRXT29Nd2RLbW9PMVVhbDBjS0hyamE?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-4707-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "agri-pulse.com",
+          "firstSeen": "2026-10-29",
+          "lastSeen": "2026-10-29",
+          "url": "https://news.google.com/rss/articles/CBMiqAFBVV95cUxQUXlFNi1WWktvSTN3aTFqblRWMjl5MW5xTWNhY01JTHFOSnhyemtMRVoxSzZfMGJoLWtjV19HYVdjQ3NSQUh4WlczeThFeXlQUElYQXJvMzk4cUhnWmxBQWx1S0xkOFVSQkxPM1FXcFBtXzBSRktWSEwwTnhEUXVidlhES0pWdkkyZjZVUUE3Y0k5ekNNQjJ1ZE93RWJmTTlfMnRUZVZQZjE?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "hr-478-119": {
@@ -1122,6 +1152,12 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "garhwalpost.in",
+          "firstSeen": "2026-10-29",
+          "lastSeen": "2026-10-29",
+          "url": "https://news.google.com/rss/articles/CBMirgFBVV95cUxQSklwUlUwMUxsU3pwempiZnZmN0NTbU5hNWtLUFEtcWhyMUZCM28tX3V5Wi01dnluaEFYU2tpTUZENFh3UGdHNWc1QTh3c0xteTNLNXpKR2M0emNSMTZVRG94ZkZaVXZwOC1Vajg4MU9xRlFXcjlYczM3Z0pYTlZHSEVyLUdSUXg0bDRBMXo2cFl1bXF6OHBxYzc5azU0aThFVF80ODVnVXVwV2hfM2c?oc=5"
+        },
+        {
           "domain": "newsinfo.inquirer.net",
           "firstSeen": "2026-10-22",
           "lastSeen": "2026-10-22",
@@ -1169,6 +1205,18 @@
         "lastSeen": "2026-10-12",
         "lastWeek": "2026-10-04"
       }
+    },
+    "s-1095-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "farmprogress.com",
+          "firstSeen": "2026-10-29",
+          "lastSeen": "2026-10-29",
+          "url": "https://news.google.com/rss/articles/CBMijAFBVV95cUxOY1hwbWw1WDNpRVRMeW9QOHRtY19SNzgyOGJCeU9Ld2FDeHZHWTUxM1hFdnpOUzdvSUpBM3lNS19LTXZYWTh0ekJYUFRURks3eGpUb2lodW5uTmpaZE51NUJNSlVQUzN6OHdKUnBYY1BMTUloNDVJN2RDQVUzU1VPTW9WYVBWWmtDdnQxdg?oc=5"
+        }
+      ],
+      "mostViewed": null
     },
     "s-146-119": {
       "outlets7d": [],
@@ -1273,7 +1321,14 @@
           "url": "https://reason.com/2026/10/23/the-u-k-s-online-safety-act-has-been-a-failure-regulators-want-to-broaden-it-anyway/"
         }
       ],
-      "unratedOutlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "bworldonline.com",
+          "firstSeen": "2026-10-29",
+          "lastSeen": "2026-10-29",
+          "url": "https://news.google.com/rss/articles/CBMixAFBVV95cUxNUjZGYl9SN0pEZFh4NlZyMUVmbXlTTW5KOFNLYy1lZWJpTE9JSndSTUZIdm5PeXowR3NORFNmYjU2ZnEwOEtVVHVZUzZTTEZnSzY5Qm9QZVJWbmhfSUxLamF4MWNPVks5R2tKaVg2NTAtejlEZnAwRnNiRkJaUm50cWF4VFR5WktraFFGR1BaX0RmMGhSUnI2QWZudG8tRWFSQWRVT0FkNE90eFpUWlItVnl4dXNHNDhQb1ZYaEVxdkg1MDNV?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "s-1814-119": {
@@ -1570,6 +1625,18 @@
       ],
       "mostViewed": null
     },
+    "s-766-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "philstar.com",
+          "firstSeen": "2026-10-29",
+          "lastSeen": "2026-10-29",
+          "url": "https://news.google.com/rss/articles/CBMiwAFBVV95cUxPbk94RkdDUDV3aElndGN4MlNwX0preEdjdmtWWWR4NUV2TnNqX2NHUlhMc21rTGI2dkxBOC11VXNDNDBpdWM5cWNKNFJzWWxnQmdudlRKSE9penV3RU5BYmh5SC1MdVg0ZTRQUnAybDZrZjFNbTlja2x4eWlJZ0NDVEJfWjBBQndBU0dHSWh4SDNxS2luNFM3VnRNa0tOMXpRVXplQ19JTUZqVk9qS0lBbjFkWE4ydF9weUhSMzg3eGfSAcABQVVfeXFMT25PeEZHQ1A1d2hJZ3RjeDJTcF9Ka3hHY3ZrVllkeDVFdk5zal9jR1JYTHNta0xiNnZMQTgtdVVzQzQwaXVjOXFjSjRSc1lsZ0JnbnZUSkhPaXp1d0VOQWJoeUgtTHVYNGU0UFJwMmw2a2YxTW05Y2tseHlpSWdDQ1RCX1owQUJ3QVNHR0loeEgzcUtpbjRTN1Z0TWtLTjF6UVV6ZUNfSU1GalZPaktJQW4xZFhOMnRfcHlIUjM4N3hn?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "s-856-119": {
       "outlets7d": [
         {
@@ -1622,6 +1689,12 @@
     "sjres-185-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "trtworld.com",
+          "firstSeen": "2026-10-29",
+          "lastSeen": "2026-10-29",
+          "url": "https://news.google.com/rss/articles/CBMiWEFVX3lxTE9BY3MxMTU1emFvVDUtR1psd29feTFPSVpQT2dIMGFrLUg3YTc4MEM2ZTdZQzRIWkNFTEszV0lGemtDcGlHOWF4MVJoVkYxX1AwUzNyWTRqX0s?oc=5"
+        },
         {
           "domain": "abcnews.com",
           "firstSeen": "2026-10-28",
