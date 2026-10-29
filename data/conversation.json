@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-29T00:51:30.636Z",
+    "fetched_at": "2026-10-29T02:07:17.517Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -9,15 +9,15 @@
       "press": {
         "status": "ok",
         "feeds_total": 11,
-        "feeds_silent": 1,
-        "checked_at": "2026-10-29T00:51:30.636Z"
+        "feeds_silent": 0,
+        "checked_at": "2026-10-29T02:07:17.517Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-25",
         "week_label": "Most-Viewed Bills - Week of October 25, 2026",
         "entries": 7,
-        "checked_at": "2026-10-29T00:51:30.636Z"
+        "checked_at": "2026-10-29T02:07:17.517Z"
       },
       "leans": {
         "center": {
@@ -72,10 +72,10 @@
           "url": "https://news.google.com/rss/search?q=congress%20bill%20when:1d&hl=en-US&gl=US&ceid=US:en",
           "domain": null,
           "lean": null,
-          "last_live": "2026-10-28",
-          "first_dark": "2026-10-29",
-          "dark_days": 1,
-          "last_error": "HTTP 503"
+          "last_live": "2026-10-29",
+          "first_dark": null,
+          "dark_days": 0,
+          "last_error": null
         },
         "NPR Politics": {
           "status": "ok",
@@ -224,6 +224,18 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-10549-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "morningstar.com",
+          "firstSeen": "2026-10-29",
+          "lastSeen": "2026-10-29",
+          "url": "https://news.google.com/rss/articles/CBMi6AFBVV95cUxNdXNDa0ZzbzgtdlFub3M0UGNrSzFxdGl1TTRmU0pvaWtLR0VrV3RISXJtRW9CVWpJZy05UWdUSXJaOWp3ZFZobDhxS3ZrYXVrVnE3WTJ6dDhubkZQMWdac3VzcUNVQUdRaUFNU2FkVWlrQjRla0FIeS1OS0hYLTlsbGVDb256V0x0bzFvQjVPaHFETGRiWi1mYlR0MVQ0Q1ppTjlDYU1YRWNGVFFIVVAzQXNBZU4yT2M4NXk0Z2wyR2FvcHZ2QjJ1MENIb0JZN2hhV3BqcUtFRWhIbU9wcVY0VVVSU1g1dklq?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "hr-1237-119": {
@@ -529,6 +541,12 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "ntu.org",
+          "firstSeen": "2026-10-29",
+          "lastSeen": "2026-10-29",
+          "url": "https://news.google.com/rss/articles/CBMiswFBVV95cUxQWU1NM0w2SmQ1MlNZeXlfZ2RkNEdBVDhTYTA5RENPODRJaTRUS0Y2SUNXYlpRVHJBNm1ucHFycEliOXBUdnVqNzJjSWNxZjdCQWtyQkV4aG16S2hFZmQ5ZGR6Y2lWd3JwdWF0UFgybVhFc2NjZktMc3R3Y1d1WGVjVjhydUVRRjJvb2J6cmRCb0x1Rkl1VjBhWnQ5YjM5bDAyNWxPTzJuUE0taUM4bENqTmpydw?oc=5"
+        },
+        {
           "domain": "aol.com",
           "firstSeen": "2026-10-23",
           "lastSeen": "2026-10-23",
@@ -597,6 +615,18 @@
           "firstSeen": "2026-10-26",
           "lastSeen": "2026-10-26",
           "url": "https://news.google.com/rss/articles/CBMiswFBVV95cUxNdzNBdm9GYWYxQjZvOGdCSEFJdFdkaDRhZV9acUFHVUZZVkt5cXdZUFFBQVl3eklmNlRrTlJNbW83WTdfNlNQbjZYU1AtUWtuMmVXUTZ6STdsSmpQeUduN091WWdCczZxTDZ6a0duclJQTWZyQm9LR0daM05Zbjkwc0IxcHA1NHlyb19SSFo4aml3T0VxVHVTb2xWbXNjNWExc3NSSjZsek9zd05TVlIwRGtTUQ?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-5891-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "nashua.inklink.news",
+          "firstSeen": "2026-10-29",
+          "lastSeen": "2026-10-29",
+          "url": "https://news.google.com/rss/articles/CBMitgFBVV95cUxNOWlSN08ybVkzREdFVk5XSGJXdjgxTXFDdUI5S2ZzdHRQbkRzSzlGNkd1d3BROUlHSmpJZzNmQnhKRmZqa3Z1VkoyZHJMejJDZFlGYkVJT1FZUld1Ymt0cDd1Y0VITzU2aDZIY3NiQTZzQmh3UGVyaTQxcThPSzEyUGdmZWRBQjM5SllpRmxCbXNsdW9nbU5fc2VJOVBMSndFamZDVG5ibXAtRGRFanJ6bmF1am1VQQ?oc=5"
         }
       ],
       "mostViewed": null
@@ -1072,6 +1102,18 @@
           "firstSeen": "2026-10-23",
           "lastSeen": "2026-10-23",
           "url": "https://news.google.com/rss/articles/CBMiqgFBVV95cUxQOTNrNzJlbGVTZ2syRGNDeGR3dHBOTzdtSnVmY1hrWHN1WVNtUjdrVnR6VUo4RmtxU3BUN0poVHYxMWVRRGRLXzlBYkpVaHZscHY1RWo0OVVZRW9EUVZvVzBwVkhmSG9yMjNMSXRjU3lCaG1ROTNDLTdaOGtrcFMwQkpkRXZydEEzNmZ4dF9LVzJwLXhYQlNaYXgwVTAtNEpTYVlxOWczaWxodw?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-8953-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "cardinalpine.com",
+          "firstSeen": "2026-10-29",
+          "lastSeen": "2026-10-29",
+          "url": "https://news.google.com/rss/articles/CBMiiwFBVV95cUxONFdOMFV2cWdDalhqZXgtcjZmTHlaajJ3YWU3Y1JwNEVDaEJxNHpLdW9QWDE2bm9fYVdCNTNVSmF1ZGtBYlA3QlRJYXVCZC1Temt5VGFYSEV1RjlSUzY4VTNVRHNHNW9LaDlGQ2x2U1R2MWpRNGJKNW9teEEyWGQ2RDAyazlrZGF4cWRR?oc=5"
         }
       ],
       "mostViewed": null
