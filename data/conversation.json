@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-28T20:10:17.141Z",
+    "fetched_at": "2026-10-29T00:51:30.636Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -9,30 +9,30 @@
       "press": {
         "status": "ok",
         "feeds_total": 11,
-        "feeds_silent": 0,
-        "checked_at": "2026-10-28T20:10:17.141Z"
+        "feeds_silent": 1,
+        "checked_at": "2026-10-29T00:51:30.636Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-25",
         "week_label": "Most-Viewed Bills - Week of October 25, 2026",
         "entries": 7,
-        "checked_at": "2026-10-28T20:10:17.141Z"
+        "checked_at": "2026-10-29T00:51:30.636Z"
       },
       "leans": {
         "center": {
           "status": "ok",
-          "last_live": "2026-10-28",
+          "last_live": "2026-10-29",
           "dark_days": 0
         },
         "left": {
           "status": "ok",
-          "last_live": "2026-10-28",
+          "last_live": "2026-10-29",
           "dark_days": 0
         },
         "right": {
           "status": "ok",
-          "last_live": "2026-10-28",
+          "last_live": "2026-10-29",
           "dark_days": 0
         }
       },
@@ -42,7 +42,7 @@
           "url": "https://www.cbsnews.com/latest/rss/politics",
           "domain": "cbsnews.com",
           "lean": "left",
-          "last_live": "2026-10-28",
+          "last_live": "2026-10-29",
           "first_dark": null,
           "dark_days": 0,
           "last_error": null
@@ -52,7 +52,7 @@
           "url": "https://www.cnbc.com/id/10000113/device/rss/rss.html",
           "domain": "cnbc.com",
           "lean": "center",
-          "last_live": "2026-10-28",
+          "last_live": "2026-10-29",
           "first_dark": null,
           "dark_days": 0,
           "last_error": null
@@ -62,7 +62,7 @@
           "url": "https://moxie.foxnews.com/google-publisher/politics.xml",
           "domain": "foxnews.com",
           "lean": "right",
-          "last_live": "2026-10-28",
+          "last_live": "2026-10-29",
           "first_dark": null,
           "dark_days": 0,
           "last_error": null
@@ -73,16 +73,16 @@
           "domain": null,
           "lean": null,
           "last_live": "2026-10-28",
-          "first_dark": null,
-          "dark_days": 0,
-          "last_error": null
+          "first_dark": "2026-10-29",
+          "dark_days": 1,
+          "last_error": "HTTP 503"
         },
         "NPR Politics": {
           "status": "ok",
           "url": "https://feeds.npr.org/1014/rss.xml",
           "domain": "npr.org",
           "lean": "center",
-          "last_live": "2026-10-28",
+          "last_live": "2026-10-29",
           "first_dark": null,
           "dark_days": 0,
           "last_error": null
@@ -92,7 +92,7 @@
           "url": "https://rss.politico.com/congress.xml",
           "domain": "politico.com",
           "lean": "left",
-          "last_live": "2026-10-28",
+          "last_live": "2026-10-29",
           "first_dark": null,
           "dark_days": 0,
           "last_error": null
@@ -102,7 +102,7 @@
           "url": "https://reason.com/latest/feed/",
           "domain": "reason.com",
           "lean": "right",
-          "last_live": "2026-10-28",
+          "last_live": "2026-10-29",
           "first_dark": null,
           "dark_days": 0,
           "last_error": null
@@ -112,7 +112,7 @@
           "url": "https://rollcall.com/feed/",
           "domain": "rollcall.com",
           "lean": null,
-          "last_live": "2026-10-28",
+          "last_live": "2026-10-29",
           "first_dark": null,
           "dark_days": 0,
           "last_error": null
@@ -122,7 +122,7 @@
           "url": "https://thehill.com/homenews/feed/",
           "domain": "thehill.com",
           "lean": "center",
-          "last_live": "2026-10-28",
+          "last_live": "2026-10-29",
           "first_dark": null,
           "dark_days": 0,
           "last_error": null
@@ -132,7 +132,7 @@
           "url": "https://thehill.com/homenews/house/feed/",
           "domain": "thehill.com",
           "lean": "center",
-          "last_live": "2026-10-28",
+          "last_live": "2026-10-29",
           "first_dark": null,
           "dark_days": 0,
           "last_error": null
@@ -142,7 +142,7 @@
           "url": "https://thehill.com/homenews/senate/feed/",
           "domain": "thehill.com",
           "lean": "center",
-          "last_live": "2026-10-28",
+          "last_live": "2026-10-29",
           "first_dark": null,
           "dark_days": 0,
           "last_error": null
@@ -178,13 +178,26 @@
       ],
       "mostViewed": null
     },
+    "hjres-152-119": {
+      "outlets7d": [
+        {
+          "domain": "cbsnews.com",
+          "lean": "left",
+          "firstSeen": "2026-10-29",
+          "lastSeen": "2026-10-29",
+          "url": "https://www.cbsnews.com/news/why-voting-midterms-important-2026/"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hr-1-119": {
       "outlets7d": [],
       "unratedOutlets7d": [],
       "mostViewed": {
         "weeksOnList": 12,
         "lastRank": 3,
-        "lastSeen": "2026-10-28",
+        "lastSeen": "2026-10-29",
         "lastWeek": "2026-10-25"
       }
     },
@@ -256,7 +269,7 @@
       "mostViewed": {
         "weeksOnList": 4,
         "lastRank": 9,
-        "lastSeen": "2026-10-28",
+        "lastSeen": "2026-10-29",
         "lastWeek": "2026-10-25"
       }
     },
@@ -398,7 +411,7 @@
       "mostViewed": {
         "weeksOnList": 1,
         "lastRank": 7,
-        "lastSeen": "2026-10-28",
+        "lastSeen": "2026-10-29",
         "lastWeek": "2026-10-25"
       }
     },
@@ -462,14 +475,7 @@
           "url": "https://thehill.com/homenews/house/6172897-house-democrats-trump-epstein-special-counsel/"
         }
       ],
-      "unratedOutlets7d": [
-        {
-          "domain": "spectrumlocalnews.com",
-          "firstSeen": "2026-10-21",
-          "lastSeen": "2026-10-21",
-          "url": "https://news.google.com/rss/articles/CBMijAFBVV95cUxOYkVsdnJiOXloT2RPU2NaLUFrYW9odnYxbExQRW4zMmNoSzQxbXpnRlVnbEVDaEd6VXdiSjh3ckZ6VTZPSWxiVEh5ckdKbGNYeXVYZGJlQ19CS3E2NVlLdXdxMXBJQmlaRGdOMy1aZGhWT2xFZlA5RnVJbU4yVWptRGFPU19XeUpwZV9DQg?oc=5"
-        }
-      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "hr-478-119": {
@@ -492,20 +498,6 @@
           "firstSeen": "2026-10-28",
           "lastSeen": "2026-10-28",
           "url": "https://thehill.com/homenews/campaign/6175607-what-to-know-voter-registration-midterms/"
-        },
-        {
-          "domain": "foxnews.com",
-          "lean": "right",
-          "firstSeen": "2026-10-21",
-          "lastSeen": "2026-10-21",
-          "url": "https://www.foxnews.com/politics/fox-news-poll-gender-gap-pocketbook-pain-shape-ohio-senate-race"
-        },
-        {
-          "domain": "npr.org",
-          "lean": "center",
-          "firstSeen": "2026-10-21",
-          "lastSeen": "2026-10-21",
-          "url": "https://www.npr.org/2026/10/21/nx-s1-6011179/poll-democrats-republicans-trump-approval"
         }
       ],
       "unratedOutlets7d": [],
@@ -529,7 +521,7 @@
       "mostViewed": {
         "weeksOnList": 3,
         "lastRank": 8,
-        "lastSeen": "2026-10-28",
+        "lastSeen": "2026-10-29",
         "lastWeek": "2026-10-25"
       }
     },
@@ -693,7 +685,7 @@
       "mostViewed": {
         "weeksOnList": 12,
         "lastRank": 1,
-        "lastSeen": "2026-10-28",
+        "lastSeen": "2026-10-29",
         "lastWeek": "2026-10-25"
       }
     },
@@ -705,18 +697,6 @@
           "firstSeen": "2026-10-24",
           "lastSeen": "2026-10-24",
           "url": "https://news.google.com/rss/articles/CBMitwFBVV95cUxPQU51eHlZUXZQTHNKVjRGaFhFaGxqOXdqOXVpSGE4MmxpaFhUR3h2NF91Y0JIZjUwdUNsWHI1THBNMWlza2ZGOXVqZXBjc05kRzRWR3dSMjJ1aW4zN1pITkNwb01MS2oybkFYRU50dlZaSFlOQVZncHlEd0NfSXRpSHZjTE9vWTlnaDRiTnIwRFJ1SGZJNnU4dmJoWDBGZkpkcWlwcy16V2FFOEsySG5NNUJUcHRzZ0E?oc=5"
-        }
-      ],
-      "mostViewed": null
-    },
-    "hr-6644-119": {
-      "outlets7d": [],
-      "unratedOutlets7d": [
-        {
-          "domain": "legis1.com",
-          "firstSeen": "2026-10-21",
-          "lastSeen": "2026-10-21",
-          "url": "https://news.google.com/rss/articles/CBMiekFVX3lxTE5tYmVjR1l5RmljUHVucjI5NndxMURWYk84TTU2VjVmeGhtM01IZ2RsX0J2b2ZwV1FZVkM1dDEzVkE4RkZHcXBFczNCX2dndmZNQzRMbk5RSTlfX0xWbGcxMXVRSDI3RUtmMDlzTFlhUXdBWGJmRU5lR2FB?oc=5"
         }
       ],
       "mostViewed": null
@@ -933,15 +913,7 @@
       "mostViewed": null
     },
     "hr-8313-119": {
-      "outlets7d": [
-        {
-          "domain": "thehill.com",
-          "lean": "center",
-          "firstSeen": "2026-10-21",
-          "lastSeen": "2026-10-21",
-          "url": "https://thehill.com/homenews/senate/6163408-moreno-to-expand-trump-accounts/"
-        }
-      ],
+      "outlets7d": [],
       "unratedOutlets7d": [
         {
           "domain": "justthenews.com",
@@ -1156,18 +1128,6 @@
         "lastWeek": "2026-10-04"
       }
     },
-    "hr-979-119": {
-      "outlets7d": [],
-      "unratedOutlets7d": [
-        {
-          "domain": "phoenixnewtimes.com",
-          "firstSeen": "2026-10-21",
-          "lastSeen": "2026-10-21",
-          "url": "https://news.google.com/rss/articles/CBMitAFBVV95cUxNcG5wTnhGMXJhVUNRWk1fWmVkNDM1Z1F3cEdrMDItOE1TbnpoaGx2WE1DLVNpaEpoRHo3Zk5wRlZWTko4ZE1KbjMtbjNvOHNYbG5WUExsbGxZUWJpTzd6dW81ZHdtZlEzdmFmRGJYcXdvbGZmTENEVHR3ZjdlT1hOVG1pMkZRcFUyRWxEQXo1MHJTYVlUbHBoNWg0dUh1YXYxbWFuUDktS1dBS1ZDanBEb09Xczg?oc=5"
-        }
-      ],
-      "mostViewed": null
-    },
     "s-146-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1305,7 +1265,7 @@
       "mostViewed": {
         "weeksOnList": 12,
         "lastRank": 2,
-        "lastSeen": "2026-10-28",
+        "lastSeen": "2026-10-29",
         "lastWeek": "2026-10-25"
       }
     },
@@ -1552,7 +1512,7 @@
       "mostViewed": {
         "weeksOnList": 2,
         "lastRank": 10,
-        "lastSeen": "2026-10-28",
+        "lastSeen": "2026-10-29",
         "lastWeek": "2026-10-25"
       }
     },
