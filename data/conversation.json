@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-30T00:53:32.054Z",
+    "fetched_at": "2026-10-30T14:03:49.121Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-30T00:53:32.054Z"
+        "checked_at": "2026-10-30T14:03:49.121Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-25",
         "week_label": "Most-Viewed Bills - Week of October 25, 2026",
         "entries": 7,
-        "checked_at": "2026-10-30T00:53:32.054Z"
+        "checked_at": "2026-10-30T14:03:49.121Z"
       },
       "leans": {
         "center": {
@@ -220,7 +220,22 @@
       "mostViewed": null
     },
     "hr-139-119": {
-      "outlets7d": [],
+      "outlets7d": [
+        {
+          "domain": "cbsnews.com",
+          "lean": "left",
+          "firstSeen": "2026-10-30",
+          "lastSeen": "2026-10-30",
+          "url": "https://www.cbsnews.com/news/will-daylight-saving-time-become-permanent-what-happens-next/"
+        },
+        {
+          "domain": "pbs.org",
+          "lean": "center",
+          "firstSeen": "2026-10-30",
+          "lastSeen": "2026-10-30",
+          "url": "https://news.google.com/rss/articles/CBMiwwFBVV95cUxPbHJ0X1pRdWdubjZBSDQzeC1JMkQ1VDVVMmJSNlNQRmlybDVLNkUzOHkwUHhzdjZnVVowdHRNN3ZXMzFnZmk4UW9jMEFQamRBLV8wMFNOQklIQmhyVUJ1OS14RGdvbU9qeUdGeEhuRXQxNG5wQ21fTWZIR190YmY4eEFUVkpvLVowV3EyRmNLcGFCR3p6Q1dDMkhUUkZtRTVyTHVuN0d2cGh4NldlbzZFWU55clh4d3daVzU5WlYzamxWYnc?oc=5"
+        }
+      ],
       "unratedOutlets7d": [
         {
           "domain": "abcnews.com",
@@ -493,8 +508,8 @@
           "domain": "thehill.com",
           "lean": "center",
           "firstSeen": "2026-10-28",
-          "lastSeen": "2026-10-28",
-          "url": "https://thehill.com/homenews/campaign/6175607-what-to-know-voter-registration-midterms/"
+          "lastSeen": "2026-10-30",
+          "url": "https://thehill.com/homenews/campaign/6181511-democrats-lead-gop-midterm-poll/"
         }
       ],
       "unratedOutlets7d": [],
@@ -962,7 +977,15 @@
       "mostViewed": null
     },
     "hr-8800-119": {
-      "outlets7d": [],
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-10-30",
+          "lastSeen": "2026-10-30",
+          "url": "https://thehill.com/policy/defense/6181202-ndaa-passage-threatened-partisan-infighting/"
+        }
+      ],
       "unratedOutlets7d": [],
       "mostViewed": {
         "weeksOnList": 1,
@@ -997,6 +1020,13 @@
     },
     "hr-8902-119": {
       "outlets7d": [
+        {
+          "domain": "npr.org",
+          "lean": "center",
+          "firstSeen": "2026-10-30",
+          "lastSeen": "2026-10-30",
+          "url": "https://www.npr.org/2026/10/30/g-s1-149975/2026-midterms-senate-map"
+        },
         {
           "domain": "thehill.com",
           "lean": "center",
