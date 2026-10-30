@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-30T19:01:51.420Z",
+    "fetched_at": "2026-10-30T19:18:47.509Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-30T19:01:51.420Z"
+        "checked_at": "2026-10-30T19:18:47.509Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-25",
         "week_label": "Most-Viewed Bills - Week of October 25, 2026",
         "entries": 7,
-        "checked_at": "2026-10-30T19:01:51.420Z"
+        "checked_at": "2026-10-30T19:18:47.509Z"
       },
       "leans": {
         "center": {
@@ -538,6 +538,18 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-4936-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "consumeraffairs.com",
+          "firstSeen": "2026-10-30",
+          "lastSeen": "2026-10-30",
+          "url": "https://news.google.com/rss/articles/CBMimwFBVV95cUxNYmlFcXVGN3dWT3lidXlFVnRFLUFMbTlGRGdCR0VYWFdSQUdBQ3E1UU82RVJRQ04xY2p3c3FjTXVhLXd0ejQtd3U3TlItTDUyQkRjT3RWNmVyUlRpNC1JV0lnUGRlT29pUjFEZEZPQkRPY3NyREd2Ul9EWG9BTXhjM29UZ0taaGxrWlJobFZ3UVotR1hUS3ZzWjNaRQ?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "hr-5068-119": {
@@ -1342,6 +1354,18 @@
       ],
       "mostViewed": null
     },
+    "s-380-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "mainebeacon.com",
+          "firstSeen": "2026-10-30",
+          "lastSeen": "2026-10-30",
+          "url": "https://news.google.com/rss/articles/CBMimAFBVV95cUxOck5yUnJOTnlQV0gwTWpMU3dnNklUTm9tcEdxUGd5WjVmYUpYaVZocE1QOFYybjNIV2VRODlrWER6QUxEWkVSWmxvOC1XRUZTUlRjVGdReWJYZlZXMjhoOEppNGxiMC1BZ2lLSmNoYlNTMDZlTE5tS09ETzRtSDJITS1ESnFLbmd3eFZ0RE4yemhVaWhEVTN1aQ?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "s-4315-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1426,6 +1450,18 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "s-463-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "marijuanamoment.net",
+          "firstSeen": "2026-10-30",
+          "lastSeen": "2026-10-30",
+          "url": "https://news.google.com/rss/articles/CBMipgFBVV95cUxQd3h0V3pIblpaSm9udFBKUkRmS3Y3WXhVTmFNNy12cUJEeGMtWUdnTFJOc0Q2SVhZVWl0X1VmemNCcGp0MFQ2eWI5cGJOd2w1S2lVN3RMVmJtMGVLUGxLWEdpTWdiV25md0ZNeE9PUzVkN3NqcERyYW10U2Y2SFlCdUdtOXcwMUJrZVMwWjJnTzM2c2cxQTBZWFpja211QUtkSlVjaU5B?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "s-4659-119": {
