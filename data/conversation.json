@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-30T20:19:15.421Z",
+    "fetched_at": "2026-10-30T23:41:27.606Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-30T20:19:15.421Z"
+        "checked_at": "2026-10-30T23:41:27.606Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-25",
         "week_label": "Most-Viewed Bills - Week of October 25, 2026",
         "entries": 7,
-        "checked_at": "2026-10-30T20:19:15.421Z"
+        "checked_at": "2026-10-30T23:41:27.606Z"
       },
       "leans": {
         "center": {
@@ -262,6 +262,24 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "rollingout.com",
+          "firstSeen": "2026-10-30",
+          "lastSeen": "2026-10-30",
+          "url": "https://news.google.com/rss/articles/CBMiekFVX3lxTFA2TUdIZGthdHJzZGo2MmVmaS0zQXNKYjN5NEZQLWxBVThINkx3c1VXT2hCU3RSRzd5QUxkcm9GaW9EbWprd2RGZEpHQmpSc2pfNFV4dm42N0NJQmJVVG9yMmkzS1p0RWNuNUNNOGZicWRUdUdGYzViSzdB?oc=5"
+        },
+        {
+          "domain": "spectrumlocalnews.com",
+          "firstSeen": "2026-10-30",
+          "lastSeen": "2026-10-30",
+          "url": "https://news.google.com/rss/articles/CBMivAFBVV95cUxPMnNJVExoUlFQNHFmdVFGZkhVQm9BWTE0MEZ4a1lBejVpcXJQYmNIX2Mza3NqZ1FxUzFKN1VpUFpISFNkR094dDVuOXc4dkw5eFZFcU40dHh6MWVuQUNnTUpZd2tQdF9lN3EydGNTTmhyd2YySmJvSmRJUmMxcnpxQTZiNkU1UHZyUW5VWkpvZEtEN0JPemc4S0Q2eEdWbWJYOU9XWUc1YjdPSXpkVTB3bVhaaDUteTVBblR6bA?oc=5"
+        },
+        {
+          "domain": "wsbtv.com",
+          "firstSeen": "2026-10-30",
+          "lastSeen": "2026-10-30",
+          "url": "https://news.google.com/rss/articles/CBMi4wFBVV95cUxNejF6ZWtmaEFVaExTZk1yYUdULVkyZkp6c3ItLUhvUGN2SmtOMTBkeElMNHpUeFNGZlhrLUtjMFAxV3BuWkFvVnJLTDN3WGpUaGh6SDdDR2F6ZUZqeTJ0LWw2Q3VNV2M0MU5HdUZXWUF4bUZPZW1reGlwYkM5dDRDMV9GZllnek1VX0ZrZjd5V2lsLVdTclJCdGhiQjNOSWx4U1QwWWRGR0ZaSHFYVTk1ejNjNjBNNkpmUTNac3kzMGd1UXVIME5YVmNaNGM3TkFYVFp1WkpDNlpxXzhVdXM4RXR5UdIB9wFBVV95cUxPcjZIZ0dwdU9Qd2VMaUl6czAtTTJuUktnZWU3aTVvNHN5OWhpaVRJcW1keTY0dmtTS01CRjJKUVJkMzRPLURtS2hXZWlpdmFmTHJDdERrTnVuZmNOTWRsWms3TUdVYXlrUnJjQ1YyWkktZ1dEYTdfbkFrVXQtdzhIanFPUTE3RG94dUNZZHNreUdJX3JGWVQ4bkhlX3k3eWI3a1doeGxJZ2VPeHMtWWppeW4tLS0yRlZNbDlia25teC1UUEIyV1BQdzhQdnRfWXo2Ni1LMVRxbFNndlgxM1BVMkhuMmIxWmg0V2hUWEl0Z0J3d2RnZEdF?oc=5"
+        },
         {
           "domain": "abcnews.com",
           "firstSeen": "2026-10-29",
