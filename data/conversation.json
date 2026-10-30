@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-30T19:18:47.509Z",
+    "fetched_at": "2026-10-30T20:19:15.421Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-30T19:18:47.509Z"
+        "checked_at": "2026-10-30T20:19:15.421Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-25",
         "week_label": "Most-Viewed Bills - Week of October 25, 2026",
         "entries": 7,
-        "checked_at": "2026-10-30T19:18:47.509Z"
+        "checked_at": "2026-10-30T20:19:15.421Z"
       },
       "leans": {
         "center": {
@@ -474,6 +474,18 @@
           "firstSeen": "2026-10-23",
           "lastSeen": "2026-10-23",
           "url": "https://news.google.com/rss/articles/CBMigwFBVV95cUxQdU1NNnRDQjdnR2xQNzZIQktBUGZCSHQ5X21JYk1nMjZBaDhkaFdueEtfcC1BZU9GVWlxWTZweGZGRDdHeXMxc295VjY4VkFtRHlmSEZzSXk4RFlCYl9JYlRRcUxlTkppa0tsTlhQVDdzMHV2ZTRhQXplMW0tcUdVWDNJYw?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-4377-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "liherald.com",
+          "firstSeen": "2026-10-30",
+          "lastSeen": "2026-10-30",
+          "url": "https://news.google.com/rss/articles/CBMigwFBVV95cUxPT2RwNlg5U1hSUVo2b213Y0tuYTZPWE8yYmVSc2xsM1BhVjMwSmpDcHZrQmlVZkh0U3pleV83aW5Jbkxuc2xXUXdqV2tlU3VYVUdWcFR6VWlFbVlQVFoxYjhkQkRpeWtxX3BGdXhFa1ZCbkM0aVpxWFhCd09QaTR2cU8xVQ?oc=5"
         }
       ],
       "mostViewed": null
