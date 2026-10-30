@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-30T14:03:49.121Z",
+    "fetched_at": "2026-10-30T19:01:51.420Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-30T14:03:49.121Z"
+        "checked_at": "2026-10-30T19:01:51.420Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-25",
         "week_label": "Most-Viewed Bills - Week of October 25, 2026",
         "entries": 7,
-        "checked_at": "2026-10-30T14:03:49.121Z"
+        "checked_at": "2026-10-30T19:01:51.420Z"
       },
       "leans": {
         "center": {
@@ -170,6 +170,12 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "turkiyetoday.com",
+          "firstSeen": "2026-10-30",
+          "lastSeen": "2026-10-30",
+          "url": "https://news.google.com/rss/articles/CBMihgFBVV95cUxOX2VObElXNUs0N0NxWDdTWEN5ZHR6bm9kdEQtckoxV2hxajk4TjN3VVdkc01Ecjdra1RyVmNUdzRmMDFVMjNocElwWGw2SXV3cklmUzY3WHROZjZhRU5HWjkwcVhoZVJIRnhDbTNjeGxYd2VzekNnYjJ5bk03aFl1cVFHVW9kUQ?oc=5"
+        },
+        {
           "domain": "timesofindia.indiatimes.com",
           "firstSeen": "2026-10-28",
           "lastSeen": "2026-10-28",
@@ -219,6 +225,18 @@
       ],
       "mostViewed": null
     },
+    "hr-1346-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "houstonchronicle.com",
+          "firstSeen": "2026-10-30",
+          "lastSeen": "2026-10-30",
+          "url": "https://news.google.com/rss/articles/CBMipgFBVV95cUxPZkhtdi1SOXpCVmlESUtTZmJQZGFFQkFFc0JvbExpOXhmekpaeU9jMHR3VV9hRW1nUnhQNU93UEZxamxrckw4WHUxRTQxUmdtU3gyYkFZaUx3OS1fbmVlYTNBQkpaVEcweElENmxMd0FMY3RvQ2ZQdFhyWlhoVExfNWpPUVpicURRTHNYbk5pNkFzaWxacG9rUEN4MUxWa2lmVk43MGh3?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-139-119": {
       "outlets7d": [
         {
@@ -234,6 +252,13 @@
           "firstSeen": "2026-10-30",
           "lastSeen": "2026-10-30",
           "url": "https://news.google.com/rss/articles/CBMiwwFBVV95cUxPbHJ0X1pRdWdubjZBSDQzeC1JMkQ1VDVVMmJSNlNQRmlybDVLNkUzOHkwUHhzdjZnVVowdHRNN3ZXMzFnZmk4UW9jMEFQamRBLV8wMFNOQklIQmhyVUJ1OS14RGdvbU9qeUdGeEhuRXQxNG5wQ21fTWZIR190YmY4eEFUVkpvLVowV3EyRmNLcGFCR3p6Q1dDMkhUUkZtRTVyTHVuN0d2cGh4NldlbzZFWU55clh4d3daVzU5WlYzamxWYnc?oc=5"
+        },
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-10-30",
+          "lastSeen": "2026-10-30",
+          "url": "https://thehill.com/homenews/state-watch/6184483-end-daylight-saving-time-congress/"
         }
       ],
       "unratedOutlets7d": [
@@ -513,6 +538,18 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-5068-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "stupiddope.com",
+          "firstSeen": "2026-10-30",
+          "lastSeen": "2026-10-30",
+          "url": "https://news.google.com/rss/articles/CBMivwFBVV95cUxQWlpWVFlDcTIxVnc2Tl9jVFNkTDY1d2dORWYxVVdqZS1ZSmgzVUZwR1VOdjJoNXNleG9RVXZ4VzhLVXNVWWU1UmFVbXRqYy1LRjJZRW9nNWFRU0xDYnljelpiY0RvenJqRllxX0YxamZtcUVqbnhuNVZVb1FHdTZJamk0QkxZSllVNk1NYXZFd2lSTEtVOGIzYmdyM0dxMFptX1pSQmlxTXh5c25ENTh2d1RpUzBWVEk1ZDBtb2lQSQ?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "hr-5103-119": {
@@ -1590,7 +1627,15 @@
       "mostViewed": null
     },
     "sjres-185-119": {
-      "outlets7d": [],
+      "outlets7d": [
+        {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-10-30",
+          "lastSeen": "2026-10-30",
+          "url": "https://www.foxnews.com/politics/americans-frustrated-iran-war-midterms-trump-admin-decision-gop-lawmaker"
+        }
+      ],
       "unratedOutlets7d": [
         {
           "domain": "trtworld.com",
