@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-31T12:17:04.410Z",
+    "fetched_at": "2026-10-31T21:28:33.775Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-31T12:17:04.410Z"
+        "checked_at": "2026-10-31T21:28:33.775Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-25",
         "week_label": "Most-Viewed Bills - Week of October 25, 2026",
         "entries": 7,
-        "checked_at": "2026-10-31T12:17:04.410Z"
+        "checked_at": "2026-10-31T21:28:33.775Z"
       },
       "leans": {
         "center": {
@@ -1497,7 +1497,14 @@
           "url": "https://www.foxnews.com/politics/trump-accused-trying-force-senate-candidate-voters-gop-feud-erupts"
         }
       ],
-      "unratedOutlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "magzter.com",
+          "firstSeen": "2026-10-31",
+          "lastSeen": "2026-10-31",
+          "url": "https://news.google.com/rss/articles/CBMinAFBVV95cUxPV3VaWG9xbnpxMkVDRmdIOGFoZS15Y01SWlFrSTFHeXptOXAzYmhvdmM3bVVjS29GbjFONGdEV1BtSTRIbkVIb1hqeWV0WmFTUEQ5dHVRVDhCak5tcVNsY0Y0WnlEQjI2SE5ybXlMbnJlbzZPQURqcFZON3Z2SXlyelZEdVpWd0xMY3E1d1Z2dFVPaGZseXRrQW4xR3E?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "s-5653-119": {
