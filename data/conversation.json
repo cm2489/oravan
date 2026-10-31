@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-31T05:30:02.254Z",
+    "fetched_at": "2026-10-31T12:17:04.410Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-10-31T05:30:02.254Z"
+        "checked_at": "2026-10-31T12:17:04.410Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-25",
         "week_label": "Most-Viewed Bills - Week of October 25, 2026",
         "entries": 7,
-        "checked_at": "2026-10-31T05:30:02.254Z"
+        "checked_at": "2026-10-31T12:17:04.410Z"
       },
       "leans": {
         "center": {
@@ -182,6 +182,19 @@
           "url": "https://news.google.com/rss/articles/CBMi6AFBVV95cUxNb3lOUm1mVWx3RThyOU9Pc1dOSEh3VVdvQnBEZUY3dWN5QVVobG16MDhHSG5IRDNILWVvc2FxcmYzclNnYUFVQU1PaG9LNlE2U1lEWWdDZ0lsRTZtcEF6TXU0bURpWENLbGYwU3NNTFpKWVNBOTdSZUJVVmhhU0lfVzg5YXRDdHROcG5wNEt5NVJndmRpVThKb19QM1M0a0d2VkVFZzhsVlRTV3JsZEJ4bkhmV0sySEZUU3ZjSzJ5elZmbzRxQ05TdHpmNDJ4QVZfSWxhOTBhdHladE1vZFFMQUc3N2RLbXo30gHoAUFVX3lxTE1veU5SbWZVbHdFOHI5T09zV05ISHdVV29CcERlRjd1Y3lBVWhsbXowOEdIbkhEM0gtZW9zYXFyZjNyU2dhQVVBTU9ob0s2UTZTWURZZ0NnSWxFNm1wQXpNdTRtRGlYQ0tsZjBTc01MWkpZU0E5N1JlQlVWaGFTSV9XODlhdEN0dE5wbnA0S3k1Umd2ZGlVOEpvX1AzUzRrR3ZWRUVnOGxWVFNXcmxkQnhuSGZXSzJIRlRTdmNLMnl6VmZvNHFDTlN0emY0MnhBVl9JbGE5MGF0eVp0TW9kUUxBRzc3ZEttejc?oc=5"
         }
       ],
+      "mostViewed": null
+    },
+    "hjres-15-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-10-31",
+          "lastSeen": "2026-10-31",
+          "url": "https://thehill.com/homenews/campaign/6183400-senate-rising-home-heating-costs/"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "hjres-152-119": {
@@ -453,6 +466,18 @@
         "lastSeen": "2026-10-31",
         "lastWeek": "2026-10-25"
       }
+    },
+    "hr-3633-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "americanbanker.com",
+          "firstSeen": "2026-10-31",
+          "lastSeen": "2026-10-31",
+          "url": "https://news.google.com/rss/articles/CBMimwFBVV95cUxOandkU0pfdTV4dE1FMFRQc3NndEdpVE0yR2NRLUxaWjZhMXVocjdhZHctNXFUcTlsT2RmNG1qWkJUX3F4cElReUhkekxNcHQ4U1lTXzFzbmtRVmxJeDR6amFfYThFNUdGeWpCNDVfSWd2Sm9yZG1jOGpxVTdYYVFHeDh5RHh4ZlozSDJndUczUTJQRHpFWlg5VkF0Yw?oc=5"
+        }
+      ],
+      "mostViewed": null
     },
     "hr-4377-119": {
       "outlets7d": [],
@@ -932,6 +957,18 @@
       ],
       "mostViewed": null
     },
+    "hr-8705-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "tennessean.com",
+          "firstSeen": "2026-10-31",
+          "lastSeen": "2026-10-31",
+          "url": "https://news.google.com/rss/articles/CBMi0gFBVV95cUxQQlpuSDRjWFF3dGlILW0zZ1R6ekZoMmV4TncySERSaFZfRnJfUEs4R3JGa2lOV1JCdUdnd3BTb0x5Nl9DN1RKOVo5bHpDMmFZal9WNlU0N0hqSFlraGJXY19tSEUwWGFiSk1uSkFrY1F3VjBRT3FOQkZHb254Z1JxRGJXQnJzcDQyVFNuQlptMW4zUUNvMF9KV0ZndExRNHVwQVlZSWZ3dVVId3Nvc0lsV1V1RnJXMHAyYTR2OGk0di1KX0lHekdKMGJvUmdkeG0xTnc?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-8720-119": {
       "outlets7d": [
         {
@@ -1261,6 +1298,19 @@
       ],
       "mostViewed": null
     },
+    "s-4337-119": {
+      "outlets7d": [
+        {
+          "domain": "theguardian.com",
+          "lean": "left",
+          "firstSeen": "2026-10-31",
+          "lastSeen": "2026-10-31",
+          "url": "https://news.google.com/rss/articles/CBMijgFBVV95cUxORDlEZENfTkk2S2l6MUh6ZTQ2eXlmSFBLR1JMa29LUkdEcWRfeGdPa1U1V2ZtTERsNndEVVBxVG9JdXpLcm1SM1FIRGdvdUU4ak9ONHdMTkEwd1dRblhjd1dGVk9vS3pZY3hkMDBVMlFxb2dIN1FKdmRSX1VjemNLcGxkLTVpQ29yeG16TnZ3?oc=5"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "s-4340-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1432,6 +1482,13 @@
     },
     "s-5271-119": {
       "outlets7d": [
+        {
+          "domain": "latimes.com",
+          "lean": "left",
+          "firstSeen": "2026-10-31",
+          "lastSeen": "2026-10-31",
+          "url": "https://news.google.com/rss/articles/CBMinwFBVV95cUxQYzAwU21RNEplc05peVhLUlJZcGsyOWp6SHJFajBhZnZBUy1MUzNQbFZUX1VMeDhYVEFidi1SYkoyM0Nxd0ZYSEJYOF9lRWlmMVVfSzhLOVRROGhDRFlGaTZQMlF5Q0FGaFZ2UUN6M2VlQlBxTnZrdTlJZlkyekx1VHZMYlFVNXZhWnp2WEFaZE5qYS01aG52WVltNUJaSDg?oc=5"
+        },
         {
           "domain": "foxnews.com",
           "lean": "right",
