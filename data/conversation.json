@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-10-31T01:53:53.211Z",
+    "fetched_at": "2026-10-31T05:30:02.254Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -9,15 +9,15 @@
       "press": {
         "status": "ok",
         "feeds_total": 11,
-        "feeds_silent": 1,
-        "checked_at": "2026-10-31T01:53:53.211Z"
+        "feeds_silent": 0,
+        "checked_at": "2026-10-31T05:30:02.254Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-25",
         "week_label": "Most-Viewed Bills - Week of October 25, 2026",
         "entries": 7,
-        "checked_at": "2026-10-31T01:53:53.211Z"
+        "checked_at": "2026-10-31T05:30:02.254Z"
       },
       "leans": {
         "center": {
@@ -112,10 +112,10 @@
           "url": "https://rollcall.com/feed/",
           "domain": "rollcall.com",
           "lean": null,
-          "last_live": "2026-10-30",
-          "first_dark": "2026-10-31",
-          "dark_days": 1,
-          "last_error": "HTTP 504"
+          "last_live": "2026-10-31",
+          "first_dark": null,
+          "dark_days": 0,
+          "last_error": null
         },
         "The Hill": {
           "status": "ok",
@@ -561,6 +561,18 @@
         "lastSeen": "2026-10-31",
         "lastWeek": "2026-10-25"
       }
+    },
+    "hr-5272-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "chicagotribune.com",
+          "firstSeen": "2026-10-31",
+          "lastSeen": "2026-10-31",
+          "url": "https://news.google.com/rss/articles/CBMihgFBVV95cUxPajdpNEZyTG9pQ0pWWTVxd1BGYnNkZ2NiV3dyU0J4ZnJ1MmlJZXpydUdIR3ZSNkFsbm5SQWlPN1FKT0c4cXZZbG9RMjdvVW9mMjNubnZHSjNXMXdXRGY3ZG53dHVXQ2lBMDd5bTNwN1l0d0U2cUx5MFktRHJpajlYSTBXTl90QQ?oc=5"
+        }
+      ],
+      "mostViewed": null
     },
     "hr-5284-119": {
       "outlets7d": [],
@@ -1245,6 +1257,18 @@
           "firstSeen": "2026-10-27",
           "lastSeen": "2026-10-27",
           "url": "https://news.google.com/rss/articles/CBMi7gFBVV95cUxNNEFBRlktZFRnVE9ubTd6UzdzemtkUnBxUVhCbXUxUnVKTUxoTFBwMzNYMGo5ZGw3RTNvdlN1MVNQcTJJUUFLZ081OW5KZ3lRaUpIOVJlNHBpOTRmNFByeS1tU1lWLVZRU2RkRk82b25ITm1zR2ttWGlsakJ4M2tUZVQ3YU5pUnlOYnhCYllNRUcwelFtdkhFNFRTS3VnT0RGYUR5MWNXVmpSMFlVNXFESVNJSC1jaXRsbjg5UHZPN0pxcjl0VTdieFZhRHc4QTA1c1RvNWRTTmtZaXJ1QWFVcXBiaDdoNlVzalVUMjBn?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "s-4340-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "hawaiinewsnow.com",
+          "firstSeen": "2026-10-31",
+          "lastSeen": "2026-10-31",
+          "url": "https://news.google.com/rss/articles/CBMi1wFBVV95cUxQelRERThrUW9tNUVEakt5WXlSYlZMMktHaHp3ZWhjY0QwV3VZTExnNXR0WHJaX0NyWlFKUnJnaTBWeVh6Z2pBMG1XZXJUeGdOYy13T0x3UU5GRXVaMFlEb2RZeks4dUVWQ29YSi1oZW5rbldMbjZEaDlDM3NObmkwUXBVcEs5eTFMQ3lUOGU2cFdWYXZrajd1LS0zZWEtcV9rOHo1TURqRkNpT2k3STRRVkRUVndjYmVjcUpWb2xxNHlobTZ3a1E0bzhOVXI2Y1pYNFVkUTZNQdIB1wFBVV95cUxQelRERThrUW9tNUVEakt5WXlSYlZMMktHaHp3ZWhjY0QwV3VZTExnNXR0WHJaX0NyWlFKUnJnaTBWeVh6Z2pBMG1XZXJUeGdOYy13T0x3UU5GRXVaMFlEb2RZeks4dUVWQ29YSi1oZW5rbldMbjZEaDlDM3NObmkwUXBVcEs5eTFMQ3lUOGU2cFdWYXZrajd1LS0zZWEtcV9rOHo1TURqRkNpT2k3STRRVkRUVndjYmVjcUpWb2xxNHlobTZ3a1E0bzhOVXI2Y1pYNFVkUTZNQQ?oc=5"
         }
       ],
       "mostViewed": null
