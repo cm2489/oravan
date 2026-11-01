@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-01T18:36:59.232Z",
+    "fetched_at": "2026-11-01T23:33:08.709Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-01T18:36:59.232Z"
+        "checked_at": "2026-11-01T23:33:08.709Z"
       },
       "most_viewed": {
         "status": "ok",
-        "week": "2026-10-25",
-        "week_label": "Most-Viewed Bills - Week of October 25, 2026",
-        "entries": 7,
-        "checked_at": "2026-11-01T18:36:59.232Z"
+        "week": "2026-11-01",
+        "week_label": "Most-Viewed Bills - Week of November 1, 2026",
+        "entries": 8,
+        "checked_at": "2026-11-01T23:33:08.709Z"
       },
       "leans": {
         "center": {
@@ -214,10 +214,10 @@
       "outlets7d": [],
       "unratedOutlets7d": [],
       "mostViewed": {
-        "weeksOnList": 12,
+        "weeksOnList": 13,
         "lastRank": 3,
         "lastSeen": "2026-11-01",
-        "lastWeek": "2026-10-25"
+        "lastWeek": "2026-11-01"
       }
     },
     "hr-10549-119": {
@@ -283,6 +283,12 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "agriculture.com",
+          "firstSeen": "2026-11-01",
+          "lastSeen": "2026-11-01",
+          "url": "https://news.google.com/rss/articles/CBMiwgFBVV95cUxOUXVlMWh0MFlXaG1haDNnX2huMVBxRVViVk5NaFNXX1lsMks2NTF3Rl9oNzE0b3oyREYtLTRUVkJOUnRSZ0Myc0JqNnQ1VUE0bXVUWGpOb0U5NWEtMUVRNUx2eHAtWnZrTGJGVzExNmk1M0REMksxTmdWcXQxal9Rd0tzd1AwUW9sQVhCcUMzMk8wTnVDcEYzLTBkMkd1elEtcTRPZlR1SlhBbVFwUnVMX18yM0VLZndoRE1SQlpSc3pIQQ?oc=5"
+        },
+        {
           "domain": "bostonherald.com",
           "firstSeen": "2026-11-01",
           "lastSeen": "2026-11-01",
@@ -299,6 +305,12 @@
           "firstSeen": "2026-11-01",
           "lastSeen": "2026-11-01",
           "url": "https://news.google.com/rss/articles/CBMiwAFBVV95cUxNZ3J5b3A3bmllMFgwaEJwWlNzRDRTcWhkZEExQzhLdjNyYmRSSVh6VGIwcGZuYWlka1FqSDZ6MmROT2lDTTVaS0JIelp3ZDktMlpiNVVvNTdmUHVFemM0TTVSdWY5OVd4ZUN5RVFFNzNYbFNkY2I4UkN4Q1ZqRkVJZHFJOXNQOG1ydV9jNy1GRndKaFJzOXItaDNmSEZsLUFJdEV6WlA4NDhILW96VjRXZS1xYzRVMWxXNlpCY0FYSWvSAcABQVVfeXFMTWdyeW9wN25pZTBYMGhCcFpTc0Q0U3FoZGRBMUM4S3YzcmJkUklYelRiMHBmbmFpZGtRakg2ejJkTk9pQ001WktCSHpad2Q5LTJaYjVVbzU3ZlB1RXpjNE01UnVmOTlXeGVDeUVRRTczWGxTZGNiOFJDeENWakZFSWRxSTlzUDhtcnVfYzctRkZ3SmhSczlyLWgzZkhGbC1BSXRFelpQODQ4SC1velY0V2UtcWM0VTFsVzZaQmNBWElr?oc=5"
+        },
+        {
+          "domain": "kshb.com",
+          "firstSeen": "2026-11-01",
+          "lastSeen": "2026-11-01",
+          "url": "https://news.google.com/rss/articles/CBMi3wFBVV95cUxNRGpuOGdXdUVXNUtYLUtNSnExd3lZaVIwNEhGQzFGbmxWeFpTMkx3S1hiWWVQVWxBYlFMc0FpMDV4Y1pqZkR4TFF0d2lqelV2ZGZKam13N2p3NXlMRHJ2dVJQVWdDclJ3RGw0V3BzWXZXNzZCTkFIWU15NzJoOG13ZzZyb1J0NzNQU294d3Q0QnI5cVFrNlpzVG5QODMyQkdaZXJVWGlCYkxwQ211QjlzRkZBdEZHZHVUTW0wRUdSdzJSbHNaaHZDTHlOQk1idXBjbmx0NlBtMHV2d2E2VXkw?oc=5"
         },
         {
           "domain": "news.ssbcrack.com",
@@ -362,10 +374,10 @@
         }
       ],
       "mostViewed": {
-        "weeksOnList": 4,
-        "lastRank": 9,
+        "weeksOnList": 5,
+        "lastRank": 5,
         "lastSeen": "2026-11-01",
-        "lastWeek": "2026-10-25"
+        "lastWeek": "2026-11-01"
       }
     },
     "hr-1721-119": {
@@ -456,10 +468,10 @@
       "outlets7d": [],
       "unratedOutlets7d": [],
       "mostViewed": {
-        "weeksOnList": 1,
-        "lastRank": 7,
+        "weeksOnList": 2,
+        "lastRank": 10,
         "lastSeen": "2026-11-01",
-        "lastWeek": "2026-10-25"
+        "lastWeek": "2026-11-01"
       }
     },
     "hr-3633-119": {
@@ -564,10 +576,10 @@
       "outlets7d": [],
       "unratedOutlets7d": [],
       "mostViewed": {
-        "weeksOnList": 3,
-        "lastRank": 8,
+        "weeksOnList": 4,
+        "lastRank": 6,
         "lastSeen": "2026-11-01",
-        "lastWeek": "2026-10-25"
+        "lastWeek": "2026-11-01"
       }
     },
     "hr-5272-119": {
@@ -599,9 +611,9 @@
       "unratedOutlets7d": [],
       "mostViewed": {
         "weeksOnList": 1,
-        "lastRank": 6,
-        "lastSeen": "2026-10-19",
-        "lastWeek": "2026-10-11"
+        "lastRank": 9,
+        "lastSeen": "2026-11-01",
+        "lastWeek": "2026-11-01"
       }
     },
     "hr-5602-119": {
@@ -615,6 +627,18 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-5631-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "highlandcountypress.com",
+          "firstSeen": "2026-11-01",
+          "lastSeen": "2026-11-01",
+          "url": "https://news.google.com/rss/articles/CBMiwwFBVV95cUxNVXBQcmJNbVVZUklndW8yVE5YdWh2Q2ozU1lKdjhkbnVUUy1qNEtzQ09fYlVuaGZvcUY4OS1maDV0Q2NNeUpNR2k3cllXMTlBMWoyU1pJS0xScUpZOFcwbTVfakNCTTd6eXBvZGlZRlU4RVZnQW55cEJteGhpTmFmVDU4VHhvTHFJbXJoWVd1bnZVYmM2TkgzVk42d0NUREx6cmRBQW5SSEV4VVZyZ0loU2FMOEFMOVlQSFF1S1RoZkN0dWM?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "hr-5775-119": {
@@ -723,10 +747,10 @@
       "outlets7d": [],
       "unratedOutlets7d": [],
       "mostViewed": {
-        "weeksOnList": 12,
+        "weeksOnList": 13,
         "lastRank": 1,
         "lastSeen": "2026-11-01",
-        "lastWeek": "2026-10-25"
+        "lastWeek": "2026-11-01"
       }
     },
     "hr-6808-119": {
@@ -1161,10 +1185,10 @@
       "outlets7d": [],
       "unratedOutlets7d": [],
       "mostViewed": {
-        "weeksOnList": 12,
-        "lastRank": 2,
+        "weeksOnList": 13,
+        "lastRank": 4,
         "lastSeen": "2026-11-01",
-        "lastWeek": "2026-10-25"
+        "lastWeek": "2026-11-01"
       }
     },
     "s-2379-119": {
@@ -1425,10 +1449,10 @@
       "outlets7d": [],
       "unratedOutlets7d": [],
       "mostViewed": {
-        "weeksOnList": 2,
-        "lastRank": 10,
+        "weeksOnList": 3,
+        "lastRank": 8,
         "lastSeen": "2026-11-01",
-        "lastWeek": "2026-10-25"
+        "lastWeek": "2026-11-01"
       }
     },
     "s-71-119": {
