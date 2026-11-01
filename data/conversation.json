@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-01T07:29:54.750Z",
+    "fetched_at": "2026-11-01T15:02:08.616Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-01T07:29:54.750Z"
+        "checked_at": "2026-11-01T15:02:08.616Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-25",
         "week_label": "Most-Viewed Bills - Week of October 25, 2026",
         "entries": 7,
-        "checked_at": "2026-11-01T07:29:54.750Z"
+        "checked_at": "2026-11-01T15:02:08.616Z"
       },
       "leans": {
         "center": {
@@ -253,6 +253,13 @@
     "hr-139-119": {
       "outlets7d": [
         {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-11-01",
+          "lastSeen": "2026-11-01",
+          "url": "https://www.foxnews.com/politics/americans-forced-change-clocks-again-senate-stalls-trump-backed-daylight-saving-time-bill"
+        },
+        {
           "domain": "cbsnews.com",
           "lean": "left",
           "firstSeen": "2026-10-30",
@@ -276,6 +283,12 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "bostonherald.com",
+          "firstSeen": "2026-11-01",
+          "lastSeen": "2026-11-01",
+          "url": "https://news.google.com/rss/articles/CBMitAFBVV95cUxQQWJ2SmFtajNlRzI1UWZId0ZPV0UydDdWTUQ0ZmFuVFVBSFpPc1NMSjhMMWEwVVJEMGVMOXctcEM1cjVQVV9oUkRZLVVKRDhJbXRFRmt2b3kwdlJkTVdGNGZpZ1BVMmdGZjlmbVNYSFdYQWxYdXZSVW9oN3RvTTZvLU1ZdGlkNHdsQ2gwZVRyMWN0ejIyTzVCem91ZmpLQ1ZmRkMxYUhCbXlNWkZuM2xfcGhwWkE?oc=5"
+        },
+        {
           "domain": "hayspost.com",
           "firstSeen": "2026-11-01",
           "lastSeen": "2026-11-01",
@@ -292,6 +305,12 @@
           "firstSeen": "2026-11-01",
           "lastSeen": "2026-11-01",
           "url": "https://news.google.com/rss/articles/CBMivAFBVV95cUxQN09MWkRFZ053NUphT0tWNHFUaEE0cnBBRnhZNnFoY2lMenZVdlBpMDVVS041R2Zhdm92WU1Xa1otY21wR1hXRVpyWno1cjNsb0ZSdDBBUFRrTU42cVhxVFRCTUlYWXRlakQwVE83NmNSQkhwQnRoNnVKaUFUNGgydzFqUk9OTVZtWkloaEI5Y0FFbC1mV3B6V0I3bTNiQTlFalFjMnFUbzRiUlJSc0RnWm5SZTFlSXZqUzNUTg?oc=5"
+        },
+        {
+          "domain": "wfmd.com",
+          "firstSeen": "2026-11-01",
+          "lastSeen": "2026-11-01",
+          "url": "https://news.google.com/rss/articles/CBMixwFBVV95cUxOcGxtSmNqdWxOSmVCRU9UNzY0dFZZNUNKRnhLaWZwUW84cy1icy1wemZxRUlZU25rUDFfX1NtZzJIVXdObElXdEt4a0Z6Vlo5cWZoRV9Bak5lNHc4ckwyVHlqYmJ2b3dRek1rRUFZWnFoRS1VVHh4OHRFM3FoX3ZMR2N0WEUtT1REMzFqZ1R2TFlON0NhQnVkSHFTNGhVYTg1UzVsV1RmaWNYc2QtWV9obUpaNThpS1FRY0VGYUkyU2d5Rk91UHRn?oc=5"
         },
         {
           "domain": "wsbtv.com",
@@ -826,6 +845,18 @@
           "firstSeen": "2026-10-28",
           "lastSeen": "2026-10-28",
           "url": "https://news.google.com/rss/articles/CBMinAFBVV95cUxObUVOSzJ2S3hUSUVtSXBtYTNuNXVqRWhGNTJHX0pSLTVpNWVOdlVrUjlGTmdnTTdmT3JKUmpFMTYtU1g1YW1iYWdiT0hIMXFZNHAwOW5iWVgteGV1aFQzaWF6QWRxRm11WnBFUlRUOXZRemNOYnNHdVZURklpT3lLQ2FidWVDNHJaaGNieE5saDJuN0ZZYlBHQ3V6OUc?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-8570-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "eutoday.net",
+          "firstSeen": "2026-11-01",
+          "lastSeen": "2026-11-01",
+          "url": "https://news.google.com/rss/articles/CBMie0FVX3lxTE1JRVhvM0pKNElHMWF5aWQ2TjZpdVA5U2NDXzVtX29PbWtIeXdUMHcxTjJTVVRTSzM5TUhPaHVBYTdFeGI2NWM4MTlrSk5aTXVZdGJMWkRhRzk4ajZuNGVLQnlLTDU5M28xTWFvZk5UWUExdEtSZGR3V1ExQQ?oc=5"
         }
       ],
       "mostViewed": null
@@ -1433,6 +1464,12 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "kentucky.com",
+          "firstSeen": "2026-11-01",
+          "lastSeen": "2026-11-01",
+          "url": "https://news.google.com/rss/articles/CBMifkFVX3lxTFBETWRSV2hmRXpXUmZKSkc4WTduZHdVUUpjall2cUJGR0l0emQyRU1td0p5RUhLS3F3ZDhtdFcwWENhYkh0SDRaMHV6UkZDNWdPQjFvVDBtZnVqUkNHNDRsVUVVQVQ5YWw2NnZkdnVmNVctaVJ5YjV0OUJkVlZFZw?oc=5"
+        },
         {
           "domain": "trtworld.com",
           "firstSeen": "2026-10-29",
