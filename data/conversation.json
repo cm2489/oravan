@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-01T01:05:05.691Z",
+    "fetched_at": "2026-11-01T07:29:54.750Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-01T01:05:05.691Z"
+        "checked_at": "2026-11-01T07:29:54.750Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-10-25",
         "week_label": "Most-Viewed Bills - Week of October 25, 2026",
         "entries": 7,
-        "checked_at": "2026-11-01T01:05:05.691Z"
+        "checked_at": "2026-11-01T07:29:54.750Z"
       },
       "leans": {
         "center": {
@@ -282,6 +282,24 @@
           "url": "https://news.google.com/rss/articles/CBMicEFVX3lxTE10UW9JZWRUM2c2X204YVRvMVJsVjhBTTBvZzJfaVJCRDQzdHV5N3hFLUFtS2RCYWZZNzRJeGpPRGM3M3YxSGdYaTRBaU41RmFuOXJzU01iLVlzZXo2S0dJTFN2X1Q4UWVHQ1dKOURvblk?oc=5"
         },
         {
+          "domain": "kotatv.com",
+          "firstSeen": "2026-11-01",
+          "lastSeen": "2026-11-01",
+          "url": "https://news.google.com/rss/articles/CBMiwAFBVV95cUxNZ3J5b3A3bmllMFgwaEJwWlNzRDRTcWhkZEExQzhLdjNyYmRSSVh6VGIwcGZuYWlka1FqSDZ6MmROT2lDTTVaS0JIelp3ZDktMlpiNVVvNTdmUHVFemM0TTVSdWY5OVd4ZUN5RVFFNzNYbFNkY2I4UkN4Q1ZqRkVJZHFJOXNQOG1ydV9jNy1GRndKaFJzOXItaDNmSEZsLUFJdEV6WlA4NDhILW96VjRXZS1xYzRVMWxXNlpCY0FYSWvSAcABQVVfeXFMTWdyeW9wN25pZTBYMGhCcFpTc0Q0U3FoZGRBMUM4S3YzcmJkUklYelRiMHBmbmFpZGtRakg2ejJkTk9pQ001WktCSHpad2Q5LTJaYjVVbzU3ZlB1RXpjNE01UnVmOTlXeGVDeUVRRTczWGxTZGNiOFJDeENWakZFSWRxSTlzUDhtcnVfYzctRkZ3SmhSczlyLWgzZkhGbC1BSXRFelpQODQ4SC1velY0V2UtcWM0VTFsVzZaQmNBWElr?oc=5"
+        },
+        {
+          "domain": "news.ssbcrack.com",
+          "firstSeen": "2026-11-01",
+          "lastSeen": "2026-11-01",
+          "url": "https://news.google.com/rss/articles/CBMivAFBVV95cUxQN09MWkRFZ053NUphT0tWNHFUaEE0cnBBRnhZNnFoY2lMenZVdlBpMDVVS041R2Zhdm92WU1Xa1otY21wR1hXRVpyWno1cjNsb0ZSdDBBUFRrTU42cVhxVFRCTUlYWXRlakQwVE83NmNSQkhwQnRoNnVKaUFUNGgydzFqUk9OTVZtWkloaEI5Y0FFbC1mV3B6V0I3bTNiQTlFalFjMnFUbzRiUlJSc0RnWm5SZTFlSXZqUzNUTg?oc=5"
+        },
+        {
+          "domain": "wsbtv.com",
+          "firstSeen": "2026-10-30",
+          "lastSeen": "2026-11-01",
+          "url": "https://news.google.com/rss/articles/CBMi4wFBVV95cUxNejF6ZWtmaEFVaExTZk1yYUdULVkyZkp6c3ItLUhvUGN2SmtOMTBkeElMNHpUeFNGZlhrLUtjMFAxV3BuWkFvVnJLTDN3WGpUaGh6SDdDR2F6ZUZqeTJ0LWw2Q3VNV2M0MU5HdUZXWUF4bUZPZW1reGlwYkM5dDRDMV9GZllnek1VX0ZrZjd5V2lsLVdTclJCdGhiQjNOSWx4U1QwWWRGR0ZaSHFYVTk1ejNjNjBNNkpmUTNac3kzMGd1UXVIME5YVmNaNGM3TkFYVFp1WkpDNlpxXzhVdXM4RXR5UdIB9wFBVV95cUxPcjZIZ0dwdU9Qd2VMaUl6czAtTTJuUktnZWU3aTVvNHN5OWhpaVRJcW1keTY0dmtTS01CRjJKUVJkMzRPLURtS2hXZWlpdmFmTHJDdERrTnVuZmNOTWRsWms3TUdVYXlrUnJjQ1YyWkktZ1dEYTdfbkFrVXQtdzhIanFPUTE3RG94dUNZZHNreUdJX3JGWVQ4bkhlX3k3eWI3a1doeGxJZ2VPeHMtWWppeW4tLS0yRlZNbDlia25teC1UUEIyV1BQdzhQdnRfWXo2Ni1LMVRxbFNndlgxM1BVMkhuMmIxWmg0V2hUWEl0Z0J3d2RnZEdF?oc=5"
+        },
+        {
           "domain": "spectrumlocalnews.com",
           "firstSeen": "2026-10-30",
           "lastSeen": "2026-10-31",
@@ -292,12 +310,6 @@
           "firstSeen": "2026-10-30",
           "lastSeen": "2026-10-30",
           "url": "https://news.google.com/rss/articles/CBMiekFVX3lxTFA2TUdIZGthdHJzZGo2MmVmaS0zQXNKYjN5NEZQLWxBVThINkx3c1VXT2hCU3RSRzd5QUxkcm9GaW9EbWprd2RGZEpHQmpSc2pfNFV4dm42N0NJQmJVVG9yMmkzS1p0RWNuNUNNOGZicWRUdUdGYzViSzdB?oc=5"
-        },
-        {
-          "domain": "wsbtv.com",
-          "firstSeen": "2026-10-30",
-          "lastSeen": "2026-10-30",
-          "url": "https://news.google.com/rss/articles/CBMi4wFBVV95cUxNejF6ZWtmaEFVaExTZk1yYUdULVkyZkp6c3ItLUhvUGN2SmtOMTBkeElMNHpUeFNGZlhrLUtjMFAxV3BuWkFvVnJLTDN3WGpUaGh6SDdDR2F6ZUZqeTJ0LWw2Q3VNV2M0MU5HdUZXWUF4bUZPZW1reGlwYkM5dDRDMV9GZllnek1VX0ZrZjd5V2lsLVdTclJCdGhiQjNOSWx4U1QwWWRGR0ZaSHFYVTk1ejNjNjBNNkpmUTNac3kzMGd1UXVIME5YVmNaNGM3TkFYVFp1WkpDNlpxXzhVdXM4RXR5UdIB9wFBVV95cUxPcjZIZ0dwdU9Qd2VMaUl6czAtTTJuUktnZWU3aTVvNHN5OWhpaVRJcW1keTY0dmtTS01CRjJKUVJkMzRPLURtS2hXZWlpdmFmTHJDdERrTnVuZmNOTWRsWms3TUdVYXlrUnJjQ1YyWkktZ1dEYTdfbkFrVXQtdzhIanFPUTE3RG94dUNZZHNreUdJX3JGWVQ4bkhlX3k3eWI3a1doeGxJZ2VPeHMtWWppeW4tLS0yRlZNbDlia25teC1UUEIyV1BQdzhQdnRfWXo2Ni1LMVRxbFNndlgxM1BVMkhuMmIxWmg0V2hUWEl0Z0J3d2RnZEdF?oc=5"
         },
         {
           "domain": "abcnews.com",

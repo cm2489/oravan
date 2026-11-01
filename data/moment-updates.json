@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-10-16T18:16:49.072Z"
+    "generated_at": "2026-11-01T07:30:08.639Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -80,37 +80,6 @@
           "action_code": "E20000",
           "action_type": "Floor",
           "source_system": "House floor actions"
-        },
-        "ai": false
-      },
-      {
-        "id": "u_1b5774c6",
-        "class": "vote",
-        "vehicle": "hr-6500-119",
-        "day": "2026-09-01",
-        "occurred_at": "2026-09-01",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-25T13:41:33.041Z",
-        "text": {
-          "en": "“On motion that the House suspend the rules and agree to the Senate amendments Agreed to by the Yeas and Nays: (2/3 required): 370 - 48 (Roll no. 286). (consideration: CR H5387; text: CR H5377-5383)”",
-          "es": "Registro oficial, en inglés: “On motion that the House suspend the rules and agree to the Senate amendments Agreed to by the Yeas and Nays: (2/3 required): 370 - 48 (Roll no. 286). (consideration: C…”"
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/house-bill/6500",
-            "https://clerk.house.gov/evs/2026/roll286.xml"
-          ]
-        },
-        "record": {
-          "action_text": "On motion that the House suspend the rules and agree to the Senate amendments Agreed to by the Yeas and Nays: (2/3 required): 370 - 48 (Roll no. 286). (consideration: CR H5387; text: CR H5377-5383)",
-          "action_code": "H41610",
-          "action_type": "ResolvingDifferences",
-          "source_system": "House floor actions",
-          "roll_call": {
-            "chamber": "house",
-            "number": 286
-          }
         },
         "ai": false
       }
