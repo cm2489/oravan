@@ -1,6 +1,6 @@
 {
-  "lastSync": "2026-11-01T18:55:29Z",
-  "lastRun": "2026-11-01T18:55:29.406Z",
+  "lastSync": "2026-11-02T22:51:13Z",
+  "lastRun": "2026-11-02T22:51:13.699Z",
   "note": "Cursor-format outage #2: the 2026-07-16 run was the pipeline's first-ever clean (unfrozen) run, so it persisted raw runStart with Date.toISOString() milliseconds (17:54:26.862Z) as lastSync - and Congress.gov 400s fractional-seconds fromDateTime just like it 400s bare dates (outage #1, 2026-06-25/07-01). Every nightly 2026-07-17 through 07-22 died on its first backlog request. Repaired to the same instant at seconds precision; sync-bills.mjs now normalizes every persisted cursor and verify-sync.mjs pins the exact format.",
-  "nominationsLastSync": "2026-11-01T18:58:38Z"
+  "nominationsLastSync": "2026-11-02T22:52:50Z"
 }
