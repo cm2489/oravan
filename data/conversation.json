@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-02T01:55:17.955Z",
+    "fetched_at": "2026-11-02T05:54:55.609Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-02T01:55:17.955Z"
+        "checked_at": "2026-11-02T05:54:55.609Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-01",
         "week_label": "Most-Viewed Bills - Week of November 1, 2026",
         "entries": 8,
-        "checked_at": "2026-11-02T01:55:17.955Z"
+        "checked_at": "2026-11-02T05:54:55.609Z"
       },
       "leans": {
         "center": {
@@ -283,6 +283,12 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "tododisca.es",
+          "firstSeen": "2026-11-02",
+          "lastSeen": "2026-11-02",
+          "url": "https://news.google.com/rss/articles/CBMifEFVX3lxTE43Wkw3QzhiZDlSdklYVXZXckw3Zk5UczlLWVBieXBBdnpuU1hWZlhlVXh5Qm9FQjQ4UUZMcThSV0VSWFlBb1F3MVVDY3RWa09BMUZLb3c2NEdGQzBVdUZhT2h1Mzc4c1R4NW9uZjExVWs4azlaSlY2N3VfOUo?oc=5"
+        },
+        {
           "domain": "agriculture.com",
           "firstSeen": "2026-11-01",
           "lastSeen": "2026-11-01",
@@ -466,6 +472,12 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "digitaltoday.co.kr",
+          "firstSeen": "2026-11-02",
+          "lastSeen": "2026-11-02",
+          "url": "https://news.google.com/rss/articles/CBMiywFBVV95cUxNOFBKVTZzX18zdzl6NThycDRrSVZ6eHViRGg5SmR5YXg0dHpWMVpVQ2QxbzItOW0tbTRibU9wVlMtWGN0WXQxSzE3V0puUjFKMVpKTjdpZVplWVBPeTRDZy1MS0duX3BsVk1FTTJ5M2R0QmJScHFDdXNVM0g2QmtRTzdNajczSlV1UmZ6cjlIb3BlX3BHVnVOSVJhS1R0WWNZMnFZVjU3UFJpVmhWRHBwZFRKZUd5QnBHR0VEOVpIcFViQTVINTItY3NWQQ?oc=5"
+        },
+        {
           "domain": "americanbanker.com",
           "firstSeen": "2026-10-31",
           "lastSeen": "2026-10-31",
@@ -644,6 +656,12 @@
     "hr-5631-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "justthenews.com",
+          "firstSeen": "2026-11-02",
+          "lastSeen": "2026-11-02",
+          "url": "https://news.google.com/rss/articles/CBMivgFBVV95cUxQbjgtakhsY3NGYVVtT3BGLXpReVVfSXBoRXl0WVo4MGs5eWphM2RqOHF1RXI2bHVvaTNjUEFzUEZEVEJwOGduQjU0UHEtOG95Y0FJbThSRk1ySW1DcnRZLVZGbTNZb0Nhdm96dWVBLWpDV1JXUXRVaVlLeDhwWHZkV2IxQmpWRlJhd19VMmJJREVPd0wtV1h2bkJSU2ZEclJGNS1rVFB3ejFsd3RUQ1M4QVNOeWRoTDhYLVVoanN3?oc=5"
+        },
         {
           "domain": "highlandcountypress.com",
           "firstSeen": "2026-11-01",
@@ -847,6 +865,18 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-8481-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "northfortynews.com",
+          "firstSeen": "2026-11-02",
+          "lastSeen": "2026-11-02",
+          "url": "https://news.google.com/rss/articles/CBMiyAFBVV95cUxOWnpNVEpSa0czOXdTNkVUaXJUaGNDSE9uYnNId0VSVHA4SWVtR19WbWlsQzZTaFN2OHg2ZnF3WHRLSU1hTVEySVBtRGNaSUUxYmIyX0lOejVUZUZrMkdJd0JIRHRJOFJPYVdDcTRvak9TT1d2cWszY0pfdDdsNkF5dlhxTGFiSlhnUWhFRG1JTDU0ZGV6LWk3dlVFWEhKRW5xWjJjalIzaUdxR2JxRjM0S3BNbk9DY21ZT0p5SzZlOGVuSl9hTUs3dg?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "hr-8541-119": {

@@ -1,89 +1,10 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-11-01T07:30:08.639Z"
+    "generated_at": "2026-11-02T05:55:09.409Z"
   },
   "government-funding-deadline": {
-    "updates": [
-      {
-        "id": "u_389eaa30",
-        "class": "floor_action",
-        "vehicle": "hr-6500-119",
-        "day": "2026-09-02",
-        "occurred_at": "2026-09-02",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-25T13:41:33.041Z",
-        "text": {
-          "en": "“Signed by President.”",
-          "es": "Registro oficial, en inglés: “Signed by President.”"
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/house-bill/6500"
-          ]
-        },
-        "record": {
-          "action_text": "Signed by President.",
-          "action_code": "E30000",
-          "action_type": "President",
-          "source_system": "Library of Congress"
-        },
-        "ai": false
-      },
-      {
-        "id": "u_9ce3da18",
-        "class": "floor_action",
-        "vehicle": "hr-6500-119",
-        "day": "2026-09-02",
-        "occurred_at": "2026-09-02",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-25T13:41:33.041Z",
-        "text": {
-          "en": "“Became Public Law No: 119-103.”",
-          "es": "Registro oficial, en inglés: “Became Public Law No: 119-103.”"
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/house-bill/6500"
-          ]
-        },
-        "record": {
-          "action_text": "Became Public Law No: 119-103.",
-          "action_code": "E40000",
-          "action_type": "President",
-          "source_system": "Library of Congress"
-        },
-        "ai": false
-      },
-      {
-        "id": "u_e98c3438",
-        "class": "floor_action",
-        "vehicle": "hr-6500-119",
-        "day": "2026-09-02",
-        "occurred_at": "2026-09-02",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-25T13:41:33.041Z",
-        "text": {
-          "en": "“Presented to President.”",
-          "es": "Registro oficial, en inglés: “Presented to President.”"
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/house-bill/6500"
-          ]
-        },
-        "record": {
-          "action_text": "Presented to President.",
-          "action_code": "E20000",
-          "action_type": "Floor",
-          "source_system": "House floor actions"
-        },
-        "ai": false
-      }
-    ],
+    "updates": [],
     "summary_revisions": [
       {
         "id": "s_1856a409",
