@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-02T05:54:55.609Z",
+    "fetched_at": "2026-11-02T22:39:33.348Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-02T05:54:55.609Z"
+        "checked_at": "2026-11-02T22:39:33.348Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-01",
         "week_label": "Most-Viewed Bills - Week of November 1, 2026",
         "entries": 8,
-        "checked_at": "2026-11-02T05:54:55.609Z"
+        "checked_at": "2026-11-02T22:39:33.348Z"
       },
       "leans": {
         "center": {
@@ -283,6 +283,12 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "mtexpress.com",
+          "firstSeen": "2026-11-02",
+          "lastSeen": "2026-11-02",
+          "url": "https://news.google.com/rss/articles/CBMi7wFBVV95cUxPU0dJLTFla093bmhDZUJzdTI4eVloV2x5U2NmRUc2OVlYdndkZVQ4UzUtX295ZDJ4Ui05cWVRcUVzTU9sRk1PVnFycU9WUEd2a3dieHlFLXNIT3o1dTFGM19KMVZQZ1lzYjNUV0x4bDFVUnBTbG5vZmxmWVptckM2cEpYV0lKX1VjNndmWFRkZW9ETTY1ZFdydU5PSjBiR28xNVRtV3VoNnMtRkpwVmE3X2pJN2dVZEphaEJPVy1NazI5azlNeEVjTm12WmpCTWszdmJXOUJ0QzdkbDlnOUFTb3B5dTc4VDZWa0FaaWZWbw?oc=5"
+        },
+        {
           "domain": "tododisca.es",
           "firstSeen": "2026-11-02",
           "lastSeen": "2026-11-02",
@@ -443,6 +449,18 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-2913-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "trenchart.us",
+          "firstSeen": "2026-11-02",
+          "lastSeen": "2026-11-02",
+          "url": "https://news.google.com/rss/articles/CBMidkFVX3lxTE5rcWNxWk1xN3l3TkZwVlpySUR1Tk9sT2o2bS1KeEtsZ09wd2JmSnlUNFdHUE5HdkdLQm0tc1VPT1FfTjdlMHRnMy0tQ3RRb3hxYm1vMi0zZElUZVI2V0NoS00wMEtaY05Fd0ZiVDBVLXlqRXQza1E?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "hr-3447-119": {
@@ -640,6 +658,18 @@
       ],
       "mostViewed": null
     },
+    "hr-5598-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "rollcall.com",
+          "firstSeen": "2026-11-02",
+          "lastSeen": "2026-11-02",
+          "url": "https://news.google.com/rss/articles/CBMipgFBVV95cUxQbzZYb3NiRWk5ZGpqVkQyNFRpQ1NRV01iR1gzanFzU19CakVQR1lHd3pPdDlUck94cFBlVjFiZndrcEgzSkk0QmhsY1ZETVBFYmJac1RYb2pQYUp6TGZlbURIbHh2ZDdxMzFaN3Jlb0kxUm1hVUZMYUlpT0pyS1pNR1h5VTJoM2ZGa1JHdUkxMGRtbXBUN1pVa2pHN1g2WmdFRGttOGRB?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-5602-119": {
       "outlets7d": [
         {
@@ -804,6 +834,18 @@
         "lastSeen": "2026-10-12",
         "lastWeek": "2026-10-04"
       }
+    },
+    "hr-7040-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "washingtonreporter.news",
+          "firstSeen": "2026-11-02",
+          "lastSeen": "2026-11-02",
+          "url": "https://news.google.com/rss/articles/CBMi4wFBVV95cUxPZTRhc19OcVJEcHpidWJRc2NsaVI2M0V3cEZvZDNPSnJfLVdNUm14ajJTcUpUb0pfdnhPb0ktSGp3djFyQVNNSG0tV3JHNWlzNW1OLVFRUzVkcjVXQUl0NDFMZG9aQlZDcTRNNlJYWVQwVFJDY0hhaFY1YWhhU0xmQkJBNFJ1c3BLcTB2OXhPWndRV3hoNW9GV0g3T18yamVFRy15VEFEN0ZQNFhYSzQ3eXBEYTJoakIyMHZBTEVHc2Vzb2NpR3o5Yk5mNjA2Mm9BVVFBTU5WRGhiQ0VISXZNc0FPaw?oc=5"
+        }
+      ],
+      "mostViewed": null
     },
     "hr-7212-119": {
       "outlets7d": [],
@@ -1145,6 +1187,12 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "community.triblive.com",
+          "firstSeen": "2026-11-02",
+          "lastSeen": "2026-11-02",
+          "url": "https://news.google.com/rss/articles/CBMiVkFVX3lxTE43NF90S0tTQXZnUWt5d3NodlBiZm9iV0tjaVkyaEtfcUxPMGNzdWRyR2VFNW5hMkQwWG5jRGZ2YUljS1prLTJwdlVfWEN4NXhLb0g0X0dR?oc=5"
+        },
+        {
           "domain": "bworldonline.com",
           "firstSeen": "2026-10-29",
           "lastSeen": "2026-10-29",
@@ -1225,6 +1273,18 @@
         "lastSeen": "2026-10-12",
         "lastWeek": "2026-10-04"
       }
+    },
+    "s-3755-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "seekingalpha.com",
+          "firstSeen": "2026-11-02",
+          "lastSeen": "2026-11-02",
+          "url": "https://news.google.com/rss/articles/CBMiwwFBVV95cUxQZzE3VktMVk0zYi1XWlBNTVJJZ3ZCRGlnaXhOaEM1MlFGZm94dkx4aG5QOXBhSUlGNFlySzlxQU12cmpaNko0TW1vaUN3T3U0RHh0YVlPWU53cUtmdklTWl83U0hFakpuaTlydkZxbDdOdmtVRzNaeENZM29qWDRiRzc1M3h5ZFhhNXJDNWxvdzFkZ3pQX0JxUjBpdDdPODNjY2hoWVFOTW1UdDJsNGthd3l3ZXdQZ2NFVGo0WHRTM3BkOHM?oc=5"
+        }
+      ],
+      "mostViewed": null
     },
     "s-380-119": {
       "outlets7d": [],
@@ -1321,6 +1381,19 @@
           "url": "https://news.google.com/rss/articles/CBMilwFBVV95cUxNUHVPdllGUGVfdGlBUW5kbEZ1ZEF3a3lfdDJpcHVCdTE5cERxRmkxc2xLQWozcTNrU1pmOGtiX3FFck5pN0cxWkwyVG9xLTAtcE9tZ1E1RnhhbG1nQ1ZkbDd3UFJyODB0NHF2aGFKQVRRajVIQ2NsbnczcG5Ta2lkOEpSMzFHWklzaXo0SU1jcU9qTTRyUlBv?oc=5"
         }
       ],
+      "mostViewed": null
+    },
+    "s-4583-119": {
+      "outlets7d": [
+        {
+          "domain": "newsweek.com",
+          "lean": "left",
+          "firstSeen": "2026-11-02",
+          "lastSeen": "2026-11-02",
+          "url": "https://news.google.com/rss/articles/CBMimgFBVV95cUxQYzdWazAxTDE1YnpZSWk5MldrWHlHNmw4Y3daUkxhd3lKTHNXN000NHRiX09pcnhmNlJaUzBYUDNoUnBOZnNzeW16WFhzQVZLMU44aXpwN3Z3X2IxYng2eUhsT2VkcFM0WmdneUVPRDhyOWZwZjBpM0ZuR2dqOUFMNERJZEVycXEzQmRxdlJQZk82aTVlRlRuYy1R?oc=5"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "s-4621-119": {
