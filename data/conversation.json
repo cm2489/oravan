@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-03T06:40:18.869Z",
+    "fetched_at": "2026-11-03T15:02:49.161Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -9,15 +9,15 @@
       "press": {
         "status": "ok",
         "feeds_total": 11,
-        "feeds_silent": 1,
-        "checked_at": "2026-11-03T06:40:18.869Z"
+        "feeds_silent": 0,
+        "checked_at": "2026-11-03T15:02:49.161Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-01",
         "week_label": "Most-Viewed Bills - Week of November 1, 2026",
         "entries": 8,
-        "checked_at": "2026-11-03T06:40:18.869Z"
+        "checked_at": "2026-11-03T15:02:49.161Z"
       },
       "leans": {
         "center": {
@@ -282,6 +282,12 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "thedailyworld.com",
+          "firstSeen": "2026-11-03",
+          "lastSeen": "2026-11-03",
+          "url": "https://news.google.com/rss/articles/CBMipAFBVV95cUxNbU8wMUpZQ2FlZmxXVU4xSGlTcU13NnUtQnU1OWo4NThrZHNGdXVvbzc3R0VIbE9LWE40TUxCVmdQWVFQdmpiU2RaU0ZEN3NfWEtUVG1qbzJrQXRHVUVvcUV6N2JJUlFSMkp2LV94MmtoaUtSVTdKRGw5ODE4eElFdVZLSFlhSmRPYVRocW9RNmtVbHFkWVYtX2M1V1VxRkVaNU4tbA?oc=5"
+        },
         {
           "domain": "mtexpress.com",
           "firstSeen": "2026-11-02",
@@ -620,6 +626,18 @@
       ],
       "mostViewed": null
     },
+    "hr-5473-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "nebraskapublicmedia.org",
+          "firstSeen": "2026-11-03",
+          "lastSeen": "2026-11-03",
+          "url": "https://news.google.com/rss/articles/CBMi2gFBVV95cUxQMTVOYlFoY3YzTjVJdnZNS0tIVTgtZFhJUkpidkVQLXo5SWxwakx0SHdaenZ5QVRsSnNsSm93MnItTDlpMVdXYmd2WVQ4WkQ1X0diX0sxNVRoUzFCenQtNnFtS0x6RnlQS0FTVThfUkJjTWlkbWN2RHMydlRuaE9EVldYR3hlazA4WWFsNUtzM2s1TFZsQkVDRzhzemZiRzJlVHF0RjFkQkFTbXZBb2xxV3JDaUlvVnFxREY1RWVSUVM4TFBVTlk0bThsZzVnLTR6SVBQMGJxN3VyUQ?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-5598-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -925,18 +943,25 @@
     "hr-8902-119": {
       "outlets7d": [
         {
+          "domain": "cnbc.com",
+          "lean": "center",
+          "firstSeen": "2026-11-03",
+          "lastSeen": "2026-11-03",
+          "url": "https://www.cnbc.com/2026/11/03/election-day-congress-races.html"
+        },
+        {
           "domain": "npr.org",
           "lean": "center",
           "firstSeen": "2026-10-30",
-          "lastSeen": "2026-10-30",
-          "url": "https://www.npr.org/2026/10/30/g-s1-149975/2026-midterms-senate-map"
+          "lastSeen": "2026-11-03",
+          "url": "https://www.npr.org/2026/11/03/g-s1-151305/2026-midterms-house-races-to-watch"
         },
         {
           "domain": "thehill.com",
           "lean": "center",
           "firstSeen": "2026-10-29",
-          "lastSeen": "2026-10-29",
-          "url": "https://thehill.com/video-clips/6181487-watch-live-jd-vance-texas-gop-rally-ken-paxton-senate-midterms/"
+          "lastSeen": "2026-11-03",
+          "url": "https://thehill.com/homenews/6190738-house-midterm-battlefield-key-races/"
         }
       ],
       "unratedOutlets7d": [],
@@ -976,6 +1001,19 @@
           "url": "https://news.google.com/rss/articles/CBMirgFBVV95cUxQSklwUlUwMUxsU3pwempiZnZmN0NTbU5hNWtLUFEtcWhyMUZCM28tX3V5Wi01dnluaEFYU2tpTUZENFh3UGdHNWc1QTh3c0xteTNLNXpKR2M0emNSMTZVRG94ZkZaVXZwOC1Vajg4MU9xRlFXcjlYczM3Z0pYTlZHSEVyLUdSUXg0bDRBMXo2cFl1bXF6OHBxYzc5azU0aThFVF80ODVnVXVwV2hfM2c?oc=5"
         }
       ],
+      "mostViewed": null
+    },
+    "hr-9643-119": {
+      "outlets7d": [
+        {
+          "domain": "reason.com",
+          "lean": "right",
+          "firstSeen": "2026-11-03",
+          "lastSeen": "2026-11-03",
+          "url": "https://reason.com/volokh/2026/11/03/citys-using-meta-moderation-assist-feature-for-facebook-comments-doesnt-violate-first-amendment/"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "hr-9773-119": {
