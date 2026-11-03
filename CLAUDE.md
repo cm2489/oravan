@@ -1,13 +1,13 @@
 # CLAUDE.md — Oravan
 
-<!-- session-contract:start v1.1 2026-09-29 -->
+<!-- session-contract:start v1.2 2026-10-09 -->
 ## Session contract — how every session runs
 
-Standing rule, version 1.1, 2026-09-29. Colby set it that day in his own words. It applies by default any time he is using Claude Code, in every project he has not left out. If he wants anything different, he changes it himself at the start of the session. No exceptions: Claude never departs from it on its own.
+Standing rule, version 1.2, 2026-10-09 (version 1.1 of 2026-09-29 with one sentence changed, on his words of 2026-10-08 and 2026-10-09). Colby set it on 2026-09-29 in his own words. It applies by default any time he is using Claude Code, in every project he has not left out. If he wants anything different, he changes it himself at the start of the session. No exceptions: Claude never departs from it on its own.
 
 **The contract**
 
-1. **Models.** The session Colby is talking to orchestrates, on Fable 5.1. Subagents run on Sonnet 5.5 or Opus 5.5, never Fable. Claude picks the model and the effort level for each task, weighing quality, then speed, then cost.
+1. **Models.** The session Colby is talking to orchestrates, on Fable 5.1. Subagents run on Sonnet 5.5, Opus 5.5 or Haiku 5.5 (Haiku for mechanical stages only), never Fable. Claude picks the model and the effort level for each task, weighing quality, then speed, then cost.
 2. **Methods.** Claude can use ultracode, deep research and planning phases wherever it sees fit. It works in parallel worktrees as often as it can, to optimize for speed, where that makes sense.
 3. **Questions first.** Before work starts, Claude asks every clarifying question it has. It is exhaustive, so both are clear before the work starts and interruptions and iterations stay few. The plan follows.
 4. **Plan approval is the grant.** Once Colby approves the plan, Claude has authority to push and to merge pull requests, unless there is a conflict or an issue that needs his eyes.
@@ -47,7 +47,7 @@ Standing rule, version 1.1, 2026-09-29. Colby set it that day in his own words. 
 - **Copies.** Only Colby changes this contract. If two copies differ, Claude follows the stricter one, changes neither, and lists the difference in the Report.
 <!-- session-contract:end -->
 
-**In this repo.** His words of 2026-09-29 are kept verbatim in `docs/constitution-log.md#session-contract-2026-09-29`. The rule files here are this file, README and `docs/constitution-log.md`; `docs/process.md` and `docs/current-direction.md` merge under an approved plan when the change only records his own dated words. The hard rules below still bind, and a clash with one is a conflict for him. What Claude may merge, and what waits, is under "Merging" below. The coordination ledger is pinned issue #341: every session reads it before it asks its questions, lists its work there before it builds, and clears it when the Report goes out, and the pipeline doctor reads it before it acts (owner, 2026-09-28 and 2026-09-29). At most three full local builds or end-to-end runs at once; the pull request's CI is the full-suite check. The roadmap is one private page kept outside this repo, which Claude corrects before every Report (owner, 2026-09-29).
+**In this repo.** His words of 2026-09-29 are kept verbatim in `docs/constitution-log.md#session-contract-2026-09-29`, and his words of 2026-10-08 and 2026-10-09 on Haiku 5.5 in `#session-contract-2026-10-09`. The rule files here are this file, README and `docs/constitution-log.md`; `docs/process.md` and `docs/current-direction.md` merge under an approved plan when the change only records his own dated words. The hard rules below still bind, and a clash with one is a conflict for him. What Claude may merge, and what waits, is under "Merging" below. The coordination ledger is pinned issue #341: every session reads it before it asks its questions, lists its work there before it builds, and clears it when the Report goes out, and the pipeline doctor reads it before it acts (owner, 2026-09-28 and 2026-09-29). At most three full local builds or end-to-end runs at once; the pull request's CI is the full-suite check. The roadmap is one private page kept outside this repo, which Claude corrects before every Report (owner, 2026-09-29).
 
 Constitution v2, adopted 2026-09-27. This file is page 1: the owner's session contract above (2026-09-29), then the hard rules, each with the gate that enforces it. Everything else is direction or process and lives elsewhere:
 
