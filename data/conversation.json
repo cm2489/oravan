@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-03T21:23:55.507Z",
+    "fetched_at": "2026-11-03T21:35:19.330Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-03T21:23:55.507Z"
+        "checked_at": "2026-11-03T21:35:19.330Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-01",
         "week_label": "Most-Viewed Bills - Week of November 1, 2026",
         "entries": 8,
-        "checked_at": "2026-11-03T21:23:55.507Z"
+        "checked_at": "2026-11-03T21:35:19.330Z"
       },
       "leans": {
         "center": {
@@ -295,6 +295,12 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "lakecountyexam.com",
+          "firstSeen": "2026-11-03",
+          "lastSeen": "2026-11-03",
+          "url": "https://news.google.com/rss/articles/CBMi_AFBVV95cUxPUy1QUzJLTmQxcHk0MDNGTnVUdnZmel9UMUhqeThvUVQyZkRFMmp4U2NkNTlwUXN1TFN1V1B5cnpGakRqUXpOeEdrRW1hbkZCc1Z5anZkVjVodnJPN1BhZ2x4UURRR2Z1U2dweUVkLUI1NE1CNUh3djhnYXFsdU9RNFZncDRVZXNrQzlHRnBTc0tFWkc3bUxCZE9WR2VOaUg1VzZDaFhYU0h1Ynp1aHpFMHItM1h3WkNKUlJHVWNBSnJCMG9NdHh2dk5lN3FBTndCdnpyQm5VbHRjd05XOF9teTl1MnRpNWhFVWdmVmtDcmFENENpME4xUVJ5b0Y?oc=5"
+        },
+        {
           "domain": "thedailyworld.com",
           "firstSeen": "2026-11-03",
           "lastSeen": "2026-11-03",
@@ -489,6 +495,12 @@
           "url": "https://news.google.com/rss/articles/CBMikwFBVV95cUxQbUpJX2Q0UE5JekNzM29qeXNoZVFlS0VQWXVqV0M0M1hxZmxWMlZBSzh1VFYxT3dycWdESWYtanBVYUc2MzBVV3dHYjYyYnZ6MGMxZkdsd1lrYUJMZDh3dDNQTGdMZFBmYXM2ODU1b0hXX2p4eEZMdnNtbm5JbjBYRmZRMmNVRzUxZGFGdHdnY3JHYU0?oc=5"
         },
         {
+          "domain": "es.tradingview.com",
+          "firstSeen": "2026-11-03",
+          "lastSeen": "2026-11-03",
+          "url": "https://news.google.com/rss/articles/CBMi0gFBVV95cUxQbU9jWjNrZ01JTlVKNmZjYlF6M1IwUlRudE9nVmNkY3ZxajhUOV9WTFZla05LWHF6T0x0SmxEZW5JelR2M0p1SXdYa0lncFhXT0JxOERHT0VkVXp1VGVEN2NQVEVhekt2UzJnSHRTM3U3ZEM1YTZBcTI2OFZrT2xyR1dkUmJHN1MzTXZLdmI4OTQ3Sm12Z3VSYm9qTjJrMC1INGVmZGVuQjVrd0I0SFhXLXFOVXIxaC1yTzFkUVBiaGZzYlNtejlIVlc2OTVDckNFLWc?oc=5"
+        },
+        {
           "domain": "digitaltoday.co.kr",
           "firstSeen": "2026-11-02",
           "lastSeen": "2026-11-02",
@@ -511,6 +523,12 @@
           "firstSeen": "2026-11-03",
           "lastSeen": "2026-11-03",
           "url": "https://news.google.com/rss/articles/CBMiZEFVX3lxTFBMZUV4SDhNbGVBQU1fUFBSakl1bzd3THNHUmFEUjJ5YWNWSHUwSS1BSmIxbHk2MXNDc1JfS2hnaEJuemV0bWI0ZzlCZ1BMTnBOaWRWM0JaeThHSnNrNlJiOF9UOEc?oc=5"
+        },
+        {
+          "domain": "starnewskorea.com",
+          "firstSeen": "2026-11-03",
+          "lastSeen": "2026-11-03",
+          "url": "https://news.google.com/rss/articles/CBMigwFBVV95cUxPNXpkdGY3Y0djNHFMYWV5U3Z0MUxNbjNObGIzUUJtV3BSb1cxeFBPUE8wd1FreVBfUUx0Um8yRENoSGE4R2E4N1hfRFRyMzhpbkRfcHN3RWVERjQ4UVpxNVNGUW00VkMzWV9EaTVXUGwzQ3EzXzhROTJQXzR1MDl4dy1adw?oc=5"
         }
       ],
       "mostViewed": null
@@ -1373,6 +1391,18 @@
           "firstSeen": "2026-10-31",
           "lastSeen": "2026-10-31",
           "url": "https://news.google.com/rss/articles/CBMilwFBVV95cUxNUHVPdllGUGVfdGlBUW5kbEZ1ZEF3a3lfdDJpcHVCdTE5cERxRmkxc2xLQWozcTNrU1pmOGtiX3FFck5pN0cxWkwyVG9xLTAtcE9tZ1E1RnhhbG1nQ1ZkbDd3UFJyODB0NHF2aGFKQVRRajVIQ2NsbnczcG5Ta2lkOEpSMzFHWklzaXo0SU1jcU9qTTRyUlBv?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "s-4563-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "legis1.com",
+          "firstSeen": "2026-11-03",
+          "lastSeen": "2026-11-03",
+          "url": "https://news.google.com/rss/articles/CBMid0FVX3lxTE5yTW5rZnFES0wyaWhVMk81UjU3VWVDTThHTGhwUGRqUEROb2VZaTkzNnJPbTg1VUxNX3huLTBwZmswY1A4akQ0cV9mdWNpaERlYlZBNjNua05nNlg5dTFueVhzS2twZkktV1RjcHpSR3ZseUhHR29J?oc=5"
         }
       ],
       "mostViewed": null
