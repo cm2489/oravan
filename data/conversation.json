@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-03T20:29:04.694Z",
+    "fetched_at": "2026-11-03T21:23:55.507Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-03T20:29:04.694Z"
+        "checked_at": "2026-11-03T21:23:55.507Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-01",
         "week_label": "Most-Viewed Bills - Week of November 1, 2026",
         "entries": 8,
-        "checked_at": "2026-11-03T20:29:04.694Z"
+        "checked_at": "2026-11-03T21:23:55.507Z"
       },
       "leans": {
         "center": {
@@ -180,6 +180,18 @@
           "firstSeen": "2026-10-28",
           "lastSeen": "2026-10-28",
           "url": "https://news.google.com/rss/articles/CBMi6AFBVV95cUxNb3lOUm1mVWx3RThyOU9Pc1dOSEh3VVdvQnBEZUY3dWN5QVVobG16MDhHSG5IRDNILWVvc2FxcmYzclNnYUFVQU1PaG9LNlE2U1lEWWdDZ0lsRTZtcEF6TXU0bURpWENLbGYwU3NNTFpKWVNBOTdSZUJVVmhhU0lfVzg5YXRDdHROcG5wNEt5NVJndmRpVThKb19QM1M0a0d2VkVFZzhsVlRTV3JsZEJ4bkhmV0sySEZUU3ZjSzJ5elZmbzRxQ05TdHpmNDJ4QVZfSWxhOTBhdHladE1vZFFMQUc3N2RLbXo30gHoAUFVX3lxTE1veU5SbWZVbHdFOHI5T09zV05ISHdVV29CcERlRjd1Y3lBVWhsbXowOEdIbkhEM0gtZW9zYXFyZjNyU2dhQVVBTU9ob0s2UTZTWURZZ0NnSWxFNm1wQXpNdTRtRGlYQ0tsZjBTc01MWkpZU0E5N1JlQlVWaGFTSV9XODlhdEN0dE5wbnA0S3k1Umd2ZGlVOEpvX1AzUzRrR3ZWRUVnOGxWVFNXcmxkQnhuSGZXSzJIRlRTdmNLMnl6VmZvNHFDTlN0emY0MnhBVl9JbGE5MGF0eVp0TW9kUUxBRzc3ZEttejc?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hjres-120-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "qz.com",
+          "firstSeen": "2026-11-03",
+          "lastSeen": "2026-11-03",
+          "url": "https://news.google.com/rss/articles/CBMieEFVX3lxTE44eHlpSllfWUdsNDVhdkJENktBSUFrR0pNN0dRTHVpTXFmZXA4SXpnV2V5Z0VjSkNWb1JpLXo1bEpWTXpIWVBpazBRb29odzRXbXFRME42TjlJVm1vYVp1ZVp1UVVLZ2VIMmF4YUxXcVFDcEtSYndBVw?oc=5"
         }
       ],
       "mostViewed": null
@@ -470,6 +482,12 @@
     "hr-3633-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "altcoinbuzz.io",
+          "firstSeen": "2026-11-03",
+          "lastSeen": "2026-11-03",
+          "url": "https://news.google.com/rss/articles/CBMikwFBVV95cUxQbUpJX2Q0UE5JekNzM29qeXNoZVFlS0VQWXVqV0M0M1hxZmxWMlZBSzh1VFYxT3dycWdESWYtanBVYUc2MzBVV3dHYjYyYnZ6MGMxZkdsd1lrYUJMZDh3dDNQTGdMZFBmYXM2ODU1b0hXX2p4eEZMdnNtbm5JbjBYRmZRMmNVRzUxZGFGdHdnY3JHYU0?oc=5"
+        },
         {
           "domain": "digitaltoday.co.kr",
           "firstSeen": "2026-11-02",
@@ -799,6 +817,18 @@
       ],
       "mostViewed": null
     },
+    "hr-7625-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "meritalk.com",
+          "firstSeen": "2026-11-03",
+          "lastSeen": "2026-11-03",
+          "url": "https://news.google.com/rss/articles/CBMirwFBVV95cUxPSTF4UlBCTmpxSFE0U0ZoMWsyTmFzLVBfNTBFMTRuSlpxdDlvbWJoN3hBUjJ0cG5kdThNR3NvTk9tb0gtTDd2TzB2bUNYN1ozMUVkNERuUzFONHo0Sk43Q3YzX1BGNklZaFRYalYtVElqMXBlcTdaeF9vTGhLWVZjQTlXQXUwVUs4Tk1sTklWWWlLREpvemxVa3lkdkxSVjJXVDVQUURFcGxVbDM4YnFv?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-7796-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -944,7 +974,14 @@
           "url": "https://thehill.com/policy/defense/6181202-ndaa-passage-threatened-partisan-infighting/"
         }
       ],
-      "unratedOutlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "nextgov.com",
+          "firstSeen": "2026-11-03",
+          "lastSeen": "2026-11-03",
+          "url": "https://news.google.com/rss/articles/CBMi3AFBVV95cUxQeE5TWG40WGllZG5nS3lyVG1SZWU2Q3BsYlBSM01mRTFhbnZmQzdfeVJZUDB2VlpGeXNrNmhzN05PQkxiZVRCSHNQUEVUbDVvWllnbVpYeWFqeEs1V0E5d3Nrd042YTlyc3hZQ2NpbVRhejNUc0lOMXM3UVhETVBjaldkdUQyS1JRUm5IREdSSHVMX1ZzODBhekl2dUF4ME5KMU41czlNelZpRFB3S1FzVjRtM3R2c3lVV3NyX0ZwRkM4NGFsaDhqTzEtY1VQMDBCejM0aTliajA3Zngz?oc=5"
+        }
+      ],
       "mostViewed": {
         "weeksOnList": 1,
         "lastRank": 9,
