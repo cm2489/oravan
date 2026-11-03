@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-03T15:02:49.161Z",
+    "fetched_at": "2026-11-03T20:29:04.694Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-03T15:02:49.161Z"
+        "checked_at": "2026-11-03T20:29:04.694Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-01",
         "week_label": "Most-Viewed Bills - Week of November 1, 2026",
         "entries": 8,
-        "checked_at": "2026-11-03T15:02:49.161Z"
+        "checked_at": "2026-11-03T20:29:04.694Z"
       },
       "leans": {
         "center": {
@@ -485,6 +485,18 @@
       ],
       "mostViewed": null
     },
+    "hr-4361-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "cbtnews.com",
+          "firstSeen": "2026-11-03",
+          "lastSeen": "2026-11-03",
+          "url": "https://news.google.com/rss/articles/CBMiZEFVX3lxTFBMZUV4SDhNbGVBQU1fUFBSakl1bzd3THNHUmFEUjJ5YWNWSHUwSS1BSmIxbHk2MXNDc1JfS2hnaEJuemV0bWI0ZzlCZ1BMTnBOaWRWM0JaeThHSnNrNlJiOF9UOEc?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-4377-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -807,6 +819,18 @@
           "firstSeen": "2026-10-27",
           "lastSeen": "2026-10-27",
           "url": "https://rollcall.com/2026/10/27/transmission-overhaul-threads-careful-needle-in-permitting-bill/"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-7971-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "taxfoundation.org",
+          "firstSeen": "2026-11-03",
+          "lastSeen": "2026-11-03",
+          "url": "https://news.google.com/rss/articles/CBMinAFBVV95cUxNZWNTTUpTWnM1bVRlSXhTTEI0VThBNDhQUG1HSnVfeUZmOTF6YzdUZ3lRRi1WVnFxLVViUjgxamktLVl6X0tscThrSW9ta254NFk1cUJ1NDEyMXNWSWpTZVcyZW5iakxhVEFrZ3A1ZlFkbEJDUGd2UjkzYzF3cXBDSllDaDVPSkpDQkM2S2sxcUJ6VGVGcG5vTGtBeFI?oc=5"
         }
       ],
       "mostViewed": null
@@ -1454,6 +1478,13 @@
     "sjres-185-119": {
       "outlets7d": [
         {
+          "domain": "reason.com",
+          "lean": "right",
+          "firstSeen": "2026-11-03",
+          "lastSeen": "2026-11-03",
+          "url": "https://reason.com/2026/11/03/will-the-iran-war-cost-republicans-control-of-the-senate/"
+        },
+        {
           "domain": "foxnews.com",
           "lean": "right",
           "firstSeen": "2026-10-30",
@@ -1479,6 +1510,18 @@
           "firstSeen": "2026-10-28",
           "lastSeen": "2026-10-28",
           "url": "https://news.google.com/rss/articles/CBMinAFBVV95cUxNVk1VYWQ2VlZubkFtWnd4QVhRS2JwejNON3VaNTJyVlNiRDVCcThzckZuY2ZjRmFJRTNuM3pnSExrSnNYUHhUYlVadVVSVmN1OFdCVHZqMURUUWpBRTdZNk1UeW1ZRUlBYWV6MkMtM1k1b3ptbXo5ZkZMTmxaUDVhVmVwa2g2eGJzSnVPWHB3ZnVQc1ZjTVdNekFGcUzSAaIBQVVfeXFMTnAxeW9TMDQ3dkxsNHYtVFFQNFdtdlBGZ1RZZHlJMlNWeFlITWNMdnp0aVZNRFVJeEltc1hUNk9MRjhVMFJsbkFGanZvRVFQRU11NnJ4MGVLZGdpejQ0NmVaSEdmR0dEQVBoRHBTdDBFbGU2MUJsS085c2ZtYThIWlQ2VUJGclVlVmwyUUR4WGNSTE5fQUUwUGRsQ1pIZm9MR21n?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "sjres-197-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "mecep.org",
+          "firstSeen": "2026-11-03",
+          "lastSeen": "2026-11-03",
+          "url": "https://news.google.com/rss/articles/CBMiwwFBVV95cUxOWTVuQWJMZ2pqd3dSVldhY1AySE5mV2d3OWNkLXI1S295Z0lyQ0ZQTDg1VnN1Sk5tWXYydnhLOFlUTXIwSlBJZFhZb1pRRUdIbHRlcW9ySnJyOE9PY1p3TzgtVllRMVlvQmNwem9xLUx0OVMzdnNfaXFmLXZ1cFFLdFJ2enNKanFoakZ2Q3MtelVIbkItNEJCQzFCNzB4ZE1KbDM1aGVPR3NZYmlvcWtHR2pXakVjZ0xKTF9oYUlFSzdjZG8?oc=5"
         }
       ],
       "mostViewed": null
