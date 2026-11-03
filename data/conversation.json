@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-03T03:45:46.354Z",
+    "fetched_at": "2026-11-03T06:40:18.869Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -9,15 +9,15 @@
       "press": {
         "status": "ok",
         "feeds_total": 11,
-        "feeds_silent": 0,
-        "checked_at": "2026-11-03T03:45:46.354Z"
+        "feeds_silent": 1,
+        "checked_at": "2026-11-03T06:40:18.869Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-01",
         "week_label": "Most-Viewed Bills - Week of November 1, 2026",
         "entries": 8,
-        "checked_at": "2026-11-03T03:45:46.354Z"
+        "checked_at": "2026-11-03T06:40:18.869Z"
       },
       "leans": {
         "center": {
@@ -727,6 +727,24 @@
         "lastWeek": "2026-11-01"
       }
     },
+    "hr-6687-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "deccanherald.com",
+          "firstSeen": "2026-11-03",
+          "lastSeen": "2026-11-03",
+          "url": "https://news.google.com/rss/articles/CBMi0AFBVV95cUxPRUREV3dldFFham9DdFVrZ3FoekVmOFJiejBtSnVPZGtJLVdBU0dHXzhLMzgxaVIxRjJiXy1YQWpWZkI2c2FsOUVSc1JtU1lfemxCV1hJenA1R2x4NWRZVlkzNGNqcVMzQUFhdXMwMV9seGhzMXNLLWVja0pGTk5KWkNEUDBMVHM4TGFhVEtJbi1wSm9Ja3phS2dBZFhTSDdRZjVsVzJtMDBUb0d5Nk1Jdy04bzVOTDdSamFCNVVqOEVHVzV6UUdMTTd2NmxpZS1R?oc=5"
+        },
+        {
+          "domain": "finance.biggo.com",
+          "firstSeen": "2026-11-03",
+          "lastSeen": "2026-11-03",
+          "url": "https://news.google.com/rss/articles/CBMidkFVX3lxTFBPdkc0NFZfdmNlM0Ftclg2SXlXTnllNkUzdm5yN0pNcXdTdkFmeTFMUjIzaFVybXdQUEVXWjh4dTJuYWZxTmxXT29TTFFsZFZqUnZIdzltcHdKSVVXTFJGakNkZ2pnTGpNeXpzY3JJYWtid1FsZlE?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-7040-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -932,6 +950,18 @@
           "firstSeen": "2026-10-29",
           "lastSeen": "2026-10-29",
           "url": "https://news.google.com/rss/articles/CBMiiwFBVV95cUxONFdOMFV2cWdDalhqZXgtcjZmTHlaajJ3YWU3Y1JwNEVDaEJxNHpLdW9QWDE2bm9fYVdCNTNVSmF1ZGtBYlA3QlRJYXVCZC1Temt5VGFYSEV1RjlSUzY4VTNVRHNHNW9LaDlGQ2x2U1R2MWpRNGJKNW9teEEyWGQ2RDAyazlrZGF4cWRR?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-8991-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "ilmattino.it",
+          "firstSeen": "2026-11-03",
+          "lastSeen": "2026-11-03",
+          "url": "https://news.google.com/rss/articles/CBMinAFBVV95cUxOQUFDR3hDbHFDMWh0V0VDY01qSmhWZTJiNTZuTVd1T2VtNERJNC1QenAzeEZtMkFHUkZkcVJvbmMyZk5NNC1ORmdvWVRYQTctV3JwN2NFRmdVNGcyYWZQbFl6R3psTFpTMW1vQWZrSHlBZVFEUXRMTUxiQTlyQ2Z3SDFpYzFUSDl3Z3hTSzlraXNSbGxvODRNd194QXbSAZwBQVVfeXFMTkFBQ0d4Q2xxQzFodFdFQ2NNakpoVmUyYjU2bk1XdU9lbTRESTQtUHpwM3hGbTJBR1JGZHFSb25jMmZOTTQtTkZnb1lUWEE3LVdycDdjRUZnVTRnMmFmUGxZekd6bExaUzFtb0Fma0h5QWVRRFF0TE1MYkE5ckNmd0gxaWMxVEg5d2d4U0s5a2lzUmxsbzg0TXdfeEF2?oc=5"
         }
       ],
       "mostViewed": null
