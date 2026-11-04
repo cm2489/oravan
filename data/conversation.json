@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-04T20:42:32.481Z",
+    "fetched_at": "2026-11-04T21:32:17.340Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-04T20:42:32.481Z"
+        "checked_at": "2026-11-04T21:32:17.340Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-01",
         "week_label": "Most-Viewed Bills - Week of November 1, 2026",
         "entries": 8,
-        "checked_at": "2026-11-04T20:42:32.481Z"
+        "checked_at": "2026-11-04T21:32:17.340Z"
       },
       "leans": {
         "center": {
@@ -501,6 +501,18 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "cryptotimes.io",
+          "firstSeen": "2026-11-04",
+          "lastSeen": "2026-11-04",
+          "url": "https://news.google.com/rss/articles/CBMirgFBVV95cUxONHp2Y1FZWnVzVERYVU05a3pWQ3dUM2RBeS0tNnZ2Rjkya2tjOHdJM1ZhbmJBYWxpcTRIYWg1TVd4MmZZZnh2MWI2Z193ZFRhSVVSREpYT0MzeWtVekpyWWVhUUxjNDctWXF1Q1lxS21tRzVpUnJyTGlnUVkzeDlWWXdodHc2LTVCLW1JeTg5cFhmTmNUdGZXTGJzNml4UjhIeDZLTHNoTVhIWVRySGc?oc=5"
+        },
+        {
+          "domain": "finance.yahoo.com",
+          "firstSeen": "2026-11-04",
+          "lastSeen": "2026-11-04",
+          "url": "https://news.google.com/rss/articles/CBMiqAFBVV95cUxOOHg5aUVQOVh2U1VyX3l4QWtoVHpnc2NKc2Qwd0RpWUl4NGZValRZTzc1aEZXdVl3Umk2WGwxbEtnWVRpVWcwMVNiWDFrcm9CNXdSRE8xWHZhdE9SOE9Odks3UVk5aHdPWWZSVENld3haMG50RkNnTHRpNHItYVhxSHlRUUhWb0ZyUTg3RnhJUVRBbnQ3ZmhrTG9fbjU4YmtpYnhtRE8tVGw?oc=5"
+        },
+        {
           "domain": "altcoinbuzz.io",
           "firstSeen": "2026-11-03",
           "lastSeen": "2026-11-03",
@@ -760,6 +772,12 @@
     "hr-5631-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "forth.news",
+          "firstSeen": "2026-11-04",
+          "lastSeen": "2026-11-04",
+          "url": "https://news.google.com/rss/articles/CBMiYkFVX3lxTE83aUEyZTI4QTNRaUJyM2d2Tzl3Yld4OGlfMGNWTEtEWjFfdTgzSXpOcll2eFBiRDYwVlYzUEt3RzBPNDN5TC1iLUItTzQ1VC0wRWxpVDA5cnFyd1E5VkgtRDJn?oc=5"
+        },
         {
           "domain": "justthenews.com",
           "firstSeen": "2026-11-02",
@@ -1170,6 +1188,18 @@
       "unratedOutlets7d": [],
       "mostViewed": null
     },
+    "s-1197-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "agri-pulse.com",
+          "firstSeen": "2026-11-04",
+          "lastSeen": "2026-11-04",
+          "url": "https://news.google.com/rss/articles/CBMipgFBVV95cUxNcTJ4U2FDMkpaS2ptRXZrc0pUTElPZTgyRFZiTnRnYTJpT2RZSXhEbXVUMXRPcGlsWmhWOVVzektVWlJ1dnNhZERMb3JuUFJjN0t1OXhES3Z4TV9wOWtlTWdNb3JHRy1JMDc5cmhXWVp3UWxJNDl3SHpDTE9EY3YtaVJLZ2NpWnVuR3hzX2VXOVZLTXc1VnBVaUhOSXJlUWNLVFVjbDlR?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "s-146-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1397,8 +1427,8 @@
         {
           "domain": "marijuanamoment.net",
           "firstSeen": "2026-10-29",
-          "lastSeen": "2026-10-29",
-          "url": "https://news.google.com/rss/articles/CBMi5wFBVV95cUxOZ25udXFEcmlFWjcwR0JlUHAzVkdwZk9WODdyQ1dMNFpSeWs0ZlEyWFY1M3JVbWxZdDluTEtYMWd1a1VSRnpzdW1xa3pzVy1DQ0ZvSS0zcGRNeVdFbV83WHBaTVVHTFVKVHc2eGhtc3U4YVhrU25YRG1tdHA0eUJsXzQwZ0I4THRqWmFUODFyXzRVVWFMb3BmR3VFNzJEY1I4RjJLRFdkcHpqbERpNjFuenhqa1pfSm5xa0RQUzdSZklmSnFFekVBdlFneWFnZnZxa2tnMXV1WVpQOEVheGV0RXdvX3M2QWs?oc=5"
+          "lastSeen": "2026-11-04",
+          "url": "https://news.google.com/rss/articles/CBMivAFBVV95cUxPQ2NxaG56WjZMUWZpZFc3dFN5RHJGQjVLTXJHUEtka0tGRFdVMExiNHVpZDZ0T05OMC1LckE5UzRUZW84eDdWcnpVTGZKOTZKU3ZoNVRTTUdidG0yV1Z5ckF4WUxZTElDVWZkSUxKOWhjNTNZcExxeUd1aGhhVVQ1aklHd1I3UlFvVkxXS0NWVXNKS2VkRXNrVEFUOGpkUDViNmhfQ2JQdmUzTl9pcl9GNFlvQUFPOVRMVGQ1eQ?oc=5"
         }
       ],
       "mostViewed": null
