@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-04T21:32:17.340Z",
+    "fetched_at": "2026-11-04T23:37:11.182Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-04T21:32:17.340Z"
+        "checked_at": "2026-11-04T23:37:11.182Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-01",
         "week_label": "Most-Viewed Bills - Week of November 1, 2026",
         "entries": 8,
-        "checked_at": "2026-11-04T21:32:17.340Z"
+        "checked_at": "2026-11-04T23:37:11.182Z"
       },
       "leans": {
         "center": {
@@ -1396,6 +1396,18 @@
       ],
       "mostViewed": null
     },
+    "s-4315-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "thecougarchronicle.com",
+          "firstSeen": "2026-11-04",
+          "lastSeen": "2026-11-04",
+          "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxNTXBkMFBkM0hjS1dHU3d0c0RxTmRCLU1HMFNjOHNMNDM0YzB0ZWpBa25GTXkzNzd6ZHk1TWYybWV1SGdEeHBrcXZLekd1SDF0QjM1aE5JRXVVWFdiMk9kWU5yb2F6RElVVXVZdnZOSzNMa1lCd0IxdEhzN29aczNqZERWYkVNYkFW?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "s-4337-119": {
       "outlets7d": [
         {
@@ -1509,6 +1521,12 @@
     "s-4668-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "golfweek.usatoday.com",
+          "firstSeen": "2026-11-04",
+          "lastSeen": "2026-11-04",
+          "url": "https://news.google.com/rss/articles/CBMi6AFBVV95cUxPR2tFWkVzQ0szMVNDWGFYRXhXVVkySjdXTXJKOVk2MHMweXZJTmg1ZUhQYkdPUG1XM01pUXZuUXRGTEhpdF9FNmJya1pObUZXYW5lSzE1cF9tU2ZDSHlja0FxUXNYN1BkOE5ZdEpIWWNqWE5GWVZUNkM5OXZmVmhpWXVTdzZhTG9pdkdNT3pnYVdlTE5uUEhHRzgydktaWXh4QWc0ZzcxUU5nTURsQllpMFdkSWpIQW12Tks1TEhDWC01WG5ySkxpRDF6a2tRQVdJcmpNSTFFeXRQYXN6bmpfcmNNRE44akVr?oc=5"
+        },
         {
           "domain": "blog.rallyfuel.com",
           "firstSeen": "2026-11-02",
