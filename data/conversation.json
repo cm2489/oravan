@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-04T01:18:02.097Z",
+    "fetched_at": "2026-11-04T02:54:18.126Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-04T01:18:02.097Z"
+        "checked_at": "2026-11-04T02:54:18.126Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-01",
         "week_label": "Most-Viewed Bills - Week of November 1, 2026",
         "entries": 8,
-        "checked_at": "2026-11-04T01:18:02.097Z"
+        "checked_at": "2026-11-04T02:54:18.126Z"
       },
       "leans": {
         "center": {
@@ -446,6 +446,18 @@
           "firstSeen": "2026-10-30",
           "lastSeen": "2026-10-30",
           "url": "https://news.google.com/rss/articles/CBMizwFBVV95cUxPLVgzbllmUDVYVzNWV3lYbmxIcGo5WFdCRUg1U1VjZHRmRnhBdW92cnRpcV95RS15WXRTZDRlOWxVLVptWXF3QnRDYWpWamx2eW5seFZCQ0tTeDl3Rzg3QUtIQ0Rham9DTHI5UjR5WjlwTVFDV2xzVWhjSENtRHl5UFlRZ3BjNE85ZXA1T3lMcDN4bWFlQlFxMXB1ZXpQNU1ETFhmMUhVZXc2YU1CQUMwWTFta0h5MjdxOUNPVnZEUF9zNF9MdWhrbEVSX0pOY1E?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-2694-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "rollcall.com",
+          "firstSeen": "2026-11-04",
+          "lastSeen": "2026-11-04",
+          "url": "https://rollcall.com/2026/11/03/key-midterm-election-results/"
         }
       ],
       "mostViewed": null
