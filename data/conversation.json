@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-04T17:11:19.945Z",
+    "fetched_at": "2026-11-04T20:42:32.481Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-04T17:11:19.945Z"
+        "checked_at": "2026-11-04T20:42:32.481Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-01",
         "week_label": "Most-Viewed Bills - Week of November 1, 2026",
         "entries": 8,
-        "checked_at": "2026-11-04T17:11:19.945Z"
+        "checked_at": "2026-11-04T20:42:32.481Z"
       },
       "leans": {
         "center": {
@@ -224,7 +224,14 @@
     },
     "hr-1-119": {
       "outlets7d": [],
-      "unratedOutlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "ms.now",
+          "firstSeen": "2026-11-04",
+          "lastSeen": "2026-11-04",
+          "url": "https://news.google.com/rss/articles/CBMidkFVX3lxTFBfb0M4RzdGbWtiNG93cGpMUXJxY0xjSE9oRTE0aHJoNjB6ejJlbDBWRWIzV19DdHZZWFRpcjFhSENpUURNaHI2QTZKNmg1VEFDNzU3MmNvZ1V2dVRMNjJ5bWZZZTdhQzA4U2dqSHBwWTJ1SFU1Ymc?oc=5"
+        }
+      ],
       "mostViewed": {
         "weeksOnList": 13,
         "lastRank": 3,
@@ -424,6 +431,12 @@
           "firstSeen": "2026-11-04",
           "lastSeen": "2026-11-04",
           "url": "https://news.google.com/rss/articles/CBMitgFBVV95cUxPRmh0bWtyazRZYndsX2NUbXd1U3VBVnhNVGVsYmRfcThmQU1KVVZSamJNUGRtS3NiNndDanA4WkFPRlh2cGUzVHRQN1FNaHhmOEFOMzFmVzZVaXJaMktvT0ZCWEpTajExWmtoQVBmdTJ1NWVsOEFJQmRnSHRSWDdiNHRMbnJ3STlUWUFSc2RIMndFbUxINEdQbHN1VjJ4VXFEeXNDUF9ZUHZsVzdLNGdPOXVKQWpjQQ?oc=5"
+        },
+        {
+          "domain": "theconversation.com",
+          "firstSeen": "2026-11-04",
+          "lastSeen": "2026-11-04",
+          "url": "https://news.google.com/rss/articles/CBMitAFBVV95cUxQY1pLMHQ5ckRsVUpoQmF1MkVOakkwcHlTQUw3a3ZJbm55WU9kRmU4QkZWMkFoLUF5Qm1uTktZUEpLYzRVQWd5MWR6a1hCZUR3clljVUM2dENEWER2V19QZ1kwY09TanozUEdxNWQ4OFpDSXhJVmhLSGJtYWxRa2N4UzFVcHE3T1NoRUV2UXRXOGgtbEdjNzVEdlB5MmhXOENVd3U5OGRyMkJPZlFzeHdlWG81V18?oc=5"
         }
       ],
       "mostViewed": null
@@ -571,6 +584,13 @@
     "hr-4889-119": {
       "outlets7d": [
         {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-11-04",
+          "lastSeen": "2026-11-04",
+          "url": "https://www.foxnews.com/politics/redistricting-efforts-blow-up-republicans-faces-amid-historic-house-losses"
+        },
+        {
           "domain": "thehill.com",
           "lean": "center",
           "firstSeen": "2026-11-04",
@@ -583,6 +603,13 @@
     },
     "hr-4911-119": {
       "outlets7d": [
+        {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-11-04",
+          "lastSeen": "2026-11-04",
+          "url": "https://www.foxnews.com/politics/voter-poll-democrats-take-control-senate"
+        },
         {
           "domain": "thehill.com",
           "lean": "center",
@@ -1074,7 +1101,15 @@
       "mostViewed": null
     },
     "hr-9010-119": {
-      "outlets7d": [],
+      "outlets7d": [
+        {
+          "domain": "politico.com",
+          "lean": "left",
+          "firstSeen": "2026-11-04",
+          "lastSeen": "2026-11-04",
+          "url": "https://www.politico.com/live-updates/2026/11/04/congress/delauro-makes-official-bid-to-return-to-the-top-job-on-the-house-appropriations-committee-01149452"
+        }
+      ],
       "unratedOutlets7d": [
         {
           "domain": "garhwalpost.in",
@@ -1188,6 +1223,18 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "news.bloomberglaw.com",
+          "firstSeen": "2026-11-04",
+          "lastSeen": "2026-11-04",
+          "url": "https://news.google.com/rss/articles/CBMitgFBVV95cUxOSTNQWjZ0LTFadjZlQUpjSXlHMC1HNnk4b0JzQ2NsMlYyeExiT19mbmhsNlV5blItNVJXV1hWMFFTanRKRGVSb1FmeFNXanJ1ZWh3VlFSODQwbDI0WFJZcTQzWFVCc2tXNWs0NW01TGw0d2xLRkJEaDRHUUpaX2R2aHUyeW5xSXdYWTI1WkZOaUtvRThFNnJPWWtoVEkxM1J0Y19HUFdfTWRpcEFEd09Pb3psOS1zUQ?oc=5"
+        },
+        {
+          "domain": "news.sd.gov",
+          "firstSeen": "2026-11-04",
+          "lastSeen": "2026-11-04",
+          "url": "https://news.google.com/rss/articles/CBMikgFBVV95cUxPVkhsQnIta3hpSnFPYloxR2lOWTI2bHEtenByRG1icDRJT20zVENlZmlZZFJtNmk2MGFrR0xKMnJtQnItRlQzTmI0RG5oTi1QV2liOGhqWVFPWnZOR2w0cXZPLVVZQml1cFpuRXFvNFZ5NDgxYUVFZFA4QTBLVFlEdVd1a1U0dGNkRnhfQkgyelo1UQ?oc=5"
+        },
+        {
           "domain": "community.triblive.com",
           "firstSeen": "2026-11-02",
           "lastSeen": "2026-11-02",
@@ -1275,6 +1322,24 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "s-32-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "marlerblog.com",
+          "firstSeen": "2026-11-04",
+          "lastSeen": "2026-11-04",
+          "url": "https://news.google.com/rss/articles/CBMi-wFBVV95cUxObzBKVDVDNVVGWjdwVXN6aWtjcHFDNUlIVmFjRHJHdlpYMVNkelZEd1NVaHk0N0EycENTeXdkajJmLXJhWTRkc0taTjNYZTlnY0xFWXlhZEhCajNNRHRQcDdMRjNEcWJ4V1FUOHdaSlNoWnUyTFBfdlAzcHRXX2czV2pIZjJPS2pMOFp5WjdxOGZ3YVliZXdRR3oyODJkNWQ2NmdkeUl0bHBFeXZ1YmY4Y3FSX0d1LTB4WnhnSnpkaE1VQ1RRQVliWWExLTdnV1FheHZNZUMycWkxNVF0eTNiY05pUkpqM2VxaWFmZ09aS2x4WFhOdlBqTC1DRQ?oc=5"
+        },
+        {
+          "domain": "statnews.com",
+          "firstSeen": "2026-11-04",
+          "lastSeen": "2026-11-04",
+          "url": "https://news.google.com/rss/articles/CBMirAFBVV95cUxPMTRMVFRzVXQ2VkRoZ1dJUU85UG1WOWVLbVU0NXJ1Q2U3ZEtveFc2a1BDeXN5OWhWMmxUTDZRU0pPZURfblZEWklWOEpFZWREQzFHVm5mUXViMjgxNFZKckk4TXk0WTQ3T0FwYkV4bmVUYkREWm8wMHVKLXBPejhqZmZfZVFqU29TQVM2SlEta002Wk1laVp0RVJWYlFiUFdnVUlaU0FvQlVSYXBZ?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "s-3755-119": {
@@ -1450,6 +1515,13 @@
     "s-5271-119": {
       "outlets7d": [
         {
+          "domain": "npr.org",
+          "lean": "center",
+          "firstSeen": "2026-11-04",
+          "lastSeen": "2026-11-04",
+          "url": "https://www.npr.org/2026/11/04/nx-s1-6023272/navajo-voters-hop-tractors-make-extraordinary-efforts-to-vote-after-widespread-flooding"
+        },
+        {
           "domain": "latimes.com",
           "lean": "left",
           "firstSeen": "2026-10-31",
@@ -1517,6 +1589,13 @@
     },
     "sjres-185-119": {
       "outlets7d": [
+        {
+          "domain": "cnbc.com",
+          "lean": "center",
+          "firstSeen": "2026-11-04",
+          "lastSeen": "2026-11-04",
+          "url": "https://www.cnbc.com/2026/11/04/us-midterm-elections-iran-war-speaker.html"
+        },
         {
           "domain": "thehill.com",
           "lean": "center",
