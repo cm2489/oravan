@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-05T15:25:49.640Z",
+    "fetched_at": "2026-11-05T20:58:58.389Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-05T15:25:49.640Z"
+        "checked_at": "2026-11-05T20:58:58.389Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-01",
         "week_label": "Most-Viewed Bills - Week of November 1, 2026",
         "entries": 8,
-        "checked_at": "2026-11-05T15:25:49.640Z"
+        "checked_at": "2026-11-05T20:58:58.389Z"
       },
       "leans": {
         "center": {
@@ -574,6 +574,18 @@
       ],
       "mostViewed": null
     },
+    "hr-3898-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "waterkeeper.org",
+          "firstSeen": "2026-11-05",
+          "lastSeen": "2026-11-05",
+          "url": "https://news.google.com/rss/articles/CBMiygFBVV95cUxQTXlyMWdVbmZhWE5scjdiZDIzdTJYZ0dHVHlDM2UtbmNQZHBCZDQ1YTJQN21FRWowWnBVQ0xsX2g5cnp5TVFTbTNqZnJoazREVElwdlZZSkNLR0s0Z1hKTmJXcmp4bVlqZ1AwaTl4cG1XdXdJOXgzclFiNDRGZFpFMkpPMnZwVXptcnJVRFpyR1VjblJsdlViSXktRHlMVGFFUWFKdVBYOEV5LTBMRlRwc21fMWZKRy1Wb3Q3bzIyUDNpMWVSZDNNQ1V3?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-4361-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -612,6 +624,13 @@
           "firstSeen": "2026-11-05",
           "lastSeen": "2026-11-05",
           "url": "https://www.cnbc.com/2026/11/05/jpmorgan-epstein-democrats-erdoes-midterm-election.html"
+        },
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-11-05",
+          "lastSeen": "2026-11-05",
+          "url": "https://thehill.com/homenews/house/6201121-massie-force-epstein-files-bill-vote/"
         }
       ],
       "unratedOutlets7d": [],
@@ -1342,6 +1361,19 @@
       ],
       "mostViewed": null
     },
+    "s-4338-119": {
+      "outlets7d": [
+        {
+          "domain": "cnbc.com",
+          "lean": "center",
+          "firstSeen": "2026-11-05",
+          "lastSeen": "2026-11-05",
+          "url": "https://www.cnbc.com/2026/11/05/jpmorgan-epstein-democrats-erdoes-midterm-election.html"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "s-4340-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1450,6 +1482,30 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "hjnews.com",
+          "firstSeen": "2026-11-05",
+          "lastSeen": "2026-11-05",
+          "url": "https://news.google.com/rss/articles/CBMiqgFBVV95cUxPN2FBXzYzMWg1QTJjMmNBWXhhZDBkTTZpbGVVRDVUYU9sV20xYllzUjVEZERYRmtHY056OUJSamZVSUxZN0VwWk5sNUFLZGZXZGRWQ0QyYzQ0dzV2NVp6WVlUemdma3NHbWw4Q3VLdDV2YlExdXlzWEp4bU9zU25Gd2NnSjAwVzEtSmZTaHNHUE4zUW80M0UwZ3VaZlk0QTRScWNIQzlHRHk2dw?oc=5"
+        },
+        {
+          "domain": "ktvn.com",
+          "firstSeen": "2026-11-05",
+          "lastSeen": "2026-11-05",
+          "url": "https://news.google.com/rss/articles/CBMi-gFBVV95cUxOYlZ6RVRRVXJLNVgxZld0Q0dBclVLTDlndWxPU0hCNmVEcnRnYmhYaDFyQ0FwdmQxb0E2SWc2SDh5VWI1NmdPTHoyelQ3ckxFZEpaYnFaZ2xUQzg4Q2NhY19CMWhKazRWOXkzemM5RG9PLVowSnhWR3NhdHNPUkRVNGRsckZVWG5RLURMY0RoTlNoSlp0RVExLXJ5bWFVdXQ0Z19Qd0xHT29BNTIxeWVjdmtqT25FS1NrRFItdE1JR1Y3UnlRSEN5TnJlSjlsNG1Rd3B6cm12UVFRN1Q3VWFiM2pOXzFvR3pZWk5JS295NXB6VmUwTVE1ZWVn?oc=5"
+        },
+        {
+          "domain": "si.com",
+          "firstSeen": "2026-11-05",
+          "lastSeen": "2026-11-05",
+          "url": "https://news.google.com/rss/articles/CBMilwFBVV95cUxPMXVBV1JoRmxfdDJGLXlEVG0tSmxEaWtUTWlwRTJNTVZhMU4xbDZySWlFMDJ1Mjk4OWIyVUlUMU1tVVdrWGhZVHg4OHFqZDlaNzdfQ0poTFdrSDdHd1FwMnZMRVFoaE9CRlctb0o0YmFaZGNTNVVBVG5RN3lnaFpVMEJUOEwyVHJLRktEaGJDU2phbDJ2cEFJ?oc=5"
+        },
+        {
+          "domain": "wvnews.com",
+          "firstSeen": "2026-11-05",
+          "lastSeen": "2026-11-05",
+          "url": "https://news.google.com/rss/articles/CBMisAFBVV95cUxQRExTLUp2MkEwVUk5cDRONmpLbzA1dXYwaDBRN3RNa241YmNsLTczTlFGVTVzSTFzcTVhUmgwQjBXclprMjVPUGZXeDJnajQ1ZTJxZXhpbTlCNWxQNGpYUGlNQXdfOFdSUlBGSlNYa3VmcjR0SjFVUVNLTnJ4QmZVLUM1bEltQVlkalJKb2xTVmNvSEw4SGZ1X3dLODNZY0Qxckg3dnZOSzdaeDIwbnBPdg?oc=5"
+        },
         {
           "domain": "golfweek.usatoday.com",
           "firstSeen": "2026-11-04",
@@ -1596,6 +1652,12 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "findlaw.com",
+          "firstSeen": "2026-11-05",
+          "lastSeen": "2026-11-05",
+          "url": "https://news.google.com/rss/articles/CBMirgFBVV95cUxOczI0d1JUSDZTUE1FajVpLXRKTjdPNzlGaU9kMkxDVTJ3b2dnVW9Rc2JjdEJCTWVBZXVla3ZNYURndlpsZ3V0S2Q1UzFUOFBlekpPNXVnVXRrRHFuYXk3NHFqOGhaRGdYMXZXSHhOTDVITG4xZFVuQ2MyaXJjZC0zY2pUX0Nodm1IaHN4MlVpZWdpTHh0ek0zZXJFeTZNZ1FKeVVMdndzZFEwSzdHemc?oc=5"
+        },
         {
           "domain": "kentucky.com",
           "firstSeen": "2026-11-01",
