@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-05T03:03:10.151Z",
+    "fetched_at": "2026-11-05T06:36:38.122Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-05T03:03:10.151Z"
+        "checked_at": "2026-11-05T06:36:38.122Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-01",
         "week_label": "Most-Viewed Bills - Week of November 1, 2026",
         "entries": 8,
-        "checked_at": "2026-11-05T03:03:10.151Z"
+        "checked_at": "2026-11-05T06:36:38.122Z"
       },
       "leans": {
         "center": {
@@ -251,6 +251,13 @@
     "hr-139-119": {
       "outlets7d": [
         {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-10-30",
+          "lastSeen": "2026-11-05",
+          "url": "https://thehill.com/homenews/administration/6199783-trump-calls-congress-daylight-saving/"
+        },
+        {
           "domain": "foxnews.com",
           "lean": "right",
           "firstSeen": "2026-11-01",
@@ -270,13 +277,6 @@
           "firstSeen": "2026-10-30",
           "lastSeen": "2026-10-30",
           "url": "https://news.google.com/rss/articles/CBMiwwFBVV95cUxPbHJ0X1pRdWdubjZBSDQzeC1JMkQ1VDVVMmJSNlNQRmlybDVLNkUzOHkwUHhzdjZnVVowdHRNN3ZXMzFnZmk4UW9jMEFQamRBLV8wMFNOQklIQmhyVUJ1OS14RGdvbU9qeUdGeEhuRXQxNG5wQ21fTWZIR190YmY4eEFUVkpvLVowV3EyRmNLcGFCR3p6Q1dDMkhUUkZtRTVyTHVuN0d2cGh4NldlbzZFWU55clh4d3daVzU5WlYzamxWYnc?oc=5"
-        },
-        {
-          "domain": "thehill.com",
-          "lean": "center",
-          "firstSeen": "2026-10-30",
-          "lastSeen": "2026-10-30",
-          "url": "https://thehill.com/homenews/state-watch/6184483-end-daylight-saving-time-congress/"
         }
       ],
       "unratedOutlets7d": [
@@ -473,6 +473,30 @@
     "hr-3633-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "bitcoinmagazine.com",
+          "firstSeen": "2026-11-05",
+          "lastSeen": "2026-11-05",
+          "url": "https://news.google.com/rss/articles/CBMifEFVX3lxTE1yQWRmVkVqajlPdm90RVNtaExPcjZrZ1BDS1l2MDhpT24yNUs2TXdUZHB0ZHh0MEI2YVh6ZjRhc1YwcTlvQ1lieUV6RjBkSlRiUWRQSWJ5czh6am9CTHU5bFJFTnRaWEVleDBQMWEzc1VZRFV0VzA2TUc2c0E?oc=5"
+        },
+        {
+          "domain": "coindesk.com",
+          "firstSeen": "2026-11-05",
+          "lastSeen": "2026-11-05",
+          "url": "https://news.google.com/rss/articles/CBMitgFBVV95cUxPVTFLQ0owdktZaUpZbk5BWENvUkVRamotdmdOSUhlaDkteUpQTGtOUjlTdkRiNG8yb0lGT1VreHhPVFhyOU9mTWsyazExenl1bG5PVnFvOURzQW94NTZqREFYZ1U4c2QxYXIwSGttczFPLXAtVnFsRDY5Y1F2Uzd1VnhfbnF3TEIybloxTlhFVk5CRmxhLUxmb0dNYm5tdy1pZGJkZXBOaXVjSUNZVnJVZTlIOS1HUQ?oc=5"
+        },
+        {
+          "domain": "hokanews.com",
+          "firstSeen": "2026-11-05",
+          "lastSeen": "2026-11-05",
+          "url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxNdWhLU0RHTF9xREZuRWUtbndZd1dSUGZMTUFOTGF1LTJ3YUhKYjVHcExnTjMydzB0YTdKbHBSQnp5T0tUdUJqcjFiMnRsNVlyVHNVVXNVQXVmTU14bUJBb0wxUFdjZmNScnFXakNzczF0bnIzdW9UVFNQSjQzdlZ4UW9R?oc=5"
+        },
+        {
+          "domain": "pluang.com",
+          "firstSeen": "2026-11-05",
+          "lastSeen": "2026-11-05",
+          "url": "https://news.google.com/rss/articles/CBMikwFBVV95cUxObXJzZkllWWNxOHF4Sm13TTU5WnQtRGRiR2RnUUZqeDhOdW9tVE95RTJMY05COE9oeGRCSEM4Tm5XUk01UllaSUppazlhbTVhbUNkRWhSTUd6ekdBaWxVdkxTaWVvYkkwZFduM1JzS0M3eF9iX0hNM1FmRHZDcV90ZVFuT1JDdHVHazVPU0xuZ1h6TW8?oc=5"
+        },
         {
           "domain": "cryptotimes.io",
           "firstSeen": "2026-11-04",
@@ -743,7 +767,15 @@
       "mostViewed": null
     },
     "hr-5631-119": {
-      "outlets7d": [],
+      "outlets7d": [
+        {
+          "domain": "jpost.com",
+          "lean": "center",
+          "firstSeen": "2026-11-05",
+          "lastSeen": "2026-11-05",
+          "url": "https://news.google.com/rss/articles/CBMiX0FVX3lxTE5nd3ExbGI4MGFNU1IyTWUwamgzUTJYa2psem41T2N4dWdFc1NXeWdtUl94LTFLemNjR0sxRGpMUk8tY3F2TEYwcU5uZnNrT3ZTWEhZbGFBcFFadlFWUTk4?oc=5"
+        }
+      ],
       "unratedOutlets7d": [
         {
           "domain": "forth.news",
@@ -1249,7 +1281,14 @@
           "url": "https://news.google.com/rss/articles/CBMijgFBVV95cUxORDlEZENfTkk2S2l6MUh6ZTQ2eXlmSFBLR1JMa29LUkdEcWRfeGdPa1U1V2ZtTERsNndEVVBxVG9JdXpLcm1SM1FIRGdvdUU4ak9ONHdMTkEwd1dRblhjd1dGVk9vS3pZY3hkMDBVMlFxb2dIN1FKdmRSX1VjemNLcGxkLTVpQ29yeG16TnZ3?oc=5"
         }
       ],
-      "unratedOutlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "energynewsbeat.co",
+          "firstSeen": "2026-11-05",
+          "lastSeen": "2026-11-05",
+          "url": "https://news.google.com/rss/articles/CBMivAFBVV95cUxQSE5sVmpGdTE3MzdqZWo4M0lPTlhhWmIzVmg5UVVKMC1leHk2TC1lVFB3MkFwWXZlNmxfQXJ2ckVudnhDMHNQX2diWXg3U1VXZ3NMNVk0UmRHbU8wV2JHSHVWcHF3R2dsRi0zNW81MzFybzhmS0ZhV0hGbWh1cklzbjVCaHE5eWROQjE1eDVaV1JBWHRfeFdlZldoSXJxZ0tiRDVzSVNEcTluNHZfME9lVG1sNURtSE5Fb0lCaw?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "s-4340-119": {
