@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-05T20:58:58.389Z",
+    "fetched_at": "2026-11-05T21:51:16.927Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-05T20:58:58.389Z"
+        "checked_at": "2026-11-05T21:51:16.927Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-01",
         "week_label": "Most-Viewed Bills - Week of November 1, 2026",
         "entries": 8,
-        "checked_at": "2026-11-05T20:58:58.389Z"
+        "checked_at": "2026-11-05T21:51:16.927Z"
       },
       "leans": {
         "center": {
@@ -298,6 +298,12 @@
           "firstSeen": "2026-11-05",
           "lastSeen": "2026-11-05",
           "url": "https://news.google.com/rss/articles/CBMilAFBVV95cUxPWXVIMGhLWlhKdll0SWRoWjNDb0U0SG1hckVCMzZjbGctZTdXLV9FZUFyT3hkbGJEYzZjekdkcXZ4V1JSdEd1UWx0MUY0UXM4WDdyQlZOM0tRcGJ1a2ZoelZGc09qZVllelZnY1JScHhqdGF1dVpXWjQyQUNWOVNGSUg2cWFWZ0hKOGl2cVhwSFMwOFN1?oc=5"
+        },
+        {
+          "domain": "wwlp.com",
+          "firstSeen": "2026-11-05",
+          "lastSeen": "2026-11-05",
+          "url": "https://news.google.com/rss/articles/CBMitgFBVV95cUxPTTl4ZDRjOHZSdVNCdjFKSVozMDVTbHBZTXhYV3BkX2I5bGJLZHN6VzZjZnlvWXRSNGt2OWNTZ3ZVUFZQU3pLWnBmdF95WTdvS2dqampraVNHZVJBbWVlUk54dU5PR1JnNnlhOUt2QzBEczVqUEhKUGlRbklzV2tqVG9HaGNnei1lbEdwdE81WWtfdlZCLXhYRE5GWDFJQ21YWHNBZWsyYzNMbnFIeHd2VUoxNmxoUdIBuwFBVV95cUxPWU5ScEdMSGFhZFZrUE1OOVA5TUZ3aUtHb2VMLS1QTkd0TlBvdUpUVXZ0MElDdTVwNm9uNUVQTms4M1hkTndOc25VTFBmOUpnUWt3MC1FQ3c5R3pyc3YyUkVORVZxSXVVWjY2VWlIcWFjSW9OQVR2MXhXNEdQQTZScXlIUXVaeHpnUUo2N0c4MUxsM1RjTmt4NFV1UERNY3dfRWxiUG1WUDFSQ0c2TTRKTlpGenJtbmdCdHc4?oc=5"
         },
         {
           "domain": "lakecountyexam.com",
@@ -893,6 +899,18 @@
       "unratedOutlets7d": [],
       "mostViewed": null
     },
+    "hr-6092-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "constitutioncenter.org",
+          "firstSeen": "2026-11-05",
+          "lastSeen": "2026-11-05",
+          "url": "https://news.google.com/rss/articles/CBMirgFBVV95cUxOdklpcUduUmliaGxXZEpRTVNEOFI3YWk2WEQzb3FXal9tYnRNeEgzcUhDSC1Sc01PVmFDb3dfNUNPWjZLNEtfNHc2SEQ1WWNrTHJ1TFlXZ2xfbDZqRWR6a1l4SGNselVvbkxMT3Z2Q2dvZXVqQmplQlkzelBKSlBBZnZJWTl5dnNwcFdES25sN0dEM0U0SjFlbHZmenp1SFp2MHFaTE1xQ3VBcXZCM2fSAa4BQVVfeXFMTnZJaXFHblJpYmhsV2RKUU1TRDhSN2FpNlhEM29xV2pfbWJ0TXhIM3FIQ0gtUnNNT1ZhQ293XzVDT1o2SzRLXzR3NkhENVlja0xydUxZV2dsX2w2akVkemtZeEhjbHpVb25MTE92dkNnb2V1akJqZUJZM3pQSkpQQWZ2SVk5eXZzcHBXREtubDdHRDNFNEoxZWx2Znp6dUhadjBxWkxNcUN1QXF2QjNn?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-6310-119": {
       "outlets7d": [
         {
@@ -1042,6 +1060,19 @@
         "lastSeen": "2026-10-19",
         "lastWeek": "2026-10-11"
       }
+    },
+    "hr-8809-119": {
+      "outlets7d": [
+        {
+          "domain": "politico.com",
+          "lean": "left",
+          "firstSeen": "2026-11-05",
+          "lastSeen": "2026-11-05",
+          "url": "https://www.politico.com/live-updates/2026/11/05/congress/aipac-allies-congress-midterm-elections-01152451"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
     },
     "hr-8902-119": {
       "outlets7d": [
