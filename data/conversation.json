@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-06T10:46:00.294Z",
+    "fetched_at": "2026-11-06T17:56:12.632Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-06T10:46:00.294Z"
+        "checked_at": "2026-11-06T17:56:12.632Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-01",
         "week_label": "Most-Viewed Bills - Week of November 1, 2026",
         "entries": 8,
-        "checked_at": "2026-11-06T10:46:00.294Z"
+        "checked_at": "2026-11-06T17:56:12.632Z"
       },
       "leans": {
         "center": {
@@ -163,6 +163,26 @@
       ],
       "mostViewed": null
     },
+    "hjres-1-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-11-06",
+          "lastSeen": "2026-11-06",
+          "url": "https://thehill.com/homenews/senate/6203353-chuck-schumer-donald-trump-supreme-court/"
+        }
+      ],
+      "unratedOutlets7d": [
+        {
+          "domain": "scotusblog.com",
+          "firstSeen": "2026-11-06",
+          "lastSeen": "2026-11-06",
+          "url": "https://news.google.com/rss/articles/CBMisgFBVV95cUxOam8taXNKRE42cm5ycTFaZWdPb3BBdDVpcnZ1UXR1Q3AtdkV6endFaVpWSkZjcHBzWXNZSV9kc2VkTXN4Tzdfd1BEcXN1WldFRi05M2g2a3pyS0JFclRnM2IydXM4WWdINWZIdnN6bGQ4enl4RTBfSm0zb1ZpWHNJQ0VubzBsWnBxcXdrUVRqV1lzYzlkLW84UEZnQ2tya3R4M0h4OTFQVzlNRHFqSXYzOFV3?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hjres-120-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -204,6 +224,18 @@
         "lastSeen": "2026-11-06",
         "lastWeek": "2026-11-01"
       }
+    },
+    "hr-10159-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "wardandsmith.com",
+          "firstSeen": "2026-11-06",
+          "lastSeen": "2026-11-06",
+          "url": "https://news.google.com/rss/articles/CBMi9gFBVV95cUxPZ3hyMjBVNm51aWZWd2FoSG9BdkczeW5XNlhFVTA1dUFYZE80M0RVRGhsczNVeVpNV0VXX1NXeWVtdDlpSFRsMzlVZHFmdlNVUTd0c3lmYW9Ib3dKang1X0I2cHotSlJGd2prTEhTbl9Lb1hrSnFJemJqd1JQUzd2TG1SQ2E1Q3NxUWsyM1NDNDF2VFY2emRIZjNSblEySFdOTHlpVzFKYmZXTDNXZi1Yc2lJc3l5VGdmekNQRWFIaVpsYjVHeEJmMFc4Y05abUJqT0l5ak13bVg0VDIxQzZRMXNKUzdiN0F3Rm5HMlg4LWttbldOaXc?oc=5"
+        }
+      ],
+      "mostViewed": null
     },
     "hr-1276-119": {
       "outlets7d": [
@@ -267,6 +299,12 @@
           "firstSeen": "2026-11-06",
           "lastSeen": "2026-11-06",
           "url": "https://news.google.com/rss/articles/CBMisAFBVV95cUxPOHRScFNZSHZWVHhoLVRMd05rT1FzOW5tN3FoNDUtUEZjNy0tR1NTNms4djhxMGlyWDZCQWh2VWVKaF9LOHVlcFFyRHVOUkxiZXY3Uk9Tck5VRm0yZ3lZZlA3bUplVVctZ2EyWnctcGZlRk1kSWVvenlQemVIUEZqY21CVGVKTnRncGhCOWhXT2RBTXFlQzBRTkxoVUxhRUh5ZVVuWWF0RklmaGltTUxwWNIBtgFBVV95cUxObUdRYlpKVUd2bFhrM1g5cVNBb01aNXVVSEgwQm1xOXZVZzNDakFROVFyaW1BUnFSM2Q5YW9DSlhVOUIyMGxIQU5YQzRKTjVCSVl3bmlpNHZWbnE3WnlVM0RCX29BLWkxZ1J0Z2s5aUpYMGZvVl83cExzeEdCN2dLZUJFX0ZJOVE4Wkd0RkZGdlNGQWhvZDBJbXM5V09BVllMekplVWtFN1I0MjRvMElmNkhtTEg5dw?oc=5"
+        },
+        {
+          "domain": "wkrn.com",
+          "firstSeen": "2026-11-06",
+          "lastSeen": "2026-11-06",
+          "url": "https://news.google.com/rss/articles/CBMitgFBVV95cUxPenRaclJZV3RfMzNOcU9ZdHFPSk15MldLRmpYNWpocEl2enFRYmVKOWdIbGxDNkNwSlE5SVFNYmpmejFKNlIxREQtOU83TlJTMExYaEN5QWlleEROQlJTdWYtcGxtMXM5cFlIY05nbVhPWUtOb0NsdjhMZHhsZ3duUTBlTko0WnpCLW5zSXJ4blhKUldXcElldmp0NlR3RlBES3VwRW96MHFzY09vU1oyMkR6czZkZ9IBuwFBVV95cUxNakJfaU5feFQ1SFFBbjJkX2cwbTF6QzREUDExUGxpU0E4OHNQSW9CQ1VUQUp0Vm1wV0k3cTJZSHJUNC11LVJtcFBDWGNNR256Ul9uT0lMTXFfVFpyU3MtUDlmRWxjbEJ3emoxZ1NhUVJ5VTUyOWtkei00S24wVC1wRlBBdERhY3dHaVFCQjRzTUdBU2E0Wkt0R2JldHFGTWcyVWw1YUhzN2UybU1pMUphdWpycXdIbGxyQVZN?oc=5"
         },
         {
           "domain": "ntd.com",
@@ -463,6 +501,12 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "bitcoinfoundation.org",
+          "firstSeen": "2026-11-06",
+          "lastSeen": "2026-11-06",
+          "url": "https://news.google.com/rss/articles/CBMizwFBVV95cUxNOHVGM2UzVFBBWll1MXFQTGQycVVKRDk1Q0s4SXVTS0FQc3VVZEcwUDVYbGZ4VnpyRXNFOEFnbktUZVdFUmw4bjZFS05VRUMxUzU3LUhQQXI2SWVtSFpaaFN1d0h6Y0RwRTA1V3pRQ0RKMG8yWHFWaEt1ckUyZXFRVF9GaUN0MXZ6SktGY3RDd0N0QWFHWGJTZmQ2VWdhcDdTZXl5MUhYci1uSG0xdnNaNDdFVlpxbVJfdnM4MGJLUFd4ZkZqcXhwcnFDaEdTOVk?oc=5"
+        },
+        {
           "domain": "bitcoinmagazine.com",
           "firstSeen": "2026-11-05",
           "lastSeen": "2026-11-05",
@@ -603,6 +647,19 @@
           "url": "https://news.google.com/rss/articles/CBMiekFVX3lxTE5idmZpdDFHQTBUaDN4aXh3b0wwQ21wQWZ3UV9sRFp1aWhVSVBKME1ZVG5qb0szejF6SXpKSXpGMGRSNGlwQWlNaVQ1a1VpVU1KenBCeC1Qa0hxSVI1UHdkcTJyWVNFbDlCWWc4eXp0TzhidHBqVl9HQUtB?oc=5"
         }
       ],
+      "mostViewed": null
+    },
+    "hr-4873-119": {
+      "outlets7d": [
+        {
+          "domain": "reason.com",
+          "lean": "right",
+          "firstSeen": "2026-11-06",
+          "lastSeen": "2026-11-06",
+          "url": "https://reason.com/2026/11/06/america-did-not-vote-for-woke-2-0/"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "hr-4889-119": {
@@ -1052,6 +1109,18 @@
       "unratedOutlets7d": [],
       "mostViewed": null
     },
+    "hr-9363-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "rollcall.com",
+          "firstSeen": "2026-11-06",
+          "lastSeen": "2026-11-06",
+          "url": "https://rollcall.com/2026/11/06/foster-bill-would-bolster-tech-use-to-monitor-ai-financial-risks/"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-9643-119": {
       "outlets7d": [
         {
@@ -1355,6 +1424,19 @@
           "firstSeen": "2026-11-02",
           "lastSeen": "2026-11-02",
           "url": "https://news.google.com/rss/articles/CBMimgFBVV95cUxQYzdWazAxTDE1YnpZSWk5MldrWHlHNmw4Y3daUkxhd3lKTHNXN000NHRiX09pcnhmNlJaUzBYUDNoUnBOZnNzeW16WFhzQVZLMU44aXpwN3Z3X2IxYng2eUhsT2VkcFM0WmdneUVPRDhyOWZwZjBpM0ZuR2dqOUFMNERJZEVycXEzQmRxdlJQZk82aTVlRlRuYy1R?oc=5"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "s-4602-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-11-06",
+          "lastSeen": "2026-11-06",
+          "url": "https://thehill.com/opinion/campaign/6202503-ai-industry-spent-millions-hiding-donors/"
         }
       ],
       "unratedOutlets7d": [],
