@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-06T20:16:16.749Z",
+    "fetched_at": "2026-11-06T21:09:20.763Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-06T20:16:16.749Z"
+        "checked_at": "2026-11-06T21:09:20.763Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-01",
         "week_label": "Most-Viewed Bills - Week of November 1, 2026",
         "entries": 8,
-        "checked_at": "2026-11-06T20:16:16.749Z"
+        "checked_at": "2026-11-06T21:09:20.763Z"
       },
       "leans": {
         "center": {
@@ -885,6 +885,18 @@
           "firstSeen": "2026-11-05",
           "lastSeen": "2026-11-05",
           "url": "https://news.google.com/rss/articles/CBMirgFBVV95cUxOdklpcUduUmliaGxXZEpRTVNEOFI3YWk2WEQzb3FXal9tYnRNeEgzcUhDSC1Sc01PVmFDb3dfNUNPWjZLNEtfNHc2SEQ1WWNrTHJ1TFlXZ2xfbDZqRWR6a1l4SGNselVvbkxMT3Z2Q2dvZXVqQmplQlkzelBKSlBBZnZJWTl5dnNwcFdES25sN0dEM0U0SjFlbHZmenp1SFp2MHFaTE1xQ3VBcXZCM2fSAa4BQVVfeXFMTnZJaXFHblJpYmhsV2RKUU1TRDhSN2FpNlhEM29xV2pfbWJ0TXhIM3FIQ0gtUnNNT1ZhQ293XzVDT1o2SzRLXzR3NkhENVlja0xydUxZV2dsX2w2akVkemtZeEhjbHpVb25MTE92dkNnb2V1akJqZUJZM3pQSkpQQWZ2SVk5eXZzcHBXREtubDdHRDNFNEoxZWx2Znp6dUhadjBxWkxNcUN1QXF2QjNn?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-625-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "newsfromthestates.com",
+          "firstSeen": "2026-11-06",
+          "lastSeen": "2026-11-06",
+          "url": "https://news.google.com/rss/articles/CBMivAFBVV95cUxOOWlkLXNnVUpDS2NpTjdrWFJaYkk5cmFmVHIzVkZ0M2VIZXIwWVdpcWQ5alE0NS1leDJNNGdnajhHOEY2bEpfLWkwRUN3TUJNaHhPX1dpMUxCV1hTeTlyUHQxVXp2Yks5S0s4ME8zMGZjZWltSFp2NWNqblhZWGpkZ2FlNUdvQmx3Y3l6dC1nX2w0NklLcWZrbEtod2FybW1Vb3poVFo0YzduX0JRM1ZXbnVSQU5tNmdwM3RfcQ?oc=5"
         }
       ],
       "mostViewed": null
