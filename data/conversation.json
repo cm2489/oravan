@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-06T03:04:35.995Z",
+    "fetched_at": "2026-11-06T10:46:00.294Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-06T03:04:35.995Z"
+        "checked_at": "2026-11-06T10:46:00.294Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-01",
         "week_label": "Most-Viewed Bills - Week of November 1, 2026",
         "entries": 8,
-        "checked_at": "2026-11-06T03:04:35.995Z"
+        "checked_at": "2026-11-06T10:46:00.294Z"
       },
       "leans": {
         "center": {
@@ -1098,6 +1098,12 @@
           "firstSeen": "2026-11-06",
           "lastSeen": "2026-11-06",
           "url": "https://news.google.com/rss/articles/CBMisAFBVV95cUxPMXRyQ2ZObW5HdzhmQzdHcDBDa2RaUjNxT1I1SjlUZWF1OGRubWxISXZlRmlxZDJoV0h0c2padENwVG1jTTdRZXlVVVlybndPVGlETThEMnBmQ2dncjE2bXRCZnZDTk5ubXhTQ1JST0owMFphSF9pX1YzN0QxdFliRloyendySGlReG1UWUpFQThzZEktTXNrbVYzS2tZLVh1MmZhb2kxT0tqSXFhMHZOYw?oc=5"
+        },
+        {
+          "domain": "thenewsleaders.com",
+          "firstSeen": "2026-11-06",
+          "lastSeen": "2026-11-06",
+          "url": "https://news.google.com/rss/articles/CBMinwFBVV95cUxNYXlSTDVPOXNGUUZlektmRlBlSHQzVVdZSTl6WTV2YV9jZ0hPajRLX085S1F4VjVwOVFOSHRKZ0dza1NMeEVEUGdzRHRBemUtNXYtUnNNdEFDOGNYcUQyOC1sQXZaV09LQjJrWnNRbXBMS2duc0RsY3Rmdm84UkZOMVN0ZmpkdlpuUE9PYUJwSkNta2tKWDBDNEdNOUl5TEE?oc=5"
         }
       ],
       "mostViewed": null
@@ -1377,6 +1383,12 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "audacy.com",
+          "firstSeen": "2026-11-06",
+          "lastSeen": "2026-11-06",
+          "url": "https://news.google.com/rss/articles/CBMinwFBVV95cUxPMDg4aTNPRGlMaHJfMWtzdzRjcDBxUmR0U0EwemVSNnRPTkgzaThoLVJzQW5PRWdyeVVoZFl6T3JEc1FOVXh2bTFzMW9yNDJpYmNidW1hS1g2Ql9SbUpEQjNnX3p4UXUxUnJEdVlfZTVUMTk0Yi0xZ1VtWldGNmNiQ0hPeUxDT2xsTFBlczNrNnhjcE56bm9xOGRZLVlpeHc?oc=5"
+        },
         {
           "domain": "beloitdailynews.com",
           "firstSeen": "2026-11-06",
