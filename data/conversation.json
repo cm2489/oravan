@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-06T02:21:41.735Z",
+    "fetched_at": "2026-11-06T03:04:35.995Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-06T02:21:41.735Z"
+        "checked_at": "2026-11-06T03:04:35.995Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-01",
         "week_label": "Most-Viewed Bills - Week of November 1, 2026",
         "entries": 8,
-        "checked_at": "2026-11-06T02:21:41.735Z"
+        "checked_at": "2026-11-06T03:04:35.995Z"
       },
       "leans": {
         "center": {
@@ -262,6 +262,12 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "kfor.com",
+          "firstSeen": "2026-11-06",
+          "lastSeen": "2026-11-06",
+          "url": "https://news.google.com/rss/articles/CBMisAFBVV95cUxPOHRScFNZSHZWVHhoLVRMd05rT1FzOW5tN3FoNDUtUEZjNy0tR1NTNms4djhxMGlyWDZCQWh2VWVKaF9LOHVlcFFyRHVOUkxiZXY3Uk9Tck5VRm0yZ3lZZlA3bUplVVctZ2EyWnctcGZlRk1kSWVvenlQemVIUEZqY21CVGVKTnRncGhCOWhXT2RBTXFlQzBRTkxoVUxhRUh5ZVVuWWF0RklmaGltTUxwWNIBtgFBVV95cUxObUdRYlpKVUd2bFhrM1g5cVNBb01aNXVVSEgwQm1xOXZVZzNDakFROVFyaW1BUnFSM2Q5YW9DSlhVOUIyMGxIQU5YQzRKTjVCSVl3bmlpNHZWbnE3WnlVM0RCX29BLWkxZ1J0Z2s5aUpYMGZvVl83cExzeEdCN2dLZUJFX0ZJOVE4Wkd0RkZGdlNGQWhvZDBJbXM5V09BVllMekplVWtFN1I0MjRvMElmNkhtTEg5dw?oc=5"
+        },
         {
           "domain": "ntd.com",
           "firstSeen": "2026-11-05",
@@ -585,6 +591,18 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-4776-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "steveahlquist.substack.com",
+          "firstSeen": "2026-11-06",
+          "lastSeen": "2026-11-06",
+          "url": "https://news.google.com/rss/articles/CBMiekFVX3lxTE5idmZpdDFHQTBUaDN4aXh3b0wwQ21wQWZ3UV9sRFp1aWhVSVBKME1ZVG5qb0szejF6SXpKSXpGMGRSNGlwQWlNaVQ1a1VpVU1KenBCeC1Qa0hxSVI1UHdkcTJyWVNFbDlCWWc4eXp0TzhidHBqVl9HQUtB?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "hr-4889-119": {
@@ -1359,6 +1377,12 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "beloitdailynews.com",
+          "firstSeen": "2026-11-06",
+          "lastSeen": "2026-11-06",
+          "url": "https://news.google.com/rss/articles/CBMimAJBVV95cUxPZHhyVTlBOGJyUFNvVVoybkJvcllodE92QWZLX3NtdDltUDJtVS1BX1ppUEJ2eEJtdGZmRU1INzNiMUVxZWlfa05RanJ0emNvVEluVGNHMFBYS0YyeWp5M0VDQWxkNHl6Ujczb1RwNTA0QUxXNEp2MXZPdDVsZTFnbm1LYVZneDV0MzBsQjBQSHBNbDFhaW85ZUg1a3hsNUtibDg2ZVlHcENUOFhSeC1waHpxYm9LWmZQTU01SEtRUVdJWjdkOWpTNE9rWmNyb2JXNTFlRDg2VlpWTHViU3pQNGhnR1lBY3FuVXc5VHFITEtOZ3V6ellQWFhHSGRoUUhRQzBxdnhDVTVfa0wyYk9jWWZXdFFXQThS?oc=5"
+        },
         {
           "domain": "guardonline.com",
           "firstSeen": "2026-11-06",
