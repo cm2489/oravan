@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-07T02:34:52.691Z",
+    "fetched_at": "2026-11-07T19:48:07.145Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-07T02:34:52.691Z"
+        "checked_at": "2026-11-07T19:48:07.145Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-01",
         "week_label": "Most-Viewed Bills - Week of November 1, 2026",
         "entries": 8,
-        "checked_at": "2026-11-07T02:34:52.691Z"
+        "checked_at": "2026-11-07T19:48:07.145Z"
       },
       "leans": {
         "center": {
@@ -1206,6 +1206,18 @@
           "firstSeen": "2026-11-02",
           "lastSeen": "2026-11-02",
           "url": "https://news.google.com/rss/articles/CBMiwwFBVV95cUxQZzE3VktMVk0zYi1XWlBNTVJJZ3ZCRGlnaXhOaEM1MlFGZm94dkx4aG5QOXBhSUlGNFlySzlxQU12cmpaNko0TW1vaUN3T3U0RHh0YVlPWU53cUtmdklTWl83U0hFakpuaTlydkZxbDdOdmtVRzNaeENZM29qWDRiRzc1M3h5ZFhhNXJDNWxvdzFkZ3pQX0JxUjBpdDdPODNjY2hoWVFOTW1UdDJsNGthd3l3ZXdQZ2NFVGo0WHRTM3BkOHM?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "s-4301-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "awfulannouncing.com",
+          "firstSeen": "2026-11-07",
+          "lastSeen": "2026-11-07",
+          "url": "https://news.google.com/rss/articles/CBMikAFBVV95cUxONG9hTThoOFNqZ1otcUZjbjNEOElwWFp4UmNaZWlDRE5ZWDRHLW9QcXFxakgtYXVxbGRKa0VuTzdjRk45MFFQM2ZQclE0b0hMVnM2ZjNIb0NWWVN0azcxbXI1eWF3cWd5UGVEU2MzYlRSeGs2al9vazRmZWVYckdXNXZwLWZPcDVWaFFhUmRLcGY?oc=5"
         }
       ],
       "mostViewed": null
