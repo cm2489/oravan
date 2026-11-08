@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-08T15:05:58.647Z",
+    "fetched_at": "2026-11-08T18:34:46.172Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-08T15:05:58.647Z"
+        "checked_at": "2026-11-08T18:34:46.172Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-01",
         "week_label": "Most-Viewed Bills - Week of November 1, 2026",
         "entries": 8,
-        "checked_at": "2026-11-08T15:05:58.647Z"
+        "checked_at": "2026-11-08T18:34:46.172Z"
       },
       "leans": {
         "center": {
@@ -263,6 +263,12 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "kxan.com",
+          "firstSeen": "2026-11-08",
+          "lastSeen": "2026-11-08",
+          "url": "https://news.google.com/rss/articles/CBMiqgFBVV95cUxQY2ZjX1JvOU01d2tIUTNMSHRYOG9lVlpOdHhZaXZJSUF5OFhCR0hvRFI0Z2JhNnk2bklpT2JWWk15OS16LXM5VUNFSF9paUIzeVNUQTlvTFVHV19QcjltV1hvRmctU0lhV1huTlBUM0MtVUJ6UUpvdnhtTXZnVnE4SklUcW53WGJLNzM5RFo4SGFpN2FMY1QzSGQ1SFpHOGQ1ZEtnUnVTYXV5QdIBrwFBVV95cUxPRWtOWXNkRmFkMmRuRVpmWHNQLXRJZUttcFpKb0RpZXk2QWx0MFFFdDZ5RmdhaXI4LU5yZnNnVllQQjZHVW9BMm83MGgwNGNJTDBTLVdGX3l1OHV2TEJIQzZrNFJXeUJ2TWQ0RkJkdW5lZktTekhSNWU4LVYyNGkwZC16RFl3UlliSUhBNC1wTXZPWFFCWFl1bWs2TmxzSmNpeTR2ZEhBRTB4Z0Jla0VF?oc=5"
+        },
+        {
           "domain": "kfor.com",
           "firstSeen": "2026-11-06",
           "lastSeen": "2026-11-06",
@@ -457,6 +463,12 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "en.bloomingbit.io",
+          "firstSeen": "2026-11-08",
+          "lastSeen": "2026-11-08",
+          "url": "https://news.google.com/rss/articles/CBMiVEFVX3lxTFBXZGxpQ2x0QXliRlQ3N0VXUHdIZmdwUjloZlB1c2xmRDljRk0yeF9UUUQyWFNWZDl5RkFxeVpFUG1OSWEwaWN0a2d5ZHN6dHB0cGh2Tg?oc=5"
+        },
+        {
           "domain": "bitcoinfoundation.org",
           "firstSeen": "2026-11-06",
           "lastSeen": "2026-11-06",
@@ -631,6 +643,18 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-4968-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "nacionale.com",
+          "firstSeen": "2026-11-08",
+          "lastSeen": "2026-11-08",
+          "url": "https://news.google.com/rss/articles/CBMiswFBVV95cUxOclJzdWhweHVKby1aTUhzZURvT1VhTmNyNWlLSXk1NzNSbkRfdmVFSzdSUTE3YjRqWnp2Y01MdXhaQTdLX1JVVjBMcjVoWDN3X0RvWHl5dW5jYkJKUUV6MFJDUE9rXy1vbURxcVFuRWRyWWhkT00weUVlMnhRSlNKOVZUdUgzNjhpdTdIeHBycjNjRkpQbDJkNHgydE1wYXA3Y1hjazBaQW15QWYyUEVnRk94Yw?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "hr-5269-119": {
