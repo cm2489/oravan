@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-08T19:46:45.765Z",
+    "fetched_at": "2026-11-08T19:59:11.352Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-08T19:46:45.765Z"
+        "checked_at": "2026-11-08T19:59:11.352Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-01",
         "week_label": "Most-Viewed Bills - Week of November 1, 2026",
         "entries": 8,
-        "checked_at": "2026-11-08T19:46:45.765Z"
+        "checked_at": "2026-11-08T19:59:11.352Z"
       },
       "leans": {
         "center": {
@@ -1452,7 +1452,14 @@
           "url": "https://www.npr.org/2026/11/04/nx-s1-6023272/navajo-voters-hop-tractors-make-extraordinary-efforts-to-vote-after-widespread-flooding"
         }
       ],
-      "unratedOutlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "democracydocket.com",
+          "firstSeen": "2026-11-08",
+          "lastSeen": "2026-11-08",
+          "url": "https://news.google.com/rss/articles/CBMiuAFBVV95cUxNVXU1RXp0RXBldU84VFhuYlFYZnE5ZEJ4OEVrRkRaMC13OXRtcEpPZGNCdVdHc0NZSDZJNlBQenhpQ05keVZqLUNVZE00c0ZYajhMR2VJdTJ5MDA0MVZlWldLUkZla1dpR2ZlM2ZlSTNVS0hJS3AxREdBWTNodEdQaFpRNHFzcG9YYk5SUGdPV0Fhdnlpb2RwLUlReFl6Y0hRWlJNeWdLdVF6aDNEWENuRkFKZm81LWdT?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "s-5602-119": {
