@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-08T18:34:46.172Z",
+    "fetched_at": "2026-11-08T19:46:45.765Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-08T18:34:46.172Z"
+        "checked_at": "2026-11-08T19:46:45.765Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-01",
         "week_label": "Most-Viewed Bills - Week of November 1, 2026",
         "entries": 8,
-        "checked_at": "2026-11-08T18:34:46.172Z"
+        "checked_at": "2026-11-08T19:46:45.765Z"
       },
       "leans": {
         "center": {
@@ -880,6 +880,18 @@
           "firstSeen": "2026-11-02",
           "lastSeen": "2026-11-02",
           "url": "https://news.google.com/rss/articles/CBMi4wFBVV95cUxPZTRhc19OcVJEcHpidWJRc2NsaVI2M0V3cEZvZDNPSnJfLVdNUm14ajJTcUpUb0pfdnhPb0ktSGp3djFyQVNNSG0tV3JHNWlzNW1OLVFRUzVkcjVXQUl0NDFMZG9aQlZDcTRNNlJYWVQwVFJDY0hhaFY1YWhhU0xmQkJBNFJ1c3BLcTB2OXhPWndRV3hoNW9GV0g3T18yamVFRy15VEFEN0ZQNFhYSzQ3eXBEYTJoakIyMHZBTEVHc2Vzb2NpR3o5Yk5mNjA2Mm9BVVFBTU5WRGhiQ0VISXZNc0FPaw?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-7148-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "pravda.com.ua",
+          "firstSeen": "2026-11-08",
+          "lastSeen": "2026-11-08",
+          "url": "https://news.google.com/rss/articles/CBMiZEFVX3lxTFBVNVN3RER3X0V1aDdtS1AxTHA2dGhUb2ZTR2J2bUFNTEw5c0x4cnI2OWJWM3pWb3UyMXNZSDlZNFRQYWVpLWtVQ2lZTDY3QjZ3RTNlUjhGY0RrNGNVN1BkbmFFNmbSAXBBVV95cUxQNUZuVHNXLXJ4NDl3ZGcyRTdOazI2UHdTcTVXYXJWY3ZrQ083dmE2QWF5TUFPTVAwY0RpaldOTVpHaERYSmhYV0ExM1c3NDNzVHZPUEwyZE1tNS1GbDlFRk10MWZhZF8zODFYLUozYVVi?oc=5"
         }
       ],
       "mostViewed": null
