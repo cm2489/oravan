@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-08T07:16:01.736Z",
+    "fetched_at": "2026-11-08T15:05:58.647Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-08T07:16:01.736Z"
+        "checked_at": "2026-11-08T15:05:58.647Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-01",
         "week_label": "Most-Viewed Bills - Week of November 1, 2026",
         "entries": 8,
-        "checked_at": "2026-11-08T07:16:01.736Z"
+        "checked_at": "2026-11-08T15:05:58.647Z"
       },
       "leans": {
         "center": {
@@ -657,6 +657,12 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "censor.net",
+          "firstSeen": "2026-11-08",
+          "lastSeen": "2026-11-08",
+          "url": "https://news.google.com/rss/articles/CBMisAFBVV95cUxPdjJGc01PbXFMdHNsMTRPbi1rbmRfbkg4cHRMWVJ1Y1ZHUDVyZE5mX0tGQm54SU5DM1NnQm9tN2pCQU9HVVc1Nk54Sm9zdkRNakZpMHZYc1dfbFZuQ3Rpd0J5ZkxkODkwVjQ4R3V0VUNqcDJrNmJyWEItWlBqd2k0S0Ftc2ZPeU5JbHJJYlFDRzBVVTRIYnZMTTlTYi1HQy14QWpFOXBjS2czRk1kNXl6MA?oc=5"
+        },
+        {
           "domain": "uatv.ua",
           "firstSeen": "2026-11-02",
           "lastSeen": "2026-11-02",
@@ -927,6 +933,19 @@
           "firstSeen": "2026-11-05",
           "lastSeen": "2026-11-05",
           "url": "https://www.politico.com/live-updates/2026/11/05/congress/aipac-allies-congress-midterm-elections-01152451"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-8885-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-11-08",
+          "lastSeen": "2026-11-08",
+          "url": "https://thehill.com/business/6205219-democrats-target-trump-tariffs/"
         }
       ],
       "unratedOutlets7d": [],
@@ -1242,6 +1261,18 @@
           "firstSeen": "2026-11-02",
           "lastSeen": "2026-11-02",
           "url": "https://news.google.com/rss/articles/CBMingFBVV95cUxQVXZ1UmpfYUhYNTFJd01Ybjl1N1hxcDFldDlkNFFoOEo0MC1yQW9JVFRkUlhjMGRzUTdZdXJ4dm8yX3hlN3FKNFBuTWR1ZzFBSnl5dXdiWGpmcGhKTTNUc2VpLWVqZ29kYXdtZGNEbzF3YWxfMGdIMVdhcnlMTVI3cmE3OWdlc0lhWFQxRFRucENOSUlXbXRER2FVRTY5UdIBowFBVV95cUxOV2hfd0ItQ3BVSlF6RDE1STUxc3AwSGh6eDVFSjlTSTc4QTJKcUVXU3dVbkFyTHBQRXBCUndFZWNpOWtXSTlLXzItNFFuTTJubURicndHb2ExVGZ3UzFYaGszYWtIdHVrNEw4cnpmenF6UU90bjZMam0xVmFfX1U4TGNpcEdEZWRhQnN0WERLMnJlc09mN3pJdEN0ZzR1d2xIa2NR?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "s-4528-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "nydailynews.com",
+          "firstSeen": "2026-11-08",
+          "lastSeen": "2026-11-08",
+          "url": "https://news.google.com/rss/articles/CBMihAFBVV95cUxOUzgzUlpuM1IxQWx5a3VyUlJYajFETklfaUQtc3FZZmVrSXRkVEtOLW45NHJUY3FxeHZnb0prT3I5aEU3UDY0QWEzWTFPdks2WUlHcHJNa3I1dEJLYXNjQ1Jla2lmenEwbkltcmd1cFBzVnZiWFUyWjlDOGJ0bFNVVzAyNmI?oc=5"
         }
       ],
       "mostViewed": null
