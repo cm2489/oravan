@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-08T00:31:00.465Z",
+    "fetched_at": "2026-11-08T07:16:01.736Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-08T00:31:00.465Z"
+        "checked_at": "2026-11-08T07:16:01.736Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-01",
         "week_label": "Most-Viewed Bills - Week of November 1, 2026",
         "entries": 8,
-        "checked_at": "2026-11-08T00:31:00.465Z"
+        "checked_at": "2026-11-08T07:16:01.736Z"
       },
       "leans": {
         "center": {
@@ -380,6 +380,18 @@
           "firstSeen": "2026-11-04",
           "lastSeen": "2026-11-04",
           "url": "https://news.google.com/rss/articles/CBMitAFBVV95cUxQY1pLMHQ5ckRsVUpoQmF1MkVOakkwcHlTQUw3a3ZJbm55WU9kRmU4QkZWMkFoLUF5Qm1uTktZUEpLYzRVQWd5MWR6a1hCZUR3clljVUM2dENEWER2V19QZ1kwY09TanozUEdxNWQ4OFpDSXhJVmhLSGJtYWxRa2N4UzFVcHE3T1NoRUV2UXRXOGgtbEdjNzVEdlB5MmhXOENVd3U5OGRyMkJPZlFzeHdlWG81V18?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-1968-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "nowgeorgia.com",
+          "firstSeen": "2026-11-08",
+          "lastSeen": "2026-11-08",
+          "url": "https://news.google.com/rss/articles/CBMirAFBVV95cUxNQTM2S3lJMmNGTkdaODhqMGotQ0o5cEtGRHdJZno5cURLYWl0ZDA2amhkNDBVUFBhR2JFQUFDejl0SGJjeGo1X1FhXzZBUlFhUGJzcDFLSDJGbko2dkJ6Skw3T0RBUmE5cVQ2MXZOSG9GTUJ6TGcwWmRjdXpERUJEcGVPaDQyYlhzRFZpTVYtYW9kOERPd1JCa3ZzSG1ORHlhdGZtN0JFU3daMGs4?oc=5"
         }
       ],
       "mostViewed": null
