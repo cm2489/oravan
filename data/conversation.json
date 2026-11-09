@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-09T17:26:01.384Z",
+    "fetched_at": "2026-11-09T23:22:01.498Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-09T17:26:01.384Z"
+        "checked_at": "2026-11-09T23:22:01.498Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-08",
         "week_label": "Most-Viewed Bills - Week of November 8, 2026",
         "entries": 6,
-        "checked_at": "2026-11-09T17:26:01.384Z"
+        "checked_at": "2026-11-09T23:22:01.498Z"
       },
       "leans": {
         "center": {
@@ -151,6 +151,19 @@
     }
   },
   "slugs": {
+    "hconres-93-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-11-09",
+          "lastSeen": "2026-11-09",
+          "url": "https://thehill.com/homenews/house/6208854-massie-escalates-hegseth-impeachment/"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hjres-1-119": {
       "outlets7d": [
         {
@@ -861,6 +874,19 @@
       "unratedOutlets7d": [],
       "mostViewed": null
     },
+    "hr-6322-119": {
+      "outlets7d": [
+        {
+          "domain": "politico.com",
+          "lean": "left",
+          "firstSeen": "2026-11-09",
+          "lastSeen": "2026-11-09",
+          "url": "https://www.politico.com/live-updates/2026/11/09/congress/momentum-builds-on-chip-exports-01157548"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hr-6509-119": {
       "outlets7d": [],
       "unratedOutlets7d": [],
@@ -1101,6 +1127,18 @@
       ],
       "mostViewed": null
     },
+    "hr-9372-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "pymnts.com",
+          "firstSeen": "2026-11-09",
+          "lastSeen": "2026-11-09",
+          "url": "https://news.google.com/rss/articles/CBMiqAFBVV95cUxNbGJDNXZSZUNQNVpJSkQ2Wl9OdmRYZWw4SWlLMGVaRnRTSFdiclNhQUprcjBsX3dIYVVwSzF4TUxYZ2RrSlFuR2d3Nm15ZzNLaTJHSy1pVldVcjZ1a3MtMHV5aGM4U2Y0Q0ZqQmhzbzl6NEN1MmZRSkJuVGdpOWRqZnV6RGIyUkVnd3NsNGI0cXVxSDg1MEhfN0hyRXJzNElvSEhrRmxUd1U?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-9530-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1336,6 +1374,19 @@
       ],
       "mostViewed": null
     },
+    "s-4369-119": {
+      "outlets7d": [
+        {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-11-09",
+          "lastSeen": "2026-11-09",
+          "url": "https://www.foxnews.com/politics/alaska-senate-fight-heats-sullivan-moves-block-peltola-lawsuit-rejected-absentee-ballot-records"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "s-4437-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1346,6 +1397,19 @@
           "url": "https://news.google.com/rss/articles/CBMingFBVV95cUxQVXZ1UmpfYUhYNTFJd01Ybjl1N1hxcDFldDlkNFFoOEo0MC1yQW9JVFRkUlhjMGRzUTdZdXJ4dm8yX3hlN3FKNFBuTWR1ZzFBSnl5dXdiWGpmcGhKTTNUc2VpLWVqZ29kYXdtZGNEbzF3YWxfMGdIMVdhcnlMTVI3cmE3OWdlc0lhWFQxRFRucENOSUlXbXRER2FVRTY5UdIBowFBVV95cUxOV2hfd0ItQ3BVSlF6RDE1STUxc3AwSGh6eDVFSjlTSTc4QTJKcUVXU3dVbkFyTHBQRXBCUndFZWNpOWtXSTlLXzItNFFuTTJubURicndHb2ExVGZ3UzFYaGszYWtIdHVrNEw4cnpmenF6UU90bjZMam0xVmFfX1U4TGNpcEdEZWRhQnN0WERLMnJlc09mN3pJdEN0ZzR1d2xIa2NR?oc=5"
         }
       ],
+      "mostViewed": null
+    },
+    "s-4475-119": {
+      "outlets7d": [
+        {
+          "domain": "nytimes.com",
+          "lean": "left",
+          "firstSeen": "2026-11-09",
+          "lastSeen": "2026-11-09",
+          "url": "https://news.google.com/rss/articles/CBMijwFBVV95cUxPTVY3SElZaUJyVVU4NFV2RXI4aVFRdVgzRWgxeEF1ckJxM1FaR3lTU00yNE1jamZ1ZHFFSzhGMEZHSWtSY3I2NXVxZ3RqVXZPZEktdHJPR19WcXh1RHJHdk9Vc3dBNnMtakFsM1AtSFpJYm02bDFaZHg4U0g3ZXhKQzN1VWNPSWl1cEtGMklUaw?oc=5"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "s-4528-119": {
@@ -1488,6 +1552,18 @@
         "lastSeen": "2026-10-26",
         "lastWeek": "2026-10-18"
       }
+    },
+    "s-4784-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "airandspaceforces.com",
+          "firstSeen": "2026-11-09",
+          "lastSeen": "2026-11-09",
+          "url": "https://news.google.com/rss/articles/CBMijwFBVV95cUxOUUE0akt0RHFZRUpDM09MLWNJM0RPV084NW81MEIzZXV5bm5LcldNMnlJTUpuT2dKU2UxRzdPdEkzMjVYZEVPbXhORFdNRWNtMkFzRnBtT2YtOEpwZTFUbGlJV2o5QW92cWZZVWxOX3NiTEZvNllVdWVvMGl4UVFCTXFoLTZoa1MxSVhvS001VQ?oc=5"
+        }
+      ],
+      "mostViewed": null
     },
     "s-5271-119": {
       "outlets7d": [
