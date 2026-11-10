@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-10T04:31:40.362Z",
+    "fetched_at": "2026-11-10T09:42:02.933Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-10T04:31:40.362Z"
+        "checked_at": "2026-11-10T09:42:02.933Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-08",
         "week_label": "Most-Viewed Bills - Week of November 8, 2026",
         "entries": 6,
-        "checked_at": "2026-11-10T04:31:40.362Z"
+        "checked_at": "2026-11-10T09:42:02.933Z"
       },
       "leans": {
         "center": {
@@ -869,6 +869,12 @@
           "firstSeen": "2026-11-10",
           "lastSeen": "2026-11-10",
           "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxOcEVJZXNKczEwWFdLaHEyTVFxS3F6ZVh6SEQ0ckdxTDZ4TWJoc2RtTVVsSHQzelZVcDF1MVB5Wk9ZM0xzMF8yQXNrazBzNDczTnp0Y2U5ZzdDT2FIWi14d0NrQzl4R1pWVmxGdVk4WTBJdnk1Z08zQzhoVFpRRGhvYjhMNGpIVDZ6?oc=5"
+        },
+        {
+          "domain": "mashable.com",
+          "firstSeen": "2026-11-10",
+          "lastSeen": "2026-11-10",
+          "url": "https://news.google.com/rss/articles/CBMib0FVX3lxTE1zLUdScDY2SEpzWEFwQ3FLNHk1Vnl2cVhBNUFxRTZ0WmJ1cDF6eG9mRFhPY2dkUHAtblJUbk5UYUh0NXFRM0V6dmpXZFlIRU84Mmp5V3RPdnA4TXpsd2MwQXh5MnBFSXBRQWU2OGtNRQ?oc=5"
         },
         {
           "domain": "independent.co.uk",
