@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-10T09:42:02.933Z",
+    "fetched_at": "2026-11-10T17:45:39.069Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-10T09:42:02.933Z"
+        "checked_at": "2026-11-10T17:45:39.069Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-08",
         "week_label": "Most-Viewed Bills - Week of November 8, 2026",
         "entries": 6,
-        "checked_at": "2026-11-10T09:42:02.933Z"
+        "checked_at": "2026-11-10T17:45:39.069Z"
       },
       "leans": {
         "center": {
@@ -166,6 +166,13 @@
     },
     "hjres-1-119": {
       "outlets7d": [
+        {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-11-10",
+          "lastSeen": "2026-11-10",
+          "url": "https://www.foxnews.com/politics/trumps-supreme-court-majority-faces-looming-threat-after-dem-senate-takeover-stuck"
+        },
         {
           "domain": "thehill.com",
           "lean": "center",
@@ -318,6 +325,26 @@
         "lastWeek": "2026-11-08"
       }
     },
+    "hr-1403-119": {
+      "outlets7d": [
+        {
+          "domain": "cbsnews.com",
+          "lean": "left",
+          "firstSeen": "2026-11-10",
+          "lastSeen": "2026-11-10",
+          "url": "https://www.cbsnews.com/live-updates/congress-today-senate-house-leadership-elections/"
+        },
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-11-10",
+          "lastSeen": "2026-11-10",
+          "url": "https://thehill.com/video-clips/6210118-watch-live-house-democrats-press-conference-hegseth-energy-midterms-presser/"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hr-161-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -373,6 +400,19 @@
           "url": "https://news.google.com/rss/articles/CBMirAFBVV95cUxNQTM2S3lJMmNGTkdaODhqMGotQ0o5cEtGRHdJZno5cURLYWl0ZDA2amhkNDBVUFBhR2JFQUFDejl0SGJjeGo1X1FhXzZBUlFhUGJzcDFLSDJGbko2dkJ6Skw3T0RBUmE5cVQ2MXZOSG9GTUJ6TGcwWmRjdXpERUJEcGVPaDQyYlhzRFZpTVYtYW9kOERPd1JCa3ZzSG1ORHlhdGZtN0JFU3daMGs4?oc=5"
         }
       ],
+      "mostViewed": null
+    },
+    "hr-2347-119": {
+      "outlets7d": [
+        {
+          "domain": "pbs.org",
+          "lean": "center",
+          "firstSeen": "2026-11-10",
+          "lastSeen": "2026-11-10",
+          "url": "https://news.google.com/rss/articles/CBMizgFBVV95cUxQOGhBZUlKOHdkM2xJVXVWU2d5UjBIalV3NjVfeUhZY3U2Q1ZISXB6ZnZfTnRGVGhHU3BKVGY3bkRxaWFENkVZQ3dDWFJfZmk1bzEwZFA1RWFZbjA1SHNvelJUWkk3cXU1UzNhOUllQ0psbm95b2o0Mzd3WE15X0hvQ2ppQUx2eGQzT0lRTjV2TS1ERi1WcVJtaE9leGMyX2pBSXVqcnR3X3FheFRsdVQ4ODdQa3BVclRoQmRmOU15Y2YxaHhpWWwzZC16MHlQUdIB0wFBVV95cUxPbTZJQnhqZzVTTTNHSy0xR1FKTlRra3lxaXlzU1RjYkt3bVRBQUhBUW1YZnY2YXpKbWF6cHEtN2NYVG8zVnhuQmZJSmdSRE9aSlVPa2VPNUZJWGhNaUs2UWhMN3NNWDlKOEYtVVRfaHlQOUlhQVlYUjl5VHNROHN4NUVjNS10alRkalN5eVhwUllpVjhXM3RiZW9yOXBBWDBkSXA3VXdFUkVfR3lsZXJxaG9qc1pld1FSQjhKMExNRWlXRWI2NHlmWjRpbFc5cldhM3VN?oc=5"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "hr-2694-119": {
@@ -553,11 +593,32 @@
     "hr-4405-119": {
       "outlets7d": [
         {
+          "domain": "cbsnews.com",
+          "lean": "left",
+          "firstSeen": "2026-11-10",
+          "lastSeen": "2026-11-10",
+          "url": "https://www.cbsnews.com/news/jeffrey-epstein-house-oversight-committee-report/"
+        },
+        {
           "domain": "cnbc.com",
           "lean": "center",
           "firstSeen": "2026-11-05",
-          "lastSeen": "2026-11-05",
-          "url": "https://www.cnbc.com/2026/11/05/jpmorgan-epstein-democrats-erdoes-midterm-election.html"
+          "lastSeen": "2026-11-10",
+          "url": "https://www.cnbc.com/2026/11/10/jeffrey-epstein-house-oversight-doj.html"
+        },
+        {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-11-10",
+          "lastSeen": "2026-11-10",
+          "url": "https://www.foxnews.com/politics/explosive-house-report-exposes-failures-says-allowed-epsteins-abuse-continue-years"
+        },
+        {
+          "domain": "politico.com",
+          "lean": "left",
+          "firstSeen": "2026-11-10",
+          "lastSeen": "2026-11-10",
+          "url": "https://www.politico.com/news/2026/11/10/house-oversight-republican-epstein-report-01158414"
         },
         {
           "domain": "thehill.com",
@@ -952,6 +1013,19 @@
       ],
       "mostViewed": null
     },
+    "hr-7894-119": {
+      "outlets7d": [
+        {
+          "domain": "politico.com",
+          "lean": "left",
+          "firstSeen": "2026-11-10",
+          "lastSeen": "2026-11-10",
+          "url": "https://www.politico.com/news/2026/11/10/house-gop-elections-housecleaning-01157975"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hr-7971-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1004,6 +1078,13 @@
     },
     "hr-8902-119": {
       "outlets7d": [
+        {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-11-10",
+          "lastSeen": "2026-11-10",
+          "url": "https://www.foxnews.com/politics/watch-jeffries-faces-uncertainty-from-incoming-democrats-house-speaker-vote-approaches"
+        },
         {
           "domain": "cnbc.com",
           "lean": "center",
@@ -1201,6 +1282,12 @@
     "s-252-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "dallasnews.com",
+          "firstSeen": "2026-11-10",
+          "lastSeen": "2026-11-10",
+          "url": "https://news.google.com/rss/articles/CBMitAFBVV95cUxOZWVyMUVyVGhMLXZKVlJ1aXU2ZTFWZU15REYzNUl5c2s5a0FKRzhGYzBQSVdSb28wV0VMdkJSektNMVI1XzF5SUh4ZldGRTN3d285YUtnWkFEZUVjaDZib2tkbVVOOWlqYWVzYkpTTjZfei03b2VTak1RVGE5YWVkUFFtdExDSzRCVEVORG5RTWtZMURpWmVlbVlhak9INl95TUZCVjdsRHJuTEJrVG1TWmxTVW0?oc=5"
+        },
         {
           "domain": "afslaw.com",
           "firstSeen": "2026-11-06",
@@ -1516,6 +1603,18 @@
         "lastSeen": "2026-11-10",
         "lastWeek": "2026-11-08"
       }
+    },
+    "s-909-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "solarbuildermag.com",
+          "firstSeen": "2026-11-10",
+          "lastSeen": "2026-11-10",
+          "url": "https://news.google.com/rss/articles/CBMinAFBVV95cUxPa1Q4WjlCUDBWOUVaUUpMT0hzbHFnZ3dSaGNoMnZ1Ti1uRGlzZkpVclJvNUxwVmg3ZUk5RVBHa2tPRV9uR0tCUk1tdThfZXV6ekpqSWdJM2tPdWFZd2FPMmlPVExabnFnZmZnMktmQnJwWGlxZG5SNkNtTndYb3piUlJlZTd0a0djc2I2MnAxeVhrMTJxamxodUVUajY?oc=5"
+        }
+      ],
+      "mostViewed": null
     },
     "sjres-182-119": {
       "outlets7d": [
