@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-10T00:08:39.769Z",
+    "fetched_at": "2026-11-10T01:29:07.795Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-10T00:08:39.769Z"
+        "checked_at": "2026-11-10T01:29:07.795Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-08",
         "week_label": "Most-Viewed Bills - Week of November 8, 2026",
         "entries": 6,
-        "checked_at": "2026-11-10T00:08:39.769Z"
+        "checked_at": "2026-11-10T01:29:07.795Z"
       },
       "leans": {
         "center": {
@@ -507,6 +507,18 @@
       ],
       "mostViewed": null
     },
+    "hr-3978-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "quiverquant.com",
+          "firstSeen": "2026-11-10",
+          "lastSeen": "2026-11-10",
+          "url": "https://news.google.com/rss/articles/CBMi9wFBVV95cUxQTkdOZHREM09wOWZ1Mk1pajZEVlNlVUFkSVMzZjNONjBfN0pmOVJYUEZlbmtsaGNlbkQ5VHFLQllWY1NLZDk2ZnNvLXZCZGRDelhRWXVyTnBKN0Myd2dDYk4tcnl3bXVIYjVQTHNPQnRTWFVZdVRIMS1jSlNWbGhnV0g4SnYtQVZpN3g4TjltREYwWHBCYmxZeDVEaHRhV1pKTURwMENJekk5OVM5cnRPOTJZSWRwNnN0SU9CMTFxOUhHb3N6MWtralM4WndMZ1AzUnVlWW94T3RERmRNRm90ZzdvRXJ5aEo0MjlWUFhsRnVTVlduNTdF?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-4070-119": {
       "outlets7d": [
         {
@@ -553,6 +565,19 @@
           "firstSeen": "2026-11-05",
           "lastSeen": "2026-11-05",
           "url": "https://thehill.com/homenews/house/6201121-massie-force-epstein-files-bill-vote/"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-4690-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-11-10",
+          "lastSeen": "2026-11-10",
+          "url": "https://thehill.com/newsletters/energy-environment/6209573-senate-advances-bill-to-boost-energy-and-infrastructure-teeing-up-passage/"
         }
       ],
       "unratedOutlets7d": [],
@@ -1093,6 +1118,12 @@
     "s-1547-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "westernpriorities.org",
+          "firstSeen": "2026-11-10",
+          "lastSeen": "2026-11-10",
+          "url": "https://news.google.com/rss/articles/CBMi5wFBVV95cUxOMk0wanloRFdLa2p1bHlwcm8zUi1QdTdsQmVnS0M0bkxPdFQ2bERvYVlmUU9Zdm9CYjBpVHdZSENGdXR0dGFuMm0wQnRoWEJxRldsTnlaR2JLMTVRTnFRaDRPcDByMzhTSGtoZ1VuV1RLS0tQN1I4YTh6UU16b0RXUEJyUFVvSHgyTUE0WWNkZnFFeE94UEM0Uy10OVA3WVNiTzV0RmVGTERwNFRCNmswMTFQWE1LMExZUjRCbGpsb0FiSGVCSjhjUFNsTnVhb3pTYS1ERkFwa2dDd3NadWY0R1hMcFVmS0E?oc=5"
+        },
         {
           "domain": "25newsnow.com",
           "firstSeen": "2026-11-06",
