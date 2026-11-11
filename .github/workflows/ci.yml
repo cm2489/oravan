@@ -343,6 +343,11 @@ jobs:
     # to ubuntu-latest once package-lock.json holds a Playwright release that
     # supports 26.04.
     runs-on: ubuntu-24.04
+    # A shard finishes in about 5 minutes. With no limit a stuck step holds the
+    # runner for GitHub's default 6 hours: on 2026-11-11 the runner could not
+    # resolve the Ubuntu package mirror, and all six shards sat in the browser
+    # install for 20 minutes until the run was cancelled by hand.
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
