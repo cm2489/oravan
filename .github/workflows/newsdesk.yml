@@ -299,7 +299,7 @@ jobs:
         # The main-ref half of the condition is structural, not a softening of
         # that switch: production is built from refs/heads/main and nothing
         # else, so on a workflow_dispatch validation run from a branch this
-        # poll can only run out its 12-minute deadline and paint the run red
+        # poll can only run out its 20-minute deadline and paint the run red
         # for something that is not a fault. On main the condition is
         # unchanged and the switch is armed exactly as before.
         if: steps.commit.outputs.changed == 'true' && github.ref == 'refs/heads/main'

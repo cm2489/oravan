@@ -325,7 +325,7 @@ test.describe('the Anthropic preflight', () => {
  * 2d · 2026-09-18 — every data workflow checks out the branch TIP.
  * ------------------------------------------------------------------ */
 test.describe('the stale-checkout race that killed two nightlies', () => {
-  test('sync-bills, newsdesk and hot-bills all pin checkout to the branch, not the event SHA', () => {
+  test('sync-bills, newsdesk, hot-bills and moment-watch all pin checkout to the branch, not the event SHA', () => {
     // Without `ref:`, actions/checkout takes `github.sha` — main's SHA when the
     // RUN WAS CREATED. A run queued in the data-sync group can start long
     // after that, against a corpus another member has already advanced; its
@@ -334,8 +334,15 @@ test.describe('the stale-checkout race that killed two nightlies', () => {
     // Runs 34886281500 (2026-09-14) and 35132794181 (2026-09-16) both died
     // that way, each throwing away a full night of paid work. hot-bills joined
     // the pin on 2026-10-06: under `queue: max` a pass that waits behind the
-    // nightly always runs, and it rewrites data/bills.json too.
-    for (const [name, yml] of [['sync-bills', syncBills], ['newsdesk', wf('newsdesk.yml')], ['hot-bills', hotBills]] as const) {
+    // nightly always runs, and it rewrites data/bills.json too. moment-watch
+    // joined on 2026-10-09: it READS the corpus the nightly commits, so a run
+    // queued behind the nightly must not check out the pre-sync SHA.
+    for (const [name, yml] of [
+      ['sync-bills', syncBills],
+      ['newsdesk', wf('newsdesk.yml')],
+      ['hot-bills', hotBills],
+      ['moment-watch', momentWatch],
+    ] as const) {
       const checkoutAt = yml.indexOf('- uses: actions/checkout@v7');
       expect(checkoutAt, `${name}: no checkout step`).toBeGreaterThan(0);
       expect(yml.slice(checkoutAt, checkoutAt + 2600), name).toContain('ref: ${{ github.ref_name }}');

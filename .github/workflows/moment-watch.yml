@@ -137,6 +137,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          # THE BRANCH TIP, NOT THE EVENT SHA - the pin sync-bills.yml,
+          # newsdesk.yml and hot-bills.yml already carry. Without `ref:`,
+          # checkout takes the SHA main carried when this RUN WAS CREATED.
+          # Under `queue: max` a run that waits behind the nightly now always
+          # runs, so without the pin it would read the corpus from BEFORE the
+          # sync it is scheduled to follow (data/bills.json, data/moments.json)
+          # and file candidates and status from a stale night.
+          ref: ${{ github.ref_name }}
 
       - uses: actions/setup-node@v6
         with:
