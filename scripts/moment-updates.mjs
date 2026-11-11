@@ -167,7 +167,9 @@ import {
   sameActionKey,
   shiftDay,
   summaryRefreshReason,
-  voteCountRecord,
+  numberGrounding,
+  numberParityFailure,
+  RECORD_ONLY_MODEL,
 } from '../lib/moment-updates-gate.mjs';
 import {
   actionToCandidate,
@@ -1271,6 +1273,12 @@ Output STRICT JSON only — {"en":"…","es":"…"} — no prose, no markdown fe
   parsed = { en: presidentStyle(parsed.en, 'en'), es: presidentStyle(parsed.es, 'es') };
 
   const failures = [];
+  // Every number from 0 to 435 the text states must be one the prompt
+  // printed from the record: its roll calls, its updates, its measures and
+  // its window (the NUMBER lint, lib/moment-updates-gate.mjs). The gate
+  // rebuilds the same set from grounded_in.roll_calls, grounded_in.update_ids
+  // and grounded_in.vehicle_statuses.
+  const numbers = numberGrounding({ rollCalls: votes ?? [], updates: recent, vehicles: Object.keys(statuses), windowDays: SUMMARY_WINDOW_DAYS });
   for (const lang of ['en', 'es']) {
     const value = parsed[lang].trim();
     if (!value) failures.push(`${lang}: empty`);
@@ -1278,18 +1286,13 @@ Output STRICT JSON only — {"en":"…","es":"…"} — no prose, no markdown fe
     // grounded_in.roll_calls_on_record — the same number the gate re-lints it
     // with. Never the window's count (`votes`): see ROLL_CALL_ABSENCE.
     const rollCallsOnRecord = Array.isArray(onRecord) ? onRecord.length : undefined;
-    // Every vote count the text states must be one the prompt printed: the
-    // window's roll calls and its record sentences (the vote-count lint). The
-    // gate rebuilds the same record from grounded_in.roll_calls and
-    // grounded_in.update_ids.
-    const voteRecord = voteCountRecord({
-      rollCalls: votes ?? [],
-      actionTexts: recent.filter((u) => u.class !== 'press_cluster').map((u) => u.record?.action_text),
-    });
-    for (const f of lintRevisionText(value, lang, { groundedEvents, rollCallsOnRecord, voteRecord })) {
+    for (const f of lintRevisionText(value, lang, { groundedEvents, rollCallsOnRecord, numbers })) {
       failures.push(`${lang}: ${f}`);
     }
   }
+  // …and the Spanish states the English's numbers, as many times each.
+  const parity = numberParityFailure(parsed.en, parsed.es);
+  if (parity) failures.push(`es: ${parity}`);
   if (failures.length) {
     // There is no fallback for a summary: a "where it stands" paragraph is
     // Oravan's own voice, and no government sentence can stand in for it. The
@@ -1407,7 +1410,9 @@ export function voteGroundingLine(r, { partyCounts = PARTY_COUNTS } = {}) {
  * that did not write it. lib/moment-updates.ts isAiSummary reads any token it
  * does not know as AI — the safe direction — until it is taught this one.
  */
-export const RECORD_ONLY_MODEL = 'record-only';
+// One copy, in the gate, which exempts a revision with this model from part 1
+// of its NUMBER lint (a template, not AI text).
+export { RECORD_ONLY_MODEL };
 
 /**
  * WHY THIS EXISTS. The nightly re-anchors a question's "Where it stands" every
@@ -1501,11 +1506,13 @@ export function recordOnlyRevision({ momentId, entry, statuses, records, votes, 
   if (!latest) return null;
   const text = recordOnlyText(latest, Object.keys(statuses ?? {}).length);
   // The same two lint layers every stored revision passes (and the gate
-  // re-runs). A template should never fail them; if an edit to it ever does,
+  // re-runs; part 1 of its NUMBER lint does not apply to this template). A template should never fail them; if an edit to it ever does,
   // nothing is written rather than something the gate would reject.
   for (const lang of /** @type {const} */ (['en', 'es'])) {
     if (lintRevisionText(text[lang], lang).length > 0) return null;
   }
+  // …and part 2 of the NUMBER lint, which the gate runs on every revision.
+  if (numberParityFailure(text.en, text.es)) return null;
   const windowFloor = shiftDay(day, -SUMMARY_WINDOW_DAYS);
   const recent = (entry?.updates ?? []).filter((u) => String(u?.day) >= windowFloor).slice(0, 30);
   const refs = [...new Set([...Object.keys(statuses ?? {}).map(congressGovUrlForSlug), ...contextRefs.filter((r) => /^https:\/\//.test(r))])];

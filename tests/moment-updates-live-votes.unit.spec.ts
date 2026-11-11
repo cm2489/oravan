@@ -117,13 +117,13 @@ const FALSE_ABSENCE = {
 
 /**
  * A summary that states the record — what the model is now asked to write.
- * The House vote of July 23 carries its roll number and no tally: the prompts
- * here print roll 244 only, and a count the prompt did not print is refused by
- * the vote-count lint (2026-10-06), however true it is (214 to 208).
+ * It leaves out the House vote of July 23 (Roll no. 282, 214 to 208): the
+ * prompts here print roll 244 only, and a number the prompt did not print
+ * from the record is refused by the number lint (2026-11-11), however true.
  */
 const GROUNDED_SUMMARY = {
-  en: 'On September 24, 2026, the Senate rejected H. Con. Res. 89 by a recorded vote of 49 to 50 (Roll no. 244). The House agreed to it on July 23, 2026, by a recorded vote (Roll no. 282). S.J.Res. 185 and S.J.Res. 172 show floor activity, and H. Con. Res. 38 shows floor activity.',
-  es: 'El 24 de septiembre de 2026, el Senado rechazó H. Con. Res. 89 por votación nominal de 49 a 50 (votación núm. 244). La Cámara la aprobó el 23 de julio de 2026 por votación nominal (votación núm. 282). S.J.Res. 185 y S.J.Res. 172 muestran actividad en el pleno, y H. Con. Res. 38 también.',
+  en: 'On September 24, 2026, the Senate rejected H. Con. Res. 89 by a recorded vote of 49 to 50 (Roll no. 244). S.J.Res. 185 and S.J.Res. 172 show floor activity, and H. Con. Res. 38 shows floor activity.',
+  es: 'El 24 de septiembre de 2026, el Senado rechazó H. Con. Res. 89 por votación nominal de 49 a 50 (votación núm. 244). S.J.Res. 185 y S.J.Res. 172 muestran actividad en el pleno, y H. Con. Res. 38 también.',
 };
 
 const IRAN_VEHICLES = ['sjres-185-119', 'sjres-172-119', 'hconres-38-119', 'hconres-89-119'];
@@ -415,7 +415,7 @@ test.describe('the absence lint', () => {
 
   test('a claim that nothing is SCHEDULED stays rejected — and the prompt now names it', async () => {
     expect(absenceClaims('The cloture vote was 74 to 25; no vote on final passage has been scheduled.', 'en')).toEqual(['no vote']);
-    expect(absenceClaims('No hay fecha fijada para la votación final.', 'es')).toEqual(['No hay']);
+    expect(absenceClaims('No hay fecha fijada para la votación final.', 'es')).toEqual(['No hay fecha']);
     const client = recordingClient(JSON.stringify(GROUNDED_SUMMARY));
     await generateStateSummary(client, 'iran-war-powers', { updates: [], summary_revisions: [] }, IRAN_STATUSES, [], {}, [ROLL_244]);
     expect(client.prompts[0]).toContain('that no vote or date has been scheduled');
@@ -972,10 +972,14 @@ test.describe('one daily summary budget — both modes, every question', () => {
  *     and SY-28 (no model call when nothing moved). Owner card a5.
  * ------------------------------------------------------------------ */
 test.describe('SY-23 · the absence lint lets a TRUE roll-call absence through — and only that', () => {
-  /** The shape the penny question's first summary was rejected over (2026-09-26 nightly). */
+  /**
+   * The shape the penny question's first summary was rejected over (2026-09-26
+   * nightly), without its date: the fixture's record is dated today, and a
+   * date the record does not hold is refused by the number lint.
+   */
   const VOICE_VOTE = {
-    en: 'The House passed H.R. 10167 by voice vote on September 15, 2026, with no roll call.',
-    es: 'La Cámara aprobó H.R. 10167 por voto oral el 15 de septiembre de 2026, sin votación nominal.',
+    en: 'The House passed H.R. 10167 by voice vote, with no roll call.',
+    es: 'La Cámara aprobó H.R. 10167 por voto oral, sin votación nominal.',
   };
   /** A FALSE roll-call absence: data/votes.json holds House roll 278, "On Passage", on this bill. */
   const FALSE_NO_RECORDED_VOTE = {
