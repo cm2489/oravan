@@ -543,8 +543,12 @@ const TIER0_DECODE_CAP = Number(process.env.NEWSDESK_TIER0_DECODE_CAP ?? 6);
 const TIER0_DAILY_DECODE_CAP = Number(process.env.NEWSDESK_TIER0_DAILY_DECODE_CAP ?? 20);
 // The nickname bridge's ONE per-run Congress.gov list request: how many
 // recently-updated bills to resolve extracted act-name tokens against.
-// 100 ≈ several days of legislative motion — a brand-new bill big enough
-// to be covered by nickname is essentially always inside this window.
+// Measured 2026-10-06: 100 is HOURS of record churn, not days. All 100 bills
+// in that list carried that day's updateDate, and Congress.gov's own counts
+// of bills updated per day were 565 on 2026-10-02, 176 on 2026-10-05 and
+// 376 on 2026-10-06 by 17:00Z. A bill covered by nickname is inside this
+// window only if its record happened to change in those hours. (Comment
+// corrected only; how wide the search should be is the owner's decision.)
 const NICKNAME_LIST_LIMIT = Number(process.env.NEWSDESK_NICKNAME_LIST_LIMIT ?? 100);
 // The conversation lamp's only extra network: FREE Congress.gov refreshes
 // spent checking whether a newly-corroborated bill's title is still the title

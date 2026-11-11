@@ -3,6 +3,7 @@ import { Newspaper } from 'lucide-react';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { BillCard } from './BillCard';
+import { HeadlineOrTitle } from './HeadlineOrTitle';
 import type { NewsCaption } from '@/lib/conversation';
 import type { NewsBill } from '@/lib/types';
 
@@ -111,7 +112,9 @@ export async function NewsLens({
                 <span className="whitespace-nowrap text-xs font-bold text-ink-2 tabular-nums">
                   {b.identifier}
                 </span>
-                <span className="font-semibold">{b.headline ?? b.title}</span>
+                <span className="font-semibold">
+                  <HeadlineOrTitle headline={b.headline} title={b.title} />
+                </span>
                 {/* The same reason, in the same words as the homepage card —
                     a row is a card here, and it owes the reader the same
                     account of why it is on the page. */}
@@ -173,7 +176,7 @@ export async function NewsLens({
                     {captionOf(b) ?? t('sources', { count: b.sourceCount })}
                   </span>
                   <h3 className="mt-1 text-lg leading-tight font-bold group-hover:underline group-hover:decoration-go group-hover:decoration-[3px]">
-                    {b.headline ?? b.title}
+                    <HeadlineOrTitle headline={b.headline} title={b.title} />
                   </h3>
                   <span className="mt-1 block text-sm text-ink-2 tabular-nums">{meta.join(' · ')}</span>
                 </Link>

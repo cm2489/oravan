@@ -45,6 +45,12 @@ concurrency:
   # other data-sync member's,
   # and its commit step carries the 5-attempt rebase-and-retry loop below.
   # Disjoint files plus rebase-retry, not serialization.
+  #
+  # (2026-10-06: the one-pending-run rule above is GitHub's default,
+  # `queue: single`. The data-sync members have since set `queue: max`, so a
+  # run waiting there is no longer replaced. This job stays out anyway: the
+  # reasoning just above still holds, and outside the group it never waits
+  # behind a nightly that can run over an hour.)
   group: data-sync-legislators
   cancel-in-progress: false
 

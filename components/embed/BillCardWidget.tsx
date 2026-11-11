@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useEmbedDicts } from '@/components/embed/EmbedDictsProvider';
 import type { EmbedLocale } from '@/components/embed/embed-dicts';
+import { HeadlineOrTitle } from '@/components/HeadlineOrTitle';
 import { SITE_ORIGIN } from '@/lib/site';
 import type { BillStatus, StatusLabelKey } from '@/lib/types';
 
@@ -124,7 +125,6 @@ export function BillCardWidget({
     );
   }
 
-  const displayHeadline = bill.headline ?? bill.officialTitle;
   const siteBase = `${SITE_ORIGIN}${locale === 'es' ? '/es' : ''}`;
   const billUrl = `${siteBase}/bills/${bill.slug}`;
   const dataAsOfText = format(t.freshness.dataAsOf, {
@@ -179,7 +179,9 @@ export function BillCardWidget({
             describes when we last looked. Printed the other way round, a fresh
             sync date reads as implicit corroboration of an old fact. */}
         {lastActionText && <p className="bc-freshness bc-record">{lastActionText}</p>}
-        <h1 className="bc-headline">{displayHeadline}</h1>
+        <h1 className="bc-headline">
+          <HeadlineOrTitle headline={bill.headline} title={bill.officialTitle} />
+        </h1>
         {bill.headline && <span className="bc-chip-ai">{t.og.aiDecoded}</span>}
         <p className="bc-freshness">{dataAsOfText}</p>
       </article>
