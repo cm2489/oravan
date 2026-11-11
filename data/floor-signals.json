@@ -1,22 +1,22 @@
 {
   "_meta": {
     "schema": "floor-signals/v1",
-    "fetched_at": "2026-11-10T17:45:08.891Z",
+    "fetched_at": "2026-11-11T02:27:58.573Z",
     "sources": {
       "daily-digest": {
-        "status": "ok",
-        "detail": "1 announced measure(s)/nomination(s)",
-        "checked_at": "2026-11-10T17:45:08.891Z",
-        "url": "https://www.govinfo.gov/content/pkg/CREC-2026-11-05/html/CREC-2026-11-05-pt1-PgD991-2.htm",
-        "published": "2026-11-05",
-        "covers": "2026-11-09",
-        "covers_label": "3 p.m., Monday, November 9",
-        "via": "govinfo"
+        "status": "error",
+        "detail": "no Formatted Text URL in the Daily Digest section of 2026-11-09; fallback: no \"Next Meeting of the SENATE\" granule in CREC-2026-11-06",
+        "checked_at": "2026-11-11T02:27:58.573Z",
+        "url": null,
+        "published": null,
+        "covers": null,
+        "covers_label": null,
+        "via": null
       },
       "billsthisweek": {
         "status": "ok",
         "detail": "15 scheduled measure(s)",
-        "checked_at": "2026-11-10T17:45:08.891Z",
+        "checked_at": "2026-11-11T02:27:58.573Z",
         "url": "https://docs.house.gov/billsthisweek/20261109/20261109.xml",
         "published": "2026-11-09",
         "covers": "2026-11-09",
@@ -25,19 +25,13 @@
       }
     },
     "in_session": {
-      "senate": "in_session",
-      "house": "in_session",
+      "senate": "unknown",
+      "house": "unknown",
       "basis": "Daily Digest \"Program for\" blocks"
     },
     "next_meeting": {
-      "senate": {
-        "date": "2026-11-09",
-        "label": "3 p.m., Monday, November 9"
-      },
-      "house": {
-        "date": "2026-11-09",
-        "label": "12 noon, Monday, November 9"
-      }
+      "senate": null,
+      "house": null
     },
     "dropped": []
   },
@@ -57,7 +51,7 @@
         "track": "rule",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-11-10T17:45:08.891Z",
+      "fetched_at": "2026-11-11T02:27:58.573Z",
       "first_seen": "2026-11-09T06:12:48.451Z",
       "stale": false
     },
@@ -76,7 +70,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-11-10T17:45:08.891Z",
+      "fetched_at": "2026-11-11T02:27:58.573Z",
       "first_seen": "2026-11-09T06:12:48.451Z",
       "stale": false
     },
@@ -95,7 +89,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-11-10T17:45:08.891Z",
+      "fetched_at": "2026-11-11T02:27:58.573Z",
       "first_seen": "2026-11-09T06:12:48.451Z",
       "stale": false
     },
@@ -114,7 +108,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-11-10T17:45:08.891Z",
+      "fetched_at": "2026-11-11T02:27:58.573Z",
       "first_seen": "2026-11-09T06:12:48.451Z",
       "stale": false
     },
@@ -133,7 +127,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-11-10T17:45:08.891Z",
+      "fetched_at": "2026-11-11T02:27:58.573Z",
       "first_seen": "2026-11-09T06:12:48.451Z",
       "stale": false
     },
@@ -152,7 +146,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-11-10T17:45:08.891Z",
+      "fetched_at": "2026-11-11T02:27:58.573Z",
       "first_seen": "2026-11-09T06:12:48.451Z",
       "stale": false
     },
@@ -171,26 +165,8 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-11-10T17:45:08.891Z",
+      "fetched_at": "2026-11-11T02:27:58.573Z",
       "first_seen": "2026-11-09T06:12:48.451Z",
-      "stale": false
-    },
-    "hr-2347-119": {
-      "tier0": {
-        "source": "daily-digest",
-        "chamber": "senate",
-        "quote": "proceed to consideration of H.R. 2347, Survivor Justice Tax Prevention",
-        "quote_lang": "en",
-        "quote_kind": "digest_program_sentence",
-        "url": "https://www.govinfo.gov/content/pkg/CREC-2026-11-05/html/CREC-2026-11-05-pt1-PgD991-2.htm",
-        "published": "2026-11-05",
-        "covers": "2026-11-09",
-        "covers_label": "3 p.m., Monday, November 9",
-        "track": "unspecified",
-        "certainty": "consideration"
-      },
-      "fetched_at": "2026-11-10T17:45:08.891Z",
-      "first_seen": "2026-11-06T10:45:55.488Z",
       "stale": false
     },
     "hr-3978-119": {
@@ -208,7 +184,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-11-10T17:45:08.891Z",
+      "fetched_at": "2026-11-11T02:27:58.573Z",
       "first_seen": "2026-11-09T06:12:48.451Z",
       "stale": false
     },
@@ -227,7 +203,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-11-10T17:45:08.891Z",
+      "fetched_at": "2026-11-11T02:27:58.573Z",
       "first_seen": "2026-11-09T06:12:48.451Z",
       "stale": false
     },
@@ -246,7 +222,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-11-10T17:45:08.891Z",
+      "fetched_at": "2026-11-11T02:27:58.573Z",
       "first_seen": "2026-11-09T06:12:48.451Z",
       "stale": false
     },
@@ -265,7 +241,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-11-10T17:45:08.891Z",
+      "fetched_at": "2026-11-11T02:27:58.573Z",
       "first_seen": "2026-11-09T06:12:48.451Z",
       "stale": false
     },
@@ -284,7 +260,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-11-10T17:45:08.891Z",
+      "fetched_at": "2026-11-11T02:27:58.573Z",
       "first_seen": "2026-11-09T06:12:48.451Z",
       "stale": false
     },
@@ -303,7 +279,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-11-10T17:45:08.891Z",
+      "fetched_at": "2026-11-11T02:27:58.573Z",
       "first_seen": "2026-11-09T06:12:48.451Z",
       "stale": false
     },
@@ -322,7 +298,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-11-10T17:45:08.891Z",
+      "fetched_at": "2026-11-11T02:27:58.573Z",
       "first_seen": "2026-11-09T06:12:48.451Z",
       "stale": false
     },
@@ -341,7 +317,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-11-10T17:45:08.891Z",
+      "fetched_at": "2026-11-11T02:27:58.573Z",
       "first_seen": "2026-11-09T06:12:48.451Z",
       "stale": false
     }
