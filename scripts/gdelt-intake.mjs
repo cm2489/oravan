@@ -23,9 +23,16 @@
  *
  * ---- CADENCE: once per question per UTC day -----------------------------------
  * Each run searches only the live questions whose `checkedOn` is not today,
- * oldest check first, each over the days since its last check
- * (`windowStartDay`). The second daily run is a retry for whatever the first
- * could not finish. A day the collector did not run at all loses nothing: the
+ * each over the days since its last check (`windowStartDay`). The order is
+ * fewest searches first, then oldest check (never-checked first of all), then
+ * id: a question is recorded only when every one of its searches is answered
+ * in the run, and GDELT often answers only one or two requests, so the cheap
+ * questions go first and a run's few answers go to a question it can finish
+ * (changed 2026-11-11; oldest-first alone let two many-search questions at the
+ * head spend every run's answers and record nothing). The many-search questions
+ * still wait for a run where GDELT answers all of their requests, and when GDELT
+ * answers nothing no order helps. The second daily run is a retry for whatever
+ * the first could not finish. A day the collector did not run at all loses nothing: the
  * next search starts from the last day checked.
  *
  * ---- WRITES: only what a run recorded -----------------------------------------
@@ -381,9 +388,19 @@ export async function collect({
     }
     due.push({ id, moment, terms, checkedOn });
   }
-  // Oldest check first (never-checked first of all), so a run that stops
-  // early never starves the same question two days running.
-  due.sort((a, b) => String(a.checkedOn ?? '').localeCompare(String(b.checkedOn ?? '')) || a.id.localeCompare(b.id));
+  // Fewest searches first, then oldest check (never-checked first of all), then
+  // id. A question is recorded as checked only when EVERY one of its searches is
+  // answered in the run, and GDELT often answers one or two requests per run and
+  // refuses the rest (429). With oldest-first alone, the head of the queue was
+  // two never-checked questions needing 8 and 6 searches: every run spent its
+  // one or two answers on a question it could not finish, recorded nothing, and
+  // the order never changed (2026-11-11). Putting the questions that need the
+  // fewest searches first lets those answers finish one. This does NOT let the
+  // 8- and 6-search questions through: they are still recorded only in a run
+  // where GDELT answers that many requests; and when GDELT answers nothing at
+  // all, no order helps. A question recorded in this run leaves the due list
+  // (its `checkedOn` is today), so the next run's head moves on.
+  due.sort((a, b) => a.terms.length - b.terms.length || String(a.checkedOn ?? '').localeCompare(String(b.checkedOn ?? '')) || a.id.localeCompare(b.id));
   if (due.length === 0) log(`gdelt-intake: nothing due — every searchable live question was checked today (${today}).`);
 
   // ---- the persisted circuit ---------------------------------------------------
