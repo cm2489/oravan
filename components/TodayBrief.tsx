@@ -54,6 +54,10 @@ import { dayCountParts, type Brief, type BriefChamber, type BriefScheduleItem } 
  * tag or something that explicitly draws attention to it").
  */
 
+// The first section on the page carries the heavy rule, the rest the thin one.
+const HEAVY_RULE = 'mt-12 border-t-[3px] border-ink pt-4';
+const THIN_RULE = 'mt-12 border-t border-line-strong pt-4';
+
 const LINK =
   'font-semibold text-go underline underline-offset-4 visited:text-go-deep hover:text-go-deep';
 
@@ -236,7 +240,7 @@ export async function TodayBrief({ brief, locale }: { brief: Brief; locale: stri
           yellow-tagged notice is on a phone's first screen. Quoted, dated,
           attributed; never a vote date. */}
       {showSchedule && (
-        <section className="mt-12 border-t border-line-strong pt-4" aria-labelledby="today-schedule" data-block="schedule">
+        <section className={HEAVY_RULE} aria-labelledby="today-schedule" data-block="schedule">
           <h2 id="today-schedule" className="text-h3 font-extrabold text-ink">
             {t('scheduleHeading')}
           </h2>
@@ -268,7 +272,7 @@ export async function TodayBrief({ brief, locale }: { brief: Brief; locale: stri
           schedule file is re-read hourly and not archived, so a past day has
           no honest chamber line. */}
       {brief.chamber && (
-        <section className="mt-12 border-t-[3px] border-ink pt-4" aria-labelledby="today-chambers">
+        <section className={showSchedule ? THIN_RULE : HEAVY_RULE} aria-labelledby="today-chambers">
           <h2 id="today-chambers" className="text-h3 font-extrabold text-ink">
             {t('chambersHeading')}
           </h2>
