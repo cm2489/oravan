@@ -69,6 +69,13 @@ test('the script itself carries no exit-0 path for a missing variable', () => {
   expect(source.match(/process\.exit\(0\)/g) ?? []).toHaveLength(1);
 });
 
+test('the deadline outlasts a slow-but-landing deploy (20 min since 2026-10-23)', () => {
+  // Deploys that landed after ~12 min reddened three newsdesk runs on 10-21/22; a
+  // shorter deadline brings those false alarms back.
+  const source = readFileSync(join(REPO, 'scripts/verify-deploy.mjs'), 'utf8');
+  expect(source).toMatch(/const TIMEOUT_MS = 20 \* 60 \* 1000;/);
+});
+
 /*
  * Every workflow that calls the script must still PASS the variable through.
  * A hard failure inside the script is worthless if a step quietly stops
@@ -98,7 +105,7 @@ for (const workflow of CALLERS) {
  * `workflow_dispatch`, so it gets run by hand off a branch to validate a change
  * to scripts/newsdesk.mjs. Production is built from refs/heads/main and nothing
  * else, so on such a run the poll asks production for a SHA that can never
- * appear there, burns the 12-minute deadline, and reports red. That is a
+ * appear there, burns the 20-minute deadline, and reports red. That is a
  * STRUCTURAL failure, not a caught one, and a dead-man's switch that cries wolf
  * on every branch validation is a dead-man's switch nobody reads.
  *
