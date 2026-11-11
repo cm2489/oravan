@@ -344,7 +344,17 @@ jobs:
   e2e:
     name: e2e ${{ matrix.shard }}/6
     needs: build
-    runs-on: ubuntu-latest
+    # Pinned 2026-11-11. ubuntu-latest became Ubuntu 26.04 on 2026-11-06, and
+    # Playwright 1.60.0 cannot install WebKit there ("Playwright does not
+    # support webkit on ubuntu26.04-x64"), which failed all six shards. Go back
+    # to ubuntu-latest once package-lock.json holds a Playwright release that
+    # supports 26.04.
+    runs-on: ubuntu-24.04
+    # A shard finishes in about 5 minutes. With no limit a stuck step holds the
+    # runner for GitHub's default 6 hours: on 2026-11-11 the runner could not
+    # resolve the Ubuntu package mirror, and all six shards sat in the browser
+    # install for 20 minutes until the run was cancelled by hand.
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
