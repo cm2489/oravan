@@ -390,18 +390,25 @@ test.describe('the vote-count lint · held and unheld', () => {
     expect(counted).toBeGreaterThan(50);
   });
 
-  test('the committed corpus: s_1c339dac (S. 4668 passage) reads every tally and party count it states, in both languages', () => {
-    const entry = STORE['paying-college-athletes'];
-    const r = entry.summary_revisions.find((x: Json) => x.id === 's_1c339dac');
-    expect(r).toBeTruthy();
-    expect(statedVoteCounts(r.text.en, 'en').map((c: Json) => c.text)).toEqual([
+  // The text of s_1c339dac (paying-college-athletes, 2026-09-29) as it was stored,
+  // copied here so the test depends on neither the revision nor the nightly data:
+  // revisions are trimmed by count, and a pinned id goes with the oldest. What it
+  // is held against is data/votes.json, which never rewrites a roll call it holds.
+  const S_1C339DAC = {
+    en: "The Senate passed S. 4668, the Protect College Sports Act of 2026, on September 28, 2026, by a recorded vote of 77 to 22 (Roll no. 250). On that vote, 50 Republicans and 26 Democrats voted yes. Earlier that day, senators rejected four amendments and agreed to one, by a recorded vote of 96 to 1 (Roll no. 245). Before that, the Senate agreed to amendment S.Amdt. 6776 on September 24, 2026, by a recorded vote of 77 to 23 (Roll no. 242), and invoked cloture on the bill the same day, 74 to 25 (Roll no. 243). The Senate voted 77 to 22 on September 17, 2026, to proceed to the bill (Roll no. 236). The bill is now listed as \"Passed one chamber.\"",
+    es: "El Senado aprobó el proyecto S. 4668, la Ley para Proteger los Deportes Universitarios de 2026, el 28 de septiembre de 2026, por votación nominal de 77 a 22 (votación núm. 250). En esa votación, 50 republicanos y 26 demócratas votaron a favor. Ese mismo día, los senadores rechazaron cuatro enmiendas y aprobaron una, por votación nominal de 96 a 1 (votación núm. 245). Antes, el 24 de septiembre de 2026, el Senado aprobó la enmienda S.Amdt. 6776 por votación nominal de 77 a 23 (votación núm. 242) y ese mismo día invocó el cierre del debate sobre el proyecto, por 74 a 25 (votación núm. 243). El 17 de septiembre de 2026, el Senado votó 77 a 22 para proceder al proyecto (votación núm. 236). El proyecto figura ahora como \"Aprobado por una cámara\".",
+    rolls: ["s-119-2-250", "s-119-2-249", "s-119-2-248", "s-119-2-247", "s-119-2-246", "s-119-2-245", "s-119-2-243", "s-119-2-242", "s-119-2-240", "s-119-2-236", "s-119-2-235"],
+  };
+  test('the S. 4668 passage summary (stored text, copied) reads every tally and party count it states, in both languages', () => {
+    expect(statedVoteCounts(S_1C339DAC.en, 'en').map((c: Json) => c.text)).toEqual([
       '77 to 22', '50 Republicans', '26 Democrats', '96 to 1', '77 to 23', '74 to 25', '77 to 22',
     ]);
-    expect(statedVoteCounts(r.text.es, 'es').map((c: Json) => c.text)).toEqual([
+    expect(statedVoteCounts(S_1C339DAC.es, 'es').map((c: Json) => c.text)).toEqual([
       '77 a 22', '50 republicanos', '26 demócratas', '96 a 1', '77 a 23', '74 a 25', '77 a 22',
     ]);
-    expect(unheldVoteCounts(r.text.en, 'en', recordOf(entry, r))).toEqual([]);
-    expect(unheldVoteCounts(r.text.es, 'es', recordOf(entry, r))).toEqual([]);
+    const rec = voteCountRecord({ rollCalls: S_1C339DAC.rolls.map(roll) });
+    expect(unheldVoteCounts(S_1C339DAC.en, 'en', rec)).toEqual([]);
+    expect(unheldVoteCounts(S_1C339DAC.es, 'es', rec)).toEqual([]);
   });
 
   test('the committed corpus: the Big Question text\'s "77–22" forms (data/moments.json) read as the S. 4668 roll calls', () => {
@@ -416,14 +423,18 @@ test.describe('the vote-count lint · held and unheld', () => {
     }
   });
 
-  test('the hand-authored "214-208" / "47-50" of 2026-07-25 read as pairs the vote file holds', () => {
-    const entry = STORE['iran-war-powers'];
-    const r = entry.summary_revisions.find((x: Json) => x.id === 's_d26a6b43');
-    expect(statedVoteCounts(r.text.en, 'en').map((c: Json) => c.text)).toEqual(['214-208', '47-50']);
+  // s_d26a6b43 (iran-war-powers, 2026-07-25), the hand-authored text as stored, copied
+  // here for the same reason as above.
+  const S_D26A6B43 = {
+    en: "On July 23, 2026 the House adopted H. Con. Res. 89, 214-208, and the Senate referred it to the Committee on Foreign Relations that day. On June 24, 2026 the Senate rejected a motion to proceed to S.J.Res. 185, 47-50.",
+    es: "El 23 de julio de 2026 la Cámara aprobó la H. Con. Res. 89, 214-208, y el Senado la remitió al Comité de Relaciones Exteriores ese mismo día. El 24 de junio de 2026 el Senado rechazó una moción para considerar la S.J.Res. 185, 47-50.",
+  };
+  test('the hand-authored "214-208" / "47-50" of 2026-07-25 (stored text, copied) read as pairs the vote file holds', () => {
+    expect(statedVoteCounts(S_D26A6B43.en, 'en').map((c: Json) => c.text)).toEqual(['214-208', '47-50']);
     const slugs = new Set(MOMENTS['iran-war-powers'].vehicles.map((v: Json) => v.slug));
     const rec = voteCountRecord({ rollCalls: VOTES.rollCalls.filter((x: Json) => slugs.has(x.bill)) });
-    expect(unheldVoteCounts(r.text.en, 'en', rec)).toEqual([]);
-    expect(unheldVoteCounts(r.text.es, 'es', rec)).toEqual([]);
+    expect(unheldVoteCounts(S_D26A6B43.en, 'en', rec)).toEqual([]);
+    expect(unheldVoteCounts(S_D26A6B43.es, 'es', rec)).toEqual([]);
   });
 });
 
@@ -695,6 +706,14 @@ test.describe('the gate re-checks what is stored (checkMomentUpdates, opts.rollC
   const now = Date.parse(STORE._meta?.generated_at ?? new Date().toISOString()) + 86_400_000;
   const run = (file: Json, byId?: Map<string, Json>) =>
     checkMomentUpdates(file, MOMENTS, billSlugs, { now, ...(byId ? { rollCallsById: byId } : {}) });
+  // A test that expects a count to be a VIOLATION must say what day it is: after
+  // retention can have pruned the record the revision was written from
+  // (groundingMayBePruned), the same count is only a warning. So those tests
+  // take their clock from the revision itself, one day after its as_of_day,
+  // never from the nightly data's generated_at, which moves every night.
+  const nowAfter = (r: Json): number => Date.parse(`${r.as_of_day}T17:00:00Z`) + 86_400_000;
+  const runAt = (file: Json, at: number, byId?: Map<string, Json>) =>
+    checkMomentUpdates(file, MOMENTS, billSlugs, { now: at, ...(byId ? { rollCallsById: byId } : {}) });
   const voteViolations = (res: { violations: string[] }) => res.violations.filter((v) => v.includes('vote count'));
   // The stored revision that states the Senate's 49-50 tally in both languages. The
   // NEWEST revision of a question is not it for long (the nightly run appends
@@ -716,7 +735,7 @@ test.describe('the gate re-checks what is stored (checkMomentUpdates, opts.rollC
     expect(r.text.en).toContain('49 to 50');
     r.text.en = r.text.en.replace('49 to 50', '98 to 0');
     r.text.es = r.text.es.replace('49 a 50', '98 a 0');
-    const v = voteViolations(run(file, ROLL_BY_ID));
+    const v = voteViolations(runAt(file, nowAfter(r), ROLL_BY_ID));
     expect(v).toHaveLength(2);
     expect(v[0]).toContain('.text.en: vote count "98 to 0"');
     expect(v[1]).toContain('.text.es: vote count "98 a 0"');
@@ -759,10 +778,53 @@ test.describe('the gate re-checks what is stored (checkMomentUpdates, opts.rollC
     expect(voteViolations(run(file, unmapped))).toEqual([]);
     // Without it on the record, the same count is refused, in each language.
     r.grounded_in.roll_calls_on_record = r.grounded_in.roll_calls_on_record.filter((id: string) => id !== 'h-119-2-282');
-    const v = voteViolations(run(file, unmapped));
+    const v = voteViolations(runAt(file, nowAfter(r), unmapped));
     expect(v).toHaveLength(2);
     expect(v[0]).toContain('.text.en: vote count "214 to 208"');
     expect(v[1]).toContain('.text.es: vote count "214 a 208"');
+  });
+
+  // The two retention tests below build their own question, update and revision,
+  // so they depend on no stored revision (revisions are trimmed by count and
+  // would take a pinned id with them) and on no clock: every date is written
+  // here. The vote is the Senate's 49-50 on 2026-09-24 (Roll no. 244).
+  const SYN_MOMENT = 'synthetic-moment';
+  const SYN_SLUG = 'sjres-1-119';
+  const SYN_AS_OF = '2026-10-04';
+  const synthetic = () => {
+    const update = {
+      id: 'u_syn00001',
+      class: 'vote',
+      vehicle: SYN_SLUG,
+      day: '2026-09-24',
+      occurred_at: '2026-09-24',
+      occurred_precision: 'day',
+      recorded_at: '2026-09-24T20:00:00.000Z',
+      text: { en: 'x', es: 'x' },
+      source: { kind: 'congress_actions', refs: ['https://www.congress.gov/bill/119th-congress/senate-joint-resolution/1'] },
+      record: { action_text: 'Failed of passage in Senate by Yea-Nay Vote. 49 - 50. Record Vote Number: 244.', action_code: null, action_type: 'Floor', source_system: 'Senate' },
+      ai: true,
+    };
+    const revision = {
+      id: 's_syn00001',
+      as_of_day: SYN_AS_OF,
+      text: {
+        en: 'On September 24, 2026, the Senate rejected it by a recorded vote of 49 to 50 (Roll no. 244).',
+        es: 'El 24 de septiembre de 2026, el Senado la rechazó por votación nominal de 49 a 50 (votación núm. 244).',
+      },
+      grounded_in: { vehicle_statuses: { [SYN_SLUG]: 'rejected' }, update_ids: [update.id], roll_calls: [] as string[], roll_calls_on_record: [] as string[] },
+    };
+    const entry = { updates: [update], summary_revisions: [revision] };
+    const moments = { [SYN_MOMENT]: { status: 'live', vehicles: [{ slug: SYN_SLUG }] } };
+    const file = { _meta: { schema: 1, generated_at: `${SYN_AS_OF}T12:00:00.000Z` }, [SYN_MOMENT]: entry };
+    const check = (f: Json, at: number, byId: Map<string, Json>) => checkMomentUpdates(f, moments, billSlugs, { now: at, rollCallsById: byId });
+    return { entry, revision, file, check };
+  };
+  const SYN_ROLL = new Map<string, Json>([['s-119-2-244', { id: 's-119-2-244', bill: SYN_SLUG, totals: { yea: 49, nay: 50 } }]]);
+  const NO_ROLLS = new Map<string, Json>();
+  const synRows = (res: { violations: string[]; warnings: string[] }) => ({
+    violations: res.violations.filter((v) => v.includes('vote count')),
+    warnings: res.warnings.filter((w) => w.includes('vote count')),
   });
 
   test('retention never makes the stored check stricter: a tally held only by a pruned record sentence becomes a warning, not a failure', () => {
@@ -770,56 +832,49 @@ test.describe('the gate re-checks what is stored (checkMomentUpdates, opts.rollC
     // revision's window held no roll call, and the tally came from the
     // chamber's sentence alone ("Failed of passage in Senate by Yea-Nay
     // Vote. 49 - 50"). The vote file is taken to hold no roll call on the
-    // measure either (a roll call whose bill does not map), so nothing but
-    // that sentence holds the count.
-    const file = structuredClone(STORE);
-    const entry = file['iran-war-powers'];
-    const r = entry.summary_revisions.find((x: Json) => x.id === 's_0cf29b30');
-    expect(r).toBeTruthy();
-    expect(r.text.en).toContain('49 to 50');
-    r.grounded_in.roll_calls = [];
-    r.grounded_in.roll_calls_on_record = [];
-    // A count by party is only ever held by a roll call, so the sentence that states one goes with it.
-    r.text.en = r.text.en.replace(' Republicans: 4 yea, 49 nay.', '');
-    r.text.es = r.text.es.replace(' Republicanos: 4 a favor, 49 en contra.', '');
-    expect(r.text.en).not.toContain('Republicans');
-    const noMeasureRolls = new Map([...ROLL_BY_ID].filter(([, rc]) => !MOMENTS['iran-war-powers'].vehicles.some((v: Json) => v.slug === rc.bill)));
-    const voteRows = (res: { violations: string[]; warnings: string[] }) => ({
-      violations: res.violations.filter((v) => v.includes('s_0cf29b30') || (v.includes('vote count') && v.includes('iran-war-powers'))),
-      warnings: res.warnings.filter((w) => w.includes('vote count') && w.includes('49 to 50')),
-    });
+    // measure either, so nothing but that sentence holds the count.
+    const { entry, file, check } = synthetic();
+    const early = Date.parse(`${SYN_AS_OF}T17:00:00Z`) + 86_400_000;
 
-    // Today: the sentence is still cited, the count is held.
-    const today = voteRows(checkMomentUpdates(file, MOMENTS, billSlugs, { now, rollCallsById: noMeasureRolls }));
-    expect(today.violations).toEqual([]);
+    // The day after it was written: the sentence is still cited, the count is held.
+    const before = synRows(check(file, early, NO_ROLLS));
+    expect(before.violations).toEqual([]);
+    expect(before.warnings).toEqual([]);
 
-    // 2026-12-20: retention has pruned the cited updates; the revision is kept, citing nothing.
+    // 2026-12-20: retention has pruned the cited update; the revision is kept, citing nothing.
     const later = Date.parse('2026-12-20T17:00:00Z');
     const prunedEntry = pruneEntry(entry, { now: later }) as Json;
-    const kept = prunedEntry.summary_revisions.find((x: Json) => x.id === 's_0cf29b30');
-    expect(kept.grounded_in.update_ids).toEqual([]);
-    const prunedFile = { ...file, 'iran-war-powers': prunedEntry };
-    const after = checkMomentUpdates(prunedFile, MOMENTS, billSlugs, { now: later, rollCallsById: noMeasureRolls });
-    expect(after.violations.filter((v) => v.includes('vote count'))).toEqual([]);
-    const w = voteRows(after).warnings;
-    expect(w.length).toBe(1);
-    expect(w[0]).toContain('not enforced: retention may have dropped');
+    expect(prunedEntry.updates).toEqual([]);
+    expect(prunedEntry.summary_revisions[0].grounded_in.update_ids).toEqual([]);
+    const prunedFile = { ...file, [SYN_MOMENT]: prunedEntry };
+    const after = synRows(check(prunedFile, later, NO_ROLLS));
+    expect(after.violations).toEqual([]);
+    expect(after.warnings).toHaveLength(2);
+    for (const w of after.warnings) expect(w).toContain('not enforced: retention may have dropped');
 
     // With the vote file's roll call on the measure, the same pruned revision is held outright: no warning at all.
-    const held = checkMomentUpdates(prunedFile, MOMENTS, billSlugs, { now: later, rollCallsById: ROLL_BY_ID });
-    expect(held.violations.filter((v) => v.includes('vote count'))).toEqual([]);
-    expect(voteRows(held).warnings).toEqual([]);
+    const held = synRows(check(prunedFile, later, SYN_ROLL));
+    expect(held.violations).toEqual([]);
+    expect(held.warnings).toEqual([]);
   });
 
-  test('an invented count on a revision retention cannot have touched still fails', () => {
-    const file = structuredClone(STORE);
-    const entry = file['iran-war-powers'];
-    const r = entry.summary_revisions.find((x: Json) => x.id === 's_0cf29b30');
-    r.text.en = r.text.en.replace('49 to 50', '98 to 0');
-    r.text.es = r.text.es.replace('49 a 50', '98 a 0');
-    expect(groundingMayBePruned(r, entry.updates, etDay(now))).toBeNull();
-    const v = voteViolations(run(file, ROLL_BY_ID));
-    expect(v.filter((x) => x.includes('summary_revisions') && x.includes('98'))).toHaveLength(2);
+  test('an invented count on a revision retention cannot have touched still fails — on a clock that is written here, not read from the data', () => {
+    const { entry, revision, file, check } = synthetic();
+    revision.text.en = revision.text.en.replace('49 to 50', '98 to 0');
+    revision.text.es = revision.text.es.replace('49 a 50', '98 a 0');
+    const at = Date.parse(`${SYN_AS_OF}T17:00:00Z`) + 86_400_000;
+    expect(groundingMayBePruned(revision, entry.updates, etDay(at))).toBeNull();
+    const v = synRows(check(file, at, NO_ROLLS)).violations;
+    expect(v).toHaveLength(2);
+    expect(v[0]).toContain('.text.en: vote count "98 to 0"');
+    expect(v[1]).toContain('.text.es: vote count "98 a 0"');
+    // …and on the first day retention can have pruned its sentence, the same text is only a warning.
+    const lateDay = shiftDay(SYN_AS_OF, RETENTION_DAYS - STORED_SUMMARY_WINDOW_DAYS + 1);
+    const late = Date.parse(`${lateDay}T17:00:00Z`);
+    expect(groundingMayBePruned(revision, entry.updates, lateDay)).toContain('retention');
+    const rows = synRows(check(file, late, NO_ROLLS));
+    expect(rows.violations).toEqual([]);
+    expect(rows.warnings).toHaveLength(2);
   });
 });
 
