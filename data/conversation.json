@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-11T14:09:48.244Z",
+    "fetched_at": "2026-11-11T22:10:29.363Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-11T14:09:48.244Z"
+        "checked_at": "2026-11-11T22:10:29.363Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-08",
         "week_label": "Most-Viewed Bills - Week of November 8, 2026",
         "entries": 6,
-        "checked_at": "2026-11-11T14:09:48.244Z"
+        "checked_at": "2026-11-11T22:10:29.363Z"
       },
       "leans": {
         "center": {
@@ -213,6 +213,18 @@
         "lastSeen": "2026-11-11",
         "lastWeek": "2026-11-08"
       }
+    },
+    "hr-1013-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "quiverquant.com",
+          "firstSeen": "2026-11-11",
+          "lastSeen": "2026-11-11",
+          "url": "https://news.google.com/rss/articles/CBMi7wFBVV95cUxNZS1NZHRrNVdzXzVhUy1pS2w4NTQyS2xBemI4VWxOa3BSbm5zMml1NWplWEs0WFdtVl9oU092THJoanZDbUV0ZkVlMnV1Z3NqRUZQSXFmaDlJNm5vcGJsc1cyOW1wWElRXzNBMFZHbzhpWE9zcGlCZlhVUmRzRlJ2WWtNaE5ROEV5bnY1MjE2NzBUU1lSbFd2UkNzTmVKMW5KdWw1UTdpNU5rT25YWVkzMTZnMzVxMEw3VlFGQU5abXE5cUt0MU1wVTUtVXNjZEVrMndib2RTWTBGMnQ3MHhUeldVWjR5eVdQWTB2UVhHWQ?oc=5"
+        }
+      ],
+      "mostViewed": null
     },
     "hr-10159-119": {
       "outlets7d": [],
@@ -943,6 +955,40 @@
           "firstSeen": "2026-11-08",
           "lastSeen": "2026-11-08",
           "url": "https://news.google.com/rss/articles/CBMiZEFVX3lxTFBVNVN3RER3X0V1aDdtS1AxTHA2dGhUb2ZTR2J2bUFNTEw5c0x4cnI2OWJWM3pWb3UyMXNZSDlZNFRQYWVpLWtVQ2lZTDY3QjZ3RTNlUjhGY0RrNGNVN1BkbmFFNmbSAXBBVV95cUxQNUZuVHNXLXJ4NDl3ZGcyRTdOazI2UHdTcTVXYXJWY3ZrQ083dmE2QWF5TUFPTVAwY0RpaldOTVpHaERYSmhYV0ExM1c3NDNzVHZPUEwyZE1tNS1GbDlFRk10MWZhZF8zODFYLUozYVVi?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-7814-119": {
+      "outlets7d": [
+        {
+          "domain": "cbsnews.com",
+          "lean": "left",
+          "firstSeen": "2026-11-11",
+          "lastSeen": "2026-11-11",
+          "url": "https://www.cbsnews.com/news/epstein-files-bill-discharge-petition-thomas-massie/"
+        },
+        {
+          "domain": "politico.com",
+          "lean": "left",
+          "firstSeen": "2026-11-11",
+          "lastSeen": "2026-11-11",
+          "url": "https://www.politico.com/live-updates/2026/11/11/congress/epstein-files-transparency-act-discharge-01161062"
+        },
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-11-11",
+          "lastSeen": "2026-11-11",
+          "url": "https://thehill.com/homenews/house/6214408-massie-epstein-files-discharge-petition/"
+        }
+      ],
+      "unratedOutlets7d": [
+        {
+          "domain": "rollcall.com",
+          "firstSeen": "2026-11-11",
+          "lastSeen": "2026-11-11",
+          "url": "https://rollcall.com/2026/11/11/another-bill-to-release-epstein-files-headed-to-house-floor/"
         }
       ],
       "mostViewed": null
