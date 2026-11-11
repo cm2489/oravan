@@ -459,6 +459,12 @@ test.describe('the vote-count lint · the parity table: twin forms read the same
     ['by N votes to M (check 2)', (y, n) => `by ${y} votes to ${n}`, (y, n) => `por ${y} votos a ${n}`],
     ['N votes against M', (y, n) => `${y} votes against ${n}`, (y, n) => `${y} votos contra ${n}`],
     ['N votes versus M', (y, n) => `got ${y} votes versus ${n}`, (y, n) => `obtuvo ${y} votos frente a ${n}`],
+    // A fourth independent check (2026-10-06) found the English "vs." / "versus" read and the Spanish not.
+    ['vs. (check 4)', (y, n) => `it passed ${y} vs. ${n}`, (y, n) => `se aprobó ${y} vs. ${n}`],
+    ['vs without a period (check 4)', (y, n) => `it passed ${y} vs ${n}`, (y, n) => `se aprobó ${y} vs ${n}`],
+    ['versus, same word in both (check 4)', (y, n) => `it passed ${y} versus ${n}`, (y, n) => `se aprobó ${y} versus ${n}`],
+    ['N votes vs. M (check 4)', (y, n) => `got ${y} votes vs. ${n}`, (y, n) => `obtuvo ${y} votos vs. ${n}`],
+    ['N votes versus M, same word in both (check 4)', (y, n) => `got ${y} votes versus ${n}`, (y, n) => `obtuvo ${y} votos versus ${n}`],
     ['yeas and nays', (y, n) => `${y} yeas and ${n} nays`, (y, n) => `${y} sí y ${n} no`],
     ['yea votes to nay votes (check 1)', (y, n) => `${y} yea votes to ${n} nay votes`, (y, n) => `${y} votos sí contra ${n} votos no`],
     ['votes in favor and against (check 1)', (y, n) => `${y} votes in favor and ${n} against`, (y, n) => `${y} votos a favor y ${n} votos en contra`],
@@ -537,6 +543,10 @@ test.describe('the vote-count lint · the parity table: twin forms read the same
     ['between 3 and 5', 'entre 3 a 5'],
     ['5 to 10 points', '5 a 10 puntos'],
     ['1 to 2 p.m.', '1 a 2 p. m.'],
+    // The new "vs." / "versus" reading (check 4) keeps every range exclusion: near-misses that must stay un-flagged.
+    ['rule 22 vs. 24', 'la regla 22 vs. 24'],
+    ['article 12 versus 14', 'el artículo 12 versus 14'],
+    ['60 votes versus the threshold', 'los 60 votos versus el umbral'],
   ];
 
   test('every range in the table is read in neither language', () => {
@@ -585,12 +595,21 @@ test.describe('the vote-count lint · the parity table: twin forms read the same
       ['Neither chamber moved it.', 'Ninguna de las cámaras lo movió.'],
       ['Neither chamber acted.', 'Ninguna cámara actuó.'],
       ['Neither the House nor the Senate voted.', 'Ni la Cámara ni el Senado votaron.'],
+      // Check 4 (2026-10-06): "ningún", the short masculine form before a noun, is "ninguno" / "ninguna" too.
+      ['Neither bill had a new vote.', 'Ningún proyecto tuvo una votación nueva.'],
+      ['Neither bill has moved.', 'Ningún proyecto se ha movido.'],
+      ['Neither bill advanced.', 'Ningún proyecto avanzó.'],
+      ['Neither chamber voted.', 'Ningún pleno votó.'],
     ];
     const leftAlone: [string, string][] = [
       ['Neither the House nor the Senate voted in favor.', 'Ni la Cámara ni el Senado votaron en favor.'],
       ['Neither the House nor the Senate voted in favor.', 'Ni la Cámara ni el Senado votaron en pro.'],
       ['None of the funding for advanced nuclear reactors was cut.', 'Ninguno de los fondos para reactores nucleares avanzados se recortó.'],
       ['None of the Republicans voted yes.', 'Ninguno de los republicanos votó a favor.'],
+      // Check 4's near-misses for "ningún": a party count, never an absence claim.
+      ['No Republican voted yes.', 'Ningún republicano votó a favor.'],
+      ['No Republican voted against it.', 'Ningún republicano votó en contra.'],
+      ['No senator voted no.', 'Ningún senador votó no.'],
     ];
     for (const [en, es] of caught) {
       expect(absenceClaims(en, 'en'), en).not.toEqual([]);
@@ -677,6 +696,15 @@ test.describe('the gate re-checks what is stored (checkMomentUpdates, opts.rollC
   const run = (file: Json, byId?: Map<string, Json>) =>
     checkMomentUpdates(file, MOMENTS, billSlugs, { now, ...(byId ? { rollCallsById: byId } : {}) });
   const voteViolations = (res: { violations: string[] }) => res.violations.filter((v) => v.includes('vote count'));
+  // The stored revision that states the Senate's 49-50 tally in both languages. The
+  // NEWEST revision of a question is not it for long (the nightly run appends
+  // revisions, and a later one can drop the tally), so these tests pick the
+  // revision by what it says, never by its position. `extra` narrows further.
+  const tallyRevision = (file: Json, extra: (r: Json) => boolean = () => true): Json => {
+    const hit = file['iran-war-powers'].summary_revisions.findLast((r: Json) => r.text.en.includes('49 to 50') && r.text.es.includes('49 a 50') && extra(r));
+    expect(hit, 'a stored iran-war-powers revision that states the 49-50 tally in both languages').toBeTruthy();
+    return hit;
+  };
 
   test('the committed file passes with the vote file supplied', () => {
     expect(voteViolations(run(STORE, ROLL_BY_ID))).toEqual([]);
@@ -684,8 +712,7 @@ test.describe('the gate re-checks what is stored (checkMomentUpdates, opts.rollC
 
   test('a stored revision with an invented count fails, in each language', () => {
     const file = structuredClone(STORE);
-    const revs = file['iran-war-powers'].summary_revisions;
-    const r = revs[revs.length - 1];
+    const r = tallyRevision(file);
     expect(r.text.en).toContain('49 to 50');
     r.text.en = r.text.en.replace('49 to 50', '98 to 0');
     r.text.es = r.text.es.replace('49 a 50', '98 a 0');
@@ -699,8 +726,9 @@ test.describe('the gate re-checks what is stored (checkMomentUpdates, opts.rollC
 
   test('a roll call the vote file no longer holds leaves the record unknown: a warning, never a guess', () => {
     const file = structuredClone(STORE);
-    const revs = file['iran-war-powers'].summary_revisions;
-    revs[revs.length - 1].text.en = revs[revs.length - 1].text.en.replace('49 to 50', '98 to 0');
+    const r = tallyRevision(file);
+    expect(r.grounded_in.roll_calls).toContain('s-119-2-244');
+    r.text.en = r.text.en.replace('49 to 50', '98 to 0');
     const partial = new Map(ROLL_BY_ID);
     partial.delete('s-119-2-244');
     const res = run(file, partial);
@@ -710,8 +738,7 @@ test.describe('the gate re-checks what is stored (checkMomentUpdates, opts.rollC
   test('a count the window did not print but the vote file holds on the measures passes on what is stored (the collector stays strict)', () => {
     // 214 to 208 is House roll 282 on H.Con.Res. 89 (2026-07-23): outside the window of the current revision.
     const file = structuredClone(STORE);
-    const revs = file['iran-war-powers'].summary_revisions;
-    const r = revs[revs.length - 1];
+    const r = tallyRevision(file, (x) => !(x.grounded_in.roll_calls ?? []).includes('h-119-2-282'));
     expect(r.grounded_in.roll_calls).not.toContain('h-119-2-282');
     r.text.en = `${r.text.en} In July, the House agreed to it 214 to 208.`;
     r.text.es = `${r.text.es} En julio, la Cámara la aprobó 214 a 208.`;
@@ -722,7 +749,7 @@ test.describe('the gate re-checks what is stored (checkMomentUpdates, opts.rollC
     // 214 to 208 is House roll 282 (2026-07-23). Here its `bill` is taken not
     // to map to a vehicle, so only the revision's roll_calls_on_record can hold it.
     const file = structuredClone(STORE);
-    const r = file['iran-war-powers'].summary_revisions.at(-1);
+    const r = tallyRevision(file, (x) => !(x.grounded_in.roll_calls ?? []).includes('h-119-2-282') && (x.grounded_in.roll_calls_on_record ?? []).includes('h-119-2-282'));
     expect(r.grounded_in.roll_calls).not.toContain('h-119-2-282');
     expect(r.grounded_in.roll_calls_on_record).toContain('h-119-2-282');
     r.text.en = `${r.text.en} In July, the House agreed to it 214 to 208.`;
