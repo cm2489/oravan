@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-11T02:28:02.190Z",
+    "fetched_at": "2026-11-11T14:09:48.244Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-11T02:28:02.190Z"
+        "checked_at": "2026-11-11T14:09:48.244Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-08",
         "week_label": "Most-Viewed Bills - Week of November 8, 2026",
         "entries": 6,
-        "checked_at": "2026-11-11T02:28:02.190Z"
+        "checked_at": "2026-11-11T14:09:48.244Z"
       },
       "leans": {
         "center": {
@@ -222,6 +222,18 @@
           "firstSeen": "2026-11-06",
           "lastSeen": "2026-11-06",
           "url": "https://news.google.com/rss/articles/CBMi9gFBVV95cUxPZ3hyMjBVNm51aWZWd2FoSG9BdkczeW5XNlhFVTA1dUFYZE80M0RVRGhsczNVeVpNV0VXX1NXeWVtdDlpSFRsMzlVZHFmdlNVUTd0c3lmYW9Ib3dKang1X0I2cHotSlJGd2prTEhTbl9Lb1hrSnFJemJqd1JQUzd2TG1SQ2E1Q3NxUWsyM1NDNDF2VFY2emRIZjNSblEySFdOTHlpVzFKYmZXTDNXZi1Yc2lJc3l5VGdmekNQRWFIaVpsYjVHeEJmMFc4Y05abUJqT0l5ak13bVg0VDIxQzZRMXNKUzdiN0F3Rm5HMlg4LWttbldOaXc?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-1085-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "stattimes.com",
+          "firstSeen": "2026-11-11",
+          "lastSeen": "2026-11-11",
+          "url": "https://news.google.com/rss/articles/CBMilAFBVV95cUxQVkxQYjd6b3pFd2FiWUc3dnowWC1kSmZNOFNfUWdJUHdUcVRmNlFxNnc3RWNweHphMEVGS3RZM2RIYmwzSUJKVjFWSFpwYmRVR3VXckJjVDBCZV82d0kwZTd4WkZTN093VjRwR0VVRWxjYjJyTmVRdlpfemRIdGJCa1VqVDNsdk9uZTBsejJSUmR1TklX0gGaAUFVX3lxTFB1NGRhUmJvWEhSbXpybk5rX0JXS0c5MnozeWdDRlROZjRfeFd3anp2c3ZmVEU1c1lOOXExSTItVWhsS2sxX0JablBMTkRLb3R1dEh1ZC1PLWtCM3N4Q3p5MktSc3NCVHF0Y0hDZ1U5NzJYOFpsMUlvOXNPVEdIVlhFb3YtMDJKV3g0eEtwS00xNURLdUkzWHNZSUE?oc=5"
         }
       ],
       "mostViewed": null
@@ -678,6 +690,18 @@
       ],
       "mostViewed": null
     },
+    "hr-5068-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "marijuanamoment.net",
+          "firstSeen": "2026-11-11",
+          "lastSeen": "2026-11-11",
+          "url": "https://news.google.com/rss/articles/CBMisAFBVV95cUxOaHhLOVBJSnZ3M0VGT3llMmdjVVJYRlg4Y3hFdTdGYU9uNHlhVnIxSnFuMEJNS1NDQklIazNSQ3EtOVdmZkVhU0wyS1oyd2gzMlhKU2NkUVk1Z3lxZzlKTVo2ZXQySXp6c2xhY3phcUo5NHlQdDNvOWZzWEFnRnY5Y1BmV1V5ZmtWRFhHdUt0R19rUE0yUWlpZmJFcDk4ZlE5LU1QY3hncHR5YzRMNDJLMw?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-5269-119": {
       "outlets7d": [],
       "unratedOutlets7d": [],
@@ -778,6 +802,12 @@
     "hr-625-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "chickashanews.com",
+          "firstSeen": "2026-11-11",
+          "lastSeen": "2026-11-11",
+          "url": "https://news.google.com/rss/articles/CBMikAJBVV95cUxOVy1oS3dEODN2M3czUWYzY0xaOFcwdUxMcHROTHlYTzBmTThfaE5EWXV0c0RocU1XcXBBd1VrSzZ2SWFvVDNGTW9YQU04YzR3aGtlUHZ5YkZPcVdHbUdHNWM3LWg5ZURnSE1CYjhSdm9CZ0VyUWU2VF9rM3IxM0piUU9vWHc5T1NCd256RlM3QnAtM1ZJVkhMU2tDSS1DV2I4bTEzX1ZralRsRERVUUEyWEtuNVpLVzFraGhqMlhmZU9Fa19RWGduZXR0ZkNSYkJ1TUVVYmNURk9nZGVOZklsanc2UGNEcURDYXBBcm9vLTB6TXJxMW53alRHYUNxM01vMDVPTTd6UG1mQkF6YW5HRA?oc=5"
+        },
         {
           "domain": "abcnews.com",
           "firstSeen": "2026-11-09",
@@ -1014,6 +1044,18 @@
           "firstSeen": "2026-11-09",
           "lastSeen": "2026-11-09",
           "url": "https://news.google.com/rss/articles/CBMisAFBVV95cUxPSGNUQW9PMzZlbDg4RFpJQk9KV1htQkdXN0tnWnk0MF8yRW1FMDhYLTNHNGFWaFM5WUF6RmFocVQ1clVFYnI0MG5fRldNQldUaTJUeWN4NEhyamc2Z3VpdUdMOFZVbnhLNFpFUC1lVzVsVS1va1lCRWtQeFRYLVVWRXNoRWFjWmREOXRYWnlLTUV3V3Q5RUNHTEx6X1YyN0FaWVljdTdLUHpCcjVsd29Rcw?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "s-1071-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "scheerpost.com",
+          "firstSeen": "2026-11-11",
+          "lastSeen": "2026-11-11",
+          "url": "https://news.google.com/rss/articles/CBMiqwFBVV95cUxNeXVmUHRJU1k5QXA1TDZKdEZIVnJUeUE2MWJrYzdMVUlOVEN2Z2JzTmcxbi0tMkhJZk9BYlVtaDdPbWx0aXFvWm9ibFJSNDYwQTNOQ2FmZlk3cXgyYldlQklqNWlBWEdjRFJNNl9kUTU3MDE0UFJsZE1aSDI5a0N5ZmZLbWtzWjVrV3I4RWFiOVZlQUZmRFVTMjh4VlpuWHU2Z1Vkc3dobTBiZjQ?oc=5"
         }
       ],
       "mostViewed": null
@@ -1387,6 +1429,18 @@
           "firstSeen": "2026-11-08",
           "lastSeen": "2026-11-08",
           "url": "https://news.google.com/rss/articles/CBMiuAFBVV95cUxNVXU1RXp0RXBldU84VFhuYlFYZnE5ZEJ4OEVrRkRaMC13OXRtcEpPZGNCdVdHc0NZSDZJNlBQenhpQ05keVZqLUNVZE00c0ZYajhMR2VJdTJ5MDA0MVZlWldLUkZla1dpR2ZlM2ZlSTNVS0hJS3AxREdBWTNodEdQaFpRNHFzcG9YYk5SUGdPV0Fhdnlpb2RwLUlReFl6Y0hRWlJNeWdLdVF6aDNEWENuRkFKZm81LWdT?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "s-5526-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "en.edairynews.com",
+          "firstSeen": "2026-11-11",
+          "lastSeen": "2026-11-11",
+          "url": "https://news.google.com/rss/articles/CBMi2AFBVV95cUxPS2VnRmhuZU1wMnlqMDFjUEN5OS1lY3lVVUcxT1dpNTJEMlNFRVF0QzhBYnR0LUFHaXJuTm40dVA2NS1UWkJFQVBxNUJwOTQ4YWVJT1JrcTIxSDFRb3pHb1ZsM3JSeTlqN0h2X0Y3TzdNMk0yXzNCamR5dVA0RC1YcUEyVVB4R2JaRGlFWjBJbHVfTV93eUI1RjFDMEc1TS1ybkhWS05OSnZQV2xMZ0ZmXzlTVHBTQXE4X3d3SWpJRVBkdHFzd2YzM3ZSR0pDSnFtQnhIbXNPbWw?oc=5"
         }
       ],
       "mostViewed": null
