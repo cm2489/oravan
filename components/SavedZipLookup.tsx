@@ -3,6 +3,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 import { savedZip, usePrefs } from '@/lib/local';
+import type { MembersEntry } from '@/lib/members-entry';
 
 /*
  * THE REPS TAB OPENS ON YOUR MEMBERS (owner, UX question Q8 answered "a" on
@@ -18,6 +19,13 @@ import { savedZip, usePrefs } from '@/lib/local';
  * until 2026-11-12 this swapped in /reps?zip=<ZIP>, which put the ZIP in the
  * host's request log and the browser's history (owner, 2026-11-12). Nothing
  * new is stored anywhere.
+ *
+ * WHAT THIS TAB LAST SHOWED COMES FIRST (2026-11-12). `arrival` reads this
+ * tab's own history entry (lib/members-entry.ts): on Reload, or on Back to
+ * this page, it holds the ZIP and the refined district the page last showed,
+ * and those are looked up instead of the saved ZIP, the way an address with
+ * ?zip=…&district=… did before 2026-11-12. A fresh arrival's entry holds
+ * nothing, so the saved ZIP answers.
  *
  * The ZIP is read ONCE, when the page opens, so a ZIP typed into the form
  * below does not trigger a second lookup.
@@ -40,32 +48,45 @@ import { savedZip, usePrefs } from '@/lib/local';
  */
 export function SavedZipLookup({
   children,
+  arrival,
   onLookup,
 }: {
   children: ReactNode;
-  /** Look the ZIP up; resolves false when the lookup could not be made. */
-  onLookup: (zip: string) => Promise<boolean>;
+  /** What this tab's history entry remembers, read once (see above). */
+  arrival: () => MembersEntry | null;
+  /** Look the members up; resolves false when the lookup could not be made. */
+  onLookup: (entry: MembersEntry) => Promise<boolean>;
 }) {
   const t = useTranslations('reps');
   const [zip, setZip] = useState<string | null>(null);
 
   useEffect(() => {
     const saved = savedZip();
-    if (!saved) return;
+    const entry = arrival() ?? (saved ? { zip: saved } : null);
+    if (!entry) return;
     let live = true;
-    void onLookup(saved).then((ok) => {
+    void onLookup(entry).then((ok) => {
       if (live && !ok) setZip(null);
     });
+    // The status line says the ZIP is the one "saved on this device", so it
+    // shows only when that is the ZIP being looked up; a history entry's
+    // other ZIP (an old link's, on Reload) keeps the prompt up meanwhile.
+    if (entry.zip !== saved) {
+      return () => {
+        live = false;
+      };
+    }
     // The status line is set a tick later: a synchronous state write in the
     // effect body is what react-hooks/set-state-in-effect forbids (the same
     // defer components/ActionPanel.tsx documents for its own lookup).
-    const id = setTimeout(() => setZip(saved), 0);
+    const id = setTimeout(() => setZip(entry.zip), 0);
     return () => {
       live = false;
       clearTimeout(id);
     };
-    // Once, when the page opens (see above): onLookup is a new function on
-    // every render of the page, and a re-run would look the ZIP up again.
+    // Once, when the page opens (see above): arrival and onLookup are new
+    // functions on every render of the page, and a re-run would look the ZIP
+    // up again.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

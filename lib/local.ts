@@ -131,13 +131,48 @@ function notify() {
   for (const cb of listeners) cb();
 }
 
+/**
+ * WHEN THE BROWSER REFUSES STORAGE, KEEP IT FOR THIS VISIT (2026-11-12).
+ * Safari set to block all cookies and website data (and a full or disabled
+ * store) makes every localStorage call throw. Writes used to be dropped,
+ * which was harmless while the members page read the ZIP from its address
+ * (/reps?zip=…). Since the owner took it out of the address (2026-11-12),
+ * /reps finds the ZIP through this module, so a dropped write left a ZIP
+ * typed on the home page or a bill page landing on an empty prompt.
+ *
+ * So a preferences write the browser refuses is kept HERE, in this page's
+ * memory, and every read prefers it. It lasts as long as the page's
+ * JavaScript does: across the site's client-side navigations, never past a
+ * full page load, a reload or a closed tab, and it is never written anywhere
+ * else. Once a write succeeds again, memory lets go of it. Only the
+ * preferences (the ZIP, the interests): the call and reading records keep
+ * their old behaviour, a refused write is dropped, because nothing needs
+ * them to cross a page and keeping them would change what /record shows.
+ */
+const memory = new Map<string, string>();
+const KEPT_IN_MEMORY = new Set([PREFS_KEY]);
+
 function write(key: string, value: unknown) {
+  const raw = JSON.stringify(value);
   try {
-    window.localStorage.setItem(key, JSON.stringify(value));
+    window.localStorage.setItem(key, raw);
+    memory.delete(key);
   } catch {
-    // Storage full or blocked (private mode) - degrade silently.
+    // Storage full or blocked: keep the preferences for this visit (see above).
+    if (KEPT_IN_MEMORY.has(key)) memory.set(key, raw);
   }
   notify();
+}
+
+/** What is stored under `key`: this visit's refused write first, then storage. */
+function read(key: string): string | null {
+  const kept = memory.get(key);
+  if (kept !== undefined) return kept;
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null; // blocked
+  }
 }
 
 /**
@@ -176,12 +211,7 @@ function write(key: string, value: unknown) {
 function makeSnapshot<T>(key: string, fallback: T, coerce: (v: unknown) => T | null) {
   let cache: { raw: string | null; value: T } | null = null;
   return () => {
-    let raw: string | null = null;
-    try {
-      raw = window.localStorage.getItem(key);
-    } catch {
-      /* blocked */
-    }
+    const raw = read(key);
     if (!cache || cache.raw !== raw) {
       // Nothing stored is not something to coerce: an absent key returns the
       // shared `fallback` constant itself, which is also what the server
@@ -358,6 +388,7 @@ export function removeRead(billSlug: string) {
  * both locales' confirm string.
  */
 export function eraseAll() {
+  memory.clear();
   try {
     window.localStorage.removeItem(PREFS_KEY);
     window.localStorage.removeItem(CALLS_KEY);

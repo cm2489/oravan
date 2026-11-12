@@ -33,14 +33,28 @@
  *                       may not mention a ZIP at all (`zip=`, `/zip/`,
  *                       `${zip}` …), unless it is named in
  *                       ZIP_ADDRESS_EXCEPTIONS with a reason.
- *   zip-query           Any literal that writes a `zip=` query parameter
- *                       (`?zip=`, `&zip=`, or a literal that starts `zip=`),
- *                       wherever its address comes from, unless the literal
- *                       is named in ZIP_ADDRESS_EXCEPTIONS with a reason. This
- *                       catches the shapes whose address the lexer cannot see
- *                       (`${base}?zip=…`, `u.search = \`zip=…\``).
- *   zip-param-builder   No `.set('zip', …)` / `.append('zip', …)`: the
- *                       URLSearchParams way of writing the same address.
+ *   zip-query           Any literal that writes a `zip=` or `district=` query
+ *                       parameter (`?zip=`, `&district=`, or a literal that
+ *                       starts `zip=`), wherever its address comes from,
+ *                       unless the literal is named in ZIP_ADDRESS_EXCEPTIONS
+ *                       with a reason. This catches the shapes whose address
+ *                       the lexer cannot see (`${base}?zip=…`,
+ *                       `u.search = \`zip=…\``). The refined district sat
+ *                       next to the ZIP in the members page's address until
+ *                       2026-11-12, so it is held to the same rule.
+ *   reps-address-query  A literal that is the members page's address (`/reps`,
+ *                       `/es/reps`, with or without an origin) may carry no
+ *                       query string but `?change=1`: anything else there
+ *                       (`?district=…`, `?${params}`) is how the lookup used
+ *                       to travel. Member pages (`/reps/${bioguide}`) are not
+ *                       the members page and are not affected.
+ *   zip-param-builder   No `.set('zip', …)` / `.append('zip', …)` (or
+ *                       'district'), no `new URLSearchParams({ zip })` or
+ *                       `new URLSearchParams([['zip', …]])`, and no `query`
+ *                       object naming a zip or district
+ *                       (`{ pathname: '/reps', query: { zip } }`, the
+ *                       next-intl Link and router shape): the ways of writing
+ *                       the same address without a literal.
  *   server-reads-zip    No `searchParams.get('zip')` (or getAll/has) anywhere,
  *                       and, under app/api, app/embed and the members page
  *                       (app/[locale]/reps), no `zip` member in a page's
@@ -57,13 +71,24 @@
  *                       of attribute names, so a 'zip' entry there would put
  *                       the ZIP back in the /embed/ address.
  *
+ * MESSAGES (2026-11-12). messages/*.json are scanned too: a translated string
+ * can hold an address (a rich-text link, a sentence naming a page). Every
+ * string value is read as a literal for zip-query, and every address inside
+ * it (`/reps…`, `/es/reps…`, `/api/…`, `/embed/…`, with or without an
+ * origin) is held to zip-in-address, reps-address-query and
+ * api-address-input; an ICU placeholder (`{zip}`) in an address counts as a
+ * ZIP. Prose that only names the ZIP (`ZIP {zip}`) is not an address.
+ *
  * THE MEMBERS PAGE (owner, 2026-11-12). Until that day the page address
  * `/reps?zip=NNNNN` was out of scope: the ZIP form, the saved-ZIP swap, the
  * address form's return (`&district=`), the "see your members" links and the
  * MCP server's reps_url all wrote it. The owner took the ZIP out of it, so
  * `/reps` is an address here now and its page sits in SERVER_PAGE_DIRS. The
  * lookup travels in a POST body (lib/members-action.ts,
- * components/RepsLookup.tsx).
+ * components/RepsLookup.tsx). The rep-lookup embed's link-out for a split
+ * ZIP, the last writer, now opens the bare page and asks the visitor to
+ * enter the ZIP there, so ZIP_ADDRESS_EXCEPTIONS is empty and the one named
+ * exception left is the members page's reader of old links.
  *
  * Address constants: before scanning, the gate collects every
  * `const NAME = '/api/…'` (or `/embed/…`, a same-origin path) in the scanned tree, and each
@@ -94,9 +119,11 @@ const ROOT = process.cwd();
 const SCAN_DIRS = ['app', 'components', 'lib'];
 const SCAN_FILES = ['proxy.ts', 'public/embed.js'];
 const EXTENSIONS = ['.ts', '.tsx', '.js', '.mjs'];
+/** Translated strings, read as JSON (see MESSAGES above). */
+const MESSAGE_DIRS = ['messages'];
 
 /** Where a request to one of Oravan's own routes is addressed. */
-const ADDRESS_PREFIXES = ['/api/', '/embed/', '/reps'];
+const ADDRESS_PREFIXES = ['/api/', '/embed/', '/reps', '/es/reps', '/en/reps'];
 /** Server code whose `searchParams` type may not name a zip. */
 const SERVER_PAGE_DIRS = ['app/api/', 'app/embed/', 'app/[locale]/reps/'];
 
@@ -121,17 +148,11 @@ const API_ADDRESS_EXCEPTIONS = [];
 
 /**
  * Literals allowed to put a ZIP in an address, each with its reason (the
- * zip-query and zip-in-address rules both honour it).
+ * zip-query, zip-in-address and reps-address-query rules all honour it).
+ * Empty on purpose since 2026-11-12: nothing Oravan renders writes one.
  * Shape: { file, literal, reason }.
  */
-const ZIP_ADDRESS_EXCEPTIONS = [
-  {
-    file: 'components/embed/RepLookupWidget.tsx',
-    literal: '${siteBase}/reps?zip=${zip}',
-    reason:
-      "the rep-lookup embed's link-out to the full members page, opened from an iframe on another site, for a split ZIP. The new tab cannot read a ZIP the embed holds (browser storage is partitioned per top-level site), so carrying it without the address needs a different link-out; left for the owner on 2026-11-12. The members page still answers it (an old-link arrival) and drops the ZIP from the address at once",
-  },
-];
+const ZIP_ADDRESS_EXCEPTIONS = [];
 
 const KEYWORDS_BEFORE_EXPRESSION = new Set([
   'return', 'case', 'typeof', 'in', 'of', 'else', 'yield', 'await', 'void', 'delete', 'throw', 'new', 'extends', 'do',
@@ -340,6 +361,44 @@ function addressOf(text, names) {
 }
 
 const ZIP_WORD = /zip/i;
+/** A query parameter that carried the lookup: the ZIP, or the refined district. */
+const LOOKUP_QUERY = /(?:^|[?&])(?:zip|district)=/i;
+/** The members page's own address, its locale prefix dropped. */
+const MEMBERS_PAGE = /^\/(?:(?:es|en)\/)?reps(?=$|[?#])/;
+
+/** The one query the members page's address may carry ("Change ZIP code"). */
+function repsQueryAllowed(address) {
+  const m = address.match(/^\/(?:(?:es|en)\/)?reps(\?[^#]*)?/);
+  return !m || m[1] === undefined || m[1] === '?change=1';
+}
+
+/**
+ * `src` with comments removed and the contents of every string and template
+ * literal blanked (quotes and line breaks kept), so a pattern over code never
+ * matches inside text (`\`${address}, ${zip}\`` is not an object key).
+ */
+function codeOnly(src) {
+  const chars = src.split('');
+  for (const lit of literals(src)) {
+    for (let i = lit.start + 1; i < lit.end; i++) if (chars[i] !== '\n') chars[i] = ' ';
+  }
+  return stripComments(chars.join(''));
+}
+
+/** From the index of a `{`, the text up to its matching `}`. */
+function braceBody(text, open) {
+  let depth = 0;
+  for (let j = open; j < text.length; j++) {
+    if (text[j] === '{') depth++;
+    else if (text[j] === '}' && --depth === 0) return text.slice(open, j + 1);
+  }
+  return text.slice(open);
+}
+
+/** An object literal's text names a `zip` or `district` key (bare, shorthand or quoted). */
+function namesLookupKey(body) {
+  return /[{,]\s*(?:(['"`])(?:zip|district)\1|(?:zip|district))\s*(?=[:,}])/i.test(body);
+}
 
 /**
  * Scan one file's text; returns violations { rule, file, line, detail }.
@@ -354,11 +413,14 @@ export function scanText(file, src, knownAddresses = new Map()) {
 
   for (const lit of literals(src)) {
     const zipExcepted = ZIP_ADDRESS_EXCEPTIONS.some((e) => e.file === file && e.literal === lit.text);
-    if (/(?:^|[?&])zip=/i.test(lit.text) && !zipExcepted) {
-      push('zip-query', lit.line, `"${lit.text}" writes a zip= query parameter; the ZIP goes in a request body.`);
+    if (LOOKUP_QUERY.test(lit.text) && !zipExcepted) {
+      push('zip-query', lit.line, `"${lit.text}" writes a zip= or district= query parameter; the lookup goes in a request body.`);
     }
     const address = addressOf(lit.text, names);
     if (address === null) continue;
+    if (MEMBERS_PAGE.test(address) && !repsQueryAllowed(address) && !zipExcepted) {
+      push('reps-address-query', lit.line, `"${lit.text}" puts a query on the members page's address; only ?change=1 may go there.`);
+    }
     const isApi = address.startsWith('/api/');
     const excepted = API_ADDRESS_EXCEPTIONS.some((e) => e.file === file && e.literal === lit.text);
     if (isApi && !excepted) {
@@ -395,8 +457,24 @@ export function scanText(file, src, knownAddresses = new Map()) {
     }
   }
 
-  for (const m of stripped.matchAll(/\.\s*(?:set|append)\(\s*['"`]zip['"`]/gi)) {
-    push('zip-param-builder', lineOf(m.index), 'a URL parameter named zip is being written; the ZIP goes in a request body.');
+  for (const m of stripped.matchAll(/\.\s*(?:set|append)\(\s*['"`](?:zip|district)['"`]/gi)) {
+    push('zip-param-builder', lineOf(m.index), 'a URL parameter named zip or district is being written; the lookup goes in a request body.');
+  }
+  for (const m of stripped.matchAll(/\bURLSearchParams\s*\(\s*\[\s*\[\s*['"`](?:zip|district)['"`]/gi)) {
+    push('zip-param-builder', lineOf(m.index), 'URLSearchParams is built with a zip or district entry; the lookup goes in a request body.');
+  }
+  // Object shapes, read over code only, so a ZIP inside a string value (the
+  // geocoder's `address: \`${address}, ${zip}\``) is not mistaken for a key.
+  const code = codeOnly(src);
+  for (const m of code.matchAll(/\bURLSearchParams\s*\(\s*\{/g)) {
+    if (namesLookupKey(braceBody(code, m.index + m[0].length - 1))) {
+      push('zip-param-builder', lineOf(m.index), 'URLSearchParams is built from an object with a zip or district key; the lookup goes in a request body.');
+    }
+  }
+  for (const m of code.matchAll(/\bquery\s*:\s*\{/g)) {
+    if (namesLookupKey(braceBody(code, m.index + m[0].length - 1))) {
+      push('zip-param-builder', lineOf(m.index), 'a `query` object names a zip or district, so the lookup would be written into an address.');
+    }
   }
   for (const m of stripped.matchAll(/searchParams\s*\.\s*(?:get|getAll|has)\(\s*['"`]zip['"`]/gi)) {
     push('server-reads-zip', lineOf(m.index), 'the ZIP is read from a request address; read it from the request body.');
@@ -430,6 +508,55 @@ export function scanText(file, src, knownAddresses = new Map()) {
   return violations;
 }
 
+/** Every string value in a parsed JSON tree, with its dotted key. */
+function jsonStrings(node, path = '', out = []) {
+  if (typeof node === 'string') out.push([path, node]);
+  else if (node && typeof node === 'object') {
+    for (const [k, v] of Object.entries(node)) jsonStrings(v, path ? `${path}.${k}` : k, out);
+  }
+  return out;
+}
+
+/** An address inside a string of prose: a path to one of our routes, with or without an origin. */
+const EMBEDDED_ADDRESS = /(?:https?:\/\/[^\s/"'<>]+)?(\/(?:(?:es|en)\/)?(?:reps|api\/|embed\/)[^\s"'<>)\]]*)/g;
+
+/**
+ * Scan one messages/*.json file (see MESSAGES above); returns violations
+ * like scanText. `line` is the line of the string's key.
+ */
+export function scanMessages(file, src) {
+  const violations = [];
+  let tree;
+  try {
+    tree = JSON.parse(src);
+  } catch {
+    return [{ rule: 'messages-unreadable', file, line: 1, detail: 'not valid JSON, so its strings could not be checked.' }];
+  }
+  const lines = src.split('\n');
+  const lineOfKey = (path) => {
+    const key = path.split('.').pop();
+    const i = lines.findIndex((l) => l.includes(`"${key}"`));
+    return i === -1 ? 1 : i + 1;
+  };
+  for (const [path, text] of jsonStrings(tree)) {
+    const push = (rule, detail) => violations.push({ rule, file, line: lineOfKey(path), detail: `${path}: ${detail}` });
+    if (/[?&](?:zip|district)=/i.test(text) || /^(?:zip|district)=/i.test(text)) {
+      push('zip-query', `"${text}" writes a zip= or district= query parameter.`);
+    }
+    for (const m of text.matchAll(EMBEDDED_ADDRESS)) {
+      const address = m[1];
+      if (ZIP_WORD.test(address)) push('zip-in-address', `"${address}" puts a ZIP into the address of one of Oravan's routes.`);
+      if (MEMBERS_PAGE.test(address) && !repsQueryAllowed(address)) {
+        push('reps-address-query', `"${address}" puts a query on the members page's address; only ?change=1 may go there.`);
+      }
+      if (address.startsWith('/api/') && /[?{]/.test(address)) {
+        push('api-address-input', `"${address}" puts input into the address of a request to our own API.`);
+      }
+    }
+  }
+  return violations;
+}
+
 function walk(dir) {
   const out = [];
   for (const entry of readdirSync(dir)) {
@@ -455,7 +582,17 @@ export function scanRepo(root = ROOT) {
   const known = repoAddressConstants(sources);
   const violations = [];
   for (const [rel, src] of sources) violations.push(...scanText(rel, src, known));
-  return { files: files.length, violations, addressConstants: known };
+  let messageFiles = 0;
+  for (const dir of MESSAGE_DIRS) {
+    const full = join(root, dir);
+    if (!existsSync(full)) continue;
+    for (const entry of readdirSync(full).filter((f) => f.endsWith('.json'))) {
+      const rel = `${dir}/${entry}`;
+      violations.push(...scanMessages(rel, readFileSync(join(full, entry), 'utf8')));
+      messageFiles++;
+    }
+  }
+  return { files: files.length + messageFiles, violations, addressConstants: known };
 }
 
 /** Every address constant declared anywhere in `sources` ([file, text] pairs). */
@@ -516,12 +653,32 @@ const SELF_TEST_FIXTURES = [
   ['a "see your members" link, as it shipped', 'components/HeroSavedZip.tsx', '  const lookupHref = `/reps?zip=${zip}`;', 'zip-in-address'],
   ["the MCP envelope's reps_url, as it shipped", 'lib/core/mcp.ts', '  const repsUrl = `${absoluteUrl(locale, REPS_PATH)}?zip=${zip}`;', 'zip-query'],
   ['an embed link-out not on the exception list', 'components/embed/ActionPanelWidget.tsx', 'href={`${siteBase}/reps?zip=${zip}`}', 'zip-in-address'],
+  ["the rep-lookup embed's link-out, as it shipped", 'components/embed/RepLookupWidget.tsx', 'href={`${siteBase}/reps?zip=${zip}`}', 'zip-in-address'],
+  // The four shapes the 2026-11-12 review found the gate missing.
+  ['the refined district alone on /reps', 'components/AddressForm.tsx', '        router.push(`/reps?district=${state}-${district}`);', 'reps-address-query'],
+  ['the same line, by the zip-query rule', 'components/AddressForm.tsx', '        router.push(`/reps?district=${state}-${district}`);', 'zip-query'],
+  ['any other query on the Spanish members page', 'components/Fixture.tsx', 'href={`/es/reps?${params}`}', 'reps-address-query'],
+  ['a next-intl href object with a zip query', 'components/Fixture.tsx', "<Link href={{ pathname: '/reps', query: { zip } }}>x</Link>", 'zip-param-builder'],
+  ['a router call with a district query', 'components/Fixture.tsx', "router.push({ pathname: '/reps', query: { zip: z, 'district': d } });", 'zip-param-builder'],
+  ['URLSearchParams from a zip shorthand', 'components/Fixture.tsx', 'const q = new URLSearchParams({ zip });\nlocation.assign(`${base}?${q}`);', 'zip-param-builder'],
+  ['URLSearchParams from entries', 'components/Fixture.tsx', "const q = new URLSearchParams([['zip', zip]]);", 'zip-param-builder'],
+  ['a district parameter set on a URL', 'components/Fixture.tsx', "u.searchParams.set('district', d);", 'zip-param-builder'],
   [
     "a member page reading a zip from its searchParams",
     'app/[locale]/reps/[bioguide]/page.tsx',
     '  const { zip } = await searchParams;',
     'server-reads-zip',
   ],
+];
+
+// Seeded violations in a messages file: each must be caught by the named rule.
+const SELF_TEST_MESSAGE_FIXTURES = [
+  ['a ZIP query in a translated string', 'messages/en.json', '{"reps": {"see": "Open /reps?zip={zip} to see them"}}', 'zip-query'],
+  ['a ZIP placeholder in a rich-text link', 'messages/es.json', '{"home": {"go": "<link href=\\"/es/reps/{zip}\\">Tus miembros</link>"}}', 'zip-in-address'],
+  ['a district query on the members page, with an origin', 'messages/en.json', '{"a": {"b": "https://oravan.org/reps?district={district}"}}', 'reps-address-query'],
+];
+const SELF_TEST_MESSAGE_CLEAN = [
+  ['ICU placeholders in prose, and the bare page', 'messages/en.json', '{"reps": {"zipLine": "ZIP {zip}", "go": "Enter your ZIP at /reps.", "change": "/reps?change=1"}}'],
 ];
 
 /** The tree's real lookup constant, collected the way scanRepo collects it. */
@@ -546,7 +703,14 @@ const SELF_TEST_CLEAN = [
   ['prose that names the old shape inside a comment', 'components/Fixture.tsx', '// it used to be fetch(`/api/reps?zip=${zip}`)\n/* `/embed/rep-lookup?zip=` */'],
   ['a log message that mentions an API in prose', 'lib/moments-gate.mjs', 'warnings.push(`${vp}.slug: "${v.slug}" has an unclassified status, so /api/script refuses it`);'],
   ['the helper POSTing to its constant', 'lib/reps-lookup.ts', "fetch(REPS_LOOKUP_PATH, { method: 'POST', body: JSON.stringify({ zip }) });"],
-  ['the embed link-out to the /reps page (named exception)', 'components/embed/RepLookupWidget.tsx', 'href={`${siteBase}/reps?zip=${zip}`}'],
+  ["the rep-lookup embed's link-out to the bare members page", 'components/embed/RepLookupWidget.tsx', 'href={`${siteBase}/reps`}'],
+  [
+    "the district route's geocoder query (a ZIP in a value, not a key)",
+    'app/api/district/route.ts',
+    'const params = new URLSearchParams({ address: `${address}, ${zip}`, ...CENSUS_QUERY });',
+  ],
+  ['a Link href object with the Change ZIP query', 'components/Fixture.tsx', "<Link href={{ pathname: '/reps', query: { change: 1 } }}>x</Link>"],
+  ['a member page by bioguide, with a query', 'components/Fixture.tsx', 'href={`/reps/${rep.bioguide}?tab=votes`}'],
   ['the members page reading an old link (named exception)', 'app/[locale]/reps/page.tsx', '  searchParams: Promise<{ zip?: string; district?: string }>;'],
   ["the MCP envelope's bare /reps link", 'lib/core/mcp.ts', 'const repsUrl = absoluteUrl(locale, REPS_PATH);'],
   ['a page destructuring other params', 'app/embed/action-panel/page.tsx', '  const { locale, slug, token } = await searchParams;'],
@@ -568,13 +732,27 @@ function selfTest() {
       failed = true;
     }
   }
+  for (const [name, file, text, rule] of SELF_TEST_MESSAGE_FIXTURES) {
+    const hits = scanMessages(file, text);
+    if (!hits.some((v) => v.rule === rule)) {
+      console.error(`::error::self-test: seeded violation NOT caught: ${name} (expected rule "${rule}", got ${JSON.stringify(hits.map((h) => h.rule))})`);
+      failed = true;
+    }
+  }
+  for (const [name, file, text] of SELF_TEST_MESSAGE_CLEAN) {
+    const hits = scanMessages(file, text);
+    if (hits.length > 0) {
+      console.error(`::error::self-test: clean sample flagged (${name}): [${hits[0].rule}] ${hits[0].detail}`);
+      failed = true;
+    }
+  }
   if (SELF_TEST_KNOWN.get('REPS_LOOKUP_PATH') !== '/api/reps') {
     console.error('::error::self-test: the address-constant collector did not read REPS_LOOKUP_PATH');
     failed = true;
   }
   if (failed) process.exit(1);
   console.log(
-    `zip-urls gate self-test: all ${SELF_TEST_FIXTURES.length} seeded violations caught, ${SELF_TEST_CLEAN.length} clean samples pass`
+    `zip-urls gate self-test: all ${SELF_TEST_FIXTURES.length + SELF_TEST_MESSAGE_FIXTURES.length} seeded violations caught, ${SELF_TEST_CLEAN.length + SELF_TEST_MESSAGE_CLEAN.length} clean samples pass`
   );
 }
 

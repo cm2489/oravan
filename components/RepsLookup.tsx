@@ -11,6 +11,7 @@ import { RepCard } from '@/components/RepCard';
 import { VacantSeatCard } from '@/components/VacantSeatCard';
 import { lookupMembers } from '@/lib/members-action';
 import type { MembersResult } from '@/lib/members';
+import { currentEntry, entryFor, readEntry, rememberMembers, sameEntry, type MembersEntry } from '@/lib/members-entry';
 
 /*
  * THE MEMBERS, LOOKED UP WITHOUT AN ADDRESS (owner, 2026-11-12; CLAUDE.md
@@ -31,10 +32,28 @@ import type { MembersResult } from '@/lib/members';
  *      renders this page with the answer as `useActionState`'s state.
  *   3. An old link, /reps?zip=NNNNN (bookmarks, shared links, search
  *      results): the page reads it on the server once, renders the members
- *      as `initial`, and on hydration this component drops the ZIP from the
- *      address bar with history.replaceState (no new history entry). That one
- *      request's address, with the ZIP in it, is still in the host's log; the
- *      page cannot un-send it.
+ *      as `initial`, and once the page runs this component drops the ZIP from
+ *      the address bar with history.replaceState (no new history entry). That
+ *      one request's address, with the ZIP in it, is still in the host's log;
+ *      the page cannot un-send it. The page's responses carry a
+ *      Referrer-Policy (next.config.ts) so that address is not repeated in
+ *      the Referer of the requests the page makes next.
+ *
+ * RELOAD AND BACK KEEP WHAT WAS SHOWN (2026-11-12). Each lookup's ZIP, and
+ * its refined district, are kept in this tab's own history entry
+ * (lib/members-entry.ts), never in the address, web storage, a cookie or the
+ * server. Reload looks that entry up again; a refinement, and "Show all
+ * districts", make a new entry, so Back returns to the view before it, as it
+ * did while both sat in the address.
+ *
+ * THE OLD LINK'S CLEANUP WAITS ONE TICK. Next.js hooks history.replaceState
+ * so the router learns the new address, but installs that hook in an effect
+ * of its own root, which on the first render runs after this component's
+ * effects. Called from this component's first effect, replaceState reached
+ * the browser's own method: the router kept the old address, so every later
+ * lookup POSTed to /reps?zip=…, and the entry lost the router's state, so
+ * Back from a bill left the bill on screen. One tick later the hook is in
+ * place (lib/members-entry.ts has the detail).
  *
  * "Change ZIP code" stays /reps?change=1: it carries nothing about the
  * reader. The prompt shows while the address holds `change`, and a lookup
@@ -57,14 +76,6 @@ type Props = {
 /** The informational register: a hairline rule over a recessed ground. */
 const NOTE = 'border-t-[1.5px] border-line-strong bg-wash p-4 text-sm text-ink-2';
 
-/** Drop every parameter that ever carried the lookup, and `change`, from the address. */
-function cleanAddress() {
-  const url = new URL(window.location.href);
-  if (!url.search) return;
-  for (const name of ['zip', 'district', 'change']) url.searchParams.delete(name);
-  window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
-}
-
 export function RepsLookup({ initial, legacy, preview, switchboard, continuation }: Props) {
   const t = useTranslations('reps');
   const locale = useLocale();
@@ -78,10 +89,36 @@ export function RepsLookup({ initial, legacy, preview, switchboard, continuation
   const latest = useRef(0);
   const scrollToHash = useRef(false);
 
-  // Way 3: an old link's ZIP leaves the address bar as soon as the page runs.
+  // On the page's first render with members already in it (way 3, or a
+  // remount from the router's cache on Back): when this tab's history entry
+  // remembers something else (a refinement made after the old link), look
+  // that up; otherwise, for an old link, keep its lookup in the entry and
+  // drop it from the address, one tick later (see above).
   useEffect(() => {
-    if (legacy) cleanAddress();
-  }, [legacy]);
+    if (!initial) return; // the prompt's arrival (SavedZipLookup) reads the entry
+    const entry = currentEntry();
+    if (entry && !sameEntry(entry, entryFor(initial))) {
+      void lookup(entry, 'none');
+      return;
+    }
+    if (!legacy) return;
+    const id = setTimeout(() => rememberMembers(entryFor(initial), 'replace'), 0);
+    return () => clearTimeout(id);
+    // Once, when the page opens: `lookup` is a new function on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Back and Forward between two of this page's own entries (a refinement and
+  // the view before it): the router keeps this component mounted, so the
+  // entry the browser moved to is looked up here.
+  useEffect(() => {
+    function onPopState(e: PopStateEvent) {
+      const entry = readEntry(e.state);
+      if (entry) void lookup(entry, 'none');
+    }
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
 
   // A saved-ZIP arrival at /reps#your-calls: the router scrolled to the hash
   // before the members were in, so scroll again once they are.
@@ -92,8 +129,18 @@ export function RepsLookup({ initial, legacy, preview, switchboard, continuation
     if (id) document.getElementById(id)?.scrollIntoView();
   }, [result]);
 
-  /** Way 1. Resolves false when the lookup could not be made (offline). */
-  async function lookup(zip: string, district?: string, fromArrival = false): Promise<boolean> {
+  /**
+   * Way 1. Resolves false when the lookup could not be made (offline).
+   * `history` says what happens to this tab's history entry once the members
+   * are in: 'replace' keeps them in the current entry, 'push' makes a new one
+   * (Back returns to the view before it), 'none' leaves it alone (the entry
+   * is where they came from: Reload, Back, Forward).
+   */
+  async function lookup(
+    { zip, district }: MembersEntry,
+    history: 'push' | 'replace' | 'none',
+    fromArrival = false
+  ): Promise<boolean> {
     const ticket = ++latest.current;
     // A POST body, built field by field: the ZIP is never in an address.
     const body = new FormData();
@@ -103,7 +150,7 @@ export function RepsLookup({ initial, legacy, preview, switchboard, continuation
       if (ticket !== latest.current) return true;
       scrollToHash.current = fromArrival;
       setLive(next);
-      cleanAddress();
+      if (history !== 'none') rememberMembers(entryFor(next), history);
       return true;
     } catch {
       return false;
@@ -111,7 +158,7 @@ export function RepsLookup({ initial, legacy, preview, switchboard, continuation
   }
 
   const zipForm = (autoFocus: boolean) => (
-    <ZipForm autoFocus={autoFocus} formAction={formAction} onSaved={(zip) => void lookup(zip)} />
+    <ZipForm autoFocus={autoFocus} formAction={formAction} onSaved={(zip) => void lookup({ zip }, 'replace')} />
   );
   const prompt = (
     <div className="max-w-xl rounded-control border-[1.5px] border-line-strong bg-paper p-6">
@@ -127,7 +174,13 @@ export function RepsLookup({ initial, legacy, preview, switchboard, continuation
          `?change=1` is the "Change ZIP code" link's way in, so there the
          prompt stays put and the saved ZIP only pre-fills it. */
       <div className="mt-8">
-        {asking ? prompt : <SavedZipLookup onLookup={(zip) => lookup(zip, undefined, true)}>{prompt}</SavedZipLookup>}
+        {asking ? (
+          prompt
+        ) : (
+          <SavedZipLookup arrival={currentEntry} onLookup={(entry) => lookup(entry, 'replace', true)}>
+            {prompt}
+          </SavedZipLookup>
+        )}
         {preview}
       </div>
     );
@@ -182,7 +235,7 @@ export function RepsLookup({ initial, legacy, preview, switchboard, continuation
               href="/reps"
               onClick={(e) => {
                 e.preventDefault();
-                void lookup(zip);
+                void lookup({ zip }, 'push');
               }}
               className="inline-flex min-h-11 items-center font-semibold text-ink underline underline-offset-2"
             >
@@ -200,7 +253,7 @@ export function RepsLookup({ initial, legacy, preview, switchboard, continuation
           <p data-multi-district className={`mt-6 max-w-read ${NOTE}`}>
             {t('multiDistrict', { count: districts.length })}
           </p>
-          <AddressForm zip={zip} onRefined={(district) => lookup(zip, district)} />
+          <AddressForm zip={zip} onRefined={(district) => lookup({ zip, district }, 'push')} />
         </>
       )}
 
