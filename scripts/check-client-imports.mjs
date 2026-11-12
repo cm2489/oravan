@@ -30,6 +30,14 @@
  * pure piece from a module that does not read the corpus, and pass data in as
  * props from a server component.
  *
+ * A 'use server' module is a boundary, not a path (2026-11-12, the members
+ * lookup in lib/members-action.ts). When a client module imports a module
+ * whose directive prologue says 'use server', the bundler gives the client a
+ * reference to each exported function (an id it POSTs to), never the
+ * module's code or anything it imports, so the walk stops there. The
+ * post-build check, scripts/check-client-bundle.mjs, is what proves no
+ * corpus text shipped.
+ *
  * Type-only imports are skipped (`import type`, `export type`, and a named
  * import whose every binding says `type`), because TypeScript erases them.
  * An import written WITHOUT `type` that is only used as a type is also
@@ -91,10 +99,23 @@ function parse(file, text) {
  * later statement) does not make a client module and is not counted.
  */
 export function isClientModule(file, text) {
+  return hasDirective(file, text, 'use client');
+}
+
+/**
+ * True when the module's directive prologue contains 'use server': a module
+ * of server actions, which a client bundle only ever references (see the
+ * header).
+ */
+export function isServerActionModule(file, text) {
+  return hasDirective(file, text, 'use server');
+}
+
+function hasDirective(file, text, directive) {
   const sf = parse(file, text);
   for (const stmt of sf.statements) {
     if (!ts.isExpressionStatement(stmt) || !ts.isStringLiteral(stmt.expression)) break;
-    if (stmt.expression.text === 'use client') return true;
+    if (stmt.expression.text === directive) return true;
   }
   return false;
 }
@@ -186,6 +207,10 @@ export function findViolations(host) {
           violations.push({ client: rootFile, data: target, chain });
           continue;
         }
+        if (SOURCE_FILE.test(target) && isServerActionModule(target, host.read(target))) {
+          reachable.add(target); // referenced, never bundled: not followed
+          continue;
+        }
         queue.push(target);
       }
     }
@@ -270,6 +295,12 @@ export const SELF_TEST_VIOLATIONS = [
   {
     name: 'a mixed named import (one value binding) is a value import',
     files: { 'components/A.tsx': "'use client';\nimport { all, type Bill } from '@/lib/corpus';\nexport const A = (): Bill[] => all() as Bill[];\n" },
+  },  {
+    name: "'use server' outside the directive prologue is no boundary",
+    files: {
+      'lib/action.ts': "import { all } from '@/lib/corpus';\nexport const note = 'use server';\nexport async function count() { return all().length; }\n",
+      'components/A.tsx': "'use client';\nimport { count } from '@/lib/action';\nexport const A = () => count();\n",
+    },
   },
 ];
 
@@ -289,6 +320,13 @@ export const SELF_TEST_CLEAN = [
   {
     name: 'a client component importing a pure module',
     files: { 'components/A.tsx': "'use client';\nimport { matches } from '@/lib/pure';\nexport const A = () => matches('x');\n" },
+  },
+  {
+    name: 'a client component calling a server action that reads the corpus',
+    files: {
+      'lib/action.ts': "'use server';\nimport { all } from '@/lib/corpus';\nexport async function count() { return all().length; }\n",
+      'components/A.tsx': "'use client';\nimport { count } from '@/lib/action';\nexport const A = () => count();\n",
+    },
   },
   {
     name: "'use client' outside the directive prologue does not make a client module",

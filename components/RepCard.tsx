@@ -3,7 +3,7 @@ import { Phone } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { CALL_BUTTON } from '@/components/call-button';
-import { portraitUrl } from '@/lib/core';
+import { portraitUrl } from '@/lib/portrait-url';
 import type { Legislator } from '@/lib/types';
 
 function telHref(phone: string) {

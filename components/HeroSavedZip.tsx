@@ -106,7 +106,9 @@ export function HeroSavedZip({ children }: { children: ReactNode }) {
     )),
     { type: 'conjunction' }
   );
-  const lookupHref = `/reps?zip=${zip}`;
+  // Bare /reps opens on the saved ZIP (components/RepsLookup.tsx), with no ZIP
+  // in the address (owner, 2026-11-12).
+  const lookupHref = '/reps';
   const inlineLink = (chunks: ReactNode) => (
     <Link href={lookupHref} className="font-semibold text-go underline underline-offset-4 hover:text-go-deep">
       {chunks}

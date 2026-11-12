@@ -109,9 +109,11 @@ export function HouseFinder({ zip, rows }: { zip: string; rows: FinderRow[] }) {
         {/* Optional, and the version works without it: /reps already holds
             the street-address form (components/AddressForm.tsx), which sends
             the address once in a POST body and keeps only the derived
-            district, in that page's own URL. Nothing is asked here. */}
+            district, for that page's own lookup. Bare /reps opens on the
+            saved ZIP, which is this one; no ZIP goes in the address (owner,
+            2026-11-12). Nothing is asked here. */}
         <Link
-          href={`/reps?zip=${zip}`}
+          href="/reps"
           className="mt-1 inline-flex min-h-11 items-center text-sm text-ink-2 underline underline-offset-2 hover:text-ink"
           data-house-finder-refine=""
         >

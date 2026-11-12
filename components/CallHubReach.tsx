@@ -154,7 +154,7 @@ export function CallHubReach() {
             <p className="mt-3 max-w-note text-sm text-ink-2">
               {tBill('callWhoMulti')}{' '}
               <Link
-                href={`/reps?zip=${zip}`}
+                href="/reps"
                 className="inline-flex min-h-11 items-center font-semibold text-ink underline underline-offset-2"
               >
                 {tBill('refineDistrictCta')}

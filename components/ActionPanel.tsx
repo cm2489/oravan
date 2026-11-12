@@ -1417,7 +1417,7 @@ export function ActionPanel({
             {multiDistrict && reps.length > 0 && zip && (
               <p className="mt-2 max-w-note text-sm">
                 <Link
-                  href={`/reps?zip=${zip}`}
+                  href="/reps"
                   className="inline-flex min-h-11 items-center gap-1.5 font-semibold text-go underline visited:text-go-deep hover:text-go-deep"
                 >
                   {t('refineDistrictCta')}

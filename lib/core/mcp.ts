@@ -489,7 +489,9 @@ export function lookupRepresentatives(zip: string, locale: Locale) {
     .filter((v): v is NonNullable<typeof v> => Boolean(v))
     .map((v) => ({ state: v.state, district: v.district }));
   const needsAddress = districts.length > 1;
-  const repsUrl = `${absoluteUrl(locale, REPS_PATH)}?zip=${zip}`;
+  // The members page, with no ZIP in its address (owner, 2026-11-12): the
+  // person types the ZIP there, and it travels only in a POST body.
+  const repsUrl = absoluteUrl(locale, REPS_PATH);
 
   return {
     zip,
@@ -508,8 +510,8 @@ export function lookupRepresentatives(zip: string, locale: Locale) {
 // by `absoluteUrl` above, so only the surrounding sentence needs a pair.
 function refineHintText(locale: Locale, repsUrl: string): string {
   return locale === 'es'
-    ? `Este código postal abarca más de un distrito congresional. Para obtener una respuesta de un solo distrito, indica a la persona que vaya a ${repsUrl} e ingrese allí una dirección postal - el refinamiento ocurre mediante un proxy sin estado del geocodificador del Census que nunca guarda ni registra la dirección. Esta herramienta no realiza el refinamiento por dirección directamente.`
-    : `This ZIP code spans more than one congressional district. For a single-district answer, direct the person to ${repsUrl} and enter a street address there - refinement happens through a stateless Census-geocoder proxy that never stores or logs the address. This tool does not perform address-level refinement itself.`;
+    ? `Este código postal abarca más de un distrito congresional. Para obtener una respuesta de un solo distrito, indica a la persona que vaya a ${repsUrl} e ingrese allí su código postal y luego una dirección postal - el refinamiento ocurre mediante un proxy sin estado del geocodificador del Census que nunca guarda ni registra la dirección. Esta herramienta no realiza el refinamiento por dirección directamente.`
+    : `This ZIP code spans more than one congressional district. For a single-district answer, direct the person to ${repsUrl} and enter the ZIP code and then a street address there - refinement happens through a stateless Census-geocoder proxy that never stores or logs the address. This tool does not perform address-level refinement itself.`;
 }
 
 /* ---------------------------------------------------------------------- *

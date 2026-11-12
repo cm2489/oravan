@@ -302,7 +302,8 @@ for (const { locale, prefix, messages } of LOCALES) {
       // so wherever the homepage puts it the budget is measured the same way.
       await page.getByLabel(messages.home.zipLabel).fill(ZIP);
       await steps.click(page.getByRole('button', { name: messages.home.zipCta }));
-      await expect(page).toHaveURL(new RegExp(`/reps\\?zip=${ZIP}`));
+      // The members page, with no ZIP in its address (owner, 2026-11-12).
+      await expect(page).toHaveURL(/\/reps$/);
 
       // The rep-lookup result is not a dead end: the continuation section
       // surfaces the same callable bills. Its copy was reviewed in the

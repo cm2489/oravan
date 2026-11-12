@@ -1,7 +1,7 @@
 /**
- * ZIP-out-of-addresses gate (2026-10-06). A visitor's ZIP code must never
- * travel in the ADDRESS of a request to Oravan's own routes: not in a query
- * string, not in a path segment.
+ * ZIP-out-of-addresses gate (2026-10-06; the members page added 2026-11-12).
+ * A visitor's ZIP code must never travel in the ADDRESS of a request to
+ * Oravan's own routes or pages: not in a query string, not in a path segment.
  *
  * Why: the hosting provider's request logs keep each request's path WITH its
  * query string, next to the caller's network address and user agent, and do
@@ -29,36 +29,41 @@
  *                       and the narrower rule is easy to dodge. A route that
  *                       needs an exception is named in API_ADDRESS_EXCEPTIONS
  *                       with a reason.
- *   zip-in-address      A literal that is an /api/ or /embed/ address may not
- *                       mention a ZIP at all (`zip=`, `/zip/`, `${zip}` …).
+ *   zip-in-address      A literal that is an /api/, /embed/ or /reps address
+ *                       may not mention a ZIP at all (`zip=`, `/zip/`,
+ *                       `${zip}` …), unless it is named in
+ *                       ZIP_ADDRESS_EXCEPTIONS with a reason.
  *   zip-query           Any literal that writes a `zip=` query parameter
  *                       (`?zip=`, `&zip=`, or a literal that starts `zip=`),
- *                       wherever its address comes from, unless that address
- *                       is the /reps page (out of scope, below) or the literal
- *                       is named in ZIP_QUERY_EXCEPTIONS with a reason. This
+ *                       wherever its address comes from, unless the literal
+ *                       is named in ZIP_ADDRESS_EXCEPTIONS with a reason. This
  *                       catches the shapes whose address the lexer cannot see
  *                       (`${base}?zip=…`, `u.search = \`zip=…\``).
  *   zip-param-builder   No `.set('zip', …)` / `.append('zip', …)`: the
  *                       URLSearchParams way of writing the same address.
  *   server-reads-zip    No `searchParams.get('zip')` (or getAll/has) anywhere,
- *                       and, under app/api or app/embed, no `zip` member in a
- *                       page's `searchParams` type and no `{ zip } = … searchParams`
+ *                       and, under app/api, app/embed and the members page
+ *                       (app/[locale]/reps), no `zip` member in a page's
+ *                       `searchParams` type and no `{ zip } = … searchParams`
  *                       destructuring: the server side of the same shape (the
- *                       embed page's dormant `?zip=` was removed with this gate).
+ *                       embed page's dormant `?zip=` was removed with this
+ *                       gate). The members page itself is named in
+ *                       SERVER_READS_EXCEPTIONS: it still reads an OLD link's
+ *                       ?zip= once, so bookmarks and shared links keep working,
+ *                       and drops it from the address on arrival.
  *   loader-zip-attr     public/embed.js may not name a `zip` attribute (as a
  *                       string or as `dataset.zip`): the
  *                       loader builds the embed's iframe address from a list
  *                       of attribute names, so a 'zip' entry there would put
  *                       the ZIP back in the /embed/ address.
  *
- * DELIBERATELY OUT OF SCOPE, and why: the page address `/reps?zip=NNNNN`
- * (the ZIP form, the saved-ZIP swap, the address form's return, the "see
- * your members" links and the MCP server's reps_url all write it, and the
- * page renders per request from it). Taking the ZIP out of that address
- * changes what readers see and share, so it is the owner's decision (open as
- * of 2026-10-06); until then this gate does not look at `/reps` addresses.
- * When that lands, add `/reps` to ADDRESS_PREFIXES and the
- * `app/[locale]/reps` page to SERVER_PAGE_DIRS.
+ * THE MEMBERS PAGE (owner, 2026-11-12). Until that day the page address
+ * `/reps?zip=NNNNN` was out of scope: the ZIP form, the saved-ZIP swap, the
+ * address form's return (`&district=`), the "see your members" links and the
+ * MCP server's reps_url all wrote it. The owner took the ZIP out of it, so
+ * `/reps` is an address here now and its page sits in SERVER_PAGE_DIRS. The
+ * lookup travels in a POST body (lib/members-action.ts,
+ * components/RepsLookup.tsx).
  *
  * Address constants: before scanning, the gate collects every
  * `const NAME = '/api/…'` (or `/embed/…`, a same-origin path) in the scanned tree, and each
@@ -70,9 +75,12 @@
  * a constant that is not a plain string literal, a computed property name,
  * or code in node_modules. A form's native submission (no JavaScript, or
  * before hydration) is not source text either: the embed widgets' ZIP forms
- * carry `method="post"` for that, pinned by tests/embed-rep-lookup.spec.ts. It is a tripwire for
- * the realistic regression, not a proof; tests/embed-rep-lookup.spec.ts and
- * tests/reps.spec.ts check the request a browser actually sends.
+ * carry `method="post"` for that, pinned by tests/embed-rep-lookup.spec.ts,
+ * and the site's ZIP forms POST to /reps through a server action, pinned by
+ * tests/reps-zip-address.spec.ts. It is a tripwire for the realistic
+ * regression, not a proof; tests/embed-rep-lookup.spec.ts, tests/reps.spec.ts
+ * and tests/reps-zip-address.spec.ts check the requests a browser actually
+ * sends.
  *
  * `--self-test` runs every rule against seeded violations and clean samples
  * and exits nonzero if any violation goes undetected or any clean sample is
@@ -88,9 +96,21 @@ const SCAN_FILES = ['proxy.ts', 'public/embed.js'];
 const EXTENSIONS = ['.ts', '.tsx', '.js', '.mjs'];
 
 /** Where a request to one of Oravan's own routes is addressed. */
-const ADDRESS_PREFIXES = ['/api/', '/embed/'];
+const ADDRESS_PREFIXES = ['/api/', '/embed/', '/reps'];
 /** Server code whose `searchParams` type may not name a zip. */
-const SERVER_PAGE_DIRS = ['app/api/', 'app/embed/'];
+const SERVER_PAGE_DIRS = ['app/api/', 'app/embed/', 'app/[locale]/reps/'];
+
+/**
+ * Server files allowed to read a zip from their own address, each with its
+ * reason. Shape: { file, reason }.
+ */
+const SERVER_READS_EXCEPTIONS = [
+  {
+    file: 'app/[locale]/reps/page.tsx',
+    reason:
+      'old /reps?zip= links (bookmarks, shared links, search results) keep working: the page answers that one request with the members and components/RepsLookup.tsx drops the ZIP from the address on arrival; nothing Oravan renders writes that address (owner, 2026-11-12)',
+  },
+];
 
 /**
  * /api/ addresses allowed a query string or an interpolation, each with its
@@ -100,15 +120,16 @@ const SERVER_PAGE_DIRS = ['app/api/', 'app/embed/'];
 const API_ADDRESS_EXCEPTIONS = [];
 
 /**
- * Literals allowed to write `zip=` although the gate cannot see that their
- * address is the /reps page, each with its reason. Shape: { file, literal, reason }.
+ * Literals allowed to put a ZIP in an address, each with its reason (the
+ * zip-query and zip-in-address rules both honour it).
+ * Shape: { file, literal, reason }.
  */
-const ZIP_QUERY_EXCEPTIONS = [
+const ZIP_ADDRESS_EXCEPTIONS = [
   {
-    file: 'lib/core/mcp.ts',
-    literal: '${absoluteUrl(locale, REPS_PATH)}?zip=${zip}',
+    file: 'components/embed/RepLookupWidget.tsx',
+    literal: '${siteBase}/reps?zip=${zip}',
     reason:
-      "the MCP envelope's reps_url, a link to the /reps page (REPS_PATH = '/reps'); out of scope with that page address until the owner decides it",
+      "the rep-lookup embed's link-out to the full members page, opened from an iframe on another site, for a split ZIP. The new tab cannot read a ZIP the embed holds (browser storage is partitioned per top-level site), so carrying it without the address needs a different link-out; left for the owner on 2026-11-12. The members page still answers it (an old-link arrival) and drops the ZIP from the address at once",
   },
 ];
 
@@ -318,11 +339,6 @@ function addressOf(text, names) {
   return ADDRESS_PREFIXES.some((p) => rest.startsWith(p)) ? rest : null;
 }
 
-/** The /reps page address, out of scope until the owner decides it (see the header). */
-function isRepsPageAddress(text) {
-  return /^\/reps(?:[?#/]|$)/.test(text.replace(/^(?:https?:\/\/[^/'"`\s]*|\$\{[^}]*\})/, ''));
-}
-
 const ZIP_WORD = /zip/i;
 
 /**
@@ -337,11 +353,8 @@ export function scanText(file, src, knownAddresses = new Map()) {
   const names = withAliases(src, knownAddresses);
 
   for (const lit of literals(src)) {
-    if (
-      /(?:^|[?&])zip=/i.test(lit.text) &&
-      !isRepsPageAddress(lit.text) &&
-      !ZIP_QUERY_EXCEPTIONS.some((e) => e.file === file && e.literal === lit.text)
-    ) {
+    const zipExcepted = ZIP_ADDRESS_EXCEPTIONS.some((e) => e.file === file && e.literal === lit.text);
+    if (/(?:^|[?&])zip=/i.test(lit.text) && !zipExcepted) {
       push('zip-query', lit.line, `"${lit.text}" writes a zip= query parameter; the ZIP goes in a request body.`);
     }
     const address = addressOf(lit.text, names);
@@ -363,7 +376,7 @@ export function scanText(file, src, knownAddresses = new Map()) {
         );
       }
     }
-    if (ZIP_WORD.test(address)) {
+    if (ZIP_WORD.test(address) && !zipExcepted) {
       push('zip-in-address', lit.line, `"${lit.text}" puts a ZIP into the address of a request to Oravan's own routes.`);
     }
   }
@@ -388,7 +401,7 @@ export function scanText(file, src, knownAddresses = new Map()) {
   for (const m of stripped.matchAll(/searchParams\s*\.\s*(?:get|getAll|has)\(\s*['"`]zip['"`]/gi)) {
     push('server-reads-zip', lineOf(m.index), 'the ZIP is read from a request address; read it from the request body.');
   }
-  if (SERVER_PAGE_DIRS.some((d) => file.startsWith(d))) {
+  if (SERVER_PAGE_DIRS.some((d) => file.startsWith(d)) && !SERVER_READS_EXCEPTIONS.some((e) => e.file === file)) {
     for (const m of stripped.matchAll(/searchParams\s*:\s*Promise<\s*\{/g)) {
       let depth = 0;
       let j = m.index + m[0].length - 1;
@@ -495,21 +508,35 @@ const SELF_TEST_FIXTURES = [
   ['a zip= query on an address the lexer cannot see', 'components/Fixture.tsx', 'fetch(`${base}?locale=en&zip=${zip}`)', 'zip-query'],
   ['a zip destructured from an embed page\'s searchParams', 'app/embed/rep-lookup/page.tsx', '  const { locale, zip } = await searchParams;', 'server-reads-zip'],
   ['the loader reading a zip data attribute', 'public/embed.js', 'var z = el.dataset.zip;', 'loader-zip-attr'],
+  // The members page's address, as each writer shipped it before 2026-11-12.
+  ['the ZIP form, as it shipped', 'components/ZipForm.tsx', '    else router.push(`/reps?zip=${clean}`);', 'zip-in-address'],
+  ['the ZIP form, by the zip-query rule', 'components/ZipForm.tsx', '    else router.push(`/reps?zip=${clean}`);', 'zip-query'],
+  ['the saved-ZIP swap, as it shipped', 'components/SavedZipLookup.tsx', '    router.replace(`/reps?zip=${saved}${window.location.hash}`);', 'zip-in-address'],
+  ['the address form return, as it shipped', 'components/AddressForm.tsx', '        router.push(`/reps?zip=${zip}&district=${state}-${district}`);', 'zip-in-address'],
+  ['a "see your members" link, as it shipped', 'components/HeroSavedZip.tsx', '  const lookupHref = `/reps?zip=${zip}`;', 'zip-in-address'],
+  ["the MCP envelope's reps_url, as it shipped", 'lib/core/mcp.ts', '  const repsUrl = `${absoluteUrl(locale, REPS_PATH)}?zip=${zip}`;', 'zip-query'],
+  ['an embed link-out not on the exception list', 'components/embed/ActionPanelWidget.tsx', 'href={`${siteBase}/reps?zip=${zip}`}', 'zip-in-address'],
+  [
+    "a member page reading a zip from its searchParams",
+    'app/[locale]/reps/[bioguide]/page.tsx',
+    '  const { zip } = await searchParams;',
+    'server-reads-zip',
+  ],
 ];
 
 /** The tree's real lookup constant, collected the way scanRepo collects it. */
 const SELF_TEST_KNOWN = addressConstants("export const REPS_LOOKUP_PATH = '/api/reps';");
 
 // Clean samples: ordinary code that must NOT trip the gate (a gate that flags
-// everything gets switched off). The /reps page address is here on purpose:
-// it is out of scope until the owner decides it (see the header).
+// everything gets switched off).
 const SELF_TEST_CLEAN = [
   ['the POST helper', 'lib/reps-lookup.ts', "export const P = '/api/reps';\nfetch(P, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ zip }) });"],
   ['a component calling it', 'components/ActionPanel.tsx', '    lookupReps(zip)\n      .then((r) => (r.ok ? r.json() : Promise.reject()))'],
   ['the district POST', 'components/AddressForm.tsx', "const res = await fetch('/api/district', { method: 'POST', body: JSON.stringify({ address, zip }) });"],
   ['a portrait path with a member id', 'components/embed/RepLookupWidget.tsx', 'src={`/embed/portrait/${rep.bioguide}`}'],
   ['the configurator preview (no zip param)', 'components/EmbedConfigurator.tsx', "params.set('accent', a);\nreturn `/embed/${widget}?${params.toString()}`;"],
-  ['the /reps page address (owner decision, out of scope)', 'components/ZipForm.tsx', 'router.push(`/reps?zip=${clean}`);'],
+  ['the bare members page', 'components/ZipForm.tsx', "router.push('/reps');"],
+  ['the Change ZIP link and a member page', 'components/RepsLookup.tsx', '<Link href="/reps?change=1">x</Link>\n<Link href={`/reps/${rep.bioguide}`}>y</Link>'],
   ['FormData read of the form field', 'components/ZipForm.tsx', "const raw = new FormData(e.currentTarget).get('zip');"],
   [
     'JSX prose with apostrophes, closing tags and a regex',
@@ -519,9 +546,9 @@ const SELF_TEST_CLEAN = [
   ['prose that names the old shape inside a comment', 'components/Fixture.tsx', '// it used to be fetch(`/api/reps?zip=${zip}`)\n/* `/embed/rep-lookup?zip=` */'],
   ['a log message that mentions an API in prose', 'lib/moments-gate.mjs', 'warnings.push(`${vp}.slug: "${v.slug}" has an unclassified status, so /api/script refuses it`);'],
   ['the helper POSTing to its constant', 'lib/reps-lookup.ts', "fetch(REPS_LOOKUP_PATH, { method: 'POST', body: JSON.stringify({ zip }) });"],
-  ['the embed link-out to the /reps page (out of scope)', 'components/embed/RepLookupWidget.tsx', 'href={`${siteBase}/reps?zip=${zip}`}'],
-  ['the address form return to the /reps page (out of scope)', 'components/AddressForm.tsx', 'router.push(`/reps?zip=${zip}&district=${state}-${district}`);'],
-  ["the MCP envelope's /reps link (named exception)", 'lib/core/mcp.ts', 'const repsUrl = `${absoluteUrl(locale, REPS_PATH)}?zip=${zip}`;'],
+  ['the embed link-out to the /reps page (named exception)', 'components/embed/RepLookupWidget.tsx', 'href={`${siteBase}/reps?zip=${zip}`}'],
+  ['the members page reading an old link (named exception)', 'app/[locale]/reps/page.tsx', '  searchParams: Promise<{ zip?: string; district?: string }>;'],
+  ["the MCP envelope's bare /reps link", 'lib/core/mcp.ts', 'const repsUrl = absoluteUrl(locale, REPS_PATH);'],
   ['a page destructuring other params', 'app/embed/action-panel/page.tsx', '  const { locale, slug, token } = await searchParams;'],
 ];
 
