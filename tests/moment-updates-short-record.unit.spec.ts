@@ -49,16 +49,27 @@ const PENNY_RECORDS = {
   'hr-3074-119': { lastActionText: 'Received in the Senate and Read twice and referred to the Committee on Banking, Housing, and Urban Affairs.', lastActionDate: '2026-07-15', billType: 'hr', statusBasisText: null },
 };
 
-/** Verbatim: run 36884798035, "shortRecord #1" (the new length rule), accepted. */
-const SHORT_REPLY = {
-  en: 'On September 28, 2026, the Senate passed H.R. 10167 without amendment by unanimous consent. The same day, the Senate Committee on Banking, Housing, and Urban Affairs was discharged from the bill, also by unanimous consent. H.R. 10167 now stands as "Passed both chambers."',
-  es: 'El 28 de septiembre de 2026, el Senado aprobó el proyecto H.R. 10167 sin enmiendas por consentimiento unánime. Ese mismo día, el Comité de Banca, Vivienda y Asuntos Urbanos del Senado quedó relevado del proyecto, también por consentimiento unánime. El H.R. 10167 figura como "Aprobado por ambas cámaras".',
+/**
+ * TODAY as a summary writes a date. The fixture's record is dated today (so it
+ * is inside the summary window), and a summary may name only a date its record
+ * holds (the number lint, 2026-11-11), so a reply that names the day names
+ * this one.
+ */
+const SPOKEN_TODAY = {
+  en: new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${TODAY}T00:00:00Z`)),
+  es: new Intl.DateTimeFormat('es', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${TODAY}T00:00:00Z`)),
 };
 
-/** Verbatim: run 36884798035, "baseline #3" (the old 90-to-140 line), rejected. */
+/** Verbatim: run 36884798035, "shortRecord #1" (the new length rule), accepted; its date (September 28, 2026) is the fixture's day. */
+const SHORT_REPLY = {
+  en: `On ${SPOKEN_TODAY.en}, the Senate passed H.R. 10167 without amendment by unanimous consent. The same day, the Senate Committee on Banking, Housing, and Urban Affairs was discharged from the bill, also by unanimous consent. H.R. 10167 now stands as "Passed both chambers."`,
+  es: `El ${SPOKEN_TODAY.es}, el Senado aprobó el proyecto H.R. 10167 sin enmiendas por consentimiento unánime. Ese mismo día, el Comité de Banca, Vivienda y Asuntos Urbanos del Senado quedó relevado del proyecto, también por consentimiento unánime. El H.R. 10167 figura como "Aprobado por ambas cámaras".`,
+};
+
+/** Verbatim: run 36884798035, "baseline #3" (the old 90-to-140 line), rejected; its date is the fixture's day, as above. */
 const PADDED_REPLY = {
-  en: 'On September 28, 2026, the Senate passed H.R. 10167 without amendment by unanimous consent. That same day, the Senate Committee on Banking, Housing, and Urban Affairs was discharged from the bill, also by unanimous consent. A discharge takes a bill out of a committee\'s hands so the full chamber can act on it. Since the Senate passed the bill without changes, the House and Senate have now both passed H.R. 10167. The record for this period shows no other action on the bill. It also lists no recorded votes in this window, because passage by unanimous consent does not involve a roll call. The record for this period shows no new floor action on S. 1525 or H.R. 3074.',
-  es: 'El 28 de septiembre de 2026, el Senado aprobó el proyecto H.R. 10167 sin enmiendas por consentimiento unánime. Ese mismo día, el Comité de Banca, Vivienda y Asuntos Urbanos del Senado quedó relevado del proyecto, también por consentimiento unánime. Un relevo retira un proyecto de manos de un comité para que la cámara en pleno pueda actuar sobre él. Como el Senado aprobó el proyecto sin cambios, la Cámara de Representantes y el Senado ya aprobaron ambos el H.R. 10167. El registro de este período no muestra otras acciones sobre el proyecto. Tampoco enumera votaciones nominales en esta ventana, porque la aprobación por consentimiento unánime no incluye una votación nominal. El registro de este período no muestra nuevas acciones en el pleno sobre el S. 1525 ni el H.R. 3074.',
+  en: `On ${SPOKEN_TODAY.en}, the Senate passed H.R. 10167 without amendment by unanimous consent. That same day, the Senate Committee on Banking, Housing, and Urban Affairs was discharged from the bill, also by unanimous consent. A discharge takes a bill out of a committee\'s hands so the full chamber can act on it. Since the Senate passed the bill without changes, the House and Senate have now both passed H.R. 10167. The record for this period shows no other action on the bill. It also lists no recorded votes in this window, because passage by unanimous consent does not involve a roll call. The record for this period shows no new floor action on S. 1525 or H.R. 3074.`,
+  es: `El ${SPOKEN_TODAY.es}, el Senado aprobó el proyecto H.R. 10167 sin enmiendas por consentimiento unánime. Ese mismo día, el Comité de Banca, Vivienda y Asuntos Urbanos del Senado quedó relevado del proyecto, también por consentimiento unánime. Un relevo retira un proyecto de manos de un comité para que la cámara en pleno pueda actuar sobre él. Como el Senado aprobó el proyecto sin cambios, la Cámara de Representantes y el Senado ya aprobaron ambos el H.R. 10167. El registro de este período no muestra otras acciones sobre el proyecto. Tampoco enumera votaciones nominales en esta ventana, porque la aprobación por consentimiento unánime no incluye una votación nominal. El registro de este período no muestra nuevas acciones en el pleno sobre el S. 1525 ni el H.R. 3074.`,
 };
 
 /** The old length line, spelled out, so a later edit to the constant shows up here. */

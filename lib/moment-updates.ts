@@ -153,6 +153,11 @@ export interface MomentUpdatesEntry {
    *  model calls made for this question on one ET day, nightly and intraday
    *  alike. Never rendered. */
   summary_attempts?: { day: string; count: number };
+  /** The collector's refusal alarm counter (2026-11-12): model replies in a
+   *  row for this question that were refused, the ET day of the newest, and
+   *  its failures (lib/moment-updates-gate.mjs SUMMARY_REFUSAL_ALARM_RUNS).
+   *  Cleared when a revision is stored. Never rendered. */
+  summary_refusals?: { count: number; day: string; reason: string };
 }
 
 /** One ET day of the timeline, including the days with nothing in them. */

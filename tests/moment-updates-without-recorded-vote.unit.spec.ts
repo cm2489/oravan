@@ -80,10 +80,21 @@ const SYNTHETIC_ROLL = {
   totals: { yea: 90, nay: 5, present: 0, notVoting: 5 }, source: 'https://www.senate.gov/',
 };
 
+/**
+ * TODAY as a summary writes a date. The fixture's record is dated today (so it
+ * is inside the summary window), and a summary may name only a date its record
+ * holds (the number lint, 2026-11-11), so a reply that names the day names
+ * this one.
+ */
+const SPOKEN_TODAY = {
+  en: new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${TODAY}T00:00:00Z`)),
+  es: new Intl.DateTimeFormat('es', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${TODAY}T00:00:00Z`)),
+};
+
 /** A summary that says how the record says it passed, and nothing about a tally. Written for this test. */
 const CLEAN = {
-  en: 'On September 28, 2026, the Senate passed H.R. 10167 without amendment by unanimous consent. The House passed H.R. 10167 by voice vote on September 14, 2026.',
-  es: 'El 28 de septiembre de 2026, el Senado aprobó la H.R. 10167 sin enmiendas por consentimiento unánime. La Cámara aprobó la H.R. 10167 por votación a viva voz el 14 de septiembre de 2026.',
+  en: `On ${SPOKEN_TODAY.en}, the Senate passed H.R. 10167 without amendment by unanimous consent. The House passed H.R. 10167 by voice vote on ${SPOKEN_TODAY.en}.`,
+  es: `El ${SPOKEN_TODAY.es}, el Senado aprobó la H.R. 10167 sin enmiendas por consentimiento unánime. La Cámara aprobó la H.R. 10167 por votación a viva voz el ${SPOKEN_TODAY.es}.`,
 };
 
 /** The shape the 09-28 and 09-29 rejections name ("no tally", "no hay"). Written for this test; the model's own text was never logged. */
@@ -247,7 +258,7 @@ test.describe('the gate is unchanged', () => {
     const en = lintRevisionText(NO_TALLY.en, 'en', { groundedEvents: true, rollCallsOnRecord: 0 });
     const es = lintRevisionText(NO_TALLY.es, 'es', { groundedEvents: true, rollCallsOnRecord: 0 });
     expect(en.some((f: string) => f.startsWith('absence claim "no tally"'))).toBe(true);
-    expect(es.some((f: string) => f.startsWith('absence claim "no hay"'))).toBe(true);
+    expect(es.some((f: string) => f.startsWith('absence claim "no hay recuento"'))).toBe(true);
 
     const client = recordingClient(JSON.stringify(NO_TALLY));
     const revision = await generateStateSummary(
