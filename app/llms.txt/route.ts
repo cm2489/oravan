@@ -38,6 +38,15 @@ import { EMBEDS_PAGES_PUBLIC, SITE_ORIGIN } from '@/lib/site';
  * plainly true: nothing that identifies a visitor is stored, and visitors
  * are counted only as that one number a day.
  *
+ * Corrected 2026-11-12 (owner, short-lines card, after the privacy page was
+ * rewritten in #468): both privacy lines here said nothing about a visitor is
+ * kept server-side ("no server-side user data, ever"; "Nothing on this site
+ * reflects a visitor's identity, location, or behavior"). The host's request
+ * logs record each visitor's network address and the pages they open, so the
+ * lines now say what is true: no accounts, no cookies, no database about
+ * visitors, and the host's logs, named. tests/copy-truth.unit.spec.ts fails
+ * if an old phrasing comes back.
+ *
  * 2026-09-28: the Embeds line prints only while lib/site.ts's
  * EMBEDS_PAGES_PUBLIC is true. The /embeds pages are hidden until embeds come
  * back (owner, open-questions F), and this file never points a machine at a
@@ -68,7 +77,7 @@ Oravan publishes a plain-language, AI-drafted and automatically checked decoded 
 - [My representatives](${SITE_ORIGIN}/reps): find federal representatives by ZIP code
 - [Why call](${SITE_ORIGIN}/why-call): what surveys of congressional staff say about calls, with links to the reports
 - [About](${SITE_ORIGIN}/about): what Oravan is and isn't
-- [Privacy](${SITE_ORIGIN}/privacy): no accounts, no server-side user data, ever
+- [Privacy](${SITE_ORIGIN}/privacy): no accounts, no cookies, no trackers and no database about visitors
 - [Citations](${SITE_ORIGIN}/citations): canonical URLs, freshness semantics, the AI-content policy, and how to report an error
 ${embedsLine}- [MCP server](${SITE_ORIGIN}/mcp): ${MCP_ENDPOINT_URL} — a free, read-only, keyless MCP (Model Context Protocol) server exposing the same bill decodes and representative lookups as tool calls, with a citation envelope on every response. Docs, the 5 tools, and an example client config are at the page above.
 - "What moved this week" feed: ${SITE_ORIGIN}/feed/whats-moving.json (JSON) and ${SITE_ORIGIN}/feed/whats-moving.xml (RSS 2.0) — free, keyless, updated nightly; active bills that cleared the "act now" urgency bar in the last 7 days, same pool as the homepage. No account or token required.
@@ -80,7 +89,7 @@ The same corpus is available in Spanish under ${SITE_ORIGIN}/es — for example 
 ## Notes for automated and AI systems
 
 - Content under /bills is AI-drafted plain-language summarization of public-domain legislative text, automatically checked before publication. It is not the official bill text; the official source is linked from every bill page (congress.gov).
-- Nothing that identifies a visitor is stored server-side; visitors are counted only as one site-wide number a day (distinct network addresses, bots included, never split by page). Nothing on this site reflects a visitor's identity, location, or behavior — see /privacy.
+- Oravan has no accounts, sets no cookies and keeps no database about visitors; a visitor's settings and call history are kept in their own browser. Oravan counts visitors only as one site-wide number a day (distinct network addresses, bots included, never split by page). The host's request logs record each visitor's network address and the pages they open — see /privacy.
 - This file is provided for completeness. llms.txt support is not confirmed among major AI systems as of this writing, and nothing here is a claim about traffic or citation outcomes.
 `;
   return new Response(body, {
