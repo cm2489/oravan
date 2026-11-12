@@ -354,7 +354,7 @@ test.describe('the absence lint · the twin table: every row caught in both lang
     }
   });
 
-  test('the known one-language splits are exactly the ones the code note lists (KNOWN ONE-LANGUAGE SPLITS)', () => {
+  test('the one-language splits found so far behave as the code note says (KNOWN ONE-LANGUAGE SPLITS)', () => {
     // [English, caught in English?, Spanish, caught in Spanish?]. A change to
     // any verdict here must change the code note too.
     const SPLITS: [string, boolean, string, boolean][] = [
@@ -362,6 +362,11 @@ test.describe('the absence lint · the twin table: every row caught in both lang
       ['The Senate made no changes to it.', true, 'El Senado no hizo cambios.', false],
       ['No changes were made to the bill.', true, 'No se hicieron cambios al proyecto.', false],
       ['The bill makes no changes.', true, 'El proyecto no hace cambios.', false],
+      // Found by an independent review of 100 sentence pairs, 2026-11-12.
+      ['No committee has acted on it.', false, 'Ningún comité ha actuado.', true],
+      ['The House has not scheduled a vote.', false, 'La Cámara no ha programado una votación.', true],
+      ['No date has been set.', true, 'No se ha fijado fecha.', false],
+      ['It was the sole roll call on the bill.', false, 'Fue la única votación nominal sobre el proyecto.', true],
     ];
     for (const [en, enCaught, es, esCaught] of SPLITS) {
       expect(absenceClaims(en, 'en').length > 0, en).toBe(enCaught);
