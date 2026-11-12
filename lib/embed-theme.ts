@@ -72,17 +72,19 @@ export const FONT_VALUES: Record<FontKey, string> = {
  * "mode=dark" renders the brand's own dark palette regardless of the
  * visitor's OS preference.
  *
- * LOCKSTEP (DESIGN.md § Embed lockstep): these are variant B's `paper`
- * (#ffffff) and `ink` (#16191b). Variant B has exactly ONE dark, so the dark
+ * LOCKSTEP (DESIGN.md § Embed lockstep): colour direction "night":
+ * the light widget is the site's enamel pair — `ink` (#eef0ec) as the
+ * ground and `paper` (#121614) as the type — and the dark widget is the
+ * site's own page, the same two colours swapped. Variant B has exactly ONE dark, so the dark
  * mode is not a second palette — it is the same two colors swapped, ink
- * becoming the ground it was named for. Both pairs compute to 17.66:1.
+ * becoming the ground it was named for. Both pairs compute to 15.91:1.
  * Change these only together with app/embed/embed.css's :root fallbacks,
  * components/EmbedConfigurator.tsx's DEFAULT_*, and lib/contrast.ts's ink
  * pair — four mirrors, one move.
  */
 export const MODE_DEFAULTS: Record<'light' | 'dark', { surface: string; ink: string }> = {
-  light: { surface: '#ffffff', ink: '#16191b' },
-  dark: { surface: '#16191b', ink: '#ffffff' },
+  light: { surface: '#eef0ec', ink: '#121614' },
+  dark: { surface: '#121614', ink: '#eef0ec' },
 };
 
 /**

@@ -122,11 +122,13 @@ export function Chip(props: ChipProps) {
   const { children, ground = 'paper', className = '' } = props;
 
   if (props.tone === 'urgent') {
-    // Amber is a fill, so it resolves the same on every ground: ink text,
-    // 11.44:1, with the date printed beside the claim.
+    // Amber is a fill, so it resolves the same on every ground. On the
+    // "night" page the light ink cannot sit on the lamp, so the chip takes
+    // `paper` (the dark ground) as its text: 11.87:1, with the date printed
+    // beside the claim.
     return (
       <span
-        className={`${SHELL} bg-urgent px-3 py-1 text-xs font-bold tracking-[0.04em] text-ink uppercase tabular-nums ${className}`}
+        className={`${SHELL} bg-urgent px-3 py-1 text-xs font-bold tracking-[0.04em] text-paper uppercase tabular-nums ${className}`}
       >
         <span>{children}</span>
         <span className="font-extrabold">{props.dateLabel}</span>

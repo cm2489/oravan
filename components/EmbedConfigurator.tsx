@@ -44,14 +44,14 @@ import type { FeedTeaser } from '@/lib/types';
 type WidgetType = 'rep-lookup' | 'bill-card';
 type ConfigLocale = 'en' | 'es';
 
-// The fourth palette mirror (DESIGN.md § Embed lockstep). These are variant
-// B's `go`, `paper` and `ink`, and they must equal app/embed/embed.css's
+// The fourth palette mirror (DESIGN.md § Embed lockstep). These are colour
+// direction "night"'s accent and its light pair, and they must equal app/embed/embed.css's
 // :root fallbacks and lib/embed-theme.ts's MODE_DEFAULTS.light exactly —
 // otherwise the live preview and the copied snippet promise a look the
 // server would not render.
-const DEFAULT_ACCENT = '#0f6c4a'; // matches the widget CSS's own var(--oravan-accent, #0f6c4a) fallback
-const DEFAULT_SURFACE = '#ffffff'; // the light-mode token fallbacks in app/embed/embed.css
-const DEFAULT_INK = '#16191b';
+const DEFAULT_ACCENT = '#ffc933'; // matches the widget CSS's own var(--oravan-accent, #ffc933) fallback
+const DEFAULT_SURFACE = '#eef0ec'; // the light-mode token fallbacks in app/embed/embed.css
+const DEFAULT_INK = '#121614';
 const DEFAULT_HEIGHT = 480; // mirrors public/embed.js's own DEFAULT_HEIGHT
 const MAX_RESULTS = 25;
 // MIN_PAIR_CONTRAST is imported from lib/embed-theme — the server-side bar

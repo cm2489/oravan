@@ -60,7 +60,7 @@ export function contrastRatio(hexA: string, hexB: string): number {
  * a validation slip can only ever reproduce the default look, never invent a
  * new one.
  */
-export function pickTextColor(bgHex: string, light = '#ffffff', dark = '#16191b'): string {
+export function pickTextColor(bgHex: string, light = '#eef0ec', dark = '#121614'): string {
   const bg = hexToRgb(bgHex);
   if (!bg) return light;
   return contrastRatio(bgHex, light) >= contrastRatio(bgHex, dark) ? light : dark;
@@ -104,8 +104,8 @@ export function adjustInkForContrast(
   // Unreachable for min <= 4.58 (the i = STEPS candidate IS the extreme),
   // kept for callers that pass a stricter threshold. Same variant-B ink pair
   // as pickTextColor's defaults above — the two move together.
-  const extreme = contrastRatio('#16191b', surface) >= contrastRatio('#ffffff', surface)
-    ? '#16191b'
-    : '#ffffff';
+  const extreme = contrastRatio('#121614', surface) >= contrastRatio('#eef0ec', surface)
+    ? '#121614'
+    : '#eef0ec';
   return contrastRatio(extreme, surface) >= min ? { ink: extreme, adjusted: true } : null;
 }
