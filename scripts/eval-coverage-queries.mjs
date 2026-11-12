@@ -26,7 +26,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { TERMINAL_STATUSES, effectiveUrgency } from '../lib/urgency.mjs';
-import { parseKeptIndexes, queryWithAddedNames, relevancePrompt } from './coverage-query.mjs';
+import { CONGRESS_START, parseKeptIndexes, queryWithAddedNames, relevancePrompt } from './coverage-query.mjs';
 import { loadPressNames } from './press-names.mjs';
 
 const NEWS_API_KEY = process.env.NEWS_API_KEY;
@@ -145,7 +145,7 @@ async function filterRelevant(b, candidates) {
 const rows = [];
 for (const b of sample) {
   const slug = slugOf(b);
-  const after = b.introduced_date ?? '2025-01-03';
+  const after = b.introduced_date ?? CONGRESS_START;
   const row = { slug, stratum: strata.get(slug), status: b.status };
   try {
     row.oldQuery = oldQueryFor(b);

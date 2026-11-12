@@ -37,6 +37,7 @@ import { TERMINAL_STATUSES } from '../lib/urgency.mjs';
 import { conversationPool } from '../lib/conversation.mjs';
 import { signalIsLive } from '../lib/docket.mjs';
 import { momentVehicles } from './moment-updates-map.mjs';
+import { CURRENT_CONGRESS, congressTerm } from '../lib/congress.mjs';
 
 const CITATION_STYLE = {
   hr: 'H.R.',
@@ -244,8 +245,9 @@ export function readRateLimitRemaining(headers) {
  *      ::warning:: that lib/pipeline-health.mjs turns into a ⛔ (leanDrift).
  */
 
-/** When the 119th Congress convened; no coverage can predate a bill in it. */
-export const CONGRESS_START = '2025-01-03';
+/** The first day of the tracked Congress's term (lib/congress.mjs); no
+ *  coverage can predate a bill in it. */
+export const CONGRESS_START = CURRENT_CONGRESS.start;
 
 /** The sort the whole-life pass has always used. */
 export const RELEVANCE_SORT = 'relevance_score';
@@ -329,9 +331,13 @@ export function isCoverageEligible(b, now = Date.now(), { priority = false } = {
   return age >= 0 && age <= ENACTED_GRACE_DAYS;
 }
 
-/** The whole-life pass's floor: the bill's introduction (or the Congress's start). */
+/** The whole-life pass's floor: the bill's introduction, or else the first
+ *  day of the bill's OWN Congress (2026-11-12; the tracked Congress's when
+ *  the record names none), so a bill of an earlier Congress is never floored
+ *  at a later one's start. */
 export function wholeLifeStart(b) {
-  return isDay(b?.introduced_date) ? b.introduced_date : CONGRESS_START;
+  if (isDay(b?.introduced_date)) return b.introduced_date;
+  return Number.isInteger(b?.congress_number) ? congressTerm(b.congress_number).start : CONGRESS_START;
 }
 
 /** The date-sorted pass's floor: RECENT_WINDOW_DAYS ago, never before the bill existed. */

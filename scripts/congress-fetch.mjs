@@ -16,7 +16,10 @@ import { STATUS_BASE } from '../lib/urgency.mjs';
 // and no secret to anything that imports mapStatus.
 import { COMMITTEE_TEXT_ON_FLOOR } from '../lib/floor-text.mjs';
 
-export const CONGRESS = 119;
+// The tracked Congress is written once, in lib/congress.mjs (2026-11-12), and
+// re-exported here under the name every sync script already imports.
+import { CONGRESS } from '../lib/congress.mjs';
+export { CONGRESS };
 // hconres/sconres added 2026-07-23: concurrent resolutions carry War Powers
 // fights and budget resolutions — their exclusion made H.Con.Res.38 (the
 // Iran war-powers resolution everyone was talking about) STRUCTURALLY
