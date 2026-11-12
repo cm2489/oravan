@@ -128,6 +128,26 @@ test.describe('the decided order, in the renderer', () => {
   });
 });
 
+test.describe('the heavy rule opens the page', () => {
+  // The spec has no render helper, so this pins the renderer's source: the
+  // floor band always takes the heavy rule; the chambers take it only when the
+  // band is not rendered (showSchedule false), the thin rule otherwise.
+  const src = readFileSync(join(process.cwd(), 'components/TodayBrief.tsx'), 'utf8');
+
+  test('the floor band carries the 3px rule; the chambers carry the thin rule while the band shows', () => {
+    expect(src).toContain("const HEAVY_RULE = 'mt-12 border-t-[3px] border-ink pt-4'");
+    expect(src).toContain("const THIN_RULE = 'mt-12 border-t border-line-strong pt-4'");
+    expect(src).toContain('<section className={HEAVY_RULE} aria-labelledby="today-schedule"');
+    expect(src).toContain('className={showSchedule ? THIN_RULE : HEAVY_RULE} aria-labelledby="today-chambers"');
+  });
+
+  test('with the band hidden, the chambers carry the 3px rule', () => {
+    const chambers = src.match(/className=\{showSchedule \? (\w+) : (\w+)\} aria-labelledby="today-chambers"/);
+    expect(chambers).not.toBeNull();
+    expect(chambers![2]).toBe('HEAVY_RULE');
+  });
+});
+
 test.describe('against the committed data', () => {
   const window = briefWindow();
   const summaries = briefDays();

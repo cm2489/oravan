@@ -11,6 +11,7 @@ import {
   savedZipDistrict,
   type LookupAnswer,
 } from '@/lib/home-zip';
+import { lookupReps } from '@/lib/reps-lookup';
 
 /*
  * THE HERO WITH A SAVED ZIP (Home option B, v2 wireframe 2026-09-29, Claude's
@@ -69,7 +70,7 @@ export function HeroSavedZip({ children }: { children: ReactNode }) {
     const zip = savedZip();
     if (!zip) return;
     let live = true;
-    fetch(`/api/reps?zip=${zip}`)
+    lookupReps(zip)
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((body: unknown) => {
         const answer = readLookup(body);
