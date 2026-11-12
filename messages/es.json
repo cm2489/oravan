@@ -109,7 +109,7 @@
     "routeTotalNote": "de principio a fin, y la mitad es la llamada.",
     "privacyPoint1": "En este sitio no hace falta registrarte. No puedes crear un perfil.",
     "privacyPoint2": "La dirección que sirve para identificar tu distrito se usa una vez y nunca se guarda.",
-    "privacyPoint3": "Borra los datos de tu navegador y desaparece todo lo que Oravan guardó para ti.",
+    "privacyPoint3": "Borra los datos de tu navegador y cierra la pestaña, y desaparece todo lo que Oravan guardó para ti.",
     "zipErrorLabel": "Revisa esto",
     "momentsUpdated": "Último: {date}",
     "specimenTitle": "El texto oficial, descifrado",
@@ -655,7 +655,7 @@
     "followCta": "Ver proyectos de tus temas",
     "followCount": "{count, plural, one {# tema} other {# temas}}",
     "readsTitle": "Lo que has leído",
-    "readsNote": "Tu historial de lectura se guarda en este dispositivo, nunca en una cuenta ni en una base de datos.",
+    "readsNote": "Esta lista se guarda solo en este dispositivo. Oravan no tiene ninguna cuenta ni base de datos que la guarde.",
     "readsCount": "{count, plural, one {# proyecto} other {# proyectos}}",
     "deleteRead": "Quitar del historial de lectura",
     "calls": "{count, plural, one {Llamada hecha} other {Llamadas hechas}}",
@@ -699,7 +699,7 @@
     "title": "Acerca de Oravan",
     "intro": "Oravan es una herramienta cívica gratuita y no partidista. Úsala para encontrar a tus miembros del Congreso, leer proyectos de ley activos en lenguaje claro y hacer una llamada de 30 segundos, en inglés o español, sin cuenta y sin ninguna base de datos sobre ti.",
     "fundingTitle": "¿Quién paga esto?",
-    "fundingBody": "Oravan es un proyecto independiente, financiado por su fundador. Cuesta unos cientos de dólares al año alojarlo y mantenerlo, actualmente pagados de su propio bolsillo por una sola persona. No hay anuncios, ni patrocinadores, ni inversionistas — y Oravan no le vende nada a los lectores ni tiene una base de datos sobre ellos. Los widgets para sitios socios tienen cuatro planes, y ninguno está abierto todavía a sitios nuevos.",
+    "fundingBody": "Oravan es un proyecto independiente, financiado por su fundador. Cuesta unos cientos de dólares al año alojarlo y mantenerlo, actualmente pagados de su propio bolsillo por una sola persona. No hay anuncios, ni patrocinadores, ni inversionistas — y Oravan no les vende nada a los lectores ni tiene una base de datos sobre ellos. Los widgets para sitios socios tienen cuatro planes, y ninguno está abierto todavía a sitios nuevos.",
     "fundingSupportBody": "Si Oravan te resulta útil, puedes contribuir a su alojamiento y mantenimiento. Las contribuciones no son deducibles de impuestos.",
     "fundingSupportCta": "Apoya a Oravan",
     "accountabilityTitle": "Independencia y contacto",
@@ -1110,7 +1110,7 @@
         "cbo": "Oficina de Presupuesto del Congreso",
         "gao": "Oficina de Rendición de Cuentas del Gobierno"
       },
-      "privacyNote": "Esta página es igual para todos. No hay cuenta, ni rastreo, ni contenido hecho a tu medida, así que se puede compartir entre personas de todo el espectro."
+      "privacyNote": "Aquí nada te sigue: no hay cuenta, ni rastreo, ni contenido hecho a tu medida, así que la misma página se puede compartir entre personas de todo el espectro."
     },
     "kicker": "Gran pregunta",
     "status": {

@@ -34,9 +34,11 @@ import { EMBEDS_PAGES_PUBLIC, SITE_ORIGIN } from '@/lib/site';
  * "No user data is collected server-side". With the daily distinct-address
  * count in place (one site-wide HyperLogLog sketch per UTC day,
  * lib/ratelimit.ts) that line was true only on the reading that one
- * site-wide number is not data about a visitor, so it now says what is
- * plainly true: nothing that identifies a visitor is stored, and visitors
- * are counted only as that one number a day.
+ * site-wide number is not data about a visitor. Since 2026-11-12 it says
+ * what the privacy page says: no accounts, no cookies and no database about
+ * visitors; the host's request logs record each visitor's network address
+ * and the pages they open; and visitors are counted only as that one number
+ * a day.
  *
  * Corrected 2026-11-12 (owner, short-lines card, after the privacy page was
  * rewritten in #468): both privacy lines here said nothing about a visitor is

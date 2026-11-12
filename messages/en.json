@@ -109,7 +109,7 @@
     "routeTotalNote": "start to finish, and half of it is the call.",
     "privacyPoint1": "This site has no sign-up. You cannot create a profile.",
     "privacyPoint2": "A street address used to pick your district is used once and never stored.",
-    "privacyPoint3": "Clear your browser data and everything Oravan saved for you is gone.",
+    "privacyPoint3": "Clear your browser data and close the tab, and everything Oravan saved for you is gone.",
     "zipErrorLabel": "Check this",
     "momentsUpdated": "Latest: {date}",
     "specimenTitle": "The official text, decoded",
@@ -655,7 +655,7 @@
     "followCta": "See bills on your topics",
     "followCount": "{count, plural, one {# topic} other {# topics}}",
     "readsTitle": "What you've read",
-    "readsNote": "Your reading history is saved on this device, never in an account or a database.",
+    "readsNote": "This list is saved on this device only. Oravan has no account or database that holds it.",
     "readsCount": "{count, plural, one {# bill} other {# bills}}",
     "deleteRead": "Remove from reading history",
     "calls": "{count, plural, one {Call made} other {Calls made}}",
@@ -1110,7 +1110,7 @@
         "cbo": "Congressional Budget Office",
         "gao": "Government Accountability Office"
       },
-      "privacyNote": "This page is the same for everyone. There is no account, no tracking and no feed tuned to you, so it can be shared across the spectrum."
+      "privacyNote": "Nothing here follows you: no account, no tracking and no feed tuned to you, so the same page can be shared across the spectrum."
     },
     "kicker": "Big Question",
     "status": {
