@@ -345,6 +345,25 @@ test.describe('SY-31 meetsAfterDay', () => {
   });
 });
 
+// ---- 2026-11-11: no message says how an office counts a call or a voicemail --
+
+test.describe('2026-11-11 no message claims offices count calls or voicemails the same way', () => {
+  // Owner decision 149: no source on file says an office tallies a voicemail
+  // like a live call, tallies every call, or logs every call it takes. The
+  // Congressional Management Foundation quote and the staff-survey figures on
+  // /why-call are sourced and stay; they do not use these words.
+  const UNSOURCED = {
+    en: /\bcounts?\s+(?:exactly\s+)?the same\b|\b(?:tallied|counted)\s+the same\b|\b(?:offices|staff|staffers)\s+tally\b|\btally\s+(?:calls|voicemails)\b|\blogs\s+(?:every|your)\s+call\b|\bcounts\s+either\s+way\b/i,
+    es: /\bcuentan?\s+(?:exactamente\s+)?igual\b|\bse\s+cuenta\s+igual\b|\bcuentan?\s+(?:los\s+mensajes|las\s+llamadas|llamadas)\b|\bregistra\s+(?:cada\s+llamada|tu\s+llamada)\b|\bcuenta\s+de\s+todos\s+modos\b/i,
+  } as const;
+  for (const [locale, m] of LOCALES) {
+    test(`${locale}: every message`, () => {
+      const hits = allStrings(m).filter(([, s]) => UNSOURCED[locale].test(s));
+      expect(hits).toEqual([]);
+    });
+  }
+});
+
 // ---- the new keys exist in both languages, with the same arguments ----------
 
 test('every key this sweep added is in both locales', () => {
