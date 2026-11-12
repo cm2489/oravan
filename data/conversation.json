@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-12T10:58:03.104Z",
+    "fetched_at": "2026-11-12T18:52:48.771Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-12T10:58:03.104Z"
+        "checked_at": "2026-11-12T18:52:48.771Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-08",
         "week_label": "Most-Viewed Bills - Week of November 8, 2026",
         "entries": 6,
-        "checked_at": "2026-11-12T10:58:03.104Z"
+        "checked_at": "2026-11-12T18:52:48.771Z"
       },
       "leans": {
         "center": {
@@ -378,6 +378,18 @@
           "firstSeen": "2026-11-08",
           "lastSeen": "2026-11-08",
           "url": "https://news.google.com/rss/articles/CBMirAFBVV95cUxNQTM2S3lJMmNGTkdaODhqMGotQ0o5cEtGRHdJZno5cURLYWl0ZDA2amhkNDBVUFBhR2JFQUFDejl0SGJjeGo1X1FhXzZBUlFhUGJzcDFLSDJGbko2dkJ6Skw3T0RBUmE5cVQ2MXZOSG9GTUJ6TGcwWmRjdXpERUJEcGVPaDQyYlhzRFZpTVYtYW9kOERPd1JCa3ZzSG1ORHlhdGZtN0JFU3daMGs4?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-2102-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "quiverquant.com",
+          "firstSeen": "2026-11-12",
+          "lastSeen": "2026-11-12",
+          "url": "https://news.google.com/rss/articles/CBMiqgFBVV95cUxNQ3N0ZTJxTktRczN6LUMtdkM0MDNiSG1SNng0RXFwdTl5dlFjbzlWUG1WUGhSdVJFR2dNbGlCTGlxbEhZRERxOWVkeVBCV2pYaXBIbW1wN0RBcEhQblZuTW1zd1E2UHZQbEFvWDcyVWRpY3lRZUtkX2RfV1U1MWVHYVZFc0ZJREpzNEliME5faXlYNGV1b052NlJuVHc2WHJBZnowWFhpLWdDdw?oc=5"
         }
       ],
       "mostViewed": null
@@ -816,7 +828,14 @@
           "url": "https://www.politico.com/live-updates/2026/11/09/congress/momentum-builds-on-chip-exports-01157548"
         }
       ],
-      "unratedOutlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "mlq.ai",
+          "firstSeen": "2026-11-12",
+          "lastSeen": "2026-11-12",
+          "url": "https://news.google.com/rss/articles/CBMi1AFBVV95cUxNLThwRUxaSWE2NnlBV1dxTGFjazVsSGQ0Z2dNNl9sUHZRU041R2JBUUl5emV6SHF6WHFVaHRkaHd3TmVYZVVzdEQ4WEYzQXowbGtaYkpuRTZMOHJ4V3M0dElpYm1qLVlFMktIbmh5ZjlGb29WeEpTZGhtMkxxdTVsaHJIaFh4R0h1dzdnZE5HN2hRQlpIcUhzbmFKaFduUG1pdno0cHIyNngwclo4TzdUOE92YlJ5ejNmNmFQbFV6NXhQdk9pMzJzMUMwTlV2cVdQRTJTMw?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "hr-6509-119": {
@@ -831,6 +850,13 @@
     },
     "hr-6529-119": {
       "outlets7d": [
+        {
+          "domain": "newsweek.com",
+          "lean": "left",
+          "firstSeen": "2026-11-12",
+          "lastSeen": "2026-11-12",
+          "url": "https://news.google.com/rss/articles/CBMilwFBVV95cUxPWWJsQnR1dGNRd0hGazI0STV4aWZNMjQyY3BSbzZJZUJzbTFaai1kYjRvcHRRZmtQZjJhYjVVMG5LZ1N5TTJjcWhhaHFEMzdIYU1CWFVHNDM2bnQtLXpMSU5ETkVoeEdKZEgwR0dhRXlEOGtHLXJ0dDRUU09RakJSTzRXYTVSemhVUnB0ZzNab3JMUS1JamM0?oc=5"
+        },
         {
           "domain": "time.com",
           "lean": "left",
@@ -886,6 +912,19 @@
       ],
       "mostViewed": null
     },
+    "hr-6825-119": {
+      "outlets7d": [
+        {
+          "domain": "cbsnews.com",
+          "lean": "left",
+          "firstSeen": "2026-11-12",
+          "lastSeen": "2026-11-12",
+          "url": "https://www.cbsnews.com/news/jensen-huang-nvidia-congress-testify/"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hr-6956-119": {
       "outlets7d": [
         {
@@ -926,6 +965,13 @@
     "hr-7814-119": {
       "outlets7d": [
         {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-11-11",
+          "lastSeen": "2026-11-12",
+          "url": "https://thehill.com/homenews/media/6216776-oreilly-judiciary-committee-epstein-report-bull/"
+        },
+        {
           "domain": "cbsnews.com",
           "lean": "left",
           "firstSeen": "2026-11-11",
@@ -938,13 +984,6 @@
           "firstSeen": "2026-11-11",
           "lastSeen": "2026-11-11",
           "url": "https://www.politico.com/live-updates/2026/11/11/congress/epstein-files-transparency-act-discharge-01161062"
-        },
-        {
-          "domain": "thehill.com",
-          "lean": "center",
-          "firstSeen": "2026-11-11",
-          "lastSeen": "2026-11-11",
-          "url": "https://thehill.com/homenews/house/6214408-massie-epstein-files-discharge-petition/"
         }
       ],
       "unratedOutlets7d": [
@@ -1030,7 +1069,14 @@
           "url": "https://www.foxnews.com/politics/watch-jeffries-faces-uncertainty-from-incoming-democrats-house-speaker-vote-approaches"
         }
       ],
-      "unratedOutlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "wastedive.com",
+          "firstSeen": "2026-11-12",
+          "lastSeen": "2026-11-12",
+          "url": "https://news.google.com/rss/articles/CBMiiwFBVV95cUxNdmhMdEl6dFM2RjNYOUxaS1FqckFiWnFyTENEZXVPUjRld3VNQzFJdnI0OVFZN1pYZUppUW02aWdIYkd1UGliZ3dSandaeGhKMk9SUFBWTjBoTVNhcDlOOFFlMjlOUlBCMUVwTVI1UkxnOGU0SHpYeng5Uzc0TEdMbVN4VV9UajdFc2lV?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "hr-9363-119": {
@@ -1183,6 +1229,26 @@
       ],
       "mostViewed": null
     },
+    "s-3226-119": {
+      "outlets7d": [
+        {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-11-12",
+          "lastSeen": "2026-11-12",
+          "url": "https://www.foxnews.com/politics/dem-rep-blames-horrific-traffic-missing-hegseth-impeachment-vote-sorry"
+        },
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-11-12",
+          "lastSeen": "2026-11-12",
+          "url": "https://thehill.com/homenews/house/6215755-stansbury-missed-hegseth-vote/"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "s-3892-119": {
       "outlets7d": [
         {
@@ -1295,6 +1361,18 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "s-4621-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "linkedin.com",
+          "firstSeen": "2026-11-12",
+          "lastSeen": "2026-11-12",
+          "url": "https://news.google.com/rss/articles/CBMioAFBVV95cUxPTHBxdWxuTlVXZWo1aVU0NDBjTHhSYVJqVXNfdkFFX0pTcTZOcGFTSkdCdjBlNEdwOWdTMTAwQXVTRklBWW14NXNTdGRUWnQyY1l6RUdRWnY4V2VDMGRMUHJLOTBfbElKTUx2aW9KdlotY2ZUeHdfWGc1N3J0aU5OSmhSdnM4c1NDVXY5VmF0UEpCdC1mX0Y3YVRLc0dGUkRx?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "s-4668-119": {
@@ -1441,6 +1519,18 @@
         "lastWeek": "2026-11-08"
       }
     },
+    "s-645-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "wowt.com",
+          "firstSeen": "2026-11-12",
+          "lastSeen": "2026-11-12",
+          "url": "https://news.google.com/rss/articles/CBMirgFBVV95cUxQSjQ5R1BHYkpmWWhzTnpvdE54c1VJX0Y0SmlvVTBsUmlMUmNkT0NmekVLU1NSYVF0bmNsYkFBVDZ6aHNmNVE3SWJoeDBVbWlQOE1kckdFd2h3bnI0M2tUYXJNYjBhRTJNXzk2UzJ3SzJnRUc0WWhXZ0tsMEtJa2dLNGtUdlFsT0NoYnlvRDB4YVhKYXBkMHNsNWtVdGtvQnNJYU1kN195U3U0QlppSmfSAcIBQVVfeXFMT0tRYXpfdXE3RHkwamxXNF9KZTZvU19VVlB0cjVDaTM0ZU0ySG9DcTk0NENaY1U3N0pORHR1UTZ5RVV1ZDdyT2haNG5sWmEwNkNtOGRQamFwVXhIWV8zN1lGc1FJR29tdXk2OVJySW5EajJHaTFjWW9xQzFWcnJrWmFjbDVuUVNVczlWd1hwWFU0WWdpQmJoSThVNjEyODJ0cVBsZ19fTVI3QWlxeVpoNmFsZGFydm5xTl9BbGwxVFMxdnc?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "s-909-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1489,6 +1579,18 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "sjres-32-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "cair.com",
+          "firstSeen": "2026-11-12",
+          "lastSeen": "2026-11-12",
+          "url": "https://news.google.com/rss/articles/CBMi4wFBVV95cUxQTHJWRUt0NFRmMHRWVk5UVXNiTmtLektzVGFHcWFLbUl3WE1CWl9Id1lYN3lSQ2YtMHcyaGpKNEE3UlFrUTd6MkNHMmxKRkVzNExaMzlxbU5acVBFYWxKYVphUzJFM1VLb3RZV0NYcXdPR2xGbUFmb09xa3F3U3NzRjFlQURpdnAzcjFkY3lHQW5raGQ4a2k5R0hoTmlhdUVkZVVnU05FaERZQnlnZEtDc1lRd3pIUk9INm52QXlyYWcwdTNlVUNpX0YybVIwNHp3bzdPTm44T0twZXNnYkM5QlA5NA?oc=5"
+        }
+      ],
       "mostViewed": null
     }
   }
