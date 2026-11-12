@@ -70,7 +70,8 @@ for (const [prefix, m] of [
     }) => {
       await seed(page, FULL);
       await page.goto(`${prefix}/reps`);
-      await expect(page).toHaveURL(new RegExp(`${prefix}/reps\\?zip=${ZIP}$`));
+      await expect(page.locator('[data-zip-line]')).toBeVisible();
+      await expect(page).toHaveURL(new RegExp(`${prefix}/reps$`));
       await expect(page.getByRole('heading', { level: 1, name: m.reps.membersHeading })).toBeVisible();
 
       // The ZIP it came from, "kept on this device only" (it is: it was saved
@@ -198,7 +199,8 @@ test('the call panel\'s "See your record" lands on Your calls on the Reps tab', 
   await expect(page.getByText(en.bill.loggedFirst)).toBeVisible();
 
   await page.getByRole('link', { name: en.bill.viewImpact }).click();
-  await expect(page).toHaveURL(new RegExp(`/reps\\?zip=${ZIP}#your-calls$`));
+  await expect(page.locator('[data-zip-line]')).toBeVisible();
+  await expect(page).toHaveURL(/\/reps#your-calls$/);
   const calls = page.locator('section#your-calls');
   await expect(calls).toBeInViewport();
   // The one call just logged, whichever member the panel listed first.

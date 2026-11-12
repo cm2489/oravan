@@ -17,10 +17,11 @@ const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
  * A SAVED ZIP OPENS /reps ON YOUR MEMBERS (owner, UX question Q8 answered "a",
  * 2026-09-28: "The Reps tab opens on your members, with 'Change ZIP'. The ZIP
  * is kept only on the device and sent only to the stateless lookup").
- * components/SavedZipLookup.tsx reads the saved ZIP in the browser and
- * replaces bare /reps with /reps?zip=<ZIP>; "Change ZIP code" goes to
- * /reps?change=1, where the prompt stays put. The members printed are read
- * from the same data the page reads.
+ * components/SavedZipLookup.tsx reads the saved ZIP in the browser and looks
+ * it up in a POST body, so the address stays bare /reps (owner, 2026-11-12:
+ * no ZIP in the page address); "Change ZIP code" goes to /reps?change=1,
+ * where the prompt stays put. The members printed are read from the same data
+ * the page reads.
  */
 const SAVED = '78501';
 const SAVED_REPS = districtsForZip(SAVED).flatMap(repsForDistrict).map((l) => l.name);
@@ -43,7 +44,6 @@ test.describe('a saved ZIP opens /reps on your members (Q8 "a")', () => {
       await seedZip(page, SAVED);
 
       await page.goto(`${prefix}/reps`);
-      await expect(page).toHaveURL(new RegExp(`${prefix}/reps\\?zip=${SAVED}$`));
       for (const name of SAVED_REPS) {
         await expect(page.getByText(name, { exact: true }).first()).toBeVisible();
       }
@@ -59,20 +59,24 @@ test.describe('a saved ZIP opens /reps on your members (Q8 "a")', () => {
       await expect(field).toHaveValue(SAVED);
       await field.fill(NEW_ZIP);
       await page.getByRole('button', { name: m.home.zipCta }).click();
-      await expect(page).toHaveURL(new RegExp(`${prefix}/reps\\?zip=${NEW_ZIP}$`));
+      await expect(page.locator('[data-zip-line]')).toContainText(tr('zipLine', { zip: NEW_ZIP }));
+      // The lookup drops ?change=1, so a reload opens on the members just saved.
+      await expect(page).toHaveURL(new RegExp(`${prefix}/reps$`));
       expect(await readSavedZip(page), 'the new ZIP is the saved one now').toBe(NEW_ZIP);
 
       // The next visit to bare /reps opens on the new ZIP.
       await page.goto(`${prefix}/reps`);
-      await expect(page).toHaveURL(new RegExp(`${prefix}/reps\\?zip=${NEW_ZIP}$`));
+      await expect(page.locator('[data-zip-line]')).toContainText(tr('zipLine', { zip: NEW_ZIP }));
+      await expect(page).toHaveURL(new RegExp(`${prefix}/reps$`));
     });
   }
 
-  test('the lookup replaces bare /reps in history, so Back leaves the page', async ({ page }) => {
+  test('the saved-ZIP lookup adds no history entry, so Back leaves the page', async ({ page }) => {
     await page.goto('/privacy');
     await seedZip(page, SAVED);
     await page.goto('/reps');
-    await expect(page).toHaveURL(new RegExp(`/reps\\?zip=${SAVED}$`));
+    await expect(page.getByText(SAVED_REPS[0], { exact: true }).first()).toBeVisible();
+    await expect(page).toHaveURL(/\/reps$/);
     await page.goBack();
     await expect(page).toHaveURL(/\/privacy$/);
   });
