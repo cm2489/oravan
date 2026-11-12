@@ -66,6 +66,8 @@ import {
 } from './coverage-query.mjs';
 import { PRESS_NAMES_PATH, formatPressNames, loadPressNames, unknownPressNameSlugs } from './press-names.mjs';
 import { coverageDurability, createVoteRouter, markRouted, refileStoredCoverage } from './coverage-route.mjs';
+// Ended Congresses (2026-11-12): empty until the January switch. Import-free.
+import { isEndedBill } from '../lib/congress.mjs';
 
 const NEWS_API_KEY = process.env.NEWS_API_KEY;
 if (!NEWS_API_KEY) {
@@ -245,8 +247,13 @@ const priorityInputs = coveragePriority({
 });
 const priorityWanted = new Set(priorityInputs.slugs);
 const inSweep = (b) => isCoverageEligible(b, NOW, { priority: priorityWanted.has(slugOf(b)) });
+// A bill of an ENDED Congress is never searched or judged (2026-11-12): no
+// news request, no relevance call. Only the SPENDING set leaves it out;
+// eligibleSlugs below (what the file keeps) is unchanged, so what an ended
+// bill's stored coverage does after the switch is decided with the pages, not
+// here. Empty list today, so nothing is left out.
 const eligible = bills
-  .filter(inSweep)
+  .filter((b) => inSweep(b) && !isEndedBill(b))
   .map((b) => {
     const slug = slugOf(b);
     const rung = docketRung(b, floorSignals[slug] ?? null, { now: NOW });

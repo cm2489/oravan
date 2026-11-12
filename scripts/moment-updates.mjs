@@ -128,7 +128,8 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { execSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { CONGRESS, cg, mapStatus } from './congress-fetch.mjs';
+import { cg, mapStatus } from './congress-fetch.mjs';
+import { CONGRESS_POLICY, isEndedBill } from '../lib/congress.mjs';
 import { passageState, statusBasisText } from '../lib/floor-text.mjs';
 import { MEDIA_BIAS_PATH, PRESS_ALLOWLIST_PATH, loadPressOutletPolicy } from '../lib/press-outlets.mjs';
 import { PRESIDENT_STYLE_RULE, presidentStyle } from '../lib/president-style.mjs';
@@ -184,11 +185,12 @@ import {
   floorTodayItems,
   milestoneOf,
   momentVehicles,
+  splitEndedVehicles,
+  vehicleActionsPath,
   pressClusterDaysHeld,
   pressClusterToCandidate,
   rollCallCandidates,
   scheduledToCandidate,
-  slugParts,
   statusDiffToCandidate,
   suppressRedundantStatusChanges,
 } from './moment-updates-map.mjs';
@@ -297,9 +299,16 @@ function loadRunState() {
   originalText = existsSync(UPDATES_PATH) ? readFileSync(UPDATES_PATH, 'utf8') : null;
   store = originalText ? JSON.parse(originalText) : { _meta: { schema: SCHEMA_VERSION, generated_at: nowISO } };
 
-  vehicles = momentVehicles(moments);
+  // A vehicle of an ENDED Congress is left out of every step below (no
+  // fetch, no candidate, no model call): splitEndedVehicles. Empty until the
+  // January switch, so today every vehicle is in scope, as before.
+  const split = splitEndedVehicles(momentVehicles(moments));
+  vehicles = split.live;
   vehicleSlugs = [...new Set(vehicles.map((v) => v.slug))];
   console.log(`scope: ${vehicles.length} (moment, vehicle) pair(s), ${vehicleSlugs.length} distinct vehicle(s)`);
+  if (split.ended.length) {
+    console.log(`scope: ${split.ended.length} (moment, vehicle) pair(s) skipped - their Congress has ended (${[...new Set(split.ended.map((v) => v.slug))].join(', ')})`);
+  }
 
   // "What is new" is a diff against the stored file and never a guess — by
   // id, by roll call, and by action (freshCandidates, called from main()).
@@ -405,10 +414,13 @@ async function collectVehicleActions() {
       continue;
     }
 
-    const { type, number } = slugParts(slug);
     let actions;
     try {
-      const page = await cg(`/bill/${CONGRESS}/${type}/${number}/actions`, { limit: 250 });
+      // The vehicle's OWN Congress, from its slug (vehicleActionsPath,
+      // 2026-11-12): never the tracked number, which after the switch would
+      // read the next Congress's bill of the same number into this question.
+      // A slug with no Congress throws here and is skipped like any failed fetch.
+      const page = await cg(vehicleActionsPath(slug), { limit: 250 });
       actions = page.actions ?? [];
     } catch (e) {
       console.error(`  actions ${slug} FAILED: ${e.message}`);
@@ -1910,6 +1922,7 @@ export function summaryCallsOnDay(storeArg, day) {
  *   now: Date|number,
  *   intradayCap?: number,
  *   unsupportedStatus?: (bill: Record<string, any>|undefined) => boolean,
+ *   policy?: { tracked: number, ended: ReadonlyArray<{ number: number, ended: string }> },
  * }} args
  * @returns {{ momentId: string, generate: boolean, recordOnly?: boolean, reason: string, statuses: Record<string,string>, statusKeys: Record<string,string>, records: Record<string, any>, votes: Record<string, any>[], rollCallsOnRecord: string[] | null, intraday: boolean, day: string }[]}
  */
@@ -1924,6 +1937,7 @@ export function planSummaries({
   now: nowArg,
   intradayCap = INTRADAY_SUMMARY_CAP,
   unsupportedStatus = statusUnsupported,
+  policy = CONGRESS_POLICY,
 }) {
   const today = etDay(nowArg);
   const nowMs = nowArg instanceof Date ? nowArg.getTime() : Number(nowArg);
@@ -1944,6 +1958,10 @@ export function planSummaries({
     // diffed by summaryNeedsRefresh, so nothing here may change its shape.
     const records = {};
     for (const v of moment.vehicles ?? []) {
+      // A bill of an ENDED Congress grounds no summary and buys no model call
+      // (2026-11-12). With the ended list empty this skips nothing; what a
+      // Big Question does once its vehicles end is decided per question.
+      if (isEndedBill(v.slug, policy)) continue;
       const bill = bills?.get(v.slug);
       if (!bill?.status) continue;
       statuses[v.slug] = bill.status;
