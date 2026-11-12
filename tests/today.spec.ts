@@ -410,4 +410,29 @@ test.describe('/today cards', () => {
       expect(spill, path).toBe(0);
     }
   });
+
+  // The test above reads whatever the corpus holds today, so it passed for
+  // weeks and went red the day roll call 321 landed (CI, 2026-11-12: the
+  // vote card's "CÁMARA DE REPRESENTANTES, VOTACIÓN NOMINAL 321 ·" label sat in
+  // a nowrap span, 421px in a column about 245px wide). This one does not
+  // depend on the data: it writes the longest label the card can print (the
+  // Spanish chamber name, a five-digit roll number) and a long citation into
+  // the rendered card, then asks the same question.
+  test('/es vote card at 320px: the longest label and citation wrap, never push the page sideways @reflow', async ({
+    page,
+  }) => {
+    test.skip(!withVotes, 'no roll call inside the window');
+    await page.goto(`/es/today/${withVotes}`);
+    const card = page.locator('[data-vote-card]').first();
+    await expect(card).toBeVisible();
+    await card.evaluate((el) => {
+      const [label, cite] = el.querySelectorAll('p')[0].children;
+      label.firstChild!.textContent = 'Cámara de Representantes, votación nominal 99999';
+      cite.textContent = 'H.Con.Res. 1234';
+    });
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    expect(overflow).toBeLessThanOrEqual(0);
+    const box = await card.boundingBox();
+    expect(box!.x + box!.width).toBeLessThanOrEqual(page.viewportSize()!.width + 0.5);
+  });
 });
