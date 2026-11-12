@@ -206,7 +206,7 @@ export function ZipForm({
           className={
             submitTone === 'secondary'
               ? 'ring-gap inline-flex min-h-12 items-center justify-center gap-2 rounded-control border-2 border-ink bg-paper px-6 py-3 font-bold text-ink hover:bg-ink hover:text-paper active:bg-ink active:text-paper'
-              : 'ring-gap inline-flex min-h-12 items-center justify-center gap-2 rounded-control border-2 border-go bg-go px-6 py-3 font-bold text-paper hover:border-go-deep hover:bg-go-deep active:border-go-deep active:bg-go-deep'
+              : 'ring-gap inline-flex min-h-12 items-center justify-center gap-2 rounded-control border-2 border-ink bg-urgent px-6 py-3 font-bold text-ink hover:border-ink hover:bg-tint active:border-ink active:bg-tint'
           }
         >
           {t('zipCta')}

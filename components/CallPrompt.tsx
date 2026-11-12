@@ -29,7 +29,7 @@ export function CallPrompt({
       {sub && <p className="min-w-0 font-medium text-ink-pale">{sub}</p>}
       <a
         href={href}
-        className="ring-gap inline-flex min-h-12 items-center gap-2 rounded-control border-2 border-go bg-go px-5 py-3 font-bold text-paper no-underline hover:border-go-deep hover:bg-go-deep active:translate-y-px"
+        className="ring-gap inline-flex min-h-12 items-center gap-2 rounded-control border-2 border-ink bg-urgent px-5 py-3 font-bold text-ink no-underline hover:border-ink hover:bg-tint active:translate-y-px"
       >
         <Phone className="h-4 w-4" aria-hidden />
         {label}

@@ -388,7 +388,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                 390×664 in both locales (tests/home-fold.spec.ts). */}
             <a
               href="#top-actions"
-              className="ring-gap mt-5 inline-flex min-h-12 items-center gap-2 rounded-control border-2 border-go bg-go px-6 py-3 font-bold text-paper no-underline hover:border-go-deep hover:bg-go-deep"
+              className="ring-gap mt-5 inline-flex min-h-12 items-center gap-2 rounded-control border-2 border-ink bg-urgent px-6 py-3 font-bold text-ink no-underline hover:border-ink hover:bg-tint"
             >
               {t('heroJump')}
               <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />

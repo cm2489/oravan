@@ -20,7 +20,7 @@ export default function NotFound() {
       <p className="mt-8">
         <Link
           href="/"
-          className="ring-gap inline-flex min-h-12 items-center justify-center rounded-control border-2 border-go bg-go px-6 font-bold text-paper no-underline transition-colors hover:border-go-deep hover:bg-go-deep"
+          className="ring-gap inline-flex min-h-12 items-center justify-center rounded-control border-2 border-ink bg-urgent px-6 font-bold text-ink no-underline transition-colors hover:border-ink hover:bg-tint"
         >
           {t('cta')}
         </Link>

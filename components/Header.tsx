@@ -187,7 +187,7 @@ export function Header() {
 
   return (
     <>
-      <header className="border-b border-line bg-paper">
+      <header className="border-b border-line bg-band">
         <div className="mx-auto flex min-h-14 max-w-5xl items-center gap-3 px-4 md:min-h-16">
           <Link href="/" className="inline-flex min-h-11 items-center text-ink">
             {/* Sized AGAINST the language switch, not by eye: the switch box
