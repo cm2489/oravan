@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-12T02:55:58.495Z",
+    "fetched_at": "2026-11-12T10:58:03.104Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-12T02:55:58.495Z"
+        "checked_at": "2026-11-12T10:58:03.104Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-08",
         "week_label": "Most-Viewed Bills - Week of November 8, 2026",
         "entries": 6,
-        "checked_at": "2026-11-12T02:55:58.495Z"
+        "checked_at": "2026-11-12T10:58:03.104Z"
       },
       "leans": {
         "center": {
@@ -585,7 +585,14 @@
           "url": "https://thehill.com/homenews/house/6201121-massie-force-epstein-files-bill-vote/"
         }
       ],
-      "unratedOutlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "thestatesman.com",
+          "firstSeen": "2026-11-12",
+          "lastSeen": "2026-11-12",
+          "url": "https://news.google.com/rss/articles/CBMi_gFBVV95cUxOeVRybWU4c3I3dnNDX2FWQUJLaW1WbzBJVl9LZW02SnBJZUFISy16YUpFMXJKMUh0TE1nR2RSTk9DMjRTam54RXdSSTdCenU0UkxjSVVRNFBlM0MzMFJsTjJjMndwaDBCYWlnMk1xNjNqV055d3NaS0VKbHNjWEZoRTFSckhiWmFGRHpHaUI3QTV6eUZGbG9VZWhoVjJaaW9mS2NNNUxKam8tVVlWUUpfSXZUaGlSOVJ6cDVacGpqT21RZW8wdHdUMHhrVG83ZXZKY0l1MDFDdlc1eVN3cmIyOWt2MEg4dS13MnhsaDY1clhGb2Q5XzFua2tzRDVMd9IBgwJBVV95cUxNakFMS2daNEVRUFVvaS1jSzNONk9mSzNoTzVyLXJNQXhtdTlKNW5sbDhyZ3RFMmRydnMwb2hNZzJsdWdnVy1fdnVoTXpYSGZTNHhrVG16YVVHZExRZlJja1gzMzJuUG5LUG5ISnlJSXhyR2ZUZXZJRkE0dXd5RXkzbHNlNVdNQ3M1bkRVVURmVFNSZWxmWEk2bjVBSzhybGpRaF9Vbnlja3g4N2xSQlpMQTJ0MFJLOXh1ZGktWl9OYllpYkJEV0RweXRkSy1ENTJFeW9wdE9halhWSmd1MmRweXpBSVQxdUcwcGRrUUkzbzFXZVF5alNFTmlHMjh2SXdDWm5j?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "hr-4690-119": {
@@ -673,6 +680,12 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "themarijuanaherald.com",
+          "firstSeen": "2026-11-12",
+          "lastSeen": "2026-11-12",
+          "url": "https://news.google.com/rss/articles/CBMizgFBVV95cUxNemRGUnM2Z01SUW5UeHNPN1YzcDJvWGxzY3RrNG5tOXNtQ0ZMZENwTEVUb2t1ZmZRNGpjUGZVOU9IT2RFNUZiSlQxeHd4WkdOSkRiVm8yMlljemtUdDlHRGdhRWxIa3NxY3RmaDg5eUNIN1RlejIzNUhUS3RsdVZHWmVNLVNTcFdabC0wbnY3X0M3cXppemxZOUNSRGprVVZxSjJpSHJjdmxiVGhLd0FibDBiVE96NFpmejlZVW1nVmNmVDlDdzJZZWh5TXZFQQ?oc=5"
+        },
+        {
           "domain": "marijuanamoment.net",
           "firstSeen": "2026-11-11",
           "lastSeen": "2026-11-11",
@@ -709,6 +722,18 @@
           "firstSeen": "2026-11-08",
           "lastSeen": "2026-11-08",
           "url": "https://news.google.com/rss/articles/CBMisAFBVV95cUxPdjJGc01PbXFMdHNsMTRPbi1rbmRfbkg4cHRMWVJ1Y1ZHUDVyZE5mX0tGQm54SU5DM1NnQm9tN2pCQU9HVVc1Nk54Sm9zdkRNakZpMHZYc1dfbFZuQ3Rpd0J5ZkxkODkwVjQ4R3V0VUNqcDJrNmJyWEItWlBqd2k0S0Ftc2ZPeU5JbHJJYlFDRzBVVTRIYnZMTTlTYi1HQy14QWpFOXBjS2czRk1kNXl6MA?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-5436-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "escobar.house.gov",
+          "firstSeen": "2026-11-12",
+          "lastSeen": "2026-11-12",
+          "url": "https://news.google.com/rss/articles/CBMidEFVX3lxTE1aUm13d0ZPeVRaME5hWlNGUjVVS01CR2ZtUldPQVJ3NjFVczNmWS03SEx5dGNQck9hbko2OFJYa01GUlo4eDltRUc5bWtIV1c2TVZIUm9zUHd2VFNtdTRyNFczZ3VteDBXYkp3c0loYTdGUlNY?oc=5"
         }
       ],
       "mostViewed": null
@@ -823,6 +848,12 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "benzinga.com",
+          "firstSeen": "2026-11-12",
+          "lastSeen": "2026-11-12",
+          "url": "https://news.google.com/rss/articles/CBMivwJBVV95cUxNQzFmbXg5NU1adWVaVkJjSWNEeko5V3ctNFJ4MUZ5UHM5QVdoaHpINm1IQUNwM2ZTNVhRZGxabFQ2NFVuczV1S0VRRkpmODBvVFFzZUVtdnZTWXNXeFpwRzg0eU51RFNtZTBkLWZGTTMybzI2Tm1nckhpNG5OelBaLU9CLTFJUDZSNTIyY0ljZjN2MTFINUJHODlKY1FnaWZwZ2lodW1xT1RDWXltZE5yM0tpb083cDRhSzJiVWxCTndWd2tuQktCNXRNSGVfaTA1ci1fbFFxeHAxTGNBMGtNMG5TdXhLNG0zTjZrd3BSXzZWdUw0WVdsRUF5Njhra1JNdDBmUXFqa0J0cVNiZm1qVVRsY3RkTEozZTZBRVRNS3BIWmtNV2t6VzFOUHZCdEtBWUxJUnNUVm85WlNpbnFF?oc=5"
+        },
+        {
           "domain": "ibtimes.com",
           "firstSeen": "2026-11-10",
           "lastSeen": "2026-11-10",
@@ -922,6 +953,18 @@
           "firstSeen": "2026-11-11",
           "lastSeen": "2026-11-11",
           "url": "https://rollcall.com/2026/11/11/another-bill-to-release-epstein-files-headed-to-house-floor/"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-7866-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "natlawreview.com",
+          "firstSeen": "2026-11-12",
+          "lastSeen": "2026-11-12",
+          "url": "https://news.google.com/rss/articles/CBMisAFBVV95cUxNQmhDMEFBMDJuLXRHalBybXZmWFc5UU1PbDF5d1dtZWNxc2JtMTdxU203UzMyT1FxekxjdFBPekRoNDVrVHRpWVlUMmhGZlFHNU9DN2RMQVpiSml5eHYtaEZRV0NSaHRKMDVrWWxoNmFHTEJ2Y21HZm9fUnZmY0FHRVd4VXdMdk5pY0Z3V3Y5NDUyNWN6VmJoZFJiTW5jQzZxeFFJYVBvWW5OVkZQWFo4YdIBtgFBVV95cUxPWHNVNGZJYld1X09RX1Q0aDFPNUxCXzMtblZ5ZU9obkJRSGJZZUpNWHdXRVF6SzVxSGtmd1l6RFktUDdCSy1CRDMxdUUwbkRvWWx2Q2FfZTNudC1oRkRQQmNQVFN2RXNidmkwMHRjUldFQnFhaFFQQ1JHUklpOWJMNS1Pa2lkeDJCRndZZ3plVUFTYUR5MG9qQjA4dmFyWC05S0Z6VmVGRUVRSWR1ODN6UHI5bm1Ldw?oc=5"
         }
       ],
       "mostViewed": null
@@ -1073,6 +1116,19 @@
           "url": "https://news.google.com/rss/articles/CBMinwFBVV95cUxNYXlSTDVPOXNGUUZlektmRlBlSHQzVVdZSTl6WTV2YV9jZ0hPajRLX085S1F4VjVwOVFOSHRKZ0dza1NMeEVEUGdzRHRBemUtNXYtUnNNdEFDOGNYcUQyOC1sQXZaV09LQjJrWnNRbXBMS2duc0RsY3Rmdm84UkZOMVN0ZmpkdlpuUE9PYUJwSkNta2tKWDBDNEdNOUl5TEE?oc=5"
         }
       ],
+      "mostViewed": null
+    },
+    "s-1670-119": {
+      "outlets7d": [
+        {
+          "domain": "npr.org",
+          "lean": "center",
+          "firstSeen": "2026-11-12",
+          "lastSeen": "2026-11-12",
+          "url": "https://www.npr.org/2026/11/12/nx-s1-6037381/senate-legislation-public-review"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "s-1748-119": {
@@ -1253,6 +1309,12 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "detroitnews.com",
+          "firstSeen": "2026-11-12",
+          "lastSeen": "2026-11-12",
+          "url": "https://news.google.com/rss/articles/CBMiwAFBVV95cUxQZ2NiMlRyNnVBQ0NKM1cwaWRsSjJfaWd0dkJudGIwUXhUcEdNRzNma3o5bU9XQ1VNRU5DRjQ2SHdHOXQwQTJLX1J6VGJTSlc4dTZyUi1IVG8wb2xZNUpXWjg5VXFtQ3lNM1hXV0dFdE9ISGx1YlYyTThYV3FHVUdveDRtcWhiYTJ4emdzLXlySGtyTmtHNTZoTXEybUhTVXdiWENQUEhyRFVwS05Od3VwZWZPTWRCMDZUZ3pieHdoeVc?oc=5"
+        },
+        {
           "domain": "arkansasonline.com",
           "firstSeen": "2026-11-06",
           "lastSeen": "2026-11-06",
@@ -1389,6 +1451,19 @@
           "url": "https://news.google.com/rss/articles/CBMinAFBVV95cUxPa1Q4WjlCUDBWOUVaUUpMT0hzbHFnZ3dSaGNoMnZ1Ti1uRGlzZkpVclJvNUxwVmg3ZUk5RVBHa2tPRV9uR0tCUk1tdThfZXV6ekpqSWdJM2tPdWFZd2FPMmlPVExabnFnZmZnMktmQnJwWGlxZG5SNkNtTndYb3piUlJlZTd0a0djc2I2MnAxeVhrMTJxamxodUVUajY?oc=5"
         }
       ],
+      "mostViewed": null
+    },
+    "sconres-40-119": {
+      "outlets7d": [
+        {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-11-12",
+          "lastSeen": "2026-11-12",
+          "url": "https://www.foxnews.com/politics/senate-republicans-fear-brutal-2028-map-could-keep-dems-power-years-come"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "sjres-185-119": {
