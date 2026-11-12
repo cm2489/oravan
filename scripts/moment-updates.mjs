@@ -170,6 +170,8 @@ import {
   numberGrounding,
   numberParityFailure,
   RECORD_ONLY_MODEL,
+  nextSummaryRefusals,
+  summaryRefusalWarning,
 } from '../lib/moment-updates-gate.mjs';
 import {
   actionToCandidate,
@@ -1082,6 +1084,21 @@ export const SHORT_RECORD_LENGTH_RULE =
   '- Length follows the record: the record below is short, so the summary is short — 40 to 90 words per language, about one or two sentences for each vote or action. Never pad it with measures that did not move or with what did not happen. Plain text, no markdown, no headings.';
 
 /**
+ * The NUMBER lint's rule, told to the model (2026-11-12). Until then the
+ * prompt never said it: the lint (lib/moment-updates-gate.mjs, unheldNumbers
+ * and numberParityFailure) refused a summary for stating a number the record
+ * does not hold, or for a Spanish that states different numbers, and the
+ * model had no way to know. It sits in RULES, beside "Reproduce every tally
+ * … exactly as given", because that is where the model reads its rules on
+ * numbers. It is stricter than the lint on purpose ("does not print": the
+ * lint also accepts the Congress number and party figures the prompt leaves
+ * out), and it names the instructions' own example tally, which the lint
+ * refuses.
+ */
+export const NUMBER_RULE =
+  '- State no number the record below does not print, in digits or in words: every date, tally, roll-call or measure number and count of days you write must appear in the statuses, roll calls or record lines below. The example figures in these rules are not the record. The English and the Spanish state exactly the same numbers in digits: never a number in digits in one language and in words in the other, never a 12-hour time in one and a 24-hour time in the other. A summary that breaks this is rejected automatically.';
+
+/**
  * The sentence a rejected summary was refused for, one per quoted hit in the
  * lint's failure lines (`absence claim "no other action" …`, `forbidden
  * vocabulary "fight" …`), so the run log says what the model wrote. Until
@@ -1130,8 +1147,13 @@ export function refusedSentences(text, failures) {
  *   or null when the collector cannot vouch for that count. Persisted as
  *   `grounded_in.roll_calls_on_record` when known; it is the only count the
  *   roll-call absence exemption reads. Omitted → no exemption.
+ * @param {{ onRefused?: (reason: string) => void }} [hooks] `onRefused` is
+ *   called once, with the failures, when a reply came back and was refused
+ *   (a lint failure, not JSON, or no EN/ES pair) — writeSummaries counts it
+ *   in `summary_refusals` (SUMMARY_REFUSAL_ALARM_RUNS). Not called when the
+ *   call itself fails: that is not a refusal.
  */
-export async function generateStateSummary(anthropic, momentId, entry, statuses, contextRefs, records = {}, votes = [], onRecord = null) {
+export async function generateStateSummary(anthropic, momentId, entry, statuses, contextRefs, records = {}, votes = [], onRecord = null, { onRefused } = {}) {
   const windowFloor = shiftDay(todayET, -SUMMARY_WINDOW_DAYS);
   const recent = (entry.updates ?? []).filter((u) => u.day >= windowFloor).slice(0, 30);
 
@@ -1226,6 +1248,7 @@ RULES:
 ${partyRule({ figures: 'the "by party" figures printed with that roll call under RECORDED VOTES below', allowed: PARTY_COUNTS })}
 - Never use advocacy verbs (fight, resist, stop, save, defend, block) or crisis/attack/scheme framing, in either language.
 - Reproduce every tally and roll-call number exactly as given.
+${NUMBER_RULE}
 ${lengthRule}
 ${PRESIDENT_STYLE_RULE}
 
@@ -1262,10 +1285,12 @@ Output STRICT JSON only — {"en":"…","es":"…"} — no prose, no markdown fe
     parsed = JSON.parse(text.trim().replace(/^```json?\s*/i, '').replace(/```\s*$/, ''));
   } catch (e) {
     console.error(`  summary ${momentId} JSON parse failed: ${e.message}`);
+    onRefused?.(`the reply is not JSON: ${e.message}`);
     return null;
   }
   if (typeof parsed?.en !== 'string' || typeof parsed?.es !== 'string') {
     console.error(`  summary ${momentId}: the model returned no EN/ES pair`);
+    onRefused?.('the reply has no EN/ES pair');
     return null;
   }
   // "The president" (docs/copy-style.md), applied before the lint so what is
@@ -1304,6 +1329,7 @@ Output STRICT JSON only — {"en":"…","es":"…"} — no prose, no markdown fe
     console.warn(
       `  summary ${momentId} REJECTED, the previous revision stands: ${failures.join('; ')}${refused.length ? ` — refused sentence(s): ${refused.join(' | ')}` : ''}`,
     );
+    onRefused?.(failures.join('; '));
     return null;
   }
 
@@ -2028,8 +2054,8 @@ export function planSummaries({
  * (MOMENT_SUMMARY_DAILY_CAP minus summaryCallsOnDay), so the cap is a daily
  * ceiling across every run of the ET day, not a per-run one. Exported so the
  * "no call when capped/deferred" promise is tested, not assumed. Mutates
- * `storeArg` (appends revisions, bumps summary_attempts), like the loop it
- * replaced.
+ * `storeArg` (appends revisions, bumps summary_attempts, counts or clears
+ * summary_refusals), like the loop it replaced.
  *
  * @returns {Promise<number>} revisions written
  */
@@ -2057,6 +2083,9 @@ export async function writeSummaries({ plan, store: storeArg, moments: momentsAr
         continue;
       }
       const current = (entry.summary_revisions ?? []).at(-1);
+      // Either way the question's summary is current now, so a refusal
+      // streak behind it is over (SUMMARY_REFUSAL_ALARM_RUNS).
+      delete entry.summary_refusals;
       if (current?.model === RECORD_ONLY_MODEL && current.text?.en === revision.text.en && current.text?.es === revision.text.es) {
         console.log(`  summary ${p.momentId}: ${p.reason} — the current revision already says this, nothing written`);
         continue;
@@ -2085,8 +2114,26 @@ export async function writeSummaries({ plan, store: storeArg, moments: momentsAr
     entry.summary_attempts = { day: p.day, count: summaryAttemptsOnDay(entry, p.day) + 1 };
     calls++;
     const contextRefs = (momentsArg?.[p.momentId]?.context_refs ?? []).map((r) => r?.url).filter(Boolean);
-    const revision = await generateStateSummary(anthropic, p.momentId, entry, p.statuses, contextRefs, p.records, p.votes, p.rollCallsOnRecord);
-    if (!revision) continue;
+    /** @type {string | null} */
+    let refusal = null;
+    const revision = await generateStateSummary(anthropic, p.momentId, entry, p.statuses, contextRefs, p.records, p.votes, p.rollCallsOnRecord, {
+      onRefused: (reason) => {
+        refusal = reason;
+      },
+    });
+    if (!revision) {
+      // A reply came back and was refused: count it, and from the
+      // SUMMARY_REFUSAL_ALARM_RUNS-th in a row say so where the run's
+      // annotations show it. A call that failed before any reply is not
+      // counted (see summary_refusals in lib/moment-updates-gate.mjs).
+      if (refusal !== null) {
+        entry.summary_refusals = nextSummaryRefusals(entry, p.day, refusal);
+        const warning = summaryRefusalWarning(p.momentId, entry.summary_refusals);
+        if (warning) console.log(warning);
+      }
+      continue;
+    }
+    delete entry.summary_refusals;
     // Belt and braces. On the nightly the prune's reserveRevisions holds the
     // slot this append needs; on an incremental run the prune reserves
     // nothing (reserving would evict a revision every hour for nothing), so

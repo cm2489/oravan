@@ -1258,6 +1258,18 @@ test.describe('SY-28 · no model call when nothing moved — one record-only sen
     expect(withEvent.generate).toBe(true);
   });
 
+  test('a record-only revision ends a refusal streak (summary_refusals, 2026-11-12): the summary is current again', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const entry: Record<string, any> = {
+      updates: [OLD_ROW],
+      summary_revisions: [aiRevision('2026-09-24T14:30:00Z', [OLD_ROW.id])],
+      summary_refusals: { count: 4, day: '2026-10-01', reason: 'en: absence claim' },
+    };
+    const { client } = counting();
+    expect(await writeSummaries({ plan: plan(entry), store: { [MOMENT]: entry }, moments: MOMENTS, anthropic: client, cap: 0 })).toBe(1);
+    expect(entry).not.toHaveProperty('summary_refusals');
+  });
+
   test('writeSummaries: ZERO model calls, no attempt spent, one revision the gate accepts — and no duplicate the next night', async () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const entry: Record<string, any> = { updates: [OLD_ROW], summary_revisions: [aiRevision('2026-09-24T14:30:00Z', [OLD_ROW.id])] };

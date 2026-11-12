@@ -38,7 +38,15 @@ import {
   statedNumbers,
   STORED_SUMMARY_WINDOW_DAYS,
 } from '../lib/moment-updates-gate.mjs';
-import { generateStateSummary, RECORD_ONLY_MODEL as COLLECTOR_RECORD_ONLY_MODEL, recordOnlyText, SUMMARY_WINDOW_DAYS } from '../scripts/moment-updates.mjs';
+import {
+  generateStateSummary,
+  NUMBER_RULE,
+  RECORD_ONLY_MODEL as COLLECTOR_RECORD_ONLY_MODEL,
+  recordOnlyText,
+  SUMMARY_WINDOW_DAYS,
+  voteGroundingLine,
+} from '../scripts/moment-updates.mjs';
+import { partyTotalsPromptText } from '../lib/party-count-rule.mjs';
 
 // Fixtures are plain JSON shapes; their fields are what the gate checks.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -253,6 +261,8 @@ test.describe('the absence lint · the twin table: every row caught in both lang
     [7, 'It stays the same.', 'Sigue igual.'],
     [8, 'The bill has been quiet.', 'El proyecto ha estado inactivo.'],
     [8, 'The Senate has been quiet on it.', 'El Senado ha estado en calma al respecto.'],
+    // 2026-11-12: "Ha habido calma" was let through in Spanish only.
+    [8, 'Things have been quiet.', 'Ha habido calma.'],
     [9, 'Neither had a new vote or action in this window.', 'Ninguno tuvo un voto o una acción nuevos en este período.'],
     [9, 'Neither measure has advanced.', 'Ninguna de las dos medidas ha avanzado.'],
     [9, 'Neither measure advanced.', 'Ninguna de las dos medidas avanzó.'],
@@ -270,6 +280,12 @@ test.describe('the absence lint · the twin table: every row caught in both lang
     [10, 'These were the only actions listed.', 'Estas fueron las únicas acciones registradas.'],
     [10, 'It is the only movement recorded.', 'Es el único movimiento que consta.'],
     [10, 'They are the only ones in the last 14 days.', 'Son las únicas de los últimos 14 días.'],
+    // 2026-11-12: "la única registrada" was let through in Spanish only.
+    [10, 'It is the only one on record.', 'Es la única registrada.'],
+    // 2026-11-12: the past tense of "make no changes" stays caught in both;
+    // only the present and conditional are about a bill's text.
+    [1, 'The Senate made no changes to it.', 'El Senado no hizo ningún cambio.'],
+    [1, 'There were no changes to the bill.', 'No hubo cambios al proyecto.'],
   ];
   const LEFT_ALONE: [en: string, es: string][] = [
     // How a measure passed, and outcomes.
@@ -300,6 +316,11 @@ test.describe('the absence lint · the twin table: every row caught in both lang
     ['None of the Republicans cast a vote for it.', 'Ninguno de los republicanos emitió un voto a favor.'],
     ['Neither Republican cast a vote against it.', 'Ninguno de los republicanos emitió un voto en contra.'],
     ['No Republicans cast votes against it.', 'Ningún republicano emitió votos en contra.'],
+    // 2026-11-12: "votó presente" was caught in Spanish only (row 9 let
+    // through "votó a favor" but not "presente").
+    ['No senator voted present.', 'Ningún senador votó presente.'],
+    ['None of the senators voted present.', 'Ninguno de los senadores votó presente.'],
+    ['Neither the House nor the Senate voted present.', 'Ni la Cámara ni el Senado votaron presente.'],
     ['No Republican votes were cast for it.', 'No hubo votos republicanos a favor.'],
     ['The House voted 220 to 204; no Democrat voted against it.', 'La Cámara votó 220 a 204; ningún demócrata votó en contra.'],
     // What a bill would do, and a named change.
@@ -307,6 +328,12 @@ test.describe('the absence lint · the twin table: every row caught in both lang
     ['Neither bill would change the tax.', 'Ningún proyecto cambiaría el impuesto.'],
     ['None of its provisions would change current law.', 'Ninguna de sus disposiciones cambiaría la ley vigente.'],
     ['Neither bill will change.', 'Ningún proyecto cambiará.'],
+    // 2026-11-12: what a bill's text would do. Row 1 read these in English
+    // (and "ningún cambio" in Spanish) as a claim that nothing happened.
+    ['The bill would make no changes to Social Security.', 'El proyecto no haría cambios al Seguro Social.'],
+    ['The bill makes no changes to the tax code.', 'El proyecto no hace ningún cambio al código tributario.'],
+    ['It would make no change to the program.', 'No haría ningún cambio al programa.'],
+    ['It will make no changes in current law.', 'No hará cambios en la ley vigente.'],
     ['Neither the House nor Senate version includes the change.', 'Ni la versión de la Cámara ni la del Senado incluye el cambio.'],
     ['Neither version includes the change.', 'Ninguna versión incluye el cambio.'],
   ];
@@ -324,6 +351,21 @@ test.describe('the absence lint · the twin table: every row caught in both lang
     for (const [en, es] of LEFT_ALONE) {
       expect(absenceClaims(en, 'en'), en).toEqual([]);
       expect(absenceClaims(es, 'es'), es).toEqual([]);
+    }
+  });
+
+  test('the known one-language splits are exactly the ones the code note lists (KNOWN ONE-LANGUAGE SPLITS)', () => {
+    // [English, caught in English?, Spanish, caught in Spanish?]. A change to
+    // any verdict here must change the code note too.
+    const SPLITS: [string, boolean, string, boolean][] = [
+      ['No senator voted "present".', false, 'Ningún senador votó "presente".', true],
+      ['The Senate made no changes to it.', true, 'El Senado no hizo cambios.', false],
+      ['No changes were made to the bill.', true, 'No se hicieron cambios al proyecto.', false],
+      ['The bill makes no changes.', true, 'El proyecto no hace cambios.', false],
+    ];
+    for (const [en, enCaught, es, esCaught] of SPLITS) {
+      expect(absenceClaims(en, 'en').length > 0, en).toBe(enCaught);
+      expect(absenceClaims(es, 'es').length > 0, es).toBe(esCaught);
     }
   });
 
@@ -375,6 +417,25 @@ test.describe('the number lint · what a number is', () => {
     // Not the prompt's own example: a number copied from an instruction is not the record's.
     expect(G250).not.toContain(214);
     expect(G250).not.toContain(282);
+  });
+
+  test('the grounding holds two things the prompt never printed: the Congress number and every party group (WHAT THE RECORD HOLDS)', () => {
+    // The prompt prints "S. 4668", never "s-4668-119": 119 is held anyway.
+    expect(voteGroundingLine(ROLL_250)).not.toMatch(/\b119\b/);
+    expect(G250).toContain(119);
+    // A party group the prompt's "by party" text drops (not one PARTY_GROUP_NAME
+    // names) still grounds its numbers.
+    const withOther = { ...ROLL_250, totalsByParty: { ...ROLL_250.totalsByParty, X: { yea: 3, nay: 0, present: 0, notVoting: 0 } } };
+    expect(partyTotalsPromptText(withOther.totalsByParty)).not.toContain('(X)');
+    expect(numberGrounding({ rollCalls: [withOther] })).toContain(3);
+    expect(G250).not.toContain(3);
+  });
+
+  test('the known asymmetries refuse a true pair, never pass a wrong one: 12-hour against 24-hour times, "1" against "un"', () => {
+    expect(numberParityFailure('The vote closed at 5:30 p.m.', 'La votación cerró a las 17:30.')).not.toBeNull();
+    expect(numberParityFailure('The vote closed at 5:30 p.m.', 'La votación cerró a las 5:30 p. m.')).toBeNull();
+    expect(numberParityFailure('77 to 22, with 1 not voting.', '77 a 22; un senador no votó.')).not.toBeNull();
+    expect(numberParityFailure('77 to 22, with 1 not voting.', '77 a 22, con 1 sin votar.')).toBeNull();
   });
 });
 
@@ -553,6 +614,27 @@ test.describe('the collector refuses an unheld or mismatched number; nothing is 
     expect(
       await write({ en: 'The Senate passed H.R. 10167 without amendment by unanimous consent.', es: 'El Senado aprobó el H.R. 10167 sin enmiendas por consentimiento unánime.' }),
     ).not.toBeNull();
+  });
+
+  test('the prompt tells the model the number rule, in RULES beside the tally rule (2026-11-12)', async () => {
+    let prompt = '';
+    const capturing = {
+      messages: {
+        create: async (req: { messages: { content: string }[] }) => {
+          prompt = req.messages[0].content;
+          return { content: [{ type: 'text', text: JSON.stringify({ en: 'x', es: 'x' }) }] };
+        },
+      },
+    };
+    await generateStateSummary(capturing, 'penny-production-and-cash-rounding', { updates: [PENNY_UPDATE], summary_revisions: [] }, STATUSES, [], {}, [], []);
+    expect(NUMBER_RULE).toContain('State no number the record below does not print');
+    expect(NUMBER_RULE).toContain('12-hour time in one and a 24-hour time in the other');
+    // Once, after the tally rule, and before the record it points at.
+    expect(prompt.split(NUMBER_RULE)).toHaveLength(2);
+    const at = prompt.indexOf(NUMBER_RULE);
+    expect(at).toBeGreaterThan(prompt.indexOf('RULES:'));
+    expect(at).toBeGreaterThan(prompt.indexOf('- Reproduce every tally and roll-call number exactly as given.'));
+    expect(at).toBeLessThan(prompt.indexOf('CURRENT STATUS OF EACH MEASURE:'));
   });
 
   test('the prompt\'s own example tally, copied into a summary, is refused', async () => {
