@@ -22,6 +22,7 @@ const PRIVACY_SERVICES = [
   'servicesAnthropic',
   'servicesUpstash',
   'servicesCensus',
+  'servicesGitHub',
   'servicesStripe',
 ] as const;
 

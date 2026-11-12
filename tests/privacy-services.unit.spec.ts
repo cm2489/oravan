@@ -18,13 +18,20 @@ import es from '../messages/es.json';
 
 const PAGE = readFileSync(join(process.cwd(), 'app/[locale]/privacy/page.tsx'), 'utf8');
 
-type ServiceKey = 'servicesVercel' | 'servicesAnthropic' | 'servicesUpstash' | 'servicesCensus' | 'servicesStripe';
+type ServiceKey =
+  | 'servicesVercel'
+  | 'servicesAnthropic'
+  | 'servicesUpstash'
+  | 'servicesCensus'
+  | 'servicesGitHub'
+  | 'servicesStripe';
 
 const SERVICES: Record<ServiceKey, { en: string; es: string }> = {
   servicesVercel: { en: 'Vercel', es: 'Vercel' },
   servicesAnthropic: { en: 'Anthropic', es: 'Anthropic' },
   servicesUpstash: { en: 'Upstash', es: 'Upstash' },
   servicesCensus: { en: 'U.S. Census Bureau', es: 'Oficina del Censo de EE. UU.' },
+  servicesGitHub: { en: 'GitHub', es: 'GitHub' },
   servicesStripe: { en: 'Stripe', es: 'Stripe' },
 };
 
