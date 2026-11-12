@@ -99,6 +99,7 @@ export function HeroSavedZip({ children }: { children: ReactNode }) {
       <Link
         key={m.bioguide}
         href={`/reps/${m.bioguide}`}
+        prefetch={false}
         className="font-bold text-ink underline underline-offset-4 hover:text-go-deep"
       >
         {t('homeZip.member', { role: memberRole(m), name: m.name })}

@@ -84,11 +84,11 @@ export function HouseFinder({ zip, rows }: { zip: string; rows: FinderRow[] }) {
                     {t('settled.finderDistrict', { state: r.state, district: String(r.district) })}
                   </span>
                   {r.member ? (
-                    <Link href={`/reps/${r.member.bioguide}`} className={NAME_LINK}>
+                    <Link href={`/reps/${r.member.bioguide}`} prefetch={false} className={NAME_LINK}>
                       {r.member.name}
                     </Link>
                   ) : (
-                    <Link href={`/reps/${seatSlug(r)}`} className={NAME_LINK}>
+                    <Link href={`/reps/${seatSlug(r)}`} prefetch={false} className={NAME_LINK}>
                       {t('settled.finderVacant')}
                     </Link>
                   )}

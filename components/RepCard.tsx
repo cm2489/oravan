@@ -164,6 +164,7 @@ export function RepCard({ rep }: { rep: Legislator }) {
           <h3 className="mt-1 text-xl font-extrabold">
             <Link
               href={`/reps/${rep.bioguide}`}
+              prefetch={false}
               className="inline-flex min-h-11 items-center text-ink underline decoration-line-strong underline-offset-4 hover:decoration-ink"
               data-rep-name-link=""
             >
@@ -188,6 +189,7 @@ export function RepCard({ rep }: { rep: Legislator }) {
             )}
             <Link
               href={`/reps/${rep.bioguide}#votes`}
+              prefetch={false}
               className="relative inline-flex min-h-11 items-center text-sm text-ink-2 underline underline-offset-2 hover:text-ink"
               data-rep-votes-link=""
             >

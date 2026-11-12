@@ -343,6 +343,7 @@ export function SettledPanel({
                               >
                                 <Link
                                   href={`/reps/${m.bioguide}`}
+                                  prefetch={false}
                                   className="inline-flex min-h-11 items-center text-sm font-semibold text-ink underline decoration-line-strong underline-offset-4 hover:decoration-ink"
                                 >
                                   {m.name} ({m.state})
