@@ -63,7 +63,9 @@ test('split ZIP: shows both candidate districts plus a link-out, never an addres
   const link = page.getByRole('link', { name: new RegExp(en.embed.openFullLookup) });
   await expect(link).toHaveAttribute('target', '_blank');
   await expect(link).toHaveAttribute('rel', /noopener/);
-  await expect(link).toHaveAttribute('href', /\/reps\?zip=10001/);
+  // The bare members page (2026-11-12): no ZIP in the address. The visitor
+  // enters it there, as the link's own words say.
+  await expect(link).toHaveAttribute('href', /\/reps$/);
   // F2, hard rule: street-address refinement never renders inside this iframe.
   await expect(page.locator('input[name="street-address"]')).toHaveCount(0);
   await expect(page.getByText('Daniel S. Goldman')).toBeVisible();

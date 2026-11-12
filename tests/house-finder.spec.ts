@@ -143,10 +143,8 @@ for (const { locale, prefix, t } of [
 
     // The optional street-address path is a link to /reps, never a field here.
     await expect(list.locator('input, form')).toHaveCount(0);
-    await expect(list.locator('[data-house-finder-refine]')).toHaveAttribute(
-      'href',
-      `${prefix}/reps?zip=${SPLIT_ZIP}`
-    );
+    // Bare /reps opens on the saved ZIP; no ZIP in the address (owner, 2026-11-12).
+    await expect(list.locator('[data-house-finder-refine]')).toHaveAttribute('href', `${prefix}/reps`);
 
     // Opening it sent nothing and moved nothing.
     expect(sent, 'opening the finder calls no API and posts nothing').toEqual([]);

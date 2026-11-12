@@ -135,10 +135,11 @@ test('split ZIP (10001): honest multi-district copy, senators lead, refinement o
   const names = await rowNames.allTextContents();
   expect(names.findIndex((n) => /Goldman|Nadler/.test(n))).toBeGreaterThanOrEqual(2);
 
-  // The refinement hand-off: the same ?zip flow /reps already owns.
+  // The refinement hand-off: bare /reps, which opens on the saved ZIP and
+  // holds the street-address form. No ZIP in the address (owner, 2026-11-12).
   const refine = page.getByRole('link', { name: en.bill.refineDistrictCta }).first();
   await expect(refine).toBeVisible();
-  await expect(refine).toHaveAttribute('href', /\/reps\?zip=10001/);
+  await expect(refine).toHaveAttribute('href', /\/reps$/);
 });
 
 test('vacant seat (FL-20) via the rail: vacancy named, senators still dialable, no departed member', async ({
