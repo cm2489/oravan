@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-12T18:52:48.771Z",
+    "fetched_at": "2026-11-12T21:18:47.552Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-12T18:52:48.771Z"
+        "checked_at": "2026-11-12T21:18:47.552Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-08",
         "week_label": "Most-Viewed Bills - Week of November 8, 2026",
         "entries": 6,
-        "checked_at": "2026-11-12T18:52:48.771Z"
+        "checked_at": "2026-11-12T21:18:47.552Z"
       },
       "leans": {
         "center": {
@@ -198,7 +198,15 @@
       "mostViewed": null
     },
     "hr-1-119": {
-      "outlets7d": [],
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-11-12",
+          "lastSeen": "2026-11-12",
+          "url": "https://thehill.com/homenews/senate/6217053-donald-trump-senate-leadership-350b-reconciliation-bill/"
+        }
+      ],
       "unratedOutlets7d": [],
       "mostViewed": {
         "weeksOnList": 14,
@@ -368,6 +376,18 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-1945-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "newsfromthestates.com",
+          "firstSeen": "2026-11-12",
+          "lastSeen": "2026-11-12",
+          "url": "https://news.google.com/rss/articles/CBMiuwFBVV95cUxQR1dCTHhGYU0zMXk0b1kyS1JlVDBfakVndVV1bzJETUc3aU1hRVJfUm5oNVBIaUJBRzlYSlhDYWx4QjNPX0F2VTRMLTJxTHVKQmdOVHZteEFNSEpaZElkcUd1UHh1c2Y2UHVLVmFEY2o5TmhJUWY5Z21MWXZDbVRhYkl6NTRNcVVjb0ZraTJUWWdKX0JYYTNQSUwyb3JjXzRsa1hYRVZTZE42WWxPS0lQSXJIclVLS0tib2Nn?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "hr-1968-119": {
@@ -838,6 +858,18 @@
       ],
       "mostViewed": null
     },
+    "hr-6500-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "newsfromthestates.com",
+          "firstSeen": "2026-11-12",
+          "lastSeen": "2026-11-12",
+          "url": "https://news.google.com/rss/articles/CBMipwFBVV95cUxPYjQybVJpU3hCWGlNOUhQVHUzT00yQVNwX3RiOFlTdzhqUzRWYzhuaVV6cWUta1FReUVnSWJ0dzE5UXZ1Uk9mdnJKT3NYRGtHcHRhaS00eVAwT2I3YWpkQzVzeGlKMGhDVU5RSy1LdW9paWdlTzgyS3lGRkMxVGs1S0hzTnJpWVFVTFF6WUE4SDU5a25lNllTdXNRMjNKLWVtMVJubXV4aw?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-6509-119": {
       "outlets7d": [],
       "unratedOutlets7d": [],
@@ -1022,7 +1054,15 @@
       "mostViewed": null
     },
     "hr-8552-119": {
-      "outlets7d": [],
+      "outlets7d": [
+        {
+          "domain": "pbs.org",
+          "lean": "center",
+          "firstSeen": "2026-11-12",
+          "lastSeen": "2026-11-12",
+          "url": "https://news.google.com/rss/articles/CBMiuwFBVV95cUxOODk5S3FZVVBwQk5vaERSV0Y2Y2FJX0Y4U1lFSGdiakJNRmE0VW8xclBRQ0VnVkszTjZNYjZId1NjYzN1Zk13N0lDMkxZWnFLTWF4UlFWbEUtNXZ5Wk1KR2dqYnFEZ2kwZWNkMEZ6WmtkNDM4bjY1SWhBVFVJV2hCbncwb25Jc01JVlI5cTNtMF81UFd6VEVub1NXanNETk1uMUtpZjFDY242UEtSMVFYekFiMXV0dHRjdUg00gHAAUFVX3lxTFB4SFZsQUhhOG1MQnEyXzRPd3BGcHpsZWVXbEtPMlJ2eTdzNnU5dnhYVVBLMnZ1TXB2b3RRMW5wcFpQelZ2SWZyQjVFNGQxbGYyWmRRLWcyMkwwZ1RLYXlURHVuZGZuVURyRW4wLXJ6T0xtVXZoWE5KWmdibndQWGROWUtDOUd4RHZ2TlU4OEFaN2MtQk1HT1N2cFE2TTljUHBkWE1DeFB0U3RuSFo5YlZMYTV4QVFLY3Z0VmI0ZkhIWQ?oc=5"
+        }
+      ],
       "unratedOutlets7d": [
         {
           "domain": "abcnews.com",
@@ -1518,6 +1558,19 @@
         "lastSeen": "2026-11-12",
         "lastWeek": "2026-11-08"
       }
+    },
+    "s-607-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-11-12",
+          "lastSeen": "2026-11-12",
+          "url": "https://thehill.com/homenews/house/6216928-congressional-support-veteran-dental-care/"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
     },
     "s-645-119": {
       "outlets7d": [],
