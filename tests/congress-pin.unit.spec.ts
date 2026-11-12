@@ -51,9 +51,10 @@ const forceTarget = forceSlugTarget as (
 
 test.describe('offCongressBills (corpus uniformity, verify-sync.mjs)', () => {
   test('the tracked Congress is the 119th - the constant both gates read', () => {
-    // If this fails, the rollover happened: bump CONGRESS in
-    // scripts/congress-fetch.mjs deliberately (lib/rollover-tripwire.mjs
-    // warns from Dec 1, 2026) and update this pin in the same change.
+    // If this fails, the rollover happened: the number lives in
+    // lib/congress.mjs since 2026-11-12 (congress-fetch.mjs re-exports it);
+    // bump it there deliberately (lib/rollover-tripwire.mjs warns from
+    // Dec 1, 2026) and update this pin in the same change.
     expect(CONGRESS).toBe(119);
   });
 
