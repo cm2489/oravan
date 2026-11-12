@@ -47,7 +47,9 @@ export const BILLING_PORTAL_URL = 'https://billing.stripe.com/p/login/aFa28k5uF4
  * owner's answer of 2026-09-28 (open-questions page, item F, option a):
  * "Hide the embeds pages and terms until embeds come back. Nothing
  * half-filled stays public. Embeds come back with filled terms." The terms'
- * governing-law clause (embedsTerms.lawBody) still reads "[FOUNDER: fill]".
+ * governing-law clause (embedsTerms.lawBody) read "[FOUNDER: fill]" then; it
+ * was filled on 2026-11-12 (District of Columbia law; his answer that day).
+ * The pages stay hidden until he says to flip this.
  *
  * While false, both pages return notFound() in both locales, and every
  * surface that pointed at them follows this constant: app/sitemap.ts, the
@@ -60,10 +62,10 @@ export const BILLING_PORTAL_URL = 'https://billing.stripe.com/p/login/aFa28k5uF4
  * keep working for any site that already carries them, with rule 12's
  * promises intact.
  *
- * To bring the pages back: fill embedsTerms.lawBody in both languages, then
- * set this to true. tests/embeds-hidden.unit.spec.ts refuses true while the
- * placeholder is still there, and tests/plans-claim.unit.spec.ts then asks
- * for /partners' plans sentence back ("only Free is open").
+ * To bring the pages back: set this to true (the terms have been filled since
+ * 2026-11-12, but flipping it is his call). tests/embeds-hidden.unit.spec.ts
+ * refuses true while a placeholder is there, and tests/plans-claim.unit.spec.ts
+ * then asks for /partners' plans sentence back ("only Free is open").
  */
 export const EMBEDS_PAGES_PUBLIC: boolean = false;
 
