@@ -75,6 +75,7 @@ import {
   portraitsMissingUpstream,
   pressFeedHealth,
   producerStillRunning,
+  refusedSummaries,
   runThatWroteCursor,
 } from '../lib/pipeline-health.mjs';
 import { RECHECK_DAYS as PORTRAIT_RECHECK_DAYS } from './mirror-portraits.mjs';
@@ -557,6 +558,13 @@ export function buildReport({ now = Date.now() } = {}) {
     // Whether the GDELT collector recorded anything lately — read from the
     // committed data/question-press.json, never from a run's colour.
     questionPress,
+    // Big Questions whose summary the collector refused on
+    // SUMMARY_REFUSAL_ALARM_RUNS or more runs in a row, read from the
+    // committed counter (lib/pipeline-health.mjs refusedSummaries). Live
+    // questions only, when data/moments.json was read.
+    summaryRefusals: refusedSummaries(readJsonFile('data/moment-updates.json'), {
+      liveIds: moments ? Object.entries(moments).filter(([, m]) => m?.status === 'live').map(([id]) => id) : null,
+    }),
     momentCandidates: readMomentCandidates(now),
     logsRead: Math.min(logTargets.length, MAX_LOG_FETCHES),
     logsSkipped: skippedLogs,
