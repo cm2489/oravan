@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { createTranslator } from 'next-intl';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
@@ -25,6 +25,21 @@ const LOCALES = [
 const journeyT = (locale: 'en' | 'es') =>
   createTranslator({ locale, messages: locale === 'en' ? en : es, namespace: 'bill.journey' });
 
+/*
+ * THE STEPPER, NOT THE PAGE. Every positive journey assertion below reads
+ * inside the "Where does it stand?" section, and a short step label is matched
+ * EXACTLY. The page's headline is AI copy decoded from the bill text, so it can
+ * hold the same words as a step label: on 2026-11-13 S. 1353 passed the Senate
+ * and became this file's fresh-passage fixture, and its headline begins
+ * "Senate committee backs …" — a loose page-wide match on the step label
+ * "Senate committee" found the headline AND the step, and failed strict mode
+ * on a page that was right. The ABSENCE checks (no President's desk on a
+ * vehicle that never goes there) stay page-wide and loose on purpose: those
+ * are the stricter form of their promise.
+ */
+const journeyOf = (page: Page) => page.locator('section[aria-labelledby="journey-h"]');
+const stepLabel = (page: Page, label: string) => journeyOf(page).getByText(label, { exact: true });
+
 // The five questions a fully decoded bill answers, in the page's own keys.
 const SECTIONS = ['what', 'who', 'why', 'cost', 'journey'] as const;
 
@@ -41,8 +56,8 @@ for (const { locale, prefix, messages: m } of LOCALES) {
     // TL;DR strip with computed meta: one question per heading above.
     await expect(page.getByText(messagePattern(m.bill.tldrMeta, { count: SECTIONS.length }))).toBeVisible();
     // In committee: the stepper note names the chamber the record puts it in.
-    await expect(page.getByText(t('now'))).toBeVisible();
-    await expect(page.getByText(t('nowCommittee', { chamber: ref.chamber }))).toBeVisible();
+    await expect(journeyOf(page).getByText(t('now'))).toBeVisible();
+    await expect(journeyOf(page).getByText(t('nowCommittee', { chamber: ref.chamber }))).toBeVisible();
   });
 }
 
@@ -51,8 +66,8 @@ test('signed bill shows a completed journey', async ({ page }) => {
   test.skip(!law, 'no signed bill in the corpus today');
   const t = journeyT('en');
   await page.goto(`/bills/${law!.slug}`);
-  await expect(page.getByText(t('law'))).toBeVisible();
-  await expect(page.getByText(t('nowSigned'))).toBeVisible();
+  await expect(stepLabel(page, t('law'))).toBeVisible();
+  await expect(journeyOf(page).getByText(t('nowSigned'))).toBeVisible();
 });
 
 /*
@@ -73,8 +88,8 @@ test('a Senate bill whose passage has gone quiet says so, and claims nothing abo
   await page.goto(`/bills/${stale[0]}`);
   // The journey still starts in the Senate — the clock moves the tense, never
   // the position.
-  await expect(page.getByText(t('stepCommittee', { chamber: 'Senate' }))).toBeVisible();
-  await expect(page.getByText(t('nowPassedStale', { chamber: 'Senate' }))).toBeVisible();
+  await expect(stepLabel(page, t('stepCommittee', { chamber: 'Senate' }))).toBeVisible();
+  await expect(journeyOf(page).getByText(t('nowPassedStale', { chamber: 'Senate' }))).toBeVisible();
   // The claim the ruling removed must be gone from the page entirely.
   await expect(page.getByText(t('nowPassed', { chamber: 'Senate', other: 'House' }))).toHaveCount(0);
 });
@@ -88,8 +103,8 @@ test('a Senate bill that JUST cleared the chamber still names where it goes next
   test.skip(fresh.length === 0, 'no Senate-origin passage inside the signal window today');
   const t = journeyT('en');
   await page.goto(`/bills/${fresh[0]}`);
-  await expect(page.getByText(t('stepCommittee', { chamber: 'Senate' }))).toBeVisible();
-  await expect(page.getByText(t('nowPassed', { chamber: 'Senate', other: 'House' }))).toBeVisible();
+  await expect(stepLabel(page, t('stepCommittee', { chamber: 'Senate' }))).toBeVisible();
+  await expect(journeyOf(page).getByText(t('nowPassed', { chamber: 'Senate', other: 'House' }))).toBeVisible();
 });
 
 /*
@@ -134,9 +149,9 @@ for (const { ending, step, trailer, what } of ENDINGS) {
       test.skip(!fx, `no ${ending} vehicle with its trailer ahead in the corpus today`);
       const t = journeyT(locale);
       await page.goto(`${prefix}/bills/${fx!.slug}`);
-      await expect(page.getByText(t(step))).toBeVisible();
+      await expect(stepLabel(page, t(step))).toBeVisible();
       await expect(page.getByText(t('stepPresident'))).toHaveCount(0);
-      await expect(page.getByText(t(trailer, { chamber: fx!.chamber, other: fx!.other }))).toBeVisible();
+      await expect(journeyOf(page).getByText(t(trailer, { chamber: fx!.chamber, other: fx!.other }))).toBeVisible();
     });
   }
 }
@@ -148,7 +163,7 @@ test('an ordinary joint resolution still ends at the President', async ({ page }
   test.skip(!fx, 'no presented joint resolution in the corpus today');
   const t = journeyT('en');
   await page.goto(`/bills/${fx!.slug}`);
-  await expect(page.getByText(t('stepPresident'))).toBeVisible();
+  await expect(stepLabel(page, t('stepPresident'))).toBeVisible();
   await expect(page.getByText(t('stepStates'))).toHaveCount(0);
 });
 
@@ -156,6 +171,6 @@ test('an ordinary bill still ends at the President', async ({ page }) => {
   const ref = referenceBill();
   const t = journeyT('en');
   await page.goto(`/bills/${ref.slug}`);
-  await expect(page.getByText(t('stepPresident'))).toBeVisible();
-  await expect(page.getByText(t('backTrailer', { chamber: ref.chamber, other: ref.other }))).toBeVisible();
+  await expect(stepLabel(page, t('stepPresident'))).toBeVisible();
+  await expect(journeyOf(page).getByText(t('backTrailer', { chamber: ref.chamber, other: ref.other }))).toBeVisible();
 });
