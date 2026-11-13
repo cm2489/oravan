@@ -47,7 +47,11 @@ test('the constants the tripwire names exist where it says, and the route reads 
   // A pointer that rots is a tripwire that fires at nothing: the swap it
   // asks for must still be an edit to these two constants.
   const lib = readFileSync(join(process.cwd(), 'lib/district.ts'), 'utf8');
-  expect(lib).toMatch(/^export const SITTING_CONGRESS = \d+;$/m);
+  // Since 2026-11-12 the number is written once, in lib/congress.mjs, and
+  // SITTING_CONGRESS reads it there; the swap is still an edit to these two.
+  expect(lib).toMatch(/^export const SITTING_CONGRESS: number = CURRENT_CONGRESS\.number;$/m);
+  const source = readFileSync(join(process.cwd(), 'lib/congress.mjs'), 'utf8');
+  expect(source).toMatch(/^const NUMBER = \d+;$/m);
   expect(lib).toMatch(/^export const CENSUS_VINTAGE = '[A-Za-z0-9_]+';$/m);
   const route = readFileSync(join(process.cwd(), 'app/api/district/route.ts'), 'utf8');
   expect(route).toMatch(/vintage: CENSUS_VINTAGE,/);

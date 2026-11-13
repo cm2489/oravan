@@ -76,11 +76,9 @@ import { createHash } from 'node:crypto';
 // this file stays import-clean.
 import { statusKeyFor } from './moment-candidates.mjs';
 
-// Duplicated from congress-fetch.mjs's CONGRESS constant (not imported) so
-// this module stays import-clean for unit tests — see the header comment.
-// The 119th Congress; bump alongside congress-fetch.mjs's own CONGRESS if
-// the tracked Congress ever changes.
-const CONGRESS = 119;
+// The tracked Congress, from lib/congress.mjs: import-free, so this module
+// stays import-clean for unit tests (see the header comment).
+import { CONGRESS } from '../lib/congress.mjs';
 export const TRACKED_TYPES = new Set(['hr', 's', 'hjres', 'sjres', 'hconres', 'sconres']);
 
 // ---- t1: explicit bill-number citations ------------------------------

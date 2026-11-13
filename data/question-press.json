@@ -31,6 +31,26 @@
       },
       "outlets": []
     },
+    "crypto-oversight-split-between-sec-and-cftc": {
+      "checkedOn": "2026-11-12",
+      "terms": [
+        "digital asset market clarity act",
+        "damc act"
+      ],
+      "counts": {
+        "outlets": {
+          "left": 0,
+          "center": 0,
+          "right": 0
+        },
+        "articles": {
+          "left": 0,
+          "center": 0,
+          "right": 0
+        }
+      },
+      "outlets": []
+    },
     "paying-college-athletes": {
       "checkedOn": "2026-11-12",
       "terms": [

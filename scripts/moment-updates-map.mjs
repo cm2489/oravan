@@ -38,6 +38,7 @@
  */
 import { findCitations, parseFeed } from './newsdesk-match.mjs';
 import { vehicleKind } from '../lib/moments-gate.mjs';
+import { CONGRESS, congressOfSlug } from '../lib/congress.mjs';
 import { normalizeSource, pressOutletPolicy } from '../lib/press-outlets.mjs';
 import {
   RECORD_EVENT_CLASSES,
@@ -47,10 +48,9 @@ import {
   normalizeText,
 } from '../lib/moment-updates-gate.mjs';
 
-/** The tracked Congress. Mirrors congress-fetch.mjs's CONGRESS — duplicated,
- *  not imported, to keep this module's import chain test-loadable; pinned
- *  equal by tests/moment-updates-collect.unit.spec.ts. */
-export const CONGRESS = 119;
+/** The tracked Congress, read from lib/congress.mjs (import-free, so this
+ *  module's import chain stays test-loadable) and re-exported. */
+export { CONGRESS };
 
 /* ------------------------------------------------------------------ *
  * Slug helpers.
@@ -82,9 +82,14 @@ export function billLabel(slug) {
   return `${TYPE_LABELS[type] ?? type?.toUpperCase() ?? ''} ${number ?? ''}`.trim();
 }
 
+/** The record link for a slug, in the slug's OWN Congress (2026-11-12): a
+ *  link to an earlier Congress's bill must not quietly point at the
+ *  same-numbered bill of the tracked one. A slug with no Congress segment
+ *  falls back to the tracked Congress, as every slug did before. */
 export function congressGovUrlForSlug(slug) {
   const [type, number] = String(slug ?? '').split('-');
-  return `https://www.congress.gov/bill/${CONGRESS}th-congress/${CHAMBER_PATHS[type] ?? 'house-bill'}/${number}`;
+  const congress = congressOfSlug(slug) ?? CONGRESS;
+  return `https://www.congress.gov/bill/${congress}th-congress/${CHAMBER_PATHS[type] ?? 'house-bill'}/${number}`;
 }
 
 /** Congress.gov API path parts for a slug: {type, number}. */
