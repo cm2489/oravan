@@ -9,7 +9,7 @@ Written 2026-11-13 with stage 5. Every command below was run, or dry-run on a co
 - **Pages of members who left** appear when two things are both true: `lib/congress.mjs` lists the 119th as ended (stage 8 does this), and `data/departed-members.json` holds their record with `served_until` = `2027-01-03` (the weekly refresh writes it when they leave the member file). Each page shows the seat they held, "Served in the House until January 3, 2027." (or Senate) and how they voted, with no phone, office, website or call. Rules: `lib/departed-members.ts`.
 - **New members with no recorded vote** show "No recorded votes yet on a bill Oravan tracks." (the owner's choice of 2026-11-13) once the 119th is on the ended list. Delegates and the resident commissioner keep today's line.
 - **Nothing in the ZIP lookup, the address lookup or the Census settings changes by itself.** Those are steps 6 and 7.
-- **The refresh's checks**: around 80 members change at once. More than 5 members leaving the file in one run fails the run on an ordinary week; from Jan 3 of an odd year through the next 42 days it is allowed, because two seat checks still run every week: no more than 5 House seats may newly empty, and no more than 5 Senate seats may. A member listed twice always fails, and so does a file that looks broken rather than churning: fewer than 500 members (a complete file has about 540), or more than 20 members leaving at once outside the January window. If any check fails, the run writes nothing, commits nothing, and opens or comments on one GitHub issue labeled `legislators-refused` (see "A refused week" below). Code: `scripts/member_turnover.py`, `scripts/vacancy_diff.py`.
+- **The refresh's checks**: around 80 members change at once. More than 5 members leaving the file in one run fails the run on an ordinary week; from Jan 3 through Feb 13 of an odd year (42 days, by the run's UTC date) it is allowed, because two seat checks still run every week: no more than 5 House seats may newly empty, and no more than 5 Senate seats may. A member listed twice always fails, and so does a file that looks broken rather than churning: fewer than 500 members (a complete file has about 540). If any check fails, the run writes nothing, commits nothing, and opens or comments on one GitHub issue labeled `legislators-refused` (see "A refused week" below). Code: `scripts/member_turnover.py`, `scripts/vacancy_diff.py`.
 
 ## The steps
 
@@ -45,7 +45,7 @@ Run on 2026-11-13 exactly as written, the first command used `main` before stage
 - `N House seat(s) vanished` or `N Senate seat(s) emptied`: the upstream file is half-updated. Wait and repeat from step 1. **Do not loosen the check** (plan pin P34).
 - `N member(s) left the file … outside the 42-day window`: the date is not in the switch window. On Jan 4, 2027 this cannot happen; on any other day see "A refused week" below.
 - `listed more than once`: the upstream file is damaged. Wait for it to be fixed.
-- `the upstream member file looks broken`: it is empty, badly short, or lost more than 20 members at once outside January. Wait for it to be fixed. **Accept nothing**: no `accept_departures` number lets such a file through.
+- `the upstream member file looks broken`: it is empty or badly short (fewer than 500 members). Wait for it to be fixed. **Accept nothing**: no `accept_departures` number lets such a file through.
 
 `--today YYYY-MM-DD` makes the rehearsal use another date (only for rehearsals on a copy; the workflow never passes it).
 
@@ -147,9 +147,9 @@ The first command was **run on 2026-11-13 and refused**: the Census geocoder ans
 
 **What happens.** When a run is refused (any `::error::` in step 2's list), nothing is written or committed and the workflow opens one GitHub issue labeled `legislators-refused`, titled "Weekly members refresh refused: nothing committed", or comments on it if it is already open. The issue says what was refused, names the members who left, and, when it applies, gives the exact command to accept the week. **A refused week never clears by itself**: every later run compares against the same committed member file, so it refuses again until the upstream file changes or someone accepts the week.
 
-**When the issue says the upstream file "looks broken"**, accept nothing. It means the file lists fewer than 500 members (a complete one lists about 540; since 1995 no ordinary week had fewer than 534 serving) or more than 20 members left it at once outside the January window (since 1995 no such week had more than 2). Those numbers were counted from the congress-legislators historical and current files on 2026-11-13. The issue then gives no accept command, and the script refuses one anyway: wait for the upstream file to be fixed, and the first run after that passes on its own.
+**When the issue says the upstream file "looks broken"**, accept nothing. It means the file lists fewer than 500 members: a complete one lists about 540, and since 1995 no ordinary Monday had fewer than 534 serving (counted from the congress-legislators historical and current files on 2026-11-13). The issue then gives no accept command, and the script refuses one anyway: wait for the upstream file to be fixed, and the first run after that passes on its own.
 
-**When six to twenty members really left in one ordinary week** (several resignations and swearing-ins at once):
+**When six or more members really left in one run outside the window** (Jan 3 through Feb 13 of an odd year, by the run's UTC date). That is rare: since 1995, outside that window, no calendar week saw more than 2 members' service end, and no 7 days in a row more than 3 (Dec 8 to 14, 2024), from the same files. It is also what happens if a change of Congress is still uncommitted after Feb 13, for example after weeks of refusals for another reason: its roughly 80 departures are then accepted the same way, with the exact number.
 
 1. Read the issue. Check every named member really left (the House Clerk's and the Senate's own pages, or the news).
 2. Rehearse the acceptance on a copy, with the number of members who left:
@@ -165,7 +165,7 @@ The first command was **run on 2026-11-13 and refused**: the Census geocoder ans
    gh workflow run refresh-legislators.yml --ref main -f accept_departures=<N>
    ```
 
-   **Not run** on 2026-11-13: it runs the live job. It passes only when **exactly** `<N>` members left, `<N>` is 20 or fewer, the file still lists at least 500 members, and no more than `<N>` seats emptied; their empty seats are recorded as vacant as usual. A member listed twice is never accepted. The scheduled run never passes the number, and once the accepted file is committed the next run compares against it, so nothing carries over.
+   **Not run** on 2026-11-13: it runs the live job. It passes only when **exactly** `<N>` members left, the file still lists at least 500 members, and no more than `<N>` seats emptied; their empty seats are recorded as vacant as usual. A member listed twice is never accepted. The scheduled run never passes the number, and once the accepted file is committed the next run compares against it, so nothing carries over.
 4. Close the issue once a run is green.
 
 **When the members did not really leave**, do nothing: the upstream file is wrong, and the first run after it is fixed passes and can be followed by closing the issue.

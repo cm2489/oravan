@@ -261,6 +261,38 @@ class ProcessDataEndToEnd(unittest.TestCase):
         self.assertEqual(r.code, 1, r.out)
         self.assertTrue(r.untouched())
         self.assertIn('looks broken', r.out)
+        # The House-seat error says nothing about accepting a broken file.
+        self.assertIn('House seat(s) vanished', r.out)
+        self.assertNotIn('re-run with the accept_departures', r.out)
+
+    def test_a_499_member_file_is_refused_with_any_number(self):
+        prev = roster()
+        short = prev[:499]
+        for day in (SWITCH_DAY, ORDINARY_DAY):
+            for extra in ((), ('--accept-departures', str(len(prev) - 499)), ('--accept-departures', '1')):
+                r = self.run_(prev, short).go('--today', day, *extra)
+                self.assertEqual(r.code, 1, (day, extra, r.out))
+                self.assertTrue(r.untouched(), (day, extra))
+                self.assertIn('Accept nothing', r.report())
+
+    def test_eighty_departures_after_the_window_or_in_november_are_accepted_with_exactly_eighty(self):
+        # Second review (2026-11-13): a change of Congress committed late, after
+        # Feb 13, must stay acceptable with the exact number, as on main.
+        prev = roster()
+        new, gone = replace(prev, 80)
+        for day in ('2027-02-14', ORDINARY_DAY):
+            refused = self.run_(prev, new, historical=gone).go('--today', day)
+            self.assertEqual(refused.code, 1, (day, refused.out))
+            self.assertTrue(refused.untouched())
+            self.assertIn('accept_departures=80', refused.report())
+            for wrong in ('79', '81'):
+                r = self.run_(prev, new, historical=gone).go('--today', day, '--accept-departures', wrong)
+                self.assertEqual(r.code, 1, (day, wrong, r.out))
+                self.assertTrue(r.untouched())
+            ok = self.run_(prev, new, historical=gone).go('--today', day, '--accept-departures', '80')
+            self.assertEqual(ok.code, 0, (day, ok.out))
+            self.assertEqual(len(ok.read('departed-members.json')), 80)
+            self.assertEqual(len(ok.read('legislators.json')), len(prev))
 
 
 if __name__ == '__main__':

@@ -63,9 +63,15 @@ TURNOVER_WINDOW_DAYS = 42
 # A FILE THAT IS BROKEN, NOT CHURNING (re-check of stage 5, 2026-11-13). An
 # empty or badly short upstream file once produced a refusal report telling
 # the reader to accept every member as departed (accept_departures=539),
-# which would have written a member file with nobody in it. Below these two
-# lines the run is refused and NOTHING accepts it: the file is broken, and
-# the first run after it is fixed passes on its own.
+# which would have written a member file with nobody in it. Below this floor
+# the run is refused and NOTHING accepts it: the file is broken, and the
+# first run after it is fixed passes on its own.
+#
+# A large drop outside the window is NOT treated as broken (second review,
+# 2026-11-13): if the change of Congress is still uncommitted after Feb 13 of
+# an odd year (say, after weeks of refusals for another reason), its ~80 real
+# departures must stay acceptable with accept_departures=80, as they are on
+# main. The floor alone closes the empty-file hole.
 #
 # MIN_PLAUSIBLE_MEMBERS: the full roster is 541 (100 senators, 435
 # representatives, 6 delegates and the resident commissioner's seat among
@@ -76,11 +82,13 @@ TURNOVER_WINDOW_DAYS = 42
 # included (a file caught between one Congress's members leaving and the
 # next one's arriving is exactly what this should refuse).
 MIN_PLAUSIBLE_MEMBERS = 500
-# MAX_ACCEPTABLE_DEPARTURES: the most members whose service ended in one week
-# outside a January window, since 1995, was 2 (same files, same day). 20 is
-# ten times that. More than 20 departures outside January is not a week a
-# person should wave through with one number; it would need a pull request.
-MAX_ACCEPTABLE_DEPARTURES = 20
+
+# The window in words, for messages: Jan 3 through its last day.
+_WINDOW_LAST = date(2001, 1, 3) + timedelta(days=TURNOVER_WINDOW_DAYS - 1)
+WINDOW_WORDS = (
+    f'the {TURNOVER_WINDOW_DAYS}-day window from Jan 3 through {_WINDOW_LAST.strftime("%b")} {_WINDOW_LAST.day} '
+    "of an odd year (by the run's UTC date)"
+)
 
 # Only these leave the member file when a member leaves; everything that
 # could reach a visitor as a way to contact them is left behind.
@@ -134,18 +142,13 @@ def duplicate_ids(members: Iterable[dict]) -> List[str]:
     return dup
 
 
-def broken_file(new_members: List[dict], dropped: int, today: str) -> Optional[str]:
+def broken_file(new_members: List[dict]) -> Optional[str]:
     """Why this run's member file looks broken rather than churning, or None.
     A broken file is refused in every week and is never acceptable."""
     if len(new_members) < MIN_PLAUSIBLE_MEMBERS:
         return (
             f'the upstream member file looks broken: it lists {len(new_members)} member(s), and a complete one '
             f'lists about 540 (refused below {MIN_PLAUSIBLE_MEMBERS})'
-        )
-    if dropped > MAX_ACCEPTABLE_DEPARTURES and not in_turnover_window(today):
-        return (
-            f'the upstream member file looks broken: {dropped} members left it in one run outside the January '
-            f'window, and no real week since 1995 has had more than 2 (refused above {MAX_ACCEPTABLE_DEPARTURES})'
         )
     return None
 
@@ -184,13 +187,12 @@ def roster_problems(
     allowance does not carry over."""
     problems = []
     dropped = dropped_members(new_members, prev_members)
-    broken = broken_file(new_members, len(dropped), today)
+    broken = broken_file(new_members)
     if broken:
         problems.append(broken)
     accepted = (
         accept_departures is not None
         and len(dropped) == accept_departures
-        and len(dropped) <= MAX_ACCEPTABLE_DEPARTURES
         and not broken
     )
     dup = duplicate_ids(new_members)
@@ -206,8 +208,8 @@ def roster_problems(
     if len(dropped) > MEMBER_DROP_THRESHOLD and not in_turnover_window(today) and not accepted:
         names = ', '.join(m['bioguide'] for m in dropped[:20]) + (' ...' if len(dropped) > 20 else '')
         problems.append(
-            f'{len(dropped)} member(s) left the file in a single run (> {MEMBER_DROP_THRESHOLD}) outside the '
-            f'{TURNOVER_WINDOW_DAYS}-day window that opens on Jan 3 of an odd year: {names}'
+            f'{len(dropped)} member(s) left the file in a single run (> {MEMBER_DROP_THRESHOLD}) outside '
+            f'{WINDOW_WORDS}: {names}'
             + (f' (accept_departures was {accept_departures}, not {len(dropped)})' if accept_departures is not None else '')
         )
     return problems
@@ -216,10 +218,9 @@ def roster_problems(
 def accepts_seats(new_members: List[dict], prev_members: List[dict], accept_departures: Optional[int], seats: int) -> bool:
     """Does accept_departures let `seats` newly emptied seats through? Only
     when exactly that many members left, the seats are no more than them, and
-    the file is not broken (no more than MAX_ACCEPTABLE_DEPARTURES departures,
-    at least MIN_PLAUSIBLE_MEMBERS members)."""
+    the file is not broken (at least MIN_PLAUSIBLE_MEMBERS members)."""
     n = len(dropped_members(new_members, prev_members))
-    return accept_departures is not None and n == accept_departures and seats <= n and n <= MAX_ACCEPTABLE_DEPARTURES and len(new_members) >= MIN_PLAUSIBLE_MEMBERS
+    return accept_departures is not None and n == accept_departures and seats <= n and broken_file(new_members) is None
 
 
 def refusal_report(problems: List[str], dropped: List[dict], today: str) -> str:
@@ -239,7 +240,7 @@ def refusal_report(problems: List[str], dropped: List[dict], today: str) -> str:
         '',
     ]
     broken = any('looks broken' in p for p in problems)
-    acceptable = 0 < n <= MAX_ACCEPTABLE_DEPARTURES and not broken and not any('more than once' in p for p in problems)
+    acceptable = n > 0 and not broken and not any('more than once' in p for p in problems)
     if broken:
         lines += [
             'The upstream member file looks broken, not like members leaving. **Accept nothing**: no '
@@ -262,8 +263,8 @@ def refusal_report(problems: List[str], dropped: List[dict], today: str) -> str:
     else:
         lines += [
             'No `accept_departures` number accepts this file: either no member left (seats emptied without anyone '
-            f'leaving the file), a member is listed twice, or more than {MAX_ACCEPTABLE_DEPARTURES} members left at once. '
-            'The upstream file is damaged: wait for it to be fixed; the next run passes on its own once it is.',
+            'leaving the file) or a member is listed twice. The upstream file is damaged: wait for it to be fixed; '
+            'the next run passes on its own once it is.',
         ]
     lines += ['', 'Steps and commands: `docs/runbooks/new-congress-switch.md`, "A refused week".', '']
     return '\n'.join(lines)

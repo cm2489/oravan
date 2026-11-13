@@ -201,11 +201,18 @@ house_problem = (
 )
 if anomalous:
     print(f'::error::{house_problem}')
+    # No accept hint when the file looks broken: the report says "Accept
+    # nothing" then, and the line here must not say otherwise.
+    broken = any('looks broken' in p for p in problems)
     print(
         '::error::This looks like a truncated or broken upstream fetch, not '
-        f'{len(newly_detected)} simultaneous real vacancies - refusing to '
-        'commit. If this is genuinely correct, re-run with the accept_departures '
-        'input (docs/runbooks/new-congress-switch.md, "A refused week").'
+        f'{len(newly_detected)} simultaneous real vacancies - refusing to commit.'
+        + (
+            ''
+            if broken
+            else ' If this is genuinely correct, re-run with the accept_departures '
+            'input (docs/runbooks/new-congress-switch.md, "A refused week").'
+        )
     )
 if problems:
     for p in problems:
