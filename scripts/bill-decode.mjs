@@ -18,7 +18,7 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import {
-  CONGRESS,
+  billApiPath,
   cg,
   congressGovUrl,
   isAmbiguousAction,
@@ -39,6 +39,8 @@ import { classifyApiError } from './api-billing.mjs';
 import { bumpCounter, recordApiError } from './run-counters.mjs';
 import { PRESIDENT_STYLE_RULE, presidentStyle } from '../lib/president-style.mjs';
 import { FORBIDDEN } from '../lib/moments-gate.mjs';
+// Which Congress is tracked and which have ended (2026-11-12). Import-free.
+import { CONGRESS_POLICY, congressOfBill, isEndedCongress, isTrackedCongress } from '../lib/congress.mjs';
 
 /** Re-exported, not re-implemented: the "which document is the current text"
  *  question moved to scripts/text-version.mjs on 2026-09-18 so the re-decode
@@ -127,8 +129,10 @@ export function textFingerprint(text) {
  * scripts/text-version.mjs for why the count must not simply be the array's
  * length.
  */
-export async function fetchTextVersions(type, number) {
-  const data = await cg(`/bill/${CONGRESS}/${type}/${number}/text`);
+export async function fetchTextVersions(type, number, congress) {
+  // The bill's OWN Congress (2026-11-12): billApiPath refuses a missing one
+  // rather than read the tracked Congress's bill of the same number.
+  const data = await cg(billApiPath({ bill_type: type, bill_number: number, congress_number: congress }, '/text'));
   return {
     versions: Array.isArray(data.textVersions) ? data.textVersions : [],
     count: versionCount(data),
@@ -152,8 +156,8 @@ export async function fetchTextVersions(type, number) {
  * text we can't fetch is still refused and retried, never approximated from
  * an older one.
  */
-async function fetchBillText(type, number) {
-  const { versions, count } = await fetchTextVersions(type, number);
+async function fetchBillText(type, number, congress) {
+  const { versions, count } = await fetchTextVersions(type, number, congress);
   const version = pickTextVersion(versions);
   if (!version) return null;
   const url = formattedTextUrl(version);
@@ -561,6 +565,10 @@ function failureBilling(err, decodeAttempted) {
  *                 re-evaluates against its then-current status.
  *   'budget'    — a brand-new bill cleared the gate (or was forced) but
  *                 `allowDecode` was false this call
+ *   'skipped_ended' / 'skipped_untracked' — (2026-11-12) `u.congress_number`
+ *                 named an ended Congress, or one that is neither tracked nor
+ *                 ended: nothing fetched, nothing written, free. No caller
+ *                 can reach either while the ended list is empty.
  *   'failed'    — the fetch or decode threw (including a text version that
  *                 exists but whose document couldn't be fetched — retryable,
  *                 unlike 'skipped_no_text'); `isNew` tells the caller
@@ -585,12 +593,25 @@ function failureBilling(err, decodeAttempted) {
  * charging a budget must exempt them; chargeableDecode does.
  */
 export async function syncOneBill(u, ctx) {
-  const { allowDecode, forceSlugs = new Set(), bills, es, bySlug, anthropic, decodeQueue = null } = ctx;
+  const { allowDecode, forceSlugs = new Set(), bills, es, bySlug, anthropic, decodeQueue = null, policy = CONGRESS_POLICY } = ctx;
   const type = u.type.toLowerCase();
-  const slug = updateSlug(u);
+  // WHICH CONGRESS (2026-11-12). `u.congress_number` is the bill's own
+  // Congress, passed by a caller that holds an existing corpus record. A bare
+  // {type, number} is a bill off the tracked Congress's own list, exactly as
+  // before; a list item's own `congress` field is deliberately NOT read here
+  // (Congress.gov has served it both as a number and as a string, and the
+  // list asked for is the tracked Congress's anyway). This path adds and
+  // refreshes bills of the TRACKED Congress only: an ended Congress's bills
+  // are an archive (no fetch, no decode, no write), and any other Congress
+  // is not this build's to write.
+  const congress = u.congress_number ?? policy.tracked;
+  const slug = updateSlug(u, congress);
   let decodeAttempted = false;
+  if (!isTrackedCongress(congress, policy)) {
+    return { outcome: isEndedCongress(congress, policy) ? 'skipped_ended' : 'skipped_untracked', slug, decodeAttempted };
+  }
   try {
-    const { bill: d } = await cg(`/bill/${CONGRESS}/${type}/${u.number}`);
+    const { bill: d } = await cg(billApiPath({ bill_type: type, bill_number: u.number, congress_number: congress }));
     const existing = bySlug.get(slug);
     if (existing) {
       // The sentinel IS the outcome: a payload we refused to write surfaces
@@ -667,7 +688,7 @@ export async function syncOneBill(u, ctx) {
     let status = mapStatus(action.text);
     let basis = null;
     if (isAmbiguousAction(action.text)) {
-      const resolved = await resolveAmbiguousStatus({ bill_type: type, bill_number: u.number });
+      const resolved = await resolveAmbiguousStatus({ bill_type: type, bill_number: u.number, congress_number: congress });
       if (resolved) {
         status = resolved.status;
         // Stored beside the status by the one writer (writeStatusBasis), so
@@ -686,7 +707,7 @@ export async function syncOneBill(u, ctx) {
     const lastActionDate = action.actionDate ?? null;
     const bill = {
       full_identifier: slug,
-      congress_number: CONGRESS,
+      congress_number: congress,
       bill_type: type,
       bill_number: Number(u.number),
       title: d.title,
@@ -719,7 +740,7 @@ export async function syncOneBill(u, ctx) {
       issue_tags: tagBill(d.policyArea?.name),
       policy_area: d.policyArea?.name ?? null,
       urgency_score: urgencyScore(status, lastActionDate),
-      congress_gov_url: congressGovUrl(type, u.number),
+      congress_gov_url: congressGovUrl(type, u.number, congress),
     };
     writeStatusBasis(bill, basis);
     // No text, no decode. fetchBillText returns null when Congress.gov
@@ -743,7 +764,7 @@ export async function syncOneBill(u, ctx) {
     // its text is published, and the update feed resurfaces it then, exactly
     // as it does for a gated one. Callers count the skip and name it in their
     // run log, so a night that refuses N bills says so out loud.
-    const fetched = await fetchBillText(type, u.number);
+    const fetched = await fetchBillText(type, u.number, congress);
     if (fetched === null) return { outcome: 'skipped_no_text', slug, decodeAttempted };
     const { text, version, count } = fetched;
 
@@ -887,16 +908,22 @@ export async function syncOneBill(u, ctx) {
  *                 the text-version stamp), so callers must treat it as a data
  *                 change worth committing.
  *   'missing'         — the slug isn't in the corpus (caller bug; free)
+ *   'skipped_ended'   — the bill belongs to an ended Congress (2026-11-12):
+ *                 never re-read or re-decoded, even when forced (free)
  *   'skipped_no_text' — Congress.gov publishes no readable text (free)
  *   'failed'          — the fetch or the decode threw; the old decode stands
  */
 export async function redecodeBill(slug, ctx) {
-  const { anthropic, es, bySlug, title = null, forced = false } = ctx;
+  const { anthropic, es, bySlug, title = null, forced = false, policy = CONGRESS_POLICY } = ctx;
   const bill = bySlug.get(slug);
   if (!bill) return { outcome: 'missing', slug, decodeAttempted: false };
+  // An ended Congress's bill is never re-read or re-decoded (2026-11-12): its
+  // text cannot change, and its decode is part of the archive. Free, and
+  // nothing is touched — not even under FORCE_REDECODE_SLUGS.
+  if (isEndedCongress(congressOfBill(bill), policy)) return { outcome: 'skipped_ended', slug, decodeAttempted: false };
   let decodeAttempted = false;
   try {
-    const fetched = await fetchBillText(bill.bill_type, bill.bill_number);
+    const fetched = await fetchBillText(bill.bill_type, bill.bill_number, congressOfBill(bill));
     if (fetched === null) return { outcome: 'skipped_no_text', slug, decodeAttempted };
     const { text, version, count } = fetched;
     const subject = title ? { ...bill, title } : bill;
