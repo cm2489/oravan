@@ -25,10 +25,12 @@ import { EMBEDS_PAGES_PUBLIC } from '@/lib/site';
  * tenant is permitted to accept it, i.e. before Stripe Checkout's
  * consent_collection.terms_of_service is pointed at this page's live URL
  * and before any Payment Link goes live. Section 9 ("Governing law")
- * deliberately contains a literal [FOUNDER: fill] placeholder rather than
- * an invented jurisdiction — that decision belongs to Colby, not to this
- * document. This code change makes the page exist and resolve; pointing
- * Stripe at it is a separate, manual owner action (PR body checklist).
+ * held a literal [FOUNDER: fill] placeholder rather than an invented
+ * jurisdiction, because that decision belongs to Colby, not to this document;
+ * on 2026-11-12 he answered (District of Columbia law, operator "Colby
+ * Maxwell, an individual in Washington, DC") and it was filled. This code
+ * change makes the page exist and resolve; pointing Stripe at it is a
+ * separate, manual owner action (PR body checklist).
  *
  * tosVersion / re-consent tracking: deliberately NOT added to
  * TenantRecord this sprint (YAGNI) — lib/tenancy.ts's tosAcceptedAt (S18/
@@ -38,7 +40,8 @@ import { EMBEDS_PAGES_PUBLIC } from '@/lib/site';
  * HIDDEN since 2026-09-28 (owner, open-questions F: "Embeds come back with
  * filled terms"): both functions below return notFound() while lib/site.ts's
  * EMBEDS_PAGES_PUBLIC is false, and tests/embeds-hidden.unit.spec.ts keeps it
- * false until the [FOUNDER: fill] placeholder is gone in both languages.
+ * false while a [FOUNDER: fill] placeholder remains in either language
+ * (none does since 2026-11-12; flipping the guard is still his call).
  */
 export async function generateMetadata({
   params,

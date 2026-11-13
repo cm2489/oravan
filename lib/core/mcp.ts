@@ -213,7 +213,7 @@ export const TOOL_INFO: Record<ToolName, ToolInfo> = {
       'congressional district (needs_address: true, all candidate districts returned); this tool ' +
       'does not perform address-level refinement itself in this release - point the person to the ' +
       "response's reps_url, where they type the ZIP code and then a street address (the page does " +
-      'not carry the ZIP over), and a stateless, unlogged Census-geocoder proxy narrows it to a ' +
+      'not carry the ZIP over), and a stateless Census-geocoder proxy that never stores or logs the address narrows it to a ' +
       'single district from that address, which Oravan never stores. When a House seat currently ' +
       'has no member, `vacancies` lists the empty seat(s) (state + district) explicitly - the ' +
       'departed member is never returned as if still serving, and no election timeline is implied.',
