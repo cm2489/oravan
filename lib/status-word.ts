@@ -1,10 +1,10 @@
 import { decisionState } from './docket.mjs';
 import { concurrentAdoptedBy } from './floor-text.mjs';
-import { settledDecision, type SettledDecision } from './journey';
+import { endedDecision, settledDecision, type SettledDecision } from './journey';
 import type { Bill } from './types';
 
 /*
- * ONE WORD FOR WHERE A MEASURE ENDED UP — a closed set of five (wireframes
+ * ONE WORD FOR WHERE A MEASURE ENDED UP — a closed set of six (wireframes
  * v2, 2026-09-29, Claude's ruling 11, drawn on member.html and on the
  * several-bills Big Question page).
  *
@@ -21,6 +21,14 @@ import type { Bill } from './types';
  *   rejected  the measure itself lost its vote ("Failed of passage"). A failed
  *             MOTION about it is not this; that stays open;
  *   vetoed    the president vetoed it and no override has passed.
+ *   ended     its Congress ended while it was still `open` (stage 3 of the
+ *             new-Congress work, 2026-11-13): nothing can move it now.
+ *             Read through lib/journey.ts endedDecision, the bill page's own
+ *             reading, so the word and the panel cannot disagree. A bill
+ *             both chambers passed whose signature the record does not hold
+ *             yet stays `open` (the President's decision is still ahead).
+ *             Answered only for a bill of a Congress on the ended list,
+ *             which is empty until the January 2027 switch.
  *
  * Every word is read from the record, never from the bill type alone, and
  * through the same two readers the bill page and the MCP envelope use, so the
@@ -41,12 +49,14 @@ import type { Bill } from './types';
  * Shown as text in small ink capitals, never as a colour (page 1, rule 3).
  * The words are `bills.statusWord.*` in messages/en.json and es.json.
  */
-export const STATUS_WORDS = ['open', 'law', 'agreed', 'rejected', 'vetoed'] as const;
+export const STATUS_WORDS = ['open', 'law', 'agreed', 'rejected', 'vetoed', 'ended'] as const;
 export type StatusWord = (typeof STATUS_WORDS)[number];
 
 type StatusWordBill = Pick<Bill, 'bill_type' | 'status' | 'last_action_text' | 'last_action_date'> & {
   status_basis_text?: string | null;
   status_basis_date?: string | null;
+  congress_number?: number | null;
+  full_identifier?: string | null;
 };
 
 export function statusWord(bill: StatusWordBill): StatusWord {
@@ -58,6 +68,7 @@ export function statusWord(bill: StatusWordBill): StatusWord {
   if (state === 'enacted') return 'law';
   if (state === 'settled') return concurrentAdoptedBy(bill) ? 'agreed' : 'rejected';
   if (bill.status === 'vetoed') return 'vetoed';
+  if (endedDecision(bill)?.kind === 'ended') return 'ended';
   return 'open';
 }
 

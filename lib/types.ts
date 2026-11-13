@@ -36,6 +36,10 @@ export type BillStatus = (typeof BILL_STATUSES)[number];
  *                       chamber voted the measure down on passage or
  *                       adoption: exactly settledDecision's `rejected`
  *                       (2026-09-29). A failed procedural motion is not one.
+ *   ended               the bill's Congress has ended before Congress finished
+ *                       it (lib/journey.ts statusKeyFor, 2026-11-13). Answered
+ *                       only for a bill of a Congress on the ended list, which
+ *                       is empty until the January 2027 switch.
  *
  * Every one has a `bills.status.*` label in both languages.
  */
@@ -45,7 +49,8 @@ export type StatusLabelKey =
   | 'floor_vote_stale'
   | 'passed_both'
   | 'adopted'
-  | 'rejected';
+  | 'rejected'
+  | 'ended';
 
 /** Decoded structure. `cost` is null when the bill has no cost dimension. */
 export interface DecodedSections {

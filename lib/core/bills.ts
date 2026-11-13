@@ -35,6 +35,7 @@ import {
   type NewsCaption,
 } from '../conversation';
 import { effectiveUrgency } from '../urgency.mjs';
+import { isSiteEndedBill } from '../ended-state.mjs';
 import type { Bill, FeedTeaser, NewsBill } from '../types';
 
 export { effectiveUrgency };
@@ -359,7 +360,11 @@ export function getNewsBills(locale = 'en', n = 6, now: number = Date.now()): Ne
     const bySlug = new Map(BILLS.map((raw) => [billSlug(raw), raw]));
     return selectConversationBand(conversationBandPool(now), {
       limit: n,
-      renderable: (slug) => bySlug.has(slug),
+      // A bill of an ENDED Congress is never one of the week's news cards
+      // (stage 3 of the new-Congress work, 2026-11-13): this band is a "this
+      // week" list, and nothing can move that bill any more. The ended list
+      // is empty until the January 2027 switch.
+      renderable: (slug) => bySlug.has(slug) && !isSiteEndedBill(slug),
       // `signed` is the corpus's one enacted status (lib/urgency.mjs's
       // TERMINAL_STATUSES pairs it with `vetoed`, which is settled but is not
       // law — the owner's ruling names enacted laws, so a vetoed bill keeps
@@ -380,7 +385,8 @@ export function getNewsBills(locale = 'en', n = 6, now: number = Date.now()): Ne
     );
   }
 
-  const items = BILLS.map((raw) => {
+  // Same rule as `renderable` above: no ended bill in the week's band.
+  const items = BILLS.filter((raw) => !isSiteEndedBill(raw)).map((raw) => {
     const articles = getCoverage(billSlug(raw));
     return {
       raw,

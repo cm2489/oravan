@@ -1,6 +1,7 @@
 import { getAllBills } from '@/lib/core';
 import { MCP_ENDPOINT_URL } from '@/lib/core/mcp';
 import { EMBEDS_PAGES_PUBLIC, SITE_ORIGIN } from '@/lib/site';
+import { siteEndedCongress } from '@/lib/ended-state.mjs';
 
 /*
  * S22 — minimal, honest llms.txt (llmstxt.org convention). No native Next.js
@@ -43,6 +44,12 @@ import { EMBEDS_PAGES_PUBLIC, SITE_ORIGIN } from '@/lib/site';
  * back (owner, open-questions F), and this file never points a machine at a
  * page that 404s.
  *
+ * 2026-11-13 (stage 3 of the new-Congress work): once a Congress is on the
+ * ended list (lib/congress.mjs, empty until the January 2027 switch), the
+ * corpus sentence is followed by one more saying how many of those bills
+ * belong to it and that they are kept as a record, marked ended, with no
+ * call. Today the list is empty, the count is 0 and the file is unchanged.
+ *
  * English-only by design: llms.txt has no per-locale convention anywhere in
  * the wild (unlike every rendered page on this site, which does go through
  * messages/en.json + es.json — the bilingual-parity rule this file is not
@@ -52,6 +59,22 @@ export const dynamic = 'force-static';
 
 export function GET() {
   const total = getAllBills().length;
+  // Bills of an ended Congress, counted per Congress (none until the switch).
+  const endedBy = new Map<number, { ended: string; count: number }>();
+  for (const bill of getAllBills()) {
+    const c = siteEndedCongress(bill);
+    if (!c) continue;
+    const entry = endedBy.get(c.number) ?? { ended: c.ended, count: 0 };
+    entry.count += 1;
+    endedBy.set(c.number, entry);
+  }
+  const endedNote = [...endedBy.entries()]
+    .sort(([a], [b]) => a - b)
+    .map(
+      ([number, { ended, count }]) =>
+        ` ${count} of them are bills of the ${ordinal(number)} Congress, which ended on ${longDate(ended)}; they are kept as a record, marked ended, and offer no call.`
+    )
+    .join('');
   const embedsLine = EMBEDS_PAGES_PUBLIC
     ? `- [Embeds](${SITE_ORIGIN}/embeds): free, self-serve widgets (representative lookup, bill card) for other sites to embed\n`
     : '';
@@ -59,7 +82,7 @@ export function GET() {
 
 > Free, nonpartisan civic infrastructure: find your federal representatives, understand active bills in plain language, get a call script, and call Congress. No account required.
 
-Oravan publishes a plain-language, AI-drafted and automatically checked decoded summary for ${total} active and recent U.S. federal bills, in English and Spanish, refreshed nightly from Congress.gov and unitedstates/congress-legislators (both public domain). Every decoded summary links back to the official bill text; nothing here replaces it.
+Oravan publishes a plain-language, AI-drafted and automatically checked decoded summary for ${total} active and recent U.S. federal bills, in English and Spanish, refreshed nightly from Congress.gov and unitedstates/congress-legislators (both public domain).${endedNote} Every decoded summary links back to the official bill text; nothing here replaces it.
 
 ## Pages
 
@@ -85,5 +108,22 @@ The same corpus is available in Spanish under ${SITE_ORIGIN}/es — for example 
 `;
   return new Response(body, {
     headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+  });
+}
+
+/** 119 -> "119th", 121 -> "121st", 112 -> "112th". */
+function ordinal(n: number): string {
+  const tens = n % 100;
+  const suffix = tens >= 11 && tens <= 13 ? 'th' : (['th', 'st', 'nd', 'rd'][n % 10] ?? 'th');
+  return `${n}${suffix}`;
+}
+
+/** A YYYY-MM-DD term date as "Month D, YYYY", in UTC: it is a calendar day. */
+function longDate(isoDay: string): string {
+  return new Date(`${isoDay}T00:00:00Z`).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    timeZone: 'UTC',
   });
 }

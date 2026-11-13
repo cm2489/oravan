@@ -41,6 +41,7 @@ import {
   t0Weight,
 } from './docket.mjs';
 import type { UrgencyBand } from './taxonomy';
+import { isSiteEndedBill } from './ended-state.mjs';
 
 export {
   DOCKET_TIERS,
@@ -239,12 +240,25 @@ export function floorSessionSource(): { url: string | null; published: string | 
 }
 
 /** The rung for one bill, with its signal looked up here so callers never
- *  have to know the file exists. */
+ *  have to know the file exists.
+ *
+ *  A BILL OF AN ENDED CONGRESS IS TERMINAL (stage 3 of the new-Congress work,
+ *  2026-11-13): T4, no annotation, no announcement, exactly the rung a signed
+ *  law stands on. Every "what is moving" surface reads this one function
+ *  through the act-now pool (the homepage shortlist and crown, /call, MCP
+ *  `whats_moving`, both feeds, /today's schedule block, the /bills lead and
+ *  Moving bands), so an ended bill is never listed as moving, never crowned
+ *  and never carries a floor announcement. The slug decides it: its Congress
+ *  segment is the bill's own Congress. The ended list is empty until the
+ *  January 2027 switch, so today this returns what it always returned. */
 export function rungFor(
   bill: { status?: string; last_action_text?: string | null; last_action_date?: string | null; status_basis_text?: string | null },
   slug: string,
   now: number = Date.now()
 ): DocketRung {
+  if (isSiteEndedBill(slug)) {
+    return { tier: 't4', annotation: null, terminal: true, weight: 0, source: null, announced: null } as DocketRung;
+  }
   return docketRung(bill, floorSignalFor(slug), { now }) as DocketRung;
 }
 

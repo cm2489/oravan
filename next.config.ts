@@ -1,7 +1,26 @@
 import type { NextConfig } from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
+import { REVIEW_ENDED_ENV, reviewEndedCongressFrom } from './lib/ended-state.mjs';
 
 const withNextIntl = createNextIntlPlugin();
+
+/*
+ * THE ENDED-CONGRESS REVIEW SETTING (stage 3 of the new-Congress work,
+ * 2026-11-13). `ORAVAN_REVIEW_ENDED_CONGRESS=119 npm run build` builds the
+ * site with the 119th Congress shown as ended, so the owner can see the
+ * archive state before the January 2027 switch. Read here first so a refused
+ * setting stops the build before anything compiles: reviewEndedCongressFrom
+ * throws when the setting is on in a Vercel build (VERCEL / VERCEL_ENV) or in
+ * CI (CI / GITHUB_ACTIONS), and on any number but the tracked Congress's. Off
+ * (unset), this line does nothing. lib/ended-state.mjs carries the reasoning;
+ * tests/ended-state.unit.spec.ts pins the guard.
+ */
+const reviewedEndedCongress = reviewEndedCongressFrom(process.env);
+if (reviewedEndedCongress !== null) {
+  console.warn(
+    `\n  ${REVIEW_ENDED_ENV}=${reviewedEndedCongress}: REVIEW BUILD. Bills of the ${reviewedEndedCongress}th Congress are shown as ended. Never deploy this build.\n`
+  );
+}
 
 const nextConfig: NextConfig = {
   images: {

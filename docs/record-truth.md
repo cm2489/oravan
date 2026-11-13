@@ -133,3 +133,30 @@ Gates:
 - `tests/settled-panel.spec.ts`: the page, including S.J.Res. 185 and S. 2503 with the call panel and the line.
 - `tests/settled-state.unit.spec.ts` and `tests/mcp-tools.spec.ts`: the MCP classification.
 - Funnel invariant I2, scoped to a decision still open (`tests/funnel.spec.ts`).
+
+## 8. A bill of an ended Congress shows the record, not the call
+
+*Owner, 2026-11-12, on the change of Congress:* *"Yes. Start now, and keep the old bills as an archive marked 'ended'."* *His answers of the same evening, 9:14 to 9:19 PM ET, each the first option on his page:* an ended bill's page stays listed in search engines, at the same address, marked ended (no redirect, no "do not list"); the new wording "reads right", so it is built exactly as he read it. *Decided by the orchestrating session and told to him the same day:* the MCP server tells AI agents with a new `decision_state` value, `ended`, not by reusing `settled`, because `settled` means Congress decided and an ended bill was never decided.
+
+- **Which bills.** Every bill of a Congress on the ended list (`ENDED_CONGRESSES`, `lib/congress.mjs`), read for the site by `lib/ended-state.mjs` and, kind by kind, by `endedDecision` (`lib/journey.ts`). **The list is empty until the switch on Monday, January 4, 2027**, so on every page today nothing below applies, and nothing renders differently.
+- **What stands in the call panel's place**, by what the record holds:
+  1. **A law:** the record-only panel as in §7 ("This is law."), with the small line "Became law during the 119th Congress."
+  2. **A decided bill** (a rejected final vote, an adopted concurrent resolution): the record-only panel of §7, unchanged.
+  3. **Passed by both chambers in the same form, no signature on the record:** "Both chambers passed it before the 119th Congress ended. The record does not yet show what the president did." ("president" is lowercase under the owner's style rule of 2026-09-29, `docs/copy-style.md` §1; the line as approved capitalized it.) The record can still change here (a signature or a pocket veto after January 3), and the closing pass of stage 4 keeps reading it until January 31, 2027.
+  4. **Everything else, a veto included** (no override vote is possible once the Congress has ended): "This bill ended with the 119th Congress on January 3, 2027, before Congress finished it. A bill that ends this way can only move again if it is introduced in a new Congress, with a new number."
+
+  None of the four carries a stance, a script, a phone number, the floating call button, the "see how a call works" demo or the header's Call-tab target. The plain-language decode, its AI label, the official record and the vote record stay.
+- **Labels.** "Ended" (short) replaces every label that describes a stage the bill could still move from (committee, markup, the floor keys, "Passed one chamber") on cards, lists, search results, Today, the home page and the bill-card embed's key; "Ended with the 119th Congress" (long) on the bill page's status chip, its share image and the bill-card embed. A law, a veto, a rejection, an adopted concurrent resolution and "Passed both chambers" keep their labels: they say what the record holds, and stay true. The stepper's "Right now:" prints the long label (or, case 3, its line) instead of a stage.
+- **Never moving.** An ended bill stands on the docket ladder's terminal rung (`rungFor`, `lib/docket.ts`), so it is never in the act-now pool, the crown, `/call`, MCP `whats_moving`, the feeds, /today's schedule block, the "In the news" band, or the /bills lead and Moving bands, and it never carries a floor band, a recess note or a yellow notice. `scripts/check-floor-signals.mjs` fails on a live floor signal that names one: a chamber schedules only its own Congress's bills.
+- **The call script.** `app/api/script` answers 409 `ended` before any cache read or model call; no stored script is served.
+- **The MCP envelope.** `decision_state: "ended"` (described as "The Congress this bill belonged to has ended, and the bill can no longer move. A new bill would have to be introduced."), `settled_reason` null, no `act_url`, `urgency_score` 0, left out of `active_only`. A law and a decided bill keep `enacted` and `settled`; case 3 reads `pending` without an `act_url`, because a decision is still ahead and it is the president's. The tool descriptions name `ended` only while a Congress is on the list.
+- **The paid action-panel embed** reads the ended state: no panel, the citation, the official title and the sentence for the case. It still does not read the settled state (§7, "Not yet covered").
+- **Search engines and machines.** The sitemap keeps every ended bill page at its canonical address; llms.txt adds one sentence counting them as a record, marked ended, with no call.
+- **Not yet covered here:** the wording above names the 119th Congress, so a later Congress on the list needs its own approved wording. The Big Questions (stage 6), departed members' pages (stage 5), the first weeks' quiet-week line and the bills list's archive heading (stage 4) are separate stages.
+- **The review build.** `ORAVAN_REVIEW_ENDED_CONGRESS=119 npm run build` shows the 119th as ended on a local build, for the owner's review only. `lib/ended-state.mjs` refuses it in any Vercel or CI build, and on any number but the tracked Congress's.
+
+Gates:
+- `tests/ended-state.unit.spec.ts`: the reading, kind by kind over the committed corpus with a test policy (119 ended); the labels, the ladder, the MCP envelope, the script route, the dormant default and the review setting's guard.
+- `tests/settled-panel.unit.spec.ts`, `tests/journey.unit.spec.ts`: the ended cases beside the settled ones.
+- `tests/ended-panel.spec.ts`: the page, the embeds and the script route against a review build (skipped on an ordinary build).
+- `scripts/check-floor-signals.mjs --self-test`: the ended-Congress signal.

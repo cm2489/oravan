@@ -83,6 +83,10 @@ import {
 // The date of the sentence the stepper reads: the one reader the call panel
 // already uses for it (`import`, not a copy, so the two cannot drift).
 import { settledDecisionDate } from './settled-votes';
+// WHICH BILLS ARE ENDED (stage 3 of the new-Congress work, 2026-11-13): the
+// site's one reading of lib/congress.mjs's ended list. Import-free apart from
+// that module, so the embed and MCP surfaces that read this file pay nothing.
+import { isSiteEndedBill, siteEndedCongress } from './ended-state.mjs';
 
 /** The optional pipeline field every chamber/tense derivation below reads
  *  through `statusBasisText` (lib/floor-text.mjs), and its date, which the
@@ -497,9 +501,43 @@ export function floorCalendarName(actionText: string | null): FloorCalendar | nu
  * (it reads the passage readings only when its caller hands it the bill);
  * tests/journey.unit.spec.ts pins the two corpus-wide at a shared `now`.
  */
-export type StatusKeyBill = Pick<Bill, 'bill_type' | 'status' | 'last_action_text' | 'last_action_date'> & Basis;
+export type StatusKeyBill = Pick<Bill, 'bill_type' | 'status' | 'last_action_text' | 'last_action_date'> &
+  Basis &
+  EndedReadable;
+
+/** What the ended reading needs: the bill's own Congress (its number, else
+ *  the Congress in its identifier). A caller that hands over neither is read
+ *  as not ended, never guessed (lib/congress.mjs congressOfBill). */
+type EndedReadable = { congress_number?: number | null; full_identifier?: string | null };
+
+/*
+ * THE ENDED READING (stage 3 of the new-Congress work, 2026-11-13). The owner
+ * decided on Nov 12, 2026 to keep the 119th Congress's bills as an archive
+ * marked "ended". On a bill of a Congress on the ended list (lib/ended-state.mjs
+ * siteEndedCongress; EMPTY until the switch) every key that describes a stage
+ * a decision could still move from reads `ended` instead ("Ended"), because
+ * nothing can move it any more: committee, markup, the floor keys, "Passed one
+ * chamber". The keys that state what the record already holds are kept, since
+ * they stay true: a law, a veto, a rejection, an adopted concurrent resolution,
+ * and "Passed both chambers" (the record may still show what the President
+ * did; stage 4 keeps reading it until Jan 31, 2027).
+ */
+const ENDED_KEEPS: ReadonlySet<StatusLabelKey> = new Set<StatusLabelKey>([
+  'signed',
+  'vetoed',
+  'rejected',
+  'adopted',
+  'passed_both',
+]);
 
 export function statusKeyFor(bill: StatusKeyBill, now: number = Date.now()): StatusLabelKey {
+  const key = recordStatusKey(bill, now);
+  if (ENDED_KEEPS.has(key) || !isSiteEndedBill(bill)) return key;
+  return 'ended';
+}
+
+/** The status key the record alone answers, before the ended reading. */
+function recordStatusKey(bill: StatusKeyBill, now: number): StatusLabelKey {
   const { status } = bill;
   if (status === 'passed_chamber') {
     if (concurrentAdoptedBy(bill)) return 'adopted';
@@ -619,11 +657,15 @@ export function billFloorBand(
     last_action_text?: string | null;
     last_action_date?: string | null;
     status_basis_text?: string | null;
-  },
+  } & EndedReadable,
   announcement: { chamber: Chamber; published: string } | null,
   now: number = Date.now(),
   sessionOf?: (chamber: Chamber) => ChamberSession
 ): FloorBand | null {
+  // A bill of an ended Congress carries no floor fact: the calendar it was
+  // placed on and the vote it was waiting for belong to a Congress that no
+  // longer meets (stage 3, 2026-11-13; empty ended list today).
+  if (isSiteEndedBill(bill)) return null;
   const suspendedFor = (kind: FloorBandKind, chamber: Chamber): boolean =>
     sessionOf ? floorFactSuspended(kind, sessionOf(chamber)) : false;
   if (announcement) {
@@ -863,9 +905,12 @@ export function announcedCallTarget(
  * whatever a future caller passes in.
  */
 export function liveCallTarget(
-  bill: Pick<Bill, 'bill_type' | 'status' | 'last_action_text' | 'last_action_date'> & Basis,
+  bill: Pick<Bill, 'bill_type' | 'status' | 'last_action_text' | 'last_action_date'> & Basis & EndedReadable,
   announcement: RoutingAnnouncement | null = null
 ): LiveCallTarget | null {
+  // No chamber can act on a bill of an ended Congress, so there is no live
+  // call to route (stage 3, 2026-11-13; empty ended list today).
+  if (isSiteEndedBill(bill)) return null;
   const record = recordCallTarget(bill);
   if (TERMINAL_STATUSES.has(bill.status)) return record;
   const announced = announcedCallTarget(announcement);
@@ -1799,6 +1844,53 @@ export function settledDecision(
   if (journey.nowKey !== 'nowFloorPassageRejected') return null;
   if (floorReconsiderPendingChamber(statusBasisText(bill))) return null;
   return { kind: 'rejected', chamber: journey.nowChamber, tally: journey.tally };
+}
+
+/**
+ * A BILL OF AN ENDED CONGRESS — what stands where the call panel stands
+ * (stage 3 of the new-Congress work, 2026-11-13; owner's decision of Nov 12,
+ * 2026: keep the 119th's bills "as an archive marked 'ended'").
+ *
+ * Null for every bill whose Congress is not on the ended list, which today is
+ * every bill (lib/congress.mjs ENDED_CONGRESSES is empty until the switch).
+ * Otherwise the Congress, the term's last day, and one of four kinds:
+ *
+ *   law        it became law (settledDecision `law`): the page keeps "This is
+ *              law." and adds the approved small line under it;
+ *   decided    Congress decided it (settledDecision `rejected` or `adopted`):
+ *              the record-only panel stands as it does today;
+ *   presented  both chambers passed it in the same form (passageState stage
+ *              'both', a bill or joint resolution) and the record holds no
+ *              signature yet: the approved "does not yet show what the
+ *              president did" line, and no call;
+ *   ended      everything else, a veto included (an override vote is no
+ *              longer possible once the Congress has ended): the approved
+ *              note that the bill ended with that Congress, and no call.
+ *
+ * No kind carries call apparatus (page 1, rule 6: "a settled decision shows
+ * no call apparatus"; an ended bill is the same in that respect).
+ */
+export type EndedKind = 'law' | 'decided' | 'presented' | 'ended';
+
+export interface EndedDecision {
+  kind: EndedKind;
+  /** The ended Congress's number (119 for the 2027 switch). */
+  congress: number;
+  /** The last day of that Congress's term, YYYY-MM-DD. */
+  ended: string;
+}
+
+export function endedDecision(
+  bill: Pick<Bill, 'bill_type' | 'status' | 'last_action_text' | 'last_action_date'> & Basis & EndedReadable
+): EndedDecision | null {
+  const congress = siteEndedCongress(bill);
+  if (!congress) return null;
+  const base = { congress: congress.number, ended: congress.ended };
+  const settled = settledDecision(bill);
+  if (settled?.kind === 'law') return { ...base, kind: 'law' };
+  if (settled) return { ...base, kind: 'decided' };
+  if (bill.status === 'passed_chamber' && passageState(bill).stage === 'both') return { ...base, kind: 'presented' };
+  return { ...base, kind: 'ended' };
 }
 
 /**

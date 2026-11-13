@@ -172,7 +172,15 @@ export function BillCardWidget({
       </div>
 
       <article className="bc-card">
-        <p className="bc-status">{t.bills.status[bill.statusKey] ?? t.bills.status[bill.status]}</p>
+        {/* A bill of an ended Congress prints the approved LONG label ("Ended
+            with the 119th Congress"): a partner's reader has no bill page
+            around the card to say which Congress (stage 3, 2026-11-13). The
+            ended list is empty until the January 2027 switch. */}
+        <p className="bc-status">
+          {bill.statusKey === 'ended'
+            ? t.bill.ended.statusLong
+            : (t.bills.status[bill.statusKey] ?? t.bills.status[bill.status])}
+        </p>
         {/* WITH the status line and ABOVE the sync stamp, deliberately. These
             are two different clocks and the order is the whole point: the
             record's date qualifies the label it sits under, while "Data as of"

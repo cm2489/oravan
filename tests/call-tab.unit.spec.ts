@@ -169,8 +169,10 @@ test.describe('pages declare the target under the same condition as their panel'
     const src = read('app/[locale]/bills/[id]/page.tsx');
     // The panel's own branch…
     expect(src).toContain('{settled && settledOutcome ? (');
-    // …and the declaration, negated on the same two names.
-    expect(src).toContain('{!(settled && settledOutcome) && <CallTabTarget href="#act" />}');
+    // …and the declaration, negated on the same two names, and (stage 3,
+    // 2026-11-13) on the ended panel's own branch too.
+    expect(src).toContain(') : ended && endedText ? (');
+    expect(src).toContain('{!(settled && settledOutcome) && !(ended && endedText) && <CallTabTarget href="#act" />}');
   });
 
   test('nomination page: #act exactly when the rail is the call panel', () => {

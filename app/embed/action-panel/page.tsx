@@ -4,6 +4,7 @@ import { after } from 'next/server';
 import en from '@/messages/en.json';
 import es from '@/messages/es.json';
 import { billSlug, getBill, localizeBill } from '@/lib/core';
+import { endedDecision, statusKeyFor } from '@/lib/journey';
 import { formatCitation } from '@/lib/format';
 import { registrableDomain } from '@/lib/embed-referrer';
 import { noteImpression } from '@/lib/impressions';
@@ -137,6 +138,49 @@ export default async function ActionPanelEmbedPage({
         <p className="re-error" role="alert">
           {t.embed.billNotFound}
         </p>
+      </ActionPanelMessage>
+    );
+  }
+
+  /*
+   * A BILL OF AN ENDED CONGRESS HAS NO CALL TO MAKE (stage 3 of the
+   * new-Congress work, 2026-11-13; page 1, rule 6). The panel would offer a
+   * stance and a script for a decision no chamber can make any more, and the
+   * script route refuses it (409 `ended`), so the widget is not mounted: the
+   * partner's page shows the bill's citation, its official title and the
+   * approved sentence instead, in the same message frame as the other
+   * no-panel states. No AI-written words are printed in this frame (the
+   * official title is the record's), so it carries no AI label; system
+   * fonts, zero cookies and zero third-origin requests are the frame's own.
+   * The ended list is empty until the January 2027 switch, so today no bill
+   * takes this path.
+   *
+   * THE SETTLED STATE IS LEFT AS IT IS here on purpose: reading it would
+   * change what partners see today, and this stage changes nothing while the
+   * list is empty. A settled bill's script is already refused by the route
+   * (409 `settled`); CLAUDE.md rule 6 still names this gap.
+   */
+  const ended = endedDecision(bill);
+  if (ended) {
+    const lines =
+      ended.kind === 'law'
+        ? [t.bill.settled.law, t.bill.ended.lawLine]
+        : ended.kind === 'presented'
+          ? [t.bill.ended.presented]
+          : ended.kind === 'decided'
+            ? [t.bills.status[statusKeyFor(bill) as keyof typeof t.bills.status], t.bill.ended.statusLong]
+            : [t.bill.ended.note];
+    return (
+      <ActionPanelMessage locale={locale} theme={theme} brandless={brandlessFlag}>
+        <div data-ended-panel={ended.kind}>
+          <p className="bc-citation">{formatCitation(bill.bill_type, bill.bill_number)}</p>
+          <p className="re-title">{bill.short_title ?? bill.title}</p>
+          {lines.map((line) => (
+            <p key={line} className="re-note" data-ended-note="">
+              {line}
+            </p>
+          ))}
+        </div>
       </ActionPanelMessage>
     );
   }

@@ -5,7 +5,8 @@ import en from '../messages/en.json';
 import es from '../messages/es.json';
 import { decisionState } from '../lib/docket.mjs';
 import { FLOOR_PASSAGE_REJECTED, concurrentAdoptedBy, statusBasisText } from '../lib/floor-text.mjs';
-import { deriveJourney, lastFailedVote, settledDecision } from '../lib/journey';
+import { deriveJourney, endedDecision, lastFailedVote, settledDecision } from '../lib/journey';
+import { withSitePolicyForTest } from '../lib/ended-state.mjs';
 import { recordedRollNumber, settledDecisionDate, settledVoteGroups } from '../lib/settled-votes';
 import type { Bill, RollCall } from '../lib/types';
 import { votesCoverage, votesForBill } from '../lib/votes';
@@ -809,4 +810,31 @@ test.describe('the panel\'s words, in both languages', () => {
       }
     }
   });
+});
+
+/*
+ * THE ENDED STATE BESIDE THE SETTLED ONE (stage 3 of the new-Congress work,
+ * 2026-11-13). With a test policy (119 ended), set through
+ * lib/ended-state.mjs and never by editing a data file: the ended reading
+ * never changes what `settledDecision` answers (a law stays a law, a rejection
+ * stays a rejection), every settled bill reads as `law` or `decided`, and
+ * every bill the record leaves open reads as `presented` or `ended` — so no
+ * bill of the ended Congress is left with the call panel.
+ */
+test('ended Congress: settled bills keep their reading; every other bill leaves the call panel', () => {
+  const all = bills as Bill[];
+  const before = all.map((b) => settledDecision(b));
+  withSitePolicyForTest({ tracked: 120, ended: [{ number: 119, ended: '2027-01-03' }] }, () => {
+    all.forEach((b, i) => {
+      const id = b.full_identifier;
+      expect(settledDecision(b), id).toEqual(before[i]);
+      const ended = endedDecision(b);
+      expect(ended, id).not.toBeNull();
+      if (before[i]?.kind === 'law') expect(ended!.kind, id).toBe('law');
+      else if (before[i]) expect(ended!.kind, id).toBe('decided');
+      else expect(['presented', 'ended'], id).toContain(ended!.kind);
+    });
+  });
+  // Today, nothing is ended.
+  expect(all.every((b) => endedDecision(b) === null)).toBe(true);
 });
