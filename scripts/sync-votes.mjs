@@ -108,6 +108,7 @@ import {
   parseSenateXml,
   resolveBillId,
   resolveFloor,
+  cursorIsAhead,
   rollCallId,
   sessionForYear,
   verifyVotes,
@@ -329,9 +330,9 @@ function advance(chamber, session, examined) {
   }
   if (high == null) return;
   const next = `${CONGRESS}-${session}-${high}`;
-  const prev = cursor[chamber];
-  const [, ps, pr] = prev ? prev.split('-').map(Number) : [0, 0, 0];
-  if (!prev || session > ps || (session === ps && high > pr)) cursor[chamber] = next;
+  // Congress first, then session, then roll (lib/votes-core.mjs, 2026-11-12):
+  // the 120th's first roll is ahead of the 119th's last.
+  if (cursorIsAhead(next, cursor[chamber])) cursor[chamber] = next;
 }
 
 // ---- House --------------------------------------------------------------------
