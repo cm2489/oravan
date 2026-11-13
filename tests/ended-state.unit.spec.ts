@@ -11,6 +11,7 @@ import es from '../messages/es.json';
 import { POST } from '../app/api/script/route';
 import { CONGRESS_POLICY, type CongressPolicy } from '../lib/congress.mjs';
 import {
+  activeBillCount,
   billSlug,
   getActNowInWindow,
   getAllBills,
@@ -346,7 +347,13 @@ test('item 2: an ended bill is never moving: terminal rung, no announcement, emp
     expect(getActNowInWindow(30)).toEqual([]);
     expect(getNewsBills('en', 6)).toEqual([]);
     expect(new Set(getTeasers('en').map((t) => t.band))).toEqual(new Set(['radar']));
+    // "Browse all N active bills" and the /bills search line count none of them.
+    expect(activeBillCount()).toBe(0);
+    expect(getTeasers('en').every((t) => t.ended === true)).toBe(true);
   });
+  // Today: every bill is active, and no teaser carries the field at all.
+  expect(activeBillCount()).toBe(getAllBills().length);
+  expect(getTeasers('en').some((t) => 'ended' in t)).toBe(false);
   // The control: the committed corpus does have bills moving off the
   // ladder's own rungs today (or the assertions above prove nothing).
   expect(getTeasers('en').some((t) => t.band !== 'radar')).toBe(true);

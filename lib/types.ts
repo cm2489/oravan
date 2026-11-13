@@ -175,6 +175,13 @@ export interface FeedTeaser extends BillTeaser {
    * it — amber is one dated floor fact that is still AHEAD.
    */
   annotation?: 'just_decided' | 'just_passed' | null;
+  /**
+   * Present (and true) only on a bill of an ENDED Congress (stage 3 of the
+   * new-Congress work, 2026-11-13), so the list's "active bills" count can
+   * leave it out. Absent, never false, on every other bill, so the payload
+   * of every teaser today is what it was.
+   */
+  ended?: true;
 }
 
 export interface DistrictOffice {

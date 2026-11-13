@@ -23,6 +23,10 @@ if (reviewedEndedCongress !== null) {
 }
 
 const nextConfig: NextConfig = {
+  // A review build only: bake the reviewed Congress into this build's server
+  // and browser code, so routes rendered on request read what the prerendered
+  // pages read (lib/ended-state.mjs). Absent on every real build.
+  ...(reviewedEndedCongress !== null ? { env: { ORAVAN_REVIEW_ENDED_CONGRESS: String(reviewedEndedCongress) } } : {}),
   images: {
     remotePatterns: [
       // Public-domain congressional portraits (unitedstates project)

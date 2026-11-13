@@ -186,7 +186,20 @@ export function teaserFor(raw: Bill, locale: string, rung: DocketRung = rungFor(
     annotation: rung.annotation,
     statusKey: statusKeyFor(b),
     lastActionDate: b.last_action_date,
+    // Only when true (see FeedTeaser.ended): absent on every bill today.
+    ...(isSiteEndedBill(raw) ? { ended: true as const } : {}),
   };
+}
+
+/**
+ * HOW MANY BILLS ARE ACTIVE — the count behind every "Browse all N active
+ * bills" link (the homepage, /call, /reps). A bill of an ENDED Congress is
+ * not active (stage 3 of the new-Congress work, 2026-11-13), so it is left
+ * out; the ended list is empty until the January 2027 switch, so today this
+ * is the whole corpus, as before.
+ */
+export function activeBillCount(): number {
+  return BILLS.filter((raw) => !isSiteEndedBill(raw)).length;
 }
 
 /**

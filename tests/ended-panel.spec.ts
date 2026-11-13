@@ -80,11 +80,13 @@ for (const { locale, prefix, m } of [
     await noCallApparatus(page, m);
   });
 
-  test(`${locale}: the bills list has no "Deciding now" or "Moving" band, and labels the cards "${m.bills.status.ended}"`, async ({
+  test(`${locale}: the bills list lists nothing as deciding or moving, and labels the cards "${m.bills.status.ended}"`, async ({
     page,
   }) => {
     await page.goto(`${prefix}/bills`);
-    await expect(page.locator('#band-now')).toHaveCount(0);
+    // "Deciding now" keeps its heading and says the week is quiet; it lists
+    // no bill. "Moving" has nothing to list, so it does not render.
+    await expect(page.locator('section[aria-labelledby="band-now"] a[href*="/bills/"]')).toHaveCount(0);
     await expect(page.locator('#band-moving')).toHaveCount(0);
     await expect(page.getByText(m.bills.status.ended, { exact: true }).first()).toBeVisible();
   });
