@@ -50,9 +50,15 @@ DOWNLOAD = '--download' in sys.argv
 # The workflow never passes it.
 TODAY_ARG = sys.argv[sys.argv.index('--today') + 1] if '--today' in sys.argv else None
 # --accept-departures N: see the header. Exactly N, refused if not a number.
-ACCEPT = parse_accept_departures(
-    sys.argv[sys.argv.index('--accept-departures') + 1] if '--accept-departures' in sys.argv else None
-)
+try:
+    ACCEPT = parse_accept_departures(
+        sys.argv[sys.argv.index('--accept-departures') + 1] if '--accept-departures' in sys.argv else None
+    )
+except (ValueError, IndexError) as e:
+    # One plain line, before anything is read or written (0, abc and -1 used
+    # to stop here with a traceback).
+    print(f'::error::{e if isinstance(e, ValueError) else "--accept-departures needs a number after it"}; nothing was read or written.')
+    sys.exit(2)
 SOURCES = {
     'data/legislators-raw.json': 'https://unitedstates.github.io/congress-legislators/legislators-current.json',
     'data/district-offices-raw.json': 'https://unitedstates.github.io/congress-legislators/legislators-district-offices.json',
@@ -170,11 +176,18 @@ house_problem = (
 )
 if anomalous:
     print(f'::error::{house_problem}')
+    # No accept hint when the file looks broken: the report says "Accept
+    # nothing" then, and the line here must not say otherwise.
+    broken = any('looks broken' in p for p in problems)
     print(
         '::error::This looks like a truncated or broken upstream fetch, not '
-        f'{len(newly_detected)} simultaneous real vacancies - refusing to '
-        'commit. If this is genuinely correct, re-run with the accept_departures '
-        'input (docs/runbooks/new-congress-switch.md, "A refused week").'
+        f'{len(newly_detected)} simultaneous real vacancies - refusing to commit.'
+        + (
+            ''
+            if broken
+            else ' If this is genuinely correct, re-run with the accept_departures '
+            'input (docs/runbooks/new-congress-switch.md, "A refused week").'
+        )
     )
 if problems:
     for p in problems:

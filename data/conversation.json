@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-13T16:15:07.182Z",
+    "fetched_at": "2026-11-13T20:48:20.337Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-13T16:15:07.182Z"
+        "checked_at": "2026-11-13T20:48:20.337Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-08",
         "week_label": "Most-Viewed Bills - Week of November 8, 2026",
         "entries": 6,
-        "checked_at": "2026-11-13T16:15:07.182Z"
+        "checked_at": "2026-11-13T20:48:20.337Z"
       },
       "leans": {
         "center": {
@@ -197,6 +197,19 @@
       ],
       "mostViewed": null
     },
+    "hjres-120-119": {
+      "outlets7d": [
+        {
+          "domain": "politico.com",
+          "lean": "left",
+          "firstSeen": "2026-11-13",
+          "lastSeen": "2026-11-13",
+          "url": "https://www.politico.com/live-updates/2026/11/13/congress/hakeem-jeffries-committee-term-limits-01165296"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hjres-89-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -211,6 +224,13 @@
     },
     "hr-1-119": {
       "outlets7d": [
+        {
+          "domain": "dailysignal.com",
+          "lean": "right",
+          "firstSeen": "2026-11-13",
+          "lastSeen": "2026-11-13",
+          "url": "https://news.google.com/rss/articles/CBMicEFVX3lxTE53VUpSdDNxbkhZTThzTmtLaU00UVRFc00tSFVqRWRldmFwQ3hKYjFEaXVKZGJlcmF5SXlMdkQzM3pxZGx2bDVNdGQyWm5hTFdzdzR3c3FmYXZTbDA1Skhhb2ZDQ0lPR29CV05rZjE3NDQ?oc=5"
+        },
         {
           "domain": "politico.com",
           "lean": "left",
@@ -548,6 +568,12 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "lawcommentary.com",
+          "firstSeen": "2026-11-13",
+          "lastSeen": "2026-11-13",
+          "url": "https://news.google.com/rss/articles/CBMiiwFBVV95cUxOMlBfQkJLSkt0RGktVy1PdTJ5b1d3d1FJbjFVU1pDLWdhMVd0Q1VaV214RW5fTlc1THdTX0hwb0JFcnJ5Rk9QSFVqTnJsZWhYZkFzbGZFd0t3SU1oMUtUVUtLZ0VOVE5IWTNkeEREeEViS1A5d195Si1DbDlUSXVPenlwTV9QNXB2YWNN?oc=5"
+        },
         {
           "domain": "thestatesman.com",
           "firstSeen": "2026-11-12",
@@ -1018,6 +1044,18 @@
       ],
       "mostViewed": null
     },
+    "hr-8646-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "civileats.com",
+          "firstSeen": "2026-11-13",
+          "lastSeen": "2026-11-13",
+          "url": "https://news.google.com/rss/articles/CBMipwFBVV95cUxPTEFvWEtCdnpUVi1lOTJ1WVBwQldMeDEyMnoxZ3BqN1E3R3ZabF93LU1mNHVPYWFwcnNZaUxHWVEtTTNxaFM4NlhmU0FINkNvMkNjcnJWYVRoNEpBblMzcUowWWFOZzQ1V3NwNDBwZ3hTanR1ZUM1VWxQYjl1a1RKMU5QY0V6X3otNGF1UW1pVjl5N2F0Wkx0MVlQVWgtcjZHU01TUzUydw?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-8885-119": {
       "outlets7d": [
         {
@@ -1033,6 +1071,13 @@
     },
     "hr-8902-119": {
       "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-11-13",
+          "lastSeen": "2026-11-13",
+          "url": "https://thehill.com/video-clips/6218733-watch-live-van-hollen-remarks-whats-next-conference-denver-schumer-challenge-midterms/"
+        },
         {
           "domain": "foxnews.com",
           "lean": "right",
@@ -1095,6 +1140,18 @@
           "firstSeen": "2026-11-09",
           "lastSeen": "2026-11-09",
           "url": "https://news.google.com/rss/articles/CBMisAFBVV95cUxPSGNUQW9PMzZlbDg4RFpJQk9KV1htQkdXN0tnWnk0MF8yRW1FMDhYLTNHNGFWaFM5WUF6RmFocVQ1clVFYnI0MG5fRldNQldUaTJUeWN4NEhyamc2Z3VpdUdMOFZVbnhLNFpFUC1lVzVsVS1va1lCRWtQeFRYLVVWRXNoRWFjWmREOXRYWnlLTUV3V3Q5RUNHTEx6X1YyN0FaWVljdTdLUHpCcjVsd29Rcw?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "s-105-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "hyperallergic.com",
+          "firstSeen": "2026-11-13",
+          "lastSeen": "2026-11-13",
+          "url": "https://news.google.com/rss/articles/CBMimwFBVV95cUxQcS1oSGtaY0hxTjBsQmJ1cnBVR1NTRHVFZWZWY0JOYUJOVDVyUVZhaXFBaDRuYXBfVF9QcGxORk9feTltVWJTd01lWTNtMEtBMTljZ2hSNWZiRkR0cU9FTlJJaURfaTdHanA3VEFYb0NJQkNUMnNWQlY0ZEV5ekJxMlRrSWxYWFROb1VudU5zZmRZZi1xSjdkOTFIbw?oc=5"
         }
       ],
       "mostViewed": null
@@ -1242,6 +1299,19 @@
           "firstSeen": "2026-11-09",
           "lastSeen": "2026-11-09",
           "url": "https://www.npr.org/2026/11/09/nx-s1-6030830/democrats-grocery-bill-affordability"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "s-4161-119": {
+      "outlets7d": [
+        {
+          "domain": "politico.com",
+          "lean": "left",
+          "firstSeen": "2026-11-13",
+          "lastSeen": "2026-11-13",
+          "url": "https://www.politico.com/live-updates/2026/11/13/congress/house-gop-debates-disclipline-01164854"
         }
       ],
       "unratedOutlets7d": [],
@@ -1544,7 +1614,14 @@
           "url": "https://thehill.com/homenews/senate/6217635-senate-democrats-threaten-shutdown-iran/"
         }
       ],
-      "unratedOutlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "tehrantimes.com",
+          "firstSeen": "2026-11-13",
+          "lastSeen": "2026-11-13",
+          "url": "https://news.google.com/rss/articles/CBMipgFBVV95cUxQZGFNT290eDlsbk5oaF82TE85dlNqVVFqQV9GYnV6blZhVnR4bEFiTFRFOF9GblRLcVdlNWRTZ0tNU1hTMHE2alUwdi1QRWduZHdSYWVNUHV2UVVIX0Z5OHp5WHVEaXNrVjR6WFduQ2tKN3RXd2VmMlJqY3NPUDM2amVKZWFfUU9sYy1SS1IxY0pYT3NFLTA2SFNXT0t4c0pZcTJ0Tl9n?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "sjres-204-119": {
@@ -1562,6 +1639,13 @@
     },
     "sjres-32-119": {
       "outlets7d": [
+        {
+          "domain": "defensenews.com",
+          "lean": "center",
+          "firstSeen": "2026-11-13",
+          "lastSeen": "2026-11-13",
+          "url": "https://news.google.com/rss/articles/CBMitAFBVV95cUxQUmNUd1RxNExxMUdYbjNuQnNKQ0NleHlxMUp1Qld0NkdBQkM3ZG42ajVwUF9tWlJyLUlSNG9iS21kOXJuc1FvUkNKdHk1MldNWUhsWk5kZkZwNlV4NFhQSm1DZEEwT0gweTdqODhWd0hXUVRVWTdJSXZ4d2E0VWxVRmF6cGNvMEdyMzktS3BmNFJjeXJobW9TNzI5c3R4cFFMNGY2dnRJRXEtbTlKdGpNbmRNbVY?oc=5"
+        },
         {
           "domain": "militarytimes.com",
           "lean": "center",

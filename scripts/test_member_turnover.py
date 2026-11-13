@@ -18,6 +18,7 @@ from member_turnover import (
     refusal_report,
     FORBIDDEN_FIELDS,
     MEMBER_DROP_THRESHOLD,
+    MIN_PLAUSIBLE_MEMBERS,
     TURNOVER_WINDOW_DAYS,
     departed_problems,
     departed_records,
@@ -103,6 +104,7 @@ class LargeTurnoverTest(unittest.TestCase):
         problems = roster_problems(self.new, self.prev, ORDINARY_DAY)
         self.assertEqual(len(problems), 1)
         self.assertIn('80 member(s) left the file', problems[0])
+        self.assertIn('Jan 3 through Feb 13 of an odd year', problems[0])
 
     def test_a_seat_whose_member_changes_is_never_vacant(self):
         # FL-20-class: a seat vacant in the old Congress gets a member in the
@@ -160,8 +162,9 @@ class DuplicateTest(unittest.TestCase):
 
 
 class AcceptedWeekTest(unittest.TestCase):
-    """Six or more real departures outside January: refused until a person
-    names the exact count; then exactly that count passes, once."""
+    """Six or more real departures outside the window (Jan 3 to Feb 13 of an
+    odd year): refused until a person names the exact count; then exactly
+    that count passes, once."""
 
     def setUp(self):
         self.prev = full_roster()
@@ -199,6 +202,74 @@ class AcceptedWeekTest(unittest.TestCase):
         for bad in ('0', '-3', 'all', '7.5', ' 7'):
             with self.assertRaises(ValueError):
                 parse_accept_departures(bad)
+
+
+class BrokenFileTest(unittest.TestCase):
+    """An empty or badly short upstream file is refused in every week, and no
+    accept_departures number lets it through (re-check of stage 5: the report
+    used to say accept_departures=539, which wrote an empty member file)."""
+
+    def setUp(self):
+        self.prev = full_roster()
+
+    def test_the_floor_comes_from_the_record(self):
+        self.assertEqual(MIN_PLAUSIBLE_MEMBERS, 500)
+
+    def test_an_empty_file_is_broken_and_never_accepted(self):
+        for day in (ORDINARY_DAY, SWITCH_DAY):
+            for accept in (None, 1, 80, len(self.prev)):
+                problems = roster_problems([], self.prev, day, accept_departures=accept)
+                self.assertTrue(any('looks broken' in p for p in problems), (day, accept))
+            self.assertFalse(accepts_seats([], self.prev, len(self.prev), 435))
+
+    def test_a_short_file_is_broken_even_in_january_and_no_number_accepts_it(self):
+        short = self.prev[:MIN_PLAUSIBLE_MEMBERS - 1]  # 499 members
+        gone = len(self.prev) - len(short)
+        for day in (SWITCH_DAY, ORDINARY_DAY):
+            for accept in (None, gone, 1):
+                problems = roster_problems(short, self.prev, day, accept_departures=accept)
+                self.assertTrue(any('looks broken' in p for p in problems), (day, accept))
+            self.assertFalse(accepts_seats(short, self.prev, gone, gone))
+        whole_enough = self.prev[:MIN_PLAUSIBLE_MEMBERS]
+        self.assertFalse(any('looks broken' in p for p in roster_problems(whole_enough, self.prev, SWITCH_DAY)))
+
+    def test_the_report_for_a_broken_file_offers_no_accept_command(self):
+        from member_turnover import dropped_members
+        body = refusal_report(roster_problems([], self.prev, ORDINARY_DAY), dropped_members([], self.prev), ORDINARY_DAY)
+        self.assertNotIn('accept_departures=', body)
+        self.assertIn('Accept nothing', body)
+        self.assertIn('looks broken', body)
+
+
+
+class LateChangeoverTest(unittest.TestCase):
+    """Second review of the broken-file guard (2026-11-13): if the change of
+    Congress is still uncommitted after the window closes (Feb 13 of an odd
+    year), its ~80 real departures must stay acceptable with exactly 80, as
+    on main; the same on any ordinary week. Only the size floor is "broken"."""
+
+    def setUp(self):
+        self.prev = full_roster()
+        self.new = turnover(self.prev, 80)
+
+    def test_eighty_departures_after_the_window_and_in_november(self):
+        from member_turnover import dropped_members
+        for day in ('2027-02-14', ORDINARY_DAY):
+            refused = roster_problems(self.new, self.prev, day)
+            self.assertEqual(len(refused), 1, day)
+            self.assertIn('80 member(s) left the file', refused[0])
+            self.assertFalse(any('looks broken' in p for p in refused), day)
+            self.assertEqual(roster_problems(self.new, self.prev, day, accept_departures=80), [], day)
+            for wrong in (79, 81):
+                problems = roster_problems(self.new, self.prev, day, accept_departures=wrong)
+                self.assertTrue(any(f'accept_departures was {wrong}, not 80' in p for p in problems), (day, wrong))
+            body = refusal_report(refused, dropped_members(self.new, self.prev), day)
+            self.assertIn('accept_departures=80', body)
+            self.assertNotIn('Accept nothing', body)
+
+    def test_the_window_still_closes_on_feb_13(self):
+        self.assertEqual(roster_problems(self.new, self.prev, '2027-02-13'), [])
+        self.assertTrue(roster_problems(self.new, self.prev, '2027-02-14'))
 
 
 class RefusalReportTest(unittest.TestCase):
