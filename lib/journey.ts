@@ -68,6 +68,7 @@ export {
 import {
   CLOTURE_INVOKED_ON_MEASURE,
   concurrentAdoptedBy,
+  concurrentEnrolledBy,
   floorCalendarChamber,
   floorPassageRejectedChamber,
   floorPendingChamber,
@@ -506,9 +507,15 @@ export type StatusKeyBill = Pick<Bill, 'bill_type' | 'status' | 'last_action_tex
   EndedReadable;
 
 /** What the ended reading needs: the bill's own Congress (its number, else
- *  the Congress in its identifier). A caller that hands over neither is read
- *  as not ended, never guessed (lib/congress.mjs congressOfBill). */
-type EndedReadable = { congress_number?: number | null; full_identifier?: string | null };
+ *  the Congress in its identifier), and its stored text version (an enrolled
+ *  concurrent resolution, endedAdoption). A caller that hands over no
+ *  Congress is read as not ended, never guessed (lib/congress.mjs
+ *  congressOfBill). */
+type EndedReadable = {
+  congress_number?: number | null;
+  full_identifier?: string | null;
+  text_version_type?: string | null;
+};
 
 /*
  * THE ENDED READING (stage 3 of the new-Congress work, 2026-11-13). The owner
@@ -532,7 +539,11 @@ const ENDED_KEEPS: ReadonlySet<StatusLabelKey> = new Set<StatusLabelKey>([
 
 export function statusKeyFor(bill: StatusKeyBill, now: number = Date.now()): StatusLabelKey {
   const key = recordStatusKey(bill, now);
-  if (ENDED_KEEPS.has(key) || !isSiteEndedBill(bill)) return key;
+  if (!isSiteEndedBill(bill)) return key;
+  // An ended concurrent resolution whose enrolled text is on the record is
+  // adopted, not merely "passed both chambers" (endedAdoption, below).
+  if (key === 'passed_both' && endedAdoption(bill)) return 'adopted';
+  if (ENDED_KEEPS.has(key)) return key;
   return 'ended';
 }
 
@@ -1847,6 +1858,38 @@ export function settledDecision(
 }
 
 /**
+ * AN ENDED CONCURRENT RESOLUTION THAT BOTH CHAMBERS FINISHED (stage 3 of the
+ * new-Congress work, 2026-11-13). Null unless the bill belongs to a Congress
+ * on the ended list AND lib/floor-text.mjs `concurrentEnrolledBy` reads its
+ * enrolled text on the record — see that reader for why the stored text
+ * version decides only once the Congress has ended. On 2026-11-13 that would
+ * be S.Con.Res. 29 and S.Con.Res. 2, both agreed to by the House in the form
+ * `concurrentAdoptedBy` declines to read while a Congress sits. The ended list
+ * is empty until the January 2027 switch, so today this is null for every
+ * bill and nothing that reads it changes.
+ */
+export function endedAdoption(
+  bill: Pick<Bill, 'bill_type' | 'status' | 'last_action_text' | 'last_action_date'> & Basis & EndedReadable
+): Extract<SettledDecision, { kind: 'adopted' }> | null {
+  if (!isSiteEndedBill(bill)) return null;
+  const by = concurrentEnrolledBy(bill);
+  return by ? { kind: 'adopted', chamber: by } : null;
+}
+
+/**
+ * WHAT THE RECORD SHOWS IS FINISHED — `settledDecision`, plus, for a bill of an
+ * ended Congress only, a concurrent resolution with its enrolled text
+ * (`endedAdoption`). The bill page, the status word and the ended reading all
+ * read this one function, so they cannot disagree. Identical to
+ * `settledDecision` for every bill while the ended list is empty.
+ */
+export function finishedDecision(
+  bill: Pick<Bill, 'bill_type' | 'status' | 'last_action_text' | 'last_action_date'> & Basis & EndedReadable
+): SettledDecision | null {
+  return settledDecision(bill) ?? endedAdoption(bill);
+}
+
+/**
  * A BILL OF AN ENDED CONGRESS — what stands where the call panel stands
  * (stage 3 of the new-Congress work, 2026-11-13; owner's decision of Nov 12,
  * 2026: keep the 119th's bills "as an archive marked 'ended'").
@@ -1857,8 +1900,9 @@ export function settledDecision(
  *
  *   law        it became law (settledDecision `law`): the page keeps "This is
  *              law." and adds the approved small line under it;
- *   decided    Congress decided it (settledDecision `rejected` or `adopted`):
- *              the record-only panel stands as it does today;
+ *   decided    Congress decided it (settledDecision `rejected` or `adopted`,
+ *              or an enrolled concurrent resolution, `endedAdoption`): the
+ *              record-only panel stands;
  *   presented  both chambers passed it in the same form (passageState stage
  *              'both', a bill or joint resolution) and the record holds no
  *              signature yet: the approved "does not yet show what the
@@ -1886,7 +1930,7 @@ export function endedDecision(
   const congress = siteEndedCongress(bill);
   if (!congress) return null;
   const base = { congress: congress.number, ended: congress.ended };
-  const settled = settledDecision(bill);
+  const settled = finishedDecision(bill);
   if (settled?.kind === 'law') return { ...base, kind: 'law' };
   if (settled) return { ...base, kind: 'decided' };
   if (bill.status === 'passed_chamber' && passageState(bill).stage === 'both') return { ...base, kind: 'presented' };

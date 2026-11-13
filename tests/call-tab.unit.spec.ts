@@ -167,12 +167,13 @@ test.describe('the bar (components/Header.tsx)', () => {
 test.describe('pages declare the target under the same condition as their panel', () => {
   test('bill page: #act exactly when the call panel renders, never on a settled record', () => {
     const src = read('app/[locale]/bills/[id]/page.tsx');
-    // The panel's own branch…
-    expect(src).toContain('{settled && settledOutcome ? (');
-    // …and the declaration, negated on the same two names, and (stage 3,
-    // 2026-11-13) on the ended panel's own branch too.
-    expect(src).toContain(') : ended && endedText ? (');
-    expect(src).toContain('{!(settled && settledOutcome) && !(ended && endedText) && <CallTabTarget href="#act" />}');
+    // Since 2026-11-13 the panel's branch and the declaration both read one
+    // value, lib/bill-rail.ts `billRail` (tests/bill-rail.unit.spec.ts pins
+    // that callTabTarget is true exactly when the panel is the call panel,
+    // with a settled and with an ended record).
+    expect(src).toContain("{rail.panel === 'settled' && settled && settledOutcome ? (");
+    expect(src).toContain(") : rail.panel === 'ended' && ended && endedText ? (");
+    expect(src).toContain('{rail.callTabTarget && <CallTabTarget href="#act" />}');
   });
 
   test('nomination page: #act exactly when the rail is the call panel', () => {

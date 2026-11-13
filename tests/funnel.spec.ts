@@ -4,6 +4,8 @@ import es from '../messages/es.json';
 import { getLiveMoments } from '../lib/moments';
 import { billSlug, getAllBills, getAllLegislators, getBillsSponsoredBy } from '../lib/core';
 import { endedDecision, settledDecision } from '../lib/journey';
+import { withSitePolicyForTest } from '../lib/ended-state.mjs';
+import { ENDED_119 } from './fixtures/ended-bills';
 import { anyTopAt, stableAcross } from './corpus';
 import { mockScriptApi } from './helpers';
 
@@ -412,7 +414,10 @@ test.describe('I2 and an ended Congress (review build only)', () => {
   ] as const) {
     test(`${prefix || '/'}: an ended bill's decoded answer leads to no script`, async ({ page }) => {
       await mockScriptApi(page);
-      await page.goto(`${prefix}/bills/sjres-99-119`);
+      const open = withSitePolicyForTest(ENDED_119, () =>
+        getAllBills().find((b) => b.ai_headline && endedDecision(b)?.kind === 'ended')
+      )!;
+      await page.goto(`${prefix}/bills/${billSlug(open)}`);
       await expect(page.locator('#decoded')).toBeVisible();
       await expect(page.locator('[data-ended-panel]')).toBeVisible();
       await expect(page.getByRole('radio', { name: messages.bill.stance.support })).toHaveCount(0);

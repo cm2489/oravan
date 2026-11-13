@@ -1,6 +1,6 @@
 import { decisionState } from './docket.mjs';
 import { concurrentAdoptedBy } from './floor-text.mjs';
-import { endedDecision, settledDecision, type SettledDecision } from './journey';
+import { endedDecision, finishedDecision, type SettledDecision } from './journey';
 import type { Bill } from './types';
 
 /*
@@ -57,10 +57,13 @@ type StatusWordBill = Pick<Bill, 'bill_type' | 'status' | 'last_action_text' | '
   status_basis_date?: string | null;
   congress_number?: number | null;
   full_identifier?: string | null;
+  text_version_type?: string | null;
 };
 
 export function statusWord(bill: StatusWordBill): StatusWord {
-  const settled = settledDecision(bill);
+  // finishedDecision is settledDecision on every bill while no Congress has
+  // ended; after, it also reads an ended, enrolled concurrent resolution.
+  const settled = finishedDecision(bill);
   if (settled?.kind === 'law') return 'law';
   if (settled?.kind === 'adopted') return 'agreed';
   if (settled?.kind === 'rejected') return 'rejected';

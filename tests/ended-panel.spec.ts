@@ -3,6 +3,10 @@ import en from '../messages/en.json';
 import es from '../messages/es.json';
 import { E2E_TENANT_TOKEN } from './fixtures/e2e-tenant';
 import { callTool } from './helpers';
+import { billSlug, getAllBills } from '../lib/core/bills';
+import { endedDecision } from '../lib/journey';
+import { withSitePolicyForTest } from '../lib/ended-state.mjs';
+import { ENDED_119 } from './fixtures/ended-bills';
 
 /*
  * THE ENDED STATE ON THE RENDERED SITE (stage 3 of the new-Congress work,
@@ -20,16 +24,23 @@ import { callTool } from './helpers';
  * (The review setting is refused in CI by lib/ended-state.mjs, so CI never
  * runs this spec; the unit-level proof is tests/ended-state.unit.spec.ts.)
  *
- * The bills: S.J.Res. 99 (a joint resolution on the Senate calendar, open
- * today), H.R. 1 (Public Law 119-21) and H.R. 4930 (passed both chambers, no
- * signature on the record on 2026-11-13).
+ * The bills: the first decoded bill the ended reading calls `ended`, H.R. 1
+ * (Public Law 119-21), and the first bill both chambers passed with no
+ * signature on the record (skipped when there is none).
  */
 
 test.skip(process.env.PW_REVIEW_ENDED !== '119', 'needs a review build with the 119th shown as ended');
 
-const OPEN = 'sjres-99-119';
+/* Picked by kind, never by name where the record can still move (a bill
+   both chambers passed can be signed any night). */
+const byKind = (kind: string) =>
+  withSitePolicyForTest(ENDED_119, () =>
+    getAllBills().find((b) => b.ai_headline && endedDecision(b)?.kind === kind)
+  );
+const OPEN = billSlug(byKind('ended')!);
 const LAW = 'hr-1-119';
-const PRESENTED = 'hr-4930-119';
+const PRESENTED_BILL = byKind('presented');
+const PRESENTED = PRESENTED_BILL ? billSlug(PRESENTED_BILL) : null;
 
 async function noCallApparatus(page: import('@playwright/test').Page, m: typeof en) {
   await expect(page.getByRole('radio')).toHaveCount(0);
@@ -73,6 +84,7 @@ for (const { locale, prefix, m } of [
   });
 
   test(`${locale}: a bill both chambers passed shows the President line and no call`, async ({ page }) => {
+    test.skip(!PRESENTED, 'no bill is at "passed both chambers" today');
     await page.goto(`${prefix}/bills/${PRESENTED}`);
     const panel = page.locator('[data-ended-panel]');
     await expect(panel).toHaveAttribute('data-ended-panel', 'presented');

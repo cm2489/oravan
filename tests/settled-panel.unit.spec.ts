@@ -4,7 +4,7 @@ import bills from '../data/bills.json';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
 import { decisionState } from '../lib/docket.mjs';
-import { FLOOR_PASSAGE_REJECTED, concurrentAdoptedBy, statusBasisText } from '../lib/floor-text.mjs';
+import { FLOOR_PASSAGE_REJECTED, concurrentAdoptedBy, concurrentEnrolledBy, statusBasisText } from '../lib/floor-text.mjs';
 import { deriveJourney, endedDecision, lastFailedVote, settledDecision } from '../lib/journey';
 import { withSitePolicyForTest } from '../lib/ended-state.mjs';
 import { recordedRollNumber, settledDecisionDate, settledVoteGroups } from '../lib/settled-votes';
@@ -832,6 +832,10 @@ test('ended Congress: settled bills keep their reading; every other bill leaves 
       expect(ended, id).not.toBeNull();
       if (before[i]?.kind === 'law') expect(ended!.kind, id).toBe('law');
       else if (before[i]) expect(ended!.kind, id).toBe('decided');
+      // An enrolled concurrent resolution the live reader leaves open
+      // (concurrentAdoptedBy fails closed on the House's form) is finished
+      // once its Congress has ended (lib/journey.ts endedAdoption).
+      else if (concurrentEnrolledBy(b)) expect(ended!.kind, id).toBe('decided');
       else expect(['presented', 'ended'], id).toContain(ended!.kind);
     });
   });

@@ -10,7 +10,8 @@ const withNextIntl = createNextIntlPlugin();
  * site with the 119th Congress shown as ended, so the owner can see the
  * archive state before the January 2027 switch. Read here first so a refused
  * setting stops the build before anything compiles: reviewEndedCongressFrom
- * throws when the setting is on in a Vercel build (VERCEL / VERCEL_ENV) or in
+ * throws when the setting is on in a Vercel build (VERCEL, VERCEL_ENV,
+ * VERCEL_TARGET_ENV, VERCEL_URL or VERCEL_GIT_COMMIT_SHA set) or in
  * CI (CI / GITHUB_ACTIONS), and on any number but the tracked Congress's. Off
  * (unset), this line does nothing. lib/ended-state.mjs carries the reasoning;
  * tests/ended-state.unit.spec.ts pins the guard.

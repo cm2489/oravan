@@ -56,6 +56,10 @@ salvage/
 # anything committed.
 journey-corpus-report.json
 journey-corpus-report.md
+# scripts/check-scaffold-corpus.mjs writes its report the same way ($RUNNER_TEMP
+# on a runner, the repo root by hand); one was committed by mistake on
+# 2026-11-13 (#486).
+scaffold-corpus-report.md
 
 # Impeccable design-tooling state (owner decision 2026-08-02: critique
 # snapshots ARE tracked — they carry the teardown campaign's trend lines —

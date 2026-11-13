@@ -40,14 +40,14 @@ import { hreflangAlternates } from '@/lib/hreflang';
 import {
   billFloorBand,
   deriveJourney,
-  endedDecision,
+  endedAdoption,
   lastFailedVote,
   liveCallTarget,
-  settledDecision,
   statusKeyFor,
   type SettledDecision,
 } from '@/lib/journey';
 import { buildBillJsonLd } from '@/lib/jsonld';
+import { billRail } from '@/lib/bill-rail';
 import { getMomentsForBill } from '@/lib/moments';
 import { chamberSession, floorSignalsCheckedAt, rungFor } from '@/lib/docket';
 import { SITE_ORIGIN } from '@/lib/site';
@@ -464,7 +464,19 @@ export default async function BillPage({
    * stances with the chamber, the record's tally and the record's date for
    * that action, and nothing about what happens next.
    */
-  const settled = settledDecision(bill);
+  /*
+   * EVERY CALL-APPARATUS SWITCH ON THIS PAGE comes from `rail` (lib/bill-rail.ts):
+   * which panel stands in the rail, and whether the floating call button, the
+   * call demo and the Call-tab target render. tests/bill-rail.unit.spec.ts
+   * runs it with an ended Congress in CI and pins that nothing below renders
+   * call apparatus any other way.
+   *
+   * `settled` is lib/journey.ts finishedDecision: settledDecision, plus (for a
+   * bill of an ended Congress only) an enrolled concurrent resolution;
+   * identical to settledDecision while no Congress has ended.
+   */
+  const rail = billRail(raw);
+  const settled = rail.settled;
   /*
    * A BILL OF AN ENDED CONGRESS (stage 3 of the new-Congress work,
    * 2026-11-13; the owner's decision of Nov 12, 2026 to keep the 119th's bills
@@ -475,12 +487,8 @@ export default async function BillPage({
    * bill keep the record-only panel (a law adds the approved small line), and
    * everything else gets components/EndedPanel.tsx with the approved note.
    */
-  const ended = endedDecision(bill);
-  const endedText =
-    ended?.kind === 'presented' ? t('bill.ended.presented') : ended?.kind === 'ended' ? t('bill.ended.note') : null;
-  /* Nothing on the page points at a call: the record-only panel, or the ended
-     panel, stands in the rail. */
-  const noCall = Boolean(settled || ended);
+  const ended = rail.ended;
+  const endedText = rail.endedKey ? t(rail.endedKey) : null;
   const settledDate = settledDecisionDate(bill);
   /* An adopted concurrent resolution: what it can and cannot do, printed
      under the outcome (lib/concurrent-explainer.ts). Null on everything
@@ -489,7 +497,7 @@ export default async function BillPage({
   const settledOutcome = settled
     ? settledOutcomeText(t, settled, settledDate ? fmtDate(settledDate) : null)
     : null;
-  const failedVote = noCall ? null : lastFailedVote(bill);
+  const failedVote = rail.panel === 'call' ? lastFailedVote(bill) : null;
   const lastAttempt = failedVote
     ? t('bill.lastAttempt', {
         procedure: failedVote.procedure,
@@ -904,7 +912,7 @@ export default async function BillPage({
           {/* THE CALL RAIL. Sticky across every row on the desk; in flow, in
               the read → pick → edit → call order, below it. On a settled
               bill the record-only panel stands in the same place. */}
-          {settled && settledOutcome ? (
+          {rail.panel === 'settled' && settled && settledOutcome ? (
             <div className="min-w-0 min-[62rem]:sticky min-[62rem]:top-4 min-[62rem]:col-start-2 min-[62rem]:row-span-full min-[62rem]:self-start">
               <SettledPanel
                 outcome={settledOutcome}
@@ -924,7 +932,7 @@ export default async function BillPage({
                 }
               />
             </div>
-          ) : ended && endedText ? (
+          ) : rail.panel === 'ended' && ended && endedText ? (
             <div className="min-w-0 min-[62rem]:sticky min-[62rem]:top-4 min-[62rem]:col-start-2 min-[62rem]:row-span-full min-[62rem]:self-start">
               <EndedPanel kind={ended.kind === 'presented' ? 'presented' : 'ended'} text={endedText} />
             </div>
@@ -959,7 +967,18 @@ export default async function BillPage({
                 /* An ended bill's "Right now:" says it ended (or, passed by
                    both chambers, that the record does not yet show what the
                    president did), never a stage it can no longer move from. */
-                endedLine={endedText ? (ended?.kind === 'presented' ? endedText : t('bill.ended.statusLong')) : undefined}
+                endedLine={
+                  endedText
+                    ? ended?.kind === 'presented'
+                      ? endedText
+                      : t('bill.ended.statusLong')
+                    : // An ended, enrolled concurrent resolution: the stepper's
+                      // live sentence says the record does not show whether
+                      // the versions match; the panel's outcome says it does.
+                      endedAdoption(bill) && settledOutcome
+                      ? settledOutcome
+                      : undefined
+                }
                 introducedLabel={bill.introduced_date ? fmtShort(bill.introduced_date) : undefined}
                 currentLabel={
                   bill.last_action_date ? fmtShort(bill.last_action_date) : undefined
@@ -991,7 +1010,7 @@ export default async function BillPage({
           {/* For the hesitant: what a call actually looks like, on demand,
               collapsed so it never displaces the rail. Not on a settled bill,
               which has no call to show. */}
-          {!noCall && (
+          {rail.walkthrough && (
             <div className="min-[62rem]:col-start-1">
               <WalkthroughDisclosure />
             </div>
@@ -1023,14 +1042,14 @@ export default async function BillPage({
           it, so the rail scrolls away at the page foot and this is what
           carries the call the rest of the way. Measured, not assumed:
           tests/call-action.spec.ts and tests/bill-call-rail.spec.ts. */}
-      {!noCall && <FloatingCallButton />}
+      {rail.floatingCall && <FloatingCallButton />}
 
       {/* Where the header's Call tab goes on this page (owner, "nav 1";
           lib/call-tab.ts): to this bill's own panel whenever the panel above
           renders — the same condition, so the tab never points at a panel
           that is not there. A settled bill declares nothing, and the tab
           goes to the Call hub. */}
-      {!(settled && settledOutcome) && !(ended && endedText) && <CallTabTarget href="#act" />}
+      {rail.callTabTarget && <CallTabTarget href="#act" />}
     </>
   );
 }

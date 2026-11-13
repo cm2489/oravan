@@ -9,7 +9,7 @@ import es from '../messages/es.json';
 // Relative imports, as in tests/script-settled.unit.spec.ts: the route loads
 // in a unit spec (the SDK's CommonJS build does not throw without a key).
 import { POST } from '../app/api/script/route';
-import { CONGRESS_POLICY, type CongressPolicy } from '../lib/congress.mjs';
+import { CONGRESS_POLICY } from '../lib/congress.mjs';
 import {
   activeBillCount,
   billSlug,
@@ -34,8 +34,10 @@ import {
   withSitePolicyForTest,
 } from '../lib/ended-state.mjs';
 import { billFloorBand, endedDecision, liveCallTarget, passageState, settledDecision, statusKeyFor } from '../lib/journey';
+import { concurrentEnrolledBy } from '../lib/floor-text.mjs';
 import { statusWord } from '../lib/status-word';
 import type { Bill, StatusLabelKey } from '../lib/types';
+import { BASE, ENDED_119, ENROLLED_CONCURRENT_FIXTURE, PRESENTED_FIXTURE } from './fixtures/ended-bills';
 import { verifyFloorSignals, FLOOR_SIGNALS_SCHEMA } from '../scripts/floor-signals-parse.mjs';
 
 /*
@@ -85,10 +87,7 @@ test.afterAll(() => {
   ResolvingModule._resolveFilename = realResolve;
 });
 
-const ENDED_119: CongressPolicy = Object.freeze({
-  tracked: 120,
-  ended: Object.freeze([Object.freeze({ number: 119, ended: '2027-01-03' })]),
-});
+// ENDED_119 (119 ended, 120 tracked): tests/fixtures/ended-bills.ts.
 
 const ended119 = <T>(fn: () => T): T => withSitePolicyForTest(ENDED_119, fn);
 
@@ -109,6 +108,20 @@ function bill(slug: string): Bill {
   expect(b, `${slug} is in the committed corpus`).toBeTruthy();
   return b!;
 }
+
+/*
+ * EXAMPLES BY KIND, NEVER BY NAME where the record can still move. H.R. 1 is
+ * Public Law 119-21 for good; a rejected or adopted resolution is picked from
+ * the corpus by what settledDecision reads; a bill both chambers passed (whose
+ * signature can land any night) and an enrolled concurrent resolution are
+ * FIXTURES built on a real record, so no nightly sync can turn this spec red.
+ */
+const firstSettled = (kind: 'rejected' | 'adopted') => {
+  const b = getAllBills().find((x) => settledDecision(x)?.kind === kind);
+  expect(b, `the corpus holds a ${kind} measure`).toBeTruthy();
+  return b!;
+};
+// BASE, PRESENTED_FIXTURE and ENROLLED_CONCURRENT_FIXTURE: tests/fixtures/ended-bills.ts.
 
 /* ------------------------------------------------------------------ *
  * 1. DORMANT
@@ -168,7 +181,15 @@ test('the review setting: off by default, 119 accepted on a local build only', (
   }
   expect(reviewEndedCongressFrom({ [REVIEW_ENDED_ENV]: '119' }, 119)).toBe(119);
   // Refused wherever a deploy or CI could carry it.
-  for (const where of ['VERCEL', 'VERCEL_ENV', 'CI', 'GITHUB_ACTIONS']) {
+  for (const where of [
+    'VERCEL',
+    'VERCEL_ENV',
+    'VERCEL_TARGET_ENV',
+    'VERCEL_URL',
+    'VERCEL_GIT_COMMIT_SHA',
+    'CI',
+    'GITHUB_ACTIONS',
+  ]) {
     expect(
       () => reviewEndedCongressFrom({ [REVIEW_ENDED_ENV]: '119', [where]: where === 'VERCEL_ENV' ? 'production' : '1' }, 119),
       where
@@ -235,7 +256,7 @@ test('item 1: every 119th bill gets one ended kind, read off the record', () => 
       expect(ended, billSlug(b)).not.toBeNull();
       expect(ended!.congress).toBe(119);
       expect(ended!.ended).toBe('2027-01-03');
-      const settled = settledDecision(b);
+      const settled = settledDecision(b) ?? (concurrentEnrolledBy(b) ? { kind: 'adopted' } : null);
       const expected =
         settled?.kind === 'law'
           ? 'law'
@@ -247,21 +268,21 @@ test('item 1: every 119th bill gets one ended kind, read off the record', () => 
       expect(ended!.kind, billSlug(b)).toBe(expected);
       counts[expected] = (counts[expected] ?? 0) + 1;
     }
-    // Non-vacuity, as ranges (the corpus moves): on 2026-11-13, 3,176 ended,
-    // 119 laws, 13 decided, 10 presented.
+    // Non-vacuity, as floors that only grow (laws and decided votes stay
+    // what they are; the rare kinds are pinned by fixtures below).
     expect(counts.ended).toBeGreaterThan(1000);
     expect(counts.law).toBeGreaterThan(10);
     expect(counts.decided).toBeGreaterThan(0);
-    expect(counts.presented).toBeGreaterThan(0);
   });
 });
 
 test('item 1: named examples, one per kind', () => {
   ended119(() => {
     expect(endedDecision(bill('hr-1-119'))?.kind, 'H.R. 1, Public Law 119-21').toBe('law');
-    expect(endedDecision(bill('hconres-89-119'))?.kind, 'H.Con.Res. 89, rejected 49-50').toBe('decided');
-    expect(endedDecision(bill('hconres-86-119'))?.kind, 'H.Con.Res. 86, adopted').toBe('decided');
-    expect(endedDecision(bill('hr-4930-119'))?.kind, 'H.R. 4930, passed both chambers').toBe('presented');
+    expect(endedDecision(firstSettled('rejected'))?.kind, 'a rejected final vote').toBe('decided');
+    expect(endedDecision(firstSettled('adopted'))?.kind, 'an adopted concurrent resolution').toBe('decided');
+    expect(endedDecision(PRESENTED_FIXTURE)?.kind, 'passed both chambers, no signature').toBe('presented');
+    expect(endedDecision(ENROLLED_CONCURRENT_FIXTURE)?.kind, 'an enrolled concurrent resolution').toBe('decided');
     const committee = getAllBills().find((b) => b.status === 'committee')!;
     expect(endedDecision(committee)?.kind).toBe('ended');
   });
@@ -298,9 +319,14 @@ test('item 2: the status label never says a live stage of an ended bill; the rec
     }
     expect(seen.has('ended')).toBe(true);
     expect(statusKeyFor(bill('hr-1-119'))).toBe('signed');
-    expect(statusKeyFor(bill('hconres-89-119'))).toBe('rejected');
-    expect(statusKeyFor(bill('hconres-86-119'))).toBe('adopted');
-    expect(statusKeyFor(bill('hr-4930-119'))).toBe('passed_both');
+    expect(statusKeyFor(firstSettled('rejected'))).toBe('rejected');
+    expect(statusKeyFor(firstSettled('adopted'))).toBe('adopted');
+    expect(statusKeyFor(PRESENTED_FIXTURE)).toBe('passed_both');
+    // Item 3 of the review: an enrolled concurrent resolution reads
+    // "Adopted by both chambers", never "Passed both chambers" beside a
+    // panel saying it ended unfinished.
+    expect(statusKeyFor(ENROLLED_CONCURRENT_FIXTURE)).toBe('adopted');
+    expect(statusWord(ENROLLED_CONCURRENT_FIXTURE)).toBe('agreed');
     // The MCP label reads the same gate, in both languages.
     const committee = getAllBills().find((b) => b.status === 'committee')!;
     expect(mcp.statusLabel(committee, 'en')).toBe('Ended');
@@ -354,9 +380,17 @@ test('item 2: an ended bill is never moving: terminal rung, no announcement, emp
   // Today: every bill is active, and no teaser carries the field at all.
   expect(activeBillCount()).toBe(getAllBills().length);
   expect(getTeasers('en').some((t) => 'ended' in t)).toBe(false);
-  // The control: the committed corpus does have bills moving off the
-  // ladder's own rungs today (or the assertions above prove nothing).
-  expect(getTeasers('en').some((t) => t.band !== 'radar')).toBe(true);
+  // The control, from a fixture so a quiet week cannot break it: a fresh
+  // calendar placement of the 119th stands on T2 today and on the terminal
+  // rung once the 119th has ended.
+  const placed = {
+    ...BASE,
+    status: 'floor_vote',
+    last_action_text: 'Placed on the Union Calendar, Calendar No. 412.',
+    last_action_date: new Date().toISOString().slice(0, 10),
+  } as Bill;
+  expect(rungFor(placed, 'hr-99003-119').tier).toBe('t2');
+  expect(ended119(() => rungFor(placed, 'hr-99003-119').tier)).toBe('t4');
 });
 
 test('item 5: the MCP envelope says ended, offers no act_url, scores 0, and keeps laws and decided bills', () => {
@@ -374,13 +408,17 @@ test('item 5: the MCP envelope says ended, offers no act_url, scores 0, and keep
     expect(law.bill.decision_state).toBe('enacted');
     expect(law.bill.act_url).toBeNull();
 
-    const rejected = mcp.getBillDetail({ slug: 'hconres-89-119' }, 'en')!;
+    const rejected = mcp.getBillDetail({ slug: billSlug(firstSettled('rejected')) }, 'en')!;
     expect(rejected.bill.decision_state).toBe('settled');
     expect(rejected.bill.settled_reason).toBeTruthy();
 
-    const presented = mcp.getBillDetail({ slug: 'hr-4930-119' }, 'en')!;
-    expect(presented.bill.decision_state, 'a decision is still ahead: the President\'s').toBe('pending');
-    expect(presented.bill.act_url, 'but no call to Congress').toBeNull();
+    const presented = mcp.billDecision(PRESENTED_FIXTURE);
+    expect(presented.state, "a decision is still ahead: the president's").toBe('pending');
+    expect(presented.actable, 'but no call to Congress').toBe(false);
+
+    const enrolled = mcp.billDecision(ENROLLED_CONCURRENT_FIXTURE);
+    expect(enrolled.state).toBe('settled');
+    expect(enrolled.reason).toBe(ENROLLED_CONCURRENT_FIXTURE.status_basis_text);
 
     expect(mcp.whatsMoving({ days: 30 }, 'en').bills).toEqual([]);
     const active = mcp.searchBills({ activeOnly: true, limit: 50 }, 'en');
@@ -510,7 +548,9 @@ test.describe('item 3: app/api/script', () => {
   });
 
   test('a passed-both-chambers bill of the ended Congress is refused the same way', async () => {
-    const res = await withSitePolicyForTest(ENDED_119, () => post('hr-4930-119'));
+    const presented = ended119(() => getAllBills().find((b) => endedDecision(b)?.kind === 'presented'));
+    test.skip(!presented, 'no bill of the corpus is at "passed both chambers" today; the fixtures above cover the reading');
+    const res = await withSitePolicyForTest(ENDED_119, () => post(billSlug(presented!)));
     expect(res.status).toBe(409);
     expect(await res.json()).toEqual({ error: 'ended' });
     expect(modelCalls).toBe(0);

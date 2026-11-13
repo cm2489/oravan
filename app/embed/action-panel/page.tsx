@@ -4,7 +4,7 @@ import { after } from 'next/server';
 import en from '@/messages/en.json';
 import es from '@/messages/es.json';
 import { billSlug, getBill, localizeBill } from '@/lib/core';
-import { endedDecision, statusKeyFor } from '@/lib/journey';
+import { actionPanelEndedLines } from '@/lib/embed-ended';
 import { formatCitation } from '@/lib/format';
 import { registrableDomain } from '@/lib/embed-referrer';
 import { noteImpression } from '@/lib/impressions';
@@ -160,16 +160,11 @@ export default async function ActionPanelEmbedPage({
    * list is empty. A settled bill's script is already refused by the route
    * (409 `settled`); CLAUDE.md rule 6 still names this gap.
    */
-  const ended = endedDecision(bill);
+  // The lines are lib/embed-ended.ts's, so CI can run the reading with an
+  // ended Congress (tests/bill-rail.unit.spec.ts).
+  const ended = actionPanelEndedLines(bill, t);
   if (ended) {
-    const lines =
-      ended.kind === 'law'
-        ? [t.bill.settled.law, t.bill.ended.lawLine]
-        : ended.kind === 'presented'
-          ? [t.bill.ended.presented]
-          : ended.kind === 'decided'
-            ? [t.bills.status[statusKeyFor(bill) as keyof typeof t.bills.status], t.bill.ended.statusLong]
-            : [t.bill.ended.note];
+    const { lines } = ended;
     return (
       <ActionPanelMessage locale={locale} theme={theme} brandless={brandlessFlag}>
         <div data-ended-panel={ended.kind}>

@@ -44,7 +44,8 @@ import {
   type BillSearchDoc,
 } from '../bill-search.mjs';
 import { decisionState } from '../docket.mjs';
-import { SITE_CONGRESS_POLICY } from '../ended-state.mjs';
+import { statusBasisText } from '../floor-text.mjs';
+import { sitePolicy } from '../ended-state.mjs';
 import { endedDecision } from '../journey';
 /* The conversation lamp, for `whats_moving`'s optional evidence facet only. It
  * never touches the POOL or its order — that is the docket ladder's, and this
@@ -298,8 +299,10 @@ export function toolInfoFor(ANY_ENDED: boolean): Record<ToolName, ToolInfo> {
 }
 
 /** This build's tool metadata: the `ended` value is named only while some
- *  Congress is on the ended list (none until the January 2027 switch). */
-export const TOOL_INFO: Record<ToolName, ToolInfo> = toolInfoFor(SITE_CONGRESS_POLICY.ended.length > 0);
+ *  Congress is on the ended list (none until the January 2027 switch). Read
+ *  from the site's policy when this module loads; tests/bill-rail.unit.spec.ts
+ *  loads it fresh with an ended Congress to prove the wiring. */
+export const TOOL_INFO: Record<ToolName, ToolInfo> = toolInfoFor(sitePolicy().ended.length > 0);
 
 /* ---------------------------------------------------------------------- *
  * Plain-language labels - read off messages/{locale}.json directly rather
@@ -437,6 +440,11 @@ export function billDecision(bill: Bill): { state: DecisionStateOut; reason: str
   const ended = endedDecision(bill);
   if (!ended) return { state: record.state, reason: record.reason, actable: record.state === 'pending' };
   if (ended.kind === 'ended') return { state: 'ended', reason: null, actable: false };
+  // An ended, enrolled concurrent resolution (lib/journey.ts endedAdoption):
+  // settled, with the record's own sentence, as an adopted one reads today.
+  if (ended.kind === 'decided' && record.state === 'pending') {
+    return { state: 'settled', reason: statusBasisText(bill), actable: false };
+  }
   return { state: record.state, reason: record.reason, actable: false };
 }
 
