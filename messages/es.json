@@ -296,14 +296,16 @@
       "rejected": "Rechazado",
       "conference": "En comisión mixta",
       "signed": "Promulgado como ley",
-      "vetoed": "Vetado"
+      "vetoed": "Vetado",
+      "ended": "Terminado"
     },
     "statusWord": {
       "open": "Abierto",
       "law": "Ley",
       "agreed": "Adoptado",
       "rejected": "Rechazado",
-      "vetoed": "Vetado"
+      "vetoed": "Vetado",
+      "ended": "Terminado"
     },
     "decodedPending": "La versión en lenguaje claro todavía no está lista.",
     "updated": "Última acción: {date}",
@@ -390,6 +392,12 @@
     "callWhoMulti": "Tu código postal abarca más de un distrito de la Cámara, así que aparece más de un representante. Tus senadores son los mismos en todos los distritos de tu estado.",
     "refineDistrictCta": "Confirma cuál es tu representante en la Cámara",
     "alsoYours": "También te representa",
+    "ended": {
+      "statusLong": "Terminó con el Congreso 119",
+      "note": "Este proyecto de ley terminó con el Congreso 119 el 3 de enero de 2027, antes de que el Congreso lo terminara. Un proyecto que termina así solo puede avanzar de nuevo si se presenta en un nuevo Congreso, con un número nuevo.",
+      "lawLine": "Se convirtió en ley durante el Congreso 119.",
+      "presented": "Ambas cámaras lo aprobaron antes de que terminara el Congreso 119. El registro todavía no muestra qué hizo el presidente."
+    },
     "settled": {
       "finderShow": "Ver la votación de la Cámara para el código postal {zip}",
       "finderSplit": "Tu código postal está dividido entre {count, plural, =2 {dos} other {#}} distritos de la Cámara. {vacant, select, yes {Uno de estos escaños es el tuyo.} other {Una de estas personas es tu representante.}}",

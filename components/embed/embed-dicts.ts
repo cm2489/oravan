@@ -1,5 +1,6 @@
 import en from '@/messages/en.json';
 import es from '@/messages/es.json';
+import { withoutEndedMessages } from '@/lib/ended-messages';
 
 /*
  * THE EMBED WIDGETS' COPY, PICKED ON THE SERVER (2026-09-28).
@@ -38,8 +39,12 @@ export type EmbedDict = Pick<Catalog, (typeof EMBED_NAMESPACES)[number]>;
 export type EmbedLocale = 'en' | 'es';
 export type EmbedDicts = Record<EmbedLocale, EmbedDict>;
 
+/* The strings that exist only for the ended state never ride along
+   (lib/ended-messages.ts): no widget reads them. The bill-card widget's long
+   label arrives as a prop from the server (app/embed/bill-card/page.tsx). */
 function pick(catalog: Catalog): EmbedDict {
-  return Object.fromEntries(EMBED_NAMESPACES.map((ns) => [ns, catalog[ns]])) as EmbedDict;
+  const lean = withoutEndedMessages(catalog);
+  return Object.fromEntries(EMBED_NAMESPACES.map((ns) => [ns, lean[ns]])) as EmbedDict;
 }
 
 export function embedDicts(): EmbedDicts {

@@ -6,6 +6,7 @@ import { getBill } from '@/lib/core';
 // by accident. This route is one of the few that genuinely needs it.
 import { getNomination } from '@/lib/core/nominations';
 import { liveCallTargetForNomination, settledDecision } from '@/lib/journey';
+import { isSiteEndedBill } from '@/lib/ended-state.mjs';
 import {
   buildNominationScriptPrompt,
   NOMINATION_AUDIENCES,
@@ -313,6 +314,24 @@ export async function POST(req: NextRequest) {
      */
     if (settledDecision(bill)) {
       return NextResponse.json({ error: 'settled' }, { status: 409 });
+    }
+    /*
+     * A BILL OF AN ENDED CONGRESS HAS NO CALL TO MAKE EITHER (stage 3 of the
+     * new-Congress work, 2026-11-13). Its Congress ended before Congress
+     * finished it, so no chamber can act on it and a script would ask a
+     * member to do something they no longer can. Same place and same shape as
+     * the settled refusal above, for the same reasons: before the content
+     * version and before serveScript, so no stored script is served for it
+     * (scripts written ahead of time included: the cache is read only inside
+     * serveScript) and no model is called; a 409, not a 429, and no daily-breaker unit.
+     * Its own error word, so a client can tell "this Congress has ended" from
+     * "this bill was decided". The predicate is the one the bill page reads
+     * (lib/ended-state.mjs, through lib/journey.ts endedDecision). The ended
+     * list is empty until the January 2027 switch, so today nothing reaches
+     * this line.
+     */
+    if (isSiteEndedBill(bill)) {
+      return NextResponse.json({ error: 'ended' }, { status: 409 });
     }
     // Content-version key component (§9.1(d)): a corrected ai_summary — or a
     // status move, which reaches the generated prompt as `Current status:` —

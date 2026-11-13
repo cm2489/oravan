@@ -50,6 +50,8 @@ All five are `readOnlyHint: true`, `openWorldHint: false` — nothing here write
 
 `{ query?, topic?, status?, active_only?, locale?, limit? }` → short teasers (headline, status, `decision_state`, urgency) for bills matching a free-text query, issue topic, status, or active-only filter, most urgent first, across Oravan's bilingual federal bill corpus. The `urgency_score` is ranked from status and recency alone; `decision_state` says whether a decision is still ahead.
 
+**When a Congress ends** (none has yet in this corpus): a bill of that Congress that Congress did not finish reads `decision_state: "ended"`, described to agents as "The Congress this bill belonged to has ended, and the bill can no longer move. A new bill would have to be introduced." Such a bill has no `act_url`, an `urgency_score` of 0, and is left out of `active_only` and `whats_moving`. A law or a decided bill of that Congress keeps `enacted` or `settled`. The `get_bill` and `search_bills` descriptions above gain the same sentence on that day, and this file's quote of `get_bill` changes with it.
+
 ### `whats_moving`
 
 `{ days?, topic?, locale?, limit? }` → active, plain-language-decoded bills that cleared Oravan's "act now" urgency bar within the last N days (default 7), optionally filtered by topic. Returns an honest empty list with `quiet_week: true` when nothing has cleared the bar — this tool never pads the list to look busier than Congress actually is. If the list is empty because Oravan's own data sync looks stale rather than Congress being quiet, `data_stale` is set instead, so that distinction is never lost.

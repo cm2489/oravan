@@ -61,6 +61,7 @@
  */
 import { isTerminalNominationStatus } from '../lib/nomination-status.mjs';
 import { TERMINAL_STATUSES } from '../lib/urgency.mjs';
+import { CONGRESS_POLICY, congressOfSlug, isEndedBill } from '../lib/congress.mjs';
 import { findCitations } from './newsdesk-match.mjs';
 
 export const FLOOR_SIGNALS_PATH = 'data/floor-signals.json';
@@ -1119,10 +1120,20 @@ const KNOWN_SOURCES = new Set(['daily-digest', 'billsthisweek']);
  * attributed, checkable quote of the government's own record. A signal
  * without a quote, without a URL, or dated in the future is not that.
  *
- * @param {{ data: any, fileBytes?: number, now?: number, knownSlugs?: Set<string> | null }} input
+ * NOR IS ONE THAT NAMES A BILL OF AN ENDED CONGRESS (stage 3 of the
+ * new-Congress work, 2026-11-13). A chamber schedules only its own Congress's
+ * bills, so a live signal keyed to an ended Congress's slug means the
+ * citation was read into the wrong Congress (the 120th's H.R. 5 filed as the
+ * 119th's). The site never shows it (lib/docket.ts rungFor puts every ended
+ * bill on the terminal rung), and this gate says so loudly: a FAILURE for a
+ * live signal, a warning for one already marked stale. `policy` is
+ * lib/congress.mjs's (the pipeline's, never the site's review setting); a
+ * test passes its own. The ended list is empty until the January 2027 switch.
+ *
+ * @param {{ data: any, fileBytes?: number, now?: number, knownSlugs?: Set<string> | null, policy?: import('../lib/congress.mjs').CongressPolicy }} input
  * @returns {{ failures: string[], warnings: string[], notes: string[] }}
  */
-export function verifyFloorSignals({ data, fileBytes, now = Date.now(), knownSlugs = null }) {
+export function verifyFloorSignals({ data, fileBytes, now = Date.now(), knownSlugs = null, policy = CONGRESS_POLICY }) {
   const failures = [];
   const warnings = [];
   const notes = [];
@@ -1199,6 +1210,11 @@ export function verifyFloorSignals({ data, fileBytes, now = Date.now(), knownSlu
   };
   for (const [slug, entry] of Object.entries(data.signals ?? {})) {
     checkEntry(slug, entry, 'signal');
+    if (isEndedBill(slug, policy)) {
+      const message = `${FLOOR_SIGNALS_PATH} names ${slug}, a bill of Congress ${congressOfSlug(slug)}, which has ended — a chamber schedules only its own Congress's bills, so the citation was read into the wrong Congress; no page shows it`;
+      if (entry?.stale === true) warnings.push(message);
+      else failures.push(message);
+    }
     if (knownSlugs && !knownSlugs.has(slug)) {
       warnings.push(
         `${FLOOR_SIGNALS_PATH} names ${slug}, which is not in data/bills.json — the chamber scheduled a bill this build does not hold yet (the sync picks it up on its own update); nothing renders for it until then`

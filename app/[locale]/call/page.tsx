@@ -7,7 +7,7 @@ import { CallHubReach, CallHubRouting } from '@/components/CallHubReach';
 import { StalenessNote } from '@/components/StalenessNote';
 import { UrgencyEmptyState } from '@/components/UrgencyEmptyState';
 import { Chip } from '@/components/system';
-import { billSlug, getAllBills, getTopActions, hasActNow } from '@/lib/core';
+import { activeBillCount, billSlug, getTopActions, hasActNow } from '@/lib/core';
 import {
   announcementFor,
   chamberSession,
@@ -77,7 +77,8 @@ export default async function CallHubPage({ params }: { params: Promise<{ locale
   const format = await getFormatter();
 
   const top = getTopActions(HUB_ROWS, locale);
-  const total = getAllBills().length;
+  // "Browse all N active bills": a bill of an ended Congress is not active.
+  const total = activeBillCount();
   const freshness = getFreshness();
   const dataAsOf = await dataAsOfString(locale);
   // AE3, the homepage's own rule: the quiet claim keys on the pool alone. In

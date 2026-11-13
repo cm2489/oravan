@@ -9,7 +9,7 @@ import { UrgencyEmptyState } from '@/components/UrgencyEmptyState';
 import { YourRecord } from '@/components/YourRecord';
 import { CALL_BUTTON } from '@/components/call-button';
 import { Link } from '@/i18n/navigation';
-import { billSlug, getAllBills, getTopActions } from '@/lib/core';
+import { activeBillCount, billSlug, getTopActions } from '@/lib/core';
 import { formatCitation } from '@/lib/format';
 import { getFreshness } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
@@ -85,7 +85,8 @@ export default async function RepsPage({
   // path - the same callable bills that lead the homepage funnel surface
   // here too, so a visitor never dead-ends on "here are your reps."
   const topActions = getTopActions(2, locale);
-  const totalBills = getAllBills().length;
+  // "Browse all N active bills": a bill of an ended Congress is not active.
+  const totalBills = activeBillCount();
   const freshness = getFreshness();
   const orgJsonLd = buildOrganizationJsonLd();
 

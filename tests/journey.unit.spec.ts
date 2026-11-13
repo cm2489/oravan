@@ -23,6 +23,7 @@ import {
   type LiveCallKey,
 } from '../lib/journey';
 import type { BillStatus } from '../lib/types';
+import { withSitePolicyForTest } from '../lib/ended-state.mjs';
 import type { NominationStatus } from '../lib/core/nominations';
 // The nomination vocabulary, from the ONE copy — see lib/nomination-status.mjs's
 // header. Imported from the .mjs directly rather than through
@@ -3193,5 +3194,49 @@ test.describe('status_basis_text drives every chamber/tense derivation', () => {
       })
     ).toEqual({ stage: 'second', passedBy: 'house', next: null });
     expect(passageState({ bill_type: 'hr', last_action_text: 'Passed Senate without amendment by Unanimous Consent.' }).stage).toBe('both');
+  });
+});
+
+/*
+ * THE ENDED READING (stage 3 of the new-Congress work, 2026-11-13). With a
+ * test policy (119 ended, 120 tracked) set through lib/ended-state.mjs, never
+ * by editing a data file: statusKeyFor answers `ended` for every stage a
+ * decision could still move from, keeps the keys that state what the record
+ * holds, and the floor band and the call target stand down. A bill of the
+ * tracked Congress is untouched. With the real (empty) list, nothing changes.
+ */
+test.describe('ended Congress: the status gate and the floor band', () => {
+  const ENDED_119 = { tracked: 120, ended: [{ number: 119, ended: '2027-01-03' }] };
+  const NOW = Date.parse('2026-11-13T12:00:00Z');
+  const recOf = (congress: number, status: BillStatus, text: string, date = '2026-11-10') => ({
+    bill_type: 'hr',
+    bill_number: 5,
+    congress_number: congress,
+    full_identifier: `hr-5-${congress}`,
+    status,
+    last_action_text: text,
+    last_action_date: date,
+  });
+  const placement = 'Placed on the Union Calendar, Calendar No. 412.';
+
+  test('a fresh placement of the 119th reads `ended`; the same record of the 120th keeps `floor_vote`', () => {
+    withSitePolicyForTest(ENDED_119, () => {
+      expect(statusKeyFor(recOf(119, 'floor_vote', placement), NOW)).toBe('ended');
+      expect(statusKeyFor(recOf(120, 'floor_vote', placement), NOW)).toBe('floor_vote');
+      expect(statusKeyFor(recOf(119, 'committee', 'Referred to the Committee on Ways and Means.'), NOW)).toBe('ended');
+      expect(statusKeyFor(recOf(119, 'signed', 'Became Public Law No: 119-21.'), NOW)).toBe('signed');
+      expect(statusKeyFor(recOf(119, 'vetoed', 'Vetoed by President.'), NOW)).toBe('vetoed');
+      expect(billFloorBand(recOf(119, 'floor_vote', placement), null, NOW)).toBeNull();
+      expect(billFloorBand(recOf(120, 'floor_vote', placement), null, NOW)).not.toBeNull();
+      expect(liveCallTarget(recOf(119, 'floor_vote', placement))).toBeNull();
+    });
+    // Today's list is empty: the 119th placement is a live floor fact.
+    expect(statusKeyFor(recOf(119, 'floor_vote', placement), NOW)).toBe('floor_vote');
+    expect(billFloorBand(recOf(119, 'floor_vote', placement), null, NOW)).not.toBeNull();
+  });
+
+  test('`ended` has a label in both languages', () => {
+    expect(en.bills.status.ended).toBe('Ended');
+    expect(es.bills.status.ended).toBe('Terminado');
   });
 });
