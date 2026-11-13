@@ -57,7 +57,13 @@ export function usePartyLabel(rep: Pick<Legislator, 'party'>): string | null {
 
 /** The squared portrait frame, initials behind the photo. Decorative: the
  *  name is always printed beside it (see the header comment above). */
-export function RepPortrait({ rep, large = false }: { rep: Legislator; large?: boolean }) {
+export function RepPortrait({
+  rep,
+  large = false,
+}: {
+  rep: Pick<Legislator, 'bioguide' | 'first' | 'last'>;
+  large?: boolean;
+}) {
   const initials = `${rep.first?.[0] ?? ''}${rep.last?.[0] ?? ''}`.toUpperCase();
   return (
     <span

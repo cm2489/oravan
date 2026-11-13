@@ -76,6 +76,35 @@ export function getCoverage(slug: string): CoverageArticle[] {
 }
 
 /**
+ * What a BILL PAGE's "Read" box may show, given whether the bill is part of a
+ * Big Question (a vehicle of a live or stale moment — lib/moments.ts's
+ * getMomentsForBill, the same reader that draws the page's "part of a bigger
+ * question" line). Pure, so the rule is pinned on fixtures
+ * (tests/coverage-box-visibility.unit.spec.ts); the page passes the boolean.
+ *
+ * THE RULE (owner, 2026-11-13, on his decision card: "Yes, plus one change
+ * before press: hide the box on non-Big-Question bills when it shows only one
+ * side."). His 2026-09-28 ruling stands as it was ("For now lets just do
+ * covereage on the Big Questions so I can monitor how it's doing from a user
+ * perspective and then we can add it site wide"): a Big Question bill shows
+ * its box one-sided or not, with the one-sided note. What changes is only the
+ * other bills: when the box would be one-sided, it is not shown at all.
+ *
+ * "ONE SIDE" IS NOT A NEW DEFINITION. It is `coverageTier(...) === 'one_sided'`
+ * — the condition CoverageSection already reads to print `oneSidedNote`: two or
+ * more outlets, and exactly one partisan lean (left or right) among them.
+ * Unrated and center outlets do not make a set two-sided. Everything else
+ * passes through unchanged (cross, neutral), and so does an empty list.
+ */
+export function coverageForBillPage(
+  articles: CoverageArticle[],
+  partOfBigQuestion: boolean
+): CoverageArticle[] {
+  if (!partOfBigQuestion && coverageTier(articles) === 'one_sided') return [];
+  return articles;
+}
+
+/**
  * The newest DATED article stored for a bill, as an ISO day string — the one
  * fact the recency gate below runs on.
  *

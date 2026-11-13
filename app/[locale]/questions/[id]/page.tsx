@@ -26,7 +26,7 @@ import { getBill, localizeBill } from '@/lib/core';
 // forbids the barrel so no bundle pays for data/nominations.json (~520 KB) by
 // accident. This page renders one, so it pays for it deliberately.
 import { getNomination } from '@/lib/core/nominations';
-import { getCoverage, normalizeSource } from '@/lib/coverage';
+import { coverageForBillPage, getCoverage, normalizeSource } from '@/lib/coverage';
 import { formatCitation } from '@/lib/format';
 import { adoptedConcurrentReading } from '@/lib/concurrent-explainer';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
@@ -43,6 +43,7 @@ import {
   getLiveMoments,
   getMoment,
   getMoments,
+  getMomentsForBill,
   lastReviewedDay,
   vehicleKind,
 } from '@/lib/moments';
@@ -403,7 +404,16 @@ export default async function MomentPage({
     if (!raw) return null;
     const bill = localizeBill(raw, locale);
     const identifier = formatCitation(bill.bill_type, bill.bill_number);
-    const coverageCount = new Set(getCoverage(v.slug).map((a) => normalizeSource(a.source))).size;
+    // The same rule the bill page applies to its coverage box (owner,
+    // 2026-11-13): a card never counts outlets for a one-sided set the bill's
+    // own page does not show. On a live or stale question every vehicle is a
+    // Big Question bill, so this changes nothing there; it matters on a
+    // settled question, whose bills are no longer part of one.
+    const coverageCount = new Set(
+      coverageForBillPage(getCoverage(v.slug), getMomentsForBill(v.slug).length > 0).map((a) =>
+        normalizeSource(a.source)
+      )
+    ).size;
     // An adopted concurrent resolution's card says what that means, as its
     // bill page does (lib/concurrent-explainer.ts).
     const concurrentReading = adoptedConcurrentReading(raw);
