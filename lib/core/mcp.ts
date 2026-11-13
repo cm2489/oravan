@@ -44,6 +44,9 @@ import {
   type BillSearchDoc,
 } from '../bill-search.mjs';
 import { decisionState } from '../docket.mjs';
+import { statusBasisText } from '../floor-text.mjs';
+import { sitePolicy } from '../ended-state.mjs';
+import { endedDecision } from '../journey';
 /* The conversation lamp, for `whats_moving`'s optional evidence facet only. It
  * never touches the POOL or its order — that is the docket ladder's, and this
  * tool's whole contract is that Congress's own record decides what is moving.
@@ -203,62 +206,103 @@ export interface ToolInfo {
   description: string;
 }
 
-export const TOOL_INFO: Record<ToolName, ToolInfo> = {
-  lookup_representatives: {
-    title: 'Look up representatives by ZIP',
-    description:
-      "Look up a person's U.S. House member and two Senators by 5-digit ZIP code. Returns each " +
-      "member's name, party, phone, official website, portrait URL, and district office phone " +
-      'numbers - the number a constituent should actually call. Some ZIP codes span more than one ' +
-      'congressional district (needs_address: true, all candidate districts returned); this tool ' +
-      'does not perform address-level refinement itself in this release - point the person to the ' +
-      "response's reps_url, where they type the ZIP code and then a street address (the page does " +
-      'not carry the ZIP over), and a stateless Census-geocoder proxy that never stores or logs the address narrows it to a ' +
-      'single district from that address, which Oravan never stores. When a House seat currently ' +
-      'has no member, `vacancies` lists the empty seat(s) (state + district) explicitly - the ' +
-      'departed member is never returned as if still serving, and no election timeline is implied.',
-  },
-  get_bill: {
-    title: 'Get a bill decode',
-    description:
-      'Get the full plain-language decode of a federal bill by slug (e.g. "hr-2701-119") or ' +
-      'citation (e.g. "H.R. 2701" - resolves to the most recent Congress on a match). Returns the ' +
-      'AI-generated summary (headline, tl;dr, what/who/why/cost - automatically checked before ' +
-      'publish and clearly labeled when present), the official status in plain language, a ' +
-      'decision_state (pending, settled or enacted, with the official record\'s own sentence in ' +
-      'settled_reason once the decision is settled or enacted), an urgency band and an urgency_score (the ' +
-      'score is ranked from status and recency alone; decision_state, not the score, says whether a ' +
-      'decision is still ahead), sponsor, key dates, the ' +
-      "official Congress.gov page, and - while the decision is still pending - an act_url to Oravan's " +
-      'on-site call flow. This tool never drafts a phone script - script generation happens only on-site, ' +
-      'where the caller reads and can edit the script before dialing; that is not available over ' +
-      'this API.',
-  },
-  search_bills: {
-    title: 'Search bills',
-    description:
-      "Search Oravan's bilingual federal bill corpus by free-text query, issue topic, status, or " +
-      'active-only. Returns short teasers (headline, status, decision_state, urgency) for matching ' +
-      'bills, most urgent first. The urgency_score is ranked from status and recency alone; ' +
-      'decision_state says whether a decision is still ahead.',
-  },
-  whats_moving: {
-    title: "What's moving in Congress",
-    description:
-      "What's moving in Congress recently: active, plain-language-decoded bills that cleared " +
-      "Oravan's 'act now' urgency bar within the last N days (default 7), optionally filtered by " +
-      'topic. Returns an honest empty list with quiet_week: true when nothing has cleared the bar - ' +
-      'this tool never pads the list to look busier than Congress actually is this week. If the ' +
-      "list is empty because Oravan's own data sync looks stale rather than Congress being quiet, " +
-      'data_stale is set instead so that distinction is never lost.',
-  },
-  get_representative: {
-    title: 'Get a representative',
-    description:
-      'Get full details for one member of Congress by bioguide ID (e.g. "W000797"), plus their 5 ' +
-      'most recently active sponsored bills. Facts only: no scorecards, ratings, or vote grades.',
-  },
-};
+/*
+ * THE `ended` DECISION STATE (stage 3 of the new-Congress work, 2026-11-13).
+ * Decided by the orchestrating session and told to the owner on Nov 12, 2026:
+ * an agent learns that a bill's Congress has ended from a NEW decision_state
+ * value, "ended", not from "settled", because "settled" means Congress
+ * decided, and an ended bill was never decided. The sentence below is the
+ * owner-approved description of the value (Nov 12, 2026), English only like
+ * every other piece of tool metadata.
+ *
+ * The descriptions name the value ONLY while some Congress is on the ended
+ * list (lib/congress.mjs ENDED_CONGRESSES, empty until the January 2027
+ * switch; lib/ended-state.mjs adds the reviewed Congress on a local review
+ * build). So until then every description, and so every tools/list reply,
+ * is byte for byte what it was.
+ */
+export const ENDED_STATE_DESCRIPTION =
+  'The Congress this bill belonged to has ended, and the bill can no longer move. A new bill would have to be introduced.';
+
+/** The five tools' titles and descriptions, as they read when `ANY_ENDED` is
+ *  (or is not) true. TOOL_INFO below is this build's; tests read both. */
+export function toolInfoFor(ANY_ENDED: boolean): Record<ToolName, ToolInfo> {
+  return {
+    lookup_representatives: {
+      title: 'Look up representatives by ZIP',
+      description:
+        "Look up a person's U.S. House member and two Senators by 5-digit ZIP code. Returns each " +
+        "member's name, party, phone, official website, portrait URL, and district office phone " +
+        'numbers - the number a constituent should actually call. Some ZIP codes span more than one ' +
+        'congressional district (needs_address: true, all candidate districts returned); this tool ' +
+        'does not perform address-level refinement itself in this release - point the person to the ' +
+        "response's reps_url, where they type the ZIP code and then a street address (the page does " +
+        'not carry the ZIP over), and a stateless Census-geocoder proxy that never stores or logs the address narrows it to a ' +
+        'single district from that address, which Oravan never stores. When a House seat currently ' +
+        'has no member, `vacancies` lists the empty seat(s) (state + district) explicitly - the ' +
+        'departed member is never returned as if still serving, and no election timeline is implied.',
+    },
+    get_bill: {
+      title: 'Get a bill decode',
+      description:
+        'Get the full plain-language decode of a federal bill by slug (e.g. "hr-2701-119") or ' +
+        'citation (e.g. "H.R. 2701" - resolves to the most recent Congress on a match). Returns the ' +
+        'AI-generated summary (headline, tl;dr, what/who/why/cost - automatically checked before ' +
+        'publish and clearly labeled when present), the official status in plain language, a ' +
+        (ANY_ENDED
+          ? "decision_state (pending, settled, enacted or ended, with the official record's own sentence in " +
+            'settled_reason once the decision is settled or enacted; ended: ' +
+            ENDED_STATE_DESCRIPTION +
+            '), '
+          : 'decision_state (pending, settled or enacted, with the official record\'s own sentence in ' +
+            'settled_reason once the decision is settled or enacted), ') +
+        'an urgency band and an urgency_score (the ' +
+        'score is ranked from status and recency alone; decision_state, not the score, says whether a ' +
+        'decision is still ahead), sponsor, key dates, the ' +
+        "official Congress.gov page, and - while the decision is still pending - an act_url to Oravan's " +
+        'on-site call flow' +
+        (ANY_ENDED ? ' (never for a bill of a Congress that has ended)' : '') +
+        '. This tool never drafts a phone script - script generation happens only on-site, ' +
+        'where the caller reads and can edit the script before dialing; that is not available over ' +
+        'this API.',
+    },
+    search_bills: {
+      title: 'Search bills',
+      description:
+        "Search Oravan's bilingual federal bill corpus by free-text query, issue topic, status, or " +
+        'active-only. Returns short teasers (headline, status, decision_state, urgency) for matching ' +
+        'bills, most urgent first. The urgency_score is ranked from status and recency alone; ' +
+        'decision_state says whether a decision is still ahead.' +
+        (ANY_ENDED
+          ? ' A bill of a Congress that has ended reads decision_state "ended" (' +
+            ENDED_STATE_DESCRIPTION +
+            '), scores 0, and is left out by active_only.'
+          : ''),
+    },
+    whats_moving: {
+      title: "What's moving in Congress",
+      description:
+        "What's moving in Congress recently: active, plain-language-decoded bills that cleared " +
+        "Oravan's 'act now' urgency bar within the last N days (default 7), optionally filtered by " +
+        'topic. Returns an honest empty list with quiet_week: true when nothing has cleared the bar - ' +
+        'this tool never pads the list to look busier than Congress actually is this week. If the ' +
+        "list is empty because Oravan's own data sync looks stale rather than Congress being quiet, " +
+        'data_stale is set instead so that distinction is never lost.',
+    },
+    get_representative: {
+      title: 'Get a representative',
+      description:
+        'Get full details for one member of Congress by bioguide ID (e.g. "W000797"), plus their 5 ' +
+        'most recently active sponsored bills. Facts only: no scorecards, ratings, or vote grades.',
+    },
+  };
+}
+
+/** This build's tool metadata: the `ended` value is named only while some
+ *  Congress is on the ended list (none until the January 2027 switch). Read
+ *  from the site's policy when this module loads; tests/bill-rail.unit.spec.ts
+ *  loads it fresh with an ended Congress to prove the wiring. */
+export const TOOL_INFO: Record<ToolName, ToolInfo> = toolInfoFor(sitePolicy().ended.length > 0);
 
 /* ---------------------------------------------------------------------- *
  * Plain-language labels - read off messages/{locale}.json directly rather
@@ -372,7 +416,43 @@ export interface BillSignalOut {
  * all read `pending`, and `get_bill` offers `act_url` on them, exactly as the
  * bill page keeps its call panel on them.
  */
-export type DecisionStateOut = 'pending' | 'settled' | 'enacted';
+export type DecisionStateOut = 'pending' | 'settled' | 'enacted' | 'ended';
+
+/**
+ * THE DECISION AN AGENT IS TOLD, with the ended reading on top of the
+ * record's (lib/docket.mjs decisionState). For a bill of an ended Congress
+ * (lib/journey.ts endedDecision; none until the January 2027 switch):
+ *
+ *   law, decided  unchanged: `enacted` or `settled`, with the record's own
+ *                 sentence. Congress decided those, and the record says so.
+ *   presented     `pending`: both chambers passed it, and the record does not
+ *                 yet show what the president did, so a decision IS still
+ *                 ahead; but it is the President's, so no act_url.
+ *   ended         `ended` (ENDED_STATE_DESCRIPTION), settled_reason null: no
+ *                 record sentence says it ended, the calendar does.
+ *
+ * `actable` is false for every bill of an ended Congress: `get_bill` offers
+ * act_url only when it is true, and teasers score such a bill 0 so a search
+ * never ranks it as moving. Every other bill reads exactly as before.
+ */
+export function billDecision(bill: Bill): { state: DecisionStateOut; reason: string | null; actable: boolean } {
+  const record = decisionState(bill);
+  const ended = endedDecision(bill);
+  if (!ended) return { state: record.state, reason: record.reason, actable: record.state === 'pending' };
+  if (ended.kind === 'ended') return { state: 'ended', reason: null, actable: false };
+  // An ended, enrolled concurrent resolution (lib/journey.ts endedAdoption):
+  // settled, with the record's own sentence, as an adopted one reads today.
+  if (ended.kind === 'decided' && record.state === 'pending') {
+    return { state: 'settled', reason: statusBasisText(bill), actable: false };
+  }
+  return { state: record.state, reason: record.reason, actable: false };
+}
+
+/** urgency_score, except that a bill of an ended Congress scores 0: nothing
+ *  can move it, so no list ordered by the score may rank it as moving. */
+function urgencyScore(bill: Bill): number {
+  return endedDecision(bill) ? 0 : effectiveUrgency(bill.status, bill.last_action_date);
+}
 
 export interface BillTeaserOut {
   slug: string;
@@ -409,7 +489,7 @@ export interface BillTeaserOut {
 /** `bill` must already be locale-resolved (see localizeBill) before shaping. */
 function shapeBillTeaser(bill: Bill, locale: Locale): BillTeaserOut {
   const slug = billSlug(bill);
-  const decision = decisionState(bill);
+  const decision = billDecision(bill);
   return {
     slug,
     citation: formatCitation(bill.bill_type, bill.bill_number),
@@ -423,7 +503,7 @@ function shapeBillTeaser(bill: Bill, locale: Locale): BillTeaserOut {
     settled_reason: decision.reason,
     topics: (bill.issue_tags ?? []).map((id) => ({ id, label: categoryLabel(id, locale) })),
     last_action_date: bill.last_action_date,
-    urgency_score: effectiveUrgency(bill.status, bill.last_action_date),
+    urgency_score: urgencyScore(bill),
   };
 }
 
@@ -542,7 +622,7 @@ export function getBillDetail(input: { slug?: string; citation?: string }, local
   // it - the one copy of "what counts as Act now" this week.
   const band = getTeasers(locale).find((t) => t.slug === slug)?.band ?? 'radar';
   const hasAiContent = Boolean(localized.ai_headline);
-  const decision = decisionState(localized);
+  const decision = billDecision(localized);
 
   // NOT in scope, by settled decision (the project records (kept out of this repo)
   // §2): this tool never drafts a call script. That's the product's only
@@ -577,7 +657,7 @@ export function getBillDetail(input: { slug?: string; citation?: string }, local
       status_label: statusLabel(localized, locale),
       decision_state: decision.state,
       settled_reason: decision.reason,
-      urgency_score: effectiveUrgency(localized.status, localized.last_action_date),
+      urgency_score: urgencyScore(localized),
       urgency_band: band,
       topics: (localized.issue_tags ?? []).map((id) => ({ id, label: categoryLabel(id, locale) })),
       sponsor: sponsor
@@ -606,7 +686,9 @@ export function getBillDetail(input: { slug?: string; citation?: string }, local
       // has already voted down, or for a law, sends an agent's user to call
       // about a question with no vote left on it. `url` still carries the
       // citation; only the invitation to act is withdrawn.
-      act_url: decision.state === 'pending' ? url : null,
+      // And null for every bill of an ended Congress (`actable`, above): no
+      // chamber can act on it any more (stage 3, 2026-11-13).
+      act_url: decision.actable ? url : null,
     },
     meta: buildEnvelope(`/bills/${slug}`, locale, hasAiContent),
   };
@@ -661,7 +743,9 @@ export function searchBills(params: SearchBillsParams, locale: Locale) {
   let bills = getAllBills();
   if (params.topic) bills = bills.filter((b) => (b.issue_tags ?? []).includes(params.topic!));
   if (params.status) bills = bills.filter((b) => b.status === params.status);
-  if (params.activeOnly) bills = bills.filter((b) => !TERMINAL_STATUSES.has(b.status));
+  // A bill of an ended Congress is not active (stage 3, 2026-11-13; none
+  // until the January 2027 switch).
+  if (params.activeOnly) bills = bills.filter((b) => !TERMINAL_STATUSES.has(b.status) && !endedDecision(b));
   if (params.query) {
     // A query with nothing searchable in it (blank, punctuation only) is no
     // filter, exactly as an omitted one.
@@ -675,7 +759,7 @@ export function searchBills(params: SearchBillsParams, locale: Locale) {
   // surfaced one stale resolution while a newer one had just been voted).
   const sorted = [...bills].sort(
     (a, b) =>
-      effectiveUrgency(b.status, b.last_action_date) - effectiveUrgency(a.status, a.last_action_date) ||
+      urgencyScore(b) - urgencyScore(a) ||
       compareLastActionDesc(a.last_action_date, b.last_action_date)
   );
   const limit = params.limit ?? 20;

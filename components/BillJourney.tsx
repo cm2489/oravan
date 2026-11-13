@@ -114,9 +114,15 @@ interface Props {
   introducedLabel?: string;
   /** Short, already-localized last-action date, printed under the current step. */
   currentLabel?: string;
+  /** A bill of an ENDED Congress (lib/journey.ts endedDecision, stage 3 of the
+   *  new-Congress work, 2026-11-13): the approved line that stands after "Right
+   *  now:" instead of a stage the bill can no longer move from. Absent on every
+   *  bill today (the ended list is empty until the January 2027 switch). The
+   *  steps above are unchanged: they are the record. */
+  endedLine?: string;
 }
 
-export function BillJourney({ journey, introducedLabel, currentLabel }: Props) {
+export function BillJourney({ journey, introducedLabel, currentLabel, endedLine }: Props) {
   const t = useTranslations('bill.journey');
   const lang = glossaryLocale(useLocale());
   const { ending } = journey;
@@ -242,12 +248,18 @@ export function BillJourney({ journey, introducedLabel, currentLabel }: Props) {
       <p className="mt-4 flex flex-wrap items-center gap-2 max-w-note text-sm text-ink-2">
         <span>
           <strong className="font-bold text-ink">{t('now')}</strong>{' '}
-          {glossifyRich(
-            t.rich(journey.nowKey, { chamber: nowChamber, other, floorCalendar, ...tally, ...when }),
-            lang,
-            nowSeen
+          {endedLine ? (
+            <span data-journey-ended="">{endedLine}</span>
+          ) : (
+            <>
+              {glossifyRich(
+                t.rich(journey.nowKey, { chamber: nowChamber, other, floorCalendar, ...tally, ...when }),
+                lang,
+                nowSeen
+              )}
+              {journey.showTrailer && <> {glossifyRich(t(TRAILER_KEY[ending], { chamber, other }), lang, nowSeen)}</>}
+            </>
           )}
-          {journey.showTrailer && <> {glossifyRich(t(TRAILER_KEY[ending], { chamber, other }), lang, nowSeen)}</>}
         </span>
         {isLaw && <Chip tone="tag">{t('law')}</Chip>}
       </p>
