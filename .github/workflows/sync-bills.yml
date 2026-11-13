@@ -562,6 +562,15 @@ jobs:
         env:
           BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
         run: node scripts/mirror-portraits.mjs
+      - name: Refresh the members page's inline pictures
+        # The small pictures the members page sends inside its lookup's
+        # answer, so no request names a visitor's member (owner, 2026-11-12;
+        # scripts/portrait-thumbs.mjs). Fetches only members the file lacks
+        # (new members), drops members who left; free, no secret, and it
+        # never fails the run. After the mirror step, so it reads tonight's
+        # data/portrait-missing.json.
+        continue-on-error: true
+        run: node scripts/portrait-thumbs.mjs
       - name: Verify the sync did its job (dead-man's-switch)
         # EVERY INTEGRITY CHECK, and they all still fail BEFORE anything is
         # committed: corpus parses, EN/ES parity holds, one Congress only, the

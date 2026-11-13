@@ -1,6 +1,7 @@
 'use server';
 
 import { membersFor, type MembersResult } from '@/lib/members';
+import { withPortraits } from '@/lib/member-portraits';
 
 /*
  * The members page's lookup, as a server action (2026-11-12): the ZIP, and
@@ -17,9 +18,21 @@ import { membersFor, type MembersResult } from '@/lib/members';
  *     /reps and the server renders the members from the body.
  *
  * Nothing is logged or stored; the result is plain data (lib/members.ts).
+ *
+ * The answer carries the members' pictures too (2026-11-12,
+ * lib/member-portraits.ts), so the page draws them without a request that
+ * names a member. This action answers only the members page, which always
+ * shows them; the home page's saved-ZIP names and the call panel look
+ * members up elsewhere and never pay for pictures. A lookup made with
+ * JavaScript sends `pictures=after` and gets the names first, the pictures
+ * after them in the same response; a native form post gets both at once,
+ * as plain data the page's HTML can hold.
  */
 export async function lookupMembers(_previous: MembersResult | null, form: FormData): Promise<MembersResult | null> {
   const zip = form.get('zip');
   const district = form.get('district');
-  return membersFor(typeof zip === 'string' ? zip : null, typeof district === 'string' ? district : null);
+  return withPortraits(
+    membersFor(typeof zip === 'string' ? zip : null, typeof district === 'string' ? district : null),
+    form.get('pictures') === 'after'
+  );
 }

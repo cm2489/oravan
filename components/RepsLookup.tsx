@@ -55,6 +55,13 @@ import { currentEntry, entryFor, readEntry, rememberMembers, sameEntry, type Mem
  * Back from a bill left the bill on screen. One tick later the hook is in
  * place (lib/members-entry.ts has the detail).
  *
+ * THE PICTURES COME IN THE SAME ANSWER (owner, 2026-11-12). Each member's
+ * picture is a `data:` address inside the lookup's answer
+ * (lib/member-portraits.ts), so no request the page makes names a member.
+ * After Reload, Back or Forward the members are looked up again from the
+ * history entry, and the pictures come back in that answer: no picture is
+ * ever kept in the history entry or in web storage.
+ *
  * "Change ZIP code" stays /reps?change=1: it carries nothing about the
  * reader. The prompt shows while the address holds `change`, and a lookup
  * from there drops it, so a reload opens on the members just saved.
@@ -143,11 +150,32 @@ export function RepsLookup({ initial, legacy, preview, switchboard, continuation
   ): Promise<boolean> {
     const ticket = ++latest.current;
     // A POST body, built field by field: the ZIP is never in an address.
+    // `pictures=after`: the names first, the pictures after them in the same
+    // answer (lib/members-action.ts).
     const body = new FormData();
     for (const [name, value] of Object.entries({ zip, district })) if (value) body.append(name, value);
+    body.append('pictures', 'after');
     try {
-      const next = await lookupMembers(null, body);
+      const answer = await lookupMembers(null, body);
       if (ticket !== latest.current) return true;
+      // The names are in; the pictures are still on their way in the same
+      // answer. Until they land every card shows its initials, as it did
+      // while a picture loaded; then one ordinary update draws them (not a
+      // Suspense boundary, whose reveal React holds back up to 300 ms).
+      // Pictures that never arrive (the connection dropped mid-answer) leave
+      // the initials, as a failed picture always has, never an error.
+      const later = answer?.portraits;
+      const pending = !!later && typeof (later as Promise<unknown>).then === 'function';
+      const next = answer && pending ? { ...answer, portraits: {} } : answer;
+      if (pending) {
+        // React's decoded promise is a thenable; Promise.resolve adopts it.
+        Promise.resolve(later).then(
+          (portraits) => {
+            if (ticket === latest.current) setLive((shown) => (shown ? { ...shown, portraits } : shown));
+          },
+          () => {}
+        );
+      }
       scrollToHash.current = fromArrival;
       setLive(next);
       if (history !== 'none') rememberMembers(entryFor(next), history);
@@ -186,7 +214,12 @@ export function RepsLookup({ initial, legacy, preview, switchboard, continuation
     );
   }
 
-  const { zip, districts, refined, refinedOutsideZip } = result;
+  const { zip, districts, refined, refinedOutsideZip, portraits } = result;
+  // Always a plain map here: a lookup's promise is swapped for one above.
+  const pictures: Record<string, string> =
+    portraits && typeof (portraits as Promise<unknown>).then !== 'function'
+      ? (portraits as Record<string, string>)
+      : {};
 
   return (
     <>
@@ -269,7 +302,11 @@ export function RepsLookup({ initial, legacy, preview, switchboard, continuation
             {noSenators && <p className={`mt-4 max-w-read ${NOTE}`}>{t('delegateNote', { state: d.state })}</p>}
             <div className="mt-4 grid gap-4 md:grid-cols-3">
               {d.reps.map((r) => (
-                <RepCard key={r.bioguide} rep={r} />
+                <RepCard
+                  key={r.bioguide}
+                  rep={r}
+                  portrait={pictures[r.bioguide] ?? null}
+                />
               ))}
               {d.vacancyHref && <VacantSeatCard href={d.vacancyHref} elections={d.elections} />}
             </div>

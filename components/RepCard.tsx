@@ -55,9 +55,29 @@ export function usePartyLabel(rep: Pick<Legislator, 'party'>): string | null {
     : rep.party;
 }
 
-/** The squared portrait frame, initials behind the photo. Decorative: the
- *  name is always printed beside it (see the header comment above). */
-export function RepPortrait({ rep, large = false }: { rep: Legislator; large?: boolean }) {
+/**
+ * The squared portrait frame, initials behind the photo. Decorative: the
+ * name is always printed beside it (see the header comment above).
+ *
+ * WHERE THE PHOTO COMES FROM (2026-11-12). `inline` is how the members page
+ * draws a visitor's own members: the picture arrived inside the lookup's
+ * answer as a `data:` address (lib/member-portraits.ts), so the browser makes
+ * no request that names the member. `null` means the answer had no picture
+ * for this member: only the initials show, and nothing is requested, the
+ * same face a failed picture has always shown (and the face every card shows
+ * while its picture is still on its way). Left out (`undefined`), as on a
+ * member's own page, which the visitor chose to open, the photo loads
+ * through next/image as before.
+ */
+export function RepPortrait({
+  rep,
+  large = false,
+  inline,
+}: {
+  rep: Legislator;
+  large?: boolean;
+  inline?: string | null;
+}) {
   const initials = `${rep.first?.[0] ?? ''}${rep.last?.[0] ?? ''}`.toUpperCase();
   return (
     <span
@@ -73,13 +93,17 @@ export function RepPortrait({ rep, large = false }: { rep: Legislator; large?: b
           {initials}
         </span>
       )}
-      <Image
-        src={portraitUrl(rep.bioguide)}
-        alt=""
-        width={large ? 120 : 72}
-        height={large ? 144 : 88}
-        className="absolute inset-0 h-full w-full object-cover"
-      />
+      {/* A `data:` src is drawn as it is (next/image skips its optimizer
+          for one): same box, same crop, no request. */}
+      {inline !== null && (
+        <Image
+          src={inline ?? portraitUrl(rep.bioguide)}
+          alt=""
+          width={large ? 120 : 72}
+          height={large ? 144 : 88}
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+      )}
     </span>
   );
 }
@@ -137,7 +161,8 @@ export function RepContact({ rep }: { rep: Legislator }) {
   );
 }
 
-export function RepCard({ rep }: { rep: Legislator }) {
+/** `portrait`: see RepPortrait's `inline`. The members page always passes it. */
+export function RepCard({ rep, portrait }: { rep: Legislator; portrait?: string | null }) {
   const t = useTranslations('reps');
   const role = t(repRoleKey(rep));
   const party = usePartyLabel(rep);
@@ -145,7 +170,7 @@ export function RepCard({ rep }: { rep: Legislator }) {
   return (
     <article className="rounded-control border-[1.5px] border-line-strong bg-paper p-5">
       <div className="flex gap-4">
-        <RepPortrait rep={rep} />
+        <RepPortrait rep={rep} inline={portrait} />
         <div className="min-w-0">
           <p data-rep-role={repRoleKey(rep)} className="text-xs font-semibold tracking-[0.04em] text-ink-2">
             {role} · {party} · {rep.state}

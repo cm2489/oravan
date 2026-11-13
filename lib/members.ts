@@ -50,6 +50,18 @@ export interface MembersResult {
   refined: boolean;
   /** The refined district is not among the ZIP's own candidates. */
   refinedOutsideZip: boolean;
+  /**
+   * The members' pictures, as `data:` addresses keyed by bioguide id, so the
+   * browser draws them without a request that names a member (2026-11-12;
+   * lib/member-portraits.ts). A member with no entry shows the initials.
+   *
+   * A plain object in a page's own HTML (the no-JavaScript answer, an old
+   * /reps?zip= link), which goes through JSON.stringify. A promise only in
+   * the answer to a lookup made with JavaScript, which asks for it: the
+   * names arrive first and the pictures follow in the same response, so the
+   * members appear as soon as they did before the pictures were inlined.
+   */
+  portraits?: Record<string, string> | Promise<Record<string, string>>;
 }
 
 const ZIP_RE = /^\d{5}$/;

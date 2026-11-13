@@ -15,6 +15,7 @@ import { getFreshness } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
 import { buildOrganizationJsonLd } from '@/lib/jsonld';
 import { membersFor } from '@/lib/members';
+import { withPortraits } from '@/lib/member-portraits';
 
 /*
  * THE LOOKUP SURFACE, as ruled paper.
@@ -75,7 +76,9 @@ export default async function RepsPage({
   setRequestLocale(locale);
   const legacyParams = await searchParams;
   const legacy = legacyParams.zip !== undefined || legacyParams.district !== undefined;
-  const initial = membersFor(legacyParams.zip, legacyParams.district);
+  // With the members' pictures inline, as the lookup's own answer carries them
+  // (lib/member-portraits.ts): no request the page makes names a member.
+  const initial = withPortraits(membersFor(legacyParams.zip, legacyParams.district));
   const t = await getTranslations('reps');
   // The Capitol switchboard's words are the call panel's own (bill.*), so the
   // two surfaces cannot drift.

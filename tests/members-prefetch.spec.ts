@@ -27,10 +27,12 @@ import es from '../messages/es.json';
  * made on its own has an address that holds one of the visitor's member ids or
  * a vacant seat's slug. Nothing is clicked.
  *
- * NOT COVERED, ON PURPOSE: the portraits. `/_next/image?url=…/C001056.jpg`
- * names the member in its query, and that is a separate decision for the
- * owner (next.config.ts is not touched here). Requests whose path starts with
- * /_next/image are the one exception.
+ * THE PORTRAITS TOO (owner, 2026-11-12). `/_next/image?url=…/C001056.jpg`
+ * named the member in its query; the members page now draws its pictures
+ * from `data:` addresses inside the lookup's answer (lib/member-portraits.ts),
+ * so there is no exception any more: no request, `/_next/image` included,
+ * may name a visitor's member, in its address or its Referer.
+ * tests/members-portraits.spec.ts checks the pictures are really drawn.
  *
  * Prefetching is off in `next dev`, so this file only has teeth against a
  * production build (`next build && next start`, which is what the suite runs).
@@ -93,13 +95,14 @@ async function reachMemberLinks(page: Page): Promise<number> {
   return count;
 }
 
-function expectNoMemberInAnyAddress(requests: Request[], names: string[], also: RegExp[] = []) {
+async function expectNoMemberInAnyAddress(requests: Request[], names: string[], also: RegExp[] = []) {
   expect(names.length, 'the case has members or a seat to look for').toBeGreaterThan(0);
   for (const r of requests) {
     const url = new URL(r.url());
-    if (url.pathname.startsWith('/_next/image')) continue; // the portraits: a separate decision
+    const referer = (await r.allHeaders().catch(() => ({}) as Record<string, string>))['referer'] ?? '';
     for (const name of names) {
       expect(r.url(), `${r.method()} ${r.url()} names ${name}`).not.toContain(name);
+      expect(referer, `${r.method()} ${r.url()}: its Referer names ${name}`).not.toContain(name);
     }
     for (const pattern of also) expect(url.pathname, `${r.method()} ${r.url()}`).not.toMatch(pattern);
   }
@@ -136,7 +139,7 @@ for (const [prefix, m] of [
       await expect(page).toHaveURL(new RegExp(`${prefix}/reps$`));
       await expect(page.locator('[data-rep-name-link]').first()).toBeVisible();
       expect(await reachMemberLinks(page), 'member links on the page').toBeGreaterThan(0);
-      expectNoMemberInAnyAddress(requests, namesFor(ZIP), [ANY_MEMBER_PAGE]);
+      await expectNoMemberInAnyAddress(requests, namesFor(ZIP), [ANY_MEMBER_PAGE]);
     });
 
     test('after a ZIP typed on /reps itself', async ({ page }) => {
@@ -146,7 +149,7 @@ for (const [prefix, m] of [
       await page.getByRole('button', { name: m.home.zipCta }).click();
       await expect(page.locator('[data-rep-name-link]').first()).toBeVisible();
       expect(await reachMemberLinks(page), 'member links on the page').toBeGreaterThan(0);
-      expectNoMemberInAnyAddress(requests, namesFor(ZIP), [ANY_MEMBER_PAGE]);
+      await expectNoMemberInAnyAddress(requests, namesFor(ZIP), [ANY_MEMBER_PAGE]);
     });
 
     test('on the home page with a saved ZIP, the three names under the hero', async ({ page }) => {
@@ -156,7 +159,7 @@ for (const [prefix, m] of [
       await page.goto(`${prefix}/`);
       await expect(page.locator('[data-saved-zip] a[href*="/reps/"]').first()).toBeVisible();
       expect(await reachMemberLinks(page), 'member links on the page').toBeGreaterThan(0);
-      expectNoMemberInAnyAddress(requests, namesFor(ZIP), [ANY_MEMBER_PAGE]);
+      await expectNoMemberInAnyAddress(requests, namesFor(ZIP), [ANY_MEMBER_PAGE]);
     });
 
     test('in the bill page call panel, with a saved ZIP', async ({ page }) => {
@@ -171,7 +174,7 @@ for (const [prefix, m] of [
       // one link is left out of the names.
       const sponsor = await sponsorOf(page);
       expect(await reachMemberLinks(page), 'member links on the page').toBeGreaterThan(0);
-      expectNoMemberInAnyAddress(
+      await expectNoMemberInAnyAddress(
         requests,
         namesFor(ZIP).filter((n) => n !== sponsor)
       );
@@ -186,7 +189,7 @@ for (const [prefix, m] of [
       await expect(page.locator('[data-rep-votes-link]').first()).toBeVisible();
       const sponsor = await sponsorOf(page);
       expect(await reachMemberLinks(page), 'member links on the page').toBeGreaterThan(0);
-      expectNoMemberInAnyAddress(
+      await expectNoMemberInAnyAddress(
         requests,
         namesFor(ZIP).filter((n) => n !== sponsor)
       );
@@ -204,7 +207,7 @@ for (const [prefix, m] of [
       await expect(seat).toBeVisible();
       await expect(seat).toHaveAttribute('href', new RegExp(`/reps/${slug}$`));
       expect(await reachMemberLinks(page), 'member links on the page').toBeGreaterThan(0);
-      expectNoMemberInAnyAddress(requests, namesFor(zip), [ANY_MEMBER_PAGE]);
+      await expectNoMemberInAnyAddress(requests, namesFor(zip), [ANY_MEMBER_PAGE]);
     });
   });
 }
