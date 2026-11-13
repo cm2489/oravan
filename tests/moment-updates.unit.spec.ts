@@ -20,6 +20,7 @@ import {
   SPECULATION_ES_TERMS,
   UPDATE_CLASSES,
   checkMomentUpdates,
+  collapseRedundantStatusChanges,
   computeUpdateId,
   dedupeUpdates,
   etDay,
@@ -93,7 +94,14 @@ test.describe('real data/moment-updates.json passes the CI gate', () => {
     const file = read('data/moment-updates.json');
     for (const id of Object.keys(file)) {
       if (id === '_meta') continue;
-      expect(getUpdates(id).length).toBe(file[id].updates.length);
+      // Every stored row, in file order, less ONLY a status_change that
+      // repeats a richer record of its day (2026-11-13) — the one fold the
+      // reader applies, so a repeat the collector has not yet healed never
+      // prints twice. Nothing else is ever dropped on read.
+      const expected = collapseRedundantStatusChanges(file[id].updates).kept.map((u) => u.id);
+      expect(getUpdates(id).map((u) => u.id)).toEqual(expected);
+      const folded = file[id].updates.filter((u: { id: string }) => !expected.includes(u.id));
+      expect(folded.every((u: { class: string }) => u.class === 'status_change')).toBe(true);
       expect(getRevisions(id).length).toBe(file[id].summary_revisions.length);
       expect(getCurrentSummary(id)?.id).toBe(file[id].summary_revisions.at(-1)?.id);
       const days = file[id].updates.map((u: { day: string }) => u.day).sort();
