@@ -439,6 +439,39 @@ test.describe('2026-11-12 no short privacy line says nothing about a visitor is 
   });
 });
 
+test.describe('2026-11-12 short privacy lines promise "no profile of you", not "no database about you"', () => {
+  // Owner, Nov 12, 2026, 8:52 PM ET: "Merge them with 'no profile of you' in
+  // place of 'no database about you'." An independent review found the
+  // database form arguable: the counters database holds short-lived
+  // rate-limit counters keyed to a scrambled form of a caller's network
+  // address (lib/ratelimit.ts), and the privacy page says so. No store Oravan
+  // keeps is a profile of a visitor. This keeps the promise form from coming
+  // back in the short lines. It does not match a literal statement that
+  // something is never written to a database ("Never written to a database";
+  // "no account or database that holds it"), and it skips `terms.*` and
+  // `privacy.*`, which the owner reviews and changes separately.
+  const PROMISE = {
+    en: [/\bno database (?:about|of)\b/i],
+    es: [/\bbase de datos sobre\b/i, /\bbase de datos de (?:tus |los )?(?:visitantes|usuarios|lectores)\b/i],
+  } as const;
+  const OWNER_REVIEWED = /^(?:terms|privacy)\./;
+  for (const [locale, m] of LOCALES) {
+    test(`${locale}: every message outside terms and privacy`, () => {
+      const hits = allStrings(m).filter(
+        ([k, s]) => !OWNER_REVIEWED.test(k) && PROMISE[locale].some((re) => re.test(s)),
+      );
+      expect(hits).toEqual([]);
+    });
+  }
+  test('llms.txt', () => {
+    const src = readFileSync(join(__dirname, '..', 'app', 'llms.txt', 'route.ts'), 'utf8');
+    const body = src.slice(src.indexOf('const body = `'), src.lastIndexOf('`;'));
+    expect(body.length).toBeGreaterThan(500);
+    expect(PROMISE.en.filter((re) => re.test(body)).map(String)).toEqual([]);
+    expect(body).toMatch(/no profile of any visitor/);
+  });
+});
+
 // ---- the new keys exist in both languages, with the same arguments ----------
 
 test('every key this sweep added is in both locales', () => {
