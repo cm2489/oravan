@@ -196,6 +196,29 @@ export interface Legislator {
   lis?: string;
 }
 
+/**
+ * A member who has left data/legislators.json, as data/departed-members.json
+ * keeps them (scripts/member_turnover.py writes it from the member file as it
+ * stood before the run). The seat they held and the end date of their last
+ * term, and nothing a visitor could use to contact them: no phone, no office,
+ * no website. Empty until a member leaves the file after 2026-11-13.
+ */
+export interface DepartedMember {
+  bioguide: string;
+  name: string;
+  first: string;
+  last: string;
+  type: 'sen' | 'rep';
+  state: string;
+  district: number | null;
+  party: string | null;
+  /** The last day of their last term, from the congress-legislators
+   *  historical file; null until that file lists them. */
+  served_until: string | null;
+  /** The day the weekly refresh first found them gone from the member file. */
+  left_file: string;
+}
+
 export interface District {
   state: string;
   district: number;

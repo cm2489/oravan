@@ -30,8 +30,10 @@ export interface BillSponsor {
   state: string;
   /**
    * True only when the member has a page on this site: /reps/[bioguide] is
-   * generated from data/legislators.json, so a sponsor who has left Congress
-   * is printed without a link rather than linked to a 404.
+   * generated from data/legislators.json, plus, after a new Congress begins,
+   * the members who left at its start (lib/departed-members.ts). Any other
+   * sponsor who has left Congress is printed without a link rather than
+   * linked to a 404.
    */
   hasPage: boolean;
 }
@@ -42,6 +44,9 @@ export interface SponsorLookups {
   /** Members named in a stored roll call (lib/votes.ts `votingMember`) — the
    *  join that still knows a name after a member leaves the roster. */
   formerMember: (bioguide: string) => VotingMember | undefined;
+  /** Does a member who left still have a record page (lib/core/reps.ts
+   *  `hasMemberPage`)? Omitted, no former member is linked. */
+  hasPage?: (bioguide: string) => boolean;
 }
 
 /** The originating chamber's seat, from Congress.gov's bill type
@@ -77,7 +82,7 @@ export function billSponsor(
       name: former.name,
       type: seat ?? (former.chamber === 'senate' ? 'sen' : 'rep'),
       state: former.state,
-      hasPage: false,
+      hasPage: lookups.hasPage?.(id) ?? false,
     };
   }
   return null;

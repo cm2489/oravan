@@ -32,7 +32,7 @@ import {
   changedSince,
   decodeSource,
 } from '@/lib/bill-provenance';
-import { billSlug, getAllBills, getBill, getLegislator, localizeBill } from '@/lib/core';
+import { billSlug, getAllBills, getBill, getLegislator, hasMemberPage, localizeBill } from '@/lib/core';
 import { formatCitation } from '@/lib/format';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
@@ -295,7 +295,7 @@ export default async function BillPage({
      read, so a bill amended in committee or on the floor after that text
      still read as current (SY-25). Both come from lib/bill-provenance.ts, and
      both print nothing when the stored record does not hold the fact. */
-  const sponsor = billSponsor(raw, { legislator: getLegislator, formerMember: votingMember });
+  const sponsor = billSponsor(raw, { legislator: getLegislator, formerMember: votingMember, hasPage: hasMemberPage });
   const source = hasDecode ? decodeSource(bill) : null;
   const changedAfter = changedSince(amendedSince(source, votesForBill(id)), amendedInCommitteeSince(source, raw));
   // The provenance ritual's status fragment, through the label gate — which
