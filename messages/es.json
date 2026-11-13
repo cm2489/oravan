@@ -768,7 +768,9 @@
     "p2": "Los resúmenes y los titulares de los proyectos de ley los redacta la IA, los guiones de llamada son borradores de IA, y todos están claramente marcados. Pueden contener errores. El texto oficial en Congress.gov es siempre la autoridad, y tú eres responsable de revisar y editar todo antes de decirlo.",
     "p3": "Oravan no ofrece garantías. Hacemos lo posible por mantener al día los datos de representantes y el estado de los proyectos, pero las oficinas cambian de número y los proyectos avanzan a diario. Verifica lo que importe.",
     "p4": "Lo que hagas con el teléfono es tuyo: tú haces las llamadas y eliges las palabras. Sé honesto, sé breve y sé amable con la persona que contesta.",
-    "p5": "No tenemos cuentas ni una base de datos sobre ti; los registros de solicitudes de nuestro servicio de alojamiento anotan tu dirección de red y las páginas que abres. Tus ajustes y tu historial se guardan en tu navegador. Cuando buscas a tus miembros del Congreso, tu código postal se envía para encontrar tu distrito y nunca se escribe en una base de datos. Si nos das tu dirección (calle y número), se usa una sola vez y nunca la guardamos. La postura que elijas se envía solo para preparar tu guion de llamada y nunca se vincula contigo. La página de privacidad lo explica por completo."
+    "p5": "No tenemos cuentas ni una base de datos sobre ti; los registros de solicitudes de nuestro servicio de alojamiento anotan tu dirección de red y las páginas que abres. Tus ajustes y tu historial se guardan en tu navegador. Cuando buscas a tus miembros del Congreso, tu código postal se envía para encontrar tu distrito y nunca se escribe en una base de datos. Si nos das tu dirección (calle y número), se usa una sola vez y nunca la guardamos. La postura que elijas se envía solo para preparar tu guion de llamada y nunca se vincula contigo. La página de privacidad lo explica por completo.",
+    "operator": "Oravan es obra de Colby Maxwell, un particular en Washington, DC.",
+    "law": "Estos términos se rigen por las leyes del Distrito de Columbia."
   },
   "og": {
     "aiDecoded": "Traducido por IA",
@@ -924,7 +926,7 @@
     "intro": "Estos Términos del servicio rigen el uso institucional y comercial de los widgets de Oravan (Oravan Embeds) — los productos de widgets descritos en /embeds, en todos los niveles (Gratuito, Pro, Sin fines de lucro y Red). Son independientes de los Términos que rigen el producto gratuito para la ciudadanía de Oravan, y no los reemplazan.",
     "governingLanguageNotice": "Este documento se redacta en inglés, y el texto en inglés es el que rige. Cualquier versión en español de esta página se ofrece solo como traducción de cortesía; en caso de conflicto o ambigüedad entre ambas, prevalece el texto en inglés.",
     "scopeHeading": "1. Alcance",
-    "scopeBody": "Estos términos se aplican a cualquier organización (\"el Titular\") que incorpore un widget de Oravan bajo un plan Gratuito, Pro, Sin fines de lucro o Red, o que acepte estos términos mediante Stripe Checkout. No se aplican a un visitante individual del sitio de un Titular, ni al propio sitio de Oravan orientado a la ciudadanía, que se rige por una página de Términos distinta y más sencilla.",
+    "scopeBody": "Oravan es obra de Colby Maxwell, un particular en Washington, DC. Estos términos se aplican a cualquier organización (\"el Titular\") que incorpore un widget de Oravan bajo un plan Gratuito, Pro, Sin fines de lucro o Red, o que acepte estos términos mediante Stripe Checkout. No se aplican a un visitante individual del sitio de un Titular, ni al propio sitio de Oravan orientado a la ciudadanía, que se rige por una página de Términos distinta y más sencilla.",
     "nonpartisanHeading": "2. Uso sin filiación partidista",
     "nonpartisanBody": "Oravan es sin filiación partidista por construcción. Un Titular no puede presentar un widget de Oravan como si respaldara, se opusiera o tomara postura sobre ningún candidato, partido o medida electoral; no puede enmarcar un widget con elementos de incidencia política — llamados a la acción, imágenes o texto circundante — que den a entender que Oravan comparte la postura del Titular sobre algún tema; y no puede usar un widget para captar, solicitar o perfilar la postura política, la afiliación partidista o la intención de voto de un visitante. El contenido se mantiene sin filiación partidista tanto en inglés como en español, en todos los niveles, sin excepciones.",
     "attributionHeading": "3. Atribución y etiquetado de contenido de IA",
@@ -944,12 +946,12 @@
     "warrantyHeading": "8. Sin garantía; actualidad de los datos",
     "warrantyBody": "Oravan ofrece el producto de widgets sobre una base de mejor esfuerzo, sin garantía de disponibilidad, exactitud o idoneidad para un fin particular. Los datos de proyectos de ley y representantes se actualizan cada noche y pueden retrasarse o ser incorrectos brevemente; el contenido generado por IA puede contener errores y nunca sustituye al texto oficial del proyecto de ley enlazado en cada respuesta.",
     "lawHeading": "9. Ley aplicable",
-    "lawBody": "[FOUNDER: fill] — la ley aplicable y la jurisdicción quedan por especificar antes de que este documento se dé por finalizado para uso en producción. (Nota: este marcador se deja intencionalmente en inglés; ver la cláusula de idioma que rige arriba.)",
+    "lawBody": "Estos términos se rigen por las leyes del Distrito de Columbia.",
     "contactHeading": "10. Contacto",
     "contactBody": "Preguntas sobre estos términos, o una solicitud para rotar un token, agregar un dominio o conversar sobre un acuerdo de nivel Red: hello@oravan.org.",
     "changesHeading": "11. Cambios a estos términos",
     "changesBody": "Oravan puede actualizar estos términos de vez en cuando. La versión vigente en el momento en que un Titular acepta estos términos mediante Stripe Checkout es la que rige el uso de ese Titular, salvo que se comunique por separado una versión modificada de forma sustancial y deba aceptarse de nuevo.",
-    "lastUpdated": "Última actualización: 12 de julio de 2026."
+    "lastUpdated": "Última actualización: 12 de noviembre de 2026."
   },
   "partners": {
     "title": "Socios",
