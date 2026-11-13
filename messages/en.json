@@ -249,7 +249,13 @@
     "votesTheirVote": "Their vote:",
     "votesMoreOnBillLink": "{count, plural, one {# more vote on this bill} other {# more votes on this bill}}",
     "votesOlder": "{count, plural, one {Their earlier votes on # more bill are not shown here. Each bill's page lists its recorded votes.} other {Their earlier votes on # more bills are not shown here. Each bill's page lists its recorded votes.}}",
-    "votesNone": "The official record lists no roll-call vote by {name} on a bill Oravan tracks since {date}."
+    "votesNone": "The official record lists no roll-call vote by {name} on a bill Oravan tracks since {date}.",
+    "departedServed": "Served in the {chamber} until January 3, 2027.",
+    "departedChamber": {
+      "house": "House",
+      "senate": "Senate"
+    },
+    "votesNoneYet": "No recorded votes yet in the 120th Congress."
   },
   "bills": {
     "title": "Active bills, decoded",

@@ -3,12 +3,37 @@
  * corpus. Extracted from lib/data.ts (S9); see lib/core/index.ts for why.
  */
 import legislators from '@/data/legislators.json';
+import departedMembers from '@/data/departed-members.json';
 import zipDistricts from '@/data/zip-districts.json';
 import vacancies from '@/data/vacancies.json';
 import specialElections from '@/data/special-elections.json';
-import type { District, Legislator, SeatElections, Vacancy } from '../types';
+import { CONGRESS_POLICY } from '../congress.mjs';
+import {
+  departedWithPage,
+  memberTurnover as turnoverFor,
+  newCongressReview,
+  reviewDepartedRecord,
+  type MemberTurnover,
+} from '../departed-members';
+import type { DepartedMember, District, Legislator, SeatElections, Vacancy } from '../types';
 
-const LEGISLATORS = legislators as Legislator[];
+const ROSTER = legislators as Legislator[];
+/*
+ * The local review setting (lib/departed-members.ts, REVIEW_ENV): null on
+ * every deploy and CI build, where it throws if set. While it is null the
+ * roster below is the member file's own array, untouched, and the departed
+ * list is data/departed-members.json.
+ */
+const REVIEW = newCongressReview(process.env, CONGRESS_POLICY.tracked);
+const LEGISLATORS = REVIEW ? ROSTER.filter((l) => !REVIEW.departed.has(l.bioguide)) : ROSTER;
+const TURNOVER = turnoverFor(REVIEW ? REVIEW.policy : CONGRESS_POLICY);
+const DEPARTED_WITH_PAGE = departedWithPage(
+  REVIEW
+    ? ROSTER.filter((l) => REVIEW.departed.has(l.bioguide)).map((l) => reviewDepartedRecord(l, REVIEW))
+    : (departedMembers as DepartedMember[]),
+  new Set(LEGISLATORS.map((l) => l.bioguide)),
+  TURNOVER,
+);
 const ZIPS = zipDistricts as Record<string, District[]>;
 const VACANCIES = vacancies as Vacancy[];
 const SPECIAL_ELECTIONS = specialElections as Record<string, SeatElections>;
@@ -80,4 +105,37 @@ export function specialElectionsFor(v: Pick<Vacancy, 'state' | 'district'>): Sea
 /** The state's senators, for a seat page that has no House member to show. */
 export function senatorsForState(state: string): Legislator[] {
   return LEGISLATORS.filter((l) => l.type === 'sen' && l.state === state);
+}
+
+/*
+ * MEMBERS WHO LEFT (stage 5 of the new-Congress work; lib/departed-members.ts
+ * has the rules). Never part of a lookup, a seat or "your members": only the
+ * page at /reps/<bioguide> reads these. Empty until the switch.
+ */
+
+/** The Congress that just ended and the tracked one, or null before the switch. */
+export function memberTurnover(): MemberTurnover | null {
+  return TURNOVER;
+}
+
+/** Every member who left and keeps a record page. */
+export function getDepartedMembers(): DepartedMember[] {
+  return DEPARTED_WITH_PAGE;
+}
+
+/** A member who left and keeps a record page, or undefined. */
+export function getDepartedMember(bioguide: string): DepartedMember | undefined {
+  return DEPARTED_WITH_PAGE.find((d) => d.bioguide === bioguide);
+}
+
+/** Does /reps/<bioguide> resolve: a sitting member, or one who left and
+ *  keeps a record page? (Roll-call lists and sponsor lines link only then.) */
+export function hasMemberPage(bioguide: string): boolean {
+  return Boolean(getLegislator(bioguide) ?? getDepartedMember(bioguide));
+}
+
+/** The local review build treats this sitting member as new. Always false
+ *  outside it. */
+export function reviewTreatsAsNew(bioguide: string): boolean {
+  return REVIEW?.newMembers.has(bioguide) ?? false;
 }

@@ -93,7 +93,9 @@ import { MEMBER_VOTES_MAX_BILLS, memberVotesByBill, votesCoverage, type MemberVo
  * ABSENCE. A member the record lists on no stored roll call gets the section
  * with one plain sentence and its date window, not a hidden section: the rep
  * cards and the call panel link here unconditionally, so the anchor must
- * always land on something true.
+ * always land on something true. After the switch, a new member with no
+ * stored roll call gets the approved "No recorded votes yet in the 120th
+ * Congress." line instead (the page decides: lib/departed-members.ts).
  */
 
 /** Bills shown before the rest fold into a disclosure (member.html: "five
@@ -130,10 +132,14 @@ export async function MemberVotes({
   bioguide,
   name,
   locale,
+  noVotesYet = false,
 }: {
   bioguide: string;
   name: string;
   locale: string;
+  /** After the switch, a new member's page (lib/departed-members.ts
+   *  showsNoVotesYet): the approved line stands where the record would. */
+  noVotesYet?: boolean;
 }) {
   const t = await getTranslations('rep');
   const tVotes = await getTranslations('votes');
@@ -357,7 +363,11 @@ export async function MemberVotes({
           {t('votesHeading')}
         </h2>
       </div>
-      {groups.length > 0 ? (
+      {noVotesYet ? (
+        <p className="mt-3 max-w-read text-sm text-ink-2" data-member-votes-none-yet="">
+          {t('votesNoneYet')}
+        </p>
+      ) : groups.length > 0 ? (
         <>
           <p className="mt-3 max-w-read text-sm text-ink-2 tabular-nums">
             {t('votesNote', { count: groups.length, date: since, updated })}

@@ -41,7 +41,8 @@ concurrency:
   #
   # WHAT ACTUALLY MAKES THE PUSH SAFE, and it is already in this file: this
   # workflow's file set (legislators.json, zip-districts.json, vacancies.json,
-  # special-elections.json, redistricting-watch.json) is disjoint from every
+  # special-elections.json, redistricting-watch.json, and since 2026-11-13
+  # departed-members.json) is disjoint from every
   # other data-sync member's,
   # and its commit step carries the 5-attempt rebase-and-retry loop below.
   # Disjoint files plus rebase-retry, not serialization.
@@ -87,6 +88,15 @@ jobs:
         #     truncated/broken upstream fetch, not reality (the project records §9.1(f)) - process-data.py
         #     exits 1 here, so nothing below this step runs and nothing
         #     commits.
+        #   - since 2026-11-13 (scripts/member_turnover.py), two more, checked
+        #     before anything is written: more than 5 Senate seats emptying
+        #     at once fails every week; more than 5 MEMBERS leaving the file
+        #     at once fails too, except in the six weeks from Jan 3 of an odd
+        #     year, when a new Congress changes ~80 members in one run and
+        #     the two seat checks are what still guard the file. A member
+        #     who leaves is kept, without any contact field, in
+        #     data/departed-members.json for their record page. Switch-week
+        #     steps: docs/runbooks/new-congress-switch.md.
         run: python3 scripts/process-data.py --download
       - name: Open an issue for newly detected vacancies
         # Only for the non-anomalous case (the step above already failed
@@ -281,8 +291,8 @@ jobs:
           # land DURING this run rather than only before it. THIS LOOP IS WHAT
           # MAKES THAT SAFE, together with the disjoint file set: this workflow
           # only ever touches legislators.json / zip-districts.json /
-          # vacancies.json / special-elections.json / redistricting-watch.json,
-          # none of which any other
+          # vacancies.json / special-elections.json / redistricting-watch.json /
+          # departed-members.json, none of which any other
           # workflow writes, so a concurrent push is a fast-forward problem and
           # never a content conflict. (The 2026-06-22 failure is the reason the
           # loop exists; leaving the shared group is the reason it is now the

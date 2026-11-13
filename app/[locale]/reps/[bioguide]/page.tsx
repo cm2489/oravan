@@ -15,11 +15,15 @@ import {
   billSlug,
   getAllLegislators,
   getBillsSponsoredBy,
+  getDepartedMember,
+  getDepartedMembers,
   getLegislator,
   getTopActions,
   getVacancies,
   getVacancyBySlug,
   localizeBill,
+  memberTurnover,
+  reviewTreatsAsNew,
   senatorsForState,
   specialElectionsFor,
   vacancySlug,
@@ -28,7 +32,9 @@ import { formatCitation } from '@/lib/format';
 import { getFreshness } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
 import { statusKeyFor } from '@/lib/journey';
-import type { Bill, BillTeaser, Legislator, Vacancy } from '@/lib/types';
+import { servedChamber, showsNoVotesYet } from '@/lib/departed-members';
+import { memberVotesByBill } from '@/lib/votes';
+import type { Bill, BillTeaser, DepartedMember, Legislator, Vacancy } from '@/lib/types';
 
 /*
  * ONE MEMBER OF CONGRESS, AS RULED PAPER.
@@ -59,6 +65,14 @@ import type { Bill, BillTeaser, Legislator, Vacancy } from '@/lib/types';
  * represent that district. Never the departed member, and no election date
  * beyond what the FEC's calendar states (VacantSeatCard prints it, with the
  * day it was checked).
+ *
+ * A MEMBER WHO LEFT (stage 5 of the new-Congress work, 2026-11-13) keeps this
+ * page as a record once the Congress they served in has ended: the seat they
+ * held, the approved "Served in the {chamber} until January 3, 2027." line,
+ * and how they voted. The call column is gone, not emptied: no phone, no
+ * office, no website, no call (hard rule 6). The record and the rule for who
+ * gets one: lib/departed-members.ts. Before the switch there are none, and
+ * this page is exactly what it was.
  */
 
 const WRAP = 'mx-auto max-w-5xl px-4 py-12';
@@ -71,6 +85,7 @@ export const dynamicParams = true;
 export function generateStaticParams() {
   const ids = [
     ...getAllLegislators().map((l) => l.bioguide),
+    ...getDepartedMembers().map((d) => d.bioguide),
     ...getVacancies().map((v) => vacancySlug(v)),
   ];
   return routing.locales.flatMap((locale) => ids.map((bioguide) => ({ locale, bioguide })));
@@ -78,11 +93,14 @@ export function generateStaticParams() {
 
 type Resolved =
   | { kind: 'member'; rep: Legislator }
+  | { kind: 'departed'; member: DepartedMember }
   | { kind: 'vacancy'; seat: Vacancy };
 
 function resolve(id: string): Resolved | null {
   const rep = getLegislator(id);
   if (rep) return { kind: 'member', rep };
+  const member = getDepartedMember(id);
+  if (member) return { kind: 'departed', member };
   const seat = getVacancyBySlug(id);
   if (seat) return { kind: 'vacancy', seat };
   return null;
@@ -131,6 +149,20 @@ export async function generateMetadata({
       alternates,
     };
   }
+  if (found.kind === 'departed') {
+    const { member } = found;
+    return {
+      title: t('metaTitle', {
+        name: member.name,
+        role: tReps(repRoleKey(member)),
+        place: placeLabel(tReps, member.state, member.type === 'sen' ? null : member.district),
+      }),
+      // The page's own served-until line: the phone-number description a
+      // sitting member's page carries would be false here.
+      description: t('departedServed', { chamber: t(`departedChamber.${servedChamber(member)}`) }),
+      alternates,
+    };
+  }
   const { rep } = found;
   return {
     title: t('metaTitle', {
@@ -169,6 +201,8 @@ export default async function RepPage({
       </p>
       {found.kind === 'member' ? (
         <MemberBody rep={found.rep} locale={locale} t={t} tReps={tReps} />
+      ) : found.kind === 'departed' ? (
+        <DepartedBody member={found.member} locale={locale} t={t} tReps={tReps} />
       ) : (
         <VacancyBody seat={found.seat} locale={locale} t={t} tReps={tReps} />
       )}
@@ -195,6 +229,14 @@ function MemberBody({
   const sponsored = getBillsSponsoredBy(rep.bioguide).map((b) => teaser(localizeBill(b, locale)));
   const shown = sponsored.slice(0, SHOWN);
   const rest = sponsored.slice(SHOWN);
+  // After the switch only (lib/departed-members.ts): a member the record
+  // lists on no roll call gets the approved new-member line instead.
+  const noVotesYet = showsNoVotesYet({
+    turnover: memberTurnover(),
+    voteBills: memberVotesByBill(rep.bioguide).length,
+    delegate: repRoleKey(rep) === 'delegate',
+    reviewNew: reviewTreatsAsNew(rep.bioguide),
+  });
 
   return (
     <>
@@ -252,7 +294,7 @@ function MemberBody({
               member.html, 2026-09-29: "who she is, her numbers (first screen),
               how she voted, then the bills she sponsors"). The rep cards on
               /reps and the bill call panel link here by its `#votes` anchor. */}
-          <MemberVotes bioguide={rep.bioguide} name={rep.name} locale={locale} />
+          <MemberVotes bioguide={rep.bioguide} name={rep.name} locale={locale} noVotesYet={noVotesYet} />
 
           <section aria-labelledby="rep-sponsored" data-testid="rep-sponsored" className="mt-12">
             <div className="border-t-[3px] border-ink pt-4">
@@ -296,6 +338,56 @@ function MemberBody({
           </section>
 
           {sponsored.length === 0 && <Continuation locale={locale} t={t} />}
+        </div>
+      </div>
+    </>
+  );
+}
+
+/**
+ * A member who left, as a record: the member page's own header with the
+ * served-until line where the website link stood, then how they voted, in
+ * the same left column at the same width. Nothing from the call column, and
+ * no sponsored-bills block (its heading speaks in the present tense).
+ */
+function DepartedBody({
+  member,
+  locale,
+  t,
+  tReps,
+}: {
+  member: DepartedMember;
+  locale: string;
+  t: RepT;
+  tReps: RepsT;
+}) {
+  const party = usePartyLabel(member);
+  const place = placeLabel(tReps, member.state, member.type === 'sen' ? null : member.district);
+  return (
+    <>
+      <header className="mt-6 flex items-start gap-4 md:gap-6">
+        <RepPortrait rep={member} large />
+        <div className="min-w-0">
+          <p className={`flex flex-wrap gap-x-1 ${EYEBROW}`}>
+            {[tReps(repRoleKey(member)), party, place]
+              .filter((c): c is string => Boolean(c))
+              .map((chunk, i, all) => (
+                <span key={i} className="whitespace-nowrap">
+                  {chunk}
+                  {i < all.length - 1 && <span aria-hidden> ·</span>}
+                </span>
+              ))}
+          </p>
+          <h1 className="mt-1 text-h1-bill font-extrabold">{member.name}</h1>
+          <p className="mt-2 max-w-read text-sm text-ink-2" data-departed-served="">
+            {t('departedServed', { chamber: t(`departedChamber.${servedChamber(member)}`) })}
+          </p>
+        </div>
+      </header>
+
+      <div className="mt-8 grid gap-8 min-[62rem]:grid-cols-[minmax(0,1fr)_minmax(20rem,22rem)] min-[62rem]:items-start">
+        <div className="min-w-0 min-[62rem]:col-start-1 min-[62rem]:row-start-1" data-departed-record="">
+          <MemberVotes bioguide={member.bioguide} name={member.name} locale={locale} />
         </div>
       </div>
     </>

@@ -249,7 +249,13 @@
     "votesTheirVote": "Su voto:",
     "votesMoreOnBillLink": "{count, plural, one {# voto más sobre este proyecto} other {# votos más sobre este proyecto}}",
     "votesOlder": "{count, plural, one {Sus votos anteriores sobre # proyecto más no aparecen aquí. La página de cada proyecto muestra sus votaciones registradas.} other {Sus votos anteriores sobre # proyectos más no aparecen aquí. La página de cada proyecto muestra sus votaciones registradas.}}",
-    "votesNone": "El registro oficial no muestra ninguna votación nominal de {name} sobre un proyecto de los que sigue Oravan desde el {date}."
+    "votesNone": "El registro oficial no muestra ninguna votación nominal de {name} sobre un proyecto de los que sigue Oravan desde el {date}.",
+    "departedServed": "Sirvió en {chamber} hasta el 3 de enero de 2027.",
+    "departedChamber": {
+      "house": "la Cámara de Representantes",
+      "senate": "el Senado"
+    },
+    "votesNoneYet": "Todavía no hay votos registrados en el Congreso 120."
   },
   "bills": {
     "title": "Proyectos de ley activos, en claro",

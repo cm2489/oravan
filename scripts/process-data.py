@@ -10,19 +10,41 @@ legislators-current.json with no "vacant" marker, so this script diffs seat
 sets (never a member's own stale term data) against the currently-committed
 data/legislators.json + data/vacancies.json to notice, and refuses to commit
 (exit 1) if more seats vanish at once than looks like real churn.
+
+Member turnover (stage 5 of the new-Congress work, 2026-11-13): see
+scripts/member_turnover.py. Before anything is written, the run also fails
+when more than five Senate seats empty at once, and when more than five
+members leave the file in one run outside the six weeks that open on Jan 3 of
+an odd year (a new Congress, when ~80 members change at once and only the
+seat checks apply). A member who leaves is kept, without any way to contact
+them, in data/departed-members.json, so their page can stay a record page.
+Nothing is written when a check fails: every data/ file stays as committed.
 """
 import json, csv, sys, os, urllib.request
 from collections import defaultdict
 from datetime import datetime, timezone
 
 from vacancy_diff import ANOMALOUS_SHRINK_THRESHOLD, compute_vacancies
+from member_turnover import departed_problems, departed_records, roster_problems
 
 DOWNLOAD = '--download' in sys.argv
+# --today YYYY-MM-DD: the date the checks and the vacancy/departed stamps use,
+# for a rehearsal on a COPY of data/ (docs/runbooks/new-congress-switch.md).
+# The workflow never passes it.
+TODAY_ARG = sys.argv[sys.argv.index('--today') + 1] if '--today' in sys.argv else None
 SOURCES = {
     'data/legislators-raw.json': 'https://unitedstates.github.io/congress-legislators/legislators-current.json',
     'data/district-offices-raw.json': 'https://unitedstates.github.io/congress-legislators/legislators-district-offices.json',
     'data/zccd.csv': 'https://raw.githubusercontent.com/OpenSourceActivismTech/us_zipcodes_congress/master/zccd.csv',
 }
+# Read only in a run where a member left the file (or a kept record still
+# lacks its end date): the last term's end date for data/departed-members.json.
+# ~13 MB, so never on an ordinary week. Offline, it is read from this path if
+# present and otherwise skipped (the end date stays null; a later run fills it).
+HISTORICAL = (
+    'data/legislators-historical-raw.json',
+    'https://unitedstates.github.io/congress-legislators/legislators-historical.json',
+)
 
 if DOWNLOAD:
     for path, url in SOURCES.items():
@@ -45,6 +67,7 @@ def _load_json(path, default):
 # compares against exactly what's currently committed, per the sprint spec.
 prev_legislators = _load_json('data/legislators.json', [])
 prev_vacancies = _load_json('data/vacancies.json', [])
+prev_departed = _load_json('data/departed-members.json', [])
 
 out = []
 for l in legs:
@@ -73,21 +96,50 @@ for l in legs:
     if t['type'] == 'sen' and l['id'].get('lis'):
         entry['lis'] = l['id']['lis']
     out.append(entry)
-json.dump(out, open('data/legislators.json', 'w'), ensure_ascii=False)
-print('legislators.json:', len(out), 'members,', sum(1 for m in out if m['offices']), 'with district offices')
 
 # Vacancy-diff step. Never infers occupancy from any one legislator's own
 # term data (the footgun this replaces) - purely a seat-set comparison
 # against what the currently-committed data already expects. See
 # scripts/vacancy_diff.py for the derivation and scripts/test_vacancy_diff.py
 # for the departed-member / vacant-no-successor / anomalous-shrink fixtures.
-today = datetime.now(timezone.utc).date().isoformat()
+today = TODAY_ARG or datetime.now(timezone.utc).date().isoformat()
 vacancies, newly_detected, anomalous = compute_vacancies(out, prev_legislators, prev_vacancies, today)
-json.dump(vacancies, open('data/vacancies.json', 'w'), ensure_ascii=False, indent=2)
-print(
-    f'vacancies.json: {len(vacancies)} currently vacant seat(s),',
-    f'{len(newly_detected)} newly detected this run',
-)
+problems = roster_problems(out, prev_legislators, today)
+
+# The record of members who left. The historical file is read only when it
+# can add something: a member left this run, or a kept record lacks its date.
+leaving = {m['bioguide'] for m in prev_legislators} - {m['bioguide'] for m in out}
+historical_by_id = None
+if not anomalous and not problems and (leaving or any(r.get('served_until') is None for r in prev_departed)):
+    hist_path, hist_url = HISTORICAL
+    try:
+        if DOWNLOAD:
+            print(f'downloading {hist_url}')
+            urllib.request.urlretrieve(hist_url, hist_path)
+        if os.path.exists(hist_path):
+            historical_by_id = {h['id']['bioguide']: h for h in json.load(open(hist_path)) if h.get('id', {}).get('bioguide')}
+    except Exception as e:  # a failed read leaves the end date null, never fails the roster
+        print(f'::warning::legislators-historical not read ({e}); departed end dates stay null until a later run')
+    finally:
+        if DOWNLOAD and os.path.exists(hist_path):
+            os.remove(hist_path)
+departed, undated = departed_records(out, prev_legislators, prev_departed, historical_by_id, today)
+problems += departed_problems(departed, out)
+
+if not anomalous and not problems:
+    json.dump(out, open('data/legislators.json', 'w'), ensure_ascii=False)
+    print('legislators.json:', len(out), 'members,', sum(1 for m in out if m['offices']), 'with district offices')
+    json.dump(vacancies, open('data/vacancies.json', 'w'), ensure_ascii=False, indent=2)
+    print(
+        f'vacancies.json: {len(vacancies)} currently vacant seat(s),',
+        f'{len(newly_detected)} newly detected this run',
+    )
+    if departed != prev_departed:
+        json.dump(departed, open('data/departed-members.json', 'w'), ensure_ascii=False, indent=2)
+    if leaving or departed != prev_departed:
+        print(f'departed-members.json: {len(departed)} member(s) kept as a record, {len(leaving)} left the file this run')
+    for b in undated:
+        print(f'::warning::{b} left the member file but legislators-historical gives no end date yet; no page until it does')
 
 for v in newly_detected:
     print(
@@ -99,7 +151,7 @@ for v in newly_detected:
 github_output = os.environ.get('GITHUB_OUTPUT')
 if github_output:
     with open(github_output, 'a') as f:
-        f.write(f"anomalous_vacancy_shrink={'true' if anomalous else 'false'}\n")
+        f.write(f"anomalous_vacancy_shrink={'true' if (anomalous or problems) else 'false'}\n")
         f.write('newly_detected_vacancies<<VACANCY_EOF\n')
         f.write(json.dumps(newly_detected))
         f.write('\nVACANCY_EOF\n')
@@ -116,6 +168,15 @@ if anomalous:
         'commit. If this is genuinely correct, review data/vacancies.json '
         'manually and re-run.'
     )
+if problems:
+    for p in problems:
+        print(f'::error::{p}')
+    print(
+        '::error::The member file looks damaged or wrong, not like real churn - refusing '
+        'to write or commit anything. Wait for the upstream file to settle and re-run; '
+        'see docs/runbooks/new-congress-switch.md.'
+    )
+if anomalous or problems:
     sys.exit(1)
 
 zips = defaultdict(list)
