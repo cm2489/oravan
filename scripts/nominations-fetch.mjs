@@ -38,11 +38,13 @@
  */
 import { execCalendarNumber, isStageNeutralNominationAction, mapNominationStatus } from '../lib/nomination-status.mjs';
 import { cg } from './congress-fetch.mjs';
+import { CONGRESS } from '../lib/congress.mjs';
 
-/** The Congress this module tracks. Same value, same reason, as
- *  congress-fetch.mjs's CONGRESS — imported separately rather than
- *  re-exported so a future divergence has to be deliberate. */
-export const NOMINATION_CONGRESS = 119;
+/** The Congress this module tracks: the tracked Congress (lib/congress.mjs).
+ *  Nominations not confirmed by the end of a Congress are returned to the
+ *  President, so the nomination sync follows the same Congress as the bill
+ *  sync; a divergence would need its own constant and its own reason. */
+export const NOMINATION_CONGRESS = CONGRESS;
 
 /**
  * Which side of the civilian/military split a raw list item declares — or
