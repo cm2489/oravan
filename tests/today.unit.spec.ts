@@ -317,6 +317,31 @@ test.describe('yellowTagFirst: the notice with the yellow tag comes first', () =
   });
 });
 
+/*
+ * Only today's brief may carry the floor schedule, its tags and the chamber
+ * line (page 1, rule 6: a floor claim is live only while that chamber is
+ * meeting, and the schedule file is re-read hourly and never archived). This
+ * holds for any committed data, because "today" is window[0] by construction:
+ * the day the newest data stamp falls on in Eastern time. That day moves at
+ * midnight ET when the floor re-check commits first, which is exactly how a
+ * spec that picked its "past" day by the data's quiet/busy shape once pointed
+ * at today (2026-11-13).
+ */
+test.describe('only the newest date is today', () => {
+  test('every other date in the window has no schedule, no posture and no chamber line', () => {
+    const [newest, ...past] = briefWindow();
+    expect(buildBrief(newest).isToday).toBe(true);
+    expect(past.length).toBeGreaterThan(0);
+    for (const date of past) {
+      const brief = buildBrief(date);
+      expect(brief.isToday, date).toBe(false);
+      expect(brief.schedule, date).toEqual([]);
+      expect(brief.schedulePosture, date).toBeNull();
+      expect(brief.chamber, date).toBeNull();
+    }
+  });
+});
+
 test.describe('teaserFor: a /today card is the /bills card', () => {
   for (const locale of ['en', 'es']) {
     test(`${locale}: every bill the window's briefs print gets exactly getTeasers' teaser`, () => {

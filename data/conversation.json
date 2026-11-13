@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-13T07:52:57.316Z",
+    "fetched_at": "2026-11-13T16:15:07.182Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-13T07:52:57.316Z"
+        "checked_at": "2026-11-13T16:15:07.182Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-08",
         "week_label": "Most-Viewed Bills - Week of November 8, 2026",
         "entries": 6,
-        "checked_at": "2026-11-13T07:52:57.316Z"
+        "checked_at": "2026-11-13T16:15:07.182Z"
       },
       "leans": {
         "center": {
@@ -197,8 +197,27 @@
       ],
       "mostViewed": null
     },
+    "hjres-89-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "taxpayer.net",
+          "firstSeen": "2026-11-13",
+          "lastSeen": "2026-11-13",
+          "url": "https://news.google.com/rss/articles/CBMimwFBVV95cUxPbDVOQ09tY3BHMjFOdzRnYTFuMW9BYXJPVXI2NmF2LTdKNTFrRHF2RWNuc1lBNFBDM3ZKUVhYSFlYRlQ1SzJzLW9fcG96SnYwanhWYVdLZjlJdXdFdW52TkVoSjAzRU40WWlSZ2VKR1NpSDVXajRhYWNsTkEzbFl6Y1NMOXdMQjVLSGVIcVhlT0djOThESWZISUxfYw?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-1-119": {
       "outlets7d": [
+        {
+          "domain": "politico.com",
+          "lean": "left",
+          "firstSeen": "2026-11-13",
+          "lastSeen": "2026-11-13",
+          "url": "https://news.google.com/rss/articles/CBMipwFBVV95cUxNYlVrZEg5QXBzczA2UlZtOEp4RVY1Q3pCcFBROGM5MXR4Tlc0WVBLcnhBTGgwdHRnbl92Mk1DdF8zZzdzZm5nbGRGTFRsZV9Xd0I2bmZVM3g4YXRfR2diX0pvelZNQVBlWERXT0xjZ1FVNERpcmNzbE9BcTNqMEVPVjZuZ1ZkQzBHS2ZOeGh5Zmg4WmFUZzhXOVFsTmxoZHhJTlR2M1NMOA?oc=5"
+        },
         {
           "domain": "thehill.com",
           "lean": "center",
@@ -777,7 +796,15 @@
       "mostViewed": null
     },
     "hr-6500-119": {
-      "outlets7d": [],
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-11-13",
+          "lastSeen": "2026-11-13",
+          "url": "https://thehill.com/homenews/senate/6217691-republican-reconciliation-threatens-government-funding/"
+        }
+      ],
       "unratedOutlets7d": [
         {
           "domain": "newsfromthestates.com",
@@ -1024,6 +1051,18 @@
       ],
       "mostViewed": null
     },
+    "hr-9010-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "rollcall.com",
+          "firstSeen": "2026-11-13",
+          "lastSeen": "2026-11-13",
+          "url": "https://rollcall.com/2026/11/13/legislative-branch-bill-would-hold-off-on-gao-cuts/"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-9363-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1248,6 +1287,13 @@
     },
     "s-4475-119": {
       "outlets7d": [
+        {
+          "domain": "bloomberg.com",
+          "lean": "center",
+          "firstSeen": "2026-11-13",
+          "lastSeen": "2026-11-13",
+          "url": "https://news.google.com/rss/articles/CBMioAFBVV95cUxOb09saWhTZ3lybTlLX3lTR1RQY2M5UGsxb00tUC12eEdtcUlaV2dtTS0xdzV6MVVnUGh2SlY2alBuN2dBb1BBa3BuR1NRMUJ3cThuVlA3WUxpZGdhb2pyOVNiOXVjYnRvT0g1VnlGdlpSc0prNEJ6WDdlQ2FZbjc5Z05WQ1A0MC1pUXZ1emh2QlhkV28wZmZxd0NYOFdJZWpH?oc=5"
+        },
         {
           "domain": "nytimes.com",
           "lean": "left",
