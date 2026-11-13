@@ -2,7 +2,8 @@ import { expect, test } from '@playwright/test';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
 import coverageData from '../data/coverage.json';
-import { coverageCheckedAt, coverageTier, getCoverage } from '../lib/coverage';
+import { coverageCheckedAt, coverageForBillPage, coverageTier, getCoverage } from '../lib/coverage';
+import { getMomentsForBill } from '../lib/moments';
 import { COVERAGE_AGE_NOTE_DAYS, freshnessAgeDays } from '../lib/freshness-state';
 
 /*
@@ -12,8 +13,15 @@ import { COVERAGE_AGE_NOTE_DAYS, freshnessAgeDays } from '../lib/freshness-state
  * Tier logic itself is covered exhaustively in coverage.unit.spec.ts.
  */
 const slugs = Object.keys(coverageData).filter((k) => !k.startsWith('_'));
-const shownSlug = slugs.find((s) => getCoverage(s).length > 0);
-const oneSidedSlug = slugs.find((s) => coverageTier(getCoverage(s)) === 'one_sided');
+// What the bill page actually shows. A bill that is NOT part of a Big Question
+// shows no box when its coverage is one-sided (owner, 2026-11-13;
+// tests/coverage-box-hidden.spec.ts pins that), so every fixture below that
+// needs "a page with the box" reads the articles through the same rule the
+// page does, not the raw stored set.
+const shown = (s: string) => coverageForBillPage(getCoverage(s), getMomentsForBill(s).length > 0);
+const shownSlug = slugs.find((s) => shown(s).length > 0);
+// One-sided AND visible: only a Big Question bill can be.
+const oneSidedSlug = slugs.find((s) => coverageTier(shown(s)) === 'one_sided');
 const thinSlug = slugs.find((s) => getCoverage(s).length === 0); // stored but < 2 outlets
 
 /* Age fixtures for the "state the age of what you're showing" pair. The bill
@@ -23,7 +31,7 @@ const thinSlug = slugs.find((s) => getCoverage(s).length === 0); // stored but <
  * rest of this file: the nightly sync rewrites the corpus, and every one of
  * these ages moves with it. */
 function newestPublishedAt(slug: string): string | null {
-  const dates = getCoverage(slug)
+  const dates = shown(slug)
     .map((a) => a.publishedAt)
     .filter((d): d is string => Boolean(d))
     .sort();
@@ -142,7 +150,7 @@ test('the section states the age of what it is showing, in both languages', asyn
    only when the corpus has nothing else, which the note-scoped locator below
    tolerates. */
 const checkedCandidates = slugs.filter(
-  (s) => getCoverage(s).length > 0 && newestPublishedAt(s) !== null && coverageCheckedAt(s) !== null
+  (s) => shown(s).length > 0 && newestPublishedAt(s) !== null && coverageCheckedAt(s) !== null
 );
 const checkedSlug =
   checkedCandidates.find((s) => coverageCheckedAt(s) !== newestPublishedAt(s)) ?? checkedCandidates[0];
@@ -215,7 +223,7 @@ test('coverage older than the age window carries the caveat; recent coverage doe
   }
 });
 
-test('one-sided coverage is shown WITH a disclaimer (not hidden)', async ({ page }) => {
+test('one-sided coverage on a Big Question bill is shown WITH a disclaimer (not hidden)', async ({ page }) => {
   test.skip(!oneSidedSlug, 'no one-sided coverage in current data');
   await page.goto(`/bills/${oneSidedSlug}`);
   await expect(section(page).getByRole('heading', { name: "How it's being covered" })).toBeVisible();
