@@ -22,7 +22,7 @@ import { SettledPanel } from '@/components/SettledPanel';
 import { ConcurrentExplainer } from '@/components/ConcurrentExplainer';
 import { GlossaryTerm } from '@/components/GlossaryTerm';
 import { Chip, FloorVotePanel, Stamp } from '@/components/system';
-import { coverageCheckedAt, coverageTier, getCoverage } from '@/lib/coverage';
+import { coverageCheckedAt, coverageForBillPage, coverageTier, getCoverage } from '@/lib/coverage';
 import { StalenessNote } from '@/components/StalenessNote';
 import { repRoleKey } from '@/components/RepCard';
 import {
@@ -538,6 +538,10 @@ export default async function BillPage({
   // list /questions reads; on the overwhelming majority of bills this is empty
   // and the header renders exactly as it did before.
   const parentMoments = getMomentsForBill(id);
+  // The coverage box on a bill that is NOT part of a Big Question is hidden
+  // when it would show only one side (owner, 2026-11-13); lib/coverage.ts's
+  // coverageForBillPage owns the rule. Big Question bills are unchanged.
+  const shownCoverage = coverageForBillPage(coverage, parentMoments.length > 0);
 
   return (
     <>
@@ -970,8 +974,8 @@ export default async function BillPage({
             as of" stamp above (the Congress.gov bill sync) and from the
             article dates below (the press) — three clocks, three labels. */}
         <CoverageSection
-          articles={coverage}
-          tier={coverageTier(coverage)}
+          articles={shownCoverage}
+          tier={coverageTier(shownCoverage)}
           checkedAt={coverageCheckedAt(id)}
         />
       </div>
