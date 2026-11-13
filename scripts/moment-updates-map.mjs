@@ -38,6 +38,9 @@
  */
 import { findCitations, parseFeed } from './newsdesk-match.mjs';
 import { vehicleKind } from '../lib/moments-gate.mjs';
+import { CONGRESS, CONGRESS_POLICY, congressOfSlug, isEndedBill } from '../lib/congress.mjs';
+// Import-clean (no secret read at import): the one per-bill path builder.
+import { billApiPath } from './congress-fetch.mjs';
 import { normalizeSource, pressOutletPolicy } from '../lib/press-outlets.mjs';
 import {
   RECORD_EVENT_CLASSES,
@@ -47,10 +50,9 @@ import {
   normalizeText,
 } from '../lib/moment-updates-gate.mjs';
 
-/** The tracked Congress. Mirrors congress-fetch.mjs's CONGRESS — duplicated,
- *  not imported, to keep this module's import chain test-loadable; pinned
- *  equal by tests/moment-updates-collect.unit.spec.ts. */
-export const CONGRESS = 119;
+/** The tracked Congress, read from lib/congress.mjs (import-free, so this
+ *  module's import chain stays test-loadable) and re-exported. */
+export { CONGRESS };
 
 /* ------------------------------------------------------------------ *
  * Slug helpers.
@@ -82,15 +84,34 @@ export function billLabel(slug) {
   return `${TYPE_LABELS[type] ?? type?.toUpperCase() ?? ''} ${number ?? ''}`.trim();
 }
 
+/** The record link for a slug, in the slug's OWN Congress (2026-11-12): a
+ *  link to an earlier Congress's bill must not quietly point at the
+ *  same-numbered bill of the tracked one. A slug with no Congress segment
+ *  falls back to the tracked Congress, as every slug did before. */
 export function congressGovUrlForSlug(slug) {
   const [type, number] = String(slug ?? '').split('-');
-  return `https://www.congress.gov/bill/${CONGRESS}th-congress/${CHAMBER_PATHS[type] ?? 'house-bill'}/${number}`;
+  const congress = congressOfSlug(slug) ?? CONGRESS;
+  return `https://www.congress.gov/bill/${congress}th-congress/${CHAMBER_PATHS[type] ?? 'house-bill'}/${number}`;
 }
 
 /** Congress.gov API path parts for a slug: {type, number}. */
 export function slugParts(slug) {
   const [type, number] = String(slug ?? '').split('-');
   return { type, number };
+}
+
+/**
+ * The Congress.gov API path of one vehicle's action list, in the vehicle's
+ * OWN Congress (from its slug), never the tracked one (2026-11-12). After the
+ * switch the tracked number moves to 120 while a question's vehicles may still
+ * be 119th bills; reading `/bill/120/...` for `hr-1234-119` would hang the
+ * 120th's H.R. 1234 on the question. Throws on a slug with no Congress, which
+ * the collector treats as a failed fetch.
+ * @param {string} slug
+ */
+export function vehicleActionsPath(slug) {
+  const { type, number } = slugParts(slug);
+  return billApiPath({ bill_type: type, bill_number: number, congress_number: congressOfSlug(slug) }, '/actions');
 }
 
 /**
@@ -128,6 +149,24 @@ export function momentVehicles(moments) {
     }
   }
   return out;
+}
+
+/**
+ * Split (moment, vehicle) pairs into the ones the update pipeline works on and
+ * the ones whose bill belongs to an ENDED Congress (2026-11-12, stage 2 of the
+ * new-Congress work). An ended Congress's bill is an archive: the update run
+ * fetches nothing for it, collects nothing from it and spends no model call on
+ * it. What a Big Question does once its vehicles have ended (retire it, or tie
+ * it to a bill of the new Congress) is the owner's call, made per question,
+ * not this function's. With the ended list empty every pair is live. Pure.
+ * @param {{momentId: string, slug: string}[]} vehicles
+ * @returns {{ live: {momentId: string, slug: string}[], ended: {momentId: string, slug: string}[] }}
+ */
+export function splitEndedVehicles(vehicles, policy = CONGRESS_POLICY) {
+  const live = [];
+  const ended = [];
+  for (const v of vehicles ?? []) (isEndedBill(v.slug, policy) ? ended : live).push(v);
+  return { live, ended };
 }
 
 /* ------------------------------------------------------------------ *

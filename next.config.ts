@@ -26,11 +26,42 @@ const nextConfig: NextConfig = {
     ];
   },
   async headers() {
+    /*
+     * THE MEMBERS PAGE'S REFERER CARRIES NO ADDRESS (2026-11-12). An old
+     * link, /reps?zip=NNNNN (or /es/reps?zip=…&district=…), still reaches
+     * this page, and with the browser's default policy every request that
+     * page load makes to this site (scripts, styles, portraits, the
+     * manifest, prefetches), and with JavaScript off the next page clicked,
+     * repeated that address, ZIP included, in its Referer header. So /reps
+     * answers with a policy that sends at most the origin.
+     *
+     * `strict-origin`, which is `origin` (the scheme and host only, never the
+     * path or query) that also sends nothing when a link leaves HTTPS for
+     * HTTP. Not `same-origin`: it sends the FULL address to this site's own
+     * requests, which are exactly the ones in the host's log. Not
+     * `no-referrer`: under it the browser sends `Origin: null` on a form's
+     * native POST (the Fetch standard's origin serialization), and the
+     * no-JavaScript ZIP form on /reps posts to a server action, which
+     * Next.js aborts when the Origin does not match the host
+     * (server/app-render/action-handler.js, 16.2.12). Nothing on the site
+     * reads a Referer from /reps: the only Referer readers are the embed
+     * routes (app/embed/layout.tsx, app/embed/action-panel/page.tsx), which
+     * read a partner page's, and /reps frames no embed.
+     *
+     * In development too, unlike the CSP blocks below: it costs dev nothing,
+     * and the page behaves the same in both. Pinned by
+     * tests/reps-zip-address.spec.ts.
+     */
+    const membersPage = ['/reps', '/es/reps'].map((source) => ({
+      source,
+      headers: [{ key: 'Referrer-Policy', value: 'strict-origin' }],
+    }));
     // Dev/HMR wants 'unsafe-eval' and other looseness this policy doesn't
     // grant - scope it to production (the same mode Playwright's webServer
     // builds and starts) so `npm run dev` on the embed route is unaffected.
-    if (process.env.NODE_ENV !== 'production') return [];
+    if (process.env.NODE_ENV !== 'production') return membersPage;
     return [
+      ...membersPage,
       {
         // The embed route's OWN minimal CSP (S13). Deliberately permissive
         // on frame-ancestors - the entire point of this route is to be

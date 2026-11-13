@@ -25,7 +25,12 @@ const HOUSE_FIND_REP_URL = 'https://www.house.gov/representatives/find-your-repr
  * street-address refinement never renders in this iframe. A split ZIP shows
  * every candidate district's reps (senators are unaffected either way,
  * exactly like the main /reps page's graceful fallback) plus a link-out to
- * the main site's private AddressForm flow, opened in a new tab.
+ * the main site's private AddressForm flow, opened in a new tab. The link-out
+ * is the bare members page (2026-11-12): until then it was /reps?zip=…, which
+ * put the ZIP in the new tab's address and so in the host's log. The new tab
+ * cannot read a ZIP this frame holds (storage is partitioned per top-level
+ * site, and this frame keeps none), so the link's own words ask the visitor
+ * to enter the ZIP there.
  *
  * Stateless per pageview by design (spec §2.3): no localStorage, no prefs,
  * nothing survives a reload - every render is driven by component state and
@@ -264,7 +269,7 @@ export function RepLookupWidget({
           <p style={{ margin: '8px 0 0' }}>
             <a
               className="re-link"
-              href={`${siteBase}/reps?zip=${zip}`}
+              href={`${siteBase}/reps`}
               target="_blank"
               rel="noopener noreferrer"
             >

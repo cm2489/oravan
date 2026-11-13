@@ -16,7 +16,10 @@ import { STATUS_BASE } from '../lib/urgency.mjs';
 // and no secret to anything that imports mapStatus.
 import { COMMITTEE_TEXT_ON_FLOOR } from '../lib/floor-text.mjs';
 
-export const CONGRESS = 119;
+// The tracked Congress is written once, in lib/congress.mjs (2026-11-12), and
+// re-exported here under the name every sync script already imports.
+import { CONGRESS, CONGRESS_POLICY, congressOfBill, isEndedCongress, isTrackedCongress } from '../lib/congress.mjs';
+export { CONGRESS };
 // hconres/sconres added 2026-07-23: concurrent resolutions carry War Powers
 // fights and budget resolutions — their exclusion made H.Con.Res.38 (the
 // Iran war-powers resolution everyone was talking about) STRUCTURALLY
@@ -61,6 +64,44 @@ export async function cg(path, params = {}) {
     }
   }
   throw lastErr;
+}
+
+/**
+ * THE ONE BUILDER of a Congress.gov API path for ONE bill (2026-11-12, stage 2
+ * of the new-Congress work): `/bill/{congress}/{type}/{number}{suffix}`, where
+ * `{congress}` is the bill's OWN Congress (`congress_number`), never the
+ * tracked one.
+ *
+ * WHY. H.R. 1234 of the 119th and H.R. 1234 of the 120th are different bills.
+ * Every per-bill fetch used to be written `/bill/${CONGRESS}/...`, which was
+ * harmless while every bill in the corpus was of the tracked Congress and
+ * becomes a silent overwrite the day the tracked number moves: refreshing an
+ * archived 119th bill would read the 120th bill of the same number into it.
+ * tests/congress-fetch-own-congress.unit.spec.ts fails if any pipeline file
+ * builds a per-bill path any other way.
+ *
+ * A NEW bill (one not yet in the corpus) is of the tracked Congress by
+ * construction, because it came off the tracked Congress's list; its caller
+ * says so explicitly with `congress_number: CONGRESS`.
+ *
+ * Throws when the bill carries no Congress: guessing the tracked one is the
+ * exact mistake this exists to prevent, and every caller already treats a
+ * throw as "could not look".
+ * @param {Record<string, any>} bill a corpus record, or `{ bill_type, bill_number, congress_number }`
+ * @param {string} [suffix] e.g. '/actions', '/text'
+ * @returns {string}
+ */
+export function billApiPath(bill, suffix = '') {
+  const congress = congressOfBill(bill);
+  if (congress === null) {
+    throw new Error(`billApiPath: no Congress on ${JSON.stringify({ bill_type: bill?.bill_type, bill_number: bill?.bill_number })} - refusing to guess the tracked one`);
+  }
+  const type = String(bill.bill_type ?? '').toLowerCase();
+  const number = String(bill.bill_number ?? '');
+  if (!/^[a-z]+$/.test(type) || !/^\d+$/.test(number)) {
+    throw new Error(`billApiPath: malformed bill ${JSON.stringify({ bill_type: bill?.bill_type, bill_number: bill?.bill_number })}`);
+  }
+  return `/bill/${congress}/${type}/${number}${suffix}`;
 }
 
 /** The N most-recently-updated bills across the whole corpus (no fromDateTime
@@ -562,7 +603,9 @@ export function statusBasisProblems(bills) {
 export async function fetchBillActions(bill) {
   if (!process.env.CONGRESS_API_KEY) return null;
   try {
-    const r = await cg(`/bill/${CONGRESS}/${String(bill.bill_type).toLowerCase()}/${bill.bill_number}/actions`, { limit: '50' });
+    // The bill's OWN Congress (billApiPath). A bill with none is "could not
+    // look" (billApiPath throws, caught below), never the tracked Congress.
+    const r = await cg(billApiPath(bill, '/actions'), { limit: '50' });
     return Array.isArray(r?.actions) ? r.actions : null;
   } catch {
     return null;
@@ -684,11 +727,178 @@ export function offCongressBills(bills, congress = CONGRESS) {
   return bills.filter((b) => b?.congress_number !== congress).map(slugOf);
 }
 
+/**
+ * The fields of an ENDED bill that must never change (2026-11-12, stage 2 of
+ * the new-Congress work). An ended Congress's bills are an archive: who the
+ * bill is, which document it is, and what Oravan wrote about that document are
+ * settled for good. Nothing in the pipeline writes them for an ended bill
+ * (re-decoding, search inputs and the record link all skip or keep it), and
+ * scripts/verify-sync.mjs fails the nightly if one moves anyway.
+ *
+ * NOT FROZEN, on purpose: the status and action fields (`status`,
+ * `last_action_*`, `status_basis_*`, `urgency_score`, `issue_tags`,
+ * `policy_area`). The record can still move after a Congress ends: a bill
+ * presented before Jan 3 can be signed or pocket-vetoed in the days after,
+ * and the planned closing sweep reads those last actions from the bill's own
+ * Congress. A visitor-facing "ended" reading is stage 3's, not this list's.
+ */
+export const ENDED_FROZEN_FIELDS = Object.freeze([
+  'full_identifier',
+  'congress_number',
+  'bill_type',
+  'bill_number',
+  'title',
+  'short_title',
+  'introduced_date',
+  'sponsor_bioguide_id',
+  'congress_gov_url',
+  'ai_headline',
+  'ai_summary',
+  'ai_sections',
+  'decoded_at',
+  'decode_text_sha',
+  'decode_text_verified_at',
+  'text_version_date',
+  'text_version_type',
+  'text_version_count',
+  'press_names',
+  'news_query',
+]);
+
+/** JSON identity for a field value; a missing field and `undefined` agree. */
+const same = (a, b) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+
+/**
+ * THE FREEZE on ended bills, for scripts/verify-sync.mjs (pre-commit, hard
+ * rule 11). Compares tonight's corpus with the committed one (`before`, from
+ * HEAD) and returns one line per problem:
+ *   - a bill of an ended Congress that HEAD did not hold (none may be added);
+ *   - a bill of an ended Congress that HEAD held and tonight does not (none may
+ *     disappear);
+ *   - an ENDED_FROZEN_FIELDS field that moved;
+ *   - a Spanish twin (bills-es.json) that moved or disappeared.
+ * Returns [] when the ended list is empty: there is nothing to freeze, and the
+ * committed corpus is not needed. When the list is not empty and HEAD could
+ * not be read, that is itself a problem: the freeze cannot be shown to hold.
+ * Pure.
+ * @param {{ bills: any[], before: any[] | null, es?: Record<string, any> | null,
+ *           esBefore?: Record<string, any> | null, policy?: { tracked: number, ended: ReadonlyArray<{ number: number }> } }} args
+ * @returns {string[]}
+ */
+export function endedBillProblems({ bills, before, es = null, esBefore = null, policy = CONGRESS_POLICY }) {
+  if (!policy.ended.length) return [];
+  const ended = (b) => isEndedCongress(b?.congress_number, policy);
+  if (!Array.isArray(before)) {
+    return ['the committed corpus (HEAD:data/bills.json) could not be read, so the ended bills cannot be shown unchanged'];
+  }
+  const out = [];
+  const now = new Map((Array.isArray(bills) ? bills : []).filter(ended).map((b) => [slugOf(b), b]));
+  const was = new Map(before.filter(ended).map((b) => [slugOf(b), b]));
+  for (const slug of now.keys()) {
+    if (!was.has(slug)) out.push(`${slug}: added, but its Congress has ended (an ended Congress's bills are an archive; none may be added)`);
+  }
+  for (const [slug, old] of was) {
+    const cur = now.get(slug);
+    if (!cur) {
+      out.push(`${slug}: removed, but its Congress has ended (an ended Congress's bills are an archive; none may disappear)`);
+      continue;
+    }
+    for (const f of ENDED_FROZEN_FIELDS) {
+      if (!same(cur[f], old[f])) out.push(`${slug}: ${f} changed, but its Congress has ended`);
+    }
+  }
+  if (es && typeof es === 'object') {
+    if (!esBefore || typeof esBefore !== 'object') {
+      out.push('the committed Spanish corpus (HEAD:data/bills-es.json) could not be read, so the ended bills\' Spanish twins cannot be shown unchanged');
+    } else {
+      for (const slug of was.keys()) {
+        if (!same(es[slug], esBefore[slug])) out.push(`${slug}: its Spanish twin (bills-es.json) changed, but its Congress has ended`);
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * THE CORPUS-CONGRESS VERDICT scripts/verify-sync.mjs prints and fails on
+ * (2026-11-12; the uniformity gate of 2026-08-11, widened for ended
+ * Congresses). Pure: the script supplies the bytes.
+ *
+ * With the ended list EMPTY it is exactly the old gate, word for word: every
+ * record must be of the tracked Congress, and the note and the failure read as
+ * they always have. tests/congress-ended.unit.spec.ts pins that.
+ *
+ * With a Congress on the ended list, a record may be of the tracked Congress
+ * or of an ended one, and the ended ones are frozen (endedBillProblems).
+ * @param {{ bills: any[], before?: any[] | null, es?: Record<string, any> | null,
+ *           esBefore?: Record<string, any> | null, policy?: { tracked: number, ended: ReadonlyArray<{ number: number }> } }} args
+ * @returns {{ failures: string[], notes: string[] }}
+ */
+export function corpusCongressVerdict({ bills, before = null, es = null, esBefore = null, policy = CONGRESS_POLICY }) {
+  const failures = [];
+  const notes = [];
+  if (!Array.isArray(bills)) return { failures, notes };
+  const tracked = policy.tracked;
+  if (!policy.ended.length) {
+    const strays = offCongressBills(bills, tracked);
+    if (strays.length) {
+      failures.push(
+        `${strays.length} bills.json record(s) are not from the ${tracked}th Congress (${strays.slice(0, 10).join(', ')}${strays.length > 10 ? ', …' : ''}) — every write path is pinned to CONGRESS=${tracked} (scripts/congress-fetch.mjs), so these were seeded or force-fetched, and their pages assert present-tense activity for a Congress this build does not track. Remove them, or bump CONGRESS if the tracked Congress really changed.`
+      );
+    } else {
+      notes.push(`corpus uniformity: all ${bills.length} bills are ${tracked}th Congress`);
+    }
+    return { failures, notes };
+  }
+  const endedNames = policy.ended.map((e) => `${e.number}th`).join(', ');
+  const strays = bills.filter((b) => !isTrackedCongress(b?.congress_number, policy) && !isEndedCongress(b?.congress_number, policy)).map(slugOf);
+  if (strays.length) {
+    failures.push(
+      `${strays.length} bills.json record(s) are from neither the tracked ${tracked}th Congress nor an ended one (${endedNames}) (${strays.slice(0, 10).join(', ')}${strays.length > 10 ? ', …' : ''}) — new bills are written only for the tracked Congress and ended ones are frozen, so these were seeded or force-fetched. Remove them.`
+    );
+  }
+  const frozen = endedBillProblems({ bills, before, es, esBefore, policy });
+  if (frozen.length) {
+    failures.push(
+      `${frozen.length} ended-Congress problem(s): ${frozen.slice(0, 10).join('; ')}${frozen.length > 10 ? '; …' : ''} — bills of an ended Congress are an archive and nothing may add, remove or rewrite them (ENDED_FROZEN_FIELDS, scripts/congress-fetch.mjs).`
+    );
+  }
+  if (!strays.length) {
+    const nTracked = bills.filter((b) => isTrackedCongress(b?.congress_number, policy)).length;
+    notes.push(
+      `corpus uniformity: ${nTracked} bill(s) of the tracked ${tracked}th Congress, ${bills.length - nTracked} of ended Congress(es) ${endedNames}${frozen.length ? '' : ', all unchanged'}`
+    );
+  }
+  return { failures, notes };
+}
+
 /** Slug for a Congress.gov bill-list item ({type, number}), not yet a corpus
  *  bill object - the shape sync-bills.mjs's `updated`/recent-pass arrays and
  *  hot-bills.mjs's fetch results are in. */
 export function updateSlug(u, congress = CONGRESS) {
   return `${u.type.toLowerCase()}-${u.number}-${congress}`.toLowerCase();
+}
+
+/**
+ * Which corpus record one entry of the "most recently updated" window refreshes
+ * (scripts/hot-bills.mjs), and whether it may (2026-11-12). Pure.
+ *
+ * The window is the tracked Congress's own list, so its slug names the tracked
+ * Congress (the entry's own `congress` field is not read: Congress.gov has
+ * served it as both a number and a string). Returns:
+ *   - `skip: 'new'`   no corpus record: the nightly decodes new bills;
+ *   - `skip: 'ended'` the record belongs to an ended Congress: an archive is
+ *                     never refreshed by the hot-bill pass;
+ *   - `skip: null`    refresh `existing`, fetched from ITS OWN Congress.
+ * @param {{ type: string, number: string | number }} u
+ * @param {Map<string, any>} bySlug
+ */
+export function hotBillTarget(u, bySlug, policy = CONGRESS_POLICY) {
+  const slug = updateSlug(u, policy.tracked);
+  const existing = bySlug.get(slug) ?? null;
+  if (!existing) return { slug, existing: null, skip: 'new' };
+  if (isEndedCongress(congressOfBill(existing), policy)) return { slug, existing, skip: 'ended' };
+  return { slug, existing, skip: null };
 }
 
 /** Congress.gov's URL path segment per bill type. The old inline ternary
@@ -703,8 +913,15 @@ const CHAMBER_PATHS = {
   sconres: 'senate-concurrent-resolution',
 };
 
-export function congressGovUrl(type, number) {
-  return `https://www.congress.gov/bill/${CONGRESS}th-congress/${CHAMBER_PATHS[type] ?? 'house-bill'}/${number}`;
+/** The congress.gov page of one bill, in the bill's OWN Congress. The
+ *  Congress is required (2026-11-12): it used to be the tracked one, which
+ *  would have pointed an archived bill's record link at the same-numbered
+ *  bill of the next Congress on its first refresh after the switch. */
+export function congressGovUrl(type, number, congress) {
+  if (!Number.isInteger(congress) || congress <= 0) {
+    throw new Error(`congressGovUrl: no Congress for ${type}-${number} - refusing to guess the tracked one`);
+  }
+  return `https://www.congress.gov/bill/${congress}th-congress/${CHAMBER_PATHS[type] ?? 'house-bill'}/${number}`;
 }
 
 /** The `latestAction` we are willing to write a record from, or null when the
@@ -767,6 +984,10 @@ export function readableAction(detail) {
 export async function refreshBillFields(existing, detail, { resolve = resolveAmbiguousStatus } = {}) {
   const action = readableAction(detail);
   if (!action) return 'skipped_partial';
+  // The record link, in the bill's OWN Congress (2026-11-12), so an archived
+  // bill keeps linking to itself. Built before anything is written: a record
+  // that names no Congress throws here and is left exactly as it was.
+  const recordUrl = congressGovUrl(existing.bill_type, existing.bill_number, congressOfBill(existing));
   // An ambiguous last action (AMBIGUOUS_WITHOUT_CONTEXT above) is resolved
   // from the action BEFORE it. The detail payload carries only latestAction,
   // so this is one extra request, made only for these sentences. When it
@@ -807,6 +1028,6 @@ export async function refreshBillFields(existing, detail, { resolve = resolveAmb
   // Recompute rather than trust the stored value: bills decoded while the
   // URL builder was wrong (hconres/sconres, 2026-07-23) self-heal on their
   // next refresh.
-  existing.congress_gov_url = congressGovUrl(existing.bill_type, existing.bill_number);
+  existing.congress_gov_url = recordUrl;
   return 'refreshed';
 }

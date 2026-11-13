@@ -13,6 +13,8 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { generateSearchInputs } from './search-inputs.mjs';
+// Ended Congresses (2026-11-12): empty until the January switch. Import-free.
+import { isEndedBill } from '../lib/congress.mjs';
 
 const LIMIT = Number(process.env.BACKFILL_LIMIT ?? Infinity);
 const SLUGS_FILE = process.env.BACKFILL_SLUGS;
@@ -26,7 +28,10 @@ const only = SLUGS_FILE
 
 const slugOf = (b) => `${b.bill_type}-${b.bill_number}-${b.congress_number}`.toLowerCase();
 
+// A bill of an ENDED Congress never gets a model call (2026-11-12): its
+// search inputs are part of the archive (ENDED_FROZEN_FIELDS).
 const todo = bills.filter((b) =>
+  !isEndedBill(b) &&
   b.ai_headline &&
   b.press_names === undefined && b.news_query === undefined &&
   (!only || only.has(slugOf(b)))

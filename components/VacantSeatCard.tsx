@@ -44,6 +44,7 @@ export function VacantSeatCard({ href, elections }: { href?: string; elections?:
         {href ? (
           <Link
             href={href}
+            prefetch={false}
             className="inline-flex min-h-11 items-center text-ink underline decoration-line-strong underline-offset-4 hover:decoration-ink"
             data-seat-name-link=""
           >

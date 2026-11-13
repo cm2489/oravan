@@ -1,11 +1,12 @@
 'use client';
 
-import { useId, useLayoutEffect, useRef, useState } from 'react';
+import { useActionState, useId, useLayoutEffect, useRef, useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useRouter, getPathname } from '@/i18n/navigation';
 import type { routing } from '@/i18n/routing';
 import { setPrefs, usePrefs } from '@/lib/local';
+import { lookupMembers } from '@/lib/members-action';
 
 /*
  * The ZIP field is the funnel's front door and it renders at three very
@@ -35,22 +36,17 @@ import { setPrefs, usePrefs } from '@/lib/local';
 const FIELD_BASE =
   'min-h-12 w-full rounded-control px-4 py-3 text-lg text-ink tabular-nums placeholder:text-ink-2';
 
-export function ZipForm({
-  autoFocus = false,
-  onSaved,
-  submitTone = 'primary',
-  inline = false,
-  replace = false,
-}: {
+type ZipFormProps = {
   autoFocus?: boolean;
   /**
-   * Navigate with `replace` instead of `push` (the /reps page's own prompts,
-   * 2026-09-28). Bare /reps now opens on the saved ZIP
-   * (components/SavedZipLookup.tsx), so a pushed entry there would make Back
-   * land on /reps and bounce straight forward to the same members. Replacing
-   * lets Back leave the page. The home hero and the bill page keep `push`.
+   * The native form's action, when the page already holds the members
+   * lookup's state (components/RepsLookup.tsx on /reps passes its own, so
+   * the page has exactly one useActionState for lookupMembers and a no-JS
+   * submit's answer lands in it). Every other instance makes its own: the
+   * same server action with the same permalink, so a no-JS submit from the
+   * home hero or a bill page lands on /reps with the members.
    */
-  replace?: boolean;
+  formAction?: (form: FormData) => void;
   /**
    * The submit's visual weight. 'primary' (default) is the filled green
    * control every instance has always had. 'secondary' is the ink outline
@@ -76,14 +72,49 @@ export function ZipForm({
    * ZIP-first path is pinned on exactly that).
    */
   onSaved?: (zip: string) => void;
-}) {
+};
+
+/*
+ * THE ZIP NEVER GOES IN AN ADDRESS (owner, 2026-11-12; CLAUDE.md rule 1).
+ * With JavaScript on, a valid submit saves the ZIP in this browser
+ * (lib/local.ts) and then either hands it to `onSaved` or opens bare /reps,
+ * which looks up the saved ZIP itself (components/RepsLookup.tsx). With
+ * JavaScript off, or before hydration, the browser submits the form natively:
+ * its action is the members lookup (lib/members-action.ts) with the permalink
+ * /reps (or /es/reps), so it POSTs the field to that page and the server
+ * renders the members from the request body. Either way the ZIP is in no web
+ * address, so it is in no request log, history entry or shared link.
+ */
+export function ZipForm(props: ZipFormProps) {
+  if (props.formAction) return <ZipFormBody {...props} formAction={props.formAction} />;
+  return <ZipFormWithLookup {...props} />;
+}
+
+/** An instance away from /reps: its own handle on the lookup, posting to /reps. */
+function ZipFormWithLookup(props: ZipFormProps) {
+  const locale = useLocale();
+  const [, formAction] = useActionState(lookupMembers, null, repsPermalink(locale));
+  return <ZipFormBody {...props} formAction={formAction} />;
+}
+
+/** The members page in this locale: /reps, or /es/reps. */
+export function repsPermalink(locale: string): string {
+  return getPathname({ locale: locale as (typeof routing)['locales'][number], href: '/reps' });
+}
+
+function ZipFormBody({
+  autoFocus = false,
+  onSaved,
+  submitTone = 'primary',
+  inline = false,
+  formAction,
+}: ZipFormProps & { formAction: (form: FormData) => void }) {
   const t = useTranslations('home');
   const uid = useId();
   const fieldId = `zip-${uid}`;
   const errorId = `zip-error-${uid}`;
   const helpId = `zip-help-${uid}`;
   const router = useRouter();
-  const locale = useLocale();
   const prefs = usePrefs();
   const [typed, setTyped] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -98,9 +129,10 @@ export function ZipForm({
    * has already scrolled to the page's #hash by then (the call panel's "See
    * your record" lands on /reps#your-calls, under this form), so the late
    * scroll threw the page back to the top. With a saved ZIP the page goes
-   * straight on to /reps?zip= (SavedZipLookup), and that navigation scrolls
-   * to Your calls again; but when the late scroll came after it rather than
-   * before, the page still ended at the top. That race is why
+   * straight on to its members (2026-09-29 to 2026-11-12, by a navigation to
+   * /reps?zip=), and that navigation scrolled to Your calls again; but when
+   * the late scroll came after it rather than before, the page still ended at
+   * the top. That race is why
    * tests/reps-record.spec.ts failed about one CI run in five.
    *
    * So, once the field is laid out, focus is taken off and put back with
@@ -151,24 +183,21 @@ export function ZipForm({
       onSaved(clean);
       return;
     }
-    if (replace) router.replace(`/reps?zip=${clean}`);
-    else router.push(`/reps?zip=${clean}`);
+    // Bare /reps: the ZIP was saved just above, and the page looks it up
+    // from there, in a POST body (components/RepsLookup.tsx).
+    router.push('/reps');
   }
 
   return (
-    // PROGRESSIVE ENHANCEMENT: `action` + `method` are what make this form work
-    // before hydration and with JS off. Without them the browser GETs the
-    // current URL, and the home page never reads `?zip=` — so a correctly typed
-    // ZIP vanished and the funnel's front door was a dead end. `submit` still
-    // calls preventDefault(), so nothing changes for a hydrated visitor; the
-    // field's `name="zip"` already produces exactly the query /reps expects.
-    <form
-      onSubmit={submit}
-      action={getPathname({ locale: locale as (typeof routing)['locales'][number], href: '/reps' })}
-      method="get"
-      className="@container max-w-[30rem]"
-      noValidate
-    >
+    // PROGRESSIVE ENHANCEMENT: the server-action `action` is what makes this
+    // form work before hydration and with JS off. React renders it as a
+    // native POST to /reps (the permalink) carrying the field and the
+    // action's id, so the ZIP rides in the body and /reps renders the members
+    // from it (see above). Without an action the browser would submit to the
+    // current page, which reads no ZIP, and the funnel's front door would be
+    // a dead end. `submit` calls preventDefault(), so a hydrated visitor's
+    // submit never reaches the action here.
+    <form onSubmit={submit} action={formAction} className="@container max-w-[30rem]" noValidate>
       <label htmlFor={fieldId} className="block text-sm font-bold">
         {t('zipLabel')}
       </label>

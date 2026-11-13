@@ -75,9 +75,11 @@ test('split ZIP: address refinement narrows to the one real district', async ({ 
 
   await fillAddress(page, '421 8th Ave');
 
-  // Refined view: only NY-12's House member; senators unaffected.
-  await expect(page).toHaveURL(/district=NY-12/);
+  // Refined view: only NY-12's House member; senators unaffected. Since
+  // 2026-11-12 neither the district nor the ZIP goes in the address (the old
+  // link's ?zip= is dropped on arrival, too).
   await expect(page.getByRole('heading', { name: heading(12) })).toBeVisible();
+  await expect(page).toHaveURL(/\/reps$/);
   await expect(page.getByText('Jerrold Nadler')).toBeVisible();
   await expect(page.getByRole('heading', { name: heading(10) })).toHaveCount(0);
   await expect(page.getByText('Daniel S. Goldman')).toHaveCount(0);
@@ -127,8 +129,8 @@ test('rate limited: a gentle try-again-soon message', async ({ page }) => {
 });
 
 test('district outside the ZIP candidate set: trust the geocoder, say what happened', async ({ page }) => {
-  // Server-rendered from the URL params alone - no mock needed. NY-1 is not
-  // in 10001's candidate set {NY-10, NY-12}.
+  // Server-rendered from an old link's params alone - no mock needed. NY-1 is
+  // not in 10001's candidate set {NY-10, NY-12}.
   await page.goto(`/reps?zip=${SPLIT_ZIP}&district=NY-1`);
   await expect(page.getByText('Nick LaLota')).toBeVisible();
   await expect(page.getByText(t('refinedOutsideZip', { zip: SPLIT_ZIP }))).toBeVisible();

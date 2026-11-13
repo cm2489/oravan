@@ -68,8 +68,11 @@ const LOCALE_DIR = join(process.cwd(), 'app/[locale]');
  */
 const RENDERED_ON_DEMAND: Record<string, string> = {
   '/reps':
-    'reads searchParams (the ZIP lookup) — legitimately dynamic; its per-member children ' +
-    '/reps/[bioguide] ARE static, pinned separately below',
+    'reads searchParams so an OLD /reps?zip= link (bookmark, shared link, search result) still ' +
+    'shows the members, server-rendered, before the client drops the ZIP from the address; and ' +
+    'a no-JavaScript ZIP form POSTs to it (a server action), which renders per request. The ZIP ' +
+    'itself left the address on 2026-11-12 (owner). Its per-member children /reps/[bioguide] ' +
+    'ARE static, pinned separately below',
   '/nominations/[slug]': 'declares no generateStaticParams on purpose; see its page comment',
   '/[...rest]': 'the locale catch-all: every path no real route claims is a 404',
 };
