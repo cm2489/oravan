@@ -23,7 +23,7 @@ import { EndedPanel } from '@/components/EndedPanel';
 import { ConcurrentExplainer } from '@/components/ConcurrentExplainer';
 import { GlossaryTerm } from '@/components/GlossaryTerm';
 import { Chip, FloorVotePanel, Stamp } from '@/components/system';
-import { coverageCheckedAt, coverageTier, getCoverage } from '@/lib/coverage';
+import { coverageCheckedAt, coverageForBillPage, coverageTier, getCoverage } from '@/lib/coverage';
 import { StalenessNote } from '@/components/StalenessNote';
 import { repRoleKey } from '@/components/RepCard';
 import {
@@ -33,7 +33,7 @@ import {
   changedSince,
   decodeSource,
 } from '@/lib/bill-provenance';
-import { billSlug, getAllBills, getBill, getLegislator, localizeBill } from '@/lib/core';
+import { billSlug, getAllBills, getBill, getLegislator, hasMemberPage, localizeBill } from '@/lib/core';
 import { formatCitation } from '@/lib/format';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
@@ -297,7 +297,7 @@ export default async function BillPage({
      read, so a bill amended in committee or on the floor after that text
      still read as current (SY-25). Both come from lib/bill-provenance.ts, and
      both print nothing when the stored record does not hold the fact. */
-  const sponsor = billSponsor(raw, { legislator: getLegislator, formerMember: votingMember });
+  const sponsor = billSponsor(raw, { legislator: getLegislator, formerMember: votingMember, hasPage: hasMemberPage });
   const source = hasDecode ? decodeSource(bill) : null;
   const changedAfter = changedSince(amendedSince(source, votesForBill(id)), amendedInCommitteeSince(source, raw));
   // The provenance ritual's status fragment, through the label gate — which
@@ -570,6 +570,10 @@ export default async function BillPage({
   // list /questions reads; on the overwhelming majority of bills this is empty
   // and the header renders exactly as it did before.
   const parentMoments = getMomentsForBill(id);
+  // The coverage box on a bill that is NOT part of a Big Question is hidden
+  // when it would show only one side (owner, 2026-11-13); lib/coverage.ts's
+  // coverageForBillPage owns the rule. Big Question bills are unchanged.
+  const shownCoverage = coverageForBillPage(coverage, parentMoments.length > 0);
 
   return (
     <>
@@ -1029,8 +1033,8 @@ export default async function BillPage({
             as of" stamp above (the Congress.gov bill sync) and from the
             article dates below (the press) — three clocks, three labels. */}
         <CoverageSection
-          articles={coverage}
-          tier={coverageTier(coverage)}
+          articles={shownCoverage}
+          tier={coverageTier(shownCoverage)}
           checkedAt={coverageCheckedAt(id)}
         />
       </div>

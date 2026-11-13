@@ -94,9 +94,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - name: Vacancy-diff unit tests (departed-member / vacant-no-successor / anomalous-shrink)
+      - name: Vacancy-diff, member-turnover and refresh end-to-end tests (departed-member / vacant-no-successor / anomalous-shrink / new-Congress turnover / refused week)
         # Stdlib-only (unittest) - no pip install needed, ubuntu-latest ships python3.
-        run: cd scripts && python3 -m unittest test_vacancy_diff -v
+        run: cd scripts && python3 -m unittest test_vacancy_diff test_member_turnover test_process_data -v
       - uses: actions/setup-node@v6
         with:
           node-version: 24

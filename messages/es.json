@@ -249,7 +249,20 @@
     "votesTheirVote": "Su voto:",
     "votesMoreOnBillLink": "{count, plural, one {# voto más sobre este proyecto} other {# votos más sobre este proyecto}}",
     "votesOlder": "{count, plural, one {Sus votos anteriores sobre # proyecto más no aparecen aquí. La página de cada proyecto muestra sus votaciones registradas.} other {Sus votos anteriores sobre # proyectos más no aparecen aquí. La página de cada proyecto muestra sus votaciones registradas.}}",
-    "votesNone": "El registro oficial no muestra ninguna votación nominal de {name} sobre un proyecto de los que sigue Oravan desde el {date}."
+    "votesNone": "El registro oficial no muestra ninguna votación nominal de {name} sobre un proyecto de los que sigue Oravan desde el {date}.",
+    "departedServed": "Sirvió en {chamber} hasta el 3 de enero de 2027.",
+    "departedChamber": {
+      "house": "la Cámara de Representantes",
+      "senate": "el Senado"
+    },
+    "votesNoneYet": "Todavía no hay votos registrados en el Congreso 120.",
+    "formerRole": {
+      "senator": "Exintegrante del Senado",
+      "representative": "Exintegrante de la Cámara de Representantes",
+      "delegate": "Exintegrante de la Cámara de Representantes"
+    },
+    "crumbRecord": "Miembros actuales del Congreso",
+    "votesNoneYetTracked": "Todavía no hay votos registrados sobre un proyecto de los que sigue Oravan."
   },
   "bills": {
     "title": "Proyectos de ley activos, en claro",
@@ -776,7 +789,7 @@
     "p2": "Los resúmenes y los titulares de los proyectos de ley los redacta la IA, los guiones de llamada son borradores de IA, y todos están claramente marcados. Pueden contener errores. El texto oficial en Congress.gov es siempre la autoridad, y tú eres responsable de revisar y editar todo antes de decirlo.",
     "p3": "Oravan no ofrece garantías. Hacemos lo posible por mantener al día los datos de representantes y el estado de los proyectos, pero las oficinas cambian de número y los proyectos avanzan a diario. Verifica lo que importe.",
     "p4": "Lo que hagas con el teléfono es tuyo: tú haces las llamadas y eliges las palabras. Sé honesto, sé breve y sé amable con la persona que contesta.",
-    "p5": "No tenemos cuentas ni una base de datos sobre ti; los registros de solicitudes de nuestro servicio de alojamiento anotan tu dirección de red y las páginas que abres. Tus ajustes y tu historial se guardan en tu navegador. Cuando buscas a tus miembros del Congreso, tu código postal se envía para encontrar tu distrito y nunca se escribe en una base de datos. Si nos das tu dirección (calle y número), se usa una sola vez y nunca la guardamos. La postura que elijas se envía solo para preparar tu guion de llamada y nunca se vincula contigo. La página de privacidad lo explica por completo.",
+    "p5": "No tenemos cuentas ni un perfil tuyo; los registros de solicitudes de nuestro servicio de alojamiento anotan tu dirección de red y las páginas que abres. Tus ajustes y tu historial se guardan en tu navegador. Cuando buscas a tus miembros del Congreso, tu código postal se envía para encontrar tu distrito y nunca se escribe en una base de datos. Si nos das tu dirección (calle y número), se usa una sola vez y nunca la guardamos. La postura que elijas se envía solo para preparar tu guion de llamada y nunca se vincula contigo. La página de privacidad lo explica por completo.",
     "operator": "Oravan es obra de Colby Maxwell, un particular en Washington, DC.",
     "law": "Estos términos se rigen por las leyes del Distrito de Columbia."
   },

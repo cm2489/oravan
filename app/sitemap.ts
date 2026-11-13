@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { routing } from '@/i18n/routing';
-import { billSlug, getAllBills, getAllLegislators, getVacancies, vacancySlug } from '@/lib/core';
+import { billSlug, getAllBills, getAllLegislators, getDepartedMembers, getVacancies, vacancySlug } from '@/lib/core';
 // Imported DIRECTLY, never through the lib/core barrel — that module's header
 // forbids the barrel so no bundle pays for data/nominations.json by accident.
 import { getNomination } from '@/lib/core/nominations';
@@ -93,8 +93,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
   // on the seat, since a vacancy has no bioguide), both locales. The roster
   // carries no per-member date, so lastModified is the corpus stamp - never
   // an invented date.
+  // A member who left keeps a record page after the switch (stage 5), so it
+  // is listed too; before the switch there are none.
   const repIds = [
     ...getAllLegislators().map((l) => l.bioguide),
+    ...getDepartedMembers().map((d) => d.bioguide),
     ...getVacancies().map((v) => vacancySlug(v)),
   ];
   for (const id of repIds) {
