@@ -12,11 +12,12 @@ import { markDataUri, wordmarkDataUri, WORDMARK_RATIO } from '@/lib/og-brand';
 
 /*
  * Per-question share card (Wave B ruling #3, 2026-08-04). Same variant-B
- * idiom as the site and bill cards: ink ground, MONOCHROME paper lockup
- * (`go` is 2.75:1 on ink and never carries the mark there), `go-bright` as
- * the single accent, system sans, the UNBOXED AI label. Palette literals
- * restated because Satori resolves no CSS vars; keep in lockstep with
- * globals.css (--color-ink, --color-paper, --color-go-bright).
+ * idiom as the site and bill cards: the band's green ground (go-deep, the
+ * owner's look of 2026-11-13), MONOCHROME paper lockup (11.32:1), `go-bright`
+ * as the single accent (6.61:1), system sans, the UNBOXED AI label with its
+ * mark grey (paper on ink-2, 7.56). Palette literals restated because Satori
+ * resolves no CSS vars; keep in lockstep with globals.css (--color-go-deep,
+ * --color-paper, --color-ink-2, --color-go-bright).
  *
  * A forwarded card is a redistribution surface: question name, dek, vehicle
  * count — no advocacy copy, no lean labels. The dek is AI-drafted summary
@@ -26,7 +27,8 @@ import { markDataUri, wordmarkDataUri, WORDMARK_RATIO } from '@/lib/og-brand';
  * same commit that makes the claim true).
  */
 
-const INK = '#1c1b18'; // --color-ink
+const BAND = '#133f2d'; // --color-go-deep — the masthead band's green (owner's look, 2026-11-13)
+const INK_2 = '#55514a'; // --color-ink-2 — the grey AI mark (owner's pick 6, 2026-11-13)
 const PAPER = '#fcfaf4'; // --color-paper
 const GO_BRIGHT = '#7fd3a2'; // --color-go-bright — the dark-ground green
 const PAPER_SOFT = 'rgba(252,250,244,0.86)';
@@ -75,7 +77,7 @@ export default async function OgImage({
           flexDirection: 'column',
           justifyContent: 'space-between',
           padding: 72,
-          background: INK,
+          background: BAND,
           color: PAPER,
           fontFamily: 'sans-serif',
         }}
@@ -134,8 +136,8 @@ export default async function OgImage({
               <div
                 style={{
                   display: 'flex',
-                  background: PAPER,
-                  color: INK,
+                  background: INK_2,
+                  color: PAPER,
                   borderRadius: 6,
                   padding: '4px 12px',
                   fontSize: 24,

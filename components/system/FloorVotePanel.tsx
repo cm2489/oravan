@@ -213,7 +213,7 @@ export function FloorVotePanel({
 
   const main = (
     <>
-      <Chip tone="floor" ground="go" dateLabel={dateLabel}>
+      <Chip tone="urgent" ground="go" dateLabel={dateLabel}>
         {calendarLabel}
       </Chip>
 

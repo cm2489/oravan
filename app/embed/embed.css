@@ -14,12 +14,14 @@
  * pair — four mirrors, one move.
  *
  * THE TWO LAWS, as they apply to a white-label surface (DESIGN.md):
- *   COLOR — DRAFT mix (owner, 2026-11-13): the lamp (#ffc933, ink text 11.20) is the un-themed default accent and it means GO;
- *   it is reachable ONLY through --_accent, i.e. only where the tenant's own
- *   --oravan-accent would land, so a tenant palette always displaces it.
- *   The lamp yellow is the site's own action mark (and its one dated floor
- *   notice on Today); no widget renders either on a partner's page, so
- *   THERE IS NO LAMP OR AMBER IN THIS FILE. `.re-note` is a neutral wash. Failure,
+ *   COLOR — DRAFT, the owner's look (2026-11-13): the lamp (#ffc933, ink
+ *   text 11.20) is the un-themed default accent, because on the site every
+ *   filled action is the lamp; it means GO. It is reachable ONLY through
+ *   --_accent, i.e. only where the tenant's own --oravan-accent would land,
+ *   so a tenant palette always displaces it. That accent is the ONLY place
+ *   the lamp appears in this file: the site's dated floor labels (Today's
+ *   floor notice, the floor panel's date) are never rendered by a widget.
+ *   `.re-note` is a neutral wash. Failure,
  *   and only failure, is red, and it never carries meaning alone (3px ink
  *   rule + bold label + role="alert"; color is the third signal).
  *   SHAPE — radius is assigned by SCALE, not by interactivity. Small marks
@@ -368,9 +370,9 @@ body {
   color: inherit;
 }
 
-/* Info/prompt note. NO AMBER: the site's lamp yellow is its own action and
-   floor-notice mark, and no widget renders either, so a "heads up, this ZIP
-   spans two districts" callout has no claim on it. The un-themed default is a neutral ink wash
+/* Info/prompt note. NO LAMP: the lamp yellow marks an action (the un-themed
+   accent) and the site's dated floor labels, and a "heads up, this ZIP
+   spans two districts" callout is neither, so it has no claim on it. The un-themed default is a neutral ink wash
    (ink text on it: 14.06:1 light, 13.19:1 dark); a genuinely themed widget
    still gets --oravan-note-* from the server (an accent tint over the
    surface), so a white-label embed wears the tenant's color instead. The

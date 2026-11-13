@@ -20,10 +20,14 @@ A 3px `ink` ring alone on a `go`-filled button is **2.24:1** — a fail. So the 
 go fill │ paper border 7.36 │ paper gap │ ink ring 16.50 │ paper page 16.50
 ```
 
-Every adjacency clears 3:1. Ground contexts retune the two tones:
+Every adjacency clears 3:1.
+
+In the owner's look (a draft for his last look, 2026-11-13; the colour layer at the end of `app/globals.css`), every filled action but one is the lamp with ink type and an ink edge, so its stack reads `lamp fill │ ink edge 11.20 │ paper gap 16.50 │ ink ring 16.50 │ paper page 16.50`. The one green button is the floor panel's own (his click: "Green button, as c1 had it"), on the panel's stone: `go fill │ stone border 5.79 │ stone gap │ ink ring 12.98 │ stone panel 12.98` (on hover the fill is go-deep, 8.91 against the stone border).
+
+Ground contexts retune the two tones:
 
 - `.on-dark` — any ink enamel ground (footer, voicemail, transcript title bar). Ring = paper (16.50 on ink), gap = ink.
-- `.on-go` — the green enamel panel. Ring = paper (11.32 on go-deep), gap = go-deep. Stack: `paper fill │ go-deep border 11.32 │ go-deep gap │ paper ring 11.32 │ go-deep panel 11.32`.
+- `.on-go` — the floor panel (the home page's This-week panel and a bill page's floor panel). In direction c it is green enamel: ring = paper (11.32 on go-deep), gap = go-deep, stack `paper fill │ go-deep border 11.32 │ go-deep gap │ paper ring 11.32 │ go-deep panel 11.32`. In the owner's look it is stone (#e6dfd0) with ink type: ring = ink (12.98 on stone), gap = stone, and its button's stack is the green one above.
 - `.on-band` — the masthead band (the site header on `go-deep`). Ring = paper (11.32 on the band, where the default ink ring would be 1.46), gap = go-deep. Unlike `.on-go` it leaves the type's line-heights alone. The skip link carries it too: it is an ink pill shown over the band, and its paper ring is 16.50 against the pill and 11.32 against the band.
 
 Focus is **never** removed. It is never drawn in `go`, because `go` is what buttons are filled with, and a green ring on a green button is 1.00:1 — the general form of that rule is: never draw the ring in the colour of the thing it surrounds.
@@ -36,9 +40,11 @@ Three results for the current tokens that you must know before you build on them
 
 1. **`line-strong` clears 3:1 on both grounds: 4.24 on paper, 3.89 on wash.** The July palette missed on wash by 0.03 (2.97), which forced an enabled component's `line-strong` edge to keep `paper` on one side; this palette lifts that restriction. If a future palette misses again, do not "fix" it by lightening `wash` or by promoting `line` (1.30 on paper, decorative only) to an edge.
 2. **`go` and `alert` sit 1.24:1 apart in luminance** (alert and ink: 2.78) — to a deuteranope go and alert are near-identical. `alert` is therefore never the sole carrier of meaning: a failure always also carries a 3px rule, a bold text label, and the right ARIA (`aria-invalid`, `role="alert"`). Color is the third signal, never the first.
-3. **Fill colors are not boundaries.** `urgent` (the lamp) on paper is 1.47:1 and `tint` on paper is 1.14:1, and both are fine — a lamp is found by its ink text (11.20) and, on a control, its ink edge (a picked stance) or `line-strong` edge (the House finder), and the Today floor notice by its printed date, not by being yellow; `tint` is always carrying ink text. But any *control* on a tinted ground still takes a `line-strong` or `ink` edge.
+3. **Fill colors are not boundaries.** `urgent` (the lamp) on paper is 1.47:1 and `tint` on paper is 1.14:1, and both are fine — a lamp is found by its ink text (11.20) and, on a control, its ink edge (a picked stance, a filled button) or `line-strong` edge (the House finder), and the Today floor notice by its printed date, not by being yellow; `tint` is always carrying ink text. But any *control* on a tinted ground still takes a `line-strong` or `ink` edge. The same reasoning covers the floor panel's lamp date label in the owner's look: the lamp is 1.16:1 against the panel's stone, but the label is not a control, and it is found by its ink text (11.20) and its printed date, so it takes no ink edge (a control on the stone would).
 
 Choice controls light up in two steps (page 2, Layout, 2026-09-27 00:40): the half-lamp on hover is `bg-urgent/50` over paper (#fee294), ink on it 13.55; the picked state is the full lamp, ink on it 11.20, with an ink edge. The House finder's lighter lamp (`bg-urgent/30`, #fdebba) carries ink at 14.57.
+
+The owner's look adds the stone panel's pairs, all in the ledger: ink on stone 12.98, ink-2 on stone 5.95, a green link on stone 5.79, the grey stamp and AI mark (paper on ink-2) 7.56, and green links in text on every light ground (go on paper 7.36, on wash 6.75, on tint 6.46; on an ink ground links stay `go-bright`, 9.63).
 
 The masthead band adds three text pairs, all in the ledger: the wordmark and nav on the band (paper on go-deep, 11.32), the trust line (go-pale on go-deep, 8.26) and the inverted language switch (go-deep on paper, 11.32).
 

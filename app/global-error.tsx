@@ -9,7 +9,8 @@
  * English-only is therefore a structural constraint, not an oversight or a
  * bilingual-parity exception: there is no locale to read here. Styles are
  * inline for the same reason — a root-layout failure may mean the stylesheet
- * never attached. Colors are the live tokens (--color-ink, --color-paper),
+ * never attached. Colors are the live tokens (--color-ink, --color-paper,
+ * --color-ink-2, and --color-urgent for the filled button, ink type, ink edge),
  * restated as literals because no CSS variables are guaranteed at this point.
  *
  * app/[locale]/error.tsx is the boundary users will actually see; this one is
@@ -58,9 +59,9 @@ export default function GlobalError({
                 minHeight: '3rem',
                 padding: '0 1.5rem',
                 borderRadius: '8px',
-                border: '2px solid #1d5e43',
-                background: '#1d5e43',
-                color: '#fcfaf4',
+                border: '2px solid #1c1b18',
+                background: '#ffc933',
+                color: '#1c1b18',
                 fontWeight: 700,
                 fontSize: '1rem',
                 cursor: 'pointer',

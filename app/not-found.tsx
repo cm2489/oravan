@@ -10,7 +10,8 @@
  * lives, not a bilingual-parity exception. Same reasoning as app/global-error.tsx.
  *
  * Styles are inline for the same reason: no guarantee the stylesheet attached.
- * Colors are the live tokens (--color-paper, --color-ink, --color-ink-2, --color-go).
+ * Colors are the live tokens (--color-paper, --color-ink, --color-ink-2, --color-urgent):
+ * the button is the lamp with ink type and an ink edge, like every filled action.
  */
 import Link from 'next/link';
 
@@ -45,9 +46,9 @@ export default function RootNotFound() {
                 alignItems: 'center',
                 padding: '0 1.5rem',
                 borderRadius: '8px',
-                border: '2px solid #1d5e43',
-                background: '#1d5e43',
-                color: '#fcfaf4',
+                border: '2px solid #1c1b18',
+                background: '#ffc933',
+                color: '#1c1b18',
                 fontWeight: 700,
                 textDecoration: 'none',
               }}

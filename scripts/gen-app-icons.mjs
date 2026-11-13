@@ -1,5 +1,6 @@
 // Generate the app icons from the locked Oravan lone-O mark: a paper mark on
-// an ink tile. Reads the masters in assets/brand/ and recolors them, so
+// the band's green tile (go-deep; the owner's look of 2026-11-13, "dark green
+// strip, cream logo"; paper on go-deep is 11.32:1). Reads the masters in assets/brand/ and recolors them, so
 // there's no path duplication here. Re-run with: node scripts/gen-app-icons.mjs
 //   - public/icons/icon-192.png + icon-512.png : maskable PWA icons (app/manifest.ts)
 //   - public/apple-touch-icon.png              : iOS home-screen icon (root-probed)
@@ -8,8 +9,9 @@ import { readFile, mkdir } from 'node:fs/promises';
 
 // The live tokens (re-keyed 2026-08-02, when these still shipped the retired
 // Field Notebook values; re-keyed again 2026-09-30 for the warm-paper
-// palette). Keep in lockstep with globals.css: --color-ink, --color-paper.
-const INK = '#1c1b18';
+// palette; the tile moved from ink to the band's green 2026-11-13). Keep in
+// lockstep with globals.css: --color-go-deep, --color-paper.
+const BAND = '#133f2d';
 const PAPER = '#fcfaf4';
 
 const markMaster = await readFile('assets/brand/oravan-mark.svg', 'utf8');
@@ -21,7 +23,7 @@ for (const size of [192, 512]) {
   // Mark at 60% of the canvas keeps it inside the maskable safe zone (center 80%).
   const inner = Math.round(size * 0.6);
   const mark = await sharp(Buffer.from(paperMark)).resize(inner, inner).png().toBuffer();
-  await sharp({ create: { width: size, height: size, channels: 4, background: INK } })
+  await sharp({ create: { width: size, height: size, channels: 4, background: BAND } })
     .composite([{ input: mark, gravity: 'center' }])
     .png()
     .toFile(`public/icons/icon-${size}.png`);
@@ -37,7 +39,7 @@ for (const size of [192, 512]) {
   const size = 180;
   const inner = Math.round(size * 0.72);
   const mark = await sharp(Buffer.from(paperMark)).resize(inner, inner).png().toBuffer();
-  await sharp({ create: { width: size, height: size, channels: 4, background: INK } })
+  await sharp({ create: { width: size, height: size, channels: 4, background: BAND } })
     .composite([{ input: mark, gravity: 'center' }])
     .removeAlpha() // drop the (all-opaque) alpha channel — Apple wants flat RGB
     .png()

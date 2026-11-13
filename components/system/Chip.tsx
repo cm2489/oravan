@@ -8,16 +8,22 @@ import type { ReactNode } from 'react';
  *           tracked caption, no outline — the label is a caption on the
  *           content, not a component competing with it. Still always WITH
  *           the AI content it labels, never in a footnote.
- *   urgent  The lamp (#ffc933). Spent on ONE chip: the dated floor notice
- *           on Today (components/TodayFloorCard.tsx; owner, 2026-09-29:
- *           a scheduled vote "needs to have a yellow tag"). Ink text on the
- *           lamp (11.20:1), and the date is PRINTED — the type below makes
- *           `dateLabel` impossible to omit.
- *   floor   The same dated floor fact everywhere else (the bill page's green
- *           panel, the Big Question cards, the nomination page). INK, in the
- *           chip's shape: page 2 says status and date tags are plain text,
- *           and yellow marks only what you can act on (colour direction c,
- *           owner's pick 2026-09-30). The date is printed, as for `urgent`.
+ *   urgent  The lamp (#ffc933). Spent on TWO chips, both the dated floor
+ *           fact: the floor notice on Today (components/TodayFloorCard.tsx;
+ *           owner, 2026-09-29: a scheduled vote "needs to have a yellow
+ *           tag"), and the floor panel's date label, on the home page and on
+ *           a bill page (components/system/FloorVotePanel.tsx; owner's click,
+ *           2026-11-13 12:40 PM ET: "Yellow label, as on the live site").
+ *           Ink text on the lamp (11.20:1), and the date is PRINTED — the
+ *           type below makes `dateLabel` impossible to omit. No ink edge: it
+ *           is a label, not a control, so the fill is not a boundary (the
+ *           lamp is 1.16:1 on the panel's stone; docs/accessibility.md).
+ *   floor   The same dated floor fact everywhere else (the Big Question
+ *           cards, the nomination page). INK, in the chip's shape: page 2
+ *           says status and date tags are plain text, and yellow marks only
+ *           what you can act on (colour direction c, owner's pick
+ *           2026-09-30); the owner's look draws it warm grey. The date is
+ *           printed, as for `urgent`.
  *   stale   Data is past its claim window. INK, never the lamp: a staleness
  *           caveat is not a floor fact.
  *   status  A record's derived status label (bill page credibility block,
