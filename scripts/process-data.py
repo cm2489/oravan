@@ -37,10 +37,10 @@ from member_entry import member_entry
 from member_turnover import (
     accepts_seats,
     departed_problems,
+    attention,
+    attention_lines,
+    attention_report,
     official_problems,
-    unconfirmed,
-    unconfirmed_line,
-    unconfirmed_report,
     departed_records,
     dropped_members,
     parse_accept_departures,
@@ -128,10 +128,17 @@ if ACCEPT is not None and not problems and not anomalous:
     )
 
 # The record of members who left. The historical file is read only when it
-# can add something: a member left this run, or a kept record lacks its date.
+# can add something: a member left this run, a kept record lacks its date, or
+# a kept record without an official source has a table entry to check
+# against the file (member_turnover.official_mismatch).
 leaving = {m['bioguide'] for m in prev_legislators} - {m['bioguide'] for m in out}
+official_by_id = {e['bioguide']: e for e in official_dates if isinstance(e, dict) and 'bioguide' in e}
 historical_by_id = None
-if not anomalous and not problems and (leaving or any(r.get('served_until') is None for r in prev_departed)):
+if not anomalous and not problems and (
+    leaving
+    or any(r.get('served_until') is None for r in prev_departed)
+    or any(r.get('served_until_source') is None and r['bioguide'] in official_by_id for r in prev_departed)
+):
     hist_path, hist_url = HISTORICAL
     try:
         if DOWNLOAD:
@@ -144,9 +151,7 @@ if not anomalous and not problems and (leaving or any(r.get('served_until') is N
     finally:
         if DOWNLOAD and os.path.exists(hist_path):
             os.remove(hist_path)
-departed, undated = departed_records(
-    out, prev_legislators, prev_departed, historical_by_id, today, {e['bioguide']: e for e in official_dates}
-)
+departed, undated = departed_records(out, prev_legislators, prev_departed, historical_by_id, today, official_by_id)
 problems += official_problems(official_dates)
 problems += departed_problems(departed, out)
 
@@ -162,22 +167,27 @@ if not anomalous and not problems:
         json.dump(departed, open('data/departed-members.json', 'w'), ensure_ascii=False, indent=2)
     if leaving or departed != prev_departed:
         print(f'departed-members.json: {len(departed)} member(s) kept as a record, {len(leaving)} left the file this run')
+    # What a person must see this run (member_turnover.attention): a member
+    # who left with no day yet, a mid-term day known without an official
+    # source (new, or filled in late), a table entry that does not fit, an
+    # entry for a sitting member. One line each in the log and the step
+    # summary, and the report the workflow files on the one issue.
+    found = attention(departed, prev_departed, leaving, official_by_id, historical_by_id, out)
+    new_undated = {r['bioguide'] for r in found['undated']}
     for b in undated:
-        print(f'::warning::{b} left the member file but legislators-historical gives no end date yet; no page until it does')
-    # A NEW mid-term departure whose date is the volunteer file's alone: no
-    # record page until a person confirms it. One line each in the log and the
-    # step summary, and the report the workflow files as an issue.
-    fresh = unconfirmed(departed, leaving)
-    for r in fresh:
-        print(f'::warning::{unconfirmed_line(r)}')
+        if b not in new_undated:  # already reported the week they left
+            print(f'::warning::{b} left the member file but legislators-historical gives no end date yet; no page until it does')
+    lines = attention_lines(found)
+    for line in lines:
+        print(f'::warning::{line}')
     summary_path = os.environ.get('GITHUB_STEP_SUMMARY')
-    if fresh and summary_path:
+    if lines and summary_path:
         with open(summary_path, 'a') as f:
-            f.write(''.join(f'- {unconfirmed_line(r)}\n' for r in fresh))
+            f.write(''.join(f'- {line}\n' for line in lines))
     report_path = os.environ.get('UNCONFIRMED_REPORT')
-    if fresh and report_path:
+    if lines and report_path:
         with open(report_path, 'w') as f:
-            f.write(unconfirmed_report(fresh, today))
+            f.write(attention_report(found, today))
 
 for v in newly_detected:
     print(

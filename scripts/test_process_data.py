@@ -187,7 +187,9 @@ class ProcessDataEndToEnd(unittest.TestCase):
         r = self.run_(prev, new).go('--today', ORDINARY_DAY)
         self.assertEqual(r.code, 0, r.out)
         self.assertEqual({d['served_until'] for d in r.read('departed-members.json')}, {None})
-        self.assertIn('legislators-historical gives no end date yet', r.out)
+        # The week they leave, the new line (and the issue report) says so.
+        self.assertIn('gives no last day for them yet', r.out)
+        self.assertNotIn('legislators-historical gives no end date yet', r.out)
 
     def test_a_refused_week_writes_nothing_and_writes_the_report(self):
         prev = roster()
@@ -364,7 +366,8 @@ class UnconfirmedDeparture(unittest.TestCase):
         b = gone[0]['id']['bioguide']
         first = self.run_(prev, new, historical=gone, official=[]).go('--today', ORDINARY_DAY)
         kept = first.read('departed-members.json')
-        later = self.run_(new, new, departed=kept, official=[official_entry(b, '2026-11-11')]).go('--today', '2026-11-23')
+        # The refresh reads the historical file to check the entry fits.
+        later = self.run_(new, new, historical=gone, departed=kept, official=[official_entry(b, '2026-11-11')]).go('--today', '2026-11-23')
         self.assertEqual(later.code, 0, later.out)
         rec = later.read('departed-members.json')[0]
         self.assertEqual((rec['served_until'], rec['served_until_source']['kind'], rec['left_file']),
@@ -388,6 +391,117 @@ class UnconfirmedDeparture(unittest.TestCase):
         r = self.run_(prev, new, historical=gone, official=bad).go('--today', ORDINARY_DAY)
         self.assertEqual(r.code, 1, r.out)
         self.assertTrue(r.untouched())
+
+
+class WhatReachesAPerson(unittest.TestCase):
+    """Second review of #495 (2026-11-13): every mid-term departure whose day
+    is not official reaches a person, at most one issue (the workflow comments
+    on the one open issue each time a report is written)."""
+
+    def setUp(self):
+        self.runs = []
+
+    def tearDown(self):
+        for r in self.runs:
+            r.close()
+
+    def run_(self, *a, **k):
+        r = Run(*a, **k)
+        self.runs.append(r)
+        return r
+
+    def two_leave(self):
+        prev = roster()
+        new, gone = replace(prev, 2)
+        return prev, new, [json.loads(json.dumps(g)) for g in gone]
+
+    def test_the_date_arrives_a_week_late(self):
+        prev, new, gone = self.two_leave()
+        b = gone[0]['id']['bioguide']
+        gone[0]['terms'][-1]['end'] = '2026-11-10'
+        # Week 1: the historical file does not list them yet.
+        w1 = self.run_(prev, new[:], historical=[gone[1]], official=[]).go('--today', ORDINARY_DAY)
+        self.assertEqual(w1.code, 0, w1.out)
+        rec1 = next(x for x in w1.read('departed-members.json') if x['bioguide'] == b)
+        self.assertIsNone(rec1['served_until'])
+        self.assertIn('Left, and no date known yet', w1.report('unconfirmed.md'))
+        self.assertIn(b, w1.report('unconfirmed.md'))
+        # Week 2: it lists them now. The day is filled, unconfirmed, and reported.
+        w2 = self.run_(new, new, historical=gone, departed=w1.read('departed-members.json'), official=[]).go('--today', '2026-11-23')
+        self.assertEqual(w2.code, 0, w2.out)
+        rec2 = next(x for x in w2.read('departed-members.json') if x['bioguide'] == b)
+        self.assertEqual((rec2['served_until'], rec2['served_until_source'], rec2['left_file']), ('2026-11-10', None, ORDINARY_DAY))
+        body = w2.report('unconfirmed.md')
+        self.assertIn('Date known from the historical file only', body)
+        self.assertIn(b, body)
+        self.assertIn('2026-11-10', body)
+        self.assertEqual(sum('not yet confirmed' in l for l in w2.out.splitlines()), 1, w2.out)
+
+    def test_the_date_never_arrives_for_three_weeks_one_report_not_three(self):
+        prev, new, gone = self.two_leave()
+        b = gone[0]['id']['bioguide']
+        hist = [gone[1]]  # never lists b
+        gone[1]['terms'][-1]['end'] = '2026-11-12'
+        w1 = self.run_(prev, new, historical=hist, official=[]).go('--today', ORDINARY_DAY)
+        self.assertEqual(w1.code, 0, w1.out)
+        self.assertIn(b, w1.report('unconfirmed.md'))  # week 1: the issue is opened (or commented)
+        kept = w1.read('departed-members.json')
+        for week in ('2026-11-23', '2026-11-30'):
+            w = self.run_(new, new, historical=hist, departed=kept, official=[]).go('--today', week)
+            self.assertEqual(w.code, 0, w.out)
+            self.assertIsNone(w.report('unconfirmed.md'), week)  # weeks 2 and 3: no issue comment
+            self.assertIn(f'{b} left the member file but legislators-historical gives no end date yet', w.out)
+            self.assertNotIn('gives no last day for them yet', w.out)
+            self.assertEqual(w.read('departed-members.json'), kept)
+            kept = w.read('departed-members.json')
+
+    def test_two_members_one_dated_one_not(self):
+        prev, new, gone = self.two_leave()
+        dated, undated = gone[1]['id']['bioguide'], gone[0]['id']['bioguide']
+        gone[1]['terms'][-1]['end'] = '2026-11-12'
+        r = self.run_(prev, new, historical=[gone[1]], official=[]).go('--today', ORDINARY_DAY)
+        self.assertEqual(r.code, 0, r.out)
+        body = r.report('unconfirmed.md')
+        self.assertIn('Left, and no date known yet', body)
+        self.assertIn('Date known from the historical file only', body)
+        self.assertIn(dated, body.split('## Date known')[1])
+        self.assertIn(undated, body.split('## Date known')[0])
+        self.assertEqual(len([l for l in r.out.splitlines() if l.startswith('::warning::') and (dated in l or undated in l)]), 2)
+
+    def test_an_entry_more_than_a_day_off_is_not_applied_and_is_reported(self):
+        prev, new, gone = self.two_leave()
+        b = gone[0]['id']['bioguide']
+        gone[0]['terms'][-1]['end'] = '2026-11-10'
+        gone[1]['terms'][-1]['end'] = '2026-11-12'
+        r = self.run_(prev, new, historical=gone, official=[official_entry(b, '2026-11-13')]).go('--today', ORDINARY_DAY)
+        self.assertEqual(r.code, 0, r.out)
+        rec = next(x for x in r.read('departed-members.json') if x['bioguide'] == b)
+        self.assertEqual((rec['served_until'], rec['served_until_source']), ('2026-11-10', None))  # no page
+        body = r.report('unconfirmed.md')
+        self.assertIn('A table entry that does not fit', body)
+        self.assertIn('3 days apart', body)
+
+    def test_an_old_entry_is_not_reused_when_a_returning_member_leaves_again(self):
+        prev, new, gone = self.two_leave()
+        b = gone[0]['id']['bioguide']
+        gone[0]['terms'][-1]['start'] = '2026-06-02'  # returned in a special election
+        gone[0]['terms'][-1]['end'] = '2026-11-10'
+        gone[1]['terms'][-1]['end'] = '2026-11-12'
+        old = official_entry(b, '2025-03-05')  # written for their earlier departure
+        r = self.run_(prev, new, historical=gone, official=[old]).go('--today', ORDINARY_DAY)
+        self.assertEqual(r.code, 0, r.out)
+        rec = next(x for x in r.read('departed-members.json') if x['bioguide'] == b)
+        self.assertEqual((rec['served_until'], rec['served_until_source']), ('2026-11-10', None))
+        self.assertIn('belongs to an earlier departure', r.report('unconfirmed.md'))
+
+    def test_an_entry_for_a_sitting_member_is_reported_not_applied(self):
+        prev = roster()
+        sitting = as_committed(prev)[3]['bioguide']
+        r = self.run_(prev, prev, official=[official_entry(sitting, '2026-04-21')]).go('--today', ORDINARY_DAY)
+        self.assertEqual(r.code, 0, r.out)
+        self.assertEqual(r.read('departed-members.json'), [])
+        self.assertIn(f'entry for {sitting}, who is in the member file again', r.out)
+        self.assertIn('A table entry for a sitting member', r.report('unconfirmed.md'))
 
 
 class SeedDepartedMembers(unittest.TestCase):
@@ -463,6 +577,20 @@ class SeedDepartedMembers(unittest.TestCase):
         p = self.run_seed([official_entry('M000001', '2026-04-24'), self.official[1]])
         self.assertEqual(p.returncode, 1, p.stdout)
         self.assertIn('3 days apart', p.stdout)
+        self.assertEqual(self.written(), b'[]')
+
+    def test_refuses_an_entry_from_before_the_last_term_began(self):
+        self.hist[0]['terms'][-1]['start'] = '2026-01-06'
+        p = self.run_seed([official_entry('M000001', '2025-12-30'), self.official[1]])
+        self.assertEqual(p.returncode, 1, p.stdout)
+        self.assertIn('belongs to an earlier departure', p.stdout)
+        self.assertEqual(self.written(), b'[]')
+
+    def test_refuses_an_entry_for_a_sitting_member(self):
+        sitting = as_committed(self.current)[0]['bioguide']
+        p = self.run_seed(self.official + [official_entry(sitting, '2026-04-21')])
+        self.assertEqual(p.returncode, 1, p.stdout)
+        self.assertIn(f'entry for {sitting}, who is in the member file now', p.stdout)
         self.assertEqual(self.written(), b'[]')
 
     def test_confirms_a_kept_record_that_had_no_source(self):

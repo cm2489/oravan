@@ -49,7 +49,13 @@ from datetime import date
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from member_entry import member_entry  # noqa: E402
-from member_turnover import departed_problems, departed_records, official_problems  # noqa: E402
+from member_turnover import (  # noqa: E402
+    departed_problems,
+    departed_records,
+    official_mismatch,
+    official_problems,
+    official_sitting,
+)
 
 HISTORICAL_URL = 'https://unitedstates.github.io/congress-legislators/legislators-historical.json'
 
@@ -82,17 +88,17 @@ def main():
         if since < h['terms'][-1]['end'] <= today and h['id']['bioguide'] not in sitting
     ]
     problems = official_problems(official_table)
+    problems += [f'data/departure-dates.json has an entry for {b}, who is in the member file now' for b in official_sitting(official_table, current)]
     for h in left:
         b, file_day = h['id']['bioguide'], h['terms'][-1]['end']
         if b not in official:
             problems.append(f'{b} has no official last day in data/departure-dates.json (the historical file says {file_day})')
             continue
-        gap = abs((date.fromisoformat(official[b]['served_until']) - date.fromisoformat(file_day)).days)
-        if gap > 1:
-            problems.append(
-                f"{b}: the historical file says {file_day} and the official source says {official[b]['served_until']}, "
-                f'{gap} days apart; a person must look before anything is written'
-            )
+        # The weekly refresh's own rule (member_turnover.official_mismatch):
+        # within a day of the file, and not before their last term began.
+        why = official_mismatch(official[b], historical_by_id)
+        if why:
+            problems.append(f'{b}: {why}; a person must look before anything is written')
     entries = [member_entry(h, []) for h in left]
 
     departed, undated = departed_records(current, current + entries, prev_departed, historical_by_id, today, official)

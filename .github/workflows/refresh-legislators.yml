@@ -145,14 +145,18 @@ jobs:
             gh issue comment --repo cm2489/oravan "$NUM" --body-file "$REPORT"
           fi
       - name: Open or update the unconfirmed-departure-date issue
-        # A member who left mid-term this week is recorded with the volunteer
-        # historical file's date and NO record page until a person confirms
-        # the date against the Clerk of the House or the Biographical
-        # Directory (hard rule 6; scripts/member_turnover.py, "WHICH DATES A
-        # PAGE MAY PRINT"). process-data.py writes the report only in a run
-        # that recorded such a member; one open issue labeled
-        # departure-date-unconfirmed, commented on by every later such run,
-        # the same idiom as the refused-refresh issue above.
+        # A member who left mid-term has NO record page until a person
+        # confirms their last day against the Clerk of the House or the
+        # Biographical Directory (hard rule 6; scripts/member_turnover.py,
+        # "WHICH DATES A PAGE MAY PRINT" and "WHAT REACHES A PERSON").
+        # process-data.py writes the report only in a run that found
+        # something: a member who left with no day yet (once, the week they
+        # leave), a day known without an official source (the week they
+        # leave, or the week a late day arrives), or a table entry that does
+        # not fit or belongs to a sitting member (every run until fixed).
+        # One open issue labeled departure-date-unconfirmed, commented on by
+        # every later such run, the same idiom as the refused-refresh issue
+        # above.
         env:
           GH_TOKEN: ${{ github.token }}
           REPORT: ${{ runner.temp }}/departure-date-unconfirmed.md

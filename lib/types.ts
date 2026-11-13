@@ -229,7 +229,10 @@ export interface DepartedMember {
    *  (data/departure-dates.json). Null when the date is still the volunteer
    *  historical file's alone: then a mid-term departure has no page. */
   served_until_source?: DepartureDateSource | null;
-  /** The day the weekly refresh first found them gone from the member file. */
+  /** The day the weekly refresh first found them gone from the member file;
+   *  for the sixteen who left before this file existed, recorded by
+   *  scripts/seed-departed-members.py, the day they were recorded
+   *  (2026-11-13). Nothing on the site reads it. */
   left_file: string;
 }
 

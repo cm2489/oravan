@@ -383,5 +383,41 @@ class OfficialDatesTest(unittest.TestCase):
         self.assertTrue(official_problems([good, good]))
 
 
+class OfficialMismatchTest(unittest.TestCase):
+    """A table entry applies only to the departure it was written for."""
+
+    def hist(self, end, start=date(2025, 1, 3).isoformat()):
+        return {'A000001': {'id': {'bioguide': 'A000001'}, 'terms': [{'start': start, 'end': end}]}}
+
+    def entry(self, day):
+        return {'bioguide': 'A000001', 'served_until': day,
+                'source': {'kind': 'house-clerk', 'url': 'https://clerk.house.gov/Members/ViewVacancies', 'read': '2026-11-13'}}
+
+    def test_within_a_day_fits(self):
+        from member_turnover import official_mismatch
+        for day in ('2026-04-20', '2026-04-21', '2026-04-22'):
+            self.assertIsNone(official_mismatch(self.entry(day), self.hist('2026-04-21')), day)
+
+    def test_more_than_a_day_or_no_file_day_or_an_earlier_term_does_not(self):
+        from member_turnover import official_mismatch
+        self.assertIn('2 days apart', official_mismatch(self.entry('2026-04-23'), self.hist('2026-04-21')))
+        self.assertIn('no last day', official_mismatch(self.entry('2026-04-21'), {}))
+        self.assertIn('no last day', official_mismatch(self.entry('2026-04-21'), None))
+        self.assertIn('earlier departure', official_mismatch(self.entry('2025-03-05'), self.hist('2026-11-10', start='2026-06-02')))
+
+    def test_departed_records_never_applies_an_entry_that_does_not_fit(self):
+        prev = full_roster()
+        new = turnover(prev, 1)
+        b = next(m['bioguide'] for m in prev if m['bioguide'] not in {n['bioguide'] for n in new})
+        h = {b: {'id': {'bioguide': b}, 'terms': [{'start': date(2025, 1, 3).isoformat(), 'end': '2026-04-21'}]}}
+        off = {b: dict(self.entry('2026-04-25'), bioguide=b)}
+        departed, _ = departed_records(new, prev, [], h, ORDINARY_DAY, off)
+        self.assertEqual((departed[0]['served_until'], departed[0]['served_until_source']), ('2026-04-21', None))
+        off = {b: dict(self.entry('2026-04-22'), bioguide=b)}
+        departed, _ = departed_records(new, prev, [], h, ORDINARY_DAY, off)
+        self.assertEqual(departed[0]['served_until'], '2026-04-22')
+        self.assertEqual(departed[0]['served_until_source']['kind'], 'house-clerk')
+
+
 if __name__ == '__main__':
     unittest.main()
