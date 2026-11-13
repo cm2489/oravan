@@ -15,7 +15,7 @@
      wordmark. `go` (#1d5e43) is spent on actions, the green panel and the 6px
      gauge, and on nothing else. Not a heading, not a rule, not a link: links
      are ink, underlined (docs/current-direction.md, Colour).
-     `tint` (#e5eee2) means YOURS — what the user picked, typed, or was handed.
+     `tint` (#d6e6d0) means YOURS — what the user picked, typed, or was handed.
      Never a topic tag, never a status, never decoration.
      `urgent` (#ffc933, "the lamp") marks only what you can act on: a picked
      choice, the House finder's half-lamp button, and the one dated floor
@@ -43,17 +43,17 @@
    TEXT PAIRS (AA needs 4.5:1 normal, 3:1 at >=24px or >=18.66px bold)
      ink        on paper ......... 16.50  AAA
      ink        on wash .......... 15.13  AAA
-     ink        on tint .......... 14.48  AAA
+     ink        on tint .......... 13.19  AAA
      ink        on urgent ........ 11.20  AAA   <- the only legal text on the lamp
      ink-2      on paper .......... 7.56  AAA
      ink-2      on wash ........... 6.93  AA
-     ink-2      on tint ........... 6.63  AA
+     ink-2      on tint ........... 6.04  AA
      go         on paper .......... 7.36  AAA
      go         on wash ........... 6.75  AA
-     go         on tint ........... 6.46  AA
+     go         on tint ........... 5.88  AA
      go-deep    on paper ......... 11.32  AAA
      go-deep    on wash .......... 10.39  AAA
-     go-deep    on tint ........... 9.94  AAA
+     go-deep    on tint ........... 9.06  AAA
      paper      on go ............. 7.36  AAA   <- filled action button
      paper      on go-deep ....... 11.32  AAA   <- pressed action button
      paper      on ink ........... 16.50  AAA   <- every ink enamel ground
@@ -84,6 +84,12 @@
      go-pale (edge) on go-deep ..... 8.26  PASS  <- the language switch's edge
      ink (picked edge) on urgent .. 11.20  PASS  <- a picked choice's edge
      ink (picked edge) on paper ... 16.50  PASS  <- the same edge on the page
+     ink (c3 edge) on tint ........ 13.19  PASS  <- c3: lamp button, floor chip and ring on the sage panel
+     ink (c3 lamp edge) on paper .. 16.50  PASS  <- c3: a lamp button's ink edge on the page
+     paper (c3 hairline) on ink ... 16.50  PASS  <- c3: the ink stamp's inner hairline
+     line-strong (c3 track) on tint .. 3.39  PASS  <- c3: the vote bar's track edge
+     go (c3 vote bar) on paper ..... 7.36  PASS  <- c3: the green segment on its paper track
+     go-deep (c3 rule) on tint ..... 9.06  DECORATIVE: the panel's top and bottom rule
      line       on paper .......... 1.30  DECORATIVE ONLY. `line` may separate;
                                           it may never be a component edge, and
                                           it may never be the only thing making
@@ -92,7 +98,7 @@
                                           found by its ink text (11.20) and,
                                           on a control, its ink edge, so
                                           1.4.11 does not apply to the fill.
-     tint       on paper .......... 1.14  same: `tint` is always carrying ink
+     tint       on paper .......... 1.25  same: `tint` is always carrying ink
                                           text, and any tinted CONTROL also
                                           takes a line-strong or ink edge.
 
@@ -157,7 +163,7 @@
   --color-go-deep: #133f2d;      /* pressed/hover go; the enamel panel; the masthead band */
   --color-go-bright: #7fd3a2;    /* go, on an ink ground */
   --color-go-pale: #cbdccf;      /* secondary text on the green panel and the band */
-  --color-tint: #e5eee2;         /* YOURS: what the user chose or wrote */
+  --color-tint: #d6e6d0;         /* YOURS: what the user chose or wrote; DRAFT c3: deeper sage, also the panel */
   --color-urgent: #ffc933;       /* the lamp: what you can act on, ink text */
   --color-alert: #a0461f;        /* failure, and only failure */
   /* WHY THIS HEX (re-measured 2026-09-30 for the bottle-green palette).
@@ -476,3 +482,34 @@ label,
   stroke-dashoffset: 24;
   animation: draw-stroke 0.35s cubic-bezier(0.25, 1, 0.5, 1) 0.3s forwards;
 }
+
+/* ============================================================================
+   COLOUR DIRECTION C, VARIATION 3: SAGE AND LAMP.
+   A draft for the owner's eyes, not for merge (2026-11-12). The rules below
+   are the variation's colour layer as the owner saw it on 2026-10-03 to 04,
+   kept as one layer over direction c so it reads (and comes out) as a unit.
+   Token: `tint` moves to a deeper sage, #d6e6d0, in @theme; the embed's
+   default accent becomes the lamp (app/embed/embed.css and its mirrors).
+   Pairs: the ledger above.
+   ========================================================================= */
+
+/* The This-week panel turns from bottle green to the sage tint, with ink
+   type and a bottle-green rule. */
+div.border-go.bg-go-deep { background-color: #d6e6d0 !important; border-color: #133f2d !important; }
+div.border-go.bg-go-deep, div.border-go.bg-go-deep section.on-go {
+  --color-go-deep: var(--color-tint); --color-paper: var(--color-ink); --color-go-pale: var(--color-ink-2); --color-go-bright: var(--color-ink);
+  --focus: var(--color-ink); --focus-gap: var(--color-tint);
+}
+div.border-go.bg-go-deep section.on-go { background-color: #d6e6d0 !important; }
+div.border-go.bg-go-deep [data-floor-chip] { border-color: #1c1b18 !important; color: #1c1b18 !important; }
+div.border-go.bg-go-deep [data-latest-vote] > span[aria-hidden] { background-color: #fcfaf4 !important; box-shadow: inset 0 0 0 1px #7f7768; }
+div.border-go.bg-go-deep [data-latest-vote] > span[aria-hidden] > span { background-color: #1d5e43 !important; }
+div.border-go.bg-go-deep span.flex-none.rounded-stamp.px-1 { background-color: #1c1b18 !important; color: #fcfaf4 !important; }
+/* Every filled action is the lamp, with ink type and an ink edge (page 2:
+   yellow marks what you can act on). */
+div.border-go.bg-go-deep a.bg-paper,
+:is(a, button).bg-go:not(header *), :is(a, button).bg-go:not(header *):hover { background-color: #ffc933 !important; color: #1c1b18 !important; border-color: #1c1b18 !important; }
+:is(a, button).bg-go:not(header *) * { color: #1c1b18 !important; }
+/* THE STAMP pops by value: an ink stamp with cream type. */
+[data-oravan-stamp] { background-color: #1c1b18 !important; border-color: #1c1b18 !important; color: #fcfaf4 !important; }
+[data-oravan-stamp] > span.absolute, [data-oravan-stamp] > span.border-t-\[1\.5px\] { border-color: #fcfaf4 !important; }

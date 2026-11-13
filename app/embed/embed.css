@@ -14,7 +14,7 @@
  * pair — four mirrors, one move.
  *
  * THE TWO LAWS, as they apply to a white-label surface (DESIGN.md):
- *   COLOR — `go` (#1d5e43) is the un-themed default accent and it means GO;
+ *   COLOR — DRAFT c3: the lamp (#ffc933, ink text 11.20) is the un-themed default accent and it means GO;
  *   it is reachable ONLY through --_accent, i.e. only where the tenant's own
  *   --oravan-accent would land, so a tenant palette always displaces it.
  *   The lamp yellow is the site's own action mark (and its one dated floor
@@ -52,8 +52,8 @@
      an accent gets THEIR ink emitted here rather than falling through to
      this literal. Oravan green can therefore never appear on a widget
      wearing someone else's colors. */
-  --_accent: var(--oravan-accent, #1d5e43);
-  --_accent-ink: var(--oravan-accent-ink, #fcfaf4);
+  --_accent: var(--oravan-accent, #ffc933);
+  --_accent-ink: var(--oravan-accent-ink, #1c1b18);
   /* Focus ring falls back to INK, not accent: the server only emits
      --oravan-focus once it has confirmed the accent contrasts on the surface
      (>=3:1). With just an accent set (auto mode — the common case), the raw
