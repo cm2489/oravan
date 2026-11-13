@@ -330,10 +330,17 @@ test.describe('/today cards', () => {
   });
 
   test('no yellow on a dated past brief', async ({ page }) => {
-    for (const date of [busyPast, quiet].filter((d): d is string => Boolean(d))) {
+    // EVERY past date in the window, not two picked from it. The first version
+    // picked `quiet` from the whole window, and when the newest data stamp
+    // crossed midnight ET (2026-11-13) the quiet day it found was today: a
+    // brief that correctly prints its floor schedule (no date is "past" until
+    // the stamp moves on). Past means `dates.slice(1)`; the newest date is
+    // /today itself and is covered by the cards test above.
+    for (const date of dates.slice(1)) {
       await page.goto(`/today/${date}`);
-      await expect(page.locator('main .bg-urgent')).toHaveCount(0);
-      await expect(page.locator('[data-floor-tag]')).toHaveCount(0);
+      await expect(page.locator('main .bg-urgent'), date).toHaveCount(0);
+      await expect(page.locator('[data-floor-tag]'), date).toHaveCount(0);
+      await expect(page.locator('[data-block="schedule"]'), date).toHaveCount(0);
     }
   });
 
