@@ -547,7 +547,7 @@ export default async function BillPage({
         <p className="pt-3">
           <Link
             href="/bills"
-            className="inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-ink underline visited:text-ink-2 hover:decoration-[3px]"
+            className="inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-go underline visited:text-go-deep hover:text-go-deep"
           >
             <ArrowLeft className="h-4 w-4 flex-none" aria-hidden />
             {t('bill.allBills')}
@@ -725,7 +725,7 @@ export default async function BillPage({
                   href={bill.congress_gov_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex min-h-11 items-center gap-1.5 font-semibold text-ink underline visited:text-ink-2 hover:decoration-[3px]"
+                  className="inline-flex min-h-11 items-center gap-1.5 font-semibold text-go underline visited:text-go-deep hover:text-go-deep"
                 >
                   {t('bill.viewOfficial')}
                   <ExternalLink className="h-4 w-4 flex-none" aria-hidden />
@@ -865,7 +865,7 @@ export default async function BillPage({
                     href={bill.congress_gov_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-1 inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-ink underline visited:text-ink-2 hover:decoration-[3px]"
+                    className="mt-1 inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-go underline visited:text-go-deep hover:text-go-deep"
                   >
                     {t('bill.viewOfficial')}
                     <ExternalLink className="h-4 w-4 flex-none" aria-hidden />

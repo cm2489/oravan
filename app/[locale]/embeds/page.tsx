@@ -102,12 +102,12 @@ export default async function EmbedsPage({ params }: { params: Promise<{ locale:
           <p className="mt-2">{t('docsFeedBody')}</p>
           <ul className="mt-2 space-y-1 text-sm">
             <li>
-              <a href={feeds.json} className="text-ink underline hover:decoration-[3px]">
+              <a href={feeds.json} className="text-go underline hover:text-go-deep">
                 {t('docsFeedJsonLabel')}: {feeds.json}
               </a>
             </li>
             <li>
-              <a href={feeds.xml} className="text-ink underline hover:decoration-[3px]">
+              <a href={feeds.xml} className="text-go underline hover:text-go-deep">
                 {t('docsFeedRssLabel')}: {feeds.xml}
               </a>
             </li>
@@ -127,7 +127,7 @@ export default async function EmbedsPage({ params }: { params: Promise<{ locale:
           <h3 className="text-h3 font-extrabold">{t('docsTosTitle')}</h3>
           <p className="mt-2">
             {t('docsTosBody')}{' '}
-            <Link href="/embeds/terms" className="font-semibold text-ink underline hover:decoration-[3px]">
+            <Link href="/embeds/terms" className="font-semibold text-go underline hover:text-go-deep">
               {t('docsTosLinkText')}
             </Link>
           </p>
@@ -144,7 +144,7 @@ export default async function EmbedsPage({ params }: { params: Promise<{ locale:
               href={BILLING_PORTAL_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex min-h-11 items-center font-semibold text-ink underline hover:decoration-[3px]"
+              className="inline-flex min-h-11 items-center font-semibold text-go underline hover:text-go-deep"
             >
               {t('docsManageLinkText')}
             </a>

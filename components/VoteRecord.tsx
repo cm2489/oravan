@@ -196,7 +196,7 @@ export async function VoteRecord({
           href={record}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-1 inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-ink underline hover:decoration-[3px]"
+          className="mt-1 inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-go underline hover:text-go-deep"
         >
           {t('source')}
           <ExternalLink className="h-4 w-4 flex-none" aria-hidden />

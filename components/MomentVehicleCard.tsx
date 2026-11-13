@@ -176,7 +176,7 @@ export function MomentVehicleCard({
         ))}
       </div>
       <h3 className="mt-2 text-lg leading-tight font-bold text-ink">
-        <Link href={`/bills/${slug}`} className="hover:underline hover:decoration-ink hover:decoration-[3px]">
+        <Link href={`/bills/${slug}`} className="hover:underline hover:decoration-go hover:decoration-[3px]">
           <HeadlineOrTitle headline={headline} title={title} />
         </Link>
       </h3>

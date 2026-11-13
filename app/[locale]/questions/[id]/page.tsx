@@ -64,7 +64,7 @@ const localeText = (l: { en: string; es: string }, locale: string): string =>
 /* Content links are green — green means GO, and a link goes somewhere.
    Navigation chrome (the crumb) stays ink, per the color law's split. */
 const CONTENT_LINK =
-  'inline-flex min-h-11 items-center gap-2 font-bold text-ink underline transition-colors hover:decoration-[3px]';
+  'inline-flex min-h-11 items-center gap-2 font-bold text-go underline transition-colors hover:text-go-deep';
 
 /*
  * THE PAGE'S ONE WRAPPER — the site rail every other route sits on, and the

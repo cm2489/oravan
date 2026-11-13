@@ -119,10 +119,10 @@ export default async function EmbedsTermsPage({ params }: { params: Promise<{ lo
       <p className="mt-8 text-sm tabular-nums text-ink-2">{t('lastUpdated')}</p>
 
       <div className="mt-6 flex flex-col gap-2 border-t border-line pt-6 text-sm">
-        <Link href="/embeds" className="font-semibold text-ink underline hover:decoration-[3px]">
+        <Link href="/embeds" className="font-semibold text-go underline hover:text-go-deep">
           {t('backLinkText')}
         </Link>
-        <Link href="/terms" className="text-ink underline hover:decoration-[3px]">
+        <Link href="/terms" className="text-go underline hover:text-go-deep">
           {t('citizenTermsLinkText')}
         </Link>
       </div>

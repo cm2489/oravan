@@ -14,7 +14,7 @@
  * pair — four mirrors, one move.
  *
  * THE TWO LAWS, as they apply to a white-label surface (DESIGN.md):
- *   COLOR — `go` (#1d5e43) is the un-themed default accent and it means GO;
+ *   COLOR — DRAFT mix (owner, 2026-11-13): the lamp (#ffc933, ink text 11.20) is the un-themed default accent and it means GO;
  *   it is reachable ONLY through --_accent, i.e. only where the tenant's own
  *   --oravan-accent would land, so a tenant palette always displaces it.
  *   The lamp yellow is the site's own action mark (and its one dated floor
@@ -47,13 +47,16 @@
   color-scheme: light dark;
   --_surface: var(--oravan-surface, #fcfaf4);
   --_ink: var(--oravan-ink, #1c1b18);
+  /* DRAFT mix: the AI chip in warm grey (ink-2, 7.56 on the surface) when un-themed;
+     a tenant's own ink wins, as before. */
+  --_mark: var(--oravan-ink, #55514a);
   /* GO. The un-themed default only; --oravan-accent displaces it, and
      lib/embed-theme.ts guarantees a tenant who supplied a palette without
      an accent gets THEIR ink emitted here rather than falling through to
      this literal. Oravan green can therefore never appear on a widget
      wearing someone else's colors. */
-  --_accent: var(--oravan-accent, #1d5e43);
-  --_accent-ink: var(--oravan-accent-ink, #fcfaf4);
+  --_accent: var(--oravan-accent, #ffc933);
+  --_accent-ink: var(--oravan-accent-ink, #1c1b18);
   /* Focus ring falls back to INK, not accent: the server only emits
      --oravan-focus once it has confirmed the accent contrasts on the surface
      (>=3:1). With just an accent set (auto mode — the common case), the raw
@@ -87,6 +90,8 @@
   :root {
     --_surface: var(--oravan-surface, #1c1b18);
     --_ink: var(--oravan-ink, #fcfaf4);
+    /* DRAFT mix: ink-pale on the dark surface, 10.33 (ink-2 there is 2.18). */
+    --_mark: var(--oravan-ink, #cdc8bd);
     --_line: rgba(252, 250, 244, 0.15);
     --_line-strong: rgba(252, 250, 244, 0.5);
     --_line-faint: rgba(252, 250, 244, 0.08);
@@ -464,10 +469,10 @@ body {
   display: inline-block;
   margin-top: 12px;
   padding: 4px 8px;
-  border: 1.5px solid var(--_ink);
+  border: 1.5px solid var(--_mark);
   border-radius: var(--_radius-mark);
   background: transparent;
-  color: var(--_ink);
+  color: var(--_mark);
   font-size: 0.75rem;
   font-weight: 700;
   line-height: 1.35;

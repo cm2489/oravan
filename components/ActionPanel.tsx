@@ -1283,7 +1283,7 @@ export function ActionPanel({
             <p className="mt-3 max-w-note text-sm text-ink-2">{t('staffNote')}</p>
             <Link
               href="/why-call"
-              className="mt-2 inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-ink underline visited:text-ink-2 hover:decoration-[3px]"
+              className="mt-2 inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-go underline visited:text-go-deep hover:text-go-deep"
             >
               <BookOpen className="h-4 w-4 flex-none" aria-hidden />
               {t('whyLink')}
@@ -1422,7 +1422,7 @@ export function ActionPanel({
               <p className="mt-2 max-w-note text-sm">
                 <Link
                   href="/reps"
-                  className="inline-flex min-h-11 items-center gap-1.5 font-semibold text-ink underline visited:text-ink-2 hover:decoration-[3px]"
+                  className="inline-flex min-h-11 items-center gap-1.5 font-semibold text-go underline visited:text-go-deep hover:text-go-deep"
                 >
                   {t('refineDistrictCta')}
                 </Link>
@@ -1576,7 +1576,7 @@ export function ActionPanel({
                                     : t('outcomeLogged')}{' '}
                               <Link
                                 href="/reps#your-calls"
-                                className="font-semibold text-ink underline"
+                                className="font-semibold text-go-deep underline"
                               >
                                 {t('viewImpact')}
                               </Link>

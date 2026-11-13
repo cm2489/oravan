@@ -72,7 +72,7 @@ export function ConcurrentExplainer({
                 href={CRS_WAR_POWERS_REPORT.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex min-h-11 items-center gap-1.5 font-semibold text-ink underline hover:decoration-[3px]"
+                className="inline-flex min-h-11 items-center gap-1.5 font-semibold text-go underline hover:text-go-deep"
                 data-concurrent-source="crs"
               >
                 <span>{t.rich('crsSource', { report: CRS_WAR_POWERS_REPORT.number, title: cite })}</span>
