@@ -58,7 +58,7 @@ test.describe('review: the day after the switch', () => {
   const member = (id: string) => ROSTER.find((l) => l.bioguide === id)!;
 
   for (const [prefix, messages] of [['', en], ['/es', es]] as const) {
-    test(`a departed member's page is a record with no way to call (${prefix || '/'})`, async ({ page }) => {
+    test(`a departed member's page is a record with no way to call (${prefix || '/'}) @reflow`, async ({ page }) => {
       for (const id of departed) {
         const m = member(id);
         const res = await page.goto(`${prefix}/reps/${id}`);
@@ -66,7 +66,8 @@ test.describe('review: the day after the switch', () => {
         await expect(page.locator('h1')).toHaveText(m.name);
         const former = messages.rep.formerRole[roleKey(m)];
         await expect(page).toHaveTitle(new RegExp(`^${m.name}, ${former} · `));
-        await expect(page.getByText(former, { exact: true })).toHaveCount(1);
+        // The role line's first chunk ("Former Representative ·").
+        await expect(page.locator('header p > span').first()).toHaveText(new RegExp(`^${former}\\s*·`));
         await expect(page.getByRole('link', { name: messages.rep.crumbRecord })).toHaveAttribute('href', `${prefix}/reps`);
         await expect(page.getByRole('link', { name: messages.rep.crumb, exact: true })).toHaveCount(0);
         const chamber = messages.rep.departedChamber[m.type === 'sen' ? 'senate' : 'house'];
@@ -82,6 +83,13 @@ test.describe('review: the day after the switch', () => {
           expect(html, `${id} page carries ${phone}`).not.toContain(String(phone));
         }
         if (m.url) expect(html).not.toContain(m.url);
+        // Nothing runs past the edge (hard rule 7), the long Spanish role included.
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+        const roleLineEnds = await page
+          .locator('header p > span')
+          .evaluateAll((spans) => spans.slice(0, 3).map((el) => el.getBoundingClientRect().right));
+        const width = page.viewportSize()!.width;
+        for (const right of roleLineEnds) expect(right).toBeLessThanOrEqual(width);
       }
     });
 

@@ -373,10 +373,13 @@ function DepartedBody({
         <RepPortrait rep={member} large />
         <div className="min-w-0">
           <p className={`flex flex-wrap gap-x-1 ${EYEBROW}`}>
+            {/* The former-role chunk may wrap inside itself: in Spanish it is
+                long ("Exintegrante de la Cámara de Representantes") and would
+                otherwise run past a phone's edge. */}
             {[t(`formerRole.${repRoleKey(member)}`), party, place]
               .filter((c): c is string => Boolean(c))
               .map((chunk, i, all) => (
-                <span key={i} className="whitespace-nowrap">
+                <span key={i} className={i === 0 ? undefined : 'whitespace-nowrap'}>
                   {chunk}
                   {i < all.length - 1 && <span aria-hidden> ·</span>}
                 </span>
