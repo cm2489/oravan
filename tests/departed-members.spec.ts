@@ -5,8 +5,15 @@ import legislatorsJson from '../data/legislators.json';
 import departedJson from '../data/departed-members.json';
 import zipDistricts from '../data/zip-districts.json';
 import bills from '../data/bills.json';
-import { NEW_MEMBER_LINE_KEY, REVIEW_ENV, newCongressReview } from '../lib/departed-members';
-import { CONGRESS } from '../lib/congress.mjs';
+import {
+  NEW_MEMBER_LINE_KEY,
+  REVIEW_ENV,
+  departedWithPage,
+  memberTurnover,
+  newCongressReview,
+  servedLine,
+} from '../lib/departed-members';
+import { CONGRESS, CONGRESS_POLICY } from '../lib/congress.mjs';
 import { allRollCalls } from '../lib/votes';
 import { billSlug, portraitKnownMissing } from '../lib/core';
 import type { Bill, DepartedMember, Legislator } from '../lib/types';
@@ -28,6 +35,10 @@ import type { Bill, DepartedMember, Legislator } from '../lib/types';
 
 const ROSTER = legislatorsJson as Legislator[];
 const DEPARTED = departedJson as DepartedMember[];
+// The records the rule gives a page (lib/departed-members.ts), whatever the
+// file holds: never a count of today's data (3rd review).
+const PAGED = departedWithPage(DEPARTED, new Set(ROSTER.map((l) => l.bioguide)), CONGRESS_POLICY);
+const UNPAGED = DEPARTED.filter((d) => !PAGED.some((p) => p.bioguide === d.bioguide));
 const ZIPS = zipDistricts as Record<string, { state: string; district: number }[]>;
 const review = newCongressReview(process.env, CONGRESS);
 // components/RepCard.tsx repRoleKey, restated so this file imports no component.
@@ -59,12 +70,14 @@ const fromData = (d: DepartedMember): Rec => ({
   phones: [],
   url: null,
   served: (messages, lang) =>
-    messages.rep.departedServedOn.replace('{chamber}', chamberOf(d, messages)).replace(
-      '{date}',
-      new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }).format(
-        new Date(`${d.served_until}T00:00:00Z`),
-      ),
-    ),
+    servedLine(d, memberTurnover(CONGRESS_POLICY)).key === 'departedServed'
+      ? messages.rep.departedServed.replace('{chamber}', chamberOf(d, messages))
+      : messages.rep.departedServedOn.replace('{chamber}', chamberOf(d, messages)).replace(
+          '{date}',
+          new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }).format(
+            new Date(`${d.served_until}T00:00:00Z`),
+          ),
+        ),
 });
 
 /** A sitting member the review build treats as departed: the switch-day line. */
@@ -152,22 +165,33 @@ async function checkLinksResolve(request: APIRequestContext, id: string) {
 }
 
 test.describe('members who left this Congress (every build)', () => {
-  test('the file holds the 16 the owner gave record pages', () => {
-    expect(DEPARTED.length).toBe(16);
-  });
-
   for (const [prefix, messages, lang] of [['', en, 'en'], ['/es', es, 'es']] as const) {
-    test(`each has a record page with their own last day and no way to call (${prefix || '/'}) @reflow`, async ({ page }) => {
-      for (const d of DEPARTED) await checkRecordPage(page, prefix, messages, lang, fromData(d));
+    test(`each record with a page shows their own last day and no way to call (${prefix || '/'}) @reflow`, async ({ page }) => {
+      for (const d of PAGED) await checkRecordPage(page, prefix, messages, lang, fromData(d));
     });
   }
+
+  test('a record without a page (no official day yet) is "not found", outside the sitemap, with no sponsor link', async ({ request }) => {
+    const sitemap = await (await request.get('/sitemap.xml')).text();
+    for (const d of UNPAGED) {
+      for (const prefix of ['', '/es']) {
+        expect((await request.get(`${prefix}/reps/${d.bioguide}`)).status(), `${prefix}/reps/${d.bioguide}`).toBe(404);
+      }
+      expect(sitemap).not.toContain(`/reps/${d.bioguide}<`);
+      const sponsored = (bills as unknown as Bill[]).find((b) => b.sponsor_bioguide_id === d.bioguide);
+      if (sponsored) {
+        const html = await (await request.get(`/bills/${billSlug(sponsored)}`)).text();
+        expect(html).not.toContain(`href="/reps/${d.bioguide}"`);
+      }
+    }
+  });
 
   test('none is in the ZIP lookup for the seat they held', async ({ request }) => {
     for (const d of DEPARTED) await checkAbsentFromLookup(request, fromData(d));
   });
 
-  test('roll-call lists and sponsor lines link to them, and the links resolve', async ({ request }) => {
-    for (const d of DEPARTED) await checkLinksResolve(request, d.bioguide);
+  test('roll-call lists and sponsor lines link to those with a page, and the links resolve', async ({ request }) => {
+    for (const d of PAGED) await checkLinksResolve(request, d.bioguide);
   });
 });
 

@@ -361,7 +361,7 @@ class OfficialDatesTest(unittest.TestCase):
         recs = [
             {'bioguide': 'A000001', 'served_until': '2026-04-21', 'served_until_source': None},
             {'bioguide': 'A000002', 'served_until': '2026-04-21', 'served_until_source': src},
-            {'bioguide': 'A000003', 'served_until': TERM_END, 'served_until_source': None},
+            {'bioguide': 'A000003', 'served_until': TERM_END, 'served_until_source': None, 'left_file': '2027-01-04'},
             {'bioguide': 'A000004', 'served_until': None, 'served_until_source': None},
             {'bioguide': 'A000005', 'served_until': '2026-04-21', 'served_until_source': None},
         ]
@@ -417,6 +417,97 @@ class OfficialMismatchTest(unittest.TestCase):
         departed, _ = departed_records(new, prev, [], h, ORDINARY_DAY, off)
         self.assertEqual(departed[0]['served_until'], '2026-04-22')
         self.assertEqual(departed[0]['served_until_source']['kind'], 'house-clerk')
+
+
+class TableValidationTest(unittest.TestCase):
+    """data/departure-dates.json is checked entry by entry, with real dates."""
+
+    def good(self, b='A000001', day='2026-04-22'):
+        return {'bioguide': b, 'served_until': day,
+                'source': {'kind': 'house-clerk', 'url': 'https://clerk.house.gov/Members/ViewVacancies', 'read': '2026-11-13'}}
+
+    def test_an_impossible_date_is_caught(self):
+        from member_turnover import real_day, split_official
+        self.assertFalse(real_day('2026-02-30'))
+        self.assertFalse(real_day('2026-2-3'))
+        self.assertTrue(real_day('2028-02-29'))
+        usable, bad = split_official([self.good(day='2026-02-30')])
+        self.assertEqual(usable, {})
+        self.assertTrue(any('2026-02-30' in b for b in bad))
+        bad_read = self.good()
+        bad_read['source'] = dict(bad_read['source'], read='2026-11-31')
+        self.assertTrue(split_official([bad_read])[1])
+
+    def test_good_entries_survive_bad_ones(self):
+        from member_turnover import split_official
+        usable, bad = split_official([
+            self.good('A000001'),
+            {'bioguide': 'A000002', 'served_until': '2026-04-22'},  # no source
+            'not an object',
+            self.good('A000003'), self.good('A000003', '2026-04-23'),  # listed twice
+            dict(self.good('A000004'), extra=1),
+        ])
+        self.assertEqual(sorted(usable), ['A000001'])
+        for named in ('A000002', 'not an object', 'A000003 is listed 2 times', 'A000004'):
+            self.assertTrue(any(named in b for b in bad), named)
+        self.assertFalse(any('A000001' in b for b in bad))
+
+    def test_not_a_list(self):
+        from member_turnover import split_official
+        self.assertEqual(split_official({'A000001': {}}), ({}, ['data/departure-dates.json is not a JSON list (dict)']))
+
+
+class ChangeoverTest(unittest.TestCase):
+    """Jan 3 counts as the change of Congress only for a member still in the
+    member file that day or later."""
+
+    def test_a_member_who_left_on_dec_7_with_a_jan_3_file_date_is_mid_term(self):
+        from member_turnover import changeover, unconfirmed
+        early = {'bioguide': 'A000001', 'served_until': TERM_END, 'served_until_source': None, 'left_file': '2026-12-07'}
+        on_time = dict(early, bioguide='A000002', left_file='2027-01-04')
+        self.assertFalse(changeover(early))
+        self.assertTrue(changeover(on_time))
+        self.assertEqual([r['bioguide'] for r in unconfirmed([early, on_time], ['A000001', 'A000002'])], ['A000001'])
+
+
+class OverrideTest(unittest.TestCase):
+    """overrides_file_day: a deliberate, recorded way past a wrong volunteer
+    file. It applies only while the file shows exactly that day."""
+
+    def hist(self, end, start=date(2025, 1, 3).isoformat()):
+        return {'A000001': {'id': {'bioguide': 'A000001'}, 'terms': [{'start': start, 'end': end}]}}
+
+    def entry(self, day, **extra):
+        return dict({'bioguide': 'A000001', 'served_until': day,
+                     'source': {'kind': 'house-clerk', 'url': 'https://clerk.house.gov/Members/ViewVacancies', 'read': '2026-11-13'}}, **extra)
+
+    def test_it_applies_only_to_the_exact_file_day(self):
+        from member_turnover import official_mismatch
+        self.assertIn('overrides_file_day', official_mismatch(self.entry('2026-12-07'), self.hist(TERM_END)))
+        self.assertIsNone(official_mismatch(self.entry('2026-12-07', overrides_file_day=TERM_END), self.hist(TERM_END)))
+        # The file changes: the override no longer applies and it is reported again.
+        self.assertIsNotNone(official_mismatch(self.entry('2026-12-07', overrides_file_day=TERM_END), self.hist('2026-12-05')))
+
+    def test_it_never_passes_the_term_start_check(self):
+        from member_turnover import official_mismatch
+        why = official_mismatch(self.entry('2025-03-05', overrides_file_day='2026-11-10'), self.hist('2026-11-10', start='2026-06-02'))
+        self.assertIn('earlier departure', why)
+
+    def test_a_malformed_override_makes_the_entry_unusable(self):
+        from member_turnover import split_official
+        usable, bad = split_official([self.entry('2026-12-07', overrides_file_day='Jan 3')])
+        self.assertEqual(usable, {})
+        self.assertTrue(any('overrides_file_day' in b for b in bad))
+
+
+class ReportWordingTest(unittest.TestCase):
+    def test_a_report_about_the_table_only_does_not_speak_of_departures(self):
+        from member_turnover import attention_report
+        body = attention_report({'undated': [], 'unconfirmed': [], 'mismatched': [], 'sitting': ['A000001'], 'bad_entries': []}, ORDINARY_DAY)
+        self.assertNotIn('who left mid-term', body.split('\n')[0])
+        self.assertNotIn('They get no record page yet', body)
+        self.assertNotIn('again', body)
+        self.assertIn('A000001 is in the member file now', body)
 
 
 if __name__ == '__main__':

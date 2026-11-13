@@ -327,32 +327,78 @@ def is_term_change_day(day: Optional[str]) -> bool:
     return term_change_day(d.year) == d
 
 
-def official_problems(table: List[dict]) -> List[str]:
-    """data/departure-dates.json: one entry per member, each with a day and
-    an official source the site may cite."""
+def real_day(v) -> bool:
+    """A real calendar day written YYYY-MM-DD (2026-02-30 is not one)."""
     import re
 
-    problems, seen = [], set()
+    if not (isinstance(v, str) and re.fullmatch(r'\d{4}-\d{2}-\d{2}', v)):
+        return False
+    try:
+        date.fromisoformat(v)
+    except ValueError:
+        return False
+    return True
+
+
+# The fields a data/departure-dates.json entry may carry. `overrides_file_day`
+# is optional and deliberate: see official_mismatch.
+ENTRY_FIELDS = {'bioguide', 'served_until', 'source'}
+ENTRY_OPTIONAL = {'overrides_file_day'}
+
+
+def entry_problems(e) -> List[str]:
+    """Why one table entry cannot be used, or []."""
+    import re
+
+    if not isinstance(e, dict):
+        return [f'an entry is not an object: {e!r}']
+    b = e.get('bioguide')
+    who = b if isinstance(b, str) else repr(b)
+    if not isinstance(b, str) or not re.fullmatch(r'[A-Z]\d{6}', b):
+        return [f'an entry has a malformed bioguide id: {e!r}']
+    out = []
+    if not ENTRY_FIELDS <= set(e) or set(e) - ENTRY_FIELDS - ENTRY_OPTIONAL:
+        out.append(f'{who} has fields {sorted(e)} (expected bioguide, served_until, source and, if deliberately set, overrides_file_day)')
+    if not real_day(e.get('served_until')):
+        out.append(f'{who} served_until {e.get("served_until")!r} is not a real day written YYYY-MM-DD')
+    if 'overrides_file_day' in e and not real_day(e['overrides_file_day']):
+        out.append(f'{who} overrides_file_day {e["overrides_file_day"]!r} is not a real day written YYYY-MM-DD')
+    out += [f'{who} {p}' for p in source_problems(e.get('source'))]
+    return out
+
+
+def split_official(table) -> Tuple[Dict[str, dict], List[str]]:
+    """data/departure-dates.json, checked entry by entry: the usable entries
+    by bioguide, and one line per entry that cannot be used (never applied;
+    the weekly refresh reports them and runs on). A bioguide listed twice is
+    unusable in both entries."""
+    if not isinstance(table, list):
+        return {}, [f'data/departure-dates.json is not a JSON list ({type(table).__name__})']
+    bad, by_id, counts = [], {}, {}
     for e in table:
-        b = e.get('bioguide')
-        if not isinstance(b, str) or not re.fullmatch(r'[A-Z]\d{6}', b):
-            problems.append(f'departure-dates entry with a malformed bioguide: {e!r}')
+        if isinstance(e, dict) and isinstance(e.get('bioguide'), str):
+            counts[e['bioguide']] = counts.get(e['bioguide'], 0) + 1
+    for e in table:
+        problems = entry_problems(e)
+        if problems:
+            bad += problems
             continue
-        if b in seen:
-            problems.append(f'departure-dates lists {b} twice')
-        seen.add(b)
-        if set(e) != {'bioguide', 'served_until', 'source'}:
-            problems.append(f'departure-dates {b} has fields {sorted(e)}')
-        if not (isinstance(e.get('served_until'), str) and re.fullmatch(r'\d{4}-\d{2}-\d{2}', e['served_until'])):
-            problems.append(f'departure-dates {b} served_until {e.get("served_until")!r} is not YYYY-MM-DD')
-        problems += [f'departure-dates {b}: {p}' for p in source_problems(e.get('source'))]
-    return problems
+        if counts[e['bioguide']] > 1:
+            if e['bioguide'] not in by_id:
+                bad.append(f"{e['bioguide']} is listed {counts[e['bioguide']]} times")
+            by_id[e['bioguide']] = None
+            continue
+        by_id[e['bioguide']] = e
+    return {b: e for b, e in by_id.items() if e is not None}, bad
+
+
+def official_problems(table) -> List[str]:
+    """Every line split_official reports: the seed script refuses on any."""
+    return [f'departure-dates: {p}' for p in split_official(table)[1]]
 
 
 def source_problems(src) -> List[str]:
     """An official source: its kind, the address read, the day it was read."""
-    import re
-
     if not isinstance(src, dict) or set(src) != {'kind', 'url', 'read'}:
         return [f'source {src!r} is not {{kind, url, read}}']
     out = []
@@ -361,9 +407,19 @@ def source_problems(src) -> List[str]:
         out.append(f'source kind {src["kind"]!r} is not one of {sorted(SOURCE_KINDS)}')
     elif not str(src['url']).startswith(prefix):
         out.append(f'source url {src["url"]!r} is not on {prefix}')
-    if not (isinstance(src['read'], str) and re.fullmatch(r'\d{4}-\d{2}-\d{2}', src['read'])):
-        out.append(f'source read {src["read"]!r} is not YYYY-MM-DD')
+    if not real_day(src['read']):
+        out.append(f'source read {src["read"]!r} is not a real day written YYYY-MM-DD')
     return out
+
+
+def changeover(r: dict) -> bool:
+    """A departure at the change of Congress: the last day is Jan 3 of an
+    odd year AND the member was still in the member file that day or later.
+    A member who left the file earlier keeps a scheduled term end of Jan 3
+    in the historical file until a volunteer corrects it: that is a mid-term
+    departure with an unconfirmed day, never the changeover (3rd review)."""
+    su, left = r.get('served_until'), r.get('left_file')
+    return is_term_change_day(su) and isinstance(left, str) and left >= su
 
 
 def _ordered(r: dict) -> dict:
@@ -377,7 +433,7 @@ def unconfirmed(departed: List[dict], bioguides: Iterable[str]) -> List[dict]:
     return [
         r for r in departed
         if r['bioguide'] in ids and r.get('served_until') and r.get('served_until_source') is None
-        and not is_term_change_day(r['served_until'])
+        and not changeover(r)
     ]
 
 
@@ -400,10 +456,14 @@ def attention_report(found: Dict[str, list], today: str) -> str:
     found: members whose last day still needs an official source, and table
     entries a person must fix. Every case leaves the member without a record
     page: their address shows "not found", as it did before."""
+    about_members = found['undated'] or found['unconfirmed'] or found['mismatched']
     lines = [
         f'The weekly members refresh of {today} (UTC) found member(s) who left mid-term whose last day is not '
         'confirmed by an official source. **They get no record page yet**: their address shows "not found", as it '
-        'did before, until a person confirms the date.',
+        'did before, until a person confirms the date.'
+        if about_members
+        else f'The weekly members refresh of {today} (UTC) found entries in `data/departure-dates.json` that a person '
+        'must fix. They are not applied to anyone; no page changes because of them.',
         '',
     ]
     if found['undated']:
@@ -422,8 +482,14 @@ def attention_report(found: Dict[str, list], today: str) -> str:
                   '', 'Look again at the official source and correct `data/departure-dates.json`.', '']
     if found['sitting']:
         lines += ['## A table entry for a sitting member (not applied)', '',
-                  *[f'- {b} is in the member file again. Remove their entry from `data/departure-dates.json`.'
+                  *[f'- {b} is in the member file now. Remove their entry from `data/departure-dates.json`.'
                     for b in found['sitting']], '']
+    if found.get('bad_entries'):
+        lines += ['## A malformed entry in data/departure-dates.json (not applied)', '',
+                  *[f'- {line}. Fix `data/departure-dates.json` in a pull request.' for line in found['bad_entries']], '']
+    if not about_members:
+        lines += ['Steps: `docs/runbooks/new-congress-switch.md`, "A member left mid-term: confirm the date".', '']
+        return '\n'.join(lines)
     lines += [
         '## Confirm each date in one of the two official places',
         '',
@@ -457,7 +523,19 @@ def official_mismatch(entry: dict, historical_by_id: Optional[Dict[str, dict]]) 
         )
     gap = abs((date.fromisoformat(entry['served_until']) - date.fromisoformat(file_day)).days)
     if gap > 1:
-        return f"the entry says {entry['served_until']} and the historical file says {file_day}, {gap} days apart"
+        # THE OVERRIDE (3rd review, 2026-11-13). When the official day is
+        # right and the volunteer file is wrong by more than a day, a person
+        # may record that they looked: `overrides_file_day` set to the exact
+        # day the historical file shows. It applies only while the file
+        # still shows exactly that day (if the file changes, the entry is
+        # reported again), never past the term-start check above, and never
+        # by default: nothing writes it but a person in a pull request.
+        if entry.get('overrides_file_day') == file_day:
+            return None
+        return (
+            f"the entry says {entry['served_until']} and the historical file says {file_day}, {gap} days apart "
+            f'(if the official day is right, set "overrides_file_day": "{file_day}" in the entry deliberately)'
+        )
     return None
 
 
@@ -475,6 +553,7 @@ def attention(
     official: Dict[str, dict],
     historical_by_id: Optional[Dict[str, dict]],
     members: List[dict],
+    bad_entries: Optional[List[str]] = None,
 ) -> Dict[str, list]:
     """What this run must bring to a person (see the module header):
     `undated` (left this run, no day yet), `unconfirmed` (a mid-term day
@@ -498,6 +577,7 @@ def attention(
         'unconfirmed': unconfirmed_now,
         'mismatched': mismatched,
         'sitting': official_sitting(list(official.values()), members),
+        'bad_entries': list(bad_entries or []),
     }
 
 
@@ -515,9 +595,13 @@ def attention_lines(found: Dict[str, list]) -> List[str]:
         for r, why in found['mismatched']
     ]
     out += [
-        f'data/departure-dates.json has an entry for {b}, who is in the member file again; it is not applied to '
+        f'data/departure-dates.json has an entry for {b}, who is in the member file now; it is not applied to '
         'anyone; remove it in a pull request'
         for b in found['sitting']
+    ]
+    out += [
+        f'data/departure-dates.json: {line}; not applied to anyone; fix data/departure-dates.json in a pull request'
+        for line in found.get('bad_entries', [])
     ]
     return out
 
@@ -628,8 +712,8 @@ def departed_problems(departed: List[dict], new_members: List[dict]) -> List[str
             problems.append(f'{b} has no name')
         for k in ('served_until', 'left_file'):
             v = r.get(k)
-            if v is not None and not (isinstance(v, str) and re.fullmatch(r'\d{4}-\d{2}-\d{2}', v)):
-                problems.append(f'{b} {k} {v!r} is not YYYY-MM-DD')
+            if v is not None and not real_day(v):
+                problems.append(f'{b} {k} {v!r} is not a real day written YYYY-MM-DD')
         if not r.get('left_file'):
             problems.append(f'{b} has no left_file date')
         if r.get('served_until_source') is not None:

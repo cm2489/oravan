@@ -61,6 +61,14 @@ export function memberTurnover(policy: CongressPolicy): MemberTurnover | null {
 
 const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
 
+/** A real calendar day written YYYY-MM-DD (2026-02-30 is not one); the same
+ *  rule as scripts/member_turnover.py real_day. */
+export function isRealDay(v: unknown): v is string {
+  if (typeof v !== 'string' || !DAY_RE.test(v)) return false;
+  const d = new Date(`${v}T00:00:00Z`);
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === v;
+}
+
 /** The two official places a mid-term last day may come from
  *  (scripts/member_turnover.py SOURCE_KINDS keeps the same pair). */
 export const OFFICIAL_SOURCES: Record<DepartureDateSource['kind'], string> = {
@@ -74,7 +82,7 @@ export function hasOfficialDate(r: Pick<DepartedMember, 'served_until_source'>):
   const src = r.served_until_source;
   if (!src || typeof src !== 'object') return false;
   const prefix = OFFICIAL_SOURCES[src.kind];
-  return typeof prefix === 'string' && typeof src.url === 'string' && src.url.startsWith(prefix) && DAY_RE.test(src.read ?? '');
+  return typeof prefix === 'string' && typeof src.url === 'string' && src.url.startsWith(prefix) && isRealDay(src.read);
 }
 
 /** Did this member leave during the term of the tracked Congress or an ended
@@ -102,12 +110,23 @@ export function departedWithPage(
   return records.filter(
     (r) =>
       typeof r.served_until === 'string' &&
-      DAY_RE.test(r.served_until) &&
+      isRealDay(r.served_until) &&
       !current.has(r.bioguide) &&
       (r.type === 'rep' || r.type === 'sen') &&
-      ((turnover !== null && r.served_until === turnover.ended.ended) ||
-        (leftMidTerm(r.served_until, policy) && hasOfficialDate(r))),
+      ((turnover !== null && atChangeover(r, turnover)) || (leftMidTerm(r.served_until, policy) && hasOfficialDate(r))),
   );
+}
+
+/**
+ * A departure at the change of Congress: the last day is the last day of the
+ * Congress that just ended AND the member was still in the member file that
+ * day or later. A member who left the file earlier but whose historical entry
+ * still shows the scheduled term end is a mid-term departure with an
+ * unconfirmed day, and gets no page until it is confirmed (3rd review;
+ * scripts/member_turnover.py changeover keeps the same rule).
+ */
+function atChangeover(r: Pick<DepartedMember, 'served_until' | 'left_file'>, turnover: MemberTurnover): boolean {
+  return r.served_until === turnover.ended.ended && isRealDay(r.left_file) && r.left_file >= r.served_until;
 }
 
 /** Which served-until line a record page prints: the approved switch-day

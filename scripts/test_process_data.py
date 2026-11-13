@@ -385,12 +385,65 @@ class UnconfirmedDeparture(unittest.TestCase):
         self.assertNotIn('not yet confirmed', r.out)
         self.assertIsNone(r.report('unconfirmed.md'))
 
-    def test_a_malformed_official_table_refuses_the_run(self):
+    def test_a_malformed_table_entry_never_fails_the_week_and_is_reported(self):
+        # 3rd review: a bad entry in our own table must not stop the weekly
+        # refresh (it used to raise, or refuse with advice to wait for upstream).
         prev, new, gone = self.left_one('2026-11-10')
-        bad = [{'bioguide': gone[0]['id']['bioguide'], 'served_until': '2026-11-10', 'source': {'kind': 'news', 'url': 'x', 'read': 'x'}}]
-        r = self.run_(prev, new, historical=gone, official=bad).go('--today', ORDINARY_DAY)
-        self.assertEqual(r.code, 1, r.out)
-        self.assertTrue(r.untouched())
+        b = gone[0]['id']['bioguide']
+        for bad in (
+            [{'bioguide': b, 'served_until': '2026-11-10', 'source': {'kind': 'news', 'url': 'x', 'read': 'x'}}],
+            [official_entry(b, '2026-02-30')],
+            [{'bioguide': b}],
+            [official_entry(b, '2026-11-10'), official_entry(b, '2026-11-11')],
+            ['oops'],
+            {'not': 'a list'},
+        ):
+            r = self.run_(prev, new, historical=gone, official=bad).go('--today', ORDINARY_DAY)
+            self.assertEqual(r.code, 0, (bad, r.out))
+            self.assertNotIn('Traceback', r.out)
+            rec = r.read('departed-members.json')[0]
+            self.assertIsNone(rec['served_until_source'], bad)  # not applied: no page
+            body = r.report('unconfirmed.md')
+            self.assertIn('A malformed entry in data/departure-dates.json', body, bad)
+            self.assertIn('Fix `data/departure-dates.json`', body)
+            self.assertNotIn('wait for it to be fixed', body)
+            self.assertIsNone(r.report('refusal.md'))
+
+    def test_a_table_that_is_not_json_never_fails_the_week(self):
+        prev, new, gone = self.left_one('2026-11-10')
+        r = Run(prev, new, historical=gone, official=[])
+        self.runs.append(r)
+        with open(f'{r.dir}/data/departure-dates.json', 'w') as f:
+            f.write('[{"bioguide": ')
+        r.go('--today', ORDINARY_DAY)
+        self.assertEqual(r.code, 0, r.out)
+        self.assertIn('could not be read as JSON', r.report('unconfirmed.md'))
+
+    def test_a_member_who_left_on_dec_7_with_the_scheduled_jan_3_end_is_reported(self):
+        # 3rd review: the historical file still shows the scheduled term end
+        # for someone who left the member file on Dec 7, 2026. That is a
+        # mid-term departure with an unconfirmed day, not the changeover.
+        prev, new, gone = self.left_one(TERM_END)
+        b = gone[0]['id']['bioguide']
+        r = self.run_(prev, new, historical=gone, official=[]).go('--today', '2026-12-07')
+        self.assertEqual(r.code, 0, r.out)
+        rec = r.read('departed-members.json')[0]
+        self.assertEqual((rec['served_until'], rec['served_until_source'], rec['left_file']), (TERM_END, None, '2026-12-07'))
+        self.assertIn(b, r.report('unconfirmed.md'))
+        self.assertIn('Date known from the historical file only', r.report('unconfirmed.md'))
+
+    def test_the_override_applies_a_deliberately_recorded_official_day(self):
+        prev, new, gone = self.left_one(TERM_END)
+        b = gone[0]['id']['bioguide']
+        plain = self.run_(prev, new, historical=gone, official=[official_entry(b, '2026-12-05')]).go('--today', '2026-12-07')
+        self.assertIsNone(plain.read('departed-members.json')[0]['served_until_source'])
+        self.assertIn('overrides_file_day', plain.report('unconfirmed.md'))
+        entry = dict(official_entry(b, '2026-12-05'), overrides_file_day=TERM_END)
+        r = self.run_(prev, new, historical=gone, official=[entry]).go('--today', '2026-12-07')
+        self.assertEqual(r.code, 0, r.out)
+        rec = r.read('departed-members.json')[0]
+        self.assertEqual((rec['served_until'], rec['served_until_source']['kind']), ('2026-12-05', 'house-clerk'))
+        self.assertIsNone(r.report('unconfirmed.md'))
 
 
 class WhatReachesAPerson(unittest.TestCase):
@@ -500,7 +553,10 @@ class WhatReachesAPerson(unittest.TestCase):
         r = self.run_(prev, prev, official=[official_entry(sitting, '2026-04-21')]).go('--today', ORDINARY_DAY)
         self.assertEqual(r.code, 0, r.out)
         self.assertEqual(r.read('departed-members.json'), [])
-        self.assertIn(f'entry for {sitting}, who is in the member file again', r.out)
+        self.assertIn(f'entry for {sitting}, who is in the member file now', r.out)
+        body = r.report('unconfirmed.md')
+        self.assertNotIn('who left mid-term', body)
+        self.assertNotIn('again', body)
         self.assertIn('A table entry for a sitting member', r.report('unconfirmed.md'))
 
 

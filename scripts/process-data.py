@@ -40,7 +40,7 @@ from member_turnover import (
     attention,
     attention_lines,
     attention_report,
-    official_problems,
+    split_official,
     departed_records,
     dropped_members,
     parse_accept_departures,
@@ -102,7 +102,17 @@ prev_departed = _load_json('data/departed-members.json', [])
 # Official last days (Clerk of the House, Biographical Directory), added by a
 # person in a pull request: the only dates a mid-term record page may print
 # (scripts/member_turnover.py, "WHICH DATES A PAGE MAY PRINT").
-official_dates = _load_json('data/departure-dates.json', [])
+# A bad table never stops the weekly refresh (3rd review): the table is
+# checked first, entry by entry, and only usable entries are applied; the
+# rest are reported in the departure-date-unconfirmed issue and the member
+# simply gets no page.
+try:
+    official_dates = _load_json('data/departure-dates.json', [])
+except ValueError as e:  # not JSON at all
+    official_dates = f'unreadable ({e})'
+official_by_id, official_bad = split_official(official_dates)
+if isinstance(official_dates, str):
+    official_bad = [f'data/departure-dates.json could not be read as JSON: {official_dates}']
 
 out = [member_entry(l, office_map.get(l['id']['bioguide'], [])) for l in legs]
 
@@ -132,7 +142,6 @@ if ACCEPT is not None and not problems and not anomalous:
 # a kept record without an official source has a table entry to check
 # against the file (member_turnover.official_mismatch).
 leaving = {m['bioguide'] for m in prev_legislators} - {m['bioguide'] for m in out}
-official_by_id = {e['bioguide']: e for e in official_dates if isinstance(e, dict) and 'bioguide' in e}
 historical_by_id = None
 if not anomalous and not problems and (
     leaving
@@ -152,7 +161,6 @@ if not anomalous and not problems and (
         if DOWNLOAD and os.path.exists(hist_path):
             os.remove(hist_path)
 departed, undated = departed_records(out, prev_legislators, prev_departed, historical_by_id, today, official_by_id)
-problems += official_problems(official_dates)
 problems += departed_problems(departed, out)
 
 if not anomalous and not problems:
@@ -172,7 +180,7 @@ if not anomalous and not problems:
     # source (new, or filled in late), a table entry that does not fit, an
     # entry for a sitting member. One line each in the log and the step
     # summary, and the report the workflow files on the one issue.
-    found = attention(departed, prev_departed, leaving, official_by_id, historical_by_id, out)
+    found = attention(departed, prev_departed, leaving, official_by_id, historical_by_id, out, official_bad)
     new_undated = {r['bioguide'] for r in found['undated']}
     for b in undated:
         if b not in new_undated:  # already reported the week they left
