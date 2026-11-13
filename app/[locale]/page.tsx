@@ -15,7 +15,7 @@ import { FloorEvidence } from '@/components/FloorEvidence';
 import { AiMark, FloorVotePanel, Stamp, selectFloorVoteFeature, type ChipGround } from '@/components/system';
 import {
   billSlug,
-  getAllBills,
+  activeBillCount,
   getFloorFeatureCandidates,
   getNewsBills,
   getTopActions,
@@ -149,7 +149,8 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const format = await getFormatter();
   const top = getTopActions(4, locale);
   const newsRaw = getNewsBills(locale, 7);
-  const total = getAllBills().length;
+  // "Browse all N active bills": a bill of an ended Congress is not active.
+  const total = activeBillCount();
   const freshness = getFreshness();
   const dataAsOf = await dataAsOfString(locale);
   // AE3: the quiet-week claim keys on the floor alone. In the rare state

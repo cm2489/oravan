@@ -107,9 +107,13 @@ export default async function OgImage({
                   sync rebuilds every card; a request-time evaluation would cost
                   the whole prerender. */}
               <span style={{ color: PAPER_SOFT, fontWeight: 600 }}>
-                {tAll(
-                  `bills.status.${statusKeyFor(bill)}`
-                )}
+                {/* A bill of an ended Congress previews the approved LONG
+                    label, "Ended with the 119th Congress" (stage 3,
+                    2026-11-13): a shared link carries no page around it to
+                    say which Congress. Empty ended list today. */}
+                {statusKeyFor(bill) === 'ended'
+                  ? tAll('bill.ended.statusLong')
+                  : tAll(`bills.status.${statusKeyFor(bill)}`)}
               </span>
             </div>
           )}

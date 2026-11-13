@@ -24,8 +24,10 @@ const rec = (bill_type: string, status: string, text: string | null, date = '202
   ({ bill_type, status, last_action_text: text, last_action_date: date }) as Rec;
 
 test.describe('the closed set', () => {
-  test('is exactly five words, each in both languages, never empty', () => {
-    expect([...STATUS_WORDS]).toEqual(['open', 'law', 'agreed', 'rejected', 'vetoed']);
+  // Six since 2026-11-13: `ended`, for a bill of an ended Congress (stage 3 of
+  // the new-Congress work; read only once a Congress is on the ended list).
+  test('is exactly six words, each in both languages, never empty', () => {
+    expect([...STATUS_WORDS]).toEqual(['open', 'law', 'agreed', 'rejected', 'vetoed', 'ended']);
     expect(Object.keys(en.bills.statusWord).sort()).toEqual([...STATUS_WORDS].sort());
     expect(Object.keys(es.bills.statusWord).sort()).toEqual([...STATUS_WORDS].sort());
     for (const w of STATUS_WORDS) {
@@ -41,6 +43,8 @@ test.describe('the closed set', () => {
       agreed: 'Agreed to',
       rejected: 'Rejected',
       vetoed: 'Vetoed',
+      // The owner's approved status label for an ended bill (2026-11-12).
+      ended: 'Ended',
     });
   });
 });

@@ -1,4 +1,5 @@
 import type { AbstractIntlMessages } from 'next-intl';
+import { browserMessagesFor } from '@/lib/ended-messages';
 
 /*
  * WHAT THE BROWSER'S MESSAGE PROVIDER CARRIES — everything except the
@@ -15,11 +16,15 @@ import type { AbstractIntlMessages } from 'next-intl';
  * The rest of `glossary` (the page chrome) stays: dropping less than we could
  * is safe, dropping something a client component reads is a runtime throw.
  * tests/glossary.unit.spec.ts pins both halves.
+ *
+ * Also left out while no Congress has ended: the strings that exist only for
+ * the ended state (lib/ended-messages.ts, 2026-11-13).
  */
 export function clientMessages(messages: AbstractIntlMessages): AbstractIntlMessages {
-  const glossary = messages.glossary;
-  if (!glossary || typeof glossary !== 'object') return messages;
+  const withoutEnded = browserMessagesFor(messages);
+  const glossary = withoutEnded.glossary;
+  if (!glossary || typeof glossary !== 'object') return withoutEnded;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { terms, ...chrome } = glossary as AbstractIntlMessages;
-  return { ...messages, glossary: chrome };
+  return { ...withoutEnded, glossary: chrome };
 }

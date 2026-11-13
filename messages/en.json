@@ -297,14 +297,16 @@
       "rejected": "Rejected",
       "conference": "In conference",
       "signed": "Signed into law",
-      "vetoed": "Vetoed"
+      "vetoed": "Vetoed",
+      "ended": "Ended"
     },
     "statusWord": {
       "open": "Open",
       "law": "Law",
       "agreed": "Agreed to",
       "rejected": "Rejected",
-      "vetoed": "Vetoed"
+      "vetoed": "Vetoed",
+      "ended": "Ended"
     },
     "decodedPending": "The plain-language version isn't ready yet.",
     "updated": "Last action {date}",
@@ -391,6 +393,12 @@
     "callWhoMulti": "Your ZIP spans more than one House district, so more than one representative is listed. Your senators are the same for every district in your state.",
     "refineDistrictCta": "Confirm which House member is yours",
     "alsoYours": "Also yours",
+    "ended": {
+      "statusLong": "Ended with the 119th Congress",
+      "note": "This bill ended with the 119th Congress on January 3, 2027, before Congress finished it. A bill that ends this way can only move again if it is introduced in a new Congress, with a new number.",
+      "lawLine": "Became law during the 119th Congress.",
+      "presented": "Both chambers passed it before the 119th Congress ended. The record does not yet show what the president did."
+    },
     "settled": {
       "finderShow": "Show the House vote for ZIP {zip}",
       "finderSplit": "Your ZIP is split between {count, plural, =2 {two} other {#}} House districts. {vacant, select, yes {One of these seats is yours.} other {One of these members is yours.}}",

@@ -18,6 +18,7 @@
  * teaches people to ignore the gate.
  */
 import { existsSync, readFileSync, statSync } from 'node:fs';
+import { congressTerm } from '../lib/congress.mjs';
 import {
   FLOOR_SIGNALS_PATH,
   FLOOR_SIGNALS_SCHEMA,
@@ -35,10 +36,13 @@ if (process.argv.includes('--self-test')) {
     ['translated quote', { _meta: { schema: FLOOR_SIGNALS_SCHEMA, fetched_at: new Date().toISOString() }, signals: { 'hr-1-119': { tier0: { source: 'daily-digest', quote: 'El Senado votará…', quote_lang: 'es', url: 'https://x/y', published: '2026-08-04' }, fetched_at: new Date().toISOString() } } }],
     ['unknown schema', { _meta: { schema: 'floor-signals/v99', fetched_at: new Date().toISOString() }, signals: {} }],
     ['future date', { _meta: { schema: FLOOR_SIGNALS_SCHEMA, fetched_at: new Date().toISOString() }, signals: { 'hr-1-119': { tier0: { source: 'daily-digest', quote: 'Senate will vote.', quote_lang: 'en', url: 'https://x/y', published: '2099-01-01' }, fetched_at: new Date().toISOString() } } }],
+    // A live signal naming a bill of an ended Congress (stage 3, 2026-11-13),
+    // with a test policy: 119 ended, 120 tracked.
+    ['ended-Congress bill', { _meta: { schema: FLOOR_SIGNALS_SCHEMA, fetched_at: new Date().toISOString() }, signals: { 'hr-1-119': { tier0: { source: 'daily-digest', quote: 'Senate will vote.', quote_lang: 'en', url: 'https://x/y', published: '2026-08-04' }, fetched_at: new Date().toISOString() } } }, { tracked: 120, ended: [{ number: 119, ended: congressTerm(119).end }] }],
   ];
   let ok = true;
-  for (const [name, data] of cases) {
-    const { failures } = verifyFloorSignals({ data, fileBytes: 100 });
+  for (const [name, data, policy] of cases) {
+    const { failures } = verifyFloorSignals({ data, fileBytes: 100, ...(policy ? { policy } : {}) });
     if (failures.length === 0) {
       console.error(`::error::check-floor-signals --self-test: "${name}" was ACCEPTED by the gate`);
       ok = false;

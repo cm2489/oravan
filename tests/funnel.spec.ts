@@ -3,7 +3,9 @@ import en from '../messages/en.json';
 import es from '../messages/es.json';
 import { getLiveMoments } from '../lib/moments';
 import { billSlug, getAllBills, getAllLegislators, getBillsSponsoredBy } from '../lib/core';
-import { settledDecision } from '../lib/journey';
+import { endedDecision, settledDecision } from '../lib/journey';
+import { withSitePolicyForTest } from '../lib/ended-state.mjs';
+import { ENDED_119 } from './fixtures/ended-bills';
 import { anyTopAt, stableAcross } from './corpus';
 import { mockScriptApi } from './helpers';
 
@@ -110,10 +112,13 @@ const CORPUS_STABLE = stableAcross((at) => anyTopAt(at));
 const anyLiveMoment = getLiveMoments().length > 0;
 
 /** Every bill whose decision is still open — the only ones I2 measures from
- *  (rule 8, as amended 2026-09-28). */
+ *  (rule 8, as amended 2026-09-28). A bill of an ended Congress is not one
+ *  (stage 3 of the new-Congress work, 2026-11-13): nothing can decide it any
+ *  more, so it has no call to reach. The ended list is empty until the
+ *  January 2027 switch, so today this is the same set. */
 const OPEN_SLUGS = new Set(
   getAllBills()
-    .filter((b) => settledDecision(b) === null)
+    .filter((b) => settledDecision(b) === null && endedDecision(b) === null)
     .map(billSlug)
 );
 
@@ -392,3 +397,32 @@ for (const { locale, prefix, messages } of LOCALES) {
     });
   });
 }
+
+/*
+ * I2 AND AN ENDED CONGRESS (stage 3 of the new-Congress work, 2026-11-13).
+ * I2 is scoped to a decision still open, and a bill of an ended Congress has
+ * none: from its decoded answer no script is reachable at all, in any number
+ * of interactions, and the script route refuses it. Runs only against a local
+ * review build (ORAVAN_REVIEW_ENDED_CONGRESS=119; see tests/ended-panel.spec.ts),
+ * because the ended list is empty until the January 2027 switch.
+ */
+test.describe('I2 and an ended Congress (review build only)', () => {
+  test.skip(process.env.PW_REVIEW_ENDED !== '119', 'needs a review build with the 119th shown as ended');
+  for (const { prefix, messages } of [
+    { prefix: '', messages: en },
+    { prefix: '/es', messages: es },
+  ] as const) {
+    test(`${prefix || '/'}: an ended bill's decoded answer leads to no script`, async ({ page }) => {
+      await mockScriptApi(page);
+      const open = withSitePolicyForTest(ENDED_119, () =>
+        getAllBills().find((b) => b.ai_headline && endedDecision(b)?.kind === 'ended')
+      )!;
+      await page.goto(`${prefix}/bills/${billSlug(open)}`);
+      await expect(page.locator('#decoded')).toBeVisible();
+      await expect(page.locator('[data-ended-panel]')).toBeVisible();
+      await expect(page.getByRole('radio', { name: messages.bill.stance.support })).toHaveCount(0);
+      await expect(page.getByRole('textbox', { name: messages.bill.scriptTitle })).toHaveCount(0);
+      await expect(page.locator('[data-floating-call]')).toHaveCount(0);
+    });
+  }
+});
