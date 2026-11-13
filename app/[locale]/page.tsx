@@ -95,8 +95,8 @@ import { DONATE_URL, SITE_ORIGIN } from '@/lib/site';
  *    (tests/home-fold.spec.ts, rule 8).
  */
 
-/** The three minutes, in seconds. The `seconds` figures are what the printed
- *  `how*Dur` strings claim (0:30 / 1:00 / 1:00 / 0:30 — 3:00 total). The call
+/** The "about 3 minutes", in seconds. The `seconds` figures are what the printed
+ *  `how*Dur` strings claim (0:30 / 1:00 / 1:00 / 0:30 — about 3 minutes). The call
  *  itself, step 4, is the same "about thirty seconds" the bill page and the
  *  why-call answer say. None of these step times is a measurement. */
 const ROUTE = [
@@ -749,7 +749,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       )}
 
       {/* HOW A CALL WORKS (H17): step titles and times only (the four step
-          bodies are dropped, as in the wireframe), the 3:00 total, and the
+          bodies are dropped, as in the wireframe), the "about 3 minutes" total, and the
           calm line. A real sequence, so the numbers are information. The
           screencast stays off (H18, cut 2026-09-28; its component and
           strings are kept, unmounted). */}
