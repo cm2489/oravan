@@ -940,7 +940,10 @@ export default async function BillPage({
             <div className="min-w-0 min-[62rem]:sticky min-[62rem]:top-4 min-[62rem]:col-start-2 min-[62rem]:row-span-full min-[62rem]:self-start">
               <EndedPanel kind={ended.kind === 'presented' ? 'presented' : 'ended'} text={endedText} />
             </div>
-          ) : (
+          ) : rail.panel === 'call' ? (
+            /* The call panel only on the rail's own say-so: a settled or
+               ended bill whose panel text failed to resolve renders no panel
+               rather than fall through to a call (tests/bill-rail.unit.spec.ts). */
             <div className="min-w-0 min-[62rem]:sticky min-[62rem]:top-4 min-[62rem]:col-start-2 min-[62rem]:row-span-full min-[62rem]:flex min-[62rem]:max-h-[calc(100dvh-2rem)] min-[62rem]:self-start">
               <ActionPanel
                 slug={id}
@@ -951,7 +954,7 @@ export default async function BillPage({
                 lastAttempt={lastAttempt}
               />
             </div>
-          )}
+          ) : null}
 
           {/* THE STATUS TRACKER, below the reading column: it describes the
               bill's history, and the decode and the call are the job. The

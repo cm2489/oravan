@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import Module from 'node:module';
 import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
@@ -6,6 +6,9 @@ import en from '../messages/en.json';
 import es from '../messages/es.json';
 import { billRail } from '../lib/bill-rail';
 import { actionPanelEndedLines } from '../lib/embed-ended';
+import { withoutEndedMessages } from '../lib/ended-messages';
+import { clientMessages } from '../i18n/client-messages';
+import { embedDicts } from '../components/embed/embed-dicts';
 import { withSitePolicyForTest } from '../lib/ended-state.mjs';
 import { COMMITTEE_FIXTURE, ENDED_119, ENROLLED_CONCURRENT_FIXTURE, LAW, PRESENTED_FIXTURE } from './fixtures/ended-bills';
 
@@ -85,6 +88,12 @@ test.describe('the bill page renders call apparatus only through the rail', () =
     expect(settledAt).toBeGreaterThan(0);
     expect(endedAt).toBeGreaterThan(settledAt);
     expect(callAt).toBeGreaterThan(endedAt);
+    // The call panel's own branch asks the rail, so a settled or ended bill
+    // whose panel text fails to resolve cannot fall through to a call.
+    const callBranchAt = page.indexOf(") : rail.panel === 'call' ? (");
+    expect(callBranchAt).toBeGreaterThan(endedAt);
+    expect(callAt).toBeGreaterThan(callBranchAt);
+    expect(page.slice(callBranchAt, callAt)).not.toMatch(/\) : \(/);
     expect(count(page, '<ActionPanel')).toBe(1);
     expect(count(page, '<EndedPanel')).toBe(1);
     // The rail is the page's one reading: no second, inline one.
@@ -156,3 +165,87 @@ test.describe('MCP tool metadata reads the ended list (lib/core/mcp.ts TOOL_INFO
     expect(today.TOOL_INFO.search_bills.description).not.toContain('ended');
   });
 });
+
+/*
+ * WHAT THE BROWSER RECEIVES (review of #486, 2026-11-13). The site's layout
+ * hands a message catalog to the browser on every page, and the embeds hand
+ * both languages' dictionaries to theirs. The ended-only strings may not ride
+ * along while no Congress has ended: they would sit in every page's source.
+ */
+test.describe('the ended-only strings stay off the browser until a Congress has ended', () => {
+  const ENDED_SENTENCES = [
+    en.bill.ended.note,
+    en.bill.ended.statusLong,
+    en.bill.ended.lawLine,
+    en.bill.ended.presented,
+    es.bill.ended.note,
+    es.bill.ended.statusLong,
+    es.bill.ended.lawLine,
+    es.bill.ended.presented,
+    'Terminado',
+  ];
+  const hasEndedKeys = (c: typeof en) =>
+    'ended' in (c.bill ?? {}) || 'ended' in (c.bills?.status ?? {}) || 'ended' in (c.bills?.statusWord ?? {});
+
+  test('the site catalog leaves them out today and carries them once a Congress has ended', () => {
+    for (const catalog of [en, es as typeof en]) {
+      const today = clientMessages(catalog) as typeof en;
+      expect(hasEndedKeys(today)).toBe(false);
+      const text = JSON.stringify(today);
+      for (const s of ENDED_SENTENCES) expect(text).not.toContain(s);
+      // Nothing else is dropped: put the three keys back and it is the input
+      // (the glossary's terms aside, which clientMessages always drops).
+      const { terms: _t, ...chrome } = catalog.glossary as Record<string, unknown>;
+      void _t;
+      const restored = JSON.parse(JSON.stringify(today));
+      restored.bill.ended = catalog.bill.ended;
+      restored.bills.status.ended = catalog.bills.status.ended;
+      restored.bills.statusWord.ended = catalog.bills.statusWord.ended;
+      expect(JSON.stringify(sortKeys(restored))).toBe(JSON.stringify(sortKeys({ ...catalog, glossary: chrome })));
+
+      const ended = ended119(() => clientMessages(catalog)) as typeof en;
+      expect(hasEndedKeys(ended)).toBe(true);
+    }
+    // Key order is kept, so today's catalog serializes as one that never had them.
+    expect(Object.keys(withoutEndedMessages(en).bills.status)).toEqual(
+      Object.keys(en.bills.status).filter((k) => k !== 'ended')
+    );
+  });
+
+  test('the embed dictionaries never carry them, in either language, ended Congress or not', () => {
+    for (const dicts of [embedDicts(), ended119(() => embedDicts())]) {
+      for (const lang of ['en', 'es'] as const) {
+        expect(hasEndedKeys(dicts[lang] as unknown as typeof en)).toBe(false);
+        const text = JSON.stringify(dicts[lang]);
+        for (const s of ENDED_SENTENCES) expect(text).not.toContain(s);
+      }
+    }
+  });
+
+  test('no browser component reads an ended-only string from a catalog', () => {
+    const walk = (dir: string): string[] =>
+      readdirSync(dir, { withFileTypes: true }).flatMap((d) =>
+        d.isDirectory() ? walk(join(dir, d.name)) : /\.(tsx?|mjs)$/.test(d.name) ? [join(dir, d.name)] : []
+      );
+    const browser = [...walk('app'), ...walk('components')].filter((f) =>
+      /^['"]use client['"]/m.test(readFileSync(f, 'utf8'))
+    );
+    expect(browser.length).toBeGreaterThan(20);
+    for (const f of browser) {
+      const src = readFileSync(f, 'utf8');
+      expect(src, f).not.toMatch(/\.bill\.ended\b|['"`]bill\.ended|ended\.statusLong|statusWord\.ended|status\.ended\b/);
+    }
+    // The bill-card widget's long label comes from the server, only on an
+    // ended bill.
+    const cardPage = read('app/embed/bill-card/page.tsx');
+    expect(cardPage).toContain("...(statusKeyFor(bill) === 'ended'");
+    expect(cardPage).toContain('endedLabel: { en: en.bill.ended.statusLong, es: es.bill.ended.statusLong }');
+  });
+});
+
+function sortKeys(v: unknown): unknown {
+  if (Array.isArray(v)) return v.map(sortKeys);
+  if (v && typeof v === 'object')
+    return Object.fromEntries(Object.keys(v).sort().map((k) => [k, sortKeys((v as Record<string, unknown>)[k])]));
+  return v;
+}

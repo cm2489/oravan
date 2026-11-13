@@ -35,6 +35,11 @@ export interface BillCardData {
   /** The bill's own last-action date (`YYYY-MM-DD`), printed with the status
    *  line. The record's clock, never the sync's — see the render below. */
   lastActionDate: string | null;
+  /** Present only on a bill of an ENDED Congress (stage 3, 2026-11-13): the
+   *  approved long label in both languages, computed on the server, because
+   *  the embed's dictionaries carry no ended-only string
+   *  (lib/ended-messages.ts). Absent on every bill today. */
+  endedLabel?: { en: string; es: string };
 }
 
 /** next-intl-style `{token}` interpolation, without pulling in next-intl. */
@@ -177,8 +182,8 @@ export function BillCardWidget({
             around the card to say which Congress (stage 3, 2026-11-13). The
             ended list is empty until the January 2027 switch. */}
         <p className="bc-status">
-          {bill.statusKey === 'ended'
-            ? t.bill.ended.statusLong
+          {bill.endedLabel
+            ? bill.endedLabel[locale]
             : (t.bills.status[bill.statusKey] ?? t.bills.status[bill.status])}
         </p>
         {/* WITH the status line and ABOVE the sync stamp, deliberately. These

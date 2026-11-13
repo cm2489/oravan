@@ -197,7 +197,7 @@ test('the review setting: off by default, 119 accepted on a local build only', (
   }
   expect(() => reviewEndedCongressFrom({ [REVIEW_ENDED_ENV]: '119', CI: 'true' }, 119)).toThrow(/CI set/);
   // Only the tracked Congress: the approved wording names it.
-  for (const bad of ['118', '120', 'abc', '119.5']) {
+  for (const bad of ['118', '120', 'abc', '119.5', '119.0', '0x77', ' 119 ', '0119', '1e2', '+119']) {
     expect(() => reviewEndedCongressFrom({ [REVIEW_ENDED_ENV]: bad }, 119), bad).toThrow(/not accepted/);
   }
   // Off stays off even in CI: an unset setting never throws.

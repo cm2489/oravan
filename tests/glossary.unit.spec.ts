@@ -16,6 +16,7 @@ import {
 } from '../lib/glossary';
 import { GLOSSARY_NEAR_MISSES } from '../lib/glossary-terms';
 import { glossaryLocale, splitGlossaryTerms, type GlossaryLocale } from '../lib/glossary-match';
+import { withoutEndedMessages } from '../lib/ended-messages';
 import { clientMessages } from '../i18n/client-messages';
 import { lintForbidden } from '../lib/moments-gate.mjs';
 
@@ -726,9 +727,13 @@ test.describe('the client payload', () => {
       expect(glossary.terms, 'glossary.terms must stay on the server').toBeUndefined();
       // The chrome stays: dropping less than we could is safe.
       expect(glossary.title).toBe(msgs.glossary.title);
+      // Every other message, except the ended-only strings, which stay off
+      // the browser while no Congress has ended (lib/ended-messages.ts,
+      // 2026-11-13; pinned in tests/bill-rail.unit.spec.ts).
+      const expected = withoutEndedMessages(msgs) as Record<string, unknown>;
       for (const key of Object.keys(msgs)) {
         if (key === 'glossary') continue;
-        expect(client[key], key).toEqual((msgs as Record<string, unknown>)[key]);
+        expect(client[key], key).toEqual(expected[key]);
       }
     }
   });
