@@ -49,7 +49,7 @@ type ConfigLocale = 'en' | 'es';
 // :root fallbacks and lib/embed-theme.ts's MODE_DEFAULTS.light exactly —
 // otherwise the live preview and the copied snippet promise a look the
 // server would not render.
-const DEFAULT_ACCENT = '#1d5e43'; // matches the widget CSS's own var(--oravan-accent, #1d5e43) fallback
+const DEFAULT_ACCENT = '#66e29b'; // matches the widget CSS's own var(--oravan-accent, #66e29b) fallback
 const DEFAULT_SURFACE = '#fcfaf4'; // the light-mode token fallbacks in app/embed/embed.css
 const DEFAULT_INK = '#1c1b18';
 const DEFAULT_HEIGHT = 480; // mirrors public/embed.js's own DEFAULT_HEIGHT

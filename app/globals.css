@@ -60,30 +60,37 @@
      paper      on alert .......... 5.93  AA    <- filled failure state
      alert      on paper .......... 5.93  AA
      alert      on wash ........... 5.44  AA
-     go-bright  on ink ............ 9.63  AAA   <- link on an ink ground
+     go-bright  on ink ........... 10.59  AAA   <- link on an ink ground
      go-pale    on go-deep ........ 8.26  AAA   <- secondary on the green panel
      ink-pale   on ink ........... 10.33  AAA   <- secondary on an ink ground
      paper (band) on go-deep ..... 11.32  AAA   <- wordmark and nav on the band
      go-pale (band) on go-deep .... 8.26  AAA   <- the band's secondary line
      go-deep (switch) on paper ... 11.32  AAA   <- the language switch, inverted
      paper (switch) on go ......... 7.36  AAA   <- the phone switch's cell
+     ink (c2 fill) on go-bright ... 10.59  AAA   <- c2: buttons, the stamp, the embed's accent
+     go-bright (c2 band) on go-deep .. 7.27  AAA   <- c2: the wordmark on the band
    The House finder's light lamp button is `bg-urgent/30` over paper (#fdebba):
    ink on it computes to 14.57 (tests/house-finder.unit.spec.ts measures it).
    A stance choice's hover is the half-lamp, `bg-urgent/50` over paper
    (#fee294, page 2's "half-lamp on hover"): ink on it computes to 13.55, and
    its ink edge (hover:border-ink) is 13.55 against it.
+   DRAFT c2: the vote bar's bright segment on its track (paper at 25% over
+   ink, #54534f) computes to 4.74.
 
    NON-TEXT / BOUNDARY PAIRS (1.4.11 needs 3:1)
      line-strong on paper ......... 4.24  PASS  <- every component edge
      line-strong on wash .......... 3.89  PASS  <- clears on the recessed ground
      go (gauge segment) on paper .. 7.36  PASS
      go (gauge segment) on line ... 5.68  PASS  <- segment against its track
-     go-bright on go-deep ......... 6.61  PASS
+     go-bright on go-deep ......... 7.27  PASS
      paper (ring) on go-deep ...... 11.32  PASS  <- the focus ring, band and panel
      paper (ring) on ink .......... 16.50  PASS  <- the skip link's ring on its pill
      go-pale (edge) on go-deep ..... 8.26  PASS  <- the language switch's edge
      ink (picked edge) on urgent .. 11.20  PASS  <- a picked choice's edge
      ink (picked edge) on paper ... 16.50  PASS  <- the same edge on the page
+     ink (c2 edge) on go-bright .. 10.59  PASS  <- c2: the ink edge against the bright fill
+     go-bright (c2 mark) on ink .. 10.59  PASS  <- c2: chip, button, bar and stamp on the charcoal panel
+     go-bright (c2 underline) on paper .. 1.56  DECORATIVE: the hero underline; never text, never an edge
      line       on paper .......... 1.30  DECORATIVE ONLY. `line` may separate;
                                           it may never be a component edge, and
                                           it may never be the only thing making
@@ -155,7 +162,7 @@
   --color-line-strong: #7f7768;  /* every component edge (4.24:1 on paper) */
   --color-go: #1d5e43;           /* GO: actions and the gauge. Nothing else. */
   --color-go-deep: #133f2d;      /* pressed/hover go; the enamel panel; the masthead band */
-  --color-go-bright: #7fd3a2;    /* go, on an ink ground */
+  --color-go-bright: #66e29b;    /* go, on an ink ground; DRAFT c2: brighter, also the bright marks */
   --color-go-pale: #cbdccf;      /* secondary text on the green panel and the band */
   --color-tint: #e5eee2;         /* YOURS: what the user chose or wrote */
   --color-urgent: #ffc933;       /* the lamp: what you can act on, ink text */
@@ -476,3 +483,34 @@ label,
   stroke-dashoffset: 24;
   animation: draw-stroke 0.35s cubic-bezier(0.25, 1, 0.5, 1) 0.3s forwards;
 }
+
+/* ============================================================================
+   COLOUR DIRECTION C, VARIATION 2: BRIGHT GREEN MARKS.
+   A draft for the owner's eyes, not for merge (2026-11-12). The rules below
+   are the variation's colour layer as the owner saw it on 2026-10-03 to 04,
+   kept as one layer over direction c so it reads (and comes out) as a unit.
+   Token: `go-bright` moves to #66e29b in @theme; the embed's default accent
+   follows it (app/embed/embed.css and its mirrors). Pairs: the ledger above.
+   ========================================================================= */
+
+/* The wordmark turns bright green on the deep band. */
+header.bg-go-deep > div > a:first-child { color: #66e29b !important; }
+/* The This-week panel leaves the green: a charcoal (ink) ground, so the deep
+   green stays on the band only. */
+div.border-go.bg-go-deep { background-color: #1c1b18 !important; border-color: #66e29b !important; }
+div.border-go.bg-go-deep, div.border-go.bg-go-deep section.on-go {
+  --color-go-deep: var(--color-ink); --color-go-pale: var(--color-ink-pale); --focus-gap: var(--color-ink);
+}
+div.border-go.bg-go-deep section.on-go { background-color: #1c1b18 !important; }
+div.border-go.bg-go-deep a.bg-paper { background-color: #66e29b !important; border-color: #66e29b !important; color: #1c1b18 !important; }
+div.border-go.bg-go-deep [data-floor-chip] { border-color: #66e29b !important; color: #66e29b !important; }
+div.border-go.bg-go-deep [data-latest-vote] > span[aria-hidden] > span { background-color: #66e29b !important; }
+/* Every filled action button: bright green with ink type and an ink edge
+   (bright green on cream is 1.56, so the edge is ink). */
+:is(a, button).bg-go:not(header *), :is(a, button).bg-go:not(header *):hover { background-color: #66e29b !important; color: #1c1b18 !important; border-color: #1c1b18 !important; }
+:is(a, button).bg-go:not(header *) * { color: #1c1b18 !important; }
+/* The hero underline: bright green, decorative. */
+span.after\:bg-go::after { background-color: #66e29b !important; }
+/* THE STAMP pops: bright green with ink type and an ink double edge. */
+[data-oravan-stamp] { background-color: #66e29b !important; border-color: #1c1b18 !important; color: #1c1b18 !important; }
+[data-oravan-stamp] > span.absolute, [data-oravan-stamp] > span.border-t-\[1\.5px\] { border-color: #1c1b18 !important; }
