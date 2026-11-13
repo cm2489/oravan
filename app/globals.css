@@ -67,6 +67,9 @@
      go-pale (band) on go-deep .... 8.26  AAA   <- the band's secondary line
      go-deep (switch) on paper ... 11.32  AAA   <- the language switch, inverted
      paper (switch) on go ......... 7.36  AAA   <- the phone switch's cell
+     ink (c1 panel) on stone ...... 12.98  AAA   <- c1: the panel's headings and body
+     ink-2 (c1 panel) on stone ..... 5.95  AA    <- c1: the panel's secondary lines, grey chip
+     paper (c1 stamp) on ink-2 ..... 7.56  AAA   <- c1: the grey stamp's type, the grey AI mark
    The House finder's light lamp button is `bg-urgent/30` over paper (#fdebba):
    ink on it computes to 14.57 (tests/house-finder.unit.spec.ts measures it).
    A stance choice's hover is the half-lamp, `bg-urgent/50` over paper
@@ -84,6 +87,13 @@
      go-pale (edge) on go-deep ..... 8.26  PASS  <- the language switch's edge
      ink (picked edge) on urgent .. 11.20  PASS  <- a picked choice's edge
      ink (picked edge) on paper ... 16.50  PASS  <- the same edge on the page
+     ink-2 (c1 edge) on stone ...... 5.95  PASS  <- c1: a grey stamp or chip on the panel
+     ink-2 (c1 edge) on paper ...... 7.56  PASS  <- c1: the bill page's stamp, grey chips
+     paper (c1 hairline) on ink-2 .. 7.56  PASS  <- c1: the stamp's inner hairline
+     go (c1 button) on stone ...... 5.79  PASS  <- c1: the green button against the panel
+     ink (c1 ring) on stone ....... 12.98  PASS  <- c1: the focus ring on the panel
+     line-strong (c1 track) on stone .. 3.34  PASS  <- c1: the vote bar's track edge
+     stone (c1 panel) on paper ..... 1.27  DECORATIVE: the panel against the page
      line       on paper .......... 1.30  DECORATIVE ONLY. `line` may separate;
                                           it may never be a component edge, and
                                           it may never be the only thing making
@@ -160,6 +170,7 @@
   --color-tint: #e5eee2;         /* YOURS: what the user chose or wrote */
   --color-urgent: #ffc933;       /* the lamp: what you can act on, ink text */
   --color-alert: #a0461f;        /* failure, and only failure */
+  --color-stone: #e6dfd0;        /* DRAFT c1: the This-week panel's ground, ink type */
   /* WHY THIS HEX (re-measured 2026-09-30 for the bottle-green palette).
      `alert` is confusable with `go` for a deuteranope, and no hex separates
      it from both `go` and `ink` at once: a darker one collapses into ink, a
@@ -476,3 +487,31 @@ label,
   stroke-dashoffset: 24;
   animation: draw-stroke 0.35s cubic-bezier(0.25, 1, 0.5, 1) 0.3s forwards;
 }
+
+/* ============================================================================
+   COLOUR DIRECTION C, VARIATION 1: GREY STAMPS, STONE PANEL.
+   A draft for the owner's eyes, not for merge (2026-11-12). The rules below
+   are the variation's colour layer as the owner saw it on 2026-10-03 to 04,
+   kept as one layer over direction c so it reads (and comes out) as a unit.
+   Token: `stone` (#e6dfd0) in @theme. Every pair is in the ledger above.
+   ========================================================================= */
+
+/* The This-week panel leaves the green: a stone ground with ink type. The
+   band is the only green field. */
+div.border-go.bg-go-deep { background-color: #e6dfd0 !important; border-color: #1c1b18 !important; }
+div.border-go.bg-go-deep, div.border-go.bg-go-deep section.on-go {
+  --color-go-deep: var(--color-stone); --color-paper: var(--color-ink); --color-go-pale: var(--color-ink-2); --color-go-bright: var(--color-ink);
+  --focus: var(--color-ink); --focus-gap: var(--color-stone);
+}
+div.border-go.bg-go-deep section.on-go { background-color: #e6dfd0 !important; }
+/* The panel's button keeps the site's filled green action. */
+div.border-go.bg-go-deep a.bg-paper { background-color: #1d5e43 !important; border-color: #1d5e43 !important; color: #fcfaf4 !important; }
+/* The vote bar: a green segment on a paper track. */
+div.border-go.bg-go-deep [data-latest-vote] > span[aria-hidden] { background-color: #fcfaf4 !important; box-shadow: inset 0 0 0 1px #7f7768; }
+div.border-go.bg-go-deep [data-latest-vote] > span[aria-hidden] > span { background-color: #1d5e43 !important; }
+
+/* GREY STAMPS: warm grey (ink-2, #55514a) from the ink ladder. */
+[data-oravan-stamp] { background-color: #55514a !important; border-color: #55514a !important; color: #fcfaf4 !important; }
+[data-oravan-stamp] > span.absolute, [data-oravan-stamp] > span.border-t-\[1\.5px\] { border-color: #fcfaf4 !important; }
+span.flex-none.rounded-stamp.px-1 { background-color: #55514a !important; color: #fcfaf4 !important; }
+[data-floor-chip], span.rounded-stamp.border-\[1\.5px\] { border-color: #55514a !important; color: #55514a !important; }

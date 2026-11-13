@@ -47,6 +47,9 @@
   color-scheme: light dark;
   --_surface: var(--oravan-surface, #fcfaf4);
   --_ink: var(--oravan-ink, #1c1b18);
+  /* DRAFT c1: the AI chip in warm grey (ink-2, 7.56 on the surface) when un-themed;
+     a tenant's own ink wins, as before. */
+  --_mark: var(--oravan-ink, #55514a);
   /* GO. The un-themed default only; --oravan-accent displaces it, and
      lib/embed-theme.ts guarantees a tenant who supplied a palette without
      an accent gets THEIR ink emitted here rather than falling through to
@@ -87,6 +90,8 @@
   :root {
     --_surface: var(--oravan-surface, #1c1b18);
     --_ink: var(--oravan-ink, #fcfaf4);
+    /* DRAFT c1: ink-pale on the dark surface, 10.33 (ink-2 there is 2.18). */
+    --_mark: var(--oravan-ink, #cdc8bd);
     --_line: rgba(252, 250, 244, 0.15);
     --_line-strong: rgba(252, 250, 244, 0.5);
     --_line-faint: rgba(252, 250, 244, 0.08);
@@ -464,10 +469,10 @@ body {
   display: inline-block;
   margin-top: 12px;
   padding: 4px 8px;
-  border: 1.5px solid var(--_ink);
+  border: 1.5px solid var(--_mark);
   border-radius: var(--_radius-mark);
   background: transparent;
-  color: var(--_ink);
+  color: var(--_mark);
   font-size: 0.75rem;
   font-weight: 700;
   line-height: 1.35;
