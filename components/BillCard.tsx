@@ -107,7 +107,7 @@ export function BillCard({
           <span className="whitespace-nowrap">{t('news.sources', { count: coverageCount })}</span>
         )}
       </div>
-      <h3 className="mt-2 text-lg leading-tight font-bold text-ink group-hover:underline group-hover:decoration-go group-hover:decoration-[3px]">
+      <h3 className="mt-2 text-lg leading-tight font-bold text-ink group-hover:underline group-hover:decoration-ink group-hover:decoration-[3px]">
         <HeadlineOrTitle headline={bill.headline} title={bill.title} />
       </h3>
       {/* The counted caption, in ink. It never lights amber and never turns the

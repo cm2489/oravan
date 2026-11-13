@@ -529,8 +529,8 @@ test.describe('R2c: a fresh PENDING floor vote earns the same band the crown pro
     // The crown's own chip sentence, whichever of the two facts it found.
     // textContent, not innerText: the chip is `uppercase` in CSS only, and
     // the page it is compared against renders the same string the same way.
-    const chip = (await crown.locator('.bg-urgent > span').first().textContent())?.trim();
-    expect(chip, 'the crown prints an amber floor claim').toBeTruthy();
+    const chip = (await crown.locator('[data-floor-chip] > span').first().textContent())?.trim();
+    expect(chip, 'the crown prints a dated floor claim').toBeTruthy();
     const href = await crown.locator('a[data-call-cta]').getAttribute('href');
     expect(href, 'the crown links to a bill page').toBeTruthy();
     await page.goto(href!);

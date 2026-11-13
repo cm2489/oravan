@@ -27,11 +27,11 @@ import { markDataUri, wordmarkDataUri, WORDMARK_RATIO } from '@/lib/og-brand';
  * this surface included). Never a pill: nothing in Oravan is a pill.
  */
 
-const INK = '#16191b'; // --color-ink
-const PAPER = '#ffffff'; // --color-paper
-const GO_BRIGHT = '#5fd39a'; // --color-go-bright — the dark-ground green
-const PAPER_SOFT = 'rgba(255,255,255,0.86)';
-const PAPER_MUTE = 'rgba(255,255,255,0.7)';
+const INK = '#1c1b18'; // --color-ink
+const PAPER = '#fcfaf4'; // --color-paper
+const GO_BRIGHT = '#7fd3a2'; // --color-go-bright — the dark-ground green
+const PAPER_SOFT = 'rgba(252,250,244,0.86)';
+const PAPER_MUTE = 'rgba(252,250,244,0.7)';
 
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';

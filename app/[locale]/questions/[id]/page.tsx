@@ -64,7 +64,7 @@ const localeText = (l: { en: string; es: string }, locale: string): string =>
 /* Content links are green — green means GO, and a link goes somewhere.
    Navigation chrome (the crumb) stays ink, per the color law's split. */
 const CONTENT_LINK =
-  'inline-flex min-h-11 items-center gap-2 font-bold text-go underline transition-colors hover:text-go-deep';
+  'inline-flex min-h-11 items-center gap-2 font-bold text-ink underline transition-colors hover:decoration-[3px]';
 
 /*
  * THE PAGE'S ONE WRAPPER — the site rail every other route sits on, and the
@@ -741,7 +741,7 @@ export default async function MomentPage({
                   affordance survives with no client JavaScript and no icon. */}
               {priorRevisions.length > 0 && (
                 <details className="mt-5 max-w-read rounded-control border border-line-strong bg-paper px-4 pb-2">
-                  <summary className="min-h-11 cursor-pointer py-3 text-sm font-bold text-ink select-none marker:text-ink-2 hover:text-go-deep">
+                  <summary className="min-h-11 cursor-pointer py-3 text-sm font-bold text-ink select-none marker:text-ink-2 hover:underline">
                     {t('moments.updates.revisionsToggle', { count: priorRevisions.length })}
                   </summary>
                   {/* The label follows the AI text. When the current summary is

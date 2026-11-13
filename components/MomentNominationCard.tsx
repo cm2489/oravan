@@ -150,7 +150,7 @@ export function MomentNominationCard({
     <article className="flex flex-col rounded-control border border-line-strong bg-paper p-5">
       {onExecCalendar && (
         <p className="mb-3">
-          <Chip tone="urgent" dateLabel={fmt(lastActionDate!)}>
+          <Chip tone="floor" dateLabel={fmt(lastActionDate!)}>
             {t('nominations.onExecCalendar', { number: execCalendarNumber })}
           </Chip>
         </p>
@@ -166,7 +166,7 @@ export function MomentNominationCard({
       <h3 className="mt-2 text-lg leading-tight font-bold text-ink">
         <Link
           href={`/nominations/${slug}`}
-          className="hover:underline hover:decoration-go hover:decoration-[3px]"
+          className="hover:underline hover:decoration-ink hover:decoration-[3px]"
         >
           {description ? <span lang="en">{description}</span> : t('nominations.untitled', { citation })}
         </Link>

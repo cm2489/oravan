@@ -241,7 +241,7 @@ export async function MemberVotes({
           href={rollCallPage(r.source)}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex min-h-11 items-center gap-1.5 font-semibold text-go underline hover:text-go-deep"
+          className="inline-flex min-h-11 items-center gap-1.5 font-semibold text-ink underline hover:decoration-[3px]"
         >
           {tVotes('source')}
           <ExternalLink className="h-4 w-4 flex-none" aria-hidden />

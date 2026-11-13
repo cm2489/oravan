@@ -35,7 +35,7 @@ export function WalkthroughDisclosure() {
       onToggle={(e) => setOpen(e.currentTarget.open)}
       className="rounded-control border-[1.5px] border-line-strong px-5"
     >
-      <summary className="min-h-11 cursor-pointer py-3 font-semibold text-ink select-none marker:text-ink-2 hover:text-go-deep">
+      <summary className="min-h-11 cursor-pointer py-3 font-semibold text-ink select-none marker:text-ink-2 hover:underline">
         {t('disclosure')}
       </summary>
       <div className="pt-2 pb-6">{open && <CallWalkthrough />}</div>
