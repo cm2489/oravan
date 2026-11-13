@@ -36,6 +36,7 @@ import {
   RENDER_DAY_CAP,
   RETENTION_DAYS,
   SCHEMA_VERSION,
+  collapseRedundantStatusChanges,
   groupByDay,
 } from './moment-updates-gate.mjs';
 
@@ -189,7 +190,12 @@ function entryFor(id: string): MomentUpdatesEntry {
   const entry = FILE[id] as MomentUpdatesEntry | undefined;
   if (!entry || !Array.isArray(entry.updates)) return EMPTY;
   return {
-    updates: entry.updates,
+    // One event renders once (2026-11-13): a status_change that repeats a
+    // richer record of the same day is folded into that record here too, so a
+    // repeat the collector's prune has not yet healed never reaches the page.
+    // The collector and the pre-commit check enforce the same rule on write
+    // (collapseRedundantStatusChanges, lib/moment-updates-gate.mjs).
+    updates: collapseRedundantStatusChanges(entry.updates).kept as MomentUpdate[],
     summary_revisions: Array.isArray(entry.summary_revisions) ? entry.summary_revisions : [],
   };
 }
