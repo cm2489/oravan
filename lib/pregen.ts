@@ -1,4 +1,5 @@
 import { billSlug } from './core/bills';
+import { CONGRESS_POLICY, isEndedBill } from './congress.mjs';
 import { settledDecision } from './journey';
 import { contentVersion } from './scriptcache';
 import { buildScriptPrompt, SCRIPT_MAX_TOKENS, SCRIPT_MODEL } from './scriptprompt';
@@ -10,6 +11,9 @@ import type { Bill, Stance } from './types';
  * lib/salt.mjs vs scripts/verify-salt.mjs) so it's directly unit-testable
  * without mocking a network client.
  */
+
+/** The tracked Congress and the ended list (lib/congress.mjs). */
+type CongressPolicy = { tracked: number; ended: ReadonlyArray<{ number: number; ended: string }> };
 
 export const LOCALES: Array<'en' | 'es'> = ['en', 'es'];
 
@@ -39,10 +43,19 @@ export interface Combo {
  * announcing chamber's record answered it on or after the announcement's own
  * date. So the job applies the route's predicate rather than the pool's.
  */
-export function planCombos(bills: Bill[], stances: Stance[], locales: Array<'en' | 'es'>): Combo[] {
+export function planCombos(
+  bills: Bill[],
+  stances: Stance[],
+  locales: Array<'en' | 'es'>,
+  policy: CongressPolicy = CONGRESS_POLICY
+): Combo[] {
   const combos: Combo[] = [];
   for (const bill of bills) {
     if (settledDecision(bill)) continue;
+    // A bill of an ENDED Congress gets no call script (2026-11-12): its
+    // decision can no longer be made, so a script for it is money spent on
+    // advice to call about nothing. Empty list today, so nothing is skipped.
+    if (isEndedBill(bill, policy)) continue;
     const slug = billSlug(bill);
     // Same CALL app/api/script/route.ts makes — this IS the cache key's
     // content-version component, computed identically so a pregenerated
