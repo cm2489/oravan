@@ -69,12 +69,12 @@ export function departedWithPage(
  * "No recorded votes yet in the 120th Congress." on 2026-11-12. A review on
  * 2026-11-13 found it goes false within days of Jan 3: new members cast roll
  * calls at once (the Speaker's election, bills Oravan does not track), and
- * data/votes.json stores only roll calls on a tracked bill. The owner is being
- * asked; until he answers this stays the approved line. If he picks the
- * alternative, change this one value to 'votesNoneYetTracked' ("No recorded
- * votes yet on a bill Oravan tracks."); both strings exist in both languages.
+ * data/votes.json stores only roll calls on a tracked bill. Asked that day,
+ * the owner chose "No recorded votes yet on a bill Oravan tracks."
+ * (2026-11-13, 11:19 AM ET), so this value is 'votesNoneYetTracked'. Both
+ * strings exist in both languages; the first is kept for the record.
  */
-export const NEW_MEMBER_LINE_KEY: 'votesNoneYet' | 'votesNoneYetTracked' = 'votesNoneYet';
+export const NEW_MEMBER_LINE_KEY: 'votesNoneYet' | 'votesNoneYetTracked' = 'votesNoneYetTracked';
 
 /** Which chamber the served-until line names. */
 export const servedChamber = (r: Pick<DepartedMember, 'type'>): 'house' | 'senate' =>

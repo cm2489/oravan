@@ -174,7 +174,7 @@ test.describe('the approved wording (owner, 2026-11-12), exactly', () => {
 
   test('the new-member line is the approved one until the owner picks the other; both exist', () => {
     // Change NEW_MEMBER_LINE_KEY (lib/departed-members.ts) and this line together.
-    expect(NEW_MEMBER_LINE_KEY).toBe('votesNoneYet');
+    expect(NEW_MEMBER_LINE_KEY).toBe('votesNoneYetTracked');
     expect(en.rep.votesNoneYetTracked).toBe('No recorded votes yet on a bill Oravan tracks.');
     expect(es.rep.votesNoneYetTracked).toBe('Todavía no hay votos registrados sobre un proyecto de los que sigue Oravan.');
   });
