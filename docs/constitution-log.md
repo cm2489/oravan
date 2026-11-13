@@ -8,6 +8,36 @@ The history behind `CLAUDE.md`'s hard rules: every dated amendment and the wordi
 
 ---
 
+<a id="session-rules-2026-11-12"></a>
+
+## 2026-11-12 — The session contract gives way to the owner's shorter session rules; Merging and three README lines changed to match
+
+Sections touched: `CLAUDE.md` (the session contract at the top replaced by a short pointer; the page-1 line; the `docs/process.md` line; "When something conflicts"; "Merging", first grant); README (design principles 1 and 4; "The 'Read' section"); `docs/process.md` ("How work is handed back", "How big work is delegated"); `lib/commit-trailer.mjs` (Haiku 5.5 added to the allowed trailers). No numbered hard rule changed, and no gate changed.
+
+- **What was replaced, and why.** The full copy of the 2026-09-29 session contract at the top of `CLAUDE.md` is replaced by a pointer to the owner's global rules file, whose section "How every session runs" now holds seven short points, because he said the contract felt bloated and chose a shorter set of rules.
+- **His words.** On 2026-11-11, offered a shorter set of rules, he answered: *"1. a - the lite version"*. On 2026-11-12 at 3:39 PM ET, approving the final text, he answered: *"Yes, apply them as drafted."*
+- **The text he approved**, as it stands in his global rules file under "How every session runs":
+
+> 1. **Models.** The session I talk to orchestrates on Fable. Helpers run on Opus 5.5 or Sonnet 5.5 (Haiku 5.5 for mechanical steps), never Fable, and every helper call names its model. Claude picks the model and the effort.
+> 2. **Start.** Claude reads what is already answered, asks only the questions that block the work (five at most, each with its recommended answer), and gives a short plan. My "go" lets it push to feature branches and merge the pull requests that plan names.
+> 3. **Merging.** A pull request merges only when every check is green, with one comment saying on whose word. Bug fixes and small wording or visual fixes merge, and I see the before and after with a way to revert. These wait for me: a new look (colour, layout, navigation), a new page or section, anything that changes the product's pitch or a promise the site makes, the rule files, and anything that publishes text or touches money or privacy and that an independent reviewer scored under 95%.
+> 4. **Told at once, and not done:** spend over $3 I have not approved by name, anything a revert cannot undo, anything that reaches someone other than me.
+> 5. **No guessing.** Claude says what it checked and what it did not, and never describes a tool or step as run unless it ran. A step I will do by hand is never handed to me unverified.
+> 6. **End of a run.** A short summary in chat: done, not done, and at most five decisions, each with a recommendation. Anything I review comes as a readable page with buttons to answer, never a markdown file.
+> 7. **Times** are Eastern for me and UTC for machines. A schedule names its zone, and a UTC-only schedule gets a comment with both times.
+>
+> **Browser.** Pages open in the project's Chrome window, never Safari, and a publish updates the page that is already open.
+
+- **Unchanged:** the 12 hard rules and their gates; the 2026-09-24 pipeline carve-out, its quoted words and its scope, word for word; the coordination ledger (pinned issue #341), who reads it and when; at most three full local builds or end-to-end runs at once, with the pull request's CI as the full-suite check; the rule files (`CLAUDE.md`, README and this log), and that `docs/process.md` and `docs/current-direction.md` merge under an approved plan when the change only records his own dated words; the roadmap as one private page outside this repo; "When something conflicts", "Architecture" and "Amending a hard rule" in substance; the closing paragraph of "Merging" (no admin override, no direct push to `main`, never the `approve-moment` label). The 2026-09-29 entry below stays as history, unedited.
+- **Changed in "Merging", first grant:** it was "The session contract" (a plan's approval covers its pull requests until its Report; visual, UX or wording changes, the rule files, unplanned work other than a clear bug, and spend over $3 wait for him). It now follows point 3: his go on a plan lets Claude merge the pull requests that carry it out, each only with every check green and one comment saying on whose word; bug fixes and small wording or visual fixes merge, with a before and after and a way to revert; what waits is point 3's list, plus spend over $3 he has not approved by name.
+- **Changed in "When something conflicts":** the citation "(session contract, "Told at once")" is gone, because point 4 of the new rules does not name a rule conflict. The sentence it cited is kept as it was: where there is no compliant version, stop that thread, tell him at once, and keep working the rest.
+- **README lines changed, each because it was no longer true:**
+  - Principle 1, "No server-side user data exists — nothing to breach, leak, or subpoena.", now reads "Oravan keeps no accounts and no database of visitors. The host's request logs are the one exception, and the privacy page names them." The host's request logs record a visitor's network address and the pages they open; the Terms page has said so since #468.
+  - Principle 4, "voicemail legitimized, offices tally it identically; after-hours calling encouraged", now reads "voicemail is a normal way to leave a message, so after-hours calling is encouraged". No source on file supports the old clause, and #467 took the same claim out of the site's own strings.
+  - "The 'Read' section", "so the site still makes **zero runtime third-party calls**", now reads "so showing the section makes **no runtime third-party call**". At request time the server calls Anthropic, the Census geocoder and Upstash, so the claim held only for the section.
+
+---
+
 <a id="session-contract-2026-09-29"></a>
 
 ## 2026-09-29 — The session contract: how every session runs; Merging and conflicts changed to match
