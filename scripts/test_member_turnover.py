@@ -17,7 +17,9 @@ from member_turnover import (
     parse_accept_departures,
     refusal_report,
     FORBIDDEN_FIELDS,
+    MAX_ACCEPTABLE_DEPARTURES,
     MEMBER_DROP_THRESHOLD,
+    MIN_PLAUSIBLE_MEMBERS,
     TURNOVER_WINDOW_DAYS,
     departed_problems,
     departed_records,
@@ -101,8 +103,10 @@ class LargeTurnoverTest(unittest.TestCase):
         # A file that keeps every seat but swaps 80 people in a November week
         # is a wrong file (an old snapshot), not churn.
         problems = roster_problems(self.new, self.prev, ORDINARY_DAY)
-        self.assertEqual(len(problems), 1)
-        self.assertIn('80 member(s) left the file', problems[0])
+        self.assertEqual(len(problems), 2)
+        self.assertTrue(any('80 member(s) left the file' in p for p in problems))
+        # 80 is past MAX_ACCEPTABLE_DEPARTURES, so the file is also broken.
+        self.assertTrue(any('looks broken' in p for p in problems))
 
     def test_a_seat_whose_member_changes_is_never_vacant(self):
         # FL-20-class: a seat vacant in the old Congress gets a member in the
@@ -199,6 +203,55 @@ class AcceptedWeekTest(unittest.TestCase):
         for bad in ('0', '-3', 'all', '7.5', ' 7'):
             with self.assertRaises(ValueError):
                 parse_accept_departures(bad)
+
+
+class BrokenFileTest(unittest.TestCase):
+    """An empty or badly short upstream file is refused in every week, and no
+    accept_departures number lets it through (re-check of stage 5: the report
+    used to say accept_departures=539, which wrote an empty member file)."""
+
+    def setUp(self):
+        self.prev = full_roster()
+
+    def test_the_thresholds_come_from_the_record(self):
+        self.assertEqual((MIN_PLAUSIBLE_MEMBERS, MAX_ACCEPTABLE_DEPARTURES), (500, 20))
+
+    def test_an_empty_file_is_broken_and_never_accepted(self):
+        for day in (ORDINARY_DAY, SWITCH_DAY):
+            for accept in (None, len(self.prev)):
+                problems = roster_problems([], self.prev, day, accept_departures=accept)
+                self.assertTrue(any('looks broken' in p for p in problems), (day, accept))
+            self.assertFalse(accepts_seats([], self.prev, len(self.prev), 435))
+
+    def test_a_short_file_is_broken_even_in_january(self):
+        short = self.prev[:MIN_PLAUSIBLE_MEMBERS - 1]
+        self.assertTrue(any('looks broken' in p for p in roster_problems(short, self.prev, SWITCH_DAY)))
+        whole_enough = self.prev[:MIN_PLAUSIBLE_MEMBERS]
+        self.assertFalse(any('looks broken' in p for p in roster_problems(whole_enough, self.prev, SWITCH_DAY)))
+
+    def test_more_than_twenty_departures_outside_january_cannot_be_accepted(self):
+        new21 = turnover(self.prev, 21)
+        problems = roster_problems(new21, self.prev, ORDINARY_DAY, accept_departures=21)
+        self.assertTrue(any('looks broken' in p for p in problems))
+        new20 = turnover(self.prev, 20)
+        self.assertEqual(roster_problems(new20, self.prev, ORDINARY_DAY, accept_departures=20), [])
+        # In January the same 21 is ordinary turnover and needs no number.
+        self.assertEqual(roster_problems(new21, self.prev, SWITCH_DAY), [])
+
+    def test_the_report_for_a_broken_file_offers_no_accept_command(self):
+        from member_turnover import dropped_members
+        body = refusal_report(roster_problems([], self.prev, ORDINARY_DAY), dropped_members([], self.prev), ORDINARY_DAY)
+        self.assertNotIn('accept_departures=', body)
+        self.assertIn('Accept nothing', body)
+        self.assertIn('looks broken', body)
+
+    def test_the_report_never_offers_more_than_twenty(self):
+        # In January the drop is allowed, but a House-seat refusal with 80
+        # departures must not be answered with accept_departures=80.
+        from member_turnover import dropped_members
+        new = turnover(self.prev, 80)
+        body = refusal_report(['5 House seat(s) vanished'], dropped_members(new, self.prev), SWITCH_DAY)
+        self.assertNotIn('accept_departures=', body)
 
 
 class RefusalReportTest(unittest.TestCase):

@@ -49,9 +49,15 @@ DOWNLOAD = '--download' in sys.argv
 # The workflow never passes it.
 TODAY_ARG = sys.argv[sys.argv.index('--today') + 1] if '--today' in sys.argv else None
 # --accept-departures N: see the header. Exactly N, refused if not a number.
-ACCEPT = parse_accept_departures(
-    sys.argv[sys.argv.index('--accept-departures') + 1] if '--accept-departures' in sys.argv else None
-)
+try:
+    ACCEPT = parse_accept_departures(
+        sys.argv[sys.argv.index('--accept-departures') + 1] if '--accept-departures' in sys.argv else None
+    )
+except (ValueError, IndexError) as e:
+    # One plain line, before anything is read or written (0, abc and -1 used
+    # to stop here with a traceback).
+    print(f'::error::{e if isinstance(e, ValueError) else "--accept-departures needs a number after it"}; nothing was read or written.')
+    sys.exit(2)
 SOURCES = {
     'data/legislators-raw.json': 'https://unitedstates.github.io/congress-legislators/legislators-current.json',
     'data/district-offices-raw.json': 'https://unitedstates.github.io/congress-legislators/legislators-district-offices.json',

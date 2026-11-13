@@ -118,9 +118,18 @@ test.describe('review: the day after the switch', () => {
 
   test('roll-call lists and sponsor lines link to a departed member, and the link resolves', async ({ request }) => {
     for (const id of departed) {
-      const roll = allRollCalls().find((r) => Object.values(r.votes).some((ids) => ids.includes(id)))!;
-      const list = await (await request.get(`/votes/${roll.id}.json`)).text();
-      expect(list).toContain(`"${id}"`);
+      const roll = allRollCalls().find((r) => Object.values(r.votes).some((ids) => ids.includes(id)));
+      if (!roll) {
+        // A delegate, or a member sworn in after the last stored roll call, is
+        // on no roll-call list: there is no list link to check for them.
+        test.info().annotations.push({
+          type: 'skipped',
+          description: `${id} is on no stored roll call, so no roll-call list links to them; only their page and sponsor line are checked`,
+        });
+      } else {
+        const list = await (await request.get(`/votes/${roll.id}.json`)).text();
+        expect(list).toContain(`"${id}"`);
+      }
       expect((await request.get(`/reps/${id}`)).status()).toBe(200);
       const sponsored = (bills as unknown as Bill[]).find((b) => b.sponsor_bioguide_id === id);
       if (!sponsored) continue;

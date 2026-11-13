@@ -23,7 +23,11 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ORDINARY_DAY = '2026-11-16'
 SWITCH_DAY = '2027-01-04'
 TERM_END = date(2027, 1, 3).isoformat()
-STATES = ['AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA']
+STATES = [
+    'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA', 'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY',
+    'LA', 'ME', 'MD', 'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ', 'NM', 'NY', 'NC', 'ND',
+    'OH', 'OK', 'OR', 'PA', 'RI', 'SC', 'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY',
+]
 
 
 def raw_member(bioguide, mtype, state, district=None, start=date(2025, 1, 3).isoformat()):
@@ -39,15 +43,16 @@ def raw_member(bioguide, mtype, state, district=None, start=date(2025, 1, 3).iso
 
 
 def roster():
-    """20 senators (2 per state) and 30 House seats (3 per state)."""
+    """A complete file: 100 senators and 435 House seats (the refresh refuses
+    a file of fewer than 500 members as broken, so a fixture must be whole)."""
     out, n = [], 0
     for s in STATES:
         for _ in range(2):
             n += 1
             out.append(raw_member(f'S{n:06d}', 'sen', s))
-        for d in (1, 2, 3):
-            n += 1
-            out.append(raw_member(f'H{n:06d}', 'rep', s, d))
+    for i in range(435):
+        n += 1
+        out.append(raw_member(f'H{n:06d}', 'rep', STATES[i % 50], i // 50 + 1))
     return out
 
 
@@ -220,11 +225,42 @@ class ProcessDataEndToEnd(unittest.TestCase):
             self.assertTrue(r.untouched())
             self.assertIn('listed more than once', r.out)
 
-    def test_a_bad_accept_value_stops_before_anything(self):
+    def test_a_bad_accept_value_stops_with_one_line_before_anything(self):
         raw = roster()
-        r = self.run_(raw, raw).go('--today', ORDINARY_DAY, '--accept-departures', 'all')
-        self.assertNotEqual(r.code, 0)
+        for bad in ('all', '0', 'abc', '-1'):
+            r = self.run_(raw, raw).go('--today', ORDINARY_DAY, '--accept-departures', bad)
+            self.assertEqual(r.code, 2, (bad, r.out))
+            self.assertTrue(r.untouched(), bad)
+            self.assertNotIn('Traceback', r.out, bad)
+            self.assertEqual(r.out.strip().count('\n'), 0, (bad, r.out))
+            self.assertTrue(r.out.startswith('::error::'), (bad, r.out))
+        r = self.run_(raw, raw).go('--today', ORDINARY_DAY, '--accept-departures')
+        self.assertEqual(r.code, 2, r.out)
+        self.assertNotIn('Traceback', r.out)
+
+    def test_an_empty_upstream_file_is_refused_and_its_accept_number_is_refused_too(self):
+        # The re-check's case: the report must not offer accept_departures=535,
+        # and running with it must not write an empty member file.
+        prev = roster()
+        r = self.run_(prev, []).go('--today', ORDINARY_DAY)
+        self.assertEqual(r.code, 1, r.out)
         self.assertTrue(r.untouched())
+        self.assertIn('Accept nothing', r.report())
+        self.assertNotIn('accept_departures=', r.report())
+        forced = self.run_(prev, []).go('--today', ORDINARY_DAY, '--accept-departures', str(len(prev)))
+        self.assertEqual(forced.code, 1, forced.out)
+        self.assertTrue(forced.untouched())
+        jan = self.run_(prev, []).go('--today', SWITCH_DAY, '--accept-departures', str(len(prev)))
+        self.assertEqual(jan.code, 1, jan.out)
+        self.assertTrue(jan.untouched())
+
+    def test_a_badly_short_file_is_refused_in_january_too(self):
+        prev = roster()
+        short = prev[:300]
+        r = self.run_(prev, short).go('--today', SWITCH_DAY)
+        self.assertEqual(r.code, 1, r.out)
+        self.assertTrue(r.untouched())
+        self.assertIn('looks broken', r.out)
 
 
 if __name__ == '__main__':

@@ -60,6 +60,28 @@ SEAT_SHRINK_THRESHOLD = 5
 # that the allowance is closed again by mid-February.
 TURNOVER_WINDOW_DAYS = 42
 
+# A FILE THAT IS BROKEN, NOT CHURNING (re-check of stage 5, 2026-11-13). An
+# empty or badly short upstream file once produced a refusal report telling
+# the reader to accept every member as departed (accept_departures=539),
+# which would have written a member file with nobody in it. Below these two
+# lines the run is refused and NOTHING accepts it: the file is broken, and
+# the first run after it is fixed passes on its own.
+#
+# MIN_PLAUSIBLE_MEMBERS: the full roster is 541 (100 senators, 435
+# representatives, 6 delegates and the resident commissioner's seat among
+# them). Counted from the congress-legislators historical and current files
+# on 2026-11-13, the fewest members serving on any ordinary Monday since 1995
+# was 534 (Feb 2008). 500 leaves room for some thirty vacancies more than
+# that record and still refuses a truncated file, in any week, January
+# included (a file caught between one Congress's members leaving and the
+# next one's arriving is exactly what this should refuse).
+MIN_PLAUSIBLE_MEMBERS = 500
+# MAX_ACCEPTABLE_DEPARTURES: the most members whose service ended in one week
+# outside a January window, since 1995, was 2 (same files, same day). 20 is
+# ten times that. More than 20 departures outside January is not a week a
+# person should wave through with one number; it would need a pull request.
+MAX_ACCEPTABLE_DEPARTURES = 20
+
 # Only these leave the member file when a member leaves; everything that
 # could reach a visitor as a way to contact them is left behind.
 DEPARTED_FIELDS = ('bioguide', 'name', 'first', 'last', 'type', 'state', 'district', 'party')
@@ -112,6 +134,22 @@ def duplicate_ids(members: Iterable[dict]) -> List[str]:
     return dup
 
 
+def broken_file(new_members: List[dict], dropped: int, today: str) -> Optional[str]:
+    """Why this run's member file looks broken rather than churning, or None.
+    A broken file is refused in every week and is never acceptable."""
+    if len(new_members) < MIN_PLAUSIBLE_MEMBERS:
+        return (
+            f'the upstream member file looks broken: it lists {len(new_members)} member(s), and a complete one '
+            f'lists about 540 (refused below {MIN_PLAUSIBLE_MEMBERS})'
+        )
+    if dropped > MAX_ACCEPTABLE_DEPARTURES and not in_turnover_window(today):
+        return (
+            f'the upstream member file looks broken: {dropped} members left it in one run outside the January '
+            f'window, and no real week since 1995 has had more than 2 (refused above {MAX_ACCEPTABLE_DEPARTURES})'
+        )
+    return None
+
+
 def parse_accept_departures(value: Optional[str]) -> Optional[int]:
     """The --accept-departures value: a whole number above zero, or None when
     it was not given. Anything else is refused, so a typo never reads as
@@ -146,7 +184,15 @@ def roster_problems(
     allowance does not carry over."""
     problems = []
     dropped = dropped_members(new_members, prev_members)
-    accepted = accept_departures is not None and len(dropped) == accept_departures
+    broken = broken_file(new_members, len(dropped), today)
+    if broken:
+        problems.append(broken)
+    accepted = (
+        accept_departures is not None
+        and len(dropped) == accept_departures
+        and len(dropped) <= MAX_ACCEPTABLE_DEPARTURES
+        and not broken
+    )
     dup = duplicate_ids(new_members)
     if dup:
         problems.append(f'{len(dup)} member(s) listed more than once in the member file: ' + ', '.join(dup[:20]))
@@ -169,9 +215,11 @@ def roster_problems(
 
 def accepts_seats(new_members: List[dict], prev_members: List[dict], accept_departures: Optional[int], seats: int) -> bool:
     """Does accept_departures let `seats` newly emptied seats through? Only
-    when exactly that many members left and the seats are no more than them."""
+    when exactly that many members left, the seats are no more than them, and
+    the file is not broken (no more than MAX_ACCEPTABLE_DEPARTURES departures,
+    at least MIN_PLAUSIBLE_MEMBERS members)."""
     n = len(dropped_members(new_members, prev_members))
-    return accept_departures is not None and n == accept_departures and seats <= n
+    return accept_departures is not None and n == accept_departures and seats <= n and n <= MAX_ACCEPTABLE_DEPARTURES and len(new_members) >= MIN_PLAUSIBLE_MEMBERS
 
 
 def refusal_report(problems: List[str], dropped: List[dict], today: str) -> str:
@@ -190,8 +238,15 @@ def refusal_report(problems: List[str], dropped: List[dict], today: str) -> str:
         '## What to do',
         '',
     ]
-    acceptable = n > 0 and not any('more than once' in p for p in problems)
-    if acceptable:
+    broken = any('looks broken' in p for p in problems)
+    acceptable = 0 < n <= MAX_ACCEPTABLE_DEPARTURES and not broken and not any('more than once' in p for p in problems)
+    if broken:
+        lines += [
+            'The upstream member file looks broken, not like members leaving. **Accept nothing**: no '
+            '`accept_departures` number lets this file through. Wait for the congress-legislators project to fix it; '
+            'the first run after that passes on its own.',
+        ]
+    elif acceptable:
         lines += [
             f'{n} members left the member file at once. On an ordinary week that looks like a damaged or wrong file, '
             'so the run stops. Every later run compares against the same committed file, so **it will keep refusing '
@@ -206,9 +261,9 @@ def refusal_report(problems: List[str], dropped: List[dict], today: str) -> str:
         ]
     else:
         lines += [
-            'Either no member left (seats emptied without anyone leaving the file) or a member is listed twice. '
-            'Neither is accepted by any input: the upstream file is damaged. Wait for it to be fixed; the next run '
-            'passes on its own once it is.',
+            'No `accept_departures` number accepts this file: either no member left (seats emptied without anyone '
+            f'leaving the file), a member is listed twice, or more than {MAX_ACCEPTABLE_DEPARTURES} members left at once. '
+            'The upstream file is damaged: wait for it to be fixed; the next run passes on its own once it is.',
         ]
     lines += ['', 'Steps and commands: `docs/runbooks/new-congress-switch.md`, "A refused week".', '']
     return '\n'.join(lines)

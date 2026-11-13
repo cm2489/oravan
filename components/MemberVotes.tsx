@@ -95,9 +95,9 @@ import { NEW_MEMBER_LINE_KEY } from '@/lib/departed-members';
  * with one plain sentence and its date window, not a hidden section: the rep
  * cards and the call panel link here unconditionally, so the anchor must
  * always land on something true. After the switch, a new member with no
- * stored roll call gets the approved "No recorded votes yet in the 120th
- * Congress." line instead (the page decides, and NEW_MEMBER_LINE_KEY picks
- * the line: lib/departed-members.ts).
+ * stored roll call gets "No recorded votes yet on a bill Oravan tracks."
+ * instead (the owner's choice of 2026-11-13; the page decides, and
+ * NEW_MEMBER_LINE_KEY picks the line: lib/departed-members.ts).
  */
 
 /** Bills shown before the rest fold into a disclosure (member.html: "five
