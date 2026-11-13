@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-13T03:08:33.616Z",
+    "fetched_at": "2026-11-13T07:52:57.316Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-13T03:08:33.616Z"
+        "checked_at": "2026-11-13T07:52:57.316Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-08",
         "week_label": "Most-Viewed Bills - Week of November 8, 2026",
         "entries": 6,
-        "checked_at": "2026-11-13T03:08:33.616Z"
+        "checked_at": "2026-11-13T07:52:57.316Z"
       },
       "leans": {
         "center": {
@@ -752,6 +752,13 @@
     "hr-6322-119": {
       "outlets7d": [
         {
+          "domain": "reuters.com",
+          "lean": "center",
+          "firstSeen": "2026-11-13",
+          "lastSeen": "2026-11-13",
+          "url": "https://news.google.com/rss/articles/CBMixAFBVV95cUxQOFBGZG9jUFFjX0tFY2tXSEVILWxGWU1rMzBvT1pTcUpqa2tEdEV0QWRybENzel9tU3hIQVhmTngyY3VGRGZZeGtCWDhEWm1oRXBzVWlGRnhwRzJrd0Z5bGZhUi1STHFLdFdLVnhoRUxMOW42MkNSSjNZX3JQR0o3OVpBSE10bE1kekw3OVVXYXVub0NzekN5NE4zb1JpRzB6Zjl2V1pTWFEteUQ1Q0hxd2lhLV9JLXloLVJqbWhUQ1pmN21H?oc=5"
+        },
+        {
           "domain": "politico.com",
           "lean": "left",
           "firstSeen": "2026-11-09",
@@ -1318,6 +1325,12 @@
           "url": "https://news.google.com/rss/articles/CBMixgFBVV95cUxObkEyZEtCWGgzZDlVczRtOUxtVFJOanA0MDA3bXNHY1c5Z3hoY1d6Wm1ETHVNWEZmSUdKcDdFNW9nUExPN0drOUFtRWZRcXNKM3I3MzQwX1FkbHhBd0hieU1aTy1SQ2hQM1FSY2NETWZTZmJEN3k5WE5ZeTI0elBjZGsxVXJES0tDWUJ6ZTQ3MWN1RjlzUFp6SV9xaGloUkE0M1lxcHZ1SDRSUG16bzE2VG1COEwtWERYbkk5a19oRlpHb0oxNkE?oc=5"
         },
         {
+          "domain": "rg.org",
+          "firstSeen": "2026-11-13",
+          "lastSeen": "2026-11-13",
+          "url": "https://news.google.com/rss/articles/CBMijgFBVV95cUxOYTN2cE9nZzc5M0VtTE1tWlNvV3prTFlpRUpWLTgwY3dKcTJkdTJmQ2gxS1dxT3hKTDBrcnVaZ2hnYXpjLXVTWlRUdk9ydHBqS1pQVTFiOTFqdEZsRWZqTnhuSHY0NlRvd0tyWWxUc3hBY3l5ZGt4NEFDN2RlbzM0MTZSc0NEOFhFVzIyTm5B?oc=5"
+        },
+        {
           "domain": "detroitnews.com",
           "firstSeen": "2026-11-12",
           "lastSeen": "2026-11-12",
@@ -1434,6 +1447,18 @@
           "firstSeen": "2026-11-12",
           "lastSeen": "2026-11-12",
           "url": "https://news.google.com/rss/articles/CBMirgFBVV95cUxQSjQ5R1BHYkpmWWhzTnpvdE54c1VJX0Y0SmlvVTBsUmlMUmNkT0NmekVLU1NSYVF0bmNsYkFBVDZ6aHNmNVE3SWJoeDBVbWlQOE1kckdFd2h3bnI0M2tUYXJNYjBhRTJNXzk2UzJ3SzJnRUc0WWhXZ0tsMEtJa2dLNGtUdlFsT0NoYnlvRDB4YVhKYXBkMHNsNWtVdGtvQnNJYU1kN195U3U0QlppSmfSAcIBQVVfeXFMT0tRYXpfdXE3RHkwamxXNF9KZTZvU19VVlB0cjVDaTM0ZU0ySG9DcTk0NENaY1U3N0pORHR1UTZ5RVV1ZDdyT2haNG5sWmEwNkNtOGRQamFwVXhIWV8zN1lGc1FJR29tdXk2OVJySW5EajJHaTFjWW9xQzFWcnJrWmFjbDVuUVNVczlWd1hwWFU0WWdpQmJoSThVNjEyODJ0cVBsZ19fTVI3QWlxeVpoNmFsZGFydm5xTl9BbGwxVFMxdnc?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "s-766-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "news10.com",
+          "firstSeen": "2026-11-13",
+          "lastSeen": "2026-11-13",
+          "url": "https://news.google.com/rss/articles/CBMingFBVV95cUxPb3Fmb2N0cG1wV0JWcFB1VVpZeHgyLVNzanltSEJ6R2FNaUJVd2hfbl9XVHdIZEgydE9YV09hOEhMRDdBU3FYNDZMcVBuc3FtMzNvYjNYcjI2cTJ5dmppWHpoQkxzYkczMkxwMVU3Qmdjcm94N3FsMkxfaXBxT0d2akhzZXozWEhpRExVam1rUF9IR25yajZFSENOS3dfdw?oc=5"
         }
       ],
       "mostViewed": null
