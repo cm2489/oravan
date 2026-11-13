@@ -14,13 +14,24 @@ would have if they had left this week:
   2. it rebuilds each one's member-file entry with scripts/member_entry.py
      (the code process-data.py uses for every member), from the same
      historical record;
-  3. it hands the committed member file plus those entries to
-     member_turnover.departed_records as "last week's file", and the
-     committed member file as "this week's", so departed_records keeps the
-     same fields, reads served_until from the same historical file, and
-     stamps left_file = --today, as a refresh run on that day would;
-  4. it refuses to write unless member_turnover.departed_problems passes,
-     and writes with the refresh's own json.dump arguments.
+  3. THE DATE IS THE OFFICIAL ONE (review of 2026-11-13: the historical
+     file was a day off for five of the sixteen). Every member it records
+     must have an entry in data/departure-dates.json, the committed table
+     of last days a person read from the Clerk of the House's vacancy list
+     or the Biographical Directory, with the address and the day read. It
+     refuses when a member has no entry, or when the historical file's date
+     and the official one are more than a day apart (that is a different
+     event, not an off-by-one: a person must look);
+  4. it hands the committed member file plus those entries to
+     member_turnover.departed_records as "last week's file", the committed
+     member file as "this week's", and the official table, so
+     departed_records keeps the same fields, takes the official date and
+     source, and stamps left_file = --today, as a refresh run on that day
+     would. A record already kept with no source takes the official date the
+     same way (how a pull request confirms a new departure);
+  5. it refuses to write unless member_turnover.departed_problems and
+     official_problems pass, and writes with the refresh's own json.dump
+     arguments.
 
 It never changes data/legislators.json, data/vacancies.json or anything else,
 and a second run with the same inputs writes the same bytes.
@@ -38,7 +49,7 @@ from datetime import date
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from member_entry import member_entry  # noqa: E402
-from member_turnover import departed_problems, departed_records  # noqa: E402
+from member_turnover import departed_problems, departed_records, official_problems  # noqa: E402
 
 HISTORICAL_URL = 'https://unitedstates.github.io/congress-legislators/legislators-historical.json'
 
@@ -63,15 +74,29 @@ def main():
 
     current = json.load(open('data/legislators.json'))
     prev_departed = json.load(open('data/departed-members.json'))
+    official_table = json.load(open('data/departure-dates.json'))
+    official = {e['bioguide']: e for e in official_table}
     sitting = {m['bioguide'] for m in current}
     left = [
         h for h in historical
         if since < h['terms'][-1]['end'] <= today and h['id']['bioguide'] not in sitting
     ]
+    problems = official_problems(official_table)
+    for h in left:
+        b, file_day = h['id']['bioguide'], h['terms'][-1]['end']
+        if b not in official:
+            problems.append(f'{b} has no official last day in data/departure-dates.json (the historical file says {file_day})')
+            continue
+        gap = abs((date.fromisoformat(official[b]['served_until']) - date.fromisoformat(file_day)).days)
+        if gap > 1:
+            problems.append(
+                f"{b}: the historical file says {file_day} and the official source says {official[b]['served_until']}, "
+                f'{gap} days apart; a person must look before anything is written'
+            )
     entries = [member_entry(h, []) for h in left]
 
-    departed, undated = departed_records(current, current + entries, prev_departed, historical_by_id, today)
-    problems = departed_problems(departed, current)
+    departed, undated = departed_records(current, current + entries, prev_departed, historical_by_id, today, official)
+    problems += departed_problems(departed, current)
     if problems or undated:
         for p in problems:
             print(f'::error::{p}')
@@ -83,7 +108,8 @@ def main():
         json.dump(departed, open('data/departed-members.json', 'w'), ensure_ascii=False, indent=2)
     print(f'departed-members.json: {len(departed)} member(s) kept as a record ({len(left)} found in the historical file)')
     for r in departed:
-        print(f"  {r['bioguide']}  {r['type']}  {r['state']}{'' if r['district'] is None else '-' + str(r['district'])}  served_until {r['served_until']}  {r['name']}")
+        src = r.get('served_until_source') or {}
+        print(f"  {r['bioguide']}  {r['type']}  {r['state']}{'' if r['district'] is None else '-' + str(r['district'])}  served_until {r['served_until']}  ({src.get('kind', 'UNCONFIRMED')})  {r['name']}")
     return 0
 
 

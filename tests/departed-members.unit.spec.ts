@@ -27,13 +27,22 @@ import {
   repsForDistrict,
 } from '../lib/core';
 import type { DepartedMember, Legislator } from '../lib/types';
+import officialDates from '../data/departure-dates.json';
+import { OFFICIAL_SOURCES, hasOfficialDate } from '../lib/departed-members';
+import { portraitKnownMissing } from '../lib/core';
 
 /*
  * MEMBERS AFTER A NEW CONGRESS BEGINS (stage 5, 2026-11-13).
  * lib/departed-members.ts holds the rules; every case here is a fixture.
- * The last block pins that none of it is live today: the ended list is empty,
- * data/departed-members.json is empty, and nothing gets a page or a new line.
+ * The "today" block pins what is live: the ended list is empty, and the 16
+ * members who left mid-term have record pages with official dates.
  */
+
+const CLERK_SOURCE = {
+  kind: 'house-clerk' as const,
+  url: 'https://clerk.house.gov/Members/ViewVacancies',
+  read: '2026-11-13',
+};
 
 const ENDED_DAY = congressTerm(CONGRESS).end; // the last day of the tracked Congress
 const AFTER: CongressPolicy = { tracked: CONGRESS + 1, ended: [{ number: CONGRESS, ended: ENDED_DAY }] };
@@ -49,6 +58,7 @@ function record(over: Partial<DepartedMember> = {}): DepartedMember {
     district: 3,
     party: 'Independent',
     served_until: ENDED_DAY,
+    served_until_source: null,
     left_file: ENDED_DAY,
     ...over,
   };
@@ -69,8 +79,23 @@ test.describe('who keeps a record page', () => {
     expect(departedWithPage([record()], new Set(), AFTER).map((r) => r.bioguide)).toEqual(['A000001']);
   });
 
+  test('a mid-term date with no official source gets no page: not found, as before (hard rule 6)', () => {
+    const unconfirmed = record({ bioguide: 'B000002', served_until: '2026-04-21', served_until_source: null });
+    const missing = record({ bioguide: 'C000003', served_until: '2026-04-21' });
+    const wrongPlace = record({
+      bioguide: 'D000004',
+      served_until: '2026-04-21',
+      served_until_source: { kind: 'house-clerk', url: 'https://example.com/list', read: '2026-11-13' },
+    });
+    for (const policy of [BEFORE, AFTER]) {
+      expect(departedWithPage([unconfirmed, missing, wrongPlace], new Set(), policy)).toEqual([]);
+    }
+    // The change of Congress needs no table entry: its date is fixed.
+    expect(departedWithPage([record({ served_until_source: null })], new Set(), AFTER)).toHaveLength(1);
+  });
+
   test('a member who left mid-term has a page now and after the switch (owner, 2026-11-13)', () => {
-    const mid = record({ bioguide: 'B000002', served_until: '2026-04-21' });
+    const mid = record({ bioguide: 'B000002', served_until: '2026-04-21', served_until_source: CLERK_SOURCE });
     expect(departedWithPage([mid], new Set(), BEFORE)).toEqual([mid]);
     expect(departedWithPage([mid], new Set(), AFTER)).toEqual([mid]);
   });
@@ -226,7 +251,10 @@ test.describe('the approved wording (owner, 2026-11-12), exactly', () => {
 });
 
 test.describe('data/departed-members.json', () => {
-  const ALLOWED = new Set(['bioguide', 'name', 'first', 'last', 'type', 'state', 'district', 'party', 'served_until', 'left_file']);
+  const ALLOWED = new Set([
+    'bioguide', 'name', 'first', 'last', 'type', 'state', 'district', 'party',
+    'served_until', 'served_until_source', 'left_file',
+  ]);
   test('every record has the shape scripts/member_turnover.py writes, and no way to contact anyone', () => {
     const rows = departedFile as unknown[];
     expect(Array.isArray(rows)).toBe(true);
@@ -249,6 +277,30 @@ test.describe('today', () => {
   test('the ended list is empty, so no turnover and no new-member line', () => {
     expect(CONGRESS_POLICY.ended).toEqual([]);
     expect(liveTurnover()).toBeNull();
+  });
+
+  test('every mid-term record carries its official date, exactly as data/departure-dates.json gives it', () => {
+    type Entry = { bioguide: string; served_until: string; source: DepartedMember['served_until_source'] };
+    const table = new Map((officialDates as Entry[]).map((e) => [e.bioguide, e]));
+    expect(table.size).toBe((officialDates as unknown[]).length);
+    for (const e of table.values()) {
+      expect(e.served_until).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      expect(hasOfficialDate({ served_until_source: e.source })).toBe(true);
+    }
+    for (const r of departedFile as DepartedMember[]) {
+      const e = table.get(r.bioguide);
+      expect(e, `${r.bioguide} has an official date`).toBeTruthy();
+      expect(r.served_until).toBe(e!.served_until);
+      expect(r.served_until_source).toEqual(e!.source);
+    }
+    expect(Object.keys(OFFICIAL_SOURCES).sort()).toEqual(['bioguide', 'house-clerk']);
+  });
+
+  test('a member whose photo is missing at the source shows the initials alone (Sylvester Turner)', () => {
+    expect(portraitKnownMissing('T000489')).toBe(true);
+    for (const d of getDepartedMembers().filter((x) => x.bioguide !== 'T000489')) {
+      expect(portraitKnownMissing(d.bioguide), d.bioguide).toBe(false);
+    }
   });
 
   test('the 16 members who left the 119th Congress mid-term have record pages (owner, 2026-11-13)', () => {

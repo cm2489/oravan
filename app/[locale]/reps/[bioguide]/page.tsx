@@ -23,6 +23,7 @@ import {
   getVacancyBySlug,
   localizeBill,
   memberTurnover,
+  portraitKnownMissing,
   reviewTreatsAsNew,
   senatorsForState,
   specialElectionsFor,
@@ -388,7 +389,9 @@ function DepartedBody({
   return (
     <>
       <header className="mt-6 flex items-start gap-4 md:gap-6">
-        <RepPortrait rep={member} large />
+        {/* Initials alone when the photo is known to be missing at the source
+            (Sylvester Turner's answers 404): never an image that fails. */}
+        <RepPortrait rep={member} large photo={!portraitKnownMissing(member.bioguide)} />
         <div className="min-w-0">
           <p className={`flex flex-wrap gap-x-1 ${EYEBROW}`}>
             {/* The former-role chunk may wrap inside itself: in Spanish it is

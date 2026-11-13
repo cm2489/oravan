@@ -307,7 +307,8 @@ class DepartedRecordTest(unittest.TestCase):
             self.assertEqual(r['left_file'], SWITCH_DAY)
             for k in FORBIDDEN_FIELDS:
                 self.assertNotIn(k, r)
-            self.assertEqual(set(r) - {'served_until', 'left_file'}, set(DEPARTED_FIELDS))
+            self.assertEqual(set(r) - {'served_until', 'served_until_source', 'left_file'}, set(DEPARTED_FIELDS))
+            self.assertIsNone(r['served_until_source'])  # the historical file's date alone
         self.assertEqual(departed_problems(departed, self.new), [])
 
     def test_the_seat_comes_from_the_committed_file_not_the_historical_one(self):
@@ -343,6 +344,43 @@ class DepartedRecordTest(unittest.TestCase):
         bad = [{'bioguide': 'A000001', 'name': 'X', 'type': 'rep', 'state': 'AL', 'phone': '1', 'left_file': SWITCH_DAY}]
         self.assertTrue(any('never keeps' in p for p in departed_problems(bad, [])))
         self.assertTrue(any('at once' in p for p in departed_problems(bad, [{'bioguide': 'A000001'}])))
+
+
+class OfficialDatesTest(unittest.TestCase):
+    """Which dates a record page may print (hard rule 6)."""
+
+    def test_the_change_of_congress_is_jan_3_of_an_odd_year(self):
+        from member_turnover import is_term_change_day
+        self.assertTrue(is_term_change_day(TERM_END))
+        for d in (date(2026, 1, 3).isoformat(), '2026-04-21', None, '', 'nope'):
+            self.assertFalse(is_term_change_day(d), d)
+
+    def test_only_a_mid_term_date_without_a_source_is_unconfirmed(self):
+        from member_turnover import unconfirmed
+        src = {'kind': 'house-clerk', 'url': 'https://clerk.house.gov/Members/ViewVacancies', 'read': '2026-11-13'}
+        recs = [
+            {'bioguide': 'A000001', 'served_until': '2026-04-21', 'served_until_source': None},
+            {'bioguide': 'A000002', 'served_until': '2026-04-21', 'served_until_source': src},
+            {'bioguide': 'A000003', 'served_until': TERM_END, 'served_until_source': None},
+            {'bioguide': 'A000004', 'served_until': None, 'served_until_source': None},
+            {'bioguide': 'A000005', 'served_until': '2026-04-21', 'served_until_source': None},
+        ]
+        got = [r['bioguide'] for r in unconfirmed(recs, ['A000001', 'A000002', 'A000003', 'A000004'])]
+        self.assertEqual(got, ['A000001'])  # A000005 is not new this run
+
+    def test_the_official_table_and_its_sources_are_checked(self):
+        from member_turnover import official_problems
+        good = {'bioguide': 'A000001', 'served_until': '2026-04-22',
+                'source': {'kind': 'bioguide', 'url': 'https://bioguide.congress.gov/search/bio/A000001', 'read': '2026-11-13'}}
+        self.assertEqual(official_problems([good]), [])
+        bad = [
+            dict(good, source={'kind': 'news', 'url': 'https://example.com', 'read': '2026-11-13'}),
+            dict(good, bioguide='A000002', source={'kind': 'house-clerk', 'url': 'https://example.com', 'read': '2026-11-13'}),
+            dict(good, bioguide='A000003', served_until='April 22'),
+            dict(good, bioguide='A000004', source=None),
+        ]
+        self.assertEqual(len(official_problems(bad)), 4)
+        self.assertTrue(official_problems([good, good]))
 
 
 if __name__ == '__main__':

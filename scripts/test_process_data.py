@@ -71,7 +71,7 @@ def as_committed(raw):
 
 
 class Run:
-    def __init__(self, prev_raw, new_raw, historical=None, departed=None, vacancies=None):
+    def __init__(self, prev_raw, new_raw, historical=None, departed=None, vacancies=None, official=None):
         self.dir = tempfile.mkdtemp(prefix='oravan-process-data-')
         os.makedirs(f'{self.dir}/data')
         os.makedirs(f'{self.dir}/scripts')
@@ -80,6 +80,8 @@ class Run:
         self.write('legislators.json', as_committed(prev_raw), compact=True)
         self.write('vacancies.json', vacancies or [])
         self.write('departed-members.json', departed or [])
+        if official is not None:
+            self.write('departure-dates.json', official)
         self.write('legislators-raw.json', new_raw)
         self.write('district-offices-raw.json', [])
         if historical is not None:
@@ -104,8 +106,11 @@ class Run:
             return json.load(f)
 
     def go(self, *args):
-        env = {k: v for k, v in os.environ.items() if k not in ('GITHUB_OUTPUT', 'REFUSAL_REPORT')}
+        env = {k: v for k, v in os.environ.items()
+               if k not in ('GITHUB_OUTPUT', 'REFUSAL_REPORT', 'UNCONFIRMED_REPORT', 'GITHUB_STEP_SUMMARY')}
         env['REFUSAL_REPORT'] = f'{self.dir}/refusal.md'
+        env['UNCONFIRMED_REPORT'] = f'{self.dir}/unconfirmed.md'
+        env['GITHUB_STEP_SUMMARY'] = f'{self.dir}/summary.md'
         p = subprocess.run([sys.executable, 'scripts/process-data.py', *args], cwd=self.dir, env=env,
                            capture_output=True, text=True, timeout=60)
         self.code, self.out = p.returncode, p.stdout + p.stderr
@@ -114,8 +119,8 @@ class Run:
     def untouched(self):
         return all(self.read_bytes(n) == b for n, b in self.before.items()) and self.read_bytes('zip-districts.json') is None
 
-    def report(self):
-        p = f'{self.dir}/refusal.md'
+    def report(self, name='refusal.md'):
+        p = f'{self.dir}/{name}'
         if not os.path.exists(p):
             return None
         with open(p) as f:
@@ -295,53 +300,180 @@ class ProcessDataEndToEnd(unittest.TestCase):
             self.assertEqual(len(ok.read('legislators.json')), len(prev))
 
 
+CLERK = 'https://clerk.house.gov/Members/ViewVacancies'
+
+
+def official_entry(bioguide, day, kind='house-clerk'):
+    url = CLERK if kind == 'house-clerk' else f'https://bioguide.congress.gov/search/bio/{bioguide}'
+    return {'bioguide': bioguide, 'served_until': day, 'source': {'kind': kind, 'url': url, 'read': '2026-11-13'}}
+
+
+class UnconfirmedDeparture(unittest.TestCase):
+    """A NEW mid-term departure is recorded with the volunteer file's date and
+    no source, so it gets no record page until a person confirms the date
+    (hard rule 6). The change of Congress is told apart by its date."""
+
+    def setUp(self):
+        self.runs = []
+
+    def tearDown(self):
+        for r in self.runs:
+            r.close()
+
+    def run_(self, *a, **k):
+        r = Run(*a, **k)
+        self.runs.append(r)
+        return r
+
+    def left_one(self, end):
+        prev = roster()
+        new, gone = replace(prev, 1)
+        gone = [json.loads(json.dumps(g)) for g in gone]
+        gone[0]['terms'][-1]['end'] = end
+        return prev, new, gone
+
+    def test_a_new_mid_term_departure_is_unconfirmed_logged_and_reported(self):
+        prev, new, gone = self.left_one('2026-11-10')
+        b = gone[0]['id']['bioguide']
+        r = self.run_(prev, new, historical=gone, official=[]).go('--today', ORDINARY_DAY)
+        self.assertEqual(r.code, 0, r.out)
+        rec = r.read('departed-members.json')[0]
+        self.assertEqual((rec['bioguide'], rec['served_until'], rec['served_until_source']), (b, '2026-11-10', None))
+        lines = [l for l in r.out.splitlines() if 'not yet confirmed' in l]
+        self.assertEqual(len(lines), 1, r.out)
+        self.assertIn(b, lines[0])
+        self.assertIn('2026-11-10', lines[0])
+        self.assertIn(b, r.report('summary.md'))
+        body = r.report('unconfirmed.md')
+        for want in (b, '2026-11-10', CLERK, 'https://bioguide.congress.gov/search/bio/'):
+            self.assertIn(want, body)
+
+    def test_an_official_date_makes_it_confirmed_with_no_issue(self):
+        prev, new, gone = self.left_one('2026-11-10')
+        b = gone[0]['id']['bioguide']
+        r = self.run_(prev, new, historical=gone, official=[official_entry(b, '2026-11-11')]).go('--today', ORDINARY_DAY)
+        self.assertEqual(r.code, 0, r.out)
+        rec = r.read('departed-members.json')[0]
+        self.assertEqual(rec['served_until'], '2026-11-11')
+        self.assertEqual(rec['served_until_source']['kind'], 'house-clerk')
+        self.assertNotIn('not yet confirmed', r.out)
+        self.assertIsNone(r.report('unconfirmed.md'))
+
+    def test_a_pull_request_that_adds_the_date_confirms_a_kept_record(self):
+        prev, new, gone = self.left_one('2026-11-10')
+        b = gone[0]['id']['bioguide']
+        first = self.run_(prev, new, historical=gone, official=[]).go('--today', ORDINARY_DAY)
+        kept = first.read('departed-members.json')
+        later = self.run_(new, new, departed=kept, official=[official_entry(b, '2026-11-11')]).go('--today', '2026-11-23')
+        self.assertEqual(later.code, 0, later.out)
+        rec = later.read('departed-members.json')[0]
+        self.assertEqual((rec['served_until'], rec['served_until_source']['kind'], rec['left_file']),
+                         ('2026-11-11', 'house-clerk', ORDINARY_DAY))
+        self.assertNotIn('not yet confirmed', later.out)
+
+    def test_the_change_of_congress_is_never_reported_unconfirmed(self):
+        prev = roster()
+        new, gone = replace(prev, 8)
+        r = self.run_(prev, new, historical=gone, official=[]).go('--today', SWITCH_DAY)
+        self.assertEqual(r.code, 0, r.out)
+        recs = r.read('departed-members.json')
+        self.assertEqual({x['served_until'] for x in recs}, {TERM_END})
+        self.assertEqual({x['served_until_source'] for x in recs}, {None})
+        self.assertNotIn('not yet confirmed', r.out)
+        self.assertIsNone(r.report('unconfirmed.md'))
+
+    def test_a_malformed_official_table_refuses_the_run(self):
+        prev, new, gone = self.left_one('2026-11-10')
+        bad = [{'bioguide': gone[0]['id']['bioguide'], 'served_until': '2026-11-10', 'source': {'kind': 'news', 'url': 'x', 'read': 'x'}}]
+        r = self.run_(prev, new, historical=gone, official=bad).go('--today', ORDINARY_DAY)
+        self.assertEqual(r.code, 1, r.out)
+        self.assertTrue(r.untouched())
+
+
 class SeedDepartedMembers(unittest.TestCase):
     """scripts/seed-departed-members.py: the one-time record of members who
-    left during the tracked Congress, through the refresh's own code."""
+    left during the tracked Congress, through the refresh's own code, with
+    the official date as its input."""
 
-    def test_records_exactly_the_mid_term_departures_and_is_idempotent(self):
-        current = roster()
-        left_mid = raw_member('M000001', 'rep', 'OH', 3)
-        left_mid['terms'][-1]['end'] = '2026-04-21'
-        left_sen = raw_member('M000002', 'sen', 'SC')
-        left_sen['terms'][-1]['end'] = '2025-01-20'
+    def setUp(self):
+        self.current = roster()
+        mid = raw_member('M000001', 'rep', 'OH', 3)
+        mid['terms'][-1]['end'] = '2026-04-21'  # the volunteer file, a day early
+        sen = raw_member('M000002', 'sen', 'SC')
+        sen['terms'][-1]['end'] = '2025-01-20'
         before = raw_member('M000003', 'rep', 'OH', 4)  # left at the previous switch
         before['terms'][-1]['end'] = date(2025, 1, 3).isoformat()
         later = raw_member('M000004', 'rep', 'OH', 5)  # after --today
         later['terms'][-1]['end'] = '2026-12-01'
-        d = tempfile.mkdtemp(prefix='oravan-seed-')
-        try:
-            os.makedirs(f'{d}/data')
-            os.makedirs(f'{d}/scripts')
-            for f in ('seed-departed-members.py', 'member_entry.py', 'member_turnover.py'):
-                shutil.copy(os.path.join(HERE, f), f'{d}/scripts/{f}')
-            with open(f'{d}/data/legislators.json', 'w') as f:
-                json.dump(as_committed(current), f)
-            with open(f'{d}/data/departed-members.json', 'w') as f:
-                f.write('[]')
-            with open(f'{d}/hist.json', 'w') as f:
-                json.dump([left_mid, left_sen, before, later], f)
-            cmd = [sys.executable, 'scripts/seed-departed-members.py', '--since', date(2025, 1, 3).isoformat(),
-                   '--today', '2026-11-13', '--historical', f'{d}/hist.json']
-            p = subprocess.run(cmd, cwd=d, capture_output=True, text=True, timeout=60)
-            self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
-            with open(f'{d}/data/departed-members.json', 'rb') as f:
-                first = f.read()
-            rows = json.loads(first)
-            self.assertEqual([(r['bioguide'], r['served_until'], r['left_file']) for r in rows],
-                             [('M000001', '2026-04-21', '2026-11-13'), ('M000002', '2025-01-20', '2026-11-13')])
-            for r in rows:
-                for k in ('phone', 'url', 'offices', 'lis'):
-                    self.assertNotIn(k, r)
-            self.assertEqual(rows[0]['district'], 3)
-            p = subprocess.run(cmd, cwd=d, capture_output=True, text=True, timeout=60)
-            self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
-            with open(f'{d}/data/departed-members.json', 'rb') as f:
-                self.assertEqual(f.read(), first)
-            with open(f'{d}/data/legislators.json') as f:
-                self.assertEqual(json.load(f), as_committed(current))
-        finally:
-            shutil.rmtree(d, ignore_errors=True)
+        self.hist = [mid, sen, before, later]
+        self.official = [official_entry('M000001', '2026-04-22'), official_entry('M000002', '2025-01-20', 'bioguide')]
+        self.d = tempfile.mkdtemp(prefix='oravan-seed-')
+        os.makedirs(f'{self.d}/data')
+        os.makedirs(f'{self.d}/scripts')
+        for f in ('seed-departed-members.py', 'member_entry.py', 'member_turnover.py'):
+            shutil.copy(os.path.join(HERE, f), f'{self.d}/scripts/{f}')
+
+    def tearDown(self):
+        shutil.rmtree(self.d, ignore_errors=True)
+
+    def run_seed(self, official, departed='[]'):
+        with open(f'{self.d}/data/legislators.json', 'w') as f:
+            json.dump(as_committed(self.current), f)
+        with open(f'{self.d}/data/departed-members.json', 'w') as f:
+            f.write(departed)
+        with open(f'{self.d}/data/departure-dates.json', 'w') as f:
+            json.dump(official, f)
+        with open(f'{self.d}/hist.json', 'w') as f:
+            json.dump(self.hist, f)
+        return self.again()
+
+    def again(self):
+        cmd = [sys.executable, 'scripts/seed-departed-members.py', '--since', date(2025, 1, 3).isoformat(),
+               '--today', '2026-11-13', '--historical', f'{self.d}/hist.json']
+        return subprocess.run(cmd, cwd=self.d, capture_output=True, text=True, timeout=60)
+
+    def written(self):
+        with open(f'{self.d}/data/departed-members.json', 'rb') as f:
+            return f.read()
+
+    def test_records_the_official_dates_and_a_second_run_writes_nothing(self):
+        p = self.run_seed(self.official)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        first = self.written()
+        rows = json.loads(first)
+        self.assertEqual([(r['bioguide'], r['served_until'], r['served_until_source']['kind'], r['left_file']) for r in rows],
+                         [('M000001', '2026-04-22', 'house-clerk', '2026-11-13'), ('M000002', '2025-01-20', 'bioguide', '2026-11-13')])
+        for r in rows:
+            for k in ('phone', 'url', 'offices', 'lis'):
+                self.assertNotIn(k, r)
+        self.assertEqual(rows[0]['district'], 3)
+        p = self.again()
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertEqual(self.written(), first)
+        with open(f'{self.d}/data/legislators.json') as f:
+            self.assertEqual(json.load(f), as_committed(self.current))
+
+    def test_refuses_a_member_with_no_official_date(self):
+        p = self.run_seed(self.official[:1])
+        self.assertEqual(p.returncode, 1, p.stdout)
+        self.assertIn('M000002 has no official last day', p.stdout)
+        self.assertEqual(self.written(), b'[]')
+
+    def test_refuses_dates_more_than_a_day_apart(self):
+        p = self.run_seed([official_entry('M000001', '2026-04-24'), self.official[1]])
+        self.assertEqual(p.returncode, 1, p.stdout)
+        self.assertIn('3 days apart', p.stdout)
+        self.assertEqual(self.written(), b'[]')
+
+    def test_confirms_a_kept_record_that_had_no_source(self):
+        kept = [{'bioguide': 'M000001', 'name': 'Member M000001', 'first': 'F', 'last': 'M000001', 'type': 'rep',
+                 'state': 'OH', 'district': 3, 'party': 'Independent', 'served_until': '2026-04-21',
+                 'served_until_source': None, 'left_file': '2026-04-27'}]
+        p = self.run_seed(self.official, json.dumps(kept))
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        rec = json.loads(self.written())[0]
+        self.assertEqual((rec['served_until'], rec['served_until_source']['kind'], rec['left_file']),
+                         ('2026-04-22', 'house-clerk', '2026-04-27'))
 
 
 if __name__ == '__main__':

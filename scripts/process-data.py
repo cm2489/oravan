@@ -37,6 +37,10 @@ from member_entry import member_entry
 from member_turnover import (
     accepts_seats,
     departed_problems,
+    official_problems,
+    unconfirmed,
+    unconfirmed_line,
+    unconfirmed_report,
     departed_records,
     dropped_members,
     parse_accept_departures,
@@ -95,6 +99,10 @@ def _load_json(path, default):
 prev_legislators = _load_json('data/legislators.json', [])
 prev_vacancies = _load_json('data/vacancies.json', [])
 prev_departed = _load_json('data/departed-members.json', [])
+# Official last days (Clerk of the House, Biographical Directory), added by a
+# person in a pull request: the only dates a mid-term record page may print
+# (scripts/member_turnover.py, "WHICH DATES A PAGE MAY PRINT").
+official_dates = _load_json('data/departure-dates.json', [])
 
 out = [member_entry(l, office_map.get(l['id']['bioguide'], [])) for l in legs]
 
@@ -136,7 +144,10 @@ if not anomalous and not problems and (leaving or any(r.get('served_until') is N
     finally:
         if DOWNLOAD and os.path.exists(hist_path):
             os.remove(hist_path)
-departed, undated = departed_records(out, prev_legislators, prev_departed, historical_by_id, today)
+departed, undated = departed_records(
+    out, prev_legislators, prev_departed, historical_by_id, today, {e['bioguide']: e for e in official_dates}
+)
+problems += official_problems(official_dates)
 problems += departed_problems(departed, out)
 
 if not anomalous and not problems:
@@ -153,6 +164,20 @@ if not anomalous and not problems:
         print(f'departed-members.json: {len(departed)} member(s) kept as a record, {len(leaving)} left the file this run')
     for b in undated:
         print(f'::warning::{b} left the member file but legislators-historical gives no end date yet; no page until it does')
+    # A NEW mid-term departure whose date is the volunteer file's alone: no
+    # record page until a person confirms it. One line each in the log and the
+    # step summary, and the report the workflow files as an issue.
+    fresh = unconfirmed(departed, leaving)
+    for r in fresh:
+        print(f'::warning::{unconfirmed_line(r)}')
+    summary_path = os.environ.get('GITHUB_STEP_SUMMARY')
+    if fresh and summary_path:
+        with open(summary_path, 'a') as f:
+            f.write(''.join(f'- {unconfirmed_line(r)}\n' for r in fresh))
+    report_path = os.environ.get('UNCONFIRMED_REPORT')
+    if fresh and report_path:
+        with open(report_path, 'w') as f:
+            f.write(unconfirmed_report(fresh, today))
 
 for v in newly_detected:
     print(

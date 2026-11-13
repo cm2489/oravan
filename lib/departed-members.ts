@@ -20,9 +20,15 @@
  *   him the stage 5 pictures). They get the same record page with their real
  *   last day: "Served in the House until April 21, 2026." The 16 who left
  *   the 119th Congress before the file existed were recorded by
- *   scripts/seed-departed-members.py, through the weekly refresh's own code;
- *   served_until is the end date of their last term in the congress-legislators
- *   historical file, printed as the record states it, with no reason added.
+ *   scripts/seed-departed-members.py, through the weekly refresh's own code.
+ *   Their last day is the OFFICIAL one, never the volunteer historical
+ *   file's alone (it was a day off for five of the sixteen): the Clerk of
+ *   the House's vacancy list or the Biographical Directory, recorded with
+ *   the address and the day read (`served_until_source`, from
+ *   data/departure-dates.json). A mid-term record with no official source,
+ *   which is how the weekly refresh records a NEW departure, gets no page
+ *   (the not-found page, as before) until a pull request confirms the date.
+ *   The page prints the sentence only, with no reason added (hard rule 6).
  *
  *   A new member with no recorded vote. "No recorded votes yet on a bill
  *   Oravan tracks." (the owner's choice of 2026-11-13; NEW_MEMBER_LINE_KEY
@@ -38,7 +44,7 @@
  * are on main.
  */
 import { congressTerm, type CongressPolicy, type EndedCongress } from './congress.mjs';
-import type { DepartedMember, Legislator } from './types';
+import type { DepartedMember, DepartureDateSource, Legislator } from './types';
 
 /** The Congress that just ended and the one now tracked, or null when the
  *  tracked Congress has no ended predecessor on the list (every day before
@@ -54,6 +60,22 @@ export function memberTurnover(policy: CongressPolicy): MemberTurnover | null {
 }
 
 const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** The two official places a mid-term last day may come from
+ *  (scripts/member_turnover.py SOURCE_KINDS keeps the same pair). */
+export const OFFICIAL_SOURCES: Record<DepartureDateSource['kind'], string> = {
+  'house-clerk': 'https://clerk.house.gov/Members/ViewVacancies',
+  bioguide: 'https://bioguide.congress.gov/search/bio/',
+};
+
+/** Is this record's last day confirmed by an official source? (Hard rule 6:
+ *  the volunteer historical file was a day off for five of sixteen.) */
+export function hasOfficialDate(r: Pick<DepartedMember, 'served_until_source'>): boolean {
+  const src = r.served_until_source;
+  if (!src || typeof src !== 'object') return false;
+  const prefix = OFFICIAL_SOURCES[src.kind];
+  return typeof prefix === 'string' && typeof src.url === 'string' && src.url.startsWith(prefix) && DAY_RE.test(src.read ?? '');
+}
 
 /** Did this member leave during the term of the tracked Congress or an ended
  *  one (after its first day, before its last)? The last day itself belongs
@@ -83,7 +105,8 @@ export function departedWithPage(
       DAY_RE.test(r.served_until) &&
       !current.has(r.bioguide) &&
       (r.type === 'rep' || r.type === 'sen') &&
-      ((turnover !== null && r.served_until === turnover.ended.ended) || leftMidTerm(r.served_until, policy)),
+      ((turnover !== null && r.served_until === turnover.ended.ended) ||
+        (leftMidTerm(r.served_until, policy) && hasOfficialDate(r))),
   );
 }
 
@@ -199,6 +222,7 @@ export function reviewDepartedRecord(l: Legislator, review: NewCongressReview): 
     district: l.district,
     party: l.party,
     served_until: review.policy.ended[0].ended,
+    served_until_source: null,
     left_file: review.policy.ended[0].ended,
   };
 }

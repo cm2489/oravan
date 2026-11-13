@@ -23,10 +23,12 @@
  * Writes data/portrait-missing.json: { [bioguide]: { firstMissing, lastChecked } }
  * - members whose upstream photo answered 404. They are skipped for
  * RECHECK_DAYS days, then asked again; the record is dropped the moment a
- * photo turns up. Nothing on the site reads it: a reader still sees the
- * initials fallback exactly as before, and the manifest keeps its meaning
- * ("a portrait is mirrored"). This file only stops the nightly run asking
- * for photos that are known not to exist.
+ * photo turns up. Since 2026-11-13 the record page of a member who left
+ * reads it (lib/core/portraits.ts portraitKnownMissing) to render the
+ * initials alone instead of an image that fails; the run only walks sitting
+ * members, so an entry for a member who has left stays as it is (Sylvester
+ * Turner's, added by hand that day after his photo answered 404, is never
+ * re-asked). The manifest keeps its meaning ("a portrait is mirrored").
  *
  * Run manually with `node scripts/mirror-portraits.mjs` once the owner has
  * added the token, to backfill the initial manifest without waiting for the

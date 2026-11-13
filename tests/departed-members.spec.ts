@@ -8,7 +8,7 @@ import bills from '../data/bills.json';
 import { NEW_MEMBER_LINE_KEY, REVIEW_ENV, newCongressReview } from '../lib/departed-members';
 import { CONGRESS } from '../lib/congress.mjs';
 import { allRollCalls } from '../lib/votes';
-import { billSlug } from '../lib/core';
+import { billSlug, portraitKnownMissing } from '../lib/core';
 import type { Bill, DepartedMember, Legislator } from '../lib/types';
 
 /*
@@ -99,6 +99,20 @@ async function checkRecordPage(page: Page, prefix: string, messages: Messages, l
     .evaluateAll((spans) => spans.slice(0, 3).map((el) => el.getBoundingClientRect().right));
   const width = page.viewportSize()!.width;
   for (const right of roleLineEnds) expect(right).toBeLessThanOrEqual(width);
+  // The portrait loads, or, when the source has no photo (data/portrait-
+  // missing.json), the initials stand alone: never an image that fails.
+  const frame = page.locator('header').filter({ has: page.locator('h1') }).locator('span.relative').first();
+  if (portraitKnownMissing(r.bioguide)) {
+    await expect(frame.locator('img')).toHaveCount(0);
+    await expect(frame).toContainText(/^[A-Z]{1,2}$/);
+  } else {
+    const img = frame.locator('img');
+    await expect(img).toHaveCount(1);
+    await img.scrollIntoViewIfNeeded();
+    await expect
+      .poll(() => img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0), { timeout: 15_000 })
+      .toBe(true);
+  }
 }
 
 async function checkAbsentFromLookup(request: APIRequestContext, r: Rec) {

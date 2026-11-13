@@ -9,6 +9,11 @@
     "district": 11,
     "party": "Democrat",
     "served_until": "2025-05-21",
+    "served_until_source": {
+      "kind": "house-clerk",
+      "url": "https://clerk.house.gov/Members/ViewVacancies",
+      "read": "2026-11-13"
+    },
     "left_file": "2026-11-13"
   },
   {
@@ -21,6 +26,11 @@
     "district": 20,
     "party": "Democrat",
     "served_until": "2026-04-21",
+    "served_until_source": {
+      "kind": "house-clerk",
+      "url": "https://clerk.house.gov/Members/ViewVacancies",
+      "read": "2026-11-13"
+    },
     "left_file": "2026-11-13"
   },
   {
@@ -33,6 +43,11 @@
     "district": null,
     "party": "Republican",
     "served_until": "2026-07-11",
+    "served_until_source": {
+      "kind": "bioguide",
+      "url": "https://bioguide.congress.gov/search/bio/G000359",
+      "read": "2026-11-13"
+    },
     "left_file": "2026-11-13"
   },
   {
@@ -45,6 +60,11 @@
     "district": 7,
     "party": "Democrat",
     "served_until": "2025-03-13",
+    "served_until_source": {
+      "kind": "house-clerk",
+      "url": "https://clerk.house.gov/Members/ViewVacancies",
+      "read": "2026-11-13"
+    },
     "left_file": "2026-11-13"
   },
   {
@@ -56,7 +76,12 @@
     "state": "TN",
     "district": 7,
     "party": "Republican",
-    "served_until": "2025-07-21",
+    "served_until": "2025-07-20",
+    "served_until_source": {
+      "kind": "house-clerk",
+      "url": "https://clerk.house.gov/Members/ViewVacancies",
+      "read": "2026-11-13"
+    },
     "left_file": "2026-11-13"
   },
   {
@@ -69,6 +94,11 @@
     "district": 23,
     "party": "Republican",
     "served_until": "2026-04-14",
+    "served_until_source": {
+      "kind": "house-clerk",
+      "url": "https://clerk.house.gov/Members/ViewVacancies",
+      "read": "2026-11-13"
+    },
     "left_file": "2026-11-13"
   },
   {
@@ -81,6 +111,11 @@
     "district": 14,
     "party": "Republican",
     "served_until": "2026-01-05",
+    "served_until_source": {
+      "kind": "house-clerk",
+      "url": "https://clerk.house.gov/Members/ViewVacancies",
+      "read": "2026-11-13"
+    },
     "left_file": "2026-11-13"
   },
   {
@@ -92,7 +127,12 @@
     "state": "CA",
     "district": 1,
     "party": "Republican",
-    "served_until": "2026-01-05",
+    "served_until": "2026-01-06",
+    "served_until_source": {
+      "kind": "house-clerk",
+      "url": "https://clerk.house.gov/Members/ViewVacancies",
+      "read": "2026-11-13"
+    },
     "left_file": "2026-11-13"
   },
   {
@@ -105,6 +145,11 @@
     "district": null,
     "party": "Republican",
     "served_until": "2026-03-23",
+    "served_until_source": {
+      "kind": "bioguide",
+      "url": "https://bioguide.congress.gov/search/bio/M001190",
+      "read": "2026-11-13"
+    },
     "left_file": "2026-11-13"
   },
   {
@@ -117,6 +162,11 @@
     "district": null,
     "party": "Republican",
     "served_until": "2025-01-20",
+    "served_until_source": {
+      "kind": "bioguide",
+      "url": "https://bioguide.congress.gov/search/bio/R000595",
+      "read": "2026-11-13"
+    },
     "left_file": "2026-11-13"
   },
   {
@@ -128,7 +178,12 @@
     "state": "GA",
     "district": 13,
     "party": "Democrat",
-    "served_until": "2026-04-21",
+    "served_until": "2026-04-22",
+    "served_until_source": {
+      "kind": "house-clerk",
+      "url": "https://clerk.house.gov/Members/ViewVacancies",
+      "read": "2026-11-13"
+    },
     "left_file": "2026-11-13"
   },
   {
@@ -141,6 +196,11 @@
     "district": 14,
     "party": "Democrat",
     "served_until": "2026-04-14",
+    "served_until_source": {
+      "kind": "house-clerk",
+      "url": "https://clerk.house.gov/Members/ViewVacancies",
+      "read": "2026-11-13"
+    },
     "left_file": "2026-11-13"
   },
   {
@@ -153,6 +213,11 @@
     "district": 11,
     "party": "Democrat",
     "served_until": "2025-11-20",
+    "served_until_source": {
+      "kind": "house-clerk",
+      "url": "https://clerk.house.gov/Members/ViewVacancies",
+      "read": "2026-11-13"
+    },
     "left_file": "2026-11-13"
   },
   {
@@ -164,7 +229,12 @@
     "state": "TX",
     "district": 18,
     "party": "Democrat",
-    "served_until": "2025-03-04",
+    "served_until": "2025-03-05",
+    "served_until_source": {
+      "kind": "house-clerk",
+      "url": "https://clerk.house.gov/Members/ViewVacancies",
+      "read": "2026-11-13"
+    },
     "left_file": "2026-11-13"
   },
   {
@@ -176,7 +246,12 @@
     "state": "OH",
     "district": null,
     "party": "Republican",
-    "served_until": "2025-01-09",
+    "served_until": "2025-01-10",
+    "served_until_source": {
+      "kind": "bioguide",
+      "url": "https://bioguide.congress.gov/search/bio/V000137",
+      "read": "2026-11-13"
+    },
     "left_file": "2026-11-13"
   },
   {
@@ -189,6 +264,11 @@
     "district": 6,
     "party": "Republican",
     "served_until": "2025-01-20",
+    "served_until_source": {
+      "kind": "house-clerk",
+      "url": "https://clerk.house.gov/Members/ViewVacancies",
+      "read": "2026-11-13"
+    },
     "left_file": "2026-11-13"
   }
 ]
