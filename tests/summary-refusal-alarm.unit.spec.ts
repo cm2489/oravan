@@ -195,6 +195,27 @@ test.describe('the committed field passes the gates', () => {
     const { failures } = verifyMomentUpdates({ updates: file({ count: 3, day: '2026-11-12', reason: 'r' }), moments: MOMENTS, now: NOW });
     expect(failures).toEqual([]);
   });
+
+  test('verify-sync fails the night on a malformed or future counter, before the commit, as check-moment-updates would after it', () => {
+    const verify = (refusals: unknown) =>
+      verifyMomentUpdates({ updates: file(refusals), moments: MOMENTS, now: NOW }).failures;
+    for (const bad of [
+      { count: 0, day: '2026-11-12', reason: 'r' },
+      { count: 1, day: 'today', reason: 'r' },
+      { count: 1, day: '2026-11-12', reason: '' },
+      { count: 1, day: '2026-11-12', reason: 'x'.repeat(SUMMARY_REFUSAL_REASON_MAX + 1) },
+      null,
+      [],
+    ]) {
+      expect(gate(bad)).toHaveLength(1);
+      const failures = verify(bad);
+      expect(failures).toHaveLength(1);
+      expect(failures[0]).toContain('iran-war-powers.summary_refusals');
+    }
+    const future = verify({ count: 1, day: '2026-11-20', reason: 'r' });
+    expect(future).toHaveLength(1);
+    expect(future[0]).toContain('is in the future');
+  });
 });
 
 test.describe('the pipeline health report reads the committed counter', () => {
