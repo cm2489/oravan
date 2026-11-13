@@ -1,0 +1,75 @@
+name: Nightly sync watchdog
+
+# Re-dispatches the nightly bill sync (sync-bills.yml) when the night's run
+# never happened: at most once per UTC day, and never while a nightly is on its
+# way or after one has finished. Added 2026-10-06.
+#
+# WHY. On 2026-10-05 the nightly fired seven hours late, waited in the shared
+# data-sync group and was cancelled before it got a runner (run 37376062791,
+# zero jobs). No nightly ran that day, and nothing in the pipeline could re-run
+# it: the daily doctor's routine gets HTTP 403 on workflow_dispatch. The
+# data-sync group now queues rather than replaces (`queue: max`, in all four
+# members), but GitHub's scheduler can still drop a scheduled run outright
+# ("If the load is sufficiently high enough, some queued jobs may be dropped",
+# its own documentation of the schedule event), and a runner can still fail to
+# start. This job is the backstop for both.
+#
+# WHAT IT DECIDES, in one place: lib/nightly-watchdog.mjs (window, cap, every
+# stand-down, and the failure posture), pinned by
+# tests/nightly-pipeline.unit.spec.ts. In short: it acts only between 02:00
+# and 14:00 UTC, judges the nightly that was due at 14:15 UTC the day before,
+# and dispatches only when no main-branch nightly was created since 14:00 UTC
+# yesterday, or every one that was ended `cancelled` without ever getting a
+# runner. A failed lookup dispatches nothing and turns this run red.
+#
+# FOUR SLOTS, because this cron starves like every other one here. One fire in
+# the 02:00-14:00 band is enough and the cap makes extra fires free; a slot
+# that drifts past 14:00 stands down by itself. None sits on the hour or half
+# hour, where the scheduler's backlog is worst (hot-bills.yml's measurement).
+#
+# COST. This job: $0 (two or three free API reads, public-repo minutes). A
+# nightly it dispatches spends what any nightly spends, through the same
+# workflow_dispatch defaults a scheduled run uses (60 new decodes at most). On
+# a day whose nightly was lost it only replaces that night's run. The one case
+# that adds a run is a scheduled nightly firing more than 11h45m late, after
+# the watchdog has already acted. The pipeline doctor's worst case for one
+# nightly is about $2.74 (60 decodes at $0.029, plus under $1 of coverage);
+# sync-bills.yml's own comments put re-decodes at up to ~$0.65 a night, which
+# that figure may not include.
+#
+# NOT IN data-sync: it writes nothing. The run it dispatches joins data-sync
+# like any other nightly. Its own group keeps two watchdog runs from ever
+# overlapping, so two of them cannot both decide to dispatch.
+
+on:
+  schedule:
+    - cron: '23 2,5,8,11 * * *'
+  workflow_dispatch:
+
+permissions:
+  # Reading the checkout, and `actions: write` for the run list and the one
+  # dispatch. Nothing else: every permission not named here is `none`.
+  contents: read
+  actions: write
+
+concurrency:
+  group: nightly-watchdog
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        # Stdlib only (child_process + the runner's gh CLI), so no npm ci.
+        with:
+          node-version: 24
+      - name: Re-dispatch a nightly that never ran (at most once per UTC day)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          # Same main-ref guard as every dispatch step in the data workflows: a
+          # branch validation run reports what it would do and dispatches nothing.
+          WATCHDOG_DISPATCH: ${{ github.ref == 'refs/heads/main' && '1' || '0' }}
+        run: node scripts/nightly-watchdog.mjs

@@ -13,7 +13,8 @@ test('landing renders and ZIP search reaches reps', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 1 })).toContainText(en.home.heroTitle);
   await page.getByLabel(en.home.zipLabel).fill(ZIP);
   await page.getByRole('button', { name: en.home.zipCta }).click();
-  await expect(page).toHaveURL(new RegExp(`/reps\\?zip=${ZIP}`));
+  // The members page, with no ZIP in its address (owner, 2026-11-12).
+  await expect(page).toHaveURL(/\/reps$/);
   expect(ZIP_REPS.length, `the fixture ZIP ${ZIP} must resolve to members in data/`).toBeGreaterThan(0);
   for (const name of ZIP_REPS) {
     await expect(page.getByText(name, { exact: true }).first()).toBeVisible();
@@ -75,7 +76,7 @@ test('Enter in the hero ZIP field always submits (2026-08 gate)', async ({
   await page.goto('/');
   await page.getByLabel(en.home.zipLabel).fill(ZIP);
   await page.getByLabel(en.home.zipLabel).press('Enter');
-  await expect(page).toHaveURL(new RegExp(`/reps\\?zip=${ZIP}`));
+  await expect(page).toHaveURL(/\/reps$/);
 });
 
 test('the Spanish language switcher keeps full-size cells beside the header trust line', async ({

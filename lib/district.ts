@@ -3,13 +3,15 @@
  * Bureau geocoder response (geocoding.geo.census.gov). The network call
  * lives in app/api/district; this module is the pure, unit-testable half.
  * It also owns the two constants that decide WHICH Congress's map the route
- * asks for, next to the parser that refuses any other Congress's map, so the
- * Jan 3, 2027 swap is one edit in one file.
+ * asks for, next to the parser that refuses any other Congress's map. The
+ * Congress number itself is written once, in lib/congress.mjs (2026-11-12),
+ * so the Jan 3, 2027 swap is that one number plus CENSUS_VINTAGE below.
  *
  * Deliberately NOT 'server-only' (like lib/coverage.ts): the parser is
  * imported by tests/district.unit.spec.ts, which pins it against real
  * responses captured live from the geocoder (tests/fixtures/census-*.json).
  */
+import { CURRENT_CONGRESS } from './congress.mjs';
 import type { District } from './types';
 
 /**
@@ -23,9 +25,12 @@ import type { District } from './types';
  * The swap is tripwired (lib/rollover-tripwire.mjs, run weekly from
  * refresh-legislators.yml): on Jan 3, 2027 this becomes 120, and
  * CENSUS_VINTAGE below is re-verified live as a vintage whose reply carries
- * the 120th layer.
+ * the 120th layer. The number is the tracked Congress (lib/congress.mjs),
+ * the one the bill, vote and nomination syncs follow too, so it moves when
+ * that does; tests/district.unit.spec.ts fails until CENSUS_VINTAGE and its
+ * fixtures move with it.
  */
-export const SITTING_CONGRESS = 119;
+export const SITTING_CONGRESS: number = CURRENT_CONGRESS.number;
 
 /**
  * The Census geocoder vintage (benchmark Public_AR_Current) whose

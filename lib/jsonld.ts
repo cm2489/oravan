@@ -47,7 +47,7 @@ const ORG_ID = `${SITE_ORIGIN}/#organization`;
  */
 const AI_DISCLOSURE: Record<Locale, string> = {
   en: 'AI-drafted plain-language summary, automatically checked before publication. Not the official bill text — see the linked official source.',
-  es: 'Resumen en lenguaje sencillo redactado por IA y verificado automáticamente antes de publicarse. No es el texto oficial del proyecto de ley — consulta la fuente oficial enlazada.',
+  es: 'Resumen en lenguaje claro redactado por IA y verificado automáticamente antes de publicarse. No es el texto oficial del proyecto de ley — consulta la fuente oficial enlazada.',
 };
 
 function organizationNode() {

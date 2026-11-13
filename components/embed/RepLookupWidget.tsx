@@ -6,6 +6,7 @@ import { useEmbedDicts } from '@/components/embed/EmbedDictsProvider';
 import type { EmbedLocale } from '@/components/embed/embed-dicts';
 import { SITE_ORIGIN } from '@/lib/site';
 import type { Legislator } from '@/lib/types';
+import { lookupReps } from '@/lib/reps-lookup';
 
 const HOUSE_FIND_REP_URL = 'https://www.house.gov/representatives/find-your-representative';
 
@@ -24,11 +25,18 @@ const HOUSE_FIND_REP_URL = 'https://www.house.gov/representatives/find-your-repr
  * street-address refinement never renders in this iframe. A split ZIP shows
  * every candidate district's reps (senators are unaffected either way,
  * exactly like the main /reps page's graceful fallback) plus a link-out to
- * the main site's private AddressForm flow, opened in a new tab.
+ * the main site's private AddressForm flow, opened in a new tab. The link-out
+ * is the bare members page (2026-11-12): until then it was /reps?zip=…, which
+ * put the ZIP in the new tab's address and so in the host's log. The new tab
+ * cannot read a ZIP this frame holds (storage is partitioned per top-level
+ * site, and this frame keeps none), so the link's own words ask the visitor
+ * to enter the ZIP there.
  *
  * Stateless per pageview by design (spec §2.3): no localStorage, no prefs,
  * nothing survives a reload - every render is driven by component state and
- * the initial `?zip=`/`?locale=` the host page supplied.
+ * the initial `?locale=` the host page supplied. The ZIP is only ever typed
+ * here and POSTed to /api/reps in the body (lib/reps-lookup.ts), never read
+ * from or written into an address (app/embed/rep-lookup/page.tsx).
  */
 
 const DELEGATE_JURISDICTIONS = new Set(['DC', 'PR', 'GU', 'VI', 'AS', 'MP']);
@@ -68,13 +76,11 @@ type Vacancy = { state: string; district: number };
 
 export function RepLookupWidget({
   initialLocale,
-  initialZip,
   availablePortraits = [],
   brandless = false,
   attribution = 'on',
 }: {
   initialLocale: EmbedLocale;
-  initialZip: string | null;
   /**
    * Bioguides with a mirrored (Vercel Blob) portrait, served same-origin via
    * app/embed/portrait/[bioguide]/route.ts — never a third-party hotlink.
@@ -90,7 +96,7 @@ export function RepLookupWidget({
 }) {
   const [locale, setLocale] = useState<EmbedLocale>(initialLocale);
   const portraitSet = new Set(availablePortraits);
-  const [zipInput, setZipInput] = useState(initialZip ?? '');
+  const [zipInput, setZipInput] = useState('');
   const [zip, setZip] = useState<string | null>(null);
   const [reps, setReps] = useState<Legislator[] | null>(null);
   const [multiDistrict, setMultiDistrict] = useState(false);
@@ -110,7 +116,7 @@ export function RepLookupWidget({
     setStatus('loading');
     setZip(value);
     try {
-      const res = await fetch(`/api/reps?zip=${value}`);
+      const res = await lookupReps(value);
       if (!res.ok) {
         // Server/API failure is NOT the visitor's ZIP (Phase-1 P1: a 500
         // rendered "That doesn't look like a US ZIP code" with aria-invalid
@@ -141,18 +147,6 @@ export function RepLookupWidget({
       setReps(null);
       setStatus('lookupFailed');
     }
-  }, []);
-
-  useEffect(() => {
-    if (!initialZip) return;
-    // Deferred a tick so lookup()'s setState calls land outside this
-    // effect's own synchronous commit (react-hooks/set-state-in-effect) -
-    // the same reasoning ActionPanel's fetchReps satisfies for free by
-    // only setting state inside a fetch .then(), not before it.
-    const id = setTimeout(() => void lookup(initialZip), 0);
-    return () => clearTimeout(id);
-    // Runs once for the host-page-supplied initial ZIP only.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Auto-resize: report height to the parent frame (public/embed.js) on every
@@ -218,7 +212,10 @@ export function RepLookupWidget({
         </div>
       </div>
 
-      <form onSubmit={submit} className="re-row" noValidate>
+      {/* method="post": a native submit (no JavaScript, or before hydration)
+          carries the ZIP in the body to this same address, never as ?zip= in
+          the logged /embed/ address (2026-10-06). JS submits stay in onSubmit. */}
+      <form method="post" onSubmit={submit} className="re-row" noValidate>
         <div className="re-field">
           <label htmlFor="re-zip" className="re-label">
             {t.home.zipLabel}
@@ -272,7 +269,7 @@ export function RepLookupWidget({
           <p style={{ margin: '8px 0 0' }}>
             <a
               className="re-link"
-              href={`${siteBase}/reps?zip=${zip}`}
+              href={`${siteBase}/reps`}
               target="_blank"
               rel="noopener noreferrer"
             >

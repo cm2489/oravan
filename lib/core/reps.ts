@@ -40,9 +40,7 @@ export function getLegislator(bioguide: string): Legislator | undefined {
   return LEGISLATORS.find((l) => l.bioguide === bioguide);
 }
 
-export function portraitUrl(bioguide: string): string {
-  return `https://unitedstates.github.io/images/congress/450x550/${bioguide}.jpg`;
-}
+export { portraitUrl } from '../portrait-url';
 
 /** Every sitting member in the baked roster (senators, representatives, delegates). */
 export function getAllLegislators(): Legislator[] {

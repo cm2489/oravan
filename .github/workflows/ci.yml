@@ -140,6 +140,13 @@ jobs:
         run: |
           node scripts/check-embed-fingerprinting.mjs --self-test
           node scripts/check-embed-fingerprinting.mjs
+      - name: ZIP-out-of-addresses gate (no ZIP in the address of a request to our own routes)
+        # The host's request logs keep each path with its query string; the
+        # ZIP travels in a POST body instead (2026-10-06, lib/reps-lookup.ts).
+        # Same self-test-first convention.
+        run: |
+          node scripts/check-zip-urls.mjs --self-test
+          node scripts/check-zip-urls.mjs
       - name: Client-import gate (no 'use client' module may reach data/)
         # The pre-build half of the client-bundle rule (2026-09-27 audit,
         # card a6): one pure function imported from a corpus-reading module
@@ -337,7 +344,17 @@ jobs:
   e2e:
     name: e2e ${{ matrix.shard }}/6
     needs: build
-    runs-on: ubuntu-latest
+    # Pinned 2026-11-11. ubuntu-latest became Ubuntu 26.04 on 2026-11-06, and
+    # Playwright 1.60.0 cannot install WebKit there ("Playwright does not
+    # support webkit on ubuntu26.04-x64"), which failed all six shards. Go back
+    # to ubuntu-latest once package-lock.json holds a Playwright release that
+    # supports 26.04.
+    runs-on: ubuntu-24.04
+    # A shard finishes in about 5 minutes. With no limit a stuck step holds the
+    # runner for GitHub's default 6 hours: on 2026-11-11 the runner could not
+    # resolve the Ubuntu package mirror, and all six shards sat in the browser
+    # install for 20 minutes until the run was cancelled by hand.
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:

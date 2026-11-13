@@ -44,7 +44,6 @@ const ROUTES = [
   '/robots.txt',
   // Dynamic APIs, success and failure shapes, and the embeds.
   ...Object.values(API_PROBES),
-  '/api/reps?zip=not-a-zip',
   ...Object.values(embedProbes()),
 ];
 
@@ -57,6 +56,12 @@ test('no response from any surface class ever sets a cookie', async ({ request }
   // cookie-free as a success (the success path is pinned by the journey below).
   const post = await request.post('/api/script', { data: { nonsense: true } });
   expect(post.headers()['set-cookie'], '/api/script set a cookie').toBeUndefined();
+  // The rep lookup is POST-only (2026-10-06: the ZIP rides in the body, never
+  // the address), so its success and failure shapes are POSTs too.
+  for (const zip of ['78501', 'not-a-zip']) {
+    const reps = await request.post('/api/reps', { data: { zip } });
+    expect(reps.headers()['set-cookie'], `/api/reps (zip ${zip}) set a cookie`).toBeUndefined();
+  }
 });
 
 test('a full user journey ends with an EMPTY cookie jar', async ({ page }) => {

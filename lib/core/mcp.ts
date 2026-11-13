@@ -127,7 +127,7 @@ export const SOURCE: Record<Locale, string> = {
  */
 export const AI_LABEL_TEXT: Record<Locale, string> = {
   en: 'This plain-language content is AI-generated and automatically checked before publish. It is not the official bill text.',
-  es: 'Este contenido en lenguaje sencillo es generado por IA y verificado automáticamente antes de publicarse. No es el texto oficial del proyecto de ley.',
+  es: 'Este contenido en lenguaje claro es generado por IA y verificado automáticamente antes de publicarse. No es el texto oficial del proyecto de ley.',
 };
 
 export const LICENSE_PUBLIC_DOMAIN: Record<Locale, string> = {
@@ -137,7 +137,7 @@ export const LICENSE_PUBLIC_DOMAIN: Record<Locale, string> = {
 
 export const LICENSE_AI_CONTENT: Record<Locale, string> = {
   en: "CC BY 4.0 (Oravan's AI-generated plain-language content); underlying official data is U.S. public domain (Congress.gov).",
-  es: 'CC BY 4.0 (el contenido en lenguaje sencillo generado por IA de Oravan); los datos oficiales subyacentes son de dominio público en EE. UU. (Congress.gov).',
+  es: 'CC BY 4.0 (el contenido en lenguaje claro generado por IA de Oravan); los datos oficiales subyacentes son de dominio público en EE. UU. (Congress.gov).',
 };
 
 /*
@@ -212,8 +212,9 @@ export const TOOL_INFO: Record<ToolName, ToolInfo> = {
       'numbers - the number a constituent should actually call. Some ZIP codes span more than one ' +
       'congressional district (needs_address: true, all candidate districts returned); this tool ' +
       'does not perform address-level refinement itself in this release - point the person to the ' +
-      "response's reps_url, where a stateless, unlogged Census-geocoder proxy narrows it to a " +
-      'single district from a street address that Oravan never stores. When a House seat currently ' +
+      "response's reps_url, where they type the ZIP code and then a street address (the page does " +
+      'not carry the ZIP over), and a stateless, unlogged Census-geocoder proxy narrows it to a ' +
+      'single district from that address, which Oravan never stores. When a House seat currently ' +
       'has no member, `vacancies` lists the empty seat(s) (state + district) explicitly - the ' +
       'departed member is never returned as if still serving, and no election timeline is implied.',
   },
@@ -489,7 +490,9 @@ export function lookupRepresentatives(zip: string, locale: Locale) {
     .filter((v): v is NonNullable<typeof v> => Boolean(v))
     .map((v) => ({ state: v.state, district: v.district }));
   const needsAddress = districts.length > 1;
-  const repsUrl = `${absoluteUrl(locale, REPS_PATH)}?zip=${zip}`;
+  // The members page, with no ZIP in its address (owner, 2026-11-12): the
+  // person types the ZIP there, and it travels only in a POST body.
+  const repsUrl = absoluteUrl(locale, REPS_PATH);
 
   return {
     zip,
@@ -508,8 +511,8 @@ export function lookupRepresentatives(zip: string, locale: Locale) {
 // by `absoluteUrl` above, so only the surrounding sentence needs a pair.
 function refineHintText(locale: Locale, repsUrl: string): string {
   return locale === 'es'
-    ? `Este código postal abarca más de un distrito congresional. Para obtener una respuesta de un solo distrito, indica a la persona que vaya a ${repsUrl} e ingrese allí una dirección postal - el refinamiento ocurre mediante un proxy sin estado del geocodificador del Census que nunca guarda ni registra la dirección. Esta herramienta no realiza el refinamiento por dirección directamente.`
-    : `This ZIP code spans more than one congressional district. For a single-district answer, direct the person to ${repsUrl} and enter a street address there - refinement happens through a stateless Census-geocoder proxy that never stores or logs the address. This tool does not perform address-level refinement itself.`;
+    ? `Este código postal abarca más de un distrito congresional. Para obtener una respuesta de un solo distrito, indica a la persona que vaya a ${repsUrl} e ingrese allí su código postal y luego una dirección postal - el refinamiento ocurre mediante un proxy sin estado del geocodificador del Census que nunca guarda ni registra la dirección. Esta herramienta no realiza el refinamiento por dirección directamente.`
+    : `This ZIP code spans more than one congressional district. For a single-district answer, direct the person to ${repsUrl} and enter the ZIP code and then a street address there - refinement happens through a stateless Census-geocoder proxy that never stores or logs the address. This tool does not perform address-level refinement itself.`;
 }
 
 /* ---------------------------------------------------------------------- *

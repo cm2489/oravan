@@ -2,6 +2,8 @@ import { expect, test } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { SIGNAL_STALE_HOURS } from '../lib/docket.mjs';
+import { cursorAgeVerdict } from '../scripts/check-cursor-age.mjs';
+import { SIDE_WORKFLOWS } from '../scripts/pipeline-health.mjs';
 import {
   COVERAGE_KEPT_ZERO_MIN_CHECKED,
   COVERAGE_MASS_DROP,
@@ -26,6 +28,8 @@ import {
   formatHealthAlarmComment,
   formatHealthIssueBody,
   formatHealthSection,
+  orderLogTargets,
+  parkedDecodeCount,
   parseCoverageDone,
   parseCoverageLean,
   parseCoverageOutage,
@@ -34,7 +38,12 @@ import {
   parseRedecodeDone,
   parseSyncDone,
   parseT3,
+  pickNightlyLog,
+  portraitsMissingUpstream,
+  PRODUCER_START_SLACK_MS,
   pressFeedHealth,
+  producerStillRunning,
+  runThatWroteCursor,
   stripLogPrefix,
 } from '../lib/pipeline-health.mjs';
 
@@ -70,6 +79,14 @@ const PREGEN_PARKED = fixture('pipeline-health-pregen-parked.log');
 // 36260101319) — both of the lines it prints with the same prefix, so the
 // parser has to tell the outcome from the plan.
 const REDECODE = fixture('pipeline-health-redecode.log');
+// The DONE line of the 2026-09-30 17:20Z dispatch (run 36750647347: three
+// forced re-decodes; its backlog pass parked 10 decodes in a slow batch and the
+// cursor stayed at 09-28, "(frozen)"). The digest at 18:18Z called it FROZEN.
+const CURSOR_HELD = fixture('pipeline-health-cursor-held.log');
+// The DONE line of the 2026-09-27 nightly (run 36340349799): 3 decodes parked
+// AND the window truncated at the old 500 cap, "(frozen+truncated)". A real
+// stall (#394 raised the cap), so it must stay FROZEN.
+const CURSOR_TRUNCATED = fixture('pipeline-health-cursor-truncated.log');
 
 /* ------------------------------------------------------------------ *
  * 1 · Log-line normalisation
@@ -126,6 +143,20 @@ test.describe('parseSyncDone', () => {
 
   test('a log with no sync line is null, never a zeroed record', () => {
     expect(parseSyncDone('nothing to see here')).toBeNull();
+  });
+
+  test('reads the parked-batch segment off a real line, and null (not 0) off a line older than it', () => {
+    expect(parseSyncDone(CURSOR_HELD)).toMatchObject({
+      queued: 0,
+      waitingOnBatch: 10,
+      revisitFailed: 0,
+      ascendingFailed: 0,
+      cursor: '2026-09-28T00:00:00Z',
+      cursorReason: 'frozen',
+    });
+    expect(parseSyncDone(CURSOR_TRUNCATED)).toMatchObject({ waitingOnBatch: 3, cursorReason: 'frozen+truncated' });
+    // The 2026-09-17 line predates the segment (2026-09-25).
+    expect(parseSyncDone(NIGHTLY)).toMatchObject({ waitingOnBatch: null, revisitFailed: null });
   });
 });
 
@@ -414,6 +445,51 @@ test.describe('countPortrait404s / countUpstashCacheFailures', () => {
   });
 });
 
+test.describe('portraitsMissingUpstream — members with no photo, from data/portrait-missing.json', () => {
+  const missing = {
+    A000383: { firstMissing: '2026-09-29', lastChecked: '2026-09-29' },
+    B001321: { firstMissing: '2026-09-29', lastChecked: '2026-09-29' },
+    Z999999: { firstMissing: '2026-09-29', lastChecked: '2026-09-29' },
+  };
+  const legislators = [{ bioguide: 'A000383' }, { bioguide: 'B001321' }, { bioguide: 'C000127' }];
+
+  test('counts every recorded member, and names the ones no longer serving', () => {
+    expect(portraitsMissingUpstream(missing, legislators)).toEqual({ members: 3, notServing: 1 });
+  });
+
+  test('without the legislators file it still counts, and says nothing about who serves', () => {
+    expect(portraitsMissingUpstream(missing, null)).toEqual({ members: 3, notServing: null });
+  });
+
+  test('an empty record is a real zero; an absent one is null', () => {
+    expect(portraitsMissingUpstream({}, legislators)).toEqual({ members: 0, notServing: 0 });
+    expect(portraitsMissingUpstream(null, legislators)).toBeNull();
+    expect(portraitsMissingUpstream([] as unknown as Record<string, unknown>, legislators)).toBeNull();
+  });
+
+  test('the digest row leads with the members missing, not the night\'s 404s', () => {
+    // The regression (2026-10-04 digest): after #402 the nightly re-asks a
+    // known-missing member only every 30 days, so the row read "0 source
+    // 404(s)" while 15 members had no photo.
+    const rendered = formatHealthSection({
+      portrait404s: 0,
+      portraitsMissing: { members: 15, notServing: 0, recheckDays: 30 },
+    });
+    expect(rendered).toMatch(
+      /portraits\s+15 member\(s\) with no photo upstream \(data\/portrait-missing\.json; re-asked every 30d\) · 0 source 404\(s\) in the nightly log/
+    );
+    expect(formatHealthSection({ portraitsMissing: { members: 3, notServing: 1 } })).toContain(
+      '3 member(s) with no photo upstream (1 no longer serving)'
+    );
+  });
+
+  test('an unread record says "not found", never 0', () => {
+    expect(formatHealthSection({ portrait404s: 0 })).toMatch(
+      /portraits\s+members with no photo upstream: not found · 0 source 404\(s\)/
+    );
+  });
+});
+
 test.describe('parseT3', () => {
   test('reads the batched/resolved pair off a real newsdesk run', () => {
     expect(parseT3(NEWSDESK)).toEqual({ batched: 25, resolved: 8, runs: 1 });
@@ -555,6 +631,359 @@ test.describe('cursorHealth', () => {
 
   test('the frozen threshold is 2 days — "two nights in a row"', () => {
     expect(CURSOR_FROZEN_DAYS).toBe(2);
+  });
+});
+
+test.describe('cursorHealth — one sync held for a parked batch is not a freeze', () => {
+  // The 2026-09-30 digest at 18:17:58Z, rebuilt from the committed files:
+  // 112165a (the 17:20Z dispatch) lastSync 09-28, ef6c3e1 (09-29 nightly)
+  // 09-28, 503f7ff (09-28 nightly) 09-26, and 112165a's
+  // data/decode-batch-parked.json naming 10 bills.
+  const now = Date.parse('2026-09-30T18:17:58.725Z');
+  const state = { lastSync: '2026-09-28T00:00:00Z', lastRun: '2026-09-30T17:20:43.817Z' };
+  const base = { now, previousSync: '2026-09-28T00:00:00Z', earlierSync: '2026-09-26T00:00:00Z', parkedDecodes: 10 };
+  const held = parseSyncDone(CURSOR_HELD);
+  const report = (cursor: object) => {
+    const r: { cursor: object; nightly: object; alarms: { code: string; text: string }[] } = {
+      cursor,
+      nightly: { conclusion: 'success' },
+      alarms: [],
+    };
+    r.alarms = alarms(r);
+    return r;
+  };
+
+  test('the false alarm: HELD, no ⛔, and the row says why', () => {
+    // As at 18:17Z the dispatch was still running (run 36750647347, updated
+    // 18:22:39Z), so its log could not be read: the committed files alone
+    // decide, and the row says so.
+    const h = cursorHealth(state, { ...base, lastDone: null, producerRunning: true });
+    expect(h.moved).toBe(false);
+    expect(h.movedBefore).toBe(true);
+    expect(h.behind).toBe(true);
+    expect(h.frozen).toBe(false);
+    expect(h.held).toBe(true);
+    const r = report(h);
+    expect(r.alarms).toEqual([]);
+    expect(formatHealthSection(r)).toContain(
+      'cursor              lastSync 2.8d · lastRun 1.0h · BEHIND (held for 10 parked decode(s); moved on the sync before; its run is still going, other causes unchecked)'
+    );
+  });
+
+  test('with the run\'s own DONE line read, the same case is HELD and checked', () => {
+    const h = cursorHealth(state, { ...base, lastDone: held });
+    expect(h.held).toBe(true);
+    expect(h.heldCheckedAgainstLog).toBe(true);
+    expect(formatHealthSection(report(h))).toContain(
+      '· BEHIND (held for 10 parked decode(s); moved on the sync before)'
+    );
+  });
+
+  test('a true freeze still alarms: two syncs in a row stood still, parked batch or not', () => {
+    const h = cursorHealth(state, { ...base, earlierSync: '2026-09-28T00:00:00Z', lastDone: held });
+    expect(h.movedBefore).toBe(false);
+    expect(h.frozen).toBe(true);
+    expect(h.held).toBe(false);
+    expect(report(h).alarms).toEqual([expect.objectContaining({ code: 'cursor-frozen' })]);
+    expect(formatHealthSection(report(h))).toContain('· FROZEN');
+  });
+
+  test('a true freeze still alarms: parked AND truncated (the real 2026-09-27 nightly)', () => {
+    // d165d57: 09-25 → 09-25 after 09-24 → 09-25, 3 parked, "(frozen+truncated)".
+    const h = cursorHealth(
+      { lastSync: '2026-09-25T00:00:00Z', lastRun: '2026-09-27T18:27:46.844Z' },
+      {
+        now: Date.parse('2026-09-28T20:01:31.693Z'),
+        previousSync: '2026-09-25T00:00:00Z',
+        earlierSync: '2026-09-24T00:00:00Z',
+        parkedDecodes: 3,
+        lastDone: parseSyncDone(CURSOR_TRUNCATED),
+      }
+    );
+    expect(h.frozen).toBe(true);
+    expect(report(h).alarms.map((a) => a.code)).toContain('cursor-frozen');
+  });
+
+  test('a true freeze still alarms: any other cause in the DONE line', () => {
+    for (const other of [
+      { queued: 4 },
+      { ascendingFailed: 1, newFailed: 1 },
+      { recentFailed: 1 },
+      { forceFailed: 1 },
+      { revisitFailed: 1 },
+      { revisitFailed: null },
+      { waitingOnBatch: 0 },
+      { waitingOnBatch: null },
+      { cursorReason: 'frozen+truncated' },
+    ]) {
+      const h = cursorHealth(state, { ...base, lastDone: { ...held!, ...other } });
+      expect(h.frozen, JSON.stringify(other)).toBe(true);
+    }
+  });
+
+  test('a true freeze still alarms: nothing parked, or no baseline one sync further back', () => {
+    // Each with every other test passing (the run still going, or its DONE
+    // line read and clean), so only the missing piece keeps the alarm on.
+    for (const pass of [{ producerRunning: true }, { lastDone: held }]) {
+      expect(cursorHealth(state, { ...base, ...pass, parkedDecodes: 0 }).frozen).toBe(true);
+      expect(cursorHealth(state, { ...base, ...pass, parkedDecodes: null }).frozen).toBe(true);
+      expect(cursorHealth(state, { ...base, ...pass, earlierSync: null }).frozen).toBe(true);
+      expect(cursorHealth(state, { ...base, ...pass }).held).toBe(true);
+    }
+  });
+
+  test('a cursor that went backwards is never held: FROZEN, bills parked or not', () => {
+    // 09-27 after 09-28 after 09-26: the batch keeps the mark where it was, it
+    // never moves it back.
+    const back = { ...state, lastSync: '2026-09-27T00:00:00Z' };
+    for (const pass of [{ producerRunning: true }, { lastDone: { ...held!, cursor: back.lastSync } }]) {
+      const h = cursorHealth(back, { ...base, ...pass });
+      expect(h.moved).toBe(false);
+      expect(h.held).toBe(false);
+      expect(h.frozen).toBe(true);
+      expect(report(h).alarms.map((a) => a.code)).toContain('cursor-frozen');
+    }
+  });
+
+  test('a second nightly queued behind the producer does not excuse its log: held AND truncated stays FROZEN', () => {
+    // queue: max (#447) lets two nightlies wait at once, and the run list's
+    // startedAt is the creation time. P (d165d57's producer shape) was
+    // created first and wrote the cursor; Q was created while P waited, before
+    // P stamped lastRun, and is still queued or running when the digest
+    // reads. P is the run that wrote the cursor, its DONE line shows the
+    // truncated window, and the alarm stays on.
+    const lastRun = '2026-09-27T18:27:46.844Z';
+    const P = {
+      databaseId: 1,
+      workflowName: 'Nightly bill sync',
+      status: 'completed',
+      createdAt: '2026-09-27T18:21:36Z',
+      startedAt: '2026-09-27T18:21:36Z',
+      updatedAt: '2026-09-27T19:04:00Z',
+    };
+    const truncated = parseSyncDone(CURSOR_TRUNCATED);
+    for (const status of ['in_progress', 'queued', 'pending', 'waiting']) {
+      const Q = {
+        databaseId: 2,
+        workflowName: 'Nightly bill sync',
+        status,
+        createdAt: '2026-09-27T18:25:00Z',
+        startedAt: '2026-09-27T18:25:00Z',
+        updatedAt: '2026-09-27T19:30:00Z',
+      };
+      for (const runs of [
+        [Q, P],
+        [P, Q],
+      ]) {
+        const producer = runThatWroteCursor(runs, lastRun);
+        expect(producer?.databaseId, status).toBe(1);
+        const running = producerStillRunning(producer, lastRun);
+        expect(running, status).toBe(false);
+        // Its log read (truncated), or not read at all: FROZEN either way.
+        for (const lastDone of [truncated, null]) {
+          const h = cursorHealth(
+            { lastSync: '2026-09-25T00:00:00Z', lastRun },
+            {
+              now: Date.parse('2026-09-27T19:40:00Z'),
+              previousSync: '2026-09-25T00:00:00Z',
+              earlierSync: '2026-09-24T00:00:00Z',
+              parkedDecodes: 3,
+              lastDone,
+              producerRunning: running,
+            }
+          );
+          expect(h.held, `${status} ${lastDone ? 'read' : 'unread'}`).toBe(false);
+          expect(h.frozen, `${status} ${lastDone ? 'read' : 'unread'}`).toBe(true);
+          expect(report(h).alarms.map((a) => a.code)).toContain('cursor-frozen');
+        }
+      }
+    }
+  });
+
+  test('a DONE line that describes another cursor excuses nothing: FROZEN', () => {
+    // An older run's line (cursor 09-26) says nothing about why 09-28 stood
+    // still. The run that wrote 09-28 has finished, so its own line was there
+    // to read and was not: that is not evidence of a hold.
+    const h = cursorHealth(state, { ...base, lastDone: { ...held!, cursor: '2026-09-26T00:00:00Z' } });
+    expect(h.held).toBe(false);
+    expect(h.frozen).toBe(true);
+    expect(report(h).alarms.map((a) => a.code)).toContain('cursor-frozen');
+  });
+
+  test('a missing DONE line keeps FROZEN unless the run that wrote the cursor is still going', () => {
+    // The run finished but its log could not be read, the run list was stale,
+    // or no producing run was found: the collector passes producerRunning
+    // false (producerStillRunning) and the alarm stays on.
+    for (const producerRunning of [false, undefined]) {
+      const h = cursorHealth(state, { ...base, lastDone: null, producerRunning });
+      expect(h.frozen, String(producerRunning)).toBe(true);
+      expect(h.held, String(producerRunning)).toBe(false);
+      expect(report(h).alarms.map((a) => a.code)).toContain('cursor-frozen');
+    }
+  });
+
+  test('a true freeze still alarms: the 2026-09-27 nightly with its log unread', () => {
+    // d165d57's committed state (parked AND truncated window), the run that
+    // wrote it completed, and no readable DONE line. The next sync moved the
+    // cursor (503f7ff), so a HELD here would never have been flagged.
+    const h = cursorHealth(
+      { lastSync: '2026-09-25T00:00:00Z', lastRun: '2026-09-27T18:27:46.844Z' },
+      {
+        now: Date.parse('2026-09-28T20:01:31.693Z'),
+        previousSync: '2026-09-25T00:00:00Z',
+        earlierSync: '2026-09-24T00:00:00Z',
+        parkedDecodes: 3,
+        lastDone: null,
+        producerRunning: producerStillRunning(
+          { status: 'completed', startedAt: '2026-09-27T18:21:36Z' },
+          '2026-09-27T18:27:46.844Z'
+        ),
+      }
+    );
+    expect(h.held).toBe(false);
+    expect(h.frozen).toBe(true);
+    expect(report(h).alarms.map((a) => a.code)).toContain('cursor-frozen');
+  });
+
+  test('a residual false alarm, kept on purpose: a held nightly then a held dispatch is two still syncs', () => {
+    // Both syncs parked decodes and neither moved the cursor. This reads
+    // FROZEN even when the second only waited on the first's batch: two still
+    // syncs in a row are not told apart by cause.
+    const h = cursorHealth(state, { ...base, earlierSync: '2026-09-28T00:00:00Z', lastDone: null, producerRunning: true });
+    expect(h.frozen).toBe(true);
+  });
+
+  test('the lateness gate does not read any of this: a held cursor past 10 days still reds the run', () => {
+    const old = { lastSync: '2026-09-18T00:00:00Z', lastRun: '2026-09-30T17:20:43.817Z' };
+    const h = cursorHealth(old, {
+      ...base,
+      previousSync: old.lastSync,
+      earlierSync: '2026-09-17T00:00:00Z',
+      producerRunning: true,
+    });
+    expect(h.held).toBe(true);
+    expect(cursorAgeVerdict({ lastSync: old.lastSync, now }).ok).toBe(false);
+  });
+});
+
+test.describe('parkedDecodeCount — data/decode-batch-parked.json', () => {
+  test('counts distinct bills across every parked batch', () => {
+    // A bill whose summary batch was collected and whose structure batch then
+    // parked can appear in two batches; it is one bill waiting.
+    expect(
+      parkedDecodeCount({
+        batches: [
+          { jobs: [{ slug: 'hr-1-119' }, { slug: 's-2-119' }] },
+          { jobs: [{ slug: 's-2-119' }, { slug: 'hr-3-119' }] },
+        ],
+      })
+    ).toBe(3);
+    expect(parkedDecodeCount({ batches: [] })).toBe(0);
+  });
+
+  test('an absent or unreadable file is null, never 0', () => {
+    expect(parkedDecodeCount(null)).toBeNull();
+    expect(parkedDecodeCount({} as object)).toBeNull();
+  });
+});
+
+test.describe('which nightly log the digest reads', () => {
+  const runs = [
+    { databaseId: 1, workflowName: 'Newsdesk headline trigger', createdAt: '2026-09-30T18:00:00Z' },
+    {
+      databaseId: 2,
+      workflowName: 'Nightly bill sync',
+      status: 'completed',
+      createdAt: '2026-09-29T19:24:25Z',
+      startedAt: '2026-09-29T19:24:25Z',
+      updatedAt: '2026-09-29T20:05:00Z',
+    },
+    // The 09-30 dispatch as the 18:17:58Z digest saw it.
+    {
+      databaseId: 3,
+      workflowName: 'Nightly bill sync',
+      status: 'in_progress',
+      createdAt: '2026-09-30T17:20:14Z',
+      startedAt: '2026-09-30T17:20:14Z',
+      updatedAt: '2026-09-30T18:17:00Z',
+    },
+    { databaseId: 4, workflowName: 'Hot-bill refresh', createdAt: '2026-09-30T02:00:00Z' },
+  ];
+
+  test('nightlies first, newest nightly first, so its counters are the ones printed', () => {
+    expect(orderLogTargets(runs).map((r) => r.databaseId)).toEqual([3, 2, 1, 4]);
+  });
+
+  test('the newest nightly log WITH a DONE line gives the counters; a newer cancelled one does not blank them', () => {
+    const older = { id: 2, done: parseSyncDone(CURSOR_HELD) };
+    const cancelled = { id: 3, done: null };
+    expect(pickNightlyLog([cancelled, older])?.id).toBe(2);
+    expect(pickNightlyLog([older, cancelled])?.id).toBe(2);
+    // None has a DONE line: the newest log read, so its other lines still parse.
+    expect(pickNightlyLog([cancelled, { id: 2, done: null }])?.id).toBe(3);
+    expect(pickNightlyLog([])).toBeNull();
+  });
+
+  test('the producer counts as still running only when found, not completed, and started just before lastRun', () => {
+    const lastRun = '2026-09-30T17:20:43.817Z';
+    // The 09-30 dispatch as the 18:17:58Z digest saw it.
+    const dispatch = { status: 'in_progress', startedAt: '2026-09-30T17:20:14Z' };
+    expect(producerStillRunning(dispatch, lastRun)).toBe(true);
+    expect(producerStillRunning({ ...dispatch, status: 'completed' }, lastRun)).toBe(false);
+    expect(producerStillRunning(null, lastRun)).toBe(false);
+    expect(producerStillRunning(dispatch, null)).toBe(false);
+    expect(producerStillRunning({ status: 'in_progress' }, lastRun)).toBe(false);
+    // A run list stale enough to show an older run still going is not the producer.
+    const started = Date.parse(lastRun) - PRODUCER_START_SLACK_MS - 1000;
+    expect(producerStillRunning({ status: 'in_progress', startedAt: new Date(started).toISOString() }, lastRun)).toBe(
+      false
+    );
+    expect(producerStillRunning({ status: 'in_progress', startedAt: '2026-09-30T17:21:00Z' }, lastRun)).toBe(false);
+    // A run that has not started its job cannot have written the stamp.
+    for (const status of ['queued', 'pending', 'waiting', 'requested', undefined]) {
+      expect(producerStillRunning({ ...dispatch, status }, lastRun), String(status)).toBe(false);
+    }
+  });
+
+  test('the run that wrote the cursor: a completed nightly alive at lastRun, else the one nightly in progress', () => {
+    expect(runThatWroteCursor(runs, '2026-09-30T17:20:43.817Z')?.databaseId).toBe(3);
+    expect(runThatWroteCursor(runs, '2026-09-29T19:24:51.321Z')?.databaseId).toBe(2);
+    expect(runThatWroteCursor(runs, '2026-09-01T00:00:00Z')).toBeNull();
+    expect(runThatWroteCursor(runs, null)).toBeNull();
+  });
+
+  test('the run that wrote the cursor is never a queued run, nor a completed run that ended before lastRun', () => {
+    const lastRun = '2026-09-30T17:20:43.817Z';
+    const nightly = { workflowName: 'Nightly bill sync', createdAt: '2026-09-30T17:20:14Z', startedAt: '2026-09-30T17:20:14Z' };
+    // Only a queued run created by the stamp: no producer, not "still running".
+    expect(runThatWroteCursor([{ ...nightly, databaseId: 5, status: 'queued' }], lastRun)).toBeNull();
+    // A completed run that last updated before the stamp finished before it was written.
+    expect(
+      runThatWroteCursor([{ ...nightly, databaseId: 6, status: 'completed', updatedAt: '2026-09-30T17:20:30Z' }], lastRun)
+    ).toBeNull();
+    // A completed run with no updatedAt cannot be shown alive at the stamp.
+    expect(runThatWroteCursor([{ ...nightly, databaseId: 7, status: 'completed' }], lastRun)).toBeNull();
+    // Two in progress at once is not a state the group allows: no producer.
+    expect(
+      runThatWroteCursor(
+        [
+          { ...nightly, databaseId: 8, status: 'in_progress' },
+          { ...nightly, databaseId: 9, status: 'in_progress', createdAt: '2026-09-30T17:15:00Z', startedAt: '2026-09-30T17:15:00Z' },
+        ],
+        lastRun
+      )
+    ).toBeNull();
+    // Two completed runs alive at the stamp (one waited behind the other and
+    // was cancelled): the older, first in the queue.
+    expect(
+      runThatWroteCursor(
+        [
+          { ...nightly, databaseId: 11, status: 'completed', createdAt: '2026-09-30T17:20:30Z', startedAt: '2026-09-30T17:20:30Z', updatedAt: '2026-09-30T17:40:00Z' },
+          { ...nightly, databaseId: 10, status: 'completed', updatedAt: '2026-09-30T18:22:39Z' },
+        ],
+        lastRun
+      )?.databaseId
+    ).toBe(10);
   });
 });
 
@@ -1131,4 +1560,11 @@ test('the digest body carries the corrected page-view disclaimer too', () => {
   const traffic = readFileSync(join(process.cwd(), 'lib/traffic-metrics.mjs'), 'utf8');
   expect(traffic).toContain('vercel metrics');
   expect(traffic).toContain('does not read it yet');
+});
+
+test('the nightly watchdog is a side workflow of the digest, by its exact name, so a red run shows', () => {
+  const yml = readFileSync(join(process.cwd(), '.github/workflows/nightly-watchdog.yml'), 'utf8');
+  const name = /^name:\s*(.+)$/m.exec(yml)?.[1].trim();
+  expect(name).toBe('Nightly sync watchdog');
+  expect(SIDE_WORKFLOWS).toContain(name);
 });

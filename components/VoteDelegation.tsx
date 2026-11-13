@@ -90,6 +90,7 @@ export function VoteDelegation({
             >
               <Link
                 href={`/reps/${r.bioguide}`}
+                prefetch={false}
                 className="inline-flex min-h-11 items-center text-sm font-semibold text-ink underline decoration-line-strong underline-offset-4 hover:decoration-ink"
               >
                 {r.name} ({r.state})

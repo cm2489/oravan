@@ -3,7 +3,6 @@
 import { useState, useSyncExternalStore } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useRouter } from '@/i18n/navigation';
 
 /*
  * Optional split-ZIP refinement: a street address, sent once via POST to
@@ -16,7 +15,10 @@ import { useRouter } from '@/i18n/navigation';
  * form submit - which would put the address in a GET query string - is
  * impossible. The address lives in component state only; it is never written
  * to localStorage, a URL, or anywhere else. Only the derived district
- * ("NY-12") goes into the query string for the refined view.
+ * ("NY-12") is kept, and only for the members lookup: `onRefined` hands it to
+ * components/RepsLookup.tsx, which sends it with the ZIP in a POST body. Until
+ * 2026-11-12 it went into the page's address as ?district=NY-12, next to the
+ * ZIP (owner, 2026-11-12: neither belongs in an address).
  *
  * IN-FLIGHT IS A REAL DISABLED STATE, not a dimmed one: opacity would drag
  * every pair below AA at once. A checking control takes the `wash` ground and
@@ -50,9 +52,15 @@ const useHydrated = () =>
 const FIELD_BASE =
   'min-h-12 w-full min-w-0 rounded-control px-4 py-3 text-md text-ink placeholder:text-ink-2 disabled:cursor-not-allowed disabled:border-line-strong disabled:bg-wash disabled:text-ink-2';
 
-export function AddressForm({ zip }: { zip: string }) {
+export function AddressForm({
+  zip,
+  onRefined,
+}: {
+  zip: string;
+  /** Show the one district ("NY-12"); resolves false when that lookup could not be made. */
+  onRefined: (district: string) => Promise<boolean>;
+}) {
   const t = useTranslations('reps');
-  const router = useRouter();
   const hydrated = useHydrated();
   const [address, setAddress] = useState('');
   const [status, setStatus] = useState<Status>('idle');
@@ -75,8 +83,9 @@ export function AddressForm({ zip }: { zip: string }) {
       });
       if (res.ok) {
         const { state, district } = (await res.json()) as { state: string; district: number };
-        router.push(`/reps?zip=${zip}&district=${state}-${district}`);
-        return; // stay in 'checking' until the refined view replaces us
+        // Stay in 'checking' until the refined view replaces this form.
+        if (!(await onRefined(`${state}-${district}`))) setStatus('unavailable');
+        return;
       }
       setStatus(res.status === 404 ? 'notFound' : res.status === 429 ? 'rateLimited' : 'unavailable');
     } catch {

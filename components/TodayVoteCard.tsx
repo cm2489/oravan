@@ -42,9 +42,18 @@ export function TodayVoteCard({ vote, chamberName }: { vote: BriefRollCall; cham
       data-vote-card={vote.id}
     >
       <p className="flex flex-wrap gap-x-2 text-xs leading-tight font-bold tracking-[0.06em] text-ink-2 uppercase">
-        <span className="whitespace-nowrap">
+        {/* The label is words and a number the chamber and the translation
+            decide, so it may wrap between words: in Spanish and uppercase,
+            "Cámara de Representantes, votación nominal 321 ·" is 421px on one
+            line in a column about 245px wide at 320px, and as a nowrap run it
+            pushed /es/today 159px past the screen (CI red 2026-11-12, measured).
+            The separator is glued to the last word (no-break space) so a
+            wrapped line can never start with a floating "·". The citation
+            stays one unbreakable chunk: it is short and a bill id must not
+            split. */}
+        <span>
           {t('voteRoll', { chamber: chamberName, roll: vote.roll })}
-          <span aria-hidden> ·</span>
+          <span aria-hidden>{' ·'}</span>
         </span>
         <span className="whitespace-nowrap tabular-nums normal-case">{vote.bill.citation}</span>
       </p>
