@@ -17,6 +17,7 @@ import { getLiveMoments, vehicleKind } from '@/lib/moments';
 import { statusWord, type StatusWord } from '@/lib/status-word';
 import type { Bill, VotePosition } from '@/lib/types';
 import { MEMBER_VOTES_MAX_BILLS, memberVotesByBill, votesCoverage, type MemberVote } from '@/lib/votes';
+import { NEW_MEMBER_LINE_KEY } from '@/lib/departed-members';
 
 /*
  * HOW THEY VOTED — the member page's vote record (owner, UX inventory R04,
@@ -95,7 +96,8 @@ import { MEMBER_VOTES_MAX_BILLS, memberVotesByBill, votesCoverage, type MemberVo
  * cards and the call panel link here unconditionally, so the anchor must
  * always land on something true. After the switch, a new member with no
  * stored roll call gets the approved "No recorded votes yet in the 120th
- * Congress." line instead (the page decides: lib/departed-members.ts).
+ * Congress." line instead (the page decides, and NEW_MEMBER_LINE_KEY picks
+ * the line: lib/departed-members.ts).
  */
 
 /** Bills shown before the rest fold into a disclosure (member.html: "five
@@ -365,7 +367,7 @@ export async function MemberVotes({
       </div>
       {noVotesYet ? (
         <p className="mt-3 max-w-read text-sm text-ink-2" data-member-votes-none-yet="">
-          {t('votesNoneYet')}
+          {t(NEW_MEMBER_LINE_KEY)}
         </p>
       ) : groups.length > 0 ? (
         <>

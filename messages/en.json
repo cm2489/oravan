@@ -255,7 +255,14 @@
       "house": "House",
       "senate": "Senate"
     },
-    "votesNoneYet": "No recorded votes yet in the 120th Congress."
+    "votesNoneYet": "No recorded votes yet in the 120th Congress.",
+    "formerRole": {
+      "senator": "Former Senator",
+      "representative": "Former Representative",
+      "delegate": "Former Delegate"
+    },
+    "crumbRecord": "Current members of Congress",
+    "votesNoneYetTracked": "No recorded votes yet on a bill Oravan tracks."
   },
   "bills": {
     "title": "Active bills, decoded",

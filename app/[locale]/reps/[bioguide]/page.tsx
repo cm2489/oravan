@@ -152,9 +152,11 @@ export async function generateMetadata({
   if (found.kind === 'departed') {
     const { member } = found;
     return {
+      // "Former Representative", never the sitting title: search results
+      // show this line on its own.
       title: t('metaTitle', {
         name: member.name,
-        role: tReps(repRoleKey(member)),
+        role: t(`formerRole.${repRoleKey(member)}`),
         place: placeLabel(tReps, member.state, member.type === 'sen' ? null : member.district),
       }),
       // The page's own served-until line: the phone-number description a
@@ -196,7 +198,9 @@ export default async function RepPage({
           className="inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-ink underline underline-offset-4"
         >
           <ArrowLeft className="h-4 w-4 flex-none" aria-hidden />
-          {t('crumb')}
+          {/* A record page's subject is nobody's member now: the link names
+              where it goes, not "your members". */}
+          {found.kind === 'departed' ? t('crumbRecord') : t('crumb')}
         </Link>
       </p>
       {found.kind === 'member' ? (
@@ -369,7 +373,7 @@ function DepartedBody({
         <RepPortrait rep={member} large />
         <div className="min-w-0">
           <p className={`flex flex-wrap gap-x-1 ${EYEBROW}`}>
-            {[tReps(repRoleKey(member)), party, place]
+            {[t(`formerRole.${repRoleKey(member)}`), party, place]
               .filter((c): c is string => Boolean(c))
               .map((chunk, i, all) => (
                 <span key={i} className="whitespace-nowrap">

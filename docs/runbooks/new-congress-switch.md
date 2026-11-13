@@ -9,7 +9,7 @@ Written 2026-11-13 with stage 5. Every command below was run, or dry-run on a co
 - **Pages of members who left** appear when two things are both true: `lib/congress.mjs` lists the 119th as ended (stage 8 does this), and `data/departed-members.json` holds their record with `served_until` = `2027-01-03` (the weekly refresh writes it when they leave the member file). Each page shows the seat they held, "Served in the House until January 3, 2027." (or Senate) and how they voted, with no phone, office, website or call. Rules: `lib/departed-members.ts`.
 - **New members with no recorded vote** show "No recorded votes yet in the 120th Congress." once the 119th is on the ended list. Delegates and the resident commissioner keep today's line.
 - **Nothing in the ZIP lookup, the address lookup or the Census settings changes by itself.** Those are steps 6 and 7.
-- **The refresh's checks**: around 80 members change at once. More than 5 members leaving the file in one run fails the run on an ordinary week; from Jan 3 of an odd year through the next 42 days it is allowed, because two seat checks still run every week: no more than 5 House seats may newly empty, and no more than 5 Senate seats may. If any check fails, the run writes nothing and commits nothing. Code: `scripts/member_turnover.py`, `scripts/vacancy_diff.py`.
+- **The refresh's checks**: around 80 members change at once. More than 5 members leaving the file in one run fails the run on an ordinary week; from Jan 3 of an odd year through the next 42 days it is allowed, because two seat checks still run every week: no more than 5 House seats may newly empty, and no more than 5 Senate seats may. A member listed twice always fails. If any check fails, the run writes nothing, commits nothing, and opens or comments on one GitHub issue labeled `legislators-refused` (see "A refused week" below). Code: `scripts/member_turnover.py`, `scripts/vacancy_diff.py`.
 
 ## The steps
 
@@ -27,8 +27,10 @@ curl -s https://unitedstates.github.io/congress-legislators/legislators-current.
 
 ### 2. Rehearse the refresh on a copy (writes nothing in the repo)
 
+The copy must be today's `main`: a stale `data/` compares against an old member file and gives a misleading result. So the command fetches first and copies `data/` and `scripts/` from `origin/main`, whatever your own checkout holds:
+
 ```sh
-D=$(mktemp -d) && cp -R data scripts "$D"/ && (cd "$D" && python3 scripts/process-data.py --download); echo "exit $?"
+git fetch origin && D=$(mktemp -d) && git archive origin/main data scripts | tar -x -C "$D" && (cd "$D" && python3 scripts/process-data.py --download); echo "exit $?"
 ```
 
 **Proves it worked:** `exit 0`, and lines like `legislators.json: 5xx members`, `vacancies.json: N currently vacant seat(s), M newly detected this run` and, on the switch week, `departed-members.json: K member(s) kept as a record, K left the file this run` (on a week when nobody leaves, that line is not printed). Then look at what it would commit:
@@ -37,11 +39,12 @@ D=$(mktemp -d) && cp -R data scripts "$D"/ && (cd "$D" && python3 scripts/proces
 python3 -c "import json,sys; d=json.load(open(sys.argv[1])); print(len(d), 'kept;', sum(r['served_until']=='2027-01-03' for r in d), 'served until 2027-01-03;', [r['bioguide'] for r in d if not r['served_until']] or 'none undated')" "$D/data/departed-members.json"
 ```
 
-On 2026-11-13 (an ordinary week) the rehearsal printed `legislators.json: 539 members, 532 with district offices`, `vacancies.json: 2 currently vacant seat(s), 0 newly detected this run`, `zip-districts.json: 33774 ZIPs` and `exit 0`, and wrote `legislators.json`, `vacancies.json`, `zip-districts.json` and `departed-members.json` byte-identical to the committed ones; the second command printed `0 kept; 0 served until 2027-01-03; none undated`. The same rehearsal on a synthetic 120th file (80 members replaced on the same seats, `--today 2027-01-04`) printed `departed-members.json: 80 member(s) kept as a record` and exited 0; the same file with `--today 2026-11-16` was refused.
+Run on 2026-11-13 exactly as written, the first command used `main` before stage 5 was merged (so the old script ran and the second command found no `departed-members.json`); both were then run with `origin/main` replaced by this change's commit. On that run (an ordinary week) the rehearsal printed `legislators.json: 539 members, 532 with district offices`, `vacancies.json: 2 currently vacant seat(s), 0 newly detected this run`, `zip-districts.json: 33774 ZIPs` and `exit 0`, and wrote `legislators.json`, `vacancies.json`, `zip-districts.json` and `departed-members.json` byte-identical to the committed ones; the second command printed `0 kept; 0 served until 2027-01-03; none undated`. The same rehearsal on a synthetic 120th file (80 members replaced on the same seats, `--today 2027-01-04`) printed `departed-members.json: 80 member(s) kept as a record` and exited 0; the same file with `--today 2026-11-16` was refused.
 
 **If it fails** (`::error::` lines and `exit 1`): read the error.
 - `N House seat(s) vanished` or `N Senate seat(s) emptied`: the upstream file is half-updated. Wait and repeat from step 1. **Do not loosen the check** (plan pin P34).
-- `N member(s) left the file … outside the 42-day window`: the date is not in the switch window. On Jan 4, 2027 this cannot happen; on any other day it means a wrong file.
+- `N member(s) left the file … outside the 42-day window`: the date is not in the switch window. On Jan 4, 2027 this cannot happen; on any other day see "A refused week" below.
+- `listed more than once`: the upstream file is damaged. Wait for it to be fixed.
 
 `--today YYYY-MM-DD` makes the rehearsal use another date (only for rehearsals on a copy; the workflow never passes it).
 
@@ -70,6 +73,10 @@ On 2026-11-13 it printed `0 kept; 0 served until 2027-01-03; none undated`. Afte
 git switch -c revert-legislators-refresh origin/main && git revert --no-edit <refresh-commit-sha>
 git push -u origin HEAD && gh pr create --fill
 ```
+
+**A revert does not stick by itself.** The next Monday run downloads the same upstream file and commits the same change again, unless the upstream file has been fixed by then. If you revert because the upstream file is wrong, check step 1 before the next Monday, or disable the workflow until it is fixed (`gh workflow disable refresh-legislators.yml`, **not run**: it changes the live repository; `gh workflow enable` undoes it).
+
+**The commit's date is UTC.** The commit is named `chore(data): weekly legislators refresh <UTC date>`: a run started after 7 PM ET on Monday, Jan 4 is named `2027-01-05`. Look for both dates.
 
 The first line was dry-run on 2026-11-13 in a throwaway worktree against the last refresh commit (`f41f0a48`, 2026-11-09), with `--no-commit` added so nothing was recorded: the revert applied cleanly (it staged `data/special-elections.json`), then it was aborted and the branch deleted. The second line was **not run**: it would publish a branch and a pull request.
 
@@ -134,6 +141,41 @@ The first command was **run on 2026-11-13 and refused**: the Census geocoder ans
 **Proves it worked:** on the live site, the "use my street address" refinement for a split ZIP in a redrawn state names the 120th member; `PW_NO_WEBSERVER=1 npx playwright test tests/district.unit.spec.ts --project=unit` passes with the new fixtures (run on 2026-11-13 against today's settings: 20 passed).
 
 **Undo:** revert that pull request.
+
+## A refused week
+
+**What happens.** When a run is refused (any `::error::` in step 2's list), nothing is written or committed and the workflow opens one GitHub issue labeled `legislators-refused`, titled "Weekly members refresh refused: nothing committed", or comments on it if it is already open. The issue says what was refused, names the members who left, and, when it applies, gives the exact command to accept the week. **A refused week never clears by itself**: every later run compares against the same committed member file, so it refuses again until the upstream file changes or someone accepts the week.
+
+**When six or more members really left in one ordinary week** (several resignations and swearing-ins at once):
+
+1. Read the issue. Check every named member really left (the House Clerk's and the Senate's own pages, or the news).
+2. Rehearse the acceptance on a copy, with the number of members who left:
+
+   ```sh
+   git fetch origin && D=$(mktemp -d) && git archive origin/main data scripts | tar -x -C "$D" && (cd "$D" && python3 scripts/process-data.py --download --accept-departures <N>); echo "exit $?"
+   ```
+
+   **Proves it worked:** `accept_departures=<N>: accepted; …` and `exit 0`. Run on 2026-11-13 against this change's commit with `<N>` = `7` on an ordinary week where nobody left: it printed `accept_departures=7: not used (0 member(s) left, which the checks pass without it)` and `exit 0`. The accepted case itself (7 members left, 7 accepted; 6 accepted refused) is tested end to end in `scripts/test_process_data.py`.
+3. Accept it for real:
+
+   ```sh
+   gh workflow run refresh-legislators.yml --ref main -f accept_departures=<N>
+   ```
+
+   **Not run** on 2026-11-13: it runs the live job. It passes only when **exactly** `<N>` members left and no more than `<N>` seats emptied; their empty seats are recorded as vacant as usual. A member listed twice is never accepted. The scheduled run never passes the number, and once the accepted file is committed the next run compares against it, so nothing carries over.
+4. Close the issue once a run is green.
+
+**When the members did not really leave**, do nothing: the upstream file is wrong, and the first run after it is fixed passes and can be followed by closing the issue.
+
+To see whether one is open:
+
+```sh
+gh issue list --repo cm2489/oravan --label legislators-refused --state open
+```
+
+Run on 2026-11-13: it printed nothing (none open; the label does not exist until the first refusal creates it).
+
+**Undo:** an accepted week is a normal refresh commit; undo it as in step 3.
 
 ## What stage 5 does not cover
 

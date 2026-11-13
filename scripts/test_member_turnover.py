@@ -12,6 +12,10 @@ from datetime import date
 
 from member_turnover import (
     DEPARTED_FIELDS,
+    accepts_seats,
+    duplicate_ids,
+    parse_accept_departures,
+    refusal_report,
     FORBIDDEN_FIELDS,
     MEMBER_DROP_THRESHOLD,
     TURNOVER_WINDOW_DAYS,
@@ -139,6 +143,81 @@ class DamagedFileTest(unittest.TestCase):
     def test_one_senate_vacancy_is_ordinary(self):
         new = [m for m in self.prev if m['bioguide'] != self.prev[0]['bioguide']]
         self.assertEqual(roster_problems(new, self.prev, ORDINARY_DAY), [])
+
+
+class DuplicateTest(unittest.TestCase):
+    def test_a_member_listed_twice_refuses_the_run_in_any_week(self):
+        prev = full_roster()
+        new = prev + [dict(prev[150])]
+        self.assertEqual(duplicate_ids(new), [prev[150]['bioguide']])
+        for day in (ORDINARY_DAY, SWITCH_DAY):
+            self.assertTrue(any('more than once' in p for p in roster_problems(new, prev, day)), day)
+        # and no accept_departures number lets it through
+        self.assertTrue(roster_problems(new, prev, ORDINARY_DAY, accept_departures=1))
+
+    def test_a_clean_file_has_none(self):
+        self.assertEqual(duplicate_ids(full_roster()), [])
+
+
+class AcceptedWeekTest(unittest.TestCase):
+    """Six or more real departures outside January: refused until a person
+    names the exact count; then exactly that count passes, once."""
+
+    def setUp(self):
+        self.prev = full_roster()
+        self.new = turnover(self.prev, 7)
+
+    def test_refused_without_the_input(self):
+        self.assertTrue(roster_problems(self.new, self.prev, ORDINARY_DAY))
+
+    def test_the_exact_count_passes(self):
+        self.assertEqual(roster_problems(self.new, self.prev, ORDINARY_DAY, accept_departures=7), [])
+
+    def test_any_other_count_is_refused_and_says_so(self):
+        for n in (6, 8, 70):
+            problems = roster_problems(self.new, self.prev, ORDINARY_DAY, accept_departures=n)
+            self.assertEqual(len(problems), 1, n)
+            self.assertIn(f'accept_departures was {n}, not 7', problems[0])
+
+    def test_seats_pass_only_when_the_departures_explain_them(self):
+        gone_house = [m for m in self.prev if m['type'] == 'rep'][:7]
+        new = [m for m in self.prev if m not in gone_house]  # 7 leave, 7 House seats empty
+        self.assertTrue(accepts_seats(new, self.prev, 7, 7))
+        self.assertFalse(accepts_seats(new, self.prev, None, 7))
+        self.assertFalse(accepts_seats(new, self.prev, 6, 7))
+        self.assertFalse(accepts_seats(new, self.prev, 7, 8))
+        # A truncated Senate: accepted only when the count matches and covers it.
+        sen_gone = [m for m in self.prev if m['type'] == 'sen'][:7]
+        new_s = [m for m in self.prev if m not in sen_gone]
+        self.assertTrue(roster_problems(new_s, self.prev, ORDINARY_DAY))
+        self.assertEqual(roster_problems(new_s, self.prev, ORDINARY_DAY, accept_departures=7), [])
+
+    def test_the_input_is_a_whole_number_or_nothing(self):
+        self.assertIsNone(parse_accept_departures(None))
+        self.assertIsNone(parse_accept_departures(''))
+        self.assertEqual(parse_accept_departures('7'), 7)
+        for bad in ('0', '-3', 'all', '7.5', ' 7'):
+            with self.assertRaises(ValueError):
+                parse_accept_departures(bad)
+
+
+class RefusalReportTest(unittest.TestCase):
+    def test_says_what_was_refused_and_the_exact_command(self):
+        prev = full_roster()
+        new = turnover(prev, 7)
+        from member_turnover import dropped_members
+        problems = roster_problems(new, prev, ORDINARY_DAY)
+        body = refusal_report(problems, dropped_members(new, prev), ORDINARY_DAY)
+        self.assertIn('was **refused**', body)
+        self.assertIn('7 member(s) left the file', body)
+        self.assertIn('gh workflow run refresh-legislators.yml --ref main -f accept_departures=7', body)
+        self.assertIn('A refused week', body)
+
+    def test_a_duplicate_gets_no_accept_command(self):
+        prev = full_roster()
+        body = refusal_report(roster_problems(prev + [prev[0]], prev, ORDINARY_DAY), [], ORDINARY_DAY)
+        self.assertNotIn('accept_departures=', body)
+        self.assertIn('upstream file is damaged', body)
 
 
 class DepartedRecordTest(unittest.TestCase):

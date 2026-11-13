@@ -19,19 +19,39 @@ an odd year (a new Congress, when ~80 members change at once and only the
 seat checks apply). A member who leaves is kept, without any way to contact
 them, in data/departed-members.json, so their page can stay a record page.
 Nothing is written when a check fails: every data/ file stays as committed.
+
+A refused week (2026-11-13, review of stage 5): every later run compares
+against the same committed file, so a real week with six or more departures
+would refuse forever. --accept-departures N, passed only by a person through
+the workflow's `accept_departures` input, accepts exactly N departures for
+that one run (never the seat checks or a duplicate member). On any refusal,
+when REFUSAL_REPORT names a path, the plain-words report for the GitHub issue
+is written there (scripts/member_turnover.py refusal_report).
 """
 import json, csv, sys, os, urllib.request
 from collections import defaultdict
 from datetime import datetime, timezone
 
 from vacancy_diff import ANOMALOUS_SHRINK_THRESHOLD, compute_vacancies
-from member_turnover import departed_problems, departed_records, roster_problems
+from member_turnover import (
+    accepts_seats,
+    departed_problems,
+    departed_records,
+    dropped_members,
+    parse_accept_departures,
+    refusal_report,
+    roster_problems,
+)
 
 DOWNLOAD = '--download' in sys.argv
 # --today YYYY-MM-DD: the date the checks and the vacancy/departed stamps use,
 # for a rehearsal on a COPY of data/ (docs/runbooks/new-congress-switch.md).
 # The workflow never passes it.
 TODAY_ARG = sys.argv[sys.argv.index('--today') + 1] if '--today' in sys.argv else None
+# --accept-departures N: see the header. Exactly N, refused if not a number.
+ACCEPT = parse_accept_departures(
+    sys.argv[sys.argv.index('--accept-departures') + 1] if '--accept-departures' in sys.argv else None
+)
 SOURCES = {
     'data/legislators-raw.json': 'https://unitedstates.github.io/congress-legislators/legislators-current.json',
     'data/district-offices-raw.json': 'https://unitedstates.github.io/congress-legislators/legislators-district-offices.json',
@@ -104,7 +124,19 @@ for l in legs:
 # for the departed-member / vacant-no-successor / anomalous-shrink fixtures.
 today = TODAY_ARG or datetime.now(timezone.utc).date().isoformat()
 vacancies, newly_detected, anomalous = compute_vacancies(out, prev_legislators, prev_vacancies, today)
-problems = roster_problems(out, prev_legislators, today)
+problems = roster_problems(out, prev_legislators, today, ACCEPT)
+# The House seat check yields only to an accept_departures count that matches
+# exactly and explains every emptied seat (scripts/member_turnover.py).
+house_accepted = anomalous and accepts_seats(out, prev_legislators, ACCEPT, len(newly_detected))
+if house_accepted:
+    anomalous = False
+if ACCEPT is not None and not problems and not anomalous:
+    left = len(dropped_members(out, prev_legislators))
+    print(
+        f'accept_departures={ACCEPT}: accepted; {left} member(s) left, {len(newly_detected)} newly vacant House seat(s) recorded as usual'
+        if left == ACCEPT
+        else f'accept_departures={ACCEPT}: not used ({left} member(s) left, which the checks pass without it)'
+    )
 
 # The record of members who left. The historical file is read only when it
 # can add something: a member left this run, or a kept record lacks its date.
@@ -156,17 +188,18 @@ if github_output:
         f.write(json.dumps(newly_detected))
         f.write('\nVACANCY_EOF\n')
 
+house_problem = (
+    f'{len(newly_detected)} House seat(s) vanished in a single run '
+    f'(> {ANOMALOUS_SHRINK_THRESHOLD}): '
+    + ', '.join(f"{v['state']}-{v['district']}" for v in newly_detected)
+)
 if anomalous:
-    print(
-        f'::error::{len(newly_detected)} House seat(s) vanished in a single run '
-        f'(> {ANOMALOUS_SHRINK_THRESHOLD}): '
-        + ', '.join(f"{v['state']}-{v['district']}" for v in newly_detected)
-    )
+    print(f'::error::{house_problem}')
     print(
         '::error::This looks like a truncated or broken upstream fetch, not '
         f'{len(newly_detected)} simultaneous real vacancies - refusing to '
-        'commit. If this is genuinely correct, review data/vacancies.json '
-        'manually and re-run.'
+        'commit. If this is genuinely correct, re-run with the accept_departures '
+        'input (docs/runbooks/new-congress-switch.md, "A refused week").'
     )
 if problems:
     for p in problems:
@@ -177,6 +210,10 @@ if problems:
         'see docs/runbooks/new-congress-switch.md.'
     )
 if anomalous or problems:
+    report_path = os.environ.get('REFUSAL_REPORT')
+    if report_path:
+        with open(report_path, 'w') as f:
+            f.write(refusal_report(([house_problem] if anomalous else []) + problems, dropped_members(out, prev_legislators), today))
     sys.exit(1)
 
 zips = defaultdict(list)

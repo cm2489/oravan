@@ -64,6 +64,18 @@ export function departedWithPage(
   );
 }
 
+/**
+ * WHICH NEW-MEMBER LINE THE PAGE PRINTS. The owner approved
+ * "No recorded votes yet in the 120th Congress." on 2026-11-12. A review on
+ * 2026-11-13 found it goes false within days of Jan 3: new members cast roll
+ * calls at once (the Speaker's election, bills Oravan does not track), and
+ * data/votes.json stores only roll calls on a tracked bill. The owner is being
+ * asked; until he answers this stays the approved line. If he picks the
+ * alternative, change this one value to 'votesNoneYetTracked' ("No recorded
+ * votes yet on a bill Oravan tracks."); both strings exist in both languages.
+ */
+export const NEW_MEMBER_LINE_KEY: 'votesNoneYet' | 'votesNoneYetTracked' = 'votesNoneYet';
+
 /** Which chamber the served-until line names. */
 export const servedChamber = (r: Pick<DepartedMember, 'type'>): 'house' | 'senate' =>
   r.type === 'sen' ? 'senate' : 'house';

@@ -6,6 +6,7 @@ import es from '../messages/es.json';
 import departedFile from '../data/departed-members.json';
 import { CONGRESS, CONGRESS_POLICY, congressTerm, type CongressPolicy } from '../lib/congress.mjs';
 import {
+  NEW_MEMBER_LINE_KEY,
   REVIEW_ENV,
   departedWithPage,
   memberTurnover,
@@ -154,6 +155,30 @@ test.describe('the approved wording (owner, 2026-11-12), exactly', () => {
     expect(es.rep.departedChamber).toEqual({ house: 'la Cámara de Representantes', senate: 'el Senado' });
   });
 
+  test('a record page never calls the member sitting or one of "your members"', () => {
+    expect(en.rep.formerRole).toEqual({
+      senator: 'Former Senator',
+      representative: 'Former Representative',
+      delegate: 'Former Delegate',
+    });
+    // Spanish: "exintegrante" has one form for everyone, so no gendered form
+    // is forced on the member (the sitting labels use "Senador/a").
+    expect(es.rep.formerRole).toEqual({
+      senator: 'Exintegrante del Senado',
+      representative: 'Exintegrante de la Cámara de Representantes',
+      delegate: 'Exintegrante de la Cámara de Representantes',
+    });
+    expect(en.rep.crumbRecord).toBe('Current members of Congress');
+    expect(es.rep.crumbRecord).toBe('Miembros actuales del Congreso');
+  });
+
+  test('the new-member line is the approved one until the owner picks the other; both exist', () => {
+    // Change NEW_MEMBER_LINE_KEY (lib/departed-members.ts) and this line together.
+    expect(NEW_MEMBER_LINE_KEY).toBe('votesNoneYet');
+    expect(en.rep.votesNoneYetTracked).toBe('No recorded votes yet on a bill Oravan tracks.');
+    expect(es.rep.votesNoneYetTracked).toBe('Todavía no hay votos registrados sobre un proyecto de los que sigue Oravan.');
+  });
+
   test('names the switch the code is aimed at, so a later Congress needs new wording first', () => {
     // Before the switch the turnover is the tracked Congress ending; after it,
     // the ended entry. Either way the lines must name that day and the next
@@ -186,6 +211,7 @@ test.describe('data/departed-members.json', () => {
 });
 
 test.describe('dormant today', () => {
+  // Stage 8 must update this test when it fills lib/congress.mjs's ended list.
   test('the ended list is empty, so no turnover, no departed page, no new-member line', () => {
     expect(CONGRESS_POLICY.ended).toEqual([]);
     expect(liveTurnover()).toBeNull();

@@ -101,28 +101,117 @@ def dropped_members(new_members: List[dict], prev_members: List[dict]) -> List[d
     return [m for m in prev_members if m['bioguide'] not in now]
 
 
-def roster_problems(new_members: List[dict], prev_members: List[dict], today: str) -> List[str]:
+def duplicate_ids(members: Iterable[dict]) -> List[str]:
+    """Bioguide ids listed more than once in one member file."""
+    seen, dup = set(), []
+    for m in members:
+        b = m.get('bioguide')
+        if b in seen and b not in dup:
+            dup.append(b)
+        seen.add(b)
+    return dup
+
+
+def parse_accept_departures(value: Optional[str]) -> Optional[int]:
+    """The --accept-departures value: a whole number above zero, or None when
+    it was not given. Anything else is refused, so a typo never reads as
+    'accept everything'."""
+    if value is None or value == '':
+        return None
+    if not value.isdigit() or int(value) < 1:
+        raise ValueError(f'--accept-departures must be a whole number above zero, got {value!r}')
+    return int(value)
+
+
+def roster_problems(
+    new_members: List[dict],
+    prev_members: List[dict],
+    today: str,
+    accept_departures: Optional[int] = None,
+) -> List[str]:
     """Why this run's member file looks damaged, or [] when it does not.
 
     The House seat check stays in vacancy_diff.compute_vacancies; process-data.py
-    fails on either."""
+    fails on either.
+
+    `accept_departures` is the one deliberate way past a refusal: a person who
+    has checked that exactly N named members really left this week re-runs
+    the workflow with that number (docs/runbooks/new-congress-switch.md, "A
+    refused week"). It applies only when exactly N members left the file -
+    never "up to N" - and then lets through what those N departures can
+    explain: the member drop, and no more than N emptied seats (the Senate
+    here, the House in process-data.py with accepts_seats). A duplicate
+    member is never accepted. The scheduled run never passes it, and once the
+    accepted file is committed the next run compares against it, so the
+    allowance does not carry over."""
     problems = []
+    dropped = dropped_members(new_members, prev_members)
+    accepted = accept_departures is not None and len(dropped) == accept_departures
+    dup = duplicate_ids(new_members)
+    if dup:
+        problems.append(f'{len(dup)} member(s) listed more than once in the member file: ' + ', '.join(dup[:20]))
     lost = senate_seats_lost(new_members, prev_members)
     lost_total = sum(n for _, n in lost)
-    if lost_total > SEAT_SHRINK_THRESHOLD:
+    if lost_total > SEAT_SHRINK_THRESHOLD and not (accepted and lost_total <= accept_departures):
         problems.append(
             f'{lost_total} Senate seat(s) emptied in a single run (> {SEAT_SHRINK_THRESHOLD}): '
             + ', '.join(f'{s} -{n}' for s, n in lost)
         )
-    dropped = dropped_members(new_members, prev_members)
-    if len(dropped) > MEMBER_DROP_THRESHOLD and not in_turnover_window(today):
+    if len(dropped) > MEMBER_DROP_THRESHOLD and not in_turnover_window(today) and not accepted:
+        names = ', '.join(m['bioguide'] for m in dropped[:20]) + (' ...' if len(dropped) > 20 else '')
         problems.append(
             f'{len(dropped)} member(s) left the file in a single run (> {MEMBER_DROP_THRESHOLD}) outside the '
-            f'{TURNOVER_WINDOW_DAYS}-day window that opens on Jan 3 of an odd year: '
-            + ', '.join(m['bioguide'] for m in dropped[:20])
-            + (' ...' if len(dropped) > 20 else '')
+            f'{TURNOVER_WINDOW_DAYS}-day window that opens on Jan 3 of an odd year: {names}'
+            + (f' (accept_departures was {accept_departures}, not {len(dropped)})' if accept_departures is not None else '')
         )
     return problems
+
+
+def accepts_seats(new_members: List[dict], prev_members: List[dict], accept_departures: Optional[int], seats: int) -> bool:
+    """Does accept_departures let `seats` newly emptied seats through? Only
+    when exactly that many members left and the seats are no more than them."""
+    n = len(dropped_members(new_members, prev_members))
+    return accept_departures is not None and n == accept_departures and seats <= n
+
+
+def refusal_report(problems: List[str], dropped: List[dict], today: str) -> str:
+    """The body of the GitHub issue a refused refresh opens or comments on:
+    what was refused, in plain words, and the one way to accept it when there
+    is one. Rendered here (pure, tested), written by process-data.py."""
+    n = len(dropped)
+    lines = [
+        f'The weekly members refresh of {today} (UTC) was **refused**. Nothing in `data/` was written or committed; '
+        'the site keeps last week\'s members until a run passes.',
+        '',
+        '## What was refused',
+        '',
+        *[f'- {p}' for p in problems],
+        '',
+        '## What to do',
+        '',
+    ]
+    acceptable = n > 0 and not any('more than once' in p for p in problems)
+    if acceptable:
+        lines += [
+            f'{n} members left the member file at once. On an ordinary week that looks like a damaged or wrong file, '
+            'so the run stops. Every later run compares against the same committed file, so **it will keep refusing '
+            'until someone decides**:',
+            '',
+            '1. Check that these members really left (the House Clerk and Senate pages, or the news): '
+            + ', '.join(f"{m['name']} ({m['bioguide']})" for m in dropped[:30]) + ('...' if n > 30 else '') + '.',
+            f'2. If they did, accept exactly this week: `gh workflow run refresh-legislators.yml --ref main -f accept_departures={n}`. '
+            f'It passes only if exactly {n} members left and no more than {n} seats emptied; their empty seats are then '
+            'recorded as vacant as usual.',
+            '3. If they did not, do nothing: the upstream file is wrong, and a later run passes once it is fixed.',
+        ]
+    else:
+        lines += [
+            'Either no member left (seats emptied without anyone leaving the file) or a member is listed twice. '
+            'Neither is accepted by any input: the upstream file is damaged. Wait for it to be fixed; the next run '
+            'passes on its own once it is.',
+        ]
+    lines += ['', 'Steps and commands: `docs/runbooks/new-congress-switch.md`, "A refused week".', '']
+    return '\n'.join(lines)
 
 
 def last_term_end(historical_by_id: Dict[str, dict], bioguide: str) -> Optional[str]:

@@ -4,7 +4,7 @@ import es from '../messages/es.json';
 import legislatorsJson from '../data/legislators.json';
 import zipDistricts from '../data/zip-districts.json';
 import bills from '../data/bills.json';
-import { REVIEW_ENV, newCongressReview } from '../lib/departed-members';
+import { NEW_MEMBER_LINE_KEY, REVIEW_ENV, newCongressReview } from '../lib/departed-members';
 import { CONGRESS } from '../lib/congress.mjs';
 import { allRollCalls } from '../lib/votes';
 import { billSlug } from '../lib/core';
@@ -28,6 +28,10 @@ import type { Bill, Legislator } from '../lib/types';
 const ROSTER = legislatorsJson as Legislator[];
 const ZIPS = zipDistricts as Record<string, { state: string; district: number }[]>;
 const review = newCongressReview(process.env, CONGRESS);
+// components/RepCard.tsx repRoleKey, restated so this file imports no component.
+const DELEGATE_STATES = new Set(['DC', 'PR', 'GU', 'VI', 'AS', 'MP']);
+const roleKey = (m: Legislator) =>
+  m.type === 'sen' ? 'senator' : DELEGATE_STATES.has(m.state) ? 'delegate' : 'representative';
 
 test.describe('today: nothing has switched', () => {
   test.skip(review !== null, 'review build');
@@ -60,6 +64,11 @@ test.describe('review: the day after the switch', () => {
         const res = await page.goto(`${prefix}/reps/${id}`);
         expect(res?.status()).toBe(200);
         await expect(page.locator('h1')).toHaveText(m.name);
+        const former = messages.rep.formerRole[roleKey(m)];
+        await expect(page).toHaveTitle(new RegExp(`^${m.name}, ${former} · `));
+        await expect(page.getByText(former, { exact: true })).toHaveCount(1);
+        await expect(page.getByRole('link', { name: messages.rep.crumbRecord })).toHaveAttribute('href', `${prefix}/reps`);
+        await expect(page.getByRole('link', { name: messages.rep.crumb, exact: true })).toHaveCount(0);
         const chamber = messages.rep.departedChamber[m.type === 'sen' ? 'senate' : 'house'];
         await expect(page.locator('[data-departed-served]')).toHaveText(
           messages.rep.departedServed.replace('{chamber}', chamber),
@@ -79,7 +88,7 @@ test.describe('review: the day after the switch', () => {
     test(`a new member's page shows the approved line (${prefix || '/'})`, async ({ page }) => {
       for (const id of newMembers) {
         await page.goto(`${prefix}/reps/${id}`);
-        await expect(page.locator('[data-member-votes-none-yet]')).toHaveText(messages.rep.votesNoneYet);
+        await expect(page.locator('[data-member-votes-none-yet]')).toHaveText(messages.rep[NEW_MEMBER_LINE_KEY]);
         await expect(page.locator('[data-member-vote-bill], [data-member-votes-none]')).toHaveCount(0);
         // Still a sitting member: the call column stays.
         await expect(page.locator('#rep-contact')).toHaveCount(1);
