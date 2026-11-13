@@ -17,8 +17,9 @@
  *   approved line states. A member who left mid-term keeps a record in the
  *   file and still has no page (no wording for them is approved).
  *
- *   A new member with no recorded vote. "No recorded votes yet in the 120th
- *   Congress." stands where the vote record would be, instead of the line a
+ *   A new member with no recorded vote. "No recorded votes yet on a bill
+ *   Oravan tracks." (the owner's choice of 2026-11-13; NEW_MEMBER_LINE_KEY
+ *   below) stands where the vote record would be, instead of the line a
  *   member with no stored roll call gets today. Never for a delegate or the
  *   resident commissioner: they do not cast the floor votes the record
  *   stores, so "yet" would promise something that is not coming; they keep

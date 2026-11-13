@@ -23,7 +23,11 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ORDINARY_DAY = '2026-11-16'
 SWITCH_DAY = '2027-01-04'
 TERM_END = date(2027, 1, 3).isoformat()
-STATES = ['AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA']
+STATES = [
+    'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA', 'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY',
+    'LA', 'ME', 'MD', 'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ', 'NM', 'NY', 'NC', 'ND',
+    'OH', 'OK', 'OR', 'PA', 'RI', 'SC', 'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY',
+]
 
 
 def raw_member(bioguide, mtype, state, district=None, start=date(2025, 1, 3).isoformat()):
@@ -39,15 +43,16 @@ def raw_member(bioguide, mtype, state, district=None, start=date(2025, 1, 3).iso
 
 
 def roster():
-    """20 senators (2 per state) and 30 House seats (3 per state)."""
+    """A complete file: 100 senators and 435 House seats (the refresh refuses
+    a file of fewer than 500 members as broken, so a fixture must be whole)."""
     out, n = [], 0
     for s in STATES:
         for _ in range(2):
             n += 1
             out.append(raw_member(f'S{n:06d}', 'sen', s))
-        for d in (1, 2, 3):
-            n += 1
-            out.append(raw_member(f'H{n:06d}', 'rep', s, d))
+    for i in range(435):
+        n += 1
+        out.append(raw_member(f'H{n:06d}', 'rep', STATES[i % 50], i // 50 + 1))
     return out
 
 
@@ -220,11 +225,74 @@ class ProcessDataEndToEnd(unittest.TestCase):
             self.assertTrue(r.untouched())
             self.assertIn('listed more than once', r.out)
 
-    def test_a_bad_accept_value_stops_before_anything(self):
+    def test_a_bad_accept_value_stops_with_one_line_before_anything(self):
         raw = roster()
-        r = self.run_(raw, raw).go('--today', ORDINARY_DAY, '--accept-departures', 'all')
-        self.assertNotEqual(r.code, 0)
+        for bad in ('all', '0', 'abc', '-1'):
+            r = self.run_(raw, raw).go('--today', ORDINARY_DAY, '--accept-departures', bad)
+            self.assertEqual(r.code, 2, (bad, r.out))
+            self.assertTrue(r.untouched(), bad)
+            self.assertNotIn('Traceback', r.out, bad)
+            self.assertEqual(r.out.strip().count('\n'), 0, (bad, r.out))
+            self.assertTrue(r.out.startswith('::error::'), (bad, r.out))
+        r = self.run_(raw, raw).go('--today', ORDINARY_DAY, '--accept-departures')
+        self.assertEqual(r.code, 2, r.out)
+        self.assertNotIn('Traceback', r.out)
+
+    def test_an_empty_upstream_file_is_refused_and_its_accept_number_is_refused_too(self):
+        # The re-check's case: the report must not offer accept_departures=535,
+        # and running with it must not write an empty member file.
+        prev = roster()
+        r = self.run_(prev, []).go('--today', ORDINARY_DAY)
+        self.assertEqual(r.code, 1, r.out)
         self.assertTrue(r.untouched())
+        self.assertIn('Accept nothing', r.report())
+        self.assertNotIn('accept_departures=', r.report())
+        forced = self.run_(prev, []).go('--today', ORDINARY_DAY, '--accept-departures', str(len(prev)))
+        self.assertEqual(forced.code, 1, forced.out)
+        self.assertTrue(forced.untouched())
+        jan = self.run_(prev, []).go('--today', SWITCH_DAY, '--accept-departures', str(len(prev)))
+        self.assertEqual(jan.code, 1, jan.out)
+        self.assertTrue(jan.untouched())
+
+    def test_a_badly_short_file_is_refused_in_january_too(self):
+        prev = roster()
+        short = prev[:300]
+        r = self.run_(prev, short).go('--today', SWITCH_DAY)
+        self.assertEqual(r.code, 1, r.out)
+        self.assertTrue(r.untouched())
+        self.assertIn('looks broken', r.out)
+        # The House-seat error says nothing about accepting a broken file.
+        self.assertIn('House seat(s) vanished', r.out)
+        self.assertNotIn('re-run with the accept_departures', r.out)
+
+    def test_a_499_member_file_is_refused_with_any_number(self):
+        prev = roster()
+        short = prev[:499]
+        for day in (SWITCH_DAY, ORDINARY_DAY):
+            for extra in ((), ('--accept-departures', str(len(prev) - 499)), ('--accept-departures', '1')):
+                r = self.run_(prev, short).go('--today', day, *extra)
+                self.assertEqual(r.code, 1, (day, extra, r.out))
+                self.assertTrue(r.untouched(), (day, extra))
+                self.assertIn('Accept nothing', r.report())
+
+    def test_eighty_departures_after_the_window_or_in_november_are_accepted_with_exactly_eighty(self):
+        # Second review (2026-11-13): a change of Congress committed late, after
+        # Feb 13, must stay acceptable with the exact number, as on main.
+        prev = roster()
+        new, gone = replace(prev, 80)
+        for day in ('2027-02-14', ORDINARY_DAY):
+            refused = self.run_(prev, new, historical=gone).go('--today', day)
+            self.assertEqual(refused.code, 1, (day, refused.out))
+            self.assertTrue(refused.untouched())
+            self.assertIn('accept_departures=80', refused.report())
+            for wrong in ('79', '81'):
+                r = self.run_(prev, new, historical=gone).go('--today', day, '--accept-departures', wrong)
+                self.assertEqual(r.code, 1, (day, wrong, r.out))
+                self.assertTrue(r.untouched())
+            ok = self.run_(prev, new, historical=gone).go('--today', day, '--accept-departures', '80')
+            self.assertEqual(ok.code, 0, (day, ok.out))
+            self.assertEqual(len(ok.read('departed-members.json')), 80)
+            self.assertEqual(len(ok.read('legislators.json')), len(prev))
 
 
 if __name__ == '__main__':
