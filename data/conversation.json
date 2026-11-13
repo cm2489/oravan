@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-13T00:15:20.428Z",
+    "fetched_at": "2026-11-13T03:08:33.616Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-13T00:15:20.428Z"
+        "checked_at": "2026-11-13T03:08:33.616Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-08",
         "week_label": "Most-Viewed Bills - Week of November 8, 2026",
         "entries": 6,
-        "checked_at": "2026-11-13T00:15:20.428Z"
+        "checked_at": "2026-11-13T03:08:33.616Z"
       },
       "leans": {
         "center": {
@@ -681,6 +681,18 @@
       "unratedOutlets7d": [],
       "mostViewed": null
     },
+    "hr-5860-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "news10.com",
+          "firstSeen": "2026-11-13",
+          "lastSeen": "2026-11-13",
+          "url": "https://news.google.com/rss/articles/CBMibkFVX3lxTFAtb0o5T290YUhRNjA4bnlabHpvQ0kwSFFCeWUzUV9sZGhTd200YWlhdVoxdUxpQlRLQzhiNUMyeVgwdDBoLVN5OWI3MFJPWkNyd0tJWnZBeXJUQm5Da01fckNsMFlsemFLQVB1UHd30gFzQVVfeXFMTkIwNnhxS0k2OGU1WE5LeGVzMExweXlid2FmbTQ4eUg2NV90ME14MklLcGlfeGR3a1lWWnh4QmVuRmhDSnBXcEdHZHFQaDc0dWNXTTE4b2g0SlpMcElFQ08wdEJMZGRmX1FrMjRmYnpScHF2OA?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-6047-119": {
       "outlets7d": [
         {
@@ -1281,6 +1293,12 @@
     "s-4621-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "newswire.com",
+          "firstSeen": "2026-11-13",
+          "lastSeen": "2026-11-13",
+          "url": "https://news.google.com/rss/articles/CBMiqwFBVV95cUxPWUl6T2p5NHA2d3AyYmYyd3AwOG5QQUNqVmdRTmdReWdJcGQ3OEM2MWlaUko1bVVmZWJpOFhSZmNMdVhJWDdNZWRzQmR0dzF6amZaSXlxV1U0eklHOXZXSWtoRzZuaE5tYjVzd2lHRmJpTmI4TGxHSTlINkVkRDhhcWJ5YjV3MVNXbmRCYnpsNmZ1dHlBSWc0RHoxMC1aYk1fNV9TV1EzOUhHaDg?oc=5"
+        },
         {
           "domain": "linkedin.com",
           "firstSeen": "2026-11-12",
