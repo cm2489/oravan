@@ -16,7 +16,11 @@
  *   - a bills.json record belongs to a Congress this build does not track
  *     (congress_number !== congress-fetch.mjs's CONGRESS) — added 2026-08-11
  *     after two 118th-Congress seed records (s-1776-118, s-5110-118) sat in
- *     the corpus for two months rendering live pages; see offCongressBills
+ *     the corpus for two months rendering live pages; see offCongressBills.
+ *     Since 2026-11-12 a bill of an ENDED Congress (lib/congress.mjs's
+ *     ENDED_CONGRESSES, empty until the January switch) is accepted too, and
+ *     frozen: none added, none removed, identity/text/decode and Spanish twin
+ *     unchanged against HEAD; see corpusCongressVerdict
  *   - EN/ES parity broke: a decoded bill without a bills-es.json entry, or
  *     an ES entry pointing at a bill that doesn't exist
  *   - data/floor-signals.json (the T0 announcement layer) doesn't parse,
@@ -98,7 +102,9 @@ import { QUESTION_PRESS_PATH, verifyQuestionPress } from '../lib/question-press.
 // fetch, never at import, so pulling CONGRESS in here needs no secrets and
 // makes no network call. One definition of "the Congress we track" — bumping
 // it there bumps this gate too.
-import { CONGRESS, offCongressBills, statusBasisProblems } from './congress-fetch.mjs';
+import { corpusCongressVerdict, statusBasisProblems } from './congress-fetch.mjs';
+// The tracked Congress and the ended list (2026-11-12). Import-free.
+import { CONGRESS_POLICY } from '../lib/congress.mjs';
 // Same split as verifyMomentUpdates above: the judgement lives in a pure
 // module the unit spec can reach, this file supplies the bytes.
 import {
@@ -142,15 +148,36 @@ if (es !== null && (typeof es !== 'object' || Array.isArray(es))) {
 // ES half below on purpose — a previous-Congress record is a lie about the
 // record whether or not its Spanish twin exists. Every failure names its
 // slugs; the first 10 are enough to act on and keep a CI annotation readable.
+//
+// ENDED CONGRESSES (2026-11-12). A bill of a Congress on the ended list
+// (lib/congress.mjs) is accepted too, and frozen: none added, none removed,
+// its identity, text and decode unchanged against HEAD, Spanish twin included.
+// While the ended list is EMPTY the verdict is the old gate word for word and
+// HEAD is not read here at all (corpusCongressVerdict, scripts/congress-fetch.mjs).
 if (Array.isArray(bills) && bills.length > 0) {
-  const strays = offCongressBills(bills, CONGRESS);
-  if (strays.length) {
-    fail(
-      `${strays.length} bills.json record(s) are not from the ${CONGRESS}th Congress (${strays.slice(0, 10).join(', ')}${strays.length > 10 ? ', …' : ''}) — every write path is pinned to CONGRESS=${CONGRESS} (scripts/congress-fetch.mjs), so these were seeded or force-fetched, and their pages assert present-tense activity for a Congress this build does not track. Remove them, or bump CONGRESS if the tracked Congress really changed.`
-    );
-  } else {
-    console.log(`corpus uniformity: all ${bills.length} bills are ${CONGRESS}th Congress`);
+  let before = null;
+  let esBefore = null;
+  if (CONGRESS_POLICY.ended.length) {
+    const headJson = (path) => {
+      try {
+        return JSON.parse(
+          execSync(`git show HEAD:${path}`, { encoding: 'utf8', maxBuffer: 512 * 1024 * 1024, stdio: ['ignore', 'pipe', 'ignore'] })
+        );
+      } catch {
+        return null; // endedBillProblems fails on a HEAD it could not read
+      }
+    };
+    before = headJson('data/bills.json');
+    esBefore = headJson('data/bills-es.json');
   }
+  const congressVerdict = corpusCongressVerdict({
+    bills,
+    before,
+    es: es && typeof es === 'object' && !Array.isArray(es) ? es : null,
+    esBefore,
+  });
+  for (const n of congressVerdict.notes) console.log(n);
+  for (const f of congressVerdict.failures) fail(f);
   // The status-basis fields (2026-09-24) are OPTIONAL, so nothing above keys
   // on their presence; what fails is a basis that lies. It must sit only
   // behind an ambiguous latest step (it is cleared on every other write), be

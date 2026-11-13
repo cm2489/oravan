@@ -9,13 +9,16 @@ const SESSION = 'Claude-Session: https://claude.ai/code/session_x';
 const msg = (model: string, subject = 'Fix a thing') =>
   `${subject}\n\nBody.\n\nCo-Authored-By: ${model} <noreply@anthropic.com>\n${SESSION}\n`;
 
-test('a Sonnet 5.5 and an Opus 5.5 trailer with a session line pass', () => {
+test('a Sonnet 5.5, an Opus 5.5 and a Haiku 5.5 trailer with a session line pass', () => {
   expect(checkMessage(msg('Claude Sonnet 5.5'))).toBeNull();
   expect(checkMessage(msg('Claude Opus 5.5'))).toBeNull();
+  // Haiku 5.5 runs mechanical steps (owner's session rules, 2026-11-12).
+  expect(checkMessage(msg('Claude Haiku 5.5'))).toBeNull();
 });
 
-test('a Fable trailer fails', () => {
+test('a Fable trailer fails, whatever its version', () => {
   expect(checkMessage(msg('Claude Fable 5.1'))).toMatch(/Fable/);
+  expect(checkMessage(msg('Claude Fable 5.2'))).toMatch(/Fable/);
 });
 
 test('a human commit with no Claude lines passes', () => {

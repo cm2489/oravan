@@ -37,14 +37,14 @@
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import {
-  CONGRESS,
   RECENT_WINDOW_MAX_STALE_DAYS,
   assessRecentWindow,
+  billApiPath,
   cg,
   fetchRecentlyUpdated,
+  hotBillTarget,
   refreshBillFields,
   slugOf,
-  updateSlug,
 } from './congress-fetch.mjs';
 
 const FETCH_LIMIT = Number(process.env.HOT_BILLS_FETCH_LIMIT ?? 100);
@@ -77,17 +77,22 @@ if (!window.ok) {
 }
 console.log(`window recency OK: newest updateDate ${window.newest} (${window.staleDays}d old, limit ${RECENT_WINDOW_MAX_STALE_DAYS}d)`);
 
-let refreshed = 0, newSkipped = 0, partialSkipped = 0, failed = 0;
+let refreshed = 0, newSkipped = 0, partialSkipped = 0, failed = 0, endedSkipped = 0;
 for (const u of recent) {
-  const type = u.type.toLowerCase();
-  const slug = updateSlug(u);
-  const existing = bySlug.get(slug);
-  if (!existing) {
+  // hotBillTarget (scripts/congress-fetch.mjs) picks the corpus record and
+  // refuses an ended Congress's bill (2026-11-12); the fetch below reads the
+  // record's OWN Congress, never the tracked number.
+  const { slug, existing, skip } = hotBillTarget(u, bySlug);
+  if (skip === 'new') {
     newSkipped++; // brand-new bill - decode-before-publish waits for the nightly sync
     continue;
   }
+  if (skip === 'ended') {
+    endedSkipped++; // an ended Congress's bill is an archive: never refreshed here
+    continue;
+  }
   try {
-    const { bill: d } = await cg(`/bill/${CONGRESS}/${type}/${u.number}`);
+    const { bill: d } = await cg(billApiPath(existing));
     // A 200 with no readable latestAction leaves the bill exactly as it was
     // rather than downgrading it to committee/null - counted and logged here
     // because this workflow has no verify step that would catch it later.
@@ -101,6 +106,7 @@ for (const u of recent) {
 
 writeFileSync('data/bills.json', JSON.stringify(bills));
 console.log(
-  `DONE: ${refreshed} refreshed, ${newSkipped} new bill(s) skipped (nightly sync decodes those), ${partialSkipped} skipped: partial payload (left untouched), ${failed} failed; corpus ${bills.length}`
+  `DONE: ${refreshed} refreshed, ${newSkipped} new bill(s) skipped (nightly sync decodes those), ${partialSkipped} skipped: partial payload (left untouched), ${failed} failed; corpus ${bills.length}` +
+    (endedSkipped ? `; ${endedSkipped} bill(s) of an ended Congress skipped (archive)` : '')
 );
 if (failed > recent.length / 2) process.exit(1); // mostly-failed run: don't let CI commit garbage
