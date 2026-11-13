@@ -13,10 +13,19 @@ import {
   newCongressReview,
   reviewDepartedRecord,
   servedChamber,
+  servedLine,
   showsNoVotesYet,
 } from '../lib/departed-members';
 import { billSponsor } from '../lib/bill-provenance';
-import { getDepartedMembers, hasMemberPage, memberTurnover as liveTurnover } from '../lib/core';
+import {
+  districtsForZip,
+  getDepartedMember,
+  getDepartedMembers,
+  getLegislator,
+  hasMemberPage,
+  memberTurnover as liveTurnover,
+  repsForDistrict,
+} from '../lib/core';
 import type { DepartedMember, Legislator } from '../lib/types';
 
 /*
@@ -45,26 +54,51 @@ function record(over: Partial<DepartedMember> = {}): DepartedMember {
   };
 }
 
+const BEFORE: CongressPolicy = { tracked: CONGRESS, ended: [] };
+const START_DAY = congressTerm(CONGRESS).start;
+
 test.describe('who keeps a record page', () => {
-  test('nobody before the switch: no turnover, no page', () => {
-    expect(memberTurnover({ tracked: CONGRESS, ended: [] })).toBeNull();
-    expect(departedWithPage([record()], new Set(), null)).toEqual([]);
+  test('before the switch: a member who left at the end of the term waits for it', () => {
+    expect(memberTurnover(BEFORE)).toBeNull();
+    expect(departedWithPage([record()], new Set(), BEFORE)).toEqual([]);
   });
 
   test('after the switch, a member whose last term ended with the Congress', () => {
     const turnover = memberTurnover(AFTER);
     expect(turnover).toEqual({ ended: { number: CONGRESS, ended: ENDED_DAY }, tracked: CONGRESS + 1 });
-    expect(departedWithPage([record()], new Set(), turnover).map((r) => r.bioguide)).toEqual(['A000001']);
+    expect(departedWithPage([record()], new Set(), AFTER).map((r) => r.bioguide)).toEqual(['A000001']);
   });
 
-  test('never a member who left mid-term, one with no end date yet, or one back in the member file', () => {
-    const turnover = memberTurnover(AFTER);
+  test('a member who left mid-term has a page now and after the switch (owner, 2026-11-13)', () => {
+    const mid = record({ bioguide: 'B000002', served_until: '2026-04-21' });
+    expect(departedWithPage([mid], new Set(), BEFORE)).toEqual([mid]);
+    expect(departedWithPage([mid], new Set(), AFTER)).toEqual([mid]);
+  });
+
+  test('never one with no end date, a day outside the term, or one back in the member file', () => {
     const records = [
-      record({ bioguide: 'B000002', served_until: '2026-04-21' }),
       record({ bioguide: 'C000003', served_until: null }),
-      record({ bioguide: 'D000004' }),
+      record({ bioguide: 'D000004', served_until: '2026-04-21' }),
+      record({ bioguide: 'E000005', served_until: START_DAY }), // left at the previous switch
+      record({ bioguide: 'F000006', served_until: '2024-06-01' }),
+      record({ bioguide: 'G000007', served_until: 'April 2026' }),
     ];
-    expect(departedWithPage(records, new Set(['D000004']), turnover)).toEqual([]);
+    expect(departedWithPage(records, new Set(['D000004']), BEFORE)).toEqual([]);
+    expect(departedWithPage(records, new Set(['D000004']), AFTER)).toEqual([]);
+  });
+
+  test('the switch-day record keeps the approved line; every other one prints its own day', () => {
+    expect(servedLine(record(), memberTurnover(AFTER))).toEqual({ key: 'departedServed' });
+    expect(servedLine(record({ served_until: '2026-04-21' }), memberTurnover(AFTER))).toEqual({
+      key: 'departedServedOn',
+      date: '2026-04-21',
+    });
+    expect(servedLine(record({ served_until: '2026-04-21' }), null)).toEqual({ key: 'departedServedOn', date: '2026-04-21' });
+  });
+
+  test('the dated line, in both languages', () => {
+    expect(en.rep.departedServedOn).toBe('Served in the {chamber} until {date}.');
+    expect(es.rep.departedServedOn).toBe('Sirvió en {chamber} hasta el {date}.');
   });
 
   test('a Congress that ended earlier opens no turnover for the tracked one', () => {
@@ -210,14 +244,37 @@ test.describe('data/departed-members.json', () => {
   });
 });
 
-test.describe('dormant today', () => {
+test.describe('today', () => {
   // Stage 8 must update this test when it fills lib/congress.mjs's ended list.
-  test('the ended list is empty, so no turnover, no departed page, no new-member line', () => {
+  test('the ended list is empty, so no turnover and no new-member line', () => {
     expect(CONGRESS_POLICY.ended).toEqual([]);
     expect(liveTurnover()).toBeNull();
-    expect(getDepartedMembers()).toEqual([]);
-    // A member who left mid-Congress (named in today's roll calls) still has no page.
-    expect(hasMemberPage('C001078')).toBe(false);
+  });
+
+  test('the 16 members who left the 119th Congress mid-term have record pages (owner, 2026-11-13)', () => {
+    const pages = getDepartedMembers();
+    expect(pages.length).toBe(16);
+    expect(pages.length).toBe((departedFile as unknown[]).length);
+    for (const d of pages) {
+      expect(hasMemberPage(d.bioguide)).toBe(true);
+      expect(START_DAY < String(d.served_until) && String(d.served_until) < ENDED_DAY).toBe(true);
+    }
+    expect(getDepartedMember('C001078')?.served_until).toBe('2025-05-21');
+  });
+
+  test('a member who left is never in a lookup: not a sitting member, not in any seat', () => {
+    for (const d of getDepartedMembers()) {
+      expect(getLegislator(d.bioguide)).toBeUndefined();
+      if (d.type === 'rep') {
+        const seat = { state: d.state, district: d.district ?? 0 };
+        expect(repsForDistrict(seat).map((l) => l.bioguide)).not.toContain(d.bioguide);
+      }
+      for (const zip of ['20001', '33313', '07003']) {
+        for (const district of districtsForZip(zip)) {
+          expect(repsForDistrict(district).map((l) => l.bioguide)).not.toContain(d.bioguide);
+        }
+      }
+    }
   });
 
   test('only the member page and the sitemap read the departed list', () => {

@@ -28,11 +28,14 @@ const REVIEW = newCongressReview(process.env, CONGRESS_POLICY.tracked);
 const LEGISLATORS = REVIEW ? ROSTER.filter((l) => !REVIEW.departed.has(l.bioguide)) : ROSTER;
 const TURNOVER = turnoverFor(REVIEW ? REVIEW.policy : CONGRESS_POLICY);
 const DEPARTED_WITH_PAGE = departedWithPage(
-  REVIEW
-    ? ROSTER.filter((l) => REVIEW.departed.has(l.bioguide)).map((l) => reviewDepartedRecord(l, REVIEW))
-    : (departedMembers as DepartedMember[]),
+  [
+    ...(departedMembers as DepartedMember[]),
+    ...(REVIEW
+      ? ROSTER.filter((l) => REVIEW.departed.has(l.bioguide)).map((l) => reviewDepartedRecord(l, REVIEW))
+      : []),
+  ],
   new Set(LEGISLATORS.map((l) => l.bioguide)),
-  TURNOVER,
+  REVIEW ? REVIEW.policy : CONGRESS_POLICY,
 );
 const ZIPS = zipDistricts as Record<string, District[]>;
 const VACANCIES = vacancies as Vacancy[];

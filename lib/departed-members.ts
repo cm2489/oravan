@@ -11,11 +11,18 @@
  *   (owner, 2026-11-12, the wording as approved) and how they voted. No
  *   phone number, no office, no website, no call: nothing on it may read as
  *   a live way to reach them (hard rule 6). The record comes from
- *   data/departed-members.json (scripts/member_turnover.py), which is empty
- *   today. A page is built only when the record's `served_until` is the last
- *   day of the Congress that just ended, because that is the one date the
- *   approved line states. A member who left mid-term keeps a record in the
- *   file and still has no page (no wording for them is approved).
+ *   data/departed-members.json (scripts/member_turnover.py). A page is built
+ *   when the record's `served_until` is the last day of the Congress that
+ *   just ended (the approved line above), or a day inside the term of the
+ *   tracked Congress or an ended one.
+ *
+ *   MEMBERS WHO LEFT MID-TERM (owner, 2026-11-13, on the page that showed
+ *   him the stage 5 pictures). They get the same record page with their real
+ *   last day: "Served in the House until April 21, 2026." The 16 who left
+ *   the 119th Congress before the file existed were recorded by
+ *   scripts/seed-departed-members.py, through the weekly refresh's own code;
+ *   served_until is the end date of their last term in the congress-legislators
+ *   historical file, printed as the record states it, with no reason added.
  *
  *   A new member with no recorded vote. "No recorded votes yet in the 120th
  *   Congress." stands where the vote record would be, instead of the line a
@@ -45,23 +52,49 @@ export function memberTurnover(policy: CongressPolicy): MemberTurnover | null {
   return ended ? { ended, tracked: policy.tracked } : null;
 }
 
+const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** Did this member leave during the term of the tracked Congress or an ended
+ *  one (after its first day, before its last)? The last day itself belongs
+ *  to the switch, which has its own line and waits for the ended list. */
+function leftMidTerm(servedUntil: string, policy: CongressPolicy): boolean {
+  return [policy.tracked, ...policy.ended.map((e) => e.number)].some((n) => {
+    const term = congressTerm(n);
+    return term.start < servedUntil && servedUntil < term.end;
+  });
+}
+
 /**
- * The departed records that get a page: their `served_until` is the last day
- * of the Congress that just ended, and they are not back in the member file
- * (the member file wins for anyone sitting). Empty before the switch.
+ * The departed records that get a page, and are not back in the member file
+ * (the member file wins for anyone sitting): a member whose last day is the
+ * last day of the Congress that just ended (after the switch only), or one
+ * who left mid-term in the tracked Congress or an ended one (any day).
  */
 export function departedWithPage(
   records: readonly DepartedMember[],
   current: ReadonlySet<string>,
-  turnover: MemberTurnover | null,
+  policy: CongressPolicy,
 ): DepartedMember[] {
-  if (!turnover) return [];
+  const turnover = memberTurnover(policy);
   return records.filter(
     (r) =>
-      r.served_until === turnover.ended.ended &&
+      typeof r.served_until === 'string' &&
+      DAY_RE.test(r.served_until) &&
       !current.has(r.bioguide) &&
-      (r.type === 'rep' || r.type === 'sen'),
+      (r.type === 'rep' || r.type === 'sen') &&
+      ((turnover !== null && r.served_until === turnover.ended.ended) || leftMidTerm(r.served_until, policy)),
   );
+}
+
+/** Which served-until line a record page prints: the approved switch-day
+ *  line, or the dated one with the record's own last day. */
+export function servedLine(
+  r: Pick<DepartedMember, 'served_until'>,
+  turnover: MemberTurnover | null,
+): { key: 'departedServed' } | { key: 'departedServedOn'; date: string } {
+  return turnover !== null && r.served_until === turnover.ended.ended
+    ? { key: 'departedServed' }
+    : { key: 'departedServedOn', date: r.served_until as string };
 }
 
 /**

@@ -65,7 +65,7 @@ gh run list --workflow=refresh-legislators.yml --limit 1
 node -e "const d=require('./data/departed-members.json');console.log(d.length,'kept;',d.filter(r=>r.served_until==='2027-01-03').length,'served until 2027-01-03;',d.filter(r=>!r.served_until).map(r=>r.bioguide).join(' ')||'none undated')"
 ```
 
-On 2026-11-13 it printed `0 kept; 0 served until 2027-01-03; none undated`. After the switch it should print about 80 and about 80. A member listed as undated has no page yet; the next run fills the date once the historical file lists them (re-run step 3 a day later).
+On 2026-11-13 it printed `0 kept; 0 served until 2027-01-03; none undated`; once the 16 members who left mid-term were recorded the same day (see the end of this page), it prints `16 kept; 0 served until 2027-01-03; none undated`. After the switch it should print about 96 kept and about 80 served until 2027-01-03. A member listed as undated has no page yet; the next run fills the date once the historical file lists them (re-run step 3 a day later).
 
 **Undo:** revert the data commit through a pull request, never a push to `main`:
 
@@ -179,6 +179,6 @@ Run on 2026-11-13: it printed nothing (none open; the label does not exist until
 
 ## What stage 5 does not cover
 
-- A member who left **during** the 119th (resigned, died) still has no page: the approved line names Jan 3, 2027 only. On 2026-11-13, 16 such members appear in roll-call lists (their links there go to a "not found" page today) and 11 in sponsor lines (named without a link). Wording for them would need the owner.
+- **Members who left during the 119th now have record pages** (owner, 2026-11-13): "Served in the House until April 21, 2026.", with the last day from the congress-legislators historical file. The 16 who left before `data/departed-members.json` existed were recorded on 2026-11-13 by `scripts/seed-departed-members.py --since 2025-01-03 --today 2026-11-13`, through the refresh's own code; later ones are recorded by the weekly refresh. So in step 5, `<left>` must be a member whose record says `2027-01-03`: `C001078`, used there on 2026-11-13, has had a record page since.
 - The MCP `get_representative` tool answers "not found" for a member who left, as today.
 - If the historical file never lists a member who left, their record keeps `served_until: null` and they get no page; step 3's check names them.

@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
-import { useTranslations } from 'next-intl';
-import { setRequestLocale, getTranslations } from 'next-intl/server';
+import { useFormatter, useTranslations } from 'next-intl';
+import { getFormatter, setRequestLocale, getTranslations } from 'next-intl/server';
 import { routing } from '@/i18n/routing';
 import { Link } from '@/i18n/navigation';
 import { BillCard } from '@/components/BillCard';
@@ -32,7 +32,7 @@ import { formatCitation } from '@/lib/format';
 import { getFreshness } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
 import { statusKeyFor } from '@/lib/journey';
-import { servedChamber, showsNoVotesYet } from '@/lib/departed-members';
+import { servedChamber, servedLine, showsNoVotesYet } from '@/lib/departed-members';
 import { memberVotesByBill } from '@/lib/votes';
 import type { Bill, BillTeaser, DepartedMember, Legislator, Vacancy } from '@/lib/types';
 
@@ -161,7 +161,7 @@ export async function generateMetadata({
       }),
       // The page's own served-until line: the phone-number description a
       // sitting member's page carries would be false here.
-      description: t('departedServed', { chamber: t(`departedChamber.${servedChamber(member)}`) }),
+      description: servedText(member, t, longDay(await getFormatter({ locale }))),
       alternates,
     };
   }
@@ -354,6 +354,23 @@ function MemberBody({
  * the same left column at the same width. Nothing from the call column, and
  * no sponsored-bills block (its heading speaks in the present tense).
  */
+type Formatter = ReturnType<typeof useFormatter>;
+
+/** A record's day ('2026-04-21') as the page prints dates: "April 21, 2026",
+ *  "21 de abril de 2026". The record's day is a calendar day, so UTC. */
+const longDay = (format: Formatter) => (day: string) =>
+  format.dateTime(new Date(`${day}T00:00:00Z`), { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
+
+/** The served-until sentence: the approved switch-day line, or the dated
+ *  one with the record's own last day (lib/departed-members.ts servedLine). */
+function servedText(member: DepartedMember, t: RepT, day: (d: string) => string): string {
+  const chamber = t(`departedChamber.${servedChamber(member)}`);
+  const line = servedLine(member, memberTurnover());
+  return line.key === 'departedServed'
+    ? t('departedServed', { chamber })
+    : t('departedServedOn', { chamber, date: day(line.date) });
+}
+
 function DepartedBody({
   member,
   locale,
@@ -367,6 +384,7 @@ function DepartedBody({
 }) {
   const party = usePartyLabel(member);
   const place = placeLabel(tReps, member.state, member.type === 'sen' ? null : member.district);
+  const served = servedText(member, t, longDay(useFormatter()));
   return (
     <>
       <header className="mt-6 flex items-start gap-4 md:gap-6">
@@ -387,7 +405,7 @@ function DepartedBody({
           </p>
           <h1 className="mt-1 text-h1-bill font-extrabold">{member.name}</h1>
           <p className="mt-2 max-w-read text-sm text-ink-2" data-departed-served="">
-            {t('departedServed', { chamber: t(`departedChamber.${servedChamber(member)}`) })}
+            {served}
           </p>
         </div>
       </header>

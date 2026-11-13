@@ -33,6 +33,7 @@ from collections import defaultdict
 from datetime import datetime, timezone
 
 from vacancy_diff import ANOMALOUS_SHRINK_THRESHOLD, compute_vacancies
+from member_entry import member_entry
 from member_turnover import (
     accepts_seats,
     departed_problems,
@@ -89,33 +90,7 @@ prev_legislators = _load_json('data/legislators.json', [])
 prev_vacancies = _load_json('data/vacancies.json', [])
 prev_departed = _load_json('data/departed-members.json', [])
 
-out = []
-for l in legs:
-    t = l['terms'][-1]
-    bid = l['id']['bioguide']
-    offs = [
-        {'city': o.get('city'), 'state': o.get('state'), 'phone': o.get('phone')}
-        for o in office_map.get(bid, []) if o.get('phone')
-    ]
-    entry = {
-        'bioguide': bid,
-        'name': l['name'].get('official_full') or (l['name']['first'] + ' ' + l['name']['last']),
-        'first': l['name']['first'],
-        'last': l['name']['last'],
-        'type': t['type'],  # sen | rep
-        'state': t['state'],
-        'district': t.get('district'),
-        'party': t.get('party'),
-        'phone': t.get('phone'),
-        'url': t.get('url'),
-        'offices': offs,
-    }
-    # The Senate's roll-call XML identifies senators by LIS member id only,
-    # never bioguide, so scripts/sync-votes.mjs joins on this. Senators only:
-    # a House member has no LIS id to carry.
-    if t['type'] == 'sen' and l['id'].get('lis'):
-        entry['lis'] = l['id']['lis']
-    out.append(entry)
+out = [member_entry(l, office_map.get(l['id']['bioguide'], [])) for l in legs]
 
 # Vacancy-diff step. Never infers occupancy from any one legislator's own
 # term data (the footgun this replaces) - purely a seat-set comparison

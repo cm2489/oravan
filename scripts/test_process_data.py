@@ -70,7 +70,7 @@ class Run:
         self.dir = tempfile.mkdtemp(prefix='oravan-process-data-')
         os.makedirs(f'{self.dir}/data')
         os.makedirs(f'{self.dir}/scripts')
-        for f in ('process-data.py', 'vacancy_diff.py', 'member_turnover.py'):
+        for f in ('process-data.py', 'vacancy_diff.py', 'member_turnover.py', 'member_entry.py'):
             shutil.copy(os.path.join(HERE, f), f'{self.dir}/scripts/{f}')
         self.write('legislators.json', as_committed(prev_raw), compact=True)
         self.write('vacancies.json', vacancies or [])
@@ -225,6 +225,55 @@ class ProcessDataEndToEnd(unittest.TestCase):
         r = self.run_(raw, raw).go('--today', ORDINARY_DAY, '--accept-departures', 'all')
         self.assertNotEqual(r.code, 0)
         self.assertTrue(r.untouched())
+
+
+class SeedDepartedMembers(unittest.TestCase):
+    """scripts/seed-departed-members.py: the one-time record of members who
+    left during the tracked Congress, through the refresh's own code."""
+
+    def test_records_exactly_the_mid_term_departures_and_is_idempotent(self):
+        current = roster()
+        left_mid = raw_member('M000001', 'rep', 'OH', 3)
+        left_mid['terms'][-1]['end'] = '2026-04-21'
+        left_sen = raw_member('M000002', 'sen', 'SC')
+        left_sen['terms'][-1]['end'] = '2025-01-20'
+        before = raw_member('M000003', 'rep', 'OH', 4)  # left at the previous switch
+        before['terms'][-1]['end'] = date(2025, 1, 3).isoformat()
+        later = raw_member('M000004', 'rep', 'OH', 5)  # after --today
+        later['terms'][-1]['end'] = '2026-12-01'
+        d = tempfile.mkdtemp(prefix='oravan-seed-')
+        try:
+            os.makedirs(f'{d}/data')
+            os.makedirs(f'{d}/scripts')
+            for f in ('seed-departed-members.py', 'member_entry.py', 'member_turnover.py'):
+                shutil.copy(os.path.join(HERE, f), f'{d}/scripts/{f}')
+            with open(f'{d}/data/legislators.json', 'w') as f:
+                json.dump(as_committed(current), f)
+            with open(f'{d}/data/departed-members.json', 'w') as f:
+                f.write('[]')
+            with open(f'{d}/hist.json', 'w') as f:
+                json.dump([left_mid, left_sen, before, later], f)
+            cmd = [sys.executable, 'scripts/seed-departed-members.py', '--since', date(2025, 1, 3).isoformat(),
+                   '--today', '2026-11-13', '--historical', f'{d}/hist.json']
+            p = subprocess.run(cmd, cwd=d, capture_output=True, text=True, timeout=60)
+            self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+            with open(f'{d}/data/departed-members.json', 'rb') as f:
+                first = f.read()
+            rows = json.loads(first)
+            self.assertEqual([(r['bioguide'], r['served_until'], r['left_file']) for r in rows],
+                             [('M000001', '2026-04-21', '2026-11-13'), ('M000002', '2025-01-20', '2026-11-13')])
+            for r in rows:
+                for k in ('phone', 'url', 'offices', 'lis'):
+                    self.assertNotIn(k, r)
+            self.assertEqual(rows[0]['district'], 3)
+            p = subprocess.run(cmd, cwd=d, capture_output=True, text=True, timeout=60)
+            self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+            with open(f'{d}/data/departed-members.json', 'rb') as f:
+                self.assertEqual(f.read(), first)
+            with open(f'{d}/data/legislators.json') as f:
+                self.assertEqual(json.load(f), as_committed(current))
+        finally:
+            shutil.rmtree(d, ignore_errors=True)
 
 
 if __name__ == '__main__':
