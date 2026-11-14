@@ -77,6 +77,8 @@ import {
   producerStillRunning,
   refusedSummaries,
   parseRecheckTrouble,
+  HEALTH_ISSUE_TITLE,
+  lastReportDayFromBody,
   recheckFindings,
   recheckHeldRows,
   runThatWroteCursor,
@@ -236,6 +238,34 @@ function previousBlob(path, back = 1) {
 /* ------------------------------------------------------------------ *
  * The report
  * ------------------------------------------------------------------ */
+
+/**
+ * The comparison's findings, told apart: an absent report file (null), one
+ * that cannot be parsed or fails its shape (`malformed`), or a good one. The
+ * previous report that ran is read off the standing issue's "Last update"
+ * stamp (the body this run is about to rewrite), so a skipped report day is
+ * caught up rather than lost.
+ */
+function readRecheckFindings(now) {
+  const path = 'data/record-recheck-report.json';
+  let file = null;
+  let unreadable = null;
+  if (existsSync(path)) {
+    try {
+      file = JSON.parse(readFileSync(path, 'utf8'));
+    } catch (e) {
+      unreadable = e.message;
+    }
+  }
+  let lastReportDay = null;
+  // The same lookup daily-metrics uses to find the standing issue.
+  const issues = ghJson(['issue', 'list', '--repo', REPO, '--state', 'open', '--search', `in:title "${HEALTH_ISSUE_TITLE}"`, '--json', 'number,title,body']);
+  if (Array.isArray(issues)) {
+    const issue = issues.find((i) => i?.title === HEALTH_ISSUE_TITLE);
+    lastReportDay = lastReportDayFromBody(issue?.body);
+  }
+  return recheckFindings(file, { now, lastReportDay, unreadable });
+}
 
 export function buildReport({ now = Date.now() } = {}) {
   const dayMs = 24 * 3_600_000;
@@ -574,7 +604,7 @@ export function buildReport({ now = Date.now() } = {}) {
       held: recheckHeldRows(readJsonFile('data/moment-updates.json')),
       // What the comparison still has unresolved, across nights (first-seen
       // dates and streaks), from its own committed file.
-      findings: recheckFindings(readJsonFile('data/record-recheck-report.json'), { now }),
+      findings: readRecheckFindings(now),
     },
     summaryRefusals: refusedSummaries(readJsonFile('data/moment-updates.json'), {
       liveIds: moments ? Object.entries(moments).filter(([, m]) => m?.status === 'live').map(([id]) => id) : null,

@@ -74,21 +74,23 @@ While a row is held, every nightly run prints a warning naming it (`… is HELD 
 
 ## How trouble reaches a person
 
-The collector's step is `continue-on-error`, so the nightly run stays green whatever the comparison finds. The daily pipeline-health report (`daily-metrics.yml`, 13:00 UTC, before that day's nightly at 14:15 UTC) reads the nightly's log, `data/moment-updates.json` and `data/record-recheck-report.json`. It rewrites the standing `pipeline-health` issue's body every day and posts **one ⛔ comment a day only when there is an alarm**. For the comparison:
+The collector's step is `continue-on-error`, so the nightly run stays green whatever the comparison finds. The daily pipeline-health report (`daily-metrics.yml`, 13:00 UTC, before that day's nightly at 14:15 UTC) reads the nightly's log, `data/moment-updates.json` and `data/record-recheck-report.json`. It rewrites the standing `pipeline-health` issue's body every day (the `record re-check` row counts everything open) and posts **one ⛔ comment a day only when something is due**. For the comparison, everything follows one calendar: **a comment the first morning it is worth one, then one reminder a week while it lasts; the body counts it every day.** A report that is skipped or late loses nothing: the next one that runs reads the previous run's "Last update" stamp in the issue body and catches up, once.
 
-| What | Comment on the issue | Issue body (`record re-check` row) |
+| What | First comment | Then |
 | --- | --- | --- |
-| A line newly found to differ, or left for a person | **once**, the morning after the night that found it: named with its page, the stored words and what the record holds now | counted every day while it lasts |
-| Lines still open | **one reminder a week** (8, 15, 22 … days after the oldest was first found) | counted every day |
-| A night a guard refused or would refuse | that morning: "the source looks wrong"; **no line is named as differing** from such a night | noted |
-| A bill not checked (its list failed, was rejected, or does not look like that bill's) | daily from the **3rd night running** | counted |
-| A line dated after the newest action on its bill's list (the record may have deleted it) | daily from the **3rd night running** | counted |
-| Nothing checked at all while there are lines to check | daily from the **2nd night running** | counted |
+| A line found to differ, or left for a person | the morning after the night that found it, named with its page, the stored words and what the record holds now (or "the record no longer holds it") | weekly reminder for all open lines |
+| A night a guard refused or would refuse ("the source looks wrong") | the next morning; **no line is named as differing**, and the lines it would have touched are listed as **unconfirmed** so a person can still look | weekly while it lasts |
+| A bill not checked (its list failed, was rejected, or does not look like that bill's), with the lines it left unchecked | the morning after its **3rd** night running | weekly |
+| A line dated after the newest action on its bill's list (the record may have deleted it) | the morning after its **3rd** night running | weekly |
+| Nothing checked at all while there are lines to check | the morning after the **2nd** night running | weekly |
+| A malformed `data/record-recheck-report.json` | every morning (it silences the rest) | — |
 | Apply mode: a refused night, a re-check or follow-up that threw, a malformed accept list, a held line | that morning (held lines: daily while held) | — |
+
+**A bill with one line** is judged on its own: the every-line guard starts at 2 lines, so a real change to a one-line bill is reported as that change, not as "the source looks wrong".
 
 **Out of scope, never an alarm:** lines of an ended Congress's bills. After the change of Congress the collector stops reading those bills, and the comparison counts their lines as out of scope (logged), not as unchecked.
 
-**"The source looks wrong"** means a list that names the right bill but does not hold that bill's latest action from `data/bills.json`, and on which fewer than half the stored lines it reaches stand word for word. A list whose actions carry no words in `text` (a renamed field) is not checked either.
+**"The source looks wrong"** means a list that names the right bill but does not hold that bill's latest action from `data/bills.json` (a latest action that is boilerplate, the same sentence as another bill's latest action such as "Held at the desk.", does not count on its own), and on which fewer than half the stored lines it reaches stand word for word. It also means a night when more than half of a bill's lines (from 3), or every line (from 2), would change or be left. A list whose actions carry no words in `text` (a renamed field) is not checked either.
 
 ## A line left as it is, or reported while correction is off
 

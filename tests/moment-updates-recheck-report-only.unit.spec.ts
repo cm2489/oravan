@@ -109,12 +109,21 @@ test("the owner's proof night: data/moment-updates.json is byte-identical, nothi
 });
 
 test('a night a guard would refuse: still byte-identical, still nothing applied, every row reported', () => {
-  // The bill's latest action is on the list (so it is the bill's list), and
-  // every September line is gone: a guard would refuse the night.
-  const broken = WITH_LATEST.map((a, i) =>
+  // The bill's latest action is on the list and is no other bill's (so it is
+  // the bill's list), and every September line is gone: a guard would refuse.
+  const UNIQUE = { actionDate: '2026-10-05', text: 'Stub latest action that only S. 4668 has.', sourceSystem: { name: 'House floor actions' } };
+  const broken = [UNIQUE, ...WITH_LATEST].map((a, i) =>
     String(a.actionDate) >= '2026-09-15' && String(a.actionDate) <= '2026-09-24' ? { ...a, text: `Stub action ${i} with no relation to any stored line.`, recordedVotes: undefined } : a,
   );
-  const r = night(broken);
+  const r = night(broken, (dir) => {
+    // The night's bill sync would have read the same latest action.
+    const path = join(dir, 'data/bills.json');
+    const bills = JSON.parse(readFileSync(path, 'utf8'));
+    const b = bills.find((x: { full_identifier: string }) => x.full_identifier === 's-4668-119');
+    b.last_action_date = UNIQUE.actionDate;
+    b.last_action_text = UNIQUE.text;
+    writeFileSync(path, JSON.stringify(bills));
+  });
   expect(r.status, r.log.slice(-2000)).toBe(0);
   expect(r.same).toBe(true);
   expect(r.log).toContain('would have refused the night');
@@ -122,7 +131,8 @@ test('a night a guard would refuse: still byte-identical, still nothing applied,
   expect(r.log).not.toContain('recheck follow-up');
   // T1: no row is named as differing on such a night; the refusal is recorded.
   expect(r.report.rows).toEqual({});
-  expect(r.report.would_refuse).toMatchObject({ why: expect.stringContaining('rows would be corrected') });
+  expect(r.report.would_refuse).toMatchObject({ why: expect.stringContaining('would be corrected') });
+  expect(Object.keys(r.report.would_refuse.rows).length).toBeGreaterThan(4); // the rows involved, unconfirmed
   expect(r.log).toContain('SUSPECT SOURCE (not reported as a difference)');
   expect(r.log).not.toMatch(/record re-check REPORT: would/);
 });
@@ -168,4 +178,14 @@ test('S1 · a hand-made stale model summary citing a held row: report mode write
   expect(r.same).toBe(true);
   expect(r.log).not.toContain('record-only: the re-check changed a cited line');
   expect(r.log).not.toContain('the record re-check changed');
+});
+
+test("item 3 · a would-withdraw line in the log keeps Oravan's words outside the record's quote", () => {
+  // The Sept 17 cloture motion on the measure is replaced by an unrelated sentence: that stored line is on no row of the list.
+  const changed = WITH_LATEST.map((a) => (String(a.text).startsWith('Cloture motion on the measure presented') ? { ...a, text: 'An unrelated action of that day, for this test.' } : a));
+  const r = night(changed);
+  expect(r.status, r.log.slice(-2000)).toBe(0);
+  expect(r.same).toBe(true);
+  expect(r.log).toMatch(/REPORT: would withdraw paying-college-athletes\/u_f0db9993 .* — the record no longer holds it — on no date of the bill's list; that day the record lists "An unrelated action of that day, for this test\."/);
+  expect(r.log).not.toMatch(/the record holds now: "(nothing like it|on no date)/);
 });

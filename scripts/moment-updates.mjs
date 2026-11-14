@@ -201,6 +201,7 @@ import {
   RECHECK_MODE,
   RECHECK_REPORT_PATH,
   acceptedIds,
+  latestActionsBySlug,
   nextRecheckReport,
   recheckReportProblems,
   recheckWords,
@@ -589,7 +590,7 @@ export function recheckSummaryMarkdown(result, { mode = 'apply' } = {}) {
       c.newId && c.newId !== c.id ? (would ? `${c.id} (would become ${c.newId})` : `${c.id} → ${c.newId}`) : c.id,
       c.day,
       c.was,
-      c.now ?? c.record,
+      (c.now ?? c.record) || '(the record no longer holds it)',
       c.how ?? '',
     ]),
     ...(result.leftRows ?? []).map((l) => ['left as it is', l.momentId, l.id, l.day, l.stored, l.record, l.why]),
@@ -650,7 +651,7 @@ async function recheckStoredLines() {
   // The bills the collector reads tonight: the same scope the fetch above
   // used, so an ENDED Congress's rows are out of scope in both places.
   const scope = new Set(vehicleSlugs);
-  const latestBySlug = new Map([...billBySlug].map(([slug, b]) => [slug, { date: b?.last_action_date ?? null, text: b?.last_action_text ?? null }]));
+  const latestBySlug = latestActionsBySlug(billBySlug.values());
   const result = recheckStore(store, lists, { now, fallbackText: fallbackTextFor, lintText: recheckLint, amendmentLists, accept, scope, latestBySlug });
   const report = RECHECK_MODE === 'report';
   const applied = !report && !result.refused;
@@ -671,7 +672,9 @@ async function recheckStoredLines() {
   const tag = result.refused ? 'SUSPECT SOURCE (not reported as a difference)' : 'REPORT';
   for (const c of result.changes) {
     const verdict = (would ? { reworded: 'would correct', withdrawn: 'would withdraw', held: 'would hold', reinstated: 'would reinstate' } : { reworded: 'corrected', withdrawn: 'withdrawn', held: 'held', reinstated: 'reinstated' })[c.kind];
-    const line = `moment-updates record re-check ${tag}: ${verdict} ${c.momentId}/${c.id} (${c.vehicle} ${c.day}, /questions/${c.momentId}) — stored: "${c.was}" — the record holds now: "${c.now ?? c.record}"${c.how ? ` — ${c.how}` : ''}`;
+    // Only the record's words go inside quotation marks (rule 6).
+    const holds = c.now ?? c.record;
+    const line = `moment-updates record re-check ${tag}: ${verdict} ${c.momentId}/${c.id} (${c.vehicle} ${c.day}, /questions/${c.momentId}) — stored: "${c.was}" — ${holds ? `the record holds now: "${holds}"` : 'the record no longer holds it'}${c.how ? ` — ${c.how}` : ''}`;
     console.log(would ? `::notice::${line}` : `  ${line}`);
   }
   for (const n of result.newerRows) {
