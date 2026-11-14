@@ -212,8 +212,9 @@ test('accent alone still derives --oravan-accent-ink; the AI chip stays an ink m
   // ink and the derived accent-ink the same colour today, a color assertion
   // alone would pass either way and would no longer notice the accent coming
   // back.
-  // DRAFT mix (grey stamps): with no tenant ink the chip is the ink ladder's
-  // grey, ink-2 (app/embed/embed.css --_mark); a tenant's own ink still wins.
+  // The owner's grey AI mark (approved 2026-11-13): with no tenant ink the
+  // chip is the ink ladder's grey, ink-2 (app/embed/embed.css --_mark); a
+  // tenant's own ink still wins.
   const chip = page.locator('.bc-chip-ai');
   expect(await chip.evaluate((el) => getComputedStyle(el).color)).toBe(rgbOf(colorToken('ink-2')));
   expect(await chip.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgba(0, 0, 0, 0)');

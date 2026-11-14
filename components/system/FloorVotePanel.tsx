@@ -206,7 +206,7 @@ export function FloorVotePanel({
      the headline it supports. It carries its own attribution row (source,
      date and link) from the caller. */
   const quote = evidence ? (
-    <blockquote className="max-w-read border-l-[3px] border-ink/35 pl-4 font-reading text-md leading-dark text-ink-2">
+    <blockquote className="max-w-read border-l-[3px] border-ink/35 pl-4 font-reading text-base leading-dark text-ink-2">
       {evidence}
     </blockquote>
   ) : null;

@@ -159,6 +159,41 @@ function ringTouches(
   return { ringPixels, touches: [...touches.entries()].filter(([, n]) => n >= 2).map(([k]) => k.split(',').map(Number) as Rgb) };
 }
 
+/**
+ * A control's label contrast read from the screen: the most common colour
+ * inside the control (3px in from its edge, so its border is left out) is
+ * the ground; the label is the most common colour among the tenth of
+ * pixels farthest from it in luminance (solid glyph strokes at 2x).
+ */
+async function pixelTextRatio(page: Page, loc: Locator): Promise<number> {
+  const box = (await loc.boundingBox())!;
+  const scale = await page.evaluate(() => window.devicePixelRatio);
+  const img = await decode(await page.screenshot({ clip: box, scale: 'device' }));
+  const inset = Math.ceil(3 * scale);
+  const lum = (p: Rgb) => {
+    const f = (v: number) => {
+      const c = v / 255;
+      return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+    };
+    return 0.2126 * f(p[0]) + 0.7152 * f(p[1]) + 0.0722 * f(p[2]);
+  };
+  const px: Rgb[] = [];
+  for (let j = inset; j < img.height - inset; j++)
+    for (let i = inset; i < img.width - inset; i++) {
+      const k = (j * img.width + i) * 4;
+      px.push([img.data[k], img.data[k + 1], img.data[k + 2]]);
+    }
+  const mode = (list: Rgb[]) => {
+    const n = new Map<string, number>();
+    for (const p of list) n.set(p.join(','), (n.get(p.join(',')) ?? 0) + 1);
+    return [...n.entries()].sort((a, b) => b[1] - a[1])[0][0].split(',').map(Number) as Rgb;
+  };
+  const ground = mode(px);
+  const lg = lum(ground);
+  const far = [...px].sort((a, b) => Math.abs(lum(b) - lg) - Math.abs(lum(a) - lg)).slice(0, Math.max(10, Math.floor(px.length / 10)));
+  return contrastRatio(hex(ground), hex(mode(far)));
+}
+
 /** Focus by keyboard modality, then measure the ring from a screenshot. */
 async function ringCheck(page: Page, loc: Locator, label: string): Promise<Check[]> {
   // Arrive as a keyboard user would, so the focus is :focus-visible: a key
@@ -341,91 +376,83 @@ test.describe('colour in every state', () => {
   });
 
   test('links in text on cream, wash, tint and stone: rest, hover, focus, visited', async ({ page }) => {
-    // It walks up to 14 pages to find a link on each ground, then measures
-    // four states on each: longer than the default 30s on a phone profile.
+    // Up to five pages to find, then four states per ground: longer than the
+    // default 30s on a phone profile.
     test.setTimeout(120_000);
-    const grounds = new Map<string, string>([['paper', ''], ['wash', ''], ['tint', ''], ['stone', '']]);
-    const pages = ['/about', '/', `/bills/${callableBillSlug()}`, '/privacy', '/why-call', '/call', '/reps', '/glossary', '/citations', '/partners', '/terms', '/questions', '/today', '/follow'];
-    const found: { ground: string; path: string; index: number }[] = [];
-    for (const path of pages) {
-      if (found.length === grounds.size) break;
-      await page.goto(path);
-      const hits = (await page.evaluate((want) => {
-        const cs = (window as unknown as { __cs: { token: (n: string) => number[]; bg: (e: Element) => number[] } }).__cs;
-        const tokens = want.map((w) => [w, cs.token(w).join(',')]);
-        const out: [string, number][] = [];
-        document.querySelectorAll('main a').forEach((a, i) => {
-          const s = getComputedStyle(a);
-          if (!s.textDecorationLine.includes('underline')) return;
-          const r = a.getBoundingClientRect();
-          if (r.width < 2 || r.height < 2) return;
-          const bg = cs.bg(a).map((v) => Math.round(v)).join(',');
-          const t = tokens.find(([, v]) => v === bg);
-          if (t && !out.some(([g]) => g === t[0])) out.push([t[0], i]);
+    /*
+     * STABLE BY CONSTRUCTION (CI, 2026-11-14: "Element is not attached to the
+     * DOM" on webkit-mobile). A link is found once by what it is, its href
+     * and its text, and found again the same way after every navigation,
+     * once the page has settled; nothing is held across a load and nothing
+     * is put into a box React owns, because a client re-render (slower on
+     * CI's runners than on a fast Mac) drops a foreign node.
+     *
+     *   cream  the first underlined text link in a paragraph of /about;
+     *   stone  the floor panel's first underlined link on the home page,
+     *          when the week has a floor panel;
+     *   wash, tint  no page offers a text link on these today, so the cream
+     *          link's own classes are measured inside a page made of the
+     *          site's own stylesheet and `bg-wash` / `bg-tint` boxes, which
+     *          React does not own.
+     */
+    const settle = async (path: string) => {
+      await page.goto(path, { waitUntil: 'networkidle' });
+      await page.waitForFunction(() => document.readyState === 'complete');
+    };
+    type Target = { ground: string; path: string; scope: string; href: string; text: string };
+    const describe = (scope: string) =>
+      page.evaluate((sel) => {
+        const a = [...document.querySelectorAll<HTMLAnchorElement>(`${sel} a[href]`)].find((n) => {
+          const r = n.getBoundingClientRect();
+          return getComputedStyle(n).textDecorationLine.includes('underline') && r.width > 2 && r.height > 2 && (n.textContent ?? '').trim();
         });
-        return out;
-      }, [...grounds.keys()])) as [string, number][];
-      for (const [ground, index] of hits) if (!found.some((f) => f.ground === ground)) found.push({ ground, path, index });
-    }
-    // Cream is everywhere; stone exists only on a week with a floor panel.
-    // Which grounds the pages offered is recorded with the result.
-    expect(found.some((f) => f.ground === 'paper'), 'a text link on cream').toBe(true);
-    test.info().annotations.push({ type: 'link grounds', description: found.map((f) => `${f.ground} ${f.path}`).join('; ') });
-    // Wash and tint carry few text links of their own, so where the pages
-    // offered none, the cream link itself (its markup and classes, cloned,
-    // not restyled) is measured inside a real wash or tint box of a page that
-    // has one.
-    const cream = found.find((f) => f.ground === 'paper')!;
-    await page.goto(cream.path);
-    const creamHtml = await page.locator('main a').nth(cream.index).evaluate((a) => a.outerHTML);
-    const placedOn = new Map<string, string>();
-    for (const tone of ['wash', 'tint']) {
-      if (found.some((f) => f.ground === tone)) continue;
-      for (const path of ['/', `/bills/${callableBillSlug()}`, '/partners', '/reps', '/call']) {
-        await page.goto(path);
-        const ok = await page.evaluate((t) => {
-          const cs = (window as unknown as { __cs: { token: (n: string) => number[] } }).__cs;
-          const want = cs.token(t).join(',');
-          const box = [...document.querySelectorAll('main *')].find((n) => {
-            const c = getComputedStyle(n).backgroundColor.match(/[\d.]+/g);
-            return c && c.length === 3 && c.map(Number).join(',') === want && (n as HTMLElement).offsetWidth > 100;
-          });
-          return Boolean(box);
-        }, tone);
-        if (ok) {
-          placedOn.set(tone, path);
-          found.push({ ground: `${tone} (the cream link, placed in a ${tone} box)`, path, index: -1 });
-          break;
-        }
-      }
-    }
-    for (const { ground, path, index } of found) {
-      await page.goto(path);
-      if (index === -1) {
-        const tone = ground.startsWith('wash') ? 'wash' : 'tint';
-        await page.evaluate(
-          ([html, t]) => {
-            const cs = (window as unknown as { __cs: { token: (n: string) => number[] } }).__cs;
-            const want = cs.token(t).join(',');
-            const box = [...document.querySelectorAll('main *')].find((n) => {
-              const c = getComputedStyle(n).backgroundColor.match(/[\d.]+/g);
-              return c && c.length === 3 && c.map(Number).join(',') === want && (n as HTMLElement).offsetWidth > 100;
-            })!;
-            const holder = document.createElement('p');
-            holder.innerHTML = html;
-            holder.firstElementChild!.setAttribute('data-cs-placed', '');
-            box.appendChild(holder);
-          },
-          [creamHtml, tone] as const
-        );
-      }
-      const link = index === -1 ? page.locator('[data-cs-placed]') : page.locator('main a').nth(index);
-      await link.scrollIntoViewIfNeeded();
-      record(`text link on ${ground}, rest`, [...(await textChecks(page, link, `link ${ground}`)), ...(await visitedCheck(page, link, `link ${ground}`))]);
-      await hover(page, link);
-      record(`text link on ${ground}, hover`, await textChecks(page, link, `link ${ground} hover`));
+        return a ? { href: a.getAttribute('href')!, text: (a.textContent ?? '').trim().slice(0, 30) } : null;
+      }, scope);
+    const targets: Target[] = [];
+    await settle('/about');
+    const cream = await describe('main p');
+    expect(cream, 'a text link in a paragraph of /about').toBeTruthy();
+    targets.push({ ground: 'paper', path: '/about', scope: 'main p', ...cream! });
+    await settle('/');
+    const stone = await describe('[data-crown]');
+    if (stone) targets.push({ ground: 'stone', path: '/', scope: '[data-crown]', ...stone });
+    const find = (t: Target) => page.locator(`${t.scope} a[href="${t.href}"]`).filter({ hasText: t.text }).first();
+
+    for (const t of targets) {
+      await settle(t.path);
+      await find(t).scrollIntoViewIfNeeded();
+      record(`text link on ${t.ground}, rest`, [...(await textChecks(page, find(t), `link ${t.ground}`)), ...(await visitedCheck(page, find(t), `link ${t.ground}`))]);
+      await hover(page, find(t));
+      record(`text link on ${t.ground}, hover`, await textChecks(page, find(t), `link ${t.ground} hover`));
       await page.mouse.move(0, 0);
-      record(`text link on ${ground}, keyboard focus`, await ringCheck(page, link, `link ${ground} focus`));
+      record(`text link on ${t.ground}, keyboard focus`, await ringCheck(page, find(t), `link ${t.ground} focus`));
+    }
+
+    // Wash and tint: the cream link's classes, on the site's own stylesheet.
+    await settle('/about');
+    const creamLink = find(targets[0]);
+    const classes = (await creamLink.getAttribute('class')) ?? '';
+    const sheets = await page.evaluate(() =>
+      [...document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]')].map((l) => l.href)
+    );
+    expect(sheets.length, 'the site stylesheet').toBeGreaterThan(0);
+    await page.setContent(
+      `<!doctype html><html><head>${sheets.map((h) => `<link rel="stylesheet" href="${h}">`).join('')}</head>` +
+        `<body><main>` +
+        ['wash', 'tint']
+          .map((g) => `<div class="bg-${g} p-6"><p>Words around <a data-ground="${g}" href="#${g}" class="${classes}">a link on ${g}</a> in a sentence.</p></div>`)
+          .join('') +
+        `</main></body></html>`,
+      { waitUntil: 'load' }
+    );
+    for (const g of ['wash', 'tint']) {
+      const link = page.locator(`a[data-ground="${g}"]`);
+      await expect(link).toBeVisible();
+      record(`text link on ${g}, rest (the cream link's classes on a ${g} box)`, await textChecks(page, link, `link ${g}`));
+      await hover(page, link);
+      record(`text link on ${g}, hover`, await textChecks(page, link, `link ${g} hover`));
+      await page.mouse.move(0, 0);
+      record(`text link on ${g}, keyboard focus`, await ringCheck(page, link, `link ${g} focus`));
     }
   });
 
@@ -437,6 +464,30 @@ test.describe('colour in every state', () => {
   });
 
   for (const scheme of ['light', 'dark'] as const) {
+    test.describe(`embeds, the SELECTED toggle on hover, ${scheme}`, () => {
+      test.use({ colorScheme: scheme });
+      for (const locale of ['en', 'es'] as const) {
+        for (const [name, path] of [
+          ['bill card', `/embed/bill-card?locale=${locale}&slug=` + callableBillSlug()],
+          ['members lookup', `/embed/rep-lookup?locale=${locale}`],
+        ] as const) {
+          test(`${name} (${locale}): the selected language keeps its label on hover, read from pixels`, async ({ page }) => {
+            // The review of f5d7a114: hovering the already-selected toggle
+            // swapped its fill for the faint hover tint while the label
+            // stayed accent-ink, 1.25:1 in dark mode (1.17 in light on main).
+            await page.goto(path, { waitUntil: 'networkidle' });
+            const pressed = page.locator('.re-toggle[aria-pressed="true"]').first();
+            await expect(pressed).toHaveText(locale.toUpperCase());
+            await hover(page, pressed);
+            const ratio = await pixelTextRatio(page, pressed);
+            record(`embed ${name} (${scheme}, ${locale}), selected toggle on hover`, [
+              { kind: 'text', ratio, need: 4.5, what: `${name} ${locale} ${scheme}: selected toggle label on hover, from pixels` },
+            ]);
+          });
+        }
+      }
+    });
+
     test.describe(`embeds, ${scheme}`, () => {
       test.use({ colorScheme: scheme });
       for (const [name, path] of [

@@ -14,7 +14,7 @@
  * pair — four mirrors, one move.
  *
  * THE TWO LAWS, as they apply to a white-label surface (DESIGN.md):
- *   COLOR — DRAFT, the owner's look (2026-11-13): the lamp (#ffc933, ink
+ *   COLOR — the owner's look (approved from pictures, 2026-11-13): the lamp (#ffc933, ink
  *   text 11.20) is the un-themed default accent, because on the site every
  *   filled action is the lamp; it means GO. It is reachable ONLY through
  *   --_accent, i.e. only where the tenant's own --oravan-accent would land,
@@ -49,9 +49,12 @@
   color-scheme: light dark;
   --_surface: var(--oravan-surface, #fcfaf4);
   --_ink: var(--oravan-ink, #1c1b18);
-  /* DRAFT mix: the AI chip in warm grey (ink-2, 7.56 on the surface) when un-themed;
-     a tenant's own ink wins, as before. */
-  --_mark: var(--oravan-ink, #55514a);
+  /* The AI chip's colour: warm grey (ink-2, 7.56 on the light surface), the
+     owner's grey AI mark (2026-11-13). The server sends --oravan-mark only
+     when it knows better: the partner's own ink when they set a palette (a
+     partner's ink still wins), or the forced mode's grey when `mode` pins a
+     scheme the visitor's system may not share (lib/embed-theme.ts). */
+  --_mark: var(--oravan-mark, #55514a);
   /* GO. The un-themed default only; --oravan-accent displaces it, and
      lib/embed-theme.ts guarantees a tenant who supplied a palette without
      an accent gets THEIR ink emitted here rather than falling through to
@@ -92,8 +95,8 @@
   :root {
     --_surface: var(--oravan-surface, #1c1b18);
     --_ink: var(--oravan-ink, #fcfaf4);
-    /* DRAFT mix: ink-pale on the dark surface, 10.33 (ink-2 there is 2.18). */
-    --_mark: var(--oravan-ink, #cdc8bd);
+    /* ink-pale on the dark surface, 10.33 (ink-2 there would be 2.18). */
+    --_mark: var(--oravan-mark, #cdc8bd);
     --_line: rgba(252, 250, 244, 0.15);
     --_line-strong: rgba(252, 250, 244, 0.5);
     --_line-faint: rgba(252, 250, 244, 0.08);
@@ -243,8 +246,13 @@ body {
    text: the shared hover's dark fill erased their own label (measured
    1.58:1 light / 1.37:1 dark — Phase-1 P1, desktop-pointer-only, the class
    the 390-only detector missed). Higher specificity on purpose: the quiet
-   fill keeps the label ink-on-light in both modes. */
-.re-btn.re-toggle:hover {
+   fill keeps the label ink-on-light in both modes.
+   UNPRESSED ONLY (2026-11-13): this rule also outranked the pressed rule
+   below, so hovering the SELECTED toggle swapped its accent fill for the
+   faint tint while its text stayed accent-ink (1.17:1 light on the old
+   green, 1.25:1 dark on the lamp). A pressed or checked toggle now keeps its
+   own fill and text on hover. */
+.re-btn.re-toggle:not([aria-pressed='true']):not([aria-checked='true']):hover {
   background: var(--_line-faint);
 }
 
@@ -475,9 +483,11 @@ body {
 }
 
 /* The AI label is an INTEGRITY MARK, not brand chrome — it is the one thing
-   `brandless` may never remove — so it is set in ink like every other mark
-   the citizen site stamps, not filled with the accent. That also makes it the
-   only chip whose contrast is guaranteed in every tenant configuration: the
+   `brandless` may never remove — so it is set in the mark colour (--_mark:
+   the site's warm grey, or the partner's own ink), not filled with the
+   accent. The grey is 7.56:1 on the light surface and 10.33:1 on the
+   dark one; a partner's ink is 4.5:1 or more on their surface. That also
+   makes it the only chip whose contrast is guaranteed in every tenant configuration: the
    ink/surface pair is server-validated at 4.5:1, where an accent fill's
    contrast against the surface is not knowable. Mark scale, so mark radius. */
 .bc-chip-ai {

@@ -51,16 +51,16 @@ export function contrastRatio(hexA: string, hexB: string): number {
 /**
  * Whichever of the two candidate text colors reads better on `bgHex`.
  *
- * Defaults are the site's `paper`/`ink` pair (#fcfaf4 / #1c1b18, the warm
- * paper palette of 2026-09-30) — one of the four palette mirrors listed in
- * DESIGN.md § Embed lockstep; tests/contrast.unit.spec.ts ties them to the
- * embed's default pair. Until 2026-09-30 they were pure white and a
- * near-black on purpose, because this function's output lands on a TENANT's
- * chip when they set an accent and no palette; with the embed card itself
- * turned cream, that chip text is now the same cream (owner's pick of
- * direction c, 2026-09-30, reviewed before merge). Unparseable background
- * falls back to the light candidate, so a validation slip can only ever
- * reproduce the default look, never invent a new one.
+ * Defaults are the site's `paper`/`ink` pair (#fcfaf4 / #1c1b18) — one of
+ * the four palette mirrors of the embed's default pair (page 1, rule 12);
+ * tests/contrast.unit.spec.ts ties them to app/embed/embed.css. They used to
+ * be pure white and a near-black, and the reason for that still holds, so it
+ * moved with the decision: text on a PARTNER's accent is picked in
+ * lib/embed-theme.ts from white and a near-black (ACCENT_TEXT_*), never from
+ * these, because a cream would put a recognizably Oravan color on someone
+ * else's brand. Unparseable background falls back to the light candidate, so
+ * a validation slip can only ever reproduce the default look, never invent a
+ * new one.
  */
 export function pickTextColor(bgHex: string, light = '#fcfaf4', dark = '#1c1b18'): string {
   const bg = hexToRgb(bgHex);
@@ -104,10 +104,12 @@ export function adjustInkForContrast(
     if (contrastRatio(candidate, surface) >= min) return { ink: candidate, adjusted: true };
   }
   // Unreachable for min <= 4.58 (the i = STEPS candidate IS the extreme),
-  // kept for callers that pass a stricter threshold. Same paper/ink pair
-  // as pickTextColor's defaults above — the two move together.
-  const extreme = contrastRatio('#1c1b18', surface) >= contrastRatio('#fcfaf4', surface)
-    ? '#1c1b18'
-    : '#fcfaf4';
+  // kept for callers that pass a stricter threshold. The neutral pair, as on
+  // main before 2026-11-13, not the site's cream: this repairs a PARTNER's
+  // ink (/api/brand), and Oravan's cream never lands on a partner's brand
+  // (the same pair as lib/embed-theme.ts's ACCENT_TEXT_*).
+  const extreme = contrastRatio('#16191b', surface) >= contrastRatio('#ffffff', surface)
+    ? '#16191b'
+    : '#ffffff';
   return contrastRatio(extreme, surface) >= min ? { ink: extreme, adjusted: true } : null;
 }

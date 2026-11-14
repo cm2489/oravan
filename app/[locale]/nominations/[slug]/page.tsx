@@ -352,7 +352,7 @@ export default async function NominationPage({
       <p className="pt-3">
         <Link
           href="/questions"
-          className="inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-go underline visited:text-go-deep hover:text-go-deep"
+          className="inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-go visited:text-go-deep hover:text-go-deep hover:underline"
         >
           <ArrowLeft className="h-4 w-4 flex-none" aria-hidden />
           {t('moments.crumb')}

@@ -87,6 +87,28 @@ export const MODE_DEFAULTS: Record<'light' | 'dark', { surface: string; ink: str
 };
 
 /**
+ * The AI chip's grey per forced mode (the owner's grey AI mark, 2026-11-13):
+ * the site's `ink-2` on the light surface (7.56:1) and `ink-pale` on the dark
+ * one (10.33:1) — the same literals embed.css ships as its --_mark
+ * fallbacks. A forced mode sends its own because embed.css picks its
+ * fallback from the VISITOR's colour scheme, which a forced mode overrides.
+ */
+export const MODE_MARKS: Record<'light' | 'dark', string> = {
+  light: '#55514a',
+  dark: '#cdc8bd',
+};
+
+/**
+ * The text on a PARTNER's accent when their own colours do not decide it:
+ * the two neutral extremes, never Oravan's cream. This function's output
+ * lands on a tenant's chip when they set an accent and no palette, and a
+ * cream would put a recognizably Oravan color on someone else's brand. These
+ * are the values main shipped before the site turned cream (2026-11-13).
+ */
+const ACCENT_TEXT_LIGHT = '#ffffff';
+const ACCENT_TEXT_DARK = '#16191b';
+
+/**
  * A validated hex color, or undefined if the input isn't exactly one. This
  * is the one theming knob that carries free-form-looking text, so it's the
  * one an injection attempt targets — a full-string regex match (not a
@@ -158,6 +180,13 @@ export interface ResolvedEmbedTheme {
   accentInk?: string;
   /** Derived: focus-outline color — accent when it reads on the surface, else ink. */
   focus?: string;
+  /**
+   * Derived: the AI chip's colour, sent only when the server knows better
+   * than embed.css's grey fallbacks: the tenant's own ink when they set a
+   * palette (a partner's ink wins), or the forced mode's grey (MODE_MARKS).
+   * Absent under auto with no palette, where embed.css's grey stands.
+   */
+  mark?: string;
   /**
    * Derived: the info-note callout border/fill, an accent tint over the
    * surface. Emitted ONLY when a real theme is present (accent + a known
@@ -234,7 +263,7 @@ export function resolveEmbedTheme(raw: {
   // accentInk (the text on an accent-filled chip/toggle) picks the tenant's
   // OWN light/dark color when a pair is set — not Oravan's paper/ink — so a
   // themed widget's button text is the buyer's white, not ours. With no pair,
-  // pickTextColor's defaults are the site's paper/ink pair.
+  // it is the better of white and a near-black (ACCENT_TEXT_*, above).
   //
   // ...but WITH an AA FLOOR. Picking the better of the tenant's own two
   // colors says nothing about whether the better one is legible: the
@@ -243,24 +272,32 @@ export function resolveEmbedTheme(raw: {
   // accent whose brand ink and surface both sit near it) shipped sub-AA text
   // inside the widget on the buyer's own site (pre-launch audit, 2026-07-25).
   //
-  // If the tenant's own choice does not clear 4.5, try the site's own
-  // paper/ink pair (pickTextColor's defaults). That pair is a cream and a
-  // warm near-black, not the extremes, so it does NOT always clear 4.5: on a
-  // mid-tone accent such as #d2503c the better of the two is 4.06 (about 10%
-  // of sampled sRGB accents fall below 4.5, measured 2026-09-30). The last
-  // step is therefore pure white or pure black, and the better of those two
-  // clears >= sqrt(21) ~ 4.58 against ANY colour, so this always converges.
-  // The buyer's palette is honored whenever it is legible, and never at the
-  // cost of legibility.
+  // If the tenant's own choice does not clear 4.5, fall back to whichever of
+  // white and the near-black does. Those two do NOT always clear 4.5: the
+  // near-black is not black, so on a mid-tone accent such as #d2503c the
+  // better of the two is 4.24 (about 6.5% of sampled sRGB accents fall
+  // below 4.5, measured 2026-11-13). The last step is therefore pure white
+  // or pure black, and the better of those two clears >= sqrt(21) ~ 4.58
+  // against ANY colour, so this always converges. The buyer's palette is
+  // honored whenever it is legible, and never at the cost of legibility.
+  //
+  // With a FORCED mode and no tenant pair, `surface`/`ink` hold Oravan's own
+  // mode default (pinned above), which is not the tenant's choice: the pick
+  // then starts from the neutral pair, exactly as with no mode at all.
   const accentInk = accent
     ? (() => {
-        const tenantChoice = pickTextColor(accent, surface, ink);
-        if (contrastRatio(accent, tenantChoice) >= MIN_PAIR_CONTRAST) return tenantChoice;
-        const siteChoice = pickTextColor(accent);
-        if (contrastRatio(accent, siteChoice) >= MIN_PAIR_CONTRAST) return siteChoice;
+        if (tenantPair) {
+          const tenantChoice = pickTextColor(accent, surface, ink);
+          if (contrastRatio(accent, tenantChoice) >= MIN_PAIR_CONTRAST) return tenantChoice;
+        }
+        const neutral = pickTextColor(accent, ACCENT_TEXT_LIGHT, ACCENT_TEXT_DARK);
+        if (contrastRatio(accent, neutral) >= MIN_PAIR_CONTRAST) return neutral;
         return pickTextColor(accent, '#ffffff', '#000000');
       })()
     : undefined;
+  // The AI chip: the partner's own ink when they set a palette; the forced
+  // mode's grey when `mode` pins a scheme; otherwise embed.css's grey.
+  const mark = tenantPair ? ink : mode !== 'auto' ? MODE_MARKS[mode] : undefined;
   const focus =
     accent && surface ? (contrastRatio(accent, surface) >= 3 ? accent : ink) : undefined;
 
@@ -278,6 +315,7 @@ export function resolveEmbedTheme(raw: {
     ink,
     accentInk,
     focus,
+    mark,
     noteBorder,
     noteFill,
     mode,
@@ -309,6 +347,7 @@ export function buildThemeCss(theme: ResolvedEmbedTheme): string {
   hex('--oravan-ink', theme.ink);
   hex('--oravan-accent-ink', theme.accentInk);
   hex('--oravan-focus', theme.focus);
+  hex('--oravan-mark', theme.mark);
   hex('--oravan-note-border', theme.noteBorder);
   hex('--oravan-note-fill', theme.noteFill);
   decls.push(`--oravan-radius:${RADIUS_VALUES[theme.radiusKey]}`);
