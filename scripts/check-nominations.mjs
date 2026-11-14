@@ -57,6 +57,7 @@ import {
   TERMINAL_NOMINATION_STATUSES,
   UNCLASSIFIED_NOMINATION_STATUS,
   execCalendarNumber,
+  isStageNeutralNominationAction,
   mapNominationStatus,
   ucAgreementDay,
 } from '../lib/nomination-status.mjs';
@@ -201,7 +202,9 @@ export function checkNominationCorpus(corpus, state, opts = {}) {
     if (!STORED_NOMINATION_STATUSES.includes(n.status)) {
       fail(`${id}: status "${n.status}" is not in STORED_NOMINATION_STATUSES`);
     }
-    const mapped = mapNominationStatus(n.last_action_text, now);
+    // The stored stage is handed in as the previous stage: a stage-neutral
+    // sentence (rule 11b) keeps it, every other sentence ignores it.
+    const mapped = mapNominationStatus(n.last_action_text, now, n.status);
     if (n.status !== mapped) {
       /* THE ONE EXPECTED DRIFT, and the only reason this comparison is not a
          flat equality. mapNominationStatus reads a clock for exactly one rule
@@ -271,7 +274,8 @@ export function checkNominationCorpus(corpus, state, opts = {}) {
        no number yet; Number('DESK') is NaN, and a NaN that reached a surface
        would print "Calendar No. NaN" beside a real Senate claim. */
     const expectedCalendar = execCalendarNumber(n.last_action_text);
-    if (n.exec_calendar_number !== expectedCalendar) {
+    // A stage-neutral receipt keeps the calendar number its stage printed.
+    if (!isStageNeutralNominationAction(n.last_action_text) && n.exec_calendar_number !== expectedCalendar) {
       fail(`${id}: exec_calendar_number is ${n.exec_calendar_number}, the record text yields ${expectedCalendar}`);
     }
     if (n.exec_calendar_number !== null && n.status !== 'exec_calendar') {

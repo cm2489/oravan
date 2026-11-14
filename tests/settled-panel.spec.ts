@@ -215,6 +215,55 @@ for (const { locale, prefix, t } of [
 }
 
 /*
+ * THE CHIP AND THE STEPPER AGREE WITH THE PANEL (2026-09-29). H.Con.Res. 89's
+ * status chip read "Floor activity" and its stepper drew the Senate step as
+ * "You are here", with "Adopted by both chambers" still ahead, under a panel
+ * that said "No call to make". Now the chip reads "Rejected", the Senate step
+ * says the path ended there with the record's date, the step after it says it
+ * was not reached, and no step is current.
+ */
+for (const { locale, prefix, t, m } of [
+  { locale: 'en', prefix: '', t: tEn, m: en },
+  { locale: 'es', prefix: '/es', t: tEs, m: es },
+] as const) {
+  test(`${locale}: H.Con.Res. 89's status chip reads rejected, and its stepper ends at the Senate step`, async ({
+    page,
+  }) => {
+    const bill = getBill(HCONRES_89);
+    test.skip(bill?.last_action_text !== HCONRES_89_TEXT, 'H.Con.Res. 89 has a newer action than 2026-09-24');
+    await page.goto(`${prefix}/bills/${HCONRES_89}`);
+
+    const status = page.locator('main header p').first();
+    await expect(status).toContainText(m.bills.status.rejected);
+    await expect(status).not.toContainText(m.bills.status.floor_activity);
+
+    const journey = page.locator('section[aria-labelledby="journey-h"]');
+    const steps = journey.locator('ol > li');
+    await expect(steps).toHaveCount(5);
+    // Nothing is in progress: no current step, no "You are here".
+    await expect(journey.locator('li[aria-current]')).toHaveCount(0);
+    await expect(journey).not.toContainText(t('bill.journey.youAreHere'));
+    // The Senate step (the fourth) is where it ended, with the record's date.
+    await expect(steps.nth(3)).toContainText(t('bill.journey.stepOther', { chamber: 'Senate' }));
+    await expect(steps.nth(3)).toContainText(
+      `${t('bill.journey.endedRejected')} · ${shortDate(locale, '2026-09-24')}`
+    );
+    // The step after it was not reached, and says so.
+    await expect(steps.nth(4)).toContainText(t('bill.journey.stepBothChambers'));
+    await expect(steps.nth(4)).toContainText(t('bill.journey.notReached'));
+    // The steps before it carry no ended or not-reached caption.
+    for (let i = 0; i < 3; i++) {
+      await expect(steps.nth(i)).not.toContainText(t('bill.journey.notReached'));
+      await expect(steps.nth(i)).not.toContainText(t('bill.journey.endedRejected'));
+    }
+    // The "Right now:" sentence is unchanged.
+    await expect(journey).toContainText(
+      t('bill.journey.nowFloorPassageRejected', { chamber: 'Senate', tally: 'yes', yeas: 49, nays: 50 })
+    );
+  });
+}
+
+/*
  * A CONCURRENT RESOLUTION BOTH CHAMBERS AGREED TO IN ONE FORM (2026-09-29):
  * H.Con.Res. 86. The House agreed 215–208 on 2026-06-03 (roll 199); the
  * Senate agreed "without amendment" 50–48 on 2026-06-23 (record vote 184).
@@ -526,6 +575,12 @@ for (const procedure of FAILED_PROCEDURES) {
     await page.goto(`/bills/${fx!.slug}`);
     await expect(page.locator(PANEL)).toHaveCount(0);
     await expect(page.locator('[aria-labelledby="act"][data-call-cta]')).toBeVisible();
+    // A failed procedural vote is not a rejection of the measure: the chip
+    // does not say "Rejected", and the stepper keeps a current step.
+    await expect(page.locator('main header p').first()).not.toContainText(en.bills.status.rejected);
+    const journey = page.locator('section[aria-labelledby="journey-h"]');
+    await expect(journey.locator('li[aria-current="step"]')).toHaveCount(1);
+    await expect(journey).not.toContainText(tEn('bill.journey.notReached'));
     await expect(page.locator('[data-last-attempt]')).toHaveText(
       tEn('bill.lastAttempt', {
         procedure: failed.procedure,

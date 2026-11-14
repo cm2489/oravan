@@ -25,8 +25,16 @@
  * pipeline says out loud that it can no longer see production, and the data
  * commit above it has already landed either way.
  *
+ * A NEWER BUILD COUNTS (2026-10-04). When main moves on before the host
+ * builds, the host may build only the newest head and skip ours. A
+ * production build that DESCENDS from EXPECT_SHA already carries this run's
+ * commit, so it verifies the deploy too (lib/deploy-descends.mjs, which
+ * answers false on any doubt, so the poll keeps waiting as before).
+ *
  * Stdlib only — runs on a bare Actions runner without npm ci.
  */
+import { buildDescendsFrom } from '../lib/deploy-descends.mjs';
+
 const PROD_URL = process.env.PROD_URL;
 const EXPECT_SHA = process.env.EXPECT_SHA;
 
@@ -41,9 +49,18 @@ if (!EXPECT_SHA) {
   process.exit(1);
 }
 
-const TIMEOUT_MS = 12 * 60 * 1000; // Vercel builds of this site take a few minutes
+// Vercel builds of this site took about 7 min in early October and about 10
+// by 10-22, when three deploys that did land ran past the old 12-min deadline
+// and painted their runs red (newsdesk 10-21 15:11Z, 10-22 18:10Z and 19:07Z).
+// 20 min leaves room for the corpus to keep growing; a dropped deploy still
+// reds the run, just 8 minutes later. So the longer deadline cannot hide a
+// slowing build, every pass prints how long it waited, and a pass past the
+// old 12 min prints a ::warning:: as well.
+const TIMEOUT_MS = 20 * 60 * 1000;
+const SLOW_MS = 12 * 60 * 1000;
+const startedAt = Date.now();
 const INTERVAL_MS = 20_000;
-const deadline = Date.now() + TIMEOUT_MS;
+const deadline = startedAt + TIMEOUT_MS;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 function buildIdOf(html) {
@@ -54,6 +71,16 @@ function buildIdOf(html) {
 }
 
 let lastSeen = null;
+/** Builds already found NOT to descend from EXPECT_SHA (an older build never will). */
+const notDescended = new Set();
+const verified = (seen) => {
+  if (!seen) return false;
+  if (seen === EXPECT_SHA) return true;
+  if (notDescended.has(seen)) return false;
+  if (buildDescendsFrom(EXPECT_SHA, seen)) return true;
+  notDescended.add(seen);
+  return false;
+};
 while (Date.now() < deadline) {
   try {
     const res = await fetch(PROD_URL, {
@@ -62,8 +89,19 @@ while (Date.now() < deadline) {
     });
     if (res.ok) {
       lastSeen = buildIdOf(await res.text());
-      if (lastSeen === EXPECT_SHA) {
-        console.log(`production is serving build ${EXPECT_SHA} — deploy verified`);
+      if (verified(lastSeen)) {
+        const waited = Date.now() - startedAt;
+        const after = `after ${Math.floor(waited / 60000)}m${String(Math.floor((waited % 60000) / 1000)).padStart(2, '0')}s`;
+        console.log(
+          lastSeen === EXPECT_SHA
+            ? `production is serving build ${EXPECT_SHA} — deploy verified ${after}`
+            : `production is serving build ${lastSeen}, which descends from ${EXPECT_SHA} — deploy verified ${after}`
+        );
+        if (waited > SLOW_MS) {
+          console.log(
+            `::warning::The deploy landed, but only ${after}, past the ${SLOW_MS / 60000}-min mark — production builds are slowing; check the Vercel build durations.`
+          );
+        }
         process.exit(0);
       }
       console.log(`production build is ${lastSeen ?? 'unknown'}, waiting for ${EXPECT_SHA}…`);

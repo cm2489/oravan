@@ -176,6 +176,7 @@ test.describe('client-bundle gate (post-build)', () => {
 
 test.describe('CI wiring', () => {
   const ci = read('.github/workflows/ci.yml');
+  const BUILD_STEP = 'Build the app once (the build every E2E shard serves)';
   const stepAt = (name: string) => {
     const at = ci.indexOf(`- name: ${name}`);
     expect(at, `step "${name}" not found in ci.yml`).toBeGreaterThan(0);
@@ -194,16 +195,21 @@ test.describe('CI wiring', () => {
     expect(selfTestAt).toBeGreaterThan(0);
     expect(scanAt).toBeGreaterThan(selfTestAt);
     expect(stepAt("Client-import gate (no 'use client' module may reach data/)")).toBeLessThan(
-      stepAt('E2E (builds the app via webServer)')
+      stepAt(BUILD_STEP)
     );
   });
 
-  test('the bundle gate runs after the step that builds, and still reports when an unrelated spec is red', () => {
+  test('the bundle gate runs after the step that builds, and still reports when the build failed', () => {
     const name = 'Client bundle gate (no data/ text in client JS, no chunk over 300 KB)';
-    expect(stepAt(name)).toBeGreaterThan(stepAt('E2E (builds the app via webServer)'));
+    expect(stepAt(name)).toBeGreaterThan(stepAt(BUILD_STEP));
     const body = stepBody(name);
     expect(body).toContain('!cancelled()');
-    expect(body).toContain("steps.paths.outputs.docs_only != 'true'");
+    // The build job (which holds both steps) skips docs-only pull requests,
+    // exactly as the two steps did when they shared one job.
+    const buildJob = ci.slice(ci.indexOf('\n  build:\n'), stepAt(BUILD_STEP));
+    expect(buildJob).toContain("if: needs.changes.outputs.docs_only != 'true'");
+    expect(ci.indexOf('\n  build:\n'), 'the bundle gate sits in the build job').toBeLessThan(stepAt(name));
+    expect(ci.indexOf('\n  e2e:\n')).toBeGreaterThan(stepAt(name));
     const selfTestAt = body.search(/node scripts\/check-client-bundle\.mjs --self-test$/m);
     const scanAt = body.search(/node scripts\/check-client-bundle\.mjs$/m);
     expect(selfTestAt).toBeGreaterThan(0);

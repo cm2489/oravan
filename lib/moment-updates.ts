@@ -36,6 +36,7 @@ import {
   RENDER_DAY_CAP,
   RETENTION_DAYS,
   SCHEMA_VERSION,
+  collapseRedundantStatusChanges,
   groupByDay,
 } from './moment-updates-gate.mjs';
 
@@ -153,6 +154,11 @@ export interface MomentUpdatesEntry {
    *  model calls made for this question on one ET day, nightly and intraday
    *  alike. Never rendered. */
   summary_attempts?: { day: string; count: number };
+  /** The collector's refusal alarm counter (2026-11-12): model replies in a
+   *  row for this question that were refused, the ET day of the newest, and
+   *  its failures (lib/moment-updates-gate.mjs SUMMARY_REFUSAL_ALARM_RUNS).
+   *  Cleared when a revision is stored. Never rendered. */
+  summary_refusals?: { count: number; day: string; reason: string };
 }
 
 /** One ET day of the timeline, including the days with nothing in them. */
@@ -184,7 +190,12 @@ function entryFor(id: string): MomentUpdatesEntry {
   const entry = FILE[id] as MomentUpdatesEntry | undefined;
   if (!entry || !Array.isArray(entry.updates)) return EMPTY;
   return {
-    updates: entry.updates,
+    // One event renders once (2026-11-13): a status_change that repeats a
+    // richer record of the same day is folded into that record here too, so a
+    // repeat the collector's prune has not yet healed never reaches the page.
+    // The collector and the pre-commit check enforce the same rule on write
+    // (collapseRedundantStatusChanges, lib/moment-updates-gate.mjs).
+    updates: collapseRedundantStatusChanges(entry.updates).kept as MomentUpdate[],
     summary_revisions: Array.isArray(entry.summary_revisions) ? entry.summary_revisions : [],
   };
 }

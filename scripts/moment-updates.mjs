@@ -128,8 +128,9 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { execSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { CONGRESS, cg, mapStatus } from './congress-fetch.mjs';
-import { statusBasisText } from '../lib/floor-text.mjs';
+import { cg, mapStatus } from './congress-fetch.mjs';
+import { CONGRESS_POLICY, isEndedBill } from '../lib/congress.mjs';
+import { passageState, statusBasisText } from '../lib/floor-text.mjs';
 import { MEDIA_BIAS_PATH, PRESS_ALLOWLIST_PATH, loadPressOutletPolicy } from '../lib/press-outlets.mjs';
 import { PRESIDENT_STYLE_RULE, presidentStyle } from '../lib/president-style.mjs';
 import { partyCountsPassLint, partyRule, partyTotalsPromptText } from '../lib/party-count-rule.mjs';
@@ -167,6 +168,11 @@ import {
   sameActionKey,
   shiftDay,
   summaryRefreshReason,
+  numberGrounding,
+  numberParityFailure,
+  RECORD_ONLY_MODEL,
+  nextSummaryRefusals,
+  summaryRefusalWarning,
 } from '../lib/moment-updates-gate.mjs';
 import {
   actionToCandidate,
@@ -179,11 +185,12 @@ import {
   floorTodayItems,
   milestoneOf,
   momentVehicles,
+  splitEndedVehicles,
+  vehicleActionsPath,
   pressClusterDaysHeld,
   pressClusterToCandidate,
   rollCallCandidates,
   scheduledToCandidate,
-  slugParts,
   statusDiffToCandidate,
   suppressRedundantStatusChanges,
 } from './moment-updates-map.mjs';
@@ -292,9 +299,16 @@ function loadRunState() {
   originalText = existsSync(UPDATES_PATH) ? readFileSync(UPDATES_PATH, 'utf8') : null;
   store = originalText ? JSON.parse(originalText) : { _meta: { schema: SCHEMA_VERSION, generated_at: nowISO } };
 
-  vehicles = momentVehicles(moments);
+  // A vehicle of an ENDED Congress is left out of every step below (no
+  // fetch, no candidate, no model call): splitEndedVehicles. Empty until the
+  // January switch, so today every vehicle is in scope, as before.
+  const split = splitEndedVehicles(momentVehicles(moments));
+  vehicles = split.live;
   vehicleSlugs = [...new Set(vehicles.map((v) => v.slug))];
   console.log(`scope: ${vehicles.length} (moment, vehicle) pair(s), ${vehicleSlugs.length} distinct vehicle(s)`);
+  if (split.ended.length) {
+    console.log(`scope: ${split.ended.length} (moment, vehicle) pair(s) skipped - their Congress has ended (${[...new Set(split.ended.map((v) => v.slug))].join(', ')})`);
+  }
 
   // "What is new" is a diff against the stored file and never a guess — by
   // id, by roll call, and by action (freshCandidates, called from main()).
@@ -400,10 +414,13 @@ async function collectVehicleActions() {
       continue;
     }
 
-    const { type, number } = slugParts(slug);
     let actions;
     try {
-      const page = await cg(`/bill/${CONGRESS}/${type}/${number}/actions`, { limit: 250 });
+      // The vehicle's OWN Congress, from its slug (vehicleActionsPath,
+      // 2026-11-12): never the tracked number, which after the switch would
+      // read the next Congress's bill of the same number into this question.
+      // A slug with no Congress throws here and is skipped like any failed fetch.
+      const page = await cg(vehicleActionsPath(slug), { limit: 250 });
       actions = page.actions ?? [];
     } catch (e) {
       console.error(`  actions ${slug} FAILED: ${e.message}`);
@@ -975,6 +992,150 @@ export function recordStatusPhrase(status, record, lang, nowMs = now.getTime()) 
 }
 
 /**
+ * How the record says an action was taken when it was taken WITHOUT a
+ * recorded vote: the record's own words, and the phrase the summary uses for
+ * them in each language. A voice vote and unanimous consent have no roll call
+ * by their nature.
+ *
+ * WHY (2026-09-29): the penny question's first summary was written and
+ * rejected four nights running (runs 36260101319, 36340349799, 36479913682,
+ * 36619010910) for absence claims — "no roll call recorded", "No roll call
+ * vote was recorded", "no tally", "no recorded", "sin votación", "No se
+ * registró", "no hay" — over a record whose only news was H.R. 10167 passing
+ * the Senate "without amendment by Unanimous Consent". The model was handed
+ * the action sentence and an empty RECORDED VOTES list, and filled the gap by
+ * saying what was missing. The absence lint is right to reject that (a voice
+ * vote IS a vote); this hands the model what to say instead. The gate is
+ * unchanged.
+ *
+ * NARROWED (2026-09-29, independent check of #412): a line is built only for
+ * the chamber's passage of (or agreement to) the measure itself, and only on
+ * a question with no roll call on record at all. The first version also fired
+ * on "The committee substitute withdrawn by Voice Vote." for S. 4668, a bill
+ * with eleven roll calls in the window and passage 77-22 — an invitation to
+ * write "passed by voice vote" about a bill that passed by a recorded vote,
+ * which no gate would catch.
+ */
+const WITHOUT_RECORDED_VOTE = [
+  { re: /\bby voice vote\b/i, en: 'by voice vote', es: 'por votación a viva voz' },
+  { re: /\bby unanimous consent\b/i, en: 'by unanimous consent', es: 'por consentimiento unánime' },
+];
+
+/**
+ * One prompt line per PASSAGE in the window that the record says was by voice
+ * vote or by unanimous consent: the date, the measure, the record's sentence
+ * verbatim, and the phrase to use for it. Exported for the unit suite.
+ *
+ * Three conditions, all required:
+ *   1. NO ROLL CALL ON RECORD for the question: `onRecord` (rollCallsOnRecord,
+ *      every data/votes.json roll call on its measures at any date — the same
+ *      count the roll-call absence exemption reads) is a known, empty list,
+ *      and no roll call in `votes` (the window's roll calls, which the
+ *      RECORDED VOTES section is built from) is on the measure. Unknown
+ *      (null) builds nothing.
+ *   2. THE SENTENCE IS THE CHAMBER'S PASSAGE OF THE MEASURE ITSELF, read by
+ *      the site's own passage reader (lib/floor-text.mjs passageState, whose
+ *      anchored PASSAGE_OPENING takes "Passed House|Senate …", "Passed/agreed
+ *      to in House|Senate …" and "Resolution agreed to in House|Senate …").
+ *      A withdrawn committee substitute, an amendment, a motion or a
+ *      committee discharge gets no line. (passageState also reads "Message on
+ *      … action sent to …"; such a sentence never names a voice vote or
+ *      unanimous consent, so condition 3 drops it.)
+ *   3. The sentence names the mode: "by voice vote" or "by unanimous consent".
+ *
+ * @param {Record<string, any>[]} recent  the window's updates, newest first
+ * @param {{ votes?: Record<string, any>[], onRecord?: string[] | null }} [grounding]
+ * @returns {string[]}
+ */
+export function withoutRecordedVoteLines(recent, { votes = [], onRecord = null } = {}) {
+  if (!Array.isArray(onRecord) || onRecord.length > 0) return [];
+  const rolled = new Set((votes ?? []).map((r) => r?.bill));
+  const lines = [];
+  for (const u of recent ?? []) {
+    if (!RECORD_BEARING_CLASSES.includes(u?.class)) continue;
+    if (!u.vehicle || rolled.has(u.vehicle)) continue;
+    const action = u.record?.action_text ?? '';
+    const billType = String(u.vehicle).split('-')[0];
+    if (!passageState({ bill_type: billType, last_action_text: action }).passedBy) continue;
+    const how = WITHOUT_RECORDED_VOTE.find((w) => w.re.test(action));
+    if (!how) continue;
+    lines.push(`- ${u.day} ${billLabel(u.vehicle)}: "${action}" → EN "${how.en}" / ES "${how.es}"`);
+  }
+  return lines;
+}
+
+/**
+ * The rule that goes with withoutRecordedVoteLines, in the prompt's own
+ * style. Handed to the model only when there is at least one such line, so
+ * every other question's prompt is unchanged. Exported for the unit suite.
+ */
+export const WITHOUT_RECORDED_VOTE_RULE =
+  '- A passage by voice vote or by unanimous consent (listed under PASSED WITHOUT A RECORDED VOTE below) has no roll call by its nature. When the record gives no recorded vote for a measure, say how the record says it passed, with its date, using the phrase given for it: EN "by voice vote" / "by unanimous consent", ES "por votación a viva voz" / "por consentimiento unánime". Say nothing about a tally, a count or a roll call for it, in either language: never "with no tally", "no recorded vote", "no roll call"; never "no hay recuento", "no se registró", "sin votación nominal". A sentence like that is rejected automatically.';
+
+/*
+ * A SHORT RECORD MAKES A SHORT SUMMARY (2026-10-01). The prompt asked for 90
+ * to 140 words whatever the window held. The penny question's window holds
+ * two actions, both on 2026-09-28 (H.R. 10167 discharged from committee and
+ * passed by the Senate, by unanimous consent), and two sentences cannot fill
+ * 90 words. So the model padded, and the padding was exactly what the
+ * absence lint exists to refuse: "The record shows no other action on S. 1525
+ * or H.R. 3074", "no other votes", "no muestra". Every nightly from 09-26 to
+ * 09-30 paid for a first summary and threw it away, and the page has never
+ * shown one. Measured against the real model on 2026-10-01 (throwaway
+ * workflow run 36884798035, six calls per prompt, $0.13): the old length
+ * line, 3 of 6 rejected; the line below, 6 of 6 accepted at 43 to 49 words,
+ * each stating the two actions with their date and nothing else.
+ *
+ * A window with more than SHORT_RECORD_MAX_ITEMS lines (record updates,
+ * press clusters and roll calls together) keeps FULL_LENGTH_RULE, byte for
+ * byte, so its prompt is exactly what it was.
+ */
+export const SHORT_RECORD_MAX_ITEMS = 3;
+export const FULL_LENGTH_RULE = '- 90 to 140 words per language. Plain text, no markdown, no headings.';
+export const SHORT_RECORD_LENGTH_RULE =
+  '- Length follows the record: the record below is short, so the summary is short — 40 to 90 words per language, about one or two sentences for each vote or action. Never pad it with measures that did not move or with what did not happen. Plain text, no markdown, no headings.';
+
+/**
+ * The NUMBER lint's rule, told to the model (2026-11-12). Until then the
+ * prompt never said it: the lint (lib/moment-updates-gate.mjs, unheldNumbers
+ * and numberParityFailure) refused a summary for stating a number the record
+ * does not hold, or for a Spanish that states different numbers, and the
+ * model had no way to know. It sits in RULES, beside "Reproduce every tally
+ * … exactly as given", because that is where the model reads its rules on
+ * numbers. It is stricter than the lint on purpose ("does not print": the
+ * lint also accepts the Congress number and party figures the prompt leaves
+ * out), and it names the instructions' own example tally, which the lint
+ * refuses.
+ */
+export const NUMBER_RULE =
+  '- State no number the record below does not print, in digits or in words: every date, tally, roll-call or measure number and count of days you write must appear in the statuses, roll calls or record lines below. The example figures in these rules are not the record. The English and the Spanish state exactly the same numbers in digits: never a number in digits in one language and in words in the other, never a 12-hour time in one and a 24-hour time in the other. A summary that breaks this is rejected automatically.';
+
+/**
+ * The sentence a rejected summary was refused for, one per quoted hit in the
+ * lint's failure lines (`absence claim "no other action" …`, `forbidden
+ * vocabulary "fight" …`), so the run log says what the model wrote. Until
+ * 2026-10-01 a rejection logged only the phrase, and five nights of penny
+ * rejections could not be read back. Exported for the unit suite.
+ *
+ * @param {string} text      the rejected summary in one language
+ * @param {string[]} failures the lint's failure lines for that language
+ * @returns {string[]}
+ */
+export function refusedSentences(text, failures) {
+  const sentences = String(text ?? '').split(/(?<=[.!?])\s+/);
+  const out = [];
+  for (const f of failures ?? []) {
+    const hit = /"([^"]+)"/.exec(String(f))?.[1];
+    if (!hit) continue;
+    const sentence = sentences.find((x) => x.toLowerCase().includes(hit.toLowerCase()));
+    if (!sentence) continue;
+    const shown = sentence.length > 240 ? `${sentence.slice(0, 240)}…` : sentence;
+    if (!out.includes(shown)) out.push(shown);
+  }
+  return out;
+}
+
+/**
  * Exported for the unit suite: the lint-rejection branch below is the whole of
  * the "there is no fallback for a summary" doctrine, and until now it was a
  * comment with nothing behind it.
@@ -998,8 +1159,13 @@ export function recordStatusPhrase(status, record, lang, nowMs = now.getTime()) 
  *   or null when the collector cannot vouch for that count. Persisted as
  *   `grounded_in.roll_calls_on_record` when known; it is the only count the
  *   roll-call absence exemption reads. Omitted → no exemption.
+ * @param {{ onRefused?: (reason: string) => void }} [hooks] `onRefused` is
+ *   called once, with the failures, when a reply came back and was refused
+ *   (a lint failure, not JSON, or no EN/ES pair) — writeSummaries counts it
+ *   in `summary_refusals` (SUMMARY_REFUSAL_ALARM_RUNS). Not called when the
+ *   call itself fails: that is not a refusal.
  */
-export async function generateStateSummary(anthropic, momentId, entry, statuses, contextRefs, records = {}, votes = [], onRecord = null) {
+export async function generateStateSummary(anthropic, momentId, entry, statuses, contextRefs, records = {}, votes = [], onRecord = null, { onRefused } = {}) {
   const windowFloor = shiftDay(todayET, -SUMMARY_WINDOW_DAYS);
   const recent = (entry.updates ?? []).filter((u) => u.day >= windowFloor).slice(0, 30);
 
@@ -1049,6 +1215,17 @@ export async function generateStateSummary(anthropic, momentId, entry, statuses,
   const nonEmptyRule = groundedEvents
     ? '- The record below is NOT empty: it lists recorded votes and/or actions in this window. State them. Never write that nothing happened or moved, that no votes, tallies, or actions were recorded, that no vote or date has been scheduled, or that anything is unchanged, the same, or where it stood — in either language. A sentence like that is rejected automatically.'
     : '- Write only what the votes, actions and sources below show, each with its date. Do not write sentences about what did not happen, was not reported, or has not changed.';
+  // How the record says each passage without a roll call was taken, and the
+  // rule that goes with it (see WITHOUT_RECORDED_VOTE). Empty for a question
+  // with no such passage: its prompt is exactly what it was.
+  const noRollLines = withoutRecordedVoteLines(recent, { votes, onRecord });
+  const noRollRule = noRollLines.length ? `\n${WITHOUT_RECORDED_VOTE_RULE}` : '';
+  // How long the summary may be (SHORT_RECORD_LENGTH_RULE above): a window
+  // of a few lines gets a short summary instead of a padded one.
+  const lengthRule = recent.length + (votes ?? []).length <= SHORT_RECORD_MAX_ITEMS ? SHORT_RECORD_LENGTH_RULE : FULL_LENGTH_RULE;
+  const noRollSection = noRollLines.length
+    ? `\n\nPASSED WITHOUT A RECORDED VOTE, LAST ${SUMMARY_WINDOW_DAYS} DAYS (the record's sentence verbatim → the phrase to use):\n${noRollLines.join('\n')}`
+    : '';
 
   // Institutional grounding: the moment's hand-curated context_refs plus the
   // Congress.gov page for each vehicle. cboCostEstimates ride the bill-DETAIL
@@ -1073,7 +1250,7 @@ export async function generateStateSummary(anthropic, momentId, entry, statuses,
       messages: [
         {
           role: 'user',
-          content: `Write a nonpartisan "Where it stands" summary of one congressional fight, in English and Spanish, for an everyday US resident reading at an 8th-grade level.
+          content: `Write a nonpartisan "Where it stands" summary of one question before Congress, in English and Spanish, for an everyday US resident reading at an 8th-grade level.
 
 ${LAW_BRIEF}
 
@@ -1083,26 +1260,27 @@ RULES:
 ${partyRule({ figures: 'the "by party" figures printed with that roll call under RECORDED VOTES below', allowed: PARTY_COUNTS })}
 - Never use advocacy verbs (fight, resist, stop, save, defend, block) or crisis/attack/scheme framing, in either language.
 - Reproduce every tally and roll-call number exactly as given.
-- 90 to 140 words per language. Plain text, no markdown, no headings.
+${NUMBER_RULE}
+${lengthRule}
 ${PRESIDENT_STYLE_RULE}
 
 VOICE — "where it stands", not a log:
 - Write only what MOVED: the votes and actions in the record below, each with its date, most important first. Group measures that moved together instead of reciting them one by one.
-- The page prints every measure's current status itself, from the record, right above this summary. Do NOT recite it: never write a sentence whose point is a measure's status or label (not "its status is Floor activity", not "H. Con. Res. 86 is also listed as Passed one chamber"). The phrases given per measure below are context; if a sentence about what happened must say where a measure stands, use only the quoted phrase given for it, never a label of your own. NEVER an internal token like "floor_vote" or "passed_chamber" — if you find yourself writing an underscore, stop.
+- The page prints every measure's current status itself, from the record, right above this summary. Do NOT recite it: never write a sentence whose point is a measure's status or label (not "its status is Floor activity", not "H. Con. Res. 86 is also listed as Passed one chamber"). The phrases given per measure below are context; if a sentence about what happened must say where a measure stands, use only the quoted phrase given for it, never a label of your own. NEVER an internal token like "floor_vote" or "passed_chamber" — if you find yourself writing an underscore, rewrite that sentence in plain words.
 - Dates as a reader says them: "July 23, 2026" in English, "23 de julio de 2026" in Spanish. Never ISO "2026-07-23" in prose.
 - Vote language localized: EN "by a recorded vote of 214 to 208 (Roll no. 282)"; ES "por votacion nominal de 214 a 208 (votacion num. 282)". Never leave "Yeas and Nays" untranslated in Spanish.
 - The Spanish is native-quality Spanish with correct accents and diacritics (aprobó, Cámara, comité, votación, últimos) — not a transliteration.
 - No meta-commentary about this summary itself (never "this summary reflects…", "as of this record…"). The page already stamps the date.
-${nonEmptyRule}
+${nonEmptyRule}${noRollRule}
 
 CURRENT STATUS OF EACH MEASURE:
 ${statusLines}
 
 RECORDED VOTES, LAST ${SUMMARY_WINDOW_DAYS} DAYS (the chamber's official roll-call record, newest first — question, result, and tally verbatim):
-${voteLines || '- no roll call recorded on these measures in this window'}
+${voteLines || (noRollLines.length ? '- none in this window; see PASSED WITHOUT A RECORDED VOTE below' : '- no roll call recorded on these measures in this window')}
 
 THE RECORD, LAST ${SUMMARY_WINDOW_DAYS} DAYS (newest first):
-${recordLines || '- nothing recorded in this window'}
+${recordLines || '- nothing recorded in this window'}${noRollSection}
 
 Output STRICT JSON only — {"en":"…","es":"…"} — no prose, no markdown fences, no other text.`,
         },
@@ -1119,10 +1297,12 @@ Output STRICT JSON only — {"en":"…","es":"…"} — no prose, no markdown fe
     parsed = JSON.parse(text.trim().replace(/^```json?\s*/i, '').replace(/```\s*$/, ''));
   } catch (e) {
     console.error(`  summary ${momentId} JSON parse failed: ${e.message}`);
+    onRefused?.(`the reply is not JSON: ${e.message}`);
     return null;
   }
   if (typeof parsed?.en !== 'string' || typeof parsed?.es !== 'string') {
     console.error(`  summary ${momentId}: the model returned no EN/ES pair`);
+    onRefused?.('the reply has no EN/ES pair');
     return null;
   }
   // "The president" (docs/copy-style.md), applied before the lint so what is
@@ -1130,6 +1310,12 @@ Output STRICT JSON only — {"en":"…","es":"…"} — no prose, no markdown fe
   parsed = { en: presidentStyle(parsed.en, 'en'), es: presidentStyle(parsed.es, 'es') };
 
   const failures = [];
+  // Every number from 0 to 435 the text states must be one the prompt
+  // printed from the record: its roll calls, its updates, its measures and
+  // its window (the NUMBER lint, lib/moment-updates-gate.mjs). The gate
+  // rebuilds the same set from grounded_in.roll_calls, grounded_in.update_ids
+  // and grounded_in.vehicle_statuses.
+  const numbers = numberGrounding({ rollCalls: votes ?? [], updates: recent, vehicles: Object.keys(statuses), windowDays: SUMMARY_WINDOW_DAYS });
   for (const lang of ['en', 'es']) {
     const value = parsed[lang].trim();
     if (!value) failures.push(`${lang}: empty`);
@@ -1137,16 +1323,25 @@ Output STRICT JSON only — {"en":"…","es":"…"} — no prose, no markdown fe
     // grounded_in.roll_calls_on_record — the same number the gate re-lints it
     // with. Never the window's count (`votes`): see ROLL_CALL_ABSENCE.
     const rollCallsOnRecord = Array.isArray(onRecord) ? onRecord.length : undefined;
-    for (const f of lintRevisionText(value, lang, { groundedEvents, rollCallsOnRecord })) {
+    for (const f of lintRevisionText(value, lang, { groundedEvents, rollCallsOnRecord, numbers })) {
       failures.push(`${lang}: ${f}`);
     }
   }
+  // …and the Spanish states the English's numbers, as many times each.
+  const parity = numberParityFailure(parsed.en, parsed.es);
+  if (parity) failures.push(`es: ${parity}`);
   if (failures.length) {
     // There is no fallback for a summary: a "where it stands" paragraph is
     // Oravan's own voice, and no government sentence can stand in for it. The
     // previous revision simply stands — honest, because it is still grounded
     // in a record nothing here has contradicted.
-    console.warn(`  summary ${momentId} REJECTED, the previous revision stands: ${failures.join('; ')}`);
+    const refused = ['en', 'es'].flatMap((lang) =>
+      refusedSentences(parsed[lang], failures.filter((f) => f.startsWith(`${lang}: `))).map((x) => `${lang}: "${x}"`),
+    );
+    console.warn(
+      `  summary ${momentId} REJECTED, the previous revision stands: ${failures.join('; ')}${refused.length ? ` — refused sentence(s): ${refused.join(' | ')}` : ''}`,
+    );
+    onRefused?.(failures.join('; '));
     return null;
   }
 
@@ -1253,7 +1448,9 @@ export function voteGroundingLine(r, { partyCounts = PARTY_COUNTS } = {}) {
  * that did not write it. lib/moment-updates.ts isAiSummary reads any token it
  * does not know as AI — the safe direction — until it is taught this one.
  */
-export const RECORD_ONLY_MODEL = 'record-only';
+// One copy, in the gate, which exempts a revision with this model from part 1
+// of its NUMBER lint (a template, not AI text).
+export { RECORD_ONLY_MODEL };
 
 /**
  * WHY THIS EXISTS. The nightly re-anchors a question's "Where it stands" every
@@ -1347,11 +1544,13 @@ export function recordOnlyRevision({ momentId, entry, statuses, records, votes, 
   if (!latest) return null;
   const text = recordOnlyText(latest, Object.keys(statuses ?? {}).length);
   // The same two lint layers every stored revision passes (and the gate
-  // re-runs). A template should never fail them; if an edit to it ever does,
+  // re-runs; part 1 of its NUMBER lint does not apply to this template). A template should never fail them; if an edit to it ever does,
   // nothing is written rather than something the gate would reject.
   for (const lang of /** @type {const} */ (['en', 'es'])) {
     if (lintRevisionText(text[lang], lang).length > 0) return null;
   }
+  // …and part 2 of the NUMBER lint, which the gate runs on every revision.
+  if (numberParityFailure(text.en, text.es)) return null;
   const windowFloor = shiftDay(day, -SUMMARY_WINDOW_DAYS);
   const recent = (entry?.updates ?? []).filter((u) => String(u?.day) >= windowFloor).slice(0, 30);
   const refs = [...new Set([...Object.keys(statuses ?? {}).map(congressGovUrlForSlug), ...contextRefs.filter((r) => /^https:\/\//.test(r))])];
@@ -1723,6 +1922,7 @@ export function summaryCallsOnDay(storeArg, day) {
  *   now: Date|number,
  *   intradayCap?: number,
  *   unsupportedStatus?: (bill: Record<string, any>|undefined) => boolean,
+ *   policy?: { tracked: number, ended: ReadonlyArray<{ number: number, ended: string }> },
  * }} args
  * @returns {{ momentId: string, generate: boolean, recordOnly?: boolean, reason: string, statuses: Record<string,string>, statusKeys: Record<string,string>, records: Record<string, any>, votes: Record<string, any>[], rollCallsOnRecord: string[] | null, intraday: boolean, day: string }[]}
  */
@@ -1737,6 +1937,7 @@ export function planSummaries({
   now: nowArg,
   intradayCap = INTRADAY_SUMMARY_CAP,
   unsupportedStatus = statusUnsupported,
+  policy = CONGRESS_POLICY,
 }) {
   const today = etDay(nowArg);
   const nowMs = nowArg instanceof Date ? nowArg.getTime() : Number(nowArg);
@@ -1757,6 +1958,10 @@ export function planSummaries({
     // diffed by summaryNeedsRefresh, so nothing here may change its shape.
     const records = {};
     for (const v of moment.vehicles ?? []) {
+      // A bill of an ENDED Congress grounds no summary and buys no model call
+      // (2026-11-12). With the ended list empty this skips nothing; what a
+      // Big Question does once its vehicles end is decided per question.
+      if (isEndedBill(v.slug, policy)) continue;
       const bill = bills?.get(v.slug);
       if (!bill?.status) continue;
       statuses[v.slug] = bill.status;
@@ -1867,8 +2072,8 @@ export function planSummaries({
  * (MOMENT_SUMMARY_DAILY_CAP minus summaryCallsOnDay), so the cap is a daily
  * ceiling across every run of the ET day, not a per-run one. Exported so the
  * "no call when capped/deferred" promise is tested, not assumed. Mutates
- * `storeArg` (appends revisions, bumps summary_attempts), like the loop it
- * replaced.
+ * `storeArg` (appends revisions, bumps summary_attempts, counts or clears
+ * summary_refusals), like the loop it replaced.
  *
  * @returns {Promise<number>} revisions written
  */
@@ -1896,6 +2101,9 @@ export async function writeSummaries({ plan, store: storeArg, moments: momentsAr
         continue;
       }
       const current = (entry.summary_revisions ?? []).at(-1);
+      // Either way the question's summary is current now, so a refusal
+      // streak behind it is over (SUMMARY_REFUSAL_ALARM_RUNS).
+      delete entry.summary_refusals;
       if (current?.model === RECORD_ONLY_MODEL && current.text?.en === revision.text.en && current.text?.es === revision.text.es) {
         console.log(`  summary ${p.momentId}: ${p.reason} — the current revision already says this, nothing written`);
         continue;
@@ -1924,8 +2132,26 @@ export async function writeSummaries({ plan, store: storeArg, moments: momentsAr
     entry.summary_attempts = { day: p.day, count: summaryAttemptsOnDay(entry, p.day) + 1 };
     calls++;
     const contextRefs = (momentsArg?.[p.momentId]?.context_refs ?? []).map((r) => r?.url).filter(Boolean);
-    const revision = await generateStateSummary(anthropic, p.momentId, entry, p.statuses, contextRefs, p.records, p.votes, p.rollCallsOnRecord);
-    if (!revision) continue;
+    /** @type {string | null} */
+    let refusal = null;
+    const revision = await generateStateSummary(anthropic, p.momentId, entry, p.statuses, contextRefs, p.records, p.votes, p.rollCallsOnRecord, {
+      onRefused: (reason) => {
+        refusal = reason;
+      },
+    });
+    if (!revision) {
+      // A reply came back and was refused: count it, and from the
+      // SUMMARY_REFUSAL_ALARM_RUNS-th in a row say so where the run's
+      // annotations show it. A call that failed before any reply is not
+      // counted (see summary_refusals in lib/moment-updates-gate.mjs).
+      if (refusal !== null) {
+        entry.summary_refusals = nextSummaryRefusals(entry, p.day, refusal);
+        const warning = summaryRefusalWarning(p.momentId, entry.summary_refusals);
+        if (warning) console.log(warning);
+      }
+      continue;
+    }
+    delete entry.summary_refusals;
     // Belt and braces. On the nightly the prune's reserveRevisions holds the
     // slot this append needs; on an incremental run the prune reserves
     // nothing (reserving would evict a revision every hour for nothing), so

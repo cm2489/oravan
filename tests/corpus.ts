@@ -160,19 +160,22 @@ export function topActionSlugsAt(at: number): string[] {
 }
 
 /** Mirror of lib/core/mcp.ts's whatsMoving: the act-now pool further gated to
- *  bills with a known last action inside the recency window (and, optionally, a
- *  topic), capped at `limit`. */
+ *  bills whose signal is inside the recency window — a live announcement's own
+ *  date, or the bill's last action (lib/docket.ts `insideSignalWindow`) — and,
+ *  optionally, a topic, capped at `limit`. */
 export function movingSlugsAt(
   at: number,
   { topic, days = 7, limit = 10 }: { topic?: string; days?: number; limit?: number } = {}
 ): string[] {
   const cutoff = at - days * 86_400_000;
-  return actNowPoolAt(at)
-    .filter((b) => b.ai_headline)
-    .filter((b) => !topic || (b.issue_tags ?? []).includes(topic))
-    .filter((b) => b.last_action_date && new Date(b.last_action_date).getTime() >= cutoff)
+  const inWindow = (d: string | null | undefined) => Boolean(d) && new Date(d as string).getTime() >= cutoff;
+  return docketedAt(at)
+    .filter((e) => isActNow(e.rung))
+    .filter((e) => e.b.ai_headline)
+    .filter((e) => !topic || (e.b.issue_tags ?? []).includes(topic))
+    .filter((e) => inWindow(e.rung.announced?.published) || inWindow(e.b.last_action_date))
     .slice(0, limit)
-    .map(slugOf);
+    .map((e) => slugOf(e.b));
 }
 
 /** Mirror of emptyStateVerdict's data_stale collapse (lib/freshness-state.ts),

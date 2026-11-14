@@ -43,7 +43,7 @@ test('embeds come back only with filled terms: the guard stays off while a place
  * hidden, so flipping the guard fails here until the intro is rewritten
  * (tests/plans-claim.unit.spec.ts does the same for the plans sentence).
  */
-const NOT_OPEN = { en: /aren't open to new sites right now/, es: /no están abiertos a sitios nuevos/ } as const;
+const NOT_OPEN = { en: /aren’t open to new sites right now/, es: /no están abiertos a sitios nuevos/ } as const;
 
 test('the /partners intro says the embeds are closed exactly while the pages are hidden', () => {
   for (const [locale, m] of [

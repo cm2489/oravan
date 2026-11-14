@@ -486,6 +486,8 @@ import {
   shouldWrite as shouldWriteConversation,
 } from '../lib/conversation.mjs';
 import { loadJSON, redecodeBill, syncOneBill } from './bill-decode.mjs';
+// Ended Congresses (2026-11-12): empty until the January switch. Import-free.
+import { isEndedBill } from '../lib/congress.mjs';
 import { fetchRecentlyUpdated, slugOf } from './congress-fetch.mjs';
 import {
   FLOOR_SIGNALS_PATH,
@@ -543,8 +545,12 @@ const TIER0_DECODE_CAP = Number(process.env.NEWSDESK_TIER0_DECODE_CAP ?? 6);
 const TIER0_DAILY_DECODE_CAP = Number(process.env.NEWSDESK_TIER0_DAILY_DECODE_CAP ?? 20);
 // The nickname bridge's ONE per-run Congress.gov list request: how many
 // recently-updated bills to resolve extracted act-name tokens against.
-// 100 ≈ several days of legislative motion — a brand-new bill big enough
-// to be covered by nickname is essentially always inside this window.
+// Measured 2026-10-06: 100 is HOURS of record churn, not days. All 100 bills
+// in that list carried that day's updateDate, and Congress.gov's own counts
+// of bills updated per day were 565 on 2026-10-02, 176 on 2026-10-05 and
+// 376 on 2026-10-06 by 17:00Z. A bill covered by nickname is inside this
+// window only if its record happened to change in those hours. (Comment
+// corrected only; how wide the search should be is the owner's decision.)
 const NICKNAME_LIST_LIMIT = Number(process.env.NEWSDESK_NICKNAME_LIST_LIMIT ?? 100);
 // The conversation lamp's only extra network: FREE Congress.gov refreshes
 // spent checking whether a newly-corroborated bill's title is still the title
@@ -1142,6 +1148,12 @@ const servedTitles = new Map();
 let pressDecodesThisRun = 0;
 let tier0DecodesThisRun = 0;
 for (const slug of fired) {
+  // A bill of an ended Congress is an archive (2026-11-12): never fetched,
+  // refreshed or decoded here. Nothing else changes for any other slug.
+  if (isEndedBill(slug)) {
+    console.log(`  ${slug}: skipped - its Congress has ended (archive; no fetch, no decode)`);
+    continue;
+  }
   const [type, number] = slug.split('-');
   const isTier0 = (reason.get(slug) ?? '').startsWith('tier0');
   // Per-slug daily backoff: this slug already paid for a decode today and the
@@ -1231,6 +1243,7 @@ console.log(
 for (const cand of candidates) {
   const bill = bySlug.get(cand.slug);
   if (!bill) continue; // a T0 signal for a bill we don't hold yet is the fire path's job, not this one
+  if (isEndedBill(bill)) continue; // an ended Congress's bill is never re-read or re-decoded (2026-11-12)
   // The served title is only worth a free Congress.gov call for the T0 set —
   // the vehicle-swap case is by construction a bill the chamber has just
   // scheduled. T1 candidates are judged on their decode stamp alone. A bill
@@ -1238,7 +1251,8 @@ for (const cand of candidates) {
   let fetchedTitle = servedTitles.get(cand.slug) ?? null;
   if (cand.tier === 't0' && fetchedTitle === null) {
     const refresh = await syncOneBill(
-      { type: bill.bill_type, number: String(bill.bill_number) },
+      // The record's OWN Congress (2026-11-12), never the tracked number.
+      { type: bill.bill_type, number: String(bill.bill_number), congress_number: bill.congress_number },
       { allowDecode: false, forceSlugs: new Set(), bills, es, bySlug, anthropic }
     );
     outcomes.push(refresh.outcome);
@@ -1391,6 +1405,7 @@ if (redecodeQueue.length > 0) {
 for (const slug of redecodeQueue) {
   const bill = bySlug.get(slug);
   if (!bill) continue; // corroborated press for a bill we don't hold yet is the fire path's job
+  if (isEndedBill(bill)) continue; // an ended Congress's bill is never re-read or re-decoded (2026-11-12)
   let fetchedTitle = servedTitles.get(slug) ?? null;
   const judge = () =>
     redecodeVerdict({
@@ -1408,7 +1423,8 @@ for (const slug of redecodeQueue) {
   if (!verdict.redecode && fetchedTitle === null && conversationTitleChecks < CONVERSATION_TITLE_CHECKS_PER_RUN) {
     conversationTitleChecks++;
     const refresh = await syncOneBill(
-      { type: bill.bill_type, number: String(bill.bill_number) },
+      // The record's OWN Congress (2026-11-12), never the tracked number.
+      { type: bill.bill_type, number: String(bill.bill_number), congress_number: bill.congress_number },
       { allowDecode: false, forceSlugs: new Set(), bills, es, bySlug, anthropic }
     );
     outcomes.push(refresh.outcome);

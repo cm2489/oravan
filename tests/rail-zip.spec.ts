@@ -45,7 +45,7 @@ for (const locale of ['en', 'es'] as const) {
 
     // The promise: reps arrive IN the panel, the URL never changes, and the
     // script draft is not destroyed by a navigation.
-    await expect(page.getByText('Monica De La Cruz')).toBeVisible();
+    await expect(page.locator('[data-rep-name]', { hasText: 'Monica De La Cruz' })).toBeVisible();
     await expect(page.locator('a[href^="tel:"]').first()).toBeVisible();
     await expect(page).toHaveURL(new RegExp(`${BILL.replace(/\//g, '\\/')}`));
     await expect(textarea).toHaveValue(/MOCKED SCRIPT BODY/);
@@ -76,7 +76,7 @@ test('unmatched ZIP in the rail: the /reps failure register in-panel, recoverabl
   // Recovery proven: correct the ZIP right there.
   await page.getByLabel(en.home.zipLabel).fill('78501');
   await page.getByRole('button', { name: en.home.zipCta }).click();
-  await expect(page.getByText('Monica De La Cruz')).toBeVisible();
+  await expect(page.locator('[data-rep-name]', { hasText: 'Monica De La Cruz' })).toBeVisible();
   await expect(page).toHaveURL(new RegExp(BILL.replace(/\//g, '\\/')));
 });
 
@@ -101,7 +101,7 @@ test('reps lookup failure in the rail: Failure + retry recovers without leaving 
 
   await expect(page.getByRole('alert').filter({ hasText: en.bill.repsError })).toBeVisible();
   await page.getByRole('button', { name: en.bill.retry }).click();
-  await expect(page.getByText('Monica De La Cruz')).toBeVisible();
+  await expect(page.locator('[data-rep-name]', { hasText: 'Monica De La Cruz' })).toBeVisible();
   await expect(page).toHaveURL(new RegExp(BILL.replace(/\//g, '\\/')));
 });
 
@@ -135,10 +135,11 @@ test('split ZIP (10001): honest multi-district copy, senators lead, refinement o
   const names = await rowNames.allTextContents();
   expect(names.findIndex((n) => /Goldman|Nadler/.test(n))).toBeGreaterThanOrEqual(2);
 
-  // The refinement hand-off: the same ?zip flow /reps already owns.
+  // The refinement hand-off: bare /reps, which opens on the saved ZIP and
+  // holds the street-address form. No ZIP in the address (owner, 2026-11-12).
   const refine = page.getByRole('link', { name: en.bill.refineDistrictCta }).first();
   await expect(refine).toBeVisible();
-  await expect(refine).toHaveAttribute('href', /\/reps\?zip=10001/);
+  await expect(refine).toHaveAttribute('href', /\/reps$/);
 });
 
 test('vacant seat (FL-20) via the rail: vacancy named, senators still dialable, no departed member', async ({
@@ -183,7 +184,10 @@ test('Enter submits the rail ZIP form, and chamber routing names the senators as
   await page.getByLabel(en.home.zipLabel).fill('78501');
   await page.getByLabel(en.home.zipLabel).press('Enter');
 
-  await expect(page.getByText('Monica De La Cruz')).toBeVisible();
+  // Read the member's own card, not any text on the page: on 2026-11-12 the
+  // Senate-live bill the corpus picked also named her in a link elsewhere on
+  // its page, and a bare text match found two elements (main's CI went red).
+  await expect(page.locator('[data-rep-name]', { hasText: 'Monica De La Cruz' })).toBeVisible();
   await expect(page).toHaveURL(new RegExp(`/bills/${senateLive[0]}`));
 
   await expect(page.getByText(en.bill.liveSenateFloor)).toBeVisible();

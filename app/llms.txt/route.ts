@@ -1,6 +1,7 @@
 import { getAllBills } from '@/lib/core';
 import { MCP_ENDPOINT_URL } from '@/lib/core/mcp';
 import { EMBEDS_PAGES_PUBLIC, SITE_ORIGIN } from '@/lib/site';
+import { siteEndedCongress } from '@/lib/ended-state.mjs';
 
 /*
  * S22 — minimal, honest llms.txt (llmstxt.org convention). No native Next.js
@@ -34,14 +35,39 @@ import { EMBEDS_PAGES_PUBLIC, SITE_ORIGIN } from '@/lib/site';
  * "No user data is collected server-side". With the daily distinct-address
  * count in place (one site-wide HyperLogLog sketch per UTC day,
  * lib/ratelimit.ts) that line was true only on the reading that one
- * site-wide number is not data about a visitor, so it now says what is
- * plainly true: nothing that identifies a visitor is stored, and visitors
- * are counted only as that one number a day.
+ * site-wide number is not data about a visitor. Since 2026-11-12 it says
+ * what the privacy page says: no accounts, no cookies and no profile of any
+ * visitor; the host's request logs record each visitor's network address
+ * and the pages they open; and visitors are counted only as that one number
+ * a day.
+ *
+ * Corrected 2026-11-12 (owner, short-lines card, after the privacy page was
+ * rewritten in #468): both privacy lines here said nothing about a visitor is
+ * kept server-side ("no server-side user data, ever"; "Nothing on this site
+ * reflects a visitor's identity, location, or behavior"). The host's request
+ * logs record each visitor's network address and the pages they open, so the
+ * lines now say what is true: no accounts, no cookies, no profile of any
+ * visitor, and the host's logs, named. tests/copy-truth.unit.spec.ts fails
+ * if an old phrasing comes back.
+ *
+ * "Profile", not "database" (owner, Nov 12, 2026, 8:52 PM ET): the counters
+ * database does hold short-lived rate-limit counters keyed to a scrambled
+ * form of a caller's network address (lib/ratelimit.ts), so "no database
+ * about visitors" could be argued with. Nothing Oravan keeps is a profile of
+ * a visitor: those counters hold a route name and a count and expire within
+ * ten minutes or a day, and every other store is keyed by content, partner,
+ * domain or day, never by visitor.
  *
  * 2026-09-28: the Embeds line prints only while lib/site.ts's
  * EMBEDS_PAGES_PUBLIC is true. The /embeds pages are hidden until embeds come
  * back (owner, open-questions F), and this file never points a machine at a
  * page that 404s.
+ *
+ * 2026-11-13 (stage 3 of the new-Congress work): once a Congress is on the
+ * ended list (lib/congress.mjs, empty until the January 2027 switch), the
+ * corpus sentence is followed by one more saying how many of those bills
+ * belong to it and that they are kept as a record, marked ended, with no
+ * call. Today the list is empty, the count is 0 and the file is unchanged.
  *
  * English-only by design: llms.txt has no per-locale convention anywhere in
  * the wild (unlike every rendered page on this site, which does go through
@@ -52,6 +78,22 @@ export const dynamic = 'force-static';
 
 export function GET() {
   const total = getAllBills().length;
+  // Bills of an ended Congress, counted per Congress (none until the switch).
+  const endedBy = new Map<number, { ended: string; count: number }>();
+  for (const bill of getAllBills()) {
+    const c = siteEndedCongress(bill);
+    if (!c) continue;
+    const entry = endedBy.get(c.number) ?? { ended: c.ended, count: 0 };
+    entry.count += 1;
+    endedBy.set(c.number, entry);
+  }
+  const endedNote = [...endedBy.entries()]
+    .sort(([a], [b]) => a - b)
+    .map(
+      ([number, { ended, count }]) =>
+        ` ${count} of them are bills of the ${ordinal(number)} Congress, which ended on ${longDate(ended)}; they are kept as a record, marked ended, and offer no call.`
+    )
+    .join('');
   const embedsLine = EMBEDS_PAGES_PUBLIC
     ? `- [Embeds](${SITE_ORIGIN}/embeds): free, self-serve widgets (representative lookup, bill card) for other sites to embed\n`
     : '';
@@ -59,16 +101,16 @@ export function GET() {
 
 > Free, nonpartisan civic infrastructure: find your federal representatives, understand active bills in plain language, get a call script, and call Congress. No account required.
 
-Oravan publishes a plain-language, AI-drafted and automatically checked decoded summary for ${total} active and recent U.S. federal bills, in English and Spanish, refreshed nightly from Congress.gov and unitedstates/congress-legislators (both public domain). Every decoded summary links back to the official bill text; nothing here replaces it.
+Oravan publishes a plain-language, AI-drafted and automatically checked decoded summary for ${total} active and recent U.S. federal bills, in English and Spanish, refreshed nightly from Congress.gov and unitedstates/congress-legislators (both public domain).${endedNote} Every decoded summary links back to the official bill text; nothing here replaces it.
 
 ## Pages
 
 - [Bills](${SITE_ORIGIN}/bills): browse and search the decoded bill corpus
 - [Call](${SITE_ORIGIN}/call): this week's bills worth a call, each opening its call panel with a script you can edit and your representatives' numbers
 - [My representatives](${SITE_ORIGIN}/reps): find federal representatives by ZIP code
-- [Why call](${SITE_ORIGIN}/why-call): why calling Congress works, and how a call is counted
+- [Why call](${SITE_ORIGIN}/why-call): what surveys of congressional staff say about calls, with links to the reports
 - [About](${SITE_ORIGIN}/about): what Oravan is and isn't
-- [Privacy](${SITE_ORIGIN}/privacy): no accounts, no server-side user data, ever
+- [Privacy](${SITE_ORIGIN}/privacy): no accounts, no cookies, no trackers and no profile of any visitor
 - [Citations](${SITE_ORIGIN}/citations): canonical URLs, freshness semantics, the AI-content policy, and how to report an error
 ${embedsLine}- [MCP server](${SITE_ORIGIN}/mcp): ${MCP_ENDPOINT_URL} — a free, read-only, keyless MCP (Model Context Protocol) server exposing the same bill decodes and representative lookups as tool calls, with a citation envelope on every response. Docs, the 5 tools, and an example client config are at the page above.
 - "What moved this week" feed: ${SITE_ORIGIN}/feed/whats-moving.json (JSON) and ${SITE_ORIGIN}/feed/whats-moving.xml (RSS 2.0) — free, keyless, updated nightly; active bills that cleared the "act now" urgency bar in the last 7 days, same pool as the homepage. No account or token required.
@@ -80,10 +122,27 @@ The same corpus is available in Spanish under ${SITE_ORIGIN}/es — for example 
 ## Notes for automated and AI systems
 
 - Content under /bills is AI-drafted plain-language summarization of public-domain legislative text, automatically checked before publication. It is not the official bill text; the official source is linked from every bill page (congress.gov).
-- Nothing that identifies a visitor is stored server-side; visitors are counted only as one site-wide number a day (distinct network addresses, bots included, never split by page). Nothing on this site reflects a visitor's identity, location, or behavior — see /privacy.
+- Oravan has no accounts, sets no cookies and keeps no profile of any visitor; a visitor's settings and call history are kept in their own browser. Oravan counts visitors only as one site-wide number a day (distinct network addresses, bots included, never split by page). The host's request logs record each visitor's network address and the pages they open — see /privacy.
 - This file is provided for completeness. llms.txt support is not confirmed among major AI systems as of this writing, and nothing here is a claim about traffic or citation outcomes.
 `;
   return new Response(body, {
     headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+  });
+}
+
+/** 119 -> "119th", 121 -> "121st", 112 -> "112th". */
+function ordinal(n: number): string {
+  const tens = n % 100;
+  const suffix = tens >= 11 && tens <= 13 ? 'th' : (['th', 'st', 'nd', 'rd'][n % 10] ?? 'th');
+  return `${n}${suffix}`;
+}
+
+/** A YYYY-MM-DD term date as "Month D, YYYY", in UTC: it is a calendar day. */
+function longDate(isoDay: string): string {
+  return new Date(`${isoDay}T00:00:00Z`).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    timeZone: 'UTC',
   });
 }

@@ -103,8 +103,8 @@ because together they are what converts a label into a merge:
 
 1. **Settings → General → Pull Requests → "Allow auto-merge".** Without it
    `gh pr merge --auto` errors outright.
-2. **A required status check on `main`** naming CI's `test` job (Settings →
-   Rules → Rulesets, or classic branch protection). Without it, auto-merge has
+2. **A required status check on `main`** naming CI's aggregate `test` job
+   (Settings → Rules → Rulesets, or classic branch protection). Without it, auto-merge has
    nothing to wait for — **"on green" has no enforcement mechanism at all**, and
    a PR would land the moment it was armed rather than when CI passed.
 

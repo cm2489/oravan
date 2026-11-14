@@ -26,6 +26,7 @@ import { CALL_BUTTON } from './call-button';
 import { OfficeHoursNote } from './OfficeHoursNote';
 import { VacantSeatCard } from './VacantSeatCard';
 import { ZipForm } from './ZipForm';
+import { lookupReps } from '@/lib/reps-lookup';
 
 /*
  * THE CALL RAIL — a control panel, not a card.
@@ -636,7 +637,7 @@ export function ActionPanel({
       return;
     }
     setLookup({ status: 'loading' });
-    fetch(`/api/reps?zip=${zip}`)
+    lookupReps(zip)
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((d) => {
         setLookup({
@@ -1416,7 +1417,7 @@ export function ActionPanel({
             {multiDistrict && reps.length > 0 && zip && (
               <p className="mt-2 max-w-note text-sm">
                 <Link
-                  href={`/reps?zip=${zip}`}
+                  href="/reps"
                   className="inline-flex min-h-11 items-center gap-1.5 font-semibold text-go underline visited:text-go-deep hover:text-go-deep"
                 >
                   {t('refineDistrictCta')}
@@ -1452,6 +1453,7 @@ export function ActionPanel({
                       </p>
                       <Link
                         href={`/reps/${rep.bioguide}#votes`}
+                        prefetch={false}
                         className="inline-flex min-h-11 items-center text-sm text-ink-2 underline underline-offset-2 hover:text-ink"
                         data-rep-votes-link=""
                       >

@@ -206,6 +206,7 @@ import {
 import {
   BILL_TYPES,
   CONGRESS,
+  billApiPath,
   cg,
   fetchRecentlyUpdated,
   mapStatus,
@@ -215,6 +216,8 @@ import {
   updateSlug,
 } from './congress-fetch.mjs';
 import { parseForceSlugs, passesGate } from './decode-gate.mjs';
+// Ended Congresses (2026-11-12): empty until the January switch. Import-free.
+import { congressOfBill, isEndedBill } from '../lib/congress.mjs';
 import { setCounter } from './run-counters.mjs';
 import {
   DEFAULT_REDECODE_MAX_PER_NIGHT,
@@ -1041,7 +1044,9 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
         const d = updateDay(u.updateDate) ?? 'unreadable';
         const row = perDay.get(d) ?? { checked: 0, passed: 0, newTotal: 0 };
         try {
-          const detail = (await cg(`/bill/${CONGRESS}/${String(u.type).toLowerCase()}/${u.number}`)).bill;
+          // A NEW bill off the tracked Congress's list, so the tracked
+          // Congress is its own (billApiPath, scripts/congress-fetch.mjs).
+          const detail = (await cg(billApiPath({ bill_type: u.type, bill_number: u.number, congress_number: CONGRESS }))).bill;
           const action = readableAction(detail);
           if (!action) unreadable++;
           else if (passesGate(mapStatus(action.text))) { gatePassed++; row.passed++; }
@@ -1445,7 +1450,10 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
   // first ten.
   const probeQueue = [...refreshedThisRun.entries()]
     .map(([slug, seen]) => ({ slug, seen, bill: bySlug.get(slug) }))
-    .filter((c) => c.bill)
+    // An ended Congress's bill is never probed or re-decoded (2026-11-12).
+    // Unreachable while syncOneBill refreshes only the tracked Congress, and
+    // kept so the rule holds here by itself.
+    .filter((c) => c.bill && !isEndedBill(c.bill))
     .map((c) => ({
       ...c,
       hint: countSaysNewText({
@@ -1465,7 +1473,7 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
   for (const c of toProbe) {
     let versions, count;
     try {
-      ({ versions, count } = await fetchTextVersions(c.bill.bill_type, c.bill.bill_number));
+      ({ versions, count } = await fetchTextVersions(c.bill.bill_type, c.bill.bill_number, congressOfBill(c.bill)));
       probed++;
     } catch (e) {
       // Free call, non-fatal, nothing written: the bill keeps whatever stamp
@@ -1537,9 +1545,16 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
   //     a refactor of the newsdesk's decode path, done for a night that saves
   //     a third of a dollar. If this ceiling is ever raised far enough to
   //     matter, that is the shape it should take.
-  let redecoded = 0, redecodeFailed = 0, redecodeNoText = 0, redecodeUnchanged = 0, redecodeMissing = 0;
+  let redecoded = 0, redecodeFailed = 0, redecodeNoText = 0, redecodeUnchanged = 0, redecodeMissing = 0, redecodeEnded = 0;
   for (const item of redecodePlan.run) {
     const bill = bySlug.get(item.slug);
+    // An ended Congress's bill is never re-decoded, not even when forced
+    // (2026-11-12): free, nothing touched. redecodeBill refuses it too.
+    if (isEndedBill(bill ?? item.slug)) {
+      redecodeEnded++;
+      console.log(`  ${item.slug}: skipped - its Congress has ended (archive; no re-decode)`);
+      continue;
+    }
     // The served title is written ONLY beside a new decode and ONLY when it
     // actually differs — refreshBillFields deliberately never touches `title`,
     // because a title that moves without its decode is a page whose headline
@@ -1568,7 +1583,7 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
   }
   if (redecodePlan.run.length) {
     console.log(
-      `re-decode on new text: ${redecoded} re-decoded, ${redecodeUnchanged} vetoed by the fingerprint (prompt byte-identical — no model call, both provenance stamps refreshed), ${redecodeNoText} skipped (no published text), ${redecodeMissing} not in the corpus, ${redecodeFailed} failed (old decode left standing)`
+      `re-decode on new text: ${redecoded} re-decoded, ${redecodeUnchanged} vetoed by the fingerprint (prompt byte-identical — no model call, both provenance stamps refreshed), ${redecodeNoText} skipped (no published text), ${redecodeMissing} not in the corpus, ${redecodeFailed} failed (old decode left standing)${redecodeEnded ? `, ${redecodeEnded} of an ended Congress skipped` : ''}`
     );
   }
 

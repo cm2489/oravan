@@ -93,7 +93,8 @@ test.describe('lookup_representatives', () => {
     const result = await callTool(request, 'lookup_representatives', { zip: '78501', locale: 'es' });
     const data = result.structuredContent!;
     expectMeta(data.meta as Record<string, unknown>, '/es/reps', false, 'es');
-    expect(data.reps_url).toContain('/es/reps?zip=78501');
+    // No ZIP in the page address (owner, 2026-11-12).
+    expect(data.reps_url).toMatch(/\/es\/reps$/);
   });
 
   test('split ZIP: needs_address true, refine_hint present, no address refinement attempted', async ({
@@ -102,7 +103,8 @@ test.describe('lookup_representatives', () => {
     const result = await callTool(request, 'lookup_representatives', { zip: '10001', locale: 'en' });
     const data = result.structuredContent!;
     expect(data.needs_address).toBe(true);
-    expect(data.refine_hint).toContain('reps?zip=10001');
+    expect(data.refine_hint).toMatch(/\/reps and enter the ZIP code/);
+    expect(data.refine_hint).not.toContain('zip=');
     expect(data.refine_hint).toMatch(/never stores or logs/i);
     expect((data.districts as unknown[]).length).toBeGreaterThan(1);
   });
@@ -114,7 +116,8 @@ test.describe('lookup_representatives', () => {
     const result = await callTool(request, 'lookup_representatives', { zip: '10001', locale: 'es' });
     const data = result.structuredContent!;
     expect(data.needs_address).toBe(true);
-    expect(data.refine_hint).toContain('/es/reps?zip=10001');
+    expect(data.refine_hint).toContain('/es/reps e ingrese');
+    expect(data.refine_hint).not.toContain('zip=');
     expect(data.refine_hint).toMatch(/nunca guarda ni registra/i);
   });
 

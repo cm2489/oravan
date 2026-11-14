@@ -216,6 +216,25 @@ test.describe('RSS feed', () => {
     expect(itemCount).toBe(json.items.length);
   });
 
+  test('each item is dated by the sentence it quotes — a live announcement prints its own date', async ({
+    request,
+  }) => {
+    // Rule 6: a floor claim prints its date. A bill kept on the list by a
+    // chamber's announcement quotes that announcement, so its pubDate is the
+    // announcement's date, not a last action that may be months older. On
+    // every other rung the evidence IS the last action, so the two agree.
+    const [jsonRes, xmlRes] = await Promise.all([request.get(ROUTES.en.json), request.get(ROUTES.en.xml)]);
+    const json = (await jsonRes.json()) as FeedPayload;
+    const xml = await xmlRes.text();
+    const pubDates = [...xml.matchAll(/<pubDate>(.*?)<\/pubDate>/g)].map((m) => m[1]);
+    expect(pubDates.length).toBe(json.items.length);
+    json.items.forEach((item, i) => {
+      const dated = item.signal?.evidence_date ?? item.last_action_date;
+      const expected = dated ? new Date(dated).toUTCString() : new Date(json.generated_at).toUTCString();
+      expect(pubDates[i], item.slug).toBe(expected);
+    });
+  });
+
   test('es: language tag is "es", not "en-us"', async ({ request }) => {
     const res = await request.get(ROUTES.es.xml);
     const body = await res.text();

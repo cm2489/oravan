@@ -3,7 +3,14 @@
     "schema": 1,
     "note": "Big Questions status lines as last flagged by scripts/moment-watch.mjs --mode=status. Deleting it re-baselines (no status diff, review dates re-flagged)."
   },
-  "pastReview": [],
+  "pastReview": [
+    "annual-defense-policy",
+    "crypto-oversight-split-between-sec-and-cftc",
+    "iran-war-powers",
+    "paying-college-athletes",
+    "penny-production-and-cash-rounding",
+    "syria-sanctions-repeal"
+  ],
   "questions": {
     "iran-war-powers": {
       "review_by": "2026-10-05",
@@ -17,7 +24,7 @@
           "text": "Failed of passage in Senate by Yea-Nay Vote. 49 - 50. Record Vote Number: 244."
         },
         "hconres-86-119": {
-          "fingerprint": "recordStep|||2026-06-24",
+          "fingerprint": "bothAgreed|||2026-06-24",
           "text": "Message on Senate action sent to the House."
         },
         "sjres-185-119": {
@@ -76,8 +83,8 @@
       "review_by": "2026-10-05",
       "vehicles": {
         "s-4668-119": {
-          "fingerprint": "onFloor|senate||2026-09-24",
-          "text": "The committee substitute tabled by Voice Vote."
+          "fingerprint": "heldAtDesk|house||2026-10-05",
+          "text": "Held at the desk."
         }
       }
     },
@@ -107,8 +114,8 @@
       "review_by": "2026-10-05",
       "vehicles": {
         "hr-10167-119": {
-          "fingerprint": "passedWaiting|senate||2026-09-15",
-          "text": "Received in the Senate and Read twice and referred to the Committee on Banking, Housing, and Urban Affairs."
+          "fingerprint": "presented|||2026-11-12",
+          "text": "Presented to President."
         },
         "s-1525-119": {
           "fingerprint": "heldAtDesk|house||2026-08-10",

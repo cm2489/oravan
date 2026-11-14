@@ -3,7 +3,7 @@ import { Phone } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { CALL_BUTTON } from '@/components/call-button';
-import { portraitUrl } from '@/lib/core';
+import { portraitUrl } from '@/lib/portrait-url';
 import type { Legislator } from '@/lib/types';
 
 function telHref(phone: string) {
@@ -57,7 +57,13 @@ export function usePartyLabel(rep: Pick<Legislator, 'party'>): string | null {
 
 /** The squared portrait frame, initials behind the photo. Decorative: the
  *  name is always printed beside it (see the header comment above). */
-export function RepPortrait({ rep, large = false }: { rep: Legislator; large?: boolean }) {
+export function RepPortrait({
+  rep,
+  large = false,
+}: {
+  rep: Pick<Legislator, 'bioguide' | 'first' | 'last'>;
+  large?: boolean;
+}) {
   const initials = `${rep.first?.[0] ?? ''}${rep.last?.[0] ?? ''}`.toUpperCase();
   return (
     <span
@@ -164,6 +170,7 @@ export function RepCard({ rep }: { rep: Legislator }) {
           <h3 className="mt-1 text-xl font-extrabold">
             <Link
               href={`/reps/${rep.bioguide}`}
+              prefetch={false}
               className="inline-flex min-h-11 items-center text-ink underline decoration-line-strong underline-offset-4 hover:decoration-ink"
               data-rep-name-link=""
             >
@@ -188,6 +195,7 @@ export function RepCard({ rep }: { rep: Legislator }) {
             )}
             <Link
               href={`/reps/${rep.bioguide}#votes`}
+              prefetch={false}
               className="relative inline-flex min-h-11 items-center text-sm text-ink-2 underline underline-offset-2 hover:text-ink"
               data-rep-votes-link=""
             >

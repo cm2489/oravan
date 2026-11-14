@@ -68,6 +68,7 @@ export {
 import {
   CLOTURE_INVOKED_ON_MEASURE,
   concurrentAdoptedBy,
+  concurrentEnrolledBy,
   floorCalendarChamber,
   floorPassageRejectedChamber,
   floorPendingChamber,
@@ -83,6 +84,10 @@ import {
 // The date of the sentence the stepper reads: the one reader the call panel
 // already uses for it (`import`, not a copy, so the two cannot drift).
 import { settledDecisionDate } from './settled-votes';
+// WHICH BILLS ARE ENDED (stage 3 of the new-Congress work, 2026-11-13): the
+// site's one reading of lib/congress.mjs's ended list. Import-free apart from
+// that module, so the embed and MCP surfaces that read this file pay nothing.
+import { isSiteEndedBill, siteEndedCongress } from './ended-state.mjs';
 
 /** The optional pipeline field every chamber/tense derivation below reads
  *  through `statusBasisText` (lib/floor-text.mjs), and its date, which the
@@ -364,9 +369,12 @@ export function floorCalendarName(actionText: string | null): FloorCalendar | nu
  *   `floor_vote_stale`  a calendar placement the record has shown nothing
  *                       since. "Placed on the calendar" — the same specific
  *                       fact, in the past tense the date supports.
- *   `floor_activity`    no placement at all (cloture, a rejected motion, a
- *                       Rules resolution). Unchanged, and deliberately NOT
- *                       clocked — see the last paragraph.
+ *   `floor_activity`    no placement at all (cloture, a failed procedural
+ *                       motion, a Rules resolution). Unchanged, and
+ *                       deliberately NOT clocked — see the last paragraph.
+ *
+ * And a fourth, read before the three (2026-09-29): `rejected`, see "THE
+ * REJECTION READING" at the end of this header.
  *
  * WHY THE CLOCK CAME HERE AFTER ALL, AND WHAT THE PREVIOUS HEADER GOT WRONG.
  * This function used to argue itself out of a clock on two grounds, and the
@@ -472,13 +480,75 @@ export function floorCalendarName(actionText: string | null): FloorCalendar | nu
  * passed WITH amendments ('back'; none in the corpus on 2026-09-29). It keeps
  * `passed_chamber`.
  *
+ * THE REJECTION READING (2026-09-29). A `floor_vote` record whose own
+ * sentence says the chamber voted the measure down on passage or adoption
+ * ("Failed of passage in Senate by Yea-Nay Vote. 49 - 50." — H.Con.Res. 89)
+ * printed "Floor activity" beside a call panel that said "No call to make"
+ * and a "Right now:" sentence that said "the Senate voted on it and rejected
+ * it, 49–50". It now reads `rejected` ("Rejected", the word lib/status-word.ts
+ * already printed for the same record on Big Question rows and member pages).
+ *
+ * WHICH RECORDS: exactly the ones settledDecision calls `rejected`, read off
+ * the same stepper derivation, so the chip, the stepper and the panel cannot
+ * disagree. That is docs/record-truth.md §7's "failed final vote", and nothing
+ * wider. Every failed PROCEDURAL vote keeps `floor_activity`, as §7 rules for
+ * the call panel: a failed motion to proceed, cloture not invoked, a rejected
+ * motion to discharge, a failed two-thirds vote under suspension of the
+ * House's rules, and a failed vote with a motion to reconsider entered. None
+ * of those is the chamber's final answer on the measure. Not clocked: a vote
+ * that happened does not go stale.
+ *
  * scripts/moment-candidates.mjs carries an import-free copy of this function
  * (it reads the passage readings only when its caller hands it the bill);
  * tests/journey.unit.spec.ts pins the two corpus-wide at a shared `now`.
  */
-export type StatusKeyBill = Pick<Bill, 'bill_type' | 'status' | 'last_action_text' | 'last_action_date'> & Basis;
+export type StatusKeyBill = Pick<Bill, 'bill_type' | 'status' | 'last_action_text' | 'last_action_date'> &
+  Basis &
+  EndedReadable;
+
+/** What the ended reading needs: the bill's own Congress (its number, else
+ *  the Congress in its identifier), and its stored text version (an enrolled
+ *  concurrent resolution, endedAdoption). A caller that hands over no
+ *  Congress is read as not ended, never guessed (lib/congress.mjs
+ *  congressOfBill). */
+type EndedReadable = {
+  congress_number?: number | null;
+  full_identifier?: string | null;
+  text_version_type?: string | null;
+};
+
+/*
+ * THE ENDED READING (stage 3 of the new-Congress work, 2026-11-13). The owner
+ * decided on Nov 12, 2026 to keep the 119th Congress's bills as an archive
+ * marked "ended". On a bill of a Congress on the ended list (lib/ended-state.mjs
+ * siteEndedCongress; EMPTY until the switch) every key that describes a stage
+ * a decision could still move from reads `ended` instead ("Ended"), because
+ * nothing can move it any more: committee, markup, the floor keys, "Passed one
+ * chamber". The keys that state what the record already holds are kept, since
+ * they stay true: a law, a veto, a rejection, an adopted concurrent resolution,
+ * and "Passed both chambers" (the record may still show what the President
+ * did; stage 4 keeps reading it until Jan 31, 2027).
+ */
+const ENDED_KEEPS: ReadonlySet<StatusLabelKey> = new Set<StatusLabelKey>([
+  'signed',
+  'vetoed',
+  'rejected',
+  'adopted',
+  'passed_both',
+]);
 
 export function statusKeyFor(bill: StatusKeyBill, now: number = Date.now()): StatusLabelKey {
+  const key = recordStatusKey(bill, now);
+  if (!isSiteEndedBill(bill)) return key;
+  // An ended concurrent resolution whose enrolled text is on the record is
+  // adopted, not merely "passed both chambers" (endedAdoption, below).
+  if (key === 'passed_both' && endedAdoption(bill)) return 'adopted';
+  if (ENDED_KEEPS.has(key)) return key;
+  return 'ended';
+}
+
+/** The status key the record alone answers, before the ended reading. */
+function recordStatusKey(bill: StatusKeyBill, now: number): StatusLabelKey {
   const { status } = bill;
   if (status === 'passed_chamber') {
     if (concurrentAdoptedBy(bill)) return 'adopted';
@@ -486,6 +556,7 @@ export function statusKeyFor(bill: StatusKeyBill, now: number = Date.now()): Sta
     return stage === 'both' || stage === 'second' ? 'passed_both' : 'passed_chamber';
   }
   if (status !== 'floor_vote') return status;
+  if (settledDecision(bill)?.kind === 'rejected') return 'rejected';
   if (!floorCalendarChamber(bill.last_action_text)) return 'floor_activity';
   return isSignalFresh(bill.last_action_date, now) ? 'floor_vote' : 'floor_vote_stale';
 }
@@ -597,11 +668,15 @@ export function billFloorBand(
     last_action_text?: string | null;
     last_action_date?: string | null;
     status_basis_text?: string | null;
-  },
+  } & EndedReadable,
   announcement: { chamber: Chamber; published: string } | null,
   now: number = Date.now(),
   sessionOf?: (chamber: Chamber) => ChamberSession
 ): FloorBand | null {
+  // A bill of an ended Congress carries no floor fact: the calendar it was
+  // placed on and the vote it was waiting for belong to a Congress that no
+  // longer meets (stage 3, 2026-11-13; empty ended list today).
+  if (isSiteEndedBill(bill)) return null;
   const suspendedFor = (kind: FloorBandKind, chamber: Chamber): boolean =>
     sessionOf ? floorFactSuspended(kind, sessionOf(chamber)) : false;
   if (announcement) {
@@ -841,9 +916,12 @@ export function announcedCallTarget(
  * whatever a future caller passes in.
  */
 export function liveCallTarget(
-  bill: Pick<Bill, 'bill_type' | 'status' | 'last_action_text' | 'last_action_date'> & Basis,
+  bill: Pick<Bill, 'bill_type' | 'status' | 'last_action_text' | 'last_action_date'> & Basis & EndedReadable,
   announcement: RoutingAnnouncement | null = null
 ): LiveCallTarget | null {
+  // No chamber can act on a bill of an ended Congress, so there is no live
+  // call to route (stage 3, 2026-11-13; empty ended list today).
+  if (isSiteEndedBill(bill)) return null;
   const record = recordCallTarget(bill);
   if (TERMINAL_STATUSES.has(bill.status)) return record;
   const announced = announcedCallTarget(announcement);
@@ -1131,6 +1209,12 @@ export interface JourneyState {
   floorCalendar: FloorCalendar | null;
   isLaw: boolean;
   isVetoed: boolean;
+  /** True only when a chamber voted the measure down on passage or adoption
+   *  and no motion to reconsider is entered — exactly settledDecision's
+   *  `rejected` (2026-09-29). The stepper then marks `step` as where the
+   *  path ended, with `date`, and the steps after it as not reached. A failed
+   *  procedural vote never sets it. */
+  isRejected: boolean;
   /** Whether the "changes send it back" trailer is still ahead. */
   showTrailer: boolean;
   /** The recorded vote the `nowKey` sentence cites, read out of the record's
@@ -1142,9 +1226,11 @@ export interface JourneyState {
   tally: { yeas: number; nays: number } | null;
   /** The record's own date (YYYY-MM-DD) for the sentence the `nowKey`
    *  sentence cites — set ONLY on `nowPointOfOrderUpheld`, the one "Right
-   *  now:" sentence that prints a date, and null there too when the record
-   *  gives none (lib/settled-votes.ts `settledDecisionDate`: never another
-   *  action's date). Formatted by components/BillJourney.tsx. */
+   *  now:" sentence that prints a date, and on a rejected measure
+   *  (`isRejected`), where the stepper prints it on the step the path ended
+   *  at; null there too when the record gives none (lib/settled-votes.ts
+   *  `settledDecisionDate`: never another action's date). Formatted by
+   *  components/BillJourney.tsx. */
   date: string | null;
 }
 
@@ -1246,6 +1332,7 @@ export function deriveJourney(
     floorCalendar: null,
     isLaw: false,
     isVetoed: false,
+    isRejected: false,
     showTrailer: true,
     tally: null,
     date: null,
@@ -1365,6 +1452,15 @@ export function deriveJourney(
         const passage = floorPassageRejectedChamber(record);
         if (passage) {
           const t = recordedTally(record);
+          /*
+           * THE PATH ENDED HERE (2026-09-29). The stepper used to draw this
+           * step as "You are here", with the ending still ahead, beside a
+           * panel that said "No call to make". `isRejected` lets it mark the
+           * step where the measure was voted down, with the record's own date
+           * for that action, and the steps after it as not reached. Same
+           * reconsider guard as settledDecision, so the two cannot disagree.
+           */
+          const ended = !floorReconsiderPendingChamber(record);
           return {
             ...base,
             step: passage === origin ? 2 : 3,
@@ -1373,6 +1469,8 @@ export function deriveJourney(
             nowKey: 'nowFloorPassageRejected',
             showTrailer: false,
             tally: t && t.yeas <= t.nays ? t : null,
+            isRejected: ended,
+            date: ended ? settledDecisionDate(bill) : null,
           };
         }
         /*
@@ -1757,6 +1855,86 @@ export function settledDecision(
   if (journey.nowKey !== 'nowFloorPassageRejected') return null;
   if (floorReconsiderPendingChamber(statusBasisText(bill))) return null;
   return { kind: 'rejected', chamber: journey.nowChamber, tally: journey.tally };
+}
+
+/**
+ * AN ENDED CONCURRENT RESOLUTION THAT BOTH CHAMBERS FINISHED (stage 3 of the
+ * new-Congress work, 2026-11-13). Null unless the bill belongs to a Congress
+ * on the ended list AND lib/floor-text.mjs `concurrentEnrolledBy` reads its
+ * enrolled text on the record — see that reader for why the stored text
+ * version decides only once the Congress has ended. On 2026-11-13 that would
+ * be S.Con.Res. 29 and S.Con.Res. 2, both agreed to by the House in the form
+ * `concurrentAdoptedBy` declines to read while a Congress sits. The ended list
+ * is empty until the January 2027 switch, so today this is null for every
+ * bill and nothing that reads it changes.
+ */
+export function endedAdoption(
+  bill: Pick<Bill, 'bill_type' | 'status' | 'last_action_text' | 'last_action_date'> & Basis & EndedReadable
+): Extract<SettledDecision, { kind: 'adopted' }> | null {
+  if (!isSiteEndedBill(bill)) return null;
+  const by = concurrentEnrolledBy(bill);
+  return by ? { kind: 'adopted', chamber: by } : null;
+}
+
+/**
+ * WHAT THE RECORD SHOWS IS FINISHED — `settledDecision`, plus, for a bill of an
+ * ended Congress only, a concurrent resolution with its enrolled text
+ * (`endedAdoption`). The bill page, the status word and the ended reading all
+ * read this one function, so they cannot disagree. Identical to
+ * `settledDecision` for every bill while the ended list is empty.
+ */
+export function finishedDecision(
+  bill: Pick<Bill, 'bill_type' | 'status' | 'last_action_text' | 'last_action_date'> & Basis & EndedReadable
+): SettledDecision | null {
+  return settledDecision(bill) ?? endedAdoption(bill);
+}
+
+/**
+ * A BILL OF AN ENDED CONGRESS — what stands where the call panel stands
+ * (stage 3 of the new-Congress work, 2026-11-13; owner's decision of Nov 12,
+ * 2026: keep the 119th's bills "as an archive marked 'ended'").
+ *
+ * Null for every bill whose Congress is not on the ended list, which today is
+ * every bill (lib/congress.mjs ENDED_CONGRESSES is empty until the switch).
+ * Otherwise the Congress, the term's last day, and one of four kinds:
+ *
+ *   law        it became law (settledDecision `law`): the page keeps "This is
+ *              law." and adds the approved small line under it;
+ *   decided    Congress decided it (settledDecision `rejected` or `adopted`,
+ *              or an enrolled concurrent resolution, `endedAdoption`): the
+ *              record-only panel stands;
+ *   presented  both chambers passed it in the same form (passageState stage
+ *              'both', a bill or joint resolution) and the record holds no
+ *              signature yet: the approved "does not yet show what the
+ *              president did" line, and no call;
+ *   ended      everything else, a veto included (an override vote is no
+ *              longer possible once the Congress has ended): the approved
+ *              note that the bill ended with that Congress, and no call.
+ *
+ * No kind carries call apparatus (page 1, rule 6: "a settled decision shows
+ * no call apparatus"; an ended bill is the same in that respect).
+ */
+export type EndedKind = 'law' | 'decided' | 'presented' | 'ended';
+
+export interface EndedDecision {
+  kind: EndedKind;
+  /** The ended Congress's number (119 for the 2027 switch). */
+  congress: number;
+  /** The last day of that Congress's term, YYYY-MM-DD. */
+  ended: string;
+}
+
+export function endedDecision(
+  bill: Pick<Bill, 'bill_type' | 'status' | 'last_action_text' | 'last_action_date'> & Basis & EndedReadable
+): EndedDecision | null {
+  const congress = siteEndedCongress(bill);
+  if (!congress) return null;
+  const base = { congress: congress.number, ended: congress.ended };
+  const settled = finishedDecision(bill);
+  if (settled?.kind === 'law') return { ...base, kind: 'law' };
+  if (settled) return { ...base, kind: 'decided' };
+  if (bill.status === 'passed_chamber' && passageState(bill).stage === 'both') return { ...base, kind: 'presented' };
+  return { ...base, kind: 'ended' };
 }
 
 /**

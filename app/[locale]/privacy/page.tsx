@@ -11,6 +11,21 @@ import { hreflangAlternates } from '@/lib/hreflang';
  */
 const strong = (chunks: ReactNode) => <strong className="font-bold">{chunks}</strong>;
 
+/*
+ * The outside services the page names, in the order it names them
+ * (privacy.services*). Not exported: a page module may export only what
+ * Next.js expects of it, so tests/privacy-services.unit.spec.ts reads this
+ * list from the source.
+ */
+const PRIVACY_SERVICES = [
+  'servicesVercel',
+  'servicesAnthropic',
+  'servicesUpstash',
+  'servicesCensus',
+  'servicesGitHub',
+  'servicesStripe',
+] as const;
+
 export async function generateMetadata({
   params,
 }: {
@@ -37,6 +52,26 @@ export default async function PrivacyPage({ params }: { params: Promise<{ locale
               {t.rich(p, { strong })}
             </p>
           ))}
+          {/*
+           * The outside services, by name (owner's decision 49, option a,
+           * 2026-11-11). Each entry names what that service receives from a
+           * visit and what it does not; the code each sentence rests on is
+           * listed in the pull request that added it, and
+           * tests/privacy-services.unit.spec.ts pins that every service named
+           * here is named in both languages.
+           */}
+          <section aria-labelledby="privacy-services" className="space-y-5 pt-4">
+            <h2 id="privacy-services" className="text-h3 font-extrabold">
+              {t('servicesTitle')}
+            </h2>
+            <p>{t('servicesIntro')}</p>
+            {PRIVACY_SERVICES.map((s) => (
+              <p key={s} data-privacy-service={s}>
+                {t.rich(s, { strong })}
+              </p>
+            ))}
+            <p className="text-sm tabular-nums text-ink-2">{t('lastUpdated')}</p>
+          </section>
           <p className="border-t border-line pt-5 text-sm text-ink-2">{t('contact')}</p>
         </div>
       </div>

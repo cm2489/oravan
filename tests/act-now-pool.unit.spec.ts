@@ -11,7 +11,7 @@ import { getCoverage, coverageTier, newestArticleDate, rankNews } from '../lib/c
 import { conversationPosture } from '../lib/conversation';
 import { FLOOR_SETTLED, floorSettledChamber } from '../lib/journey';
 import { SIGNAL_WINDOW_DAYS, isSignalFresh } from '../lib/urgency.mjs';
-import { CLOCK_SKEW_MS, corpus, slugOf } from './corpus';
+import { CLOCK_SKEW_MS, corpus, rungAt, slugOf } from './corpus';
 
 /*
  * THE TWO VISIBILITY GATES ON THE "WHAT IS HAPPENING RIGHT NOW" SURFACES
@@ -110,7 +110,20 @@ test.describe('isSettledFloor (the vocabulary gate on the act-now pool)', () => 
 
 test.describe('the settled exclusion over the committed corpus', () => {
   const floorVotes = corpus.filter((b) => b.status === 'floor_vote');
-  const settled = floorVotes.filter(isSettledFloor);
+  /*
+   * RE-ANNOUNCED IS NOT SETTLED (owner decision D13, 2026-09-18, lib/docket.mjs
+   * `docketRung`): a live announcement the chamber has not yet answered
+   * outranks whatever the action text says. On 2026-09-30 H.R. 7008's latest
+   * action was "Motion to proceed to consideration of measure withdrawn in
+   * Senate." (2026-09-28) and the next day's Digest announced a cloture vote on
+   * a new motion to proceed — a live vote, rightly in the pool. The sweeps
+   * below are about settled texts nothing has reopened; the re-announced ones
+   * are pinned by their own test at the end of this block.
+   */
+  const reannounced = (b: { status?: string }) =>
+    rungAt(b as (typeof corpus)[number], Date.now()).tier === 't0';
+  const settledTexts = floorVotes.filter(isSettledFloor);
+  const settled = settledTexts.filter((b) => !reannounced(b));
 
   test('NON-VACUITY: the corpus really does carry settled floor texts', () => {
     // Every assertion below is about a set this one proves is non-empty. Range,
@@ -137,13 +150,13 @@ test.describe('the settled exclusion over the committed corpus', () => {
     // Non-vacuity: an empty shortlist would satisfy this trivially. A quiet
     // week is legitimate, so it skips with a reason rather than failing.
     test.skip(pool.length === 0, 'quiet week: the shortlist is empty right now');
-    for (const b of pool) expect(isSettledFloor(b), billSlug(b)).toBe(false);
+    for (const b of pool) expect(isSettledFloor(b) && !reannounced(b), billSlug(b)).toBe(false);
   });
 
   test('NO settled bill reaches the crown\'s candidate pool', () => {
     const pool = getFloorFeatureCandidates();
     test.skip(pool.length === 0, 'quiet week: no floor-feature candidates right now');
-    for (const b of pool) expect(isSettledFloor(b), billSlug(b)).toBe(false);
+    for (const b of pool) expect(isSettledFloor(b) && !reannounced(b), billSlug(b)).toBe(false);
   });
 
   test('NO settled bill sits in /bills\' "Act now" band', () => {
@@ -184,6 +197,17 @@ test.describe('the settled exclusion over the committed corpus', () => {
     const annotated = getTeasers().filter((t) => t.annotation === 'just_decided');
     expect(annotated.length).toBeLessThanOrEqual(settled.length);
     for (const t of annotated) expect(t.band).toBe('radar');
+  });
+
+  test('a settled text in the pool is there only on a newer, live announcement', () => {
+    // The exemption above, pinned: every settled text the sweeps set aside sits
+    // on T0 because of an announcement published on or after the settled
+    // sentence's own date — never an older one the record has since answered.
+    for (const b of settledTexts.filter(reannounced)) {
+      const rung = rungAt(b, Date.now());
+      expect(rung.announced, slugOf(b)).toBeTruthy();
+      expect(rung.announced!.published >= (b.last_action_date ?? ''), slugOf(b)).toBe(true);
+    }
   });
 });
 

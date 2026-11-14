@@ -1091,7 +1091,7 @@ function selfTest() {
       "them: on bill decodes it's a drafting instruction to the model, and on Big Questions it's an enforced " +
       'vocabulary check that blocks the publish.',
     aiBodyEs:
-      'La capa en lenguaje sencillo la redacta la IA, y ningún campo se publica sin pasar controles automáticos: ' +
+      'La capa en lenguaje claro la redacta la IA, y ningún campo se publica sin pasar controles automáticos: ' +
       'los dos idiomas presentes, el registro oficial adjunto, y una verificación de esquema en cada resumen — y ' +
       'todo el corpus se vuelve a revisar antes de que la sincronización nocturna pueda publicar nada. La versión ' +
       'en español de esa capa es una traducción hecha por IA del resumen en inglés, y pasa los mismos controles. ' +
@@ -1100,7 +1100,7 @@ function selfTest() {
       'publicación.',
     heroEn: 'Nothing publishes without automated checks · the official record is always attached',
     labelEs:
-      'Este contenido en lenguaje sencillo es generado por IA y verificado automáticamente antes de publicarse. ' +
+      'Este contenido en lenguaje claro es generado por IA y verificado automáticamente antes de publicarse. ' +
       'No es el texto oficial del proyecto de ley.',
     // CLAUDE.md rule 3 as Constitution v2 wrote it (2026-09-27); until then
     // this fixture was the older one-line "no advocacy language" bullet.

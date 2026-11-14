@@ -1,6 +1,8 @@
+import type { ReactNode } from 'react';
 import { useTranslations, useFormatter } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { Chip } from '@/components/system';
+import { HeadlineOrTitle } from '@/components/HeadlineOrTitle';
 import type { BillTeaser } from '@/lib/types';
 
 /*
@@ -47,8 +49,9 @@ export function BillCard({
       the uppercase metadata row above it; ink, like everything else on a
       listing. The caller passes this OR `coverageCount`, never both: the
       caption already states the count, and printing it twice would read as two
-      different facts. */
-  caption?: string;
+      different facts. A node, so /today can pass the record's own action
+      sentence marked `lang="en"` (components/TodayBrief.tsx). */
+  caption?: ReactNode;
   /** The 2px ink border the ActionPanel already owns — reserved for the
       "Deciding now" band, so "a call lands hardest here" is visible before
       it's read (2026-07 critique round 2). Never a new color, per the
@@ -71,7 +74,11 @@ export function BillCard({
           status labels ("APROBADO POR UNA CÁMARA") used to shatter this row
           mid-identifier with orphaned middots leading lines (2026-07 critique,
           verified on live /es). Separators ride at the END of the preceding
-          chunk so a wrapped line can never start with a floating "·". */}
+          chunk so a wrapped line can never start with a floating "·".
+          Below 22.5rem the status and footnote chunks may wrap inside
+          themselves: at 320px a card's text column is about 246px, and
+          "ACABA DE APROBARSE EN UNA CÁMARA" on one line is wider, which
+          pushed /es/today 35px past the screen (measured 2026-09-29). */}
       <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs leading-tight font-bold tracking-[0.06em] text-ink-2 uppercase">
         {/* tabular figures, not a third typeface: the system has two voices
             and `font-mono` was neither */}
@@ -79,7 +86,7 @@ export function BillCard({
           {bill.identifier}
           <span aria-hidden> ·</span>
         </span>
-        <span className="whitespace-nowrap">
+        <span className="whitespace-nowrap max-[22.5rem]:whitespace-normal">
           {t(`bills.status.${bill.statusKey}`)}
           {(annotation || coverageCount != null) && <span aria-hidden> ·</span>}
         </span>
@@ -91,7 +98,7 @@ export function BillCard({
             identical to a live one in a status label. Neither may ever light
             amber — amber is one dated floor fact that is still AHEAD. */}
         {annotation && (
-          <span className="whitespace-nowrap">
+          <span className="whitespace-nowrap max-[22.5rem]:whitespace-normal">
             {t(`bills.annotation.${ANNOTATION_KEYS[annotation]}`)}
             {coverageCount != null && <span aria-hidden> ·</span>}
           </span>
@@ -101,7 +108,7 @@ export function BillCard({
         )}
       </div>
       <h3 className="mt-2 text-lg leading-tight font-bold text-ink group-hover:underline group-hover:decoration-go group-hover:decoration-[3px]">
-        {bill.headline ?? bill.title}
+        <HeadlineOrTitle headline={bill.headline} title={bill.title} />
       </h3>
       {/* The counted caption, in ink. It never lights amber and never turns the
           card green: it reports who published what, which is not a floor fact

@@ -76,11 +76,9 @@ import { createHash } from 'node:crypto';
 // this file stays import-clean.
 import { statusKeyFor } from './moment-candidates.mjs';
 
-// Duplicated from congress-fetch.mjs's CONGRESS constant (not imported) so
-// this module stays import-clean for unit tests — see the header comment.
-// The 119th Congress; bump alongside congress-fetch.mjs's own CONGRESS if
-// the tracked Congress ever changes.
-const CONGRESS = 119;
+// The tracked Congress, from lib/congress.mjs: import-free, so this module
+// stays import-clean for unit tests (see the header comment).
+import { CONGRESS } from '../lib/congress.mjs';
 export const TRACKED_TYPES = new Set(['hr', 's', 'hjres', 'sjres', 'hconres', 'sconres']);
 
 // ---- t1: explicit bill-number citations ------------------------------
@@ -719,7 +717,9 @@ export function rollFloorRecord(prev, observations = [], nowMs = Date.now()) {
 // print the same tenseless words the raw `floor_vote` always printed here,
 // and `passed_both` / `adopted` are the two passage readings (2026-09-29):
 // before them, every `passed_chamber` measure read "passed one chamber",
-// H.Con.Res. 86 included, after both chambers had agreed to it.
+// H.Con.Res. 86 included, after both chambers had agreed to it. `rejected`
+// (2026-09-29) is a measure a chamber voted down on passage or adoption;
+// without it the raw `floor_vote` enum would reach the prompt.
 const STATUS_WORDS = {
   committee: 'in committee',
   markup: 'committee markup',
@@ -729,6 +729,7 @@ const STATUS_WORDS = {
   passed_chamber: 'passed one chamber',
   passed_both: 'passed both chambers',
   adopted: 'adopted by both chambers',
+  rejected: 'rejected on a passage vote',
   signed: 'signed into law',
 };
 

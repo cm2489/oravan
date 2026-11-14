@@ -19,10 +19,11 @@ import { WalkthroughDisclosure } from '@/components/call-walkthrough/Walkthrough
 import { FloorEvidence } from '@/components/FloorEvidence';
 import { FloorRecessNote } from '@/components/FloorRecessNote';
 import { SettledPanel } from '@/components/SettledPanel';
+import { EndedPanel } from '@/components/EndedPanel';
 import { ConcurrentExplainer } from '@/components/ConcurrentExplainer';
 import { GlossaryTerm } from '@/components/GlossaryTerm';
 import { Chip, FloorVotePanel, Stamp } from '@/components/system';
-import { coverageCheckedAt, coverageTier, getCoverage } from '@/lib/coverage';
+import { coverageCheckedAt, coverageForBillPage, coverageTier, getCoverage } from '@/lib/coverage';
 import { StalenessNote } from '@/components/StalenessNote';
 import { repRoleKey } from '@/components/RepCard';
 import {
@@ -32,20 +33,21 @@ import {
   changedSince,
   decodeSource,
 } from '@/lib/bill-provenance';
-import { billSlug, getAllBills, getBill, getLegislator, localizeBill } from '@/lib/core';
+import { billSlug, getAllBills, getBill, getLegislator, hasMemberPage, localizeBill } from '@/lib/core';
 import { formatCitation } from '@/lib/format';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
 import {
   billFloorBand,
   deriveJourney,
+  endedAdoption,
   lastFailedVote,
   liveCallTarget,
-  settledDecision,
   statusKeyFor,
   type SettledDecision,
 } from '@/lib/journey';
 import { buildBillJsonLd } from '@/lib/jsonld';
+import { billRail } from '@/lib/bill-rail';
 import { getMomentsForBill } from '@/lib/moments';
 import { chamberSession, floorSignalsCheckedAt, rungFor } from '@/lib/docket';
 import { SITE_ORIGIN } from '@/lib/site';
@@ -295,7 +297,7 @@ export default async function BillPage({
      read, so a bill amended in committee or on the floor after that text
      still read as current (SY-25). Both come from lib/bill-provenance.ts, and
      both print nothing when the stored record does not hold the fact. */
-  const sponsor = billSponsor(raw, { legislator: getLegislator, formerMember: votingMember });
+  const sponsor = billSponsor(raw, { legislator: getLegislator, formerMember: votingMember, hasPage: hasMemberPage });
   const source = hasDecode ? decodeSource(bill) : null;
   const changedAfter = changedSince(amendedSince(source, votesForBill(id)), amendedInCommitteeSince(source, raw));
   // The provenance ritual's status fragment, through the label gate — which
@@ -462,7 +464,31 @@ export default async function BillPage({
    * stances with the chamber, the record's tally and the record's date for
    * that action, and nothing about what happens next.
    */
-  const settled = settledDecision(bill);
+  /*
+   * EVERY CALL-APPARATUS SWITCH ON THIS PAGE comes from `rail` (lib/bill-rail.ts):
+   * which panel stands in the rail, and whether the floating call button, the
+   * call demo and the Call-tab target render. tests/bill-rail.unit.spec.ts
+   * runs it with an ended Congress in CI and pins that nothing below renders
+   * call apparatus any other way.
+   *
+   * `settled` is lib/journey.ts finishedDecision: settledDecision, plus (for a
+   * bill of an ended Congress only) an enrolled concurrent resolution;
+   * identical to settledDecision while no Congress has ended.
+   */
+  const rail = billRail(raw);
+  const settled = rail.settled;
+  /*
+   * A BILL OF AN ENDED CONGRESS (stage 3 of the new-Congress work,
+   * 2026-11-13; the owner's decision of Nov 12, 2026 to keep the 119th's bills
+   * as an archive marked "ended"). Null for every bill until a Congress is on
+   * the ended list (lib/congress.mjs, empty until the January 2027 switch), so
+   * today every line below that reads it renders exactly what it did before.
+   * When it is set, nothing on this page offers a call: a law and a decided
+   * bill keep the record-only panel (a law adds the approved small line), and
+   * everything else gets components/EndedPanel.tsx with the approved note.
+   */
+  const ended = rail.ended;
+  const endedText = rail.endedKey ? t(rail.endedKey) : null;
   const settledDate = settledDecisionDate(bill);
   /* An adopted concurrent resolution: what it can and cannot do, printed
      under the outcome (lib/concurrent-explainer.ts). Null on everything
@@ -471,7 +497,7 @@ export default async function BillPage({
   const settledOutcome = settled
     ? settledOutcomeText(t, settled, settledDate ? fmtDate(settledDate) : null)
     : null;
-  const failedVote = settled ? null : lastFailedVote(bill);
+  const failedVote = rail.panel === 'call' ? lastFailedVote(bill) : null;
   const lastAttempt = failedVote
     ? t('bill.lastAttempt', {
         procedure: failedVote.procedure,
@@ -531,13 +557,23 @@ export default async function BillPage({
    * still prints beside it, under its own label, so neither date is ever
    * mistaken for the other's.
    */
-  const statusLabelKey = floorCopy ? floorCopy.status : `bills.status.${statusKey}`;
+  const statusLabelKey = floorCopy
+    ? floorCopy.status
+    : statusKey === 'ended'
+      ? // The approved long label ("Ended with the 119th Congress"); lists and
+        // cards print the short one (`bills.status.ended`).
+        'bill.ended.statusLong'
+      : `bills.status.${statusKey}`;
 
   // The bigger question this bill is a vehicle of, if any — live and stale
   // moments only (lib/moments.ts owns that rule). Read-time, off the same
   // list /questions reads; on the overwhelming majority of bills this is empty
   // and the header renders exactly as it did before.
   const parentMoments = getMomentsForBill(id);
+  // The coverage box on a bill that is NOT part of a Big Question is hidden
+  // when it would show only one side (owner, 2026-11-13); lib/coverage.ts's
+  // coverageForBillPage owns the rule. Big Question bills are unchanged.
+  const shownCoverage = coverageForBillPage(coverage, parentMoments.length > 0);
 
   return (
     <>
@@ -880,7 +916,7 @@ export default async function BillPage({
           {/* THE CALL RAIL. Sticky across every row on the desk; in flow, in
               the read → pick → edit → call order, below it. On a settled
               bill the record-only panel stands in the same place. */}
-          {settled && settledOutcome ? (
+          {rail.panel === 'settled' && settled && settledOutcome ? (
             <div className="min-w-0 min-[62rem]:sticky min-[62rem]:top-4 min-[62rem]:col-start-2 min-[62rem]:row-span-full min-[62rem]:self-start">
               <SettledPanel
                 outcome={settledOutcome}
@@ -888,11 +924,26 @@ export default async function BillPage({
                 groups={settledGroups}
                 floorLabel={fmtDate(votesCoverage().floor)}
                 explainer={
-                  concurrentReading ? <ConcurrentExplainer reading={concurrentReading} /> : undefined
+                  concurrentReading ? (
+                    <ConcurrentExplainer reading={concurrentReading} />
+                  ) : ended?.kind === 'law' ? (
+                    // The approved small line under "This is law." for a law
+                    // of an ended Congress.
+                    <p className="max-w-note text-sm text-ink-2" data-ended-law-line="">
+                      {t('bill.ended.lawLine')}
+                    </p>
+                  ) : undefined
                 }
               />
             </div>
-          ) : (
+          ) : rail.panel === 'ended' && ended && endedText ? (
+            <div className="min-w-0 min-[62rem]:sticky min-[62rem]:top-4 min-[62rem]:col-start-2 min-[62rem]:row-span-full min-[62rem]:self-start">
+              <EndedPanel kind={ended.kind === 'presented' ? 'presented' : 'ended'} text={endedText} />
+            </div>
+          ) : rail.panel === 'call' ? (
+            /* The call panel only on the rail's own say-so: a settled or
+               ended bill whose panel text failed to resolve renders no panel
+               rather than fall through to a call (tests/bill-rail.unit.spec.ts). */
             <div className="min-w-0 min-[62rem]:sticky min-[62rem]:top-4 min-[62rem]:col-start-2 min-[62rem]:row-span-full min-[62rem]:flex min-[62rem]:max-h-[calc(100dvh-2rem)] min-[62rem]:self-start">
               <ActionPanel
                 slug={id}
@@ -903,7 +954,7 @@ export default async function BillPage({
                 lastAttempt={lastAttempt}
               />
             </div>
-          )}
+          ) : null}
 
           {/* THE STATUS TRACKER, below the reading column: it describes the
               bill's history, and the decode and the call are the job. The
@@ -920,6 +971,21 @@ export default async function BillPage({
             >
               <BillJourney
                 journey={deriveJourney(bill)}
+                /* An ended bill's "Right now:" says it ended (or, passed by
+                   both chambers, that the record does not yet show what the
+                   president did), never a stage it can no longer move from. */
+                endedLine={
+                  endedText
+                    ? ended?.kind === 'presented'
+                      ? endedText
+                      : t('bill.ended.statusLong')
+                    : // An ended, enrolled concurrent resolution: the stepper's
+                      // live sentence says the record does not show whether
+                      // the versions match; the panel's outcome says it does.
+                      endedAdoption(bill) && settledOutcome
+                      ? settledOutcome
+                      : undefined
+                }
                 introducedLabel={bill.introduced_date ? fmtShort(bill.introduced_date) : undefined}
                 currentLabel={
                   bill.last_action_date ? fmtShort(bill.last_action_date) : undefined
@@ -951,7 +1017,7 @@ export default async function BillPage({
           {/* For the hesitant: what a call actually looks like, on demand,
               collapsed so it never displaces the rail. Not on a settled bill,
               which has no call to show. */}
-          {!settled && (
+          {rail.walkthrough && (
             <div className="min-[62rem]:col-start-1">
               <WalkthroughDisclosure />
             </div>
@@ -970,8 +1036,8 @@ export default async function BillPage({
             as of" stamp above (the Congress.gov bill sync) and from the
             article dates below (the press) — three clocks, three labels. */}
         <CoverageSection
-          articles={coverage}
-          tier={coverageTier(coverage)}
+          articles={shownCoverage}
+          tier={coverageTier(shownCoverage)}
           checkedAt={coverageCheckedAt(id)}
         />
       </div>
@@ -983,14 +1049,14 @@ export default async function BillPage({
           it, so the rail scrolls away at the page foot and this is what
           carries the call the rest of the way. Measured, not assumed:
           tests/call-action.spec.ts and tests/bill-call-rail.spec.ts. */}
-      {!settled && <FloatingCallButton />}
+      {rail.floatingCall && <FloatingCallButton />}
 
       {/* Where the header's Call tab goes on this page (owner, "nav 1";
           lib/call-tab.ts): to this bill's own panel whenever the panel above
           renders — the same condition, so the tab never points at a panel
           that is not there. A settled bill declares nothing, and the tab
           goes to the Call hub. */}
-      {!(settled && settledOutcome) && <CallTabTarget href="#act" />}
+      {rail.callTabTarget && <CallTabTarget href="#act" />}
     </>
   );
 }

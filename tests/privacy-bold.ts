@@ -16,6 +16,18 @@
  * p2's third phrase lost a word on 2026-09-29: it said "one-tap button"
  * ("de una sola vez"), and the erase on the record page asks first, so the
  * promise now names no step count (tests/copy-truth.unit.spec.ts).
+ *
+ * p7's second phrase names its subject since 2026-11-12 (owner's pick that
+ * day): it said the street address is "never stored or written to any log",
+ * and Oravan can speak only for its own code, not for the Census Bureau's
+ * logs, so the phrase is now "never stores it or writes it to any log" with
+ * Oravan as the subject in front of it.
+ *
+ * p9's second phrase changed the same day: "no address is stored and none
+ * can be recovered" claimed more than hard rule 1 does (while the day lasts,
+ * someone holding the counts database and the day's key could test whether
+ * a given address visited), so the phrase is now "this count stores no
+ * address" and the sentence after it says what holds until the day ends.
  */
 export type PrivacyParagraph = 'p1' | 'p2' | 'p3' | 'p7' | 'p4' | 'p8' | 'p9' | 'p5';
 
@@ -28,10 +40,10 @@ export const PRIVACY_BOLD: Record<'en' | 'es', Record<PrivacyParagraph, readonly
       'button that erases all of it',
     ],
     p3: ['not linked to any identity', "don't keep a log tying addresses to political positions"],
-    p7: ['type your street address', 'never stored or written to any log', 'Only the district number comes back.'],
+    p7: ['type your street address', 'never stores it or writes it to any log', 'Only the district number comes back.'],
     p4: ['No analytics trackers, no advertising pixels, no cookies at all.'],
     p8: ['daily counts, none of them tied to a visitor', 'never which one'],
-    p9: ['one number a day for the whole site', 'no address is stored and none can be recovered'],
+    p9: ['one number a day for the whole site', 'this count stores no address'],
     p5: [],
   },
   es: {
@@ -42,10 +54,10 @@ export const PRIVACY_BOLD: Record<'en' | 'es', Record<PrivacyParagraph, readonly
       'un botón que lo borra todo',
     ],
     p3: ['no se vinculan a ninguna identidad', 'no guardamos registros que liguen direcciones con posiciones políticas'],
-    p7: ['escribir tu dirección', 'nunca se guarda ni se escribe en ningún registro', 'Solo regresa el número del distrito.'],
+    p7: ['escribir tu dirección', 'nunca la guarda ni la escribe en ningún registro', 'Solo regresa el número del distrito.'],
     p4: ['Sin rastreadores de analítica, sin píxeles publicitarios, sin cookies en absoluto.'],
-    p8: ['cuentas diarias sencillas, ninguna ligada a un visitante', 'nunca cuál en concreto'],
-    p9: ['un solo número al día para todo el sitio', 'ninguna dirección se guarda ni puede recuperarse'],
+    p8: ['conteos diarios sencillos, ninguno ligado a un visitante', 'nunca cuál en concreto'],
+    p9: ['un solo número al día para todo el sitio', 'este conteo no guarda ninguna dirección'],
     p5: [],
   },
 };

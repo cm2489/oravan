@@ -443,7 +443,11 @@ test.describe('the live corpus', () => {
   });
 
   test('no bill whose floor question the record has answered reaches the act-now pool', () => {
-    const settled = corpus.filter(isSettledFloor);
+    // A live, unanswered announcement outranks a settled text (owner decision
+    // D13, 2026-09-18) — H.R. 7008 on 2026-09-30: a withdrawn motion to
+    // proceed, then a cloture vote announced for the next day. Those sit on T0
+    // on purpose; every other settled text stays out of the pool.
+    const settled = corpus.filter((b) => isSettledFloor(b) && rungAt(b, NOW).tier !== 't0');
     expect(settled.length, 'no settled floor texts in the corpus — this sweep would be vacuous').toBeGreaterThan(0);
     const pool = new Set(actNowPoolAt(NOW).map(slugOf));
     for (const b of settled) expect(pool.has(slugOf(b)), slugOf(b)).toBe(false);
@@ -696,7 +700,10 @@ test.describe('the typed door onto the committed file', () => {
   test('floorSessionSource attributes the verdict to the digest itself', () => {
     const src = floorSessionSource();
     const digest = floorSignalsFile()._meta?.sources?.['daily-digest'];
-    if (!digest) {
+    // A digest the collector could not read (status `error`) is stored with a
+    // null url and a null published date: there is no document to attribute
+    // to, so the door answers null, exactly as when the source is absent.
+    if (!digest || (!digest.url && !digest.published)) {
       expect(src).toBeNull();
       return;
     }

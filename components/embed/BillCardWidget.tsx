@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useEmbedDicts } from '@/components/embed/EmbedDictsProvider';
 import type { EmbedLocale } from '@/components/embed/embed-dicts';
+import { HeadlineOrTitle } from '@/components/HeadlineOrTitle';
 import { SITE_ORIGIN } from '@/lib/site';
 import type { BillStatus, StatusLabelKey } from '@/lib/types';
 
@@ -34,6 +35,11 @@ export interface BillCardData {
   /** The bill's own last-action date (`YYYY-MM-DD`), printed with the status
    *  line. The record's clock, never the sync's — see the render below. */
   lastActionDate: string | null;
+  /** Present only on a bill of an ENDED Congress (stage 3, 2026-11-13): the
+   *  approved long label in both languages, computed on the server, because
+   *  the embed's dictionaries carry no ended-only string
+   *  (lib/ended-messages.ts). Absent on every bill today. */
+  endedLabel?: { en: string; es: string };
 }
 
 /** next-intl-style `{token}` interpolation, without pulling in next-intl. */
@@ -124,7 +130,6 @@ export function BillCardWidget({
     );
   }
 
-  const displayHeadline = bill.headline ?? bill.officialTitle;
   const siteBase = `${SITE_ORIGIN}${locale === 'es' ? '/es' : ''}`;
   const billUrl = `${siteBase}/bills/${bill.slug}`;
   const dataAsOfText = format(t.freshness.dataAsOf, {
@@ -172,14 +177,24 @@ export function BillCardWidget({
       </div>
 
       <article className="bc-card">
-        <p className="bc-status">{t.bills.status[bill.statusKey] ?? t.bills.status[bill.status]}</p>
+        {/* A bill of an ended Congress prints the approved LONG label ("Ended
+            with the 119th Congress"): a partner's reader has no bill page
+            around the card to say which Congress (stage 3, 2026-11-13). The
+            ended list is empty until the January 2027 switch. */}
+        <p className="bc-status">
+          {bill.endedLabel
+            ? bill.endedLabel[locale]
+            : (t.bills.status[bill.statusKey] ?? t.bills.status[bill.status])}
+        </p>
         {/* WITH the status line and ABOVE the sync stamp, deliberately. These
             are two different clocks and the order is the whole point: the
             record's date qualifies the label it sits under, while "Data as of"
             describes when we last looked. Printed the other way round, a fresh
             sync date reads as implicit corroboration of an old fact. */}
         {lastActionText && <p className="bc-freshness bc-record">{lastActionText}</p>}
-        <h1 className="bc-headline">{displayHeadline}</h1>
+        <h1 className="bc-headline">
+          <HeadlineOrTitle headline={bill.headline} title={bill.officialTitle} />
+        </h1>
         {bill.headline && <span className="bc-chip-ai">{t.og.aiDecoded}</span>}
         <p className="bc-freshness">{dataAsOfText}</p>
       </article>

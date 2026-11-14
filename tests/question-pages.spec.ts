@@ -72,9 +72,12 @@ async function panelText(page: Page, hint: string): Promise<string> {
     .trimEnd();
 }
 
-/** The page has hydrated: a page with a call panel claims the header's Call
+/** The page has hydrated: a page with a call panel claims the thumb bar's Call
  *  tab for it in an effect (components/CallTabTarget.tsx), so the tab's href
- *  turns from the server's "/call" to "#act" only once React is running. */
+ *  turns from the server's "/call" to "#act" only once React is running. The
+ *  thumb bar is in the DOM at every width (display:none above 48rem), so this
+ *  reads on a desktop too, where the row nav has had no Call item since
+ *  2026-09-29 (owner, "Desktop only"). */
 async function hydrated(page: Page) {
   await expect(page.locator('[data-call-tab][href="#act"]').first()).toBeAttached();
 }

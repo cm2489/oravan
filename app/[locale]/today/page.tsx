@@ -37,5 +37,5 @@ export async function generateMetadata({
 export default async function TodayPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  return <TodayBrief brief={buildBrief(briefToday())} locale={locale} />;
+  return <TodayBrief brief={buildBrief(briefToday(), locale)} locale={locale} />;
 }

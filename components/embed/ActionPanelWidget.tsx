@@ -6,6 +6,7 @@ import type { EmbedDict, EmbedLocale } from '@/components/embed/embed-dicts';
 import { officeHoursStatus } from '@/lib/office-hours';
 import { SITE_ORIGIN } from '@/lib/site';
 import type { Legislator, Stance } from '@/lib/types';
+import { lookupReps } from '@/lib/reps-lookup';
 
 /*
  * The action-panel embed widget (S19, paid tier only): adapted from
@@ -204,7 +205,7 @@ export function ActionPanelWidget({
   }
 
   function fetchReps(z: string) {
-    fetch(`/api/reps?zip=${z}`)
+    lookupReps(z)
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((d: { reps: Legislator[] }) => {
         setReps(d.reps);
@@ -299,7 +300,10 @@ export function ActionPanelWidget({
       </fieldset>
 
       {/* Step 2 - ZIP (F2: ZIP only, never an address field in any iframe) */}
-      <form onSubmit={submitZip} className="re-row" style={{ marginTop: 16 }} noValidate>
+      {/* method="post": a native submit (no JavaScript, or before hydration)
+          carries the ZIP in the body to this same address, never as ?zip= in
+          the logged /embed/ address (2026-10-06). JS submits stay in onSubmit. */}
+      <form method="post" onSubmit={submitZip} className="re-row" style={{ marginTop: 16 }} noValidate>
         <div className="re-field">
           <label htmlFor="ap-zip" className="re-label">
             {t.home.zipLabel}

@@ -7,6 +7,8 @@ import { defineConfig, devices } from '@playwright/test';
 // unchanged.
 const PORT = Number(process.env.PW_PORT ?? 3300);
 
+const UNIT_SPEC = /\.unit\.spec\.ts$/;
+
 export default defineConfig({
   testDir: './tests',
   fullyParallel: true,
@@ -18,9 +20,14 @@ export default defineConfig({
     baseURL: `http://localhost:${PORT}`,
     trace: 'on-first-retry',
   },
+  // The *.unit.spec.ts files are pure Node: none takes a browser fixture or
+  // talks to the server, so running them under each browser project only ran
+  // the same code twice. They run once, in the `unit` project below, which
+  // needs no server (ci.yml's unit job sets PW_NO_WEBSERVER); the browser
+  // projects ignore them. tests/ci-shards.unit.spec.ts pins this split.
   projects: [
-    { name: 'webkit-mobile', use: { ...devices['iPhone 13'] } },
-    { name: 'webkit-desktop', use: { ...devices['Desktop Safari'] } },
+    { name: 'webkit-mobile', testIgnore: UNIT_SPEC, use: { ...devices['iPhone 13'] } },
+    { name: 'webkit-desktop', testIgnore: UNIT_SPEC, use: { ...devices['Desktop Safari'] } },
     // WCAG 1.4.10 reflow is specified AT 320px and neither project above
     // runs there — a reflow bug shipped once because of exactly that gap
     // (see tests/landing.spec.ts). This project runs the @reflow-tagged
@@ -31,15 +38,18 @@ export default defineConfig({
     {
       name: 'webkit-320',
       grep: /@reflow/,
+      testIgnore: UNIT_SPEC,
       use: { ...devices['iPhone 13'], viewport: { width: 320, height: 844 } },
     },
+    { name: 'unit', testMatch: UNIT_SPEC },
   ],
-  // PW_NO_WEBSERVER=1 skips standing the server up at all. It exists for ONE
-  // caller: ci.yml's docs-only fast path, which runs tests/claim-truth.spec.ts
-  // (pure Node — it reads the four constitution documents and shells out to a
-  // check script; it never touches `page`) on PRs that skip the build. Without
-  // it that one cheap spec would drag a full `next build && next start` behind
-  // it and the fast path would stop being fast.
+  // PW_NO_WEBSERVER=1 skips standing the server up at all. It exists for two
+  // callers in ci.yml. One is the docs-only fast path, which runs
+  // tests/claim-truth.spec.ts (pure Node — it reads the four constitution
+  // documents and shells out to a check script; it never touches `page`) on
+  // PRs that skip the build. The other is the unit job, which runs the
+  // `unit` project. Without it each would drag a full `next build && next
+  // start` behind it for specs that never talk to the server.
   //
   // Not a footgun: setting it for a run that DOES need the server makes every
   // page test fail on connection-refused, loudly and immediately. There is no
@@ -51,7 +61,9 @@ export default defineConfig({
   // next start` — it stands up a tiny fake Upstash REST server for the
   // TENANCY database only (seeding tests/fixtures/e2e-tenant.ts's one
   // fixture tenant), sets UPSTASH_TENANCY_REST_URL/TOKEN, then execs the
-  // exact same `next build && next start` as its own child. See that
+  // exact same `next build && next start` as its own child (or, with
+  // E2E_SERVER_MODE, only one half of it: ci.yml builds once and every
+  // E2E shard starts that same build). See that
   // file's header comment for why (Playwright starts webServer BEFORE any
   // globalSetup hook runs, so globalSetup can't inject env the server
   // would see). Counters/cache stay unconfigured — nothing about any

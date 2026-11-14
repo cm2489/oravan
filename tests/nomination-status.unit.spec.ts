@@ -9,6 +9,7 @@ import {
   TERMINAL_NOMINATION_STATUSES,
   UNCLASSIFIED_NOMINATION_STATUS,
   execCalendarNumber,
+  isStageNeutralNominationAction,
   isTerminalNominationStatus,
   mapNominationStatus,
   ucAgreementDay,
@@ -170,6 +171,51 @@ test.describe('mapNominationStatus fixtures (verbatim live Congress.gov text)', 
  *     PENDING on a nomination the Senate finished, on 511 of the 857
  *     civilian records committed today.
  * ------------------------------------------------------------------ */
+/* ------------------------------------------------------------------ *
+ * 1b · A STAGE-NEUTRAL RECEIPT KEEPS THE PREVIOUS STAGE (rule 11b).
+ *      Fixture: PN730-35, taken from data/nominations.json and that file's
+ *      earlier commits. Until 2026-09-30 its latest action was the Privileged
+ *      Nomination placement below (stored `exec_calendar`); on 2026-09-30 the
+ *      committee's receipt of the information it had asked for became the
+ *      latest action.
+ * ------------------------------------------------------------------ */
+const PN730_35_PLACEMENT =
+  'Placed on Senate Executive Calendar in the Privileged Nomination section with nominee information requested by the Committee on Agriculture, Nutrition, and Forestry, pursuant to S.Res. 116, 112th Congress.';
+const PN730_35_RECEIPT = 'Committee requested information was received.';
+
+test.describe('a committee receipt of requested information moves no stage', () => {
+  test('PN730-35: the placement is exec_calendar and the receipt keeps it', () => {
+    const before = mapNominationStatus(PN730_35_PLACEMENT);
+    expect(before).toBe('exec_calendar');
+    expect(mapNominationStatus(PN730_35_RECEIPT, undefined, before)).toBe('exec_calendar');
+  });
+
+  test('it keeps whichever live stage the record held', () => {
+    for (const stage of ['received', 'hearing', 'reported', 'exec_calendar', 'floor', 'scheduled']) {
+      expect(mapNominationStatus(PN730_35_RECEIPT, undefined, stage), stage).toBe(stage);
+    }
+  });
+
+  test('with no known previous stage it stays unclassified, never a guess', () => {
+    expect(mapNominationStatus(PN730_35_RECEIPT)).toBe(UNCLASSIFIED_NOMINATION_STATUS);
+    expect(mapNominationStatus(PN730_35_RECEIPT, undefined, null)).toBe(UNCLASSIFIED_NOMINATION_STATUS);
+    expect(mapNominationStatus(PN730_35_RECEIPT, undefined, 'unclassified')).toBe(UNCLASSIFIED_NOMINATION_STATUS);
+    expect(mapNominationStatus(PN730_35_RECEIPT, undefined, 'bogus')).toBe(UNCLASSIFIED_NOMINATION_STATUS);
+  });
+
+  test('only that whole sentence is stage-neutral', () => {
+    expect(isStageNeutralNominationAction(PN730_35_RECEIPT)).toBe(true);
+    expect(isStageNeutralNominationAction('Committee requested information was received')).toBe(true);
+    expect(isStageNeutralNominationAction(PN730_35_PLACEMENT)).toBe(false);
+    expect(isStageNeutralNominationAction('Committee requested information was received. Hearings held.')).toBe(false);
+    expect(isStageNeutralNominationAction(null)).toBe(false);
+  });
+
+  test('a previous stage never overrides a sentence that has its own', () => {
+    expect(mapNominationStatus('Confirmed by the Senate by Voice Vote.', undefined, 'received')).toBe('confirmed');
+  });
+});
+
 test.describe('a confirmed nomination is never a live vote', () => {
   const CONFIRMATIONS = LIVE_ACTIONS.filter(([, s]) => s === 'confirmed').map(([t]) => t);
   const LIVE_STATUSES = ['floor', 'scheduled', 'exec_calendar', 'hearing', 'reported', 'received'];
@@ -400,7 +446,7 @@ test.describe('the committed nomination corpus', () => {
 
   test('every stored status is what the mapper derives from that record’s own sentence', () => {
     for (const n of corpus) {
-      const mapped = mapNominationStatus(n.last_action_text);
+      const mapped = mapNominationStatus(n.last_action_text, undefined, n.status);
       /* THE ONE EXPECTED DRIFT, and the same carve-out
          scripts/check-nominations.mjs makes, for the same reason. The mapper
          reads a clock for exactly one rule: a unanimous-consent agreement is

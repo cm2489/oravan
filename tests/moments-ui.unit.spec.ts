@@ -411,10 +411,10 @@ test.describe('bothNoteKey', () => {
     // The bill path's sentence, byte for byte as origin/main ships it. A fix
     // for a nomination-only defect may not quietly rewrite shared copy.
     expect(enMessages.moments.bothNote).toBe(
-      'No side is pre-selected. Every link above opens the same call flow, with support and oppose scripts equally available.',
+      'No side is pre-selected. Every link above opens the same call panel, and its support and oppose scripts are equally available.',
     );
     expect(esMessages.moments.bothNote).toBe(
-      'Ningún lado está preseleccionado. Cada enlace de arriba abre el mismo flujo de llamada, con guiones a favor y en contra igualmente disponibles.',
+      'Ningún lado está preseleccionado. Cada enlace de arriba abre el mismo panel de llamada, y sus guiones a favor y en contra están igualmente disponibles.',
     );
   });
 
@@ -567,11 +567,11 @@ test.describe('moments.vehiclesLedeMixed', () => {
    *  same clause `moments.bothNoteSomeNoCall` established one commit earlier. */
   const FALSE_UNIVERSAL = {
     en: 'Each opens the record and the call flow',
-    es: 'Cada uno abre el registro y el flujo de llamada',
+    es: 'Cada uno abre el registro y el panel de llamada',
   } as const;
   const CONDITION = {
-    en: 'where that record still has a call to make',
-    es: 'cuando en ese registro todavía queda una llamada que hacer',
+    en: 'Where that record still has a call to make',
+    es: 'Cuando en ese registro todavía queda una llamada que hacer',
   } as const;
   /** The half that is true of every card of either kind, and so the half the
    *  sentence is still allowed to state flat. */
@@ -632,10 +632,10 @@ test.describe('moments.vehiclesLedeMixed', () => {
     // behind every card is true. A nomination-only defect does not get to
     // rewrite it — byte for byte as origin/main ships it.
     expect(enMessages.moments.vehiclesLede).toBe(
-      'The bills this question actually runs through. Each opens the full plain-language decode and the call flow — support and oppose scripts are equally one tap away.',
+      'The bills behind this question. Each opens the plain-language version and the call panel. Its support and oppose scripts are equally one tap away.',
     );
     expect(esMessages.moments.vehiclesLede).toBe(
-      'Los proyectos de ley por los que realmente pasa esta cuestión. Cada uno abre la explicación completa en lenguaje claro y el flujo de llamada — los guiones a favor y en contra están igual de disponibles.',
+      'Los proyectos de ley que hay detrás de esta cuestión. Cada uno abre la versión en lenguaje claro y el panel de llamada. Sus guiones a favor y en contra están igual de cerca, a un toque.',
     );
     for (const m of getMoments()) {
       expect(ledeKeyFor(m.vehicles), m.id).toBe('moments.vehiclesLede');
@@ -830,12 +830,12 @@ test.describe('moments.vehiclesLedeSomeSettled', () => {
 
   test('the conditional sentence promises no call flow behind every card', () => {
     const FLAT = {
-      en: 'Each opens the full plain-language decode and the call flow',
-      es: 'Cada uno abre la explicación completa en lenguaje claro y el flujo de llamada',
+      en: 'Each opens the plain-language version and the call panel',
+      es: 'Cada uno abre la versión en lenguaje claro y el panel de llamada',
     } as const;
     const CONDITION = {
-      en: 'where a decision on it is still open',
-      es: 'cuando todavía queda una decisión abierta sobre él',
+      en: 'Where a decision on it is still open',
+      es: 'Cuando todavía queda una decisión abierta sobre él',
     } as const;
     for (const locale of ['en', 'es'] as const) {
       const text = t(locale)('moments.vehiclesLedeSomeSettled');

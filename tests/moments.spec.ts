@@ -331,7 +331,8 @@ test.describe('homepage Big Questions band', () => {
  * every internal name (message keys, lib modules, moment ids) are still
  * unchanged. Exactly one "Primary" landmark is
  * in the tree at a time (components/Header.tsx): the thumb bar on phones, which
- * carries `navShort`, and the row nav above 48rem, which carries `nav`.
+ * carries `navShort` and, for this cell, `tab.moments` (2026-09-29), and the
+ * row nav above 48rem, which carries `nav`.
  */
 test.describe('header nav carries the Big Questions label', () => {
   for (const { locale, prefix, messages } of LOCALES) {
@@ -340,7 +341,9 @@ test.describe('header nav carries the Big Questions label', () => {
       isMobile,
     }) => {
       await page.goto(`${prefix}/`);
-      const label = isMobile ? messages.common.navShort.moments : messages.common.nav.moments;
+      // The thumb bar has its own label for this cell (owner, 2026-09-29: "I'd
+      // like the phone to say Big Questions instead of just questions").
+      const label = isMobile ? messages.common.tab.moments : messages.common.nav.moments;
       const link = page.getByRole('link', { name: label, exact: true });
       await expect(link).toBeVisible();
       await expect(link).toHaveAttribute('href', `${prefix}/questions`);

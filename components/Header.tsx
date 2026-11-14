@@ -39,28 +39,37 @@ import { LocaleSwitcher } from './LocaleSwitcher';
  * because the lockup already is the home link; the thumb bar keeps it, because
  * a lockup is not thumb-reachable.
  *
- * ONE ORDER, BOTH NAVS (owner, 2026-09-29, "nav 1"; wireframes v2, "The same
- * on every page"): the thumb bar is Home · Bills · Call · Questions · Reps,
- * and the row nav is the same order with the lockup as Home and the language
- * switch last. Today stays OFF the bar — it is one tap from Home, and the
- * owner looks at /today visits after about 30 days (reminder around
- * 2026-10-29). "My record" left the bar in the same ruling: the Reps page
- * links it ("See your record") until the Reps rebuild folds the record in
- * (wireframe Q4 b+c), and the call panel's own "See your record" still lands
- * there. "Why call?" left the row nav; it is a footer link on every page.
+ * THE TWO NAVS NO LONGER SHARE ONE ORDER (owner, 2026-09-29, typed: "The
+ * 'Call' button in the header needs to be removed and 'Today in Congress'
+ * needs to come first on the header"; his picker answer on scope: "Desktop
+ * only"). The row nav is Today in Congress · Bills · Big Questions · My reps,
+ * with the lockup as Home and the language switch last. The thumb bar keeps
+ * the "nav 1" order of the same day — Home · Bills · Call · Big Questions ·
+ * Reps — and its Questions cell reads "Big Questions" (his typed note: "I'd
+ * like the phone to say Big Questions instead of just questions if
+ * possible"; `common.tab.moments`, the thumb bar only). On a desktop the Call
+ * hub is the footer's first Site link ("Make a call"). Today stays off the
+ * thumb bar — one tap from Home — and the owner's look at /today visits
+ * around 2026-10-29 now applies to the phone only. "My record" left both
+ * bars in "nav 1": the Reps page links it ("See your record") until the Reps
+ * rebuild folds the record in (wireframe Q4 b+c). "Why call?" is a footer
+ * link on every page.
  *
- * THE CALL ITEM IS THE ONE CALL CONTROL IN THE BAR, so it wears the shared
- * call-button style (components/call-button.ts) rather than a nav item's, in
- * both navs. Where it GOES is the page's to say (lib/call-tab.ts): an open
- * bill's own panel, a Big Question's open bills, or — with nothing declared,
- * and always on the server render — the Call hub at /call.
+ * THE CALL CELL IS THE ONE CALL CONTROL IN THE BAR, so it wears the shared
+ * call-button style (components/call-button.ts) rather than a nav item's.
+ * Where it GOES is the page's to say (lib/call-tab.ts): an open bill's own
+ * panel, a Big Question's open bills, or — with nothing declared, and always
+ * on the server render — the Call hub at /call. The thumb bar stays in the
+ * DOM at every width (`md:hidden` is display:none), so a page's declared
+ * target is readable on a desktop too.
  */
 
 /** The thumb bar (phones): five destinations, home included. Five cells at
  *  the 5xl max width is ≥64px each at 320px — comfortably over the 44px
  *  floor (verified in e2e). Moments joined 2026-07-25 (v2 slice S5): the
  *  discovery layer is a flagship surface now, not an experiment. Call joined
- *  2026-09-29 in "My record"'s place (owner, "nav 1"). */
+ *  2026-09-29 in "My record"'s place (owner, "nav 1"). Labels come from
+ *  `tabLabel`. */
 const TABS = [
   { href: '/', key: 'home', icon: Home },
   { href: '/bills', key: 'bills', icon: ScrollText },
@@ -81,18 +90,34 @@ const TABS = [
  * to about 84px with "Mi historial" in this slot; the Call item's icon made
  * it 8px worse.) So BELOW 64rem the row prints the thumb bar's short labels
  * ("Proyectos", "Preguntas", "Mis reps"; 337px), in both languages for one
- * rule, and the full labels from 64rem, where /es measures 853px of 992.
- * tests/call-hub.spec.ts pins the 768px row: one line, no overflow, and the
- * switch at its full width.
+ * rule, and the full labels from 64rem.
+ *
+ * TODAY FIRST, NO CALL ITEM (2026-09-29). MEASURED in WebKit at 1024px, the
+ * narrowest full-label width, where English also carries the trust line:
+ * English needs 926px of the 992px row (lockup 119, trust line 211, the four
+ * links 404, the switch 156, three 12px gaps); Spanish needs 901px (lockup
+ * 119, links 602, switch 156, two gaps). Both fit on one row with nothing
+ * squeezed, so "Today in Congress" / "Hoy en el Congreso" print in full from
+ * 64rem like the other three, and "Today" / "Hoy" below it.
+ *
+ * tests/call-hub.spec.ts pins the 768px row (one line, no overflow, the switch
+ * at its full width) and the 1024px row in both languages.
  */
 const LINKS = [
+  // First (owner, 2026-09-29, typed): "'Today in Congress' needs to come
+  // first on the header".
+  { href: '/today', key: 'today' },
   { href: '/bills', key: 'bills' },
-  { href: CALL_HUB_PATH, key: 'call' },
   // Moments joined 2026-07-25 (v2 slice S5) — flagship surface, never held
   // back.
   { href: '/questions', key: 'moments' },
   { href: '/reps', key: 'reps' },
 ] as const;
+
+/** A thumb-bar cell's label: `navShort`, except where the thumb bar has its
+ *  own longer word (`common.tab`). Only the Big Questions cell does (owner,
+ *  2026-09-29); the row nav keeps `navShort.moments` below 64rem. */
+const TAB_OWN_LABEL: ReadonlySet<string> = new Set(['moments']);
 
 /** Segment-exact for everything but Home: '/reps' is current on a member page
  *  ('/reps/<id>'), and no path merely sharing a prefix ('/callx') counts. */
@@ -157,6 +182,8 @@ export function Header() {
   const callTarget = useSyncExternalStore(subscribeCallTab, callTabSnapshot, callTabServerSnapshot);
   const callHref = callTarget ?? CALL_HUB_PATH;
   const onHub = isActive(pathname, CALL_HUB_PATH);
+  const tabLabel = (key: (typeof TABS)[number]['key']) =>
+    TAB_OWN_LABEL.has(key) ? t(`tab.${key as 'moments'}`) : t(`navShort.${key}`);
 
   return (
     <>
@@ -195,21 +222,6 @@ export function Header() {
           >
             {LINKS.map(({ href, key }) => {
               const active = isActive(pathname, href);
-              if (key === 'call') {
-                return (
-                  <CallLink
-                    key={key}
-                    href={callHref}
-                    current={onHub}
-                    className={`mx-1 inline-flex min-h-11 items-center gap-1.5 px-2 text-sm whitespace-nowrap lg:px-3 ${
-                      onHub ? CALL_BUTTON_CURRENT : CALL_BUTTON
-                    }`}
-                  >
-                    <Phone className="h-4 w-4 flex-none" aria-hidden />
-                    <RowLabel short={t('navShort.call')} full={t('nav.call')} />
-                  </CallLink>
-                );
-              }
               return (
                 <Link
                   key={key}
@@ -276,7 +288,7 @@ export function Header() {
                     }`}
                   >
                     <Icon className="h-5 w-5" aria-hidden />
-                    {t(`navShort.${key}`)}
+                    <span data-tab-label>{tabLabel(key)}</span>
                   </CallLink>
                 </li>
               );
@@ -302,7 +314,17 @@ export function Header() {
                   }`}
                 >
                   <Icon className="h-5 w-5" aria-hidden />
-                  {t(`navShort.${key}`)}
+                  {/* A two-word cell label wraps onto two lines at a phone's
+                      cell width, set solid (`leading-none`): icon 20 + gap 2 +
+                      two 12px lines = 46px, inside the 48px row, so the bar
+                      keeps its height and the floating call button above it
+                      keeps its offset. `leading-tight` would make it 52. */}
+                  <span
+                    data-tab-label
+                    className={TAB_OWN_LABEL.has(key) ? 'text-center leading-none' : undefined}
+                  >
+                    {tabLabel(key)}
+                  </span>
                 </Link>
               </li>
             );

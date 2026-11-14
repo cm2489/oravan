@@ -635,7 +635,7 @@ export const GLOSSARY_ENTRIES = [
   {
     id: 'mandatory-spending',
     category: 'budget',
-    source: 'https://fiscaldata.treasury.gov/americas-finance-guide/federal-spending/',
+    source: 'https://www.cbo.gov/publication/61882',
     match: { en: ['mandatory spending'], es: ['gasto obligatorio'] },
   },
   {

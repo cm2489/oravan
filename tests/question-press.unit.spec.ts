@@ -923,6 +923,20 @@ test.describe('the collector (mocked GDELT): every failure mode', () => {
     expect(lines.some((l) => /circuit open/.test(l))).toBe(true);
   });
 
+  // GDELT takes 10-15 s to answer a search. Counted from the send, the 6-s
+  // spacing was no gap at all: every request sent the moment a search had
+  // been answered got a 429 on 2026-09-26 and 2026-09-27 (2026-10-01).
+  test('the spacing counts from the end of the previous answer, not from its send', async () => {
+    const ANSWER_MS = 14_000;
+    const net = fakeNet((url) => ({ ...mixedReply(url), takesMs: ANSWER_MS }));
+    const { stats } = await run(net);
+    expect(stats.done.sort()).toEqual(['iran-war-powers', 'paying-college-athletes']);
+    expect(net.calls).toHaveLength(TERMS_PER_RUN);
+    for (let i = 1; i < net.calls.length; i++) {
+      expect(net.calls[i].at - (net.calls[i - 1].at + ANSWER_MS)).toBeGreaterThanOrEqual(LIMITS.spacingMs);
+    }
+  });
+
   test('429 that clears on retry carries on normally', async () => {
     const net = fakeNet((url, n) => (n === 1 ? { status: 429, body: '' } : mixedReply(url)));
     const { stats, circuit } = await run(net);
@@ -955,8 +969,9 @@ test.describe('the collector (mocked GDELT): every failure mode', () => {
     const one = fakeNet((url, n) => (n === 1 ? new Error('ECONNRESET') : mixedReply(url)));
     const a = await run(one);
     expect(a.stats.circuitOpen).toBe(false);
-    expect(a.stats.failed).toEqual(['iran-war-powers']);
-    expect(a.stats.done).toEqual(['paying-college-athletes']);
+    // The first request goes to the question searched first: college (1 search), now that the queue runs fewest searches first.
+    expect(a.stats.failed).toEqual(['paying-college-athletes']);
+    expect(a.stats.done).toEqual(['iran-war-powers']);
     const two = fakeNet(() => Object.assign(new Error('fetch failed'), { cause: { code: 'UND_ERR_CONNECT_TIMEOUT' } }));
     const b = await run(two);
     expect(two.calls).toHaveLength(SILENT_CIRCUIT);
@@ -1144,10 +1159,82 @@ test.describe('the collector: budgets by TIME and by count', () => {
   test('the request cap: a question the remaining cap cannot even start is not started', async () => {
     const net = fakeNet((url) => mixedReply(url));
     const { stats } = await run(net, { limits: { ...LIMITS, maxRequests: 2 } });
-    // Iran (never checked, id order) takes 2; college needs 1 more and 0 are left.
-    expect(net.calls).toHaveLength(2);
+    // Fewest searches first (2026-11-11): college (1 search) goes first and takes 1;
+    // Iran needs 2 and only 1 is left under the cap, so it is not started.
+    expect(net.calls).toHaveLength(1);
     expect(stats.budgetStop).toMatch(/request cap/);
-    expect(stats.done).toEqual(['iran-war-powers']);
+    expect(stats.done).toEqual(['paying-college-athletes']);
+  });
+});
+
+// ---------------------------------------------------------------------------
+test.describe('the collector: the queue runs fewest searches first (2026-11-11)', () => {
+  // A question is recorded as checked only when EVERY one of its searches is
+  // answered in the run. GDELT often answers one or two requests and refuses the
+  // rest (429). The old order was oldest check first, never-checked first, then
+  // id: two never-checked questions with many searches sat at the head, every
+  // run spent its one or two answers on the first of them, recorded nothing,
+  // and the order never changed. The order is now fewest searches first.
+  const phrases = (name: string, n: number) => Array.from({ length: n }, (_, i) => `${name} phrase ${i}`);
+  const live = (name: string, n: number) => [name, { status: 'live', aliases: { en: phrases(name, n) }, vehicles: [] }] as const;
+  /** GDELT answers the first `answers` requests of a run, then refuses everything with 429. */
+  const answersThenRefuses = (answers: number) =>
+    fakeNet((_url, n) => (n <= answers ? { status: 200, body: '{}' } : { status: 429, body: '' }));
+
+  test('two many-search questions at the head no longer starve a small one when GDELT answers two requests', async () => {
+    // Ids sort big-a, big-b, small-c; all three are never checked. Under the old
+    // order big-a (8 searches) was first and ate both answers.
+    const moments = Object.fromEntries([live('big-a', 8), live('big-b', 6), live('small-c', 1)]);
+    const net = answersThenRefuses(2);
+    const { stats, doc, write } = await run(net, { moments, bills: [] });
+    expect(termOf(net.calls[0].url)).toBe('small-c phrase 0'); // the one-search question goes first
+    expect(stats.done).toEqual(['small-c']);
+    expect(write).toBe(true);
+    expect(Object.keys(doc.questions)).toEqual(['small-c']);
+    expect((doc.questions['small-c'] as Entry).checkedOn).toBe(TODAY);
+    // The limit this does not remove: with only the two big questions due, the same
+    // two answers record nothing (the old order's every run), and no order helps
+    // when GDELT answers nothing at all.
+    const bigOnly = Object.fromEntries([live('big-a', 8), live('big-b', 6)]);
+    const starved = await run(answersThenRefuses(2), { moments: bigOnly, bills: [] });
+    expect(starved.stats.done).toEqual([]);
+    expect(starved.write).toBe(false);
+    const silent = await run(answersThenRefuses(0), { moments, bills: [] });
+    expect(silent.stats.done).toEqual([]);
+    expect(silent.write).toBe(false);
+  });
+
+  test('ties go to the oldest check (never-checked first), then to id', async () => {
+    const moments = Object.fromEntries([live('q-a', 1), live('q-b', 1), live('q-c', 1), live('q-d', 1)]);
+    const prev = buildQuestionPress({
+      previous: null,
+      liveIds: ['q-a', 'q-b'],
+      results: new Map([
+        ['q-a', { terms: ['q-a phrase 0'], admitted: [] }],
+        ['q-b', { terms: ['q-b phrase 0'], admitted: [] }],
+      ]),
+      bias: BIAS,
+      today: '2026-09-20',
+    });
+    (prev.questions['q-b'] as Entry).checkedOn = '2026-09-18';
+    const net = fakeNet(() => ({ status: 200, body: '{}' }));
+    const { stats } = await run(net, { moments, bills: [], previous: prev });
+    // never-checked q-c, q-d first (id order), then q-b (older check), then q-a
+    expect(stats.done).toEqual(['q-c', 'q-d', 'q-b', 'q-a']);
+  });
+
+  test('a question recorded in this run leaves the due list, so the next run starts further down the queue', async () => {
+    const moments = Object.fromEntries([live('s1', 1), live('s2', 1), live('s3', 2), live('s4-big', 6)]);
+    const first = answersThenRefuses(2);
+    const a = await run(first, { moments, bills: [] });
+    expect(a.stats.done).toEqual(['s1', 's2']);
+    // A second run on the same UTC day (the retry), again answered twice.
+    const second = answersThenRefuses(2);
+    const b = await run(second, { moments, bills: [], previous: a.doc });
+    expect(b.stats.notDue).toEqual(['s1', 's2']); // recorded today: no longer due
+    expect(termOf(second.calls[0].url)).toBe('s3 phrase 0'); // the head moved on
+    expect(b.stats.done).toEqual(['s3']);
+    expect(Object.keys(b.doc.questions).sort()).toEqual(['s1', 's2', 's3']);
   });
 });
 
@@ -1418,16 +1505,29 @@ test.describe('the collector: the persisted circuit', () => {
     expect(lines.some((l) => /^::warning::.*circuit has been open since .* no request this run/.test(l))).toBe(true);
   });
 
-  test('after the cooldown, HALF-OPEN: a still-refusing GDELT costs ONE request, no backoff, and the circuit stays open', async () => {
+  // The probe gets the same two 429 backoffs as any request (2026-10-01): a
+  // 429 on a shared runner address is normal weather, and a one-shot probe
+  // kept the circuit shut from 2026-09-27 to 2026-10-01 on seven single 429s.
+  test('after the cooldown, HALF-OPEN: a still-refusing GDELT costs the probe and its two retries, and the circuit stays open', async () => {
     const net = fakeNet(() => ({ status: 429, body: '' }));
     const { circuit } = await run(net, { circuit: openAt(LIMITS.circuitCooldownMs + 1) });
-    expect(net.calls).toHaveLength(1);
-    expect(net.sleeps.filter((ms) => LIMITS.backoffMs.includes(ms))).toEqual([]);
-    expect(circuit).toMatchObject({ open: true, reason: '429', tries: 3, openedAt: new Date(NOW - 86_400_000).toISOString(), lastTryAt: new Date(NOW).toISOString() });
+    expect(net.calls).toHaveLength(1 + LIMITS.backoffMs.length);
+    expect(net.sleeps.filter((ms) => LIMITS.backoffMs.includes(ms))).toEqual(LIMITS.backoffMs);
+    const lastTry = NOW + LIMITS.backoffMs[0] + LIMITS.backoffMs[1];
+    expect(circuit).toMatchObject({ open: true, reason: '429', tries: 3, openedAt: new Date(NOW - 86_400_000).toISOString(), lastTryAt: new Date(lastTry).toISOString() });
     const silent = fakeNet(() => 'hang');
     const s = await run(silent, { circuit: openAt(LIMITS.circuitCooldownMs + 1) });
     expect(silent.calls).toHaveLength(1); // one silent answer is enough when half-open
     expect(s.circuit).toMatchObject({ open: true, reason: 'no answer' });
+  });
+
+  test('after the cooldown, HALF-OPEN: a 429 that clears on the probe\'s retry closes the circuit and the run carries on', async () => {
+    const net = fakeNet((url, n) => (n === 1 ? { status: 429, body: '' } : mixedReply(url)));
+    const { circuit, stats } = await run(net, { circuit: openAt(LIMITS.circuitCooldownMs + 1) });
+    expect(net.sleeps).toContain(LIMITS.backoffMs[0]);
+    expect(net.calls).toHaveLength(TERMS_PER_RUN + 1);
+    expect(circuit).toBeNull();
+    expect(stats.done.sort()).toEqual(['iran-war-powers', 'paying-college-athletes']);
   });
 
   test('after the cooldown, HALF-OPEN: an answer closes the circuit and the run carries on', async () => {

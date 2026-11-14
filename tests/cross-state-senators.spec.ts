@@ -104,7 +104,9 @@ for (const locale of ['en', 'es'] as const) {
   test(`${locale}: embed rep lookup, ZIP ${CROSS_STATE}: the state-scoped line over both states' senators`, async ({
     page,
   }) => {
-    await page.goto(`/embed/rep-lookup?locale=${locale}&zip=${CROSS_STATE}`);
+    await page.goto(`/embed/rep-lookup?locale=${locale}`);
+    await page.getByLabel(m.home.zipLabel).fill(CROSS_STATE);
+    await page.getByRole('button', { name: m.home.zipCta }).click();
     await expect(page.getByText(m.embed.multiDistrictBody)).toBeVisible();
     for (const s of senatorsFor(CROSS_STATE)) {
       await expect(page.getByText(s.name, { exact: true })).toBeVisible();

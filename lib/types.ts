@@ -21,7 +21,7 @@ export type BillStatus = (typeof BILL_STATUSES)[number];
 
 /**
  * The key a status LABEL is printed under (lib/journey.ts `statusKeyFor`),
- * which is a stored status or one of four readings of it:
+ * which is a stored status or one of five readings of it:
  *
  *   `floor_activity`    a `floor_vote` record whose sentence is no placement
  *                       (Wave B #1, 2026-08-04);
@@ -31,11 +31,26 @@ export type BillStatus = (typeof BILL_STATUSES)[number];
  *                       without amendment, so it goes to the president next
  *                       (2026-09-29);
  *   `adopted`           a concurrent resolution both chambers agreed to in
- *                       one form, the end of its path (2026-09-29).
+ *                       one form, the end of its path (2026-09-29);
+ *   `rejected`          a `floor_vote` record whose own sentence says a
+ *                       chamber voted the measure down on passage or
+ *                       adoption: exactly settledDecision's `rejected`
+ *                       (2026-09-29). A failed procedural motion is not one.
+ *   ended               the bill's Congress has ended before Congress finished
+ *                       it (lib/journey.ts statusKeyFor, 2026-11-13). Answered
+ *                       only for a bill of a Congress on the ended list, which
+ *                       is empty until the January 2027 switch.
  *
  * Every one has a `bills.status.*` label in both languages.
  */
-export type StatusLabelKey = BillStatus | 'floor_activity' | 'floor_vote_stale' | 'passed_both' | 'adopted';
+export type StatusLabelKey =
+  | BillStatus
+  | 'floor_activity'
+  | 'floor_vote_stale'
+  | 'passed_both'
+  | 'adopted'
+  | 'rejected'
+  | 'ended';
 
 /** Decoded structure. `cost` is null when the bill has no cost dimension. */
 export interface DecodedSections {
@@ -137,7 +152,8 @@ export interface BillTeaser {
    *  floor_vote bills whose record shows activity, not a placement,
    *  `floor_vote_stale` for a placement the record has shown nothing since
    *  (N3, 2026-08-11 — the same fact, in the past tense), and the two
-   *  passage readings `passed_both` / `adopted` (see StatusLabelKey). */
+   *  passage readings `passed_both` / `adopted`, and `rejected` for a
+   *  measure a chamber voted down (see StatusLabelKey). */
   statusKey: StatusLabelKey;
   tags: string[];
   lastActionDate: string | null;
@@ -159,6 +175,13 @@ export interface FeedTeaser extends BillTeaser {
    * it — amber is one dated floor fact that is still AHEAD.
    */
   annotation?: 'just_decided' | 'just_passed' | null;
+  /**
+   * Present (and true) only on a bill of an ENDED Congress (stage 3 of the
+   * new-Congress work, 2026-11-13), so the list's "active bills" count can
+   * leave it out. Absent, never false, on every other bill, so the payload
+   * of every teaser today is what it was.
+   */
+  ended?: true;
 }
 
 export interface DistrictOffice {
@@ -183,6 +206,29 @@ export interface Legislator {
    *  roll-call XML names senators by this id alone, never by bioguide, so it
    *  is the join key for data/votes.json (scripts/sync-votes.mjs). */
   lis?: string;
+}
+
+/**
+ * A member who has left data/legislators.json, as data/departed-members.json
+ * keeps them (scripts/member_turnover.py writes it from the member file as it
+ * stood before the run). The seat they held and the end date of their last
+ * term, and nothing a visitor could use to contact them: no phone, no office,
+ * no website. Empty until a member leaves the file after 2026-11-13.
+ */
+export interface DepartedMember {
+  bioguide: string;
+  name: string;
+  first: string;
+  last: string;
+  type: 'sen' | 'rep';
+  state: string;
+  district: number | null;
+  party: string | null;
+  /** The last day of their last term, from the congress-legislators
+   *  historical file; null until that file lists them. */
+  served_until: string | null;
+  /** The day the weekly refresh first found them gone from the member file. */
+  left_file: string;
 }
 
 export interface District {

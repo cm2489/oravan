@@ -38,7 +38,7 @@ const FEED_TITLE: Record<Locale, string> = {
 
 const FEED_DESCRIPTION: Record<Locale, string> = {
   en: "Active, plain-language-decoded U.S. federal bills that cleared Oravan's \"act now\" urgency bar in the last 7 days. Free, nonpartisan, no account or sign-up required.",
-  es: 'Proyectos de ley federales activos, en lenguaje sencillo, que superaron el umbral de urgencia "actúa ahora" de Oravan en los últimos 7 días. Gratis, sin filiación partidista, sin cuenta ni registro.',
+  es: 'Proyectos de ley federales activos, en lenguaje claro, que superaron el umbral de urgencia "actúa ahora" de Oravan en los últimos 7 días. Gratis, sin filiación partidista, sin cuenta ni registro.',
 };
 
 // Mandatory per the embeds spec's "powers their newsletters with an
@@ -198,7 +198,11 @@ export function buildFeedRss(locale: Locale): string {
         `<title>${escapeXml(itemTitle)}</title>`,
         `<link>${escapeXml(item.url)}</link>`,
         `<guid isPermaLink="true">${escapeXml(item.url)}</guid>`,
-        `<pubDate>${rfc822(item.last_action_date, payload.generated_at)}</pubDate>`,
+        // The date of the sentence the description quotes: a live chamber
+        // announcement's own date when that is what put the bill on the list
+        // (rule 6: a floor claim prints its date), otherwise the last action,
+        // which is the same sentence's date on every other rung.
+        `<pubDate>${rfc822(item.signal?.evidence_date ?? item.last_action_date, payload.generated_at)}</pubDate>`,
         `<description>${escapeXml(descriptionParts.join(' — '))}</description>`,
         '</item>',
       ].join('');

@@ -331,7 +331,7 @@ test.describe('the ladder under a live Senate announcement', () => {
     }
   });
 
-  test('S.J.Res. 98: the point of order agreed to is "The floor already answered", not "Deciding now"', () => {
+  test('S.J.Res. 98: the point of order agreed to is "Already decided on the floor", not "Deciding now"', () => {
     // At `floor_vote`, the status PR #363 re-derives for it. (At main's
     // `passed_chamber` the STATUS puts it on T3 "Just passed a chamber", which
     // is false and is #363's to fix; this reader only retires the crown.)

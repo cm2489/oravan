@@ -406,7 +406,7 @@ jobs:
         # are what converts a label into a merge. Both are needed:
         #   1. Settings -> General -> "Allow auto-merge"
         #   2. a required status check on `main` (ruleset or branch protection)
-        #      naming ci.yml's `test` job
+        #      naming ci.yml's aggregate `test` job
         # Without (2), auto-merge has nothing to wait for and "on green" has no
         # enforcement mechanism at all. docs/big-question-intake.md states both
         # as the owner's explicit opt-in rather than describing the merge as

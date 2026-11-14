@@ -1,4 +1,6 @@
 import { expect, test } from '@playwright/test';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
 import {
@@ -342,6 +344,131 @@ test.describe('SY-31 meetsAfterDay', () => {
     expect(meetsAfterDay({ session: 'in_session', nextMeeting: null }, '2026-09-26')).toBe(false);
     expect(meetsAfterDay({ session: 'out_of_session', nextMeeting: next('2026-09-28') }, '2026-09-26')).toBe(false);
     expect(meetsAfterDay({ session: 'unknown', nextMeeting: next('2026-09-28') }, '2026-09-26')).toBe(false);
+  });
+});
+
+// ---- 2026-11-11: no message says how an office counts a call or a voicemail --
+
+test.describe('2026-11-11 no message claims offices count calls or voicemails the same way', () => {
+  // Owner decision 149: no source on file says an office tallies a voicemail
+  // like a live call, tallies every call, or logs every call it takes. The
+  // Congressional Management Foundation quote and the staff-survey figures on
+  // /why-call are sourced and stay; they do not use these words.
+  const UNSOURCED = {
+    en: /\bcounts?\s+(?:exactly\s+)?the same\b|\b(?:tallied|counted)\s+the same\b|\b(?:offices|staff|staffers)\s+tally\b|\btally\s+(?:calls|voicemails)\b|\blogs\s+(?:every|your)\s+call\b|\bcounts\s+either\s+way\b/i,
+    es: /\bcuentan?\s+(?:exactamente\s+)?igual\b|\bse\s+cuenta\s+igual\b|\bcuentan?\s+(?:los\s+mensajes|las\s+llamadas|llamadas)\b|\bregistra\s+(?:cada\s+llamada|tu\s+llamada)\b|\bcuenta\s+de\s+todos\s+modos\b/i,
+  } as const;
+  for (const [locale, m] of LOCALES) {
+    test(`${locale}: every message`, () => {
+      const hits = allStrings(m).filter(([, s]) => UNSOURCED[locale].test(s));
+      expect(hits).toEqual([]);
+    });
+  }
+});
+
+// ---- 2026-11-12: no short line says nothing about you reaches a server ------
+
+test.describe('2026-11-12 no short privacy line says nothing about a visitor is kept on a server', () => {
+  // Owner, Nov 12, 2026 (short-lines card): the privacy page (#468) now says
+  // our host's request logs record a visitor's network address and the pages
+  // they open. Lines elsewhere that said nothing is stored on any server, that
+  // no IP address is stored, or that clearing the browser makes Oravan forget
+  // you were false as written or could be quoted against that page; they now
+  // use the Terms page's form ("no accounts and no database about you"). These
+  // are the retired phrasings, in both languages and in llms.txt, which is
+  // English only. Lines that stay true ("saved only on this device, never on a
+  // server" for topic picks and call history, which never leave the browser)
+  // are deliberately not matched.
+  const RETIRED = {
+    en: [
+      /no server-side user data/i,
+      /stores? nothing server-side/i,
+      /stored on our servers/i,
+      /kept on a server/i,
+      /stored anywhere else/i,
+      /no servers that know/i,
+      /server-side (?:record|data)\b/i,
+      /identifies (?:you|a visitor) is stored/i,
+      /reflects a visitor's identity/i,
+      /no political profile stored/i,
+      /collect(?:s|ed)? no personal data/i,
+      /forgets you completely/i,
+      /IP address is never stored/i,
+      /nobody is watching you/i,
+      /collects about your visitors: nothing/i,
+      /nothing collected about the people/i,
+      /reading history is saved only on this device/i,
+      /kept only in this browser/i,
+      /No visitor data reaches Oravan/i,
+      /Nothing here is logged in a way/i,
+    ],
+    es: [
+      /en nuestros servidores/i,
+      /nada en servidores/i,
+      /nada sobre ti en un servidor/i,
+      /nada sobre ti en ningún otro lugar/i,
+      /servidores que sepan/i,
+      /ningún servidor guarde/i,
+      /guardados? en ningún servidor/i,
+      /no recopilamos datos personales/i,
+      /te olvida por completo/i,
+      /nunca se guarda una dirección IP/i,
+      /nadie observa/i,
+      /historial de lectura se guarda solo/i,
+      /se guardan solo en este navegador/i,
+      /Ningún dato del visitante llega/i,
+      /Nada aquí se registra/i,
+      /sobre tus visitantes: nada/i,
+      /nada que se recopile sobre/i,
+    ],
+  } as const;
+  for (const [locale, m] of LOCALES) {
+    test(`${locale}: every message`, () => {
+      const hits = allStrings(m).filter(([, s]) => RETIRED[locale].some((re) => re.test(s)));
+      expect(hits).toEqual([]);
+    });
+  }
+  test('llms.txt', () => {
+    const src = readFileSync(join(__dirname, '..', 'app', 'llms.txt', 'route.ts'), 'utf8');
+    // Only the text the route serves: the template literal assigned to `body`.
+    const body = src.slice(src.indexOf('const body = `'), src.lastIndexOf('`;'));
+    expect(body.length).toBeGreaterThan(500);
+    expect(RETIRED.en.filter((re) => re.test(body)).map(String)).toEqual([]);
+    // The note for AI systems names the host's logs, as the privacy page does.
+    expect(body).toMatch(/request logs record each visitor's network address/);
+  });
+});
+
+test.describe('2026-11-12 short privacy lines promise "no profile of you", not "no database about you"', () => {
+  // Owner, Nov 12, 2026, 8:52 PM ET: "Merge them with 'no profile of you' in
+  // place of 'no database about you'." An independent review found the
+  // database form arguable: the counters database holds short-lived
+  // rate-limit counters keyed to a scrambled form of a caller's network
+  // address (lib/ratelimit.ts), and the privacy page says so. No store Oravan
+  // keeps is a profile of a visitor. This keeps the promise form from coming
+  // back in the short lines. It does not match a literal statement that
+  // something is never written to a database ("Never written to a database";
+  // "no account or database that holds it"), and it skips `terms.*` and
+  // `privacy.*`, which the owner reviews and changes separately.
+  const PROMISE = {
+    en: [/\bno database (?:about|of)\b/i],
+    es: [/\bbase de datos sobre\b/i, /\bbase de datos de (?:tus |los )?(?:visitantes|usuarios|lectores)\b/i],
+  } as const;
+  const OWNER_REVIEWED = /^(?:terms|privacy)\./;
+  for (const [locale, m] of LOCALES) {
+    test(`${locale}: every message outside terms and privacy`, () => {
+      const hits = allStrings(m).filter(
+        ([k, s]) => !OWNER_REVIEWED.test(k) && PROMISE[locale].some((re) => re.test(s)),
+      );
+      expect(hits).toEqual([]);
+    });
+  }
+  test('llms.txt', () => {
+    const src = readFileSync(join(__dirname, '..', 'app', 'llms.txt', 'route.ts'), 'utf8');
+    const body = src.slice(src.indexOf('const body = `'), src.lastIndexOf('`;'));
+    expect(body.length).toBeGreaterThan(500);
+    expect(PROMISE.en.filter((re) => re.test(body)).map(String)).toEqual([]);
+    expect(body).toMatch(/no profile of any visitor/);
   });
 });
 

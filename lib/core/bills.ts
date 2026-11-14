@@ -15,6 +15,7 @@ import {
   compareDocket,
   docketKey,
   evidenceFor,
+  insideSignalWindow,
   isActNow,
   isDecidingNow,
   isSettledFloor,
@@ -34,6 +35,7 @@ import {
   type NewsCaption,
 } from '../conversation';
 import { effectiveUrgency } from '../urgency.mjs';
+import { isSiteEndedBill } from '../ended-state.mjs';
 import type { Bill, FeedTeaser, NewsBill } from '../types';
 
 export { effectiveUrgency };
@@ -143,38 +145,61 @@ function docketCorpus(now: number = Date.now()): {
 
 export function getTeasers(locale = 'en'): FeedTeaser[] {
   const { ordered } = docketCorpus();
-  return ordered.map(({ raw, rung }) => {
-    const b = localizeBill(raw, locale);
-    return {
-      slug: billSlug(b),
-      identifier: formatCitation(b.bill_type, b.bill_number),
-      headline: b.ai_headline,
-      title: b.short_title ?? b.title,
-      status: b.status,
-      tags: b.issue_tags ?? [],
-      /*
-       * THE BAND IS THE RUNG — a fact about the record, not a percentile.
-       *
-       * Deciding now = T0 ∪ T1 · Moving = T2 ∪ T3 · On the radar = T4 and every
-       * terminal bill, pinned as before. T3 is in Moving on the critic's A-3
-       * patch and the backtest's K3: under the old floors a bill that had just
-       * passed a chamber scored 0.75 against a 0.95 now-floor, so on the day the
-       * Senate passed the continuing resolution 90-6 the site moved the biggest
-       * story in national politics to "quieter right now".
-       *
-       * A band may now be EMPTY, and that is the point: a fortnight in which
-       * Congress announces nothing and files no cloture motions has no "Deciding
-       * now" band, instead of promoting whatever happened to rank highest.
-       */
-      band: bandFor(rung),
-      /* The annotation rides the card and never the colour: `just_decided` and
-       * `just_passed` are ink labels on a listing. Neither may light amber —
-       * amber is one dated floor fact that is still AHEAD. */
-      annotation: rung.annotation,
-      statusKey: statusKeyFor(b),
-      lastActionDate: b.last_action_date,
-    };
-  });
+  return ordered.map(({ raw, rung }) => teaserFor(raw, locale, rung));
+}
+
+/**
+ * ONE BILL'S TEASER — the card /bills prints, for a single bill.
+ *
+ * `getTeasers` maps the ordered corpus through this, so a card built from it
+ * anywhere else (the daily brief's cards, lib/today.ts) is the card /bills
+ * prints for that bill. `rung` defaults to the bill's own rung now;
+ * `getTeasers` passes the one it already placed the bill on.
+ */
+export function teaserFor(raw: Bill, locale: string, rung: DocketRung = rungFor(raw, billSlug(raw))): FeedTeaser {
+  const b = localizeBill(raw, locale);
+  return {
+    slug: billSlug(b),
+    identifier: formatCitation(b.bill_type, b.bill_number),
+    headline: b.ai_headline,
+    title: b.short_title ?? b.title,
+    status: b.status,
+    tags: b.issue_tags ?? [],
+    /*
+     * THE BAND IS THE RUNG — a fact about the record, not a percentile.
+     *
+     * Deciding now = T0 ∪ T1 · Moving = T2 ∪ T3 · On the radar = T4 and every
+     * terminal bill, pinned as before. T3 is in Moving on the critic's A-3
+     * patch and the backtest's K3: under the old floors a bill that had just
+     * passed a chamber scored 0.75 against a 0.95 now-floor, so on the day the
+     * Senate passed the continuing resolution 90-6 the site moved the biggest
+     * story in national politics to "quieter right now".
+     *
+     * A band may now be EMPTY, and that is the point: a fortnight in which
+     * Congress announces nothing and files no cloture motions has no "Deciding
+     * now" band, instead of promoting whatever happened to rank highest.
+     */
+    band: bandFor(rung),
+    /* The annotation rides the card and never the colour: `just_decided` and
+     * `just_passed` are ink labels on a listing. Neither may light amber —
+     * amber is one dated floor fact that is still AHEAD. */
+    annotation: rung.annotation,
+    statusKey: statusKeyFor(b),
+    lastActionDate: b.last_action_date,
+    // Only when true (see FeedTeaser.ended): absent on every bill today.
+    ...(isSiteEndedBill(raw) ? { ended: true as const } : {}),
+  };
+}
+
+/**
+ * HOW MANY BILLS ARE ACTIVE — the count behind every "Browse all N active
+ * bills" link (the homepage, /call, /reps). A bill of an ENDED Congress is
+ * not active (stage 3 of the new-Congress work, 2026-11-13), so it is left
+ * out; the ended list is empty until the January 2027 switch, so today this
+ * is the whole corpus, as before.
+ */
+export function activeBillCount(): number {
+  return BILLS.filter((raw) => !isSiteEndedBill(raw)).length;
 }
 
 /**
@@ -192,6 +217,24 @@ export function getTopActions(n = 5, locale = 'en'): Bill[] {
   return actNowPool
     .filter((s) => s.raw.ai_headline)
     .slice(0, n)
+    .map(({ raw }) => localizeBill(raw, locale));
+}
+
+/**
+ * THE ACT-NOW POOL INSIDE A RECENCY WINDOW — the list the MCP `whats_moving`
+ * tool and both feeds publish, in ladder order, before any topic filter or
+ * cut. Same pool and same order as `getTopActions`; the only thing it adds is
+ * the window, and the window is tested on the date of the signal that put the
+ * bill in the pool (`insideSignalWindow`), not on its last action alone.
+ *
+ * It lives here rather than in lib/core/mcp.ts so the unit specs can pin it
+ * against the homepage's shortlist: mcp.ts reaches a `server-only` module.
+ */
+export function getActNowInWindow(days: number, locale = 'en', now: number = Date.now()): Bill[] {
+  const cutoff = now - days * 86_400_000;
+  const { actNowPool } = docketCorpus(now);
+  return actNowPool
+    .filter((s) => s.raw.ai_headline && insideSignalWindow(s.raw, s.rung, cutoff))
     .map(({ raw }) => localizeBill(raw, locale));
 }
 
@@ -330,7 +373,11 @@ export function getNewsBills(locale = 'en', n = 6, now: number = Date.now()): Ne
     const bySlug = new Map(BILLS.map((raw) => [billSlug(raw), raw]));
     return selectConversationBand(conversationBandPool(now), {
       limit: n,
-      renderable: (slug) => bySlug.has(slug),
+      // A bill of an ENDED Congress is never one of the week's news cards
+      // (stage 3 of the new-Congress work, 2026-11-13): this band is a "this
+      // week" list, and nothing can move that bill any more. The ended list
+      // is empty until the January 2027 switch.
+      renderable: (slug) => bySlug.has(slug) && !isSiteEndedBill(slug),
       // `signed` is the corpus's one enacted status (lib/urgency.mjs's
       // TERMINAL_STATUSES pairs it with `vetoed`, which is settled but is not
       // law — the owner's ruling names enacted laws, so a vetoed bill keeps
@@ -351,7 +398,8 @@ export function getNewsBills(locale = 'en', n = 6, now: number = Date.now()): Ne
     );
   }
 
-  const items = BILLS.map((raw) => {
+  // Same rule as `renderable` above: no ended bill in the week's band.
+  const items = BILLS.filter((raw) => !isSiteEndedBill(raw)).map((raw) => {
     const articles = getCoverage(billSlug(raw));
     return {
       raw,

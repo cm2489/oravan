@@ -168,7 +168,7 @@ export function MomentNominationCard({
           href={`/nominations/${slug}`}
           className="hover:underline hover:decoration-go hover:decoration-[3px]"
         >
-          {description ?? t('nominations.untitled', { citation })}
+          {description ? <span lang="en">{description}</span> : t('nominations.untitled', { citation })}
         </Link>
       </h3>
       {/* The absence of a decode, stated where the decode would have been. */}

@@ -140,7 +140,7 @@ test.describe('which records get the explainer', () => {
     expect(adoptedConcurrentReading(summaryOnly)).toEqual({ warPowers5c: false });
   });
 
-  test('over the committed corpus: exactly the adopted concurrent resolutions, and today that is H.Con.Res. 86 alone', () => {
+  test('over the committed corpus: exactly the adopted concurrent resolutions, and H.Con.Res. 86 is among them', () => {
     const got = corpus.filter((b) => adoptedConcurrentReading(b) !== null);
     for (const b of got) {
       expect(isConcurrentResolution(b), `${b.bill_type} ${b.bill_number}`).toBe(true);
@@ -151,7 +151,9 @@ test.describe('which records get the explainer', () => {
         expect(got, `${b.bill_type} ${b.bill_number}`).toContain(b);
       }
     }
-    expect(got.map((b) => `${b.bill_type}-${b.bill_number}`)).toEqual(['hconres-86']);
+    // The exact list is not pinned: a newly adopted concurrent resolution arrives
+    // with the nightly data and must not redden main. The two loops hold the invariant.
+    expect(got.map((b) => `${b.bill_type}-${b.bill_number}`)).toContain('hconres-86');
   });
 });
 
