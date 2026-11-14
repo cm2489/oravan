@@ -477,10 +477,11 @@ test('a malformed fallback table is skipped, never a throw, and the order of the
 test('each ended Congress adds one table of its own size: small enough to inline into the proxy bundle', () => {
   // Today's table is the size of a full Congress; each ended Congress kept
   // adds one more of about that size, plus a few characters of framing.
-  const one = encodeShortAddressIndex(bills, SHORT_ADDRESS_CONGRESS).length || encodeShortAddressFallback(bills).length;
+  // A full Congress: every bill number the corpus holds, under one Congress.
+  const relabel = (c: number) => bills.map((b) => ({ ...b, congress_number: c }));
+  const one = encodeShortAddressIndex(relabel(119), 119).length;
   expect(one).toBeGreaterThan(100);
   expect(one).toBeLessThan(8_000);
-  const relabel = (c: number) => bills.map((b) => ({ ...b, congress_number: c }));
   const policy: ShortAddressPolicy = { tracked: 122, ended: [119, 120, 121].map((n) => ({ number: n, ended: congressTerm(n).end })) };
   const three = encodeShortAddressFallback([...relabel(119), ...relabel(120), ...relabel(121)], policy);
   expect(three.split('|')).toHaveLength(3);
