@@ -36,6 +36,10 @@ export type BillStatus = (typeof BILL_STATUSES)[number];
  *                       chamber voted the measure down on passage or
  *                       adoption: exactly settledDecision's `rejected`
  *                       (2026-09-29). A failed procedural motion is not one.
+ *   ended               the bill's Congress has ended before Congress finished
+ *                       it (lib/journey.ts statusKeyFor, 2026-11-13). Answered
+ *                       only for a bill of a Congress on the ended list, which
+ *                       is empty until the January 2027 switch.
  *
  * Every one has a `bills.status.*` label in both languages.
  */
@@ -45,7 +49,8 @@ export type StatusLabelKey =
   | 'floor_vote_stale'
   | 'passed_both'
   | 'adopted'
-  | 'rejected';
+  | 'rejected'
+  | 'ended';
 
 /** Decoded structure. `cost` is null when the bill has no cost dimension. */
 export interface DecodedSections {
@@ -170,6 +175,13 @@ export interface FeedTeaser extends BillTeaser {
    * it — amber is one dated floor fact that is still AHEAD.
    */
   annotation?: 'just_decided' | 'just_passed' | null;
+  /**
+   * Present (and true) only on a bill of an ENDED Congress (stage 3 of the
+   * new-Congress work, 2026-11-13), so the list's "active bills" count can
+   * leave it out. Absent, never false, on every other bill, so the payload
+   * of every teaser today is what it was.
+   */
+  ended?: true;
 }
 
 export interface DistrictOffice {
@@ -194,6 +206,55 @@ export interface Legislator {
    *  roll-call XML names senators by this id alone, never by bioguide, so it
    *  is the join key for data/votes.json (scripts/sync-votes.mjs). */
   lis?: string;
+}
+
+/**
+ * A sitting member as a member card receives them: the member, plus
+ * `portraitMissing` when their photo is known to be missing at the source
+ * (lib/core/portraits.ts portraitKnownMissing). The flag is set on the server
+ * (portraitFlag), because a card can draw in the browser, where it must not
+ * read data/ itself (scripts/check-client-bundle). Absent means draw the photo.
+ */
+export type CardMember = Legislator & { portraitMissing?: true };
+
+/**
+ * A member who has left data/legislators.json, as data/departed-members.json
+ * keeps them (scripts/member_turnover.py writes it from the member file as it
+ * stood before the run). The seat they held and the end date of their last
+ * term, and nothing a visitor could use to contact them: no phone, no office,
+ * no website. Empty until a member leaves the file after 2026-11-13.
+ */
+/** An official place a member's last day was read from. */
+export interface DepartureDateSource {
+  kind: 'house-clerk' | 'bioguide';
+  url: string;
+  /** YYYY-MM-DD, the day a person read it. */
+  read: string;
+}
+
+export interface DepartedMember {
+  bioguide: string;
+  name: string;
+  first: string;
+  last: string;
+  type: 'sen' | 'rep';
+  state: string;
+  district: number | null;
+  party: string | null;
+  /** Their last day: the official one when `served_until_source` names it,
+   *  else the congress-legislators historical file's; null until that file
+   *  lists them. */
+  served_until: string | null;
+  /** Where `served_until` comes from: the Clerk of the House's vacancy list
+   *  or the Biographical Directory, with the address read and the day read
+   *  (data/departure-dates.json). Null when the date is still the volunteer
+   *  historical file's alone: then a mid-term departure has no page. */
+  served_until_source?: DepartureDateSource | null;
+  /** The day the weekly refresh first found them gone from the member file;
+   *  for the sixteen who left before this file existed, recorded by
+   *  scripts/seed-departed-members.py, the day they were recorded
+   *  (2026-11-13). Nothing on the site reads it. */
+  left_file: string;
 }
 
 export interface District {

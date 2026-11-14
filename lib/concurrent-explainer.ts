@@ -1,4 +1,4 @@
-import { settledDecision } from './journey';
+import { finishedDecision } from './journey';
 import type { Bill } from './types';
 
 /*
@@ -75,9 +75,11 @@ export interface ConcurrentReading {
  * The explainer's reading for a record, or null when it gets none: anything
  * but a concurrent resolution both chambers agreed to in one form.
  */
-export function adoptedConcurrentReading(bill: Parameters<typeof settledDecision>[0] & Pick<Bill, 'title'>): ConcurrentReading | null {
+export function adoptedConcurrentReading(bill: Parameters<typeof finishedDecision>[0] & Pick<Bill, 'title'>): ConcurrentReading | null {
   if (!isConcurrentResolution(bill)) return null;
-  if (settledDecision(bill)?.kind !== 'adopted') return null;
+  // finishedDecision: settledDecision, plus an ended Congress's enrolled
+  // concurrent resolution (stage 3, 2026-11-13; identical today).
+  if (finishedDecision(bill)?.kind !== 'adopted') return null;
   return { warPowers5c: invokesWarPowers5c(bill) };
 }
 

@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import { statusKeyFor } from '@/lib/journey';
+import en from '@/messages/en.json';
+import es from '@/messages/es.json';
 import { headers } from 'next/headers';
 import { after } from 'next/server';
 import { billSlug, getBill, localizeBill } from '@/lib/core';
@@ -92,6 +94,13 @@ export default async function BillCardEmbedPage({
         // prints it with the status line, ABOVE the "Data as of" stamp, so a
         // fresh sync date can never read as corroboration of an old fact.
         lastActionDate: bill.last_action_date,
+        // A bill of an ended Congress: the approved long label in both
+        // languages, from the server, since the embed's dictionaries carry no
+        // ended-only string (lib/ended-messages.ts). Only on such a bill, so
+        // every card today carries exactly the props it did before.
+        ...(statusKeyFor(bill) === 'ended'
+          ? { endedLabel: { en: en.bill.ended.statusLong, es: es.bill.ended.statusLong } }
+          : {}),
       }
     : null;
 

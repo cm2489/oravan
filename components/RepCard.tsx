@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { CALL_BUTTON } from '@/components/call-button';
 import { portraitUrl } from '@/lib/portrait-url';
-import type { Legislator } from '@/lib/types';
+import type { CardMember, Legislator } from '@/lib/types';
 
 function telHref(phone: string) {
   return `tel:+1${phone.replace(/\D/g, '')}`;
@@ -57,11 +57,23 @@ export function usePartyLabel(rep: Pick<Legislator, 'party'>): string | null {
 
 /** The squared portrait frame, initials behind the photo. Decorative: the
  *  name is always printed beside it (see the header comment above). */
-export function RepPortrait({ rep, large = false }: { rep: Legislator; large?: boolean }) {
+export function RepPortrait({
+  rep,
+  large = false,
+  photo = true,
+}: {
+  rep: Pick<Legislator, 'bioguide' | 'first' | 'last'>;
+  large?: boolean;
+  /** False when the photo is known to be missing at the source
+   *  (lib/core/portraits.ts portraitKnownMissing): the initials alone. A
+   *  server page passes it from the record; a card that draws in the browser
+   *  reads CardMember.portraitMissing, set on the server (portraitFlag). */
+  photo?: boolean;
+}) {
   const initials = `${rep.first?.[0] ?? ''}${rep.last?.[0] ?? ''}`.toUpperCase();
   return (
     <span
-      className={`relative flex shrink-0 items-center justify-center overflow-hidden rounded-stamp border-[1.5px] border-line-strong bg-wash ${
+      className={`relative flex shrink-0 items-center justify-center overflow-hidden rounded-stamp border-[1.5px] border-ink-2 bg-wash text-ink-2 ${
         large ? 'h-36 w-30' : 'h-22 w-18'
       }`}
     >
@@ -73,13 +85,15 @@ export function RepPortrait({ rep, large = false }: { rep: Legislator; large?: b
           {initials}
         </span>
       )}
-      <Image
-        src={portraitUrl(rep.bioguide)}
-        alt=""
-        width={large ? 120 : 72}
-        height={large ? 144 : 88}
-        className="absolute inset-0 h-full w-full object-cover"
-      />
+      {photo && (
+        <Image
+          src={portraitUrl(rep.bioguide)}
+          alt=""
+          width={large ? 120 : 72}
+          height={large ? 144 : 88}
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+      )}
     </span>
   );
 }
@@ -137,7 +151,7 @@ export function RepContact({ rep }: { rep: Legislator }) {
   );
 }
 
-export function RepCard({ rep }: { rep: Legislator }) {
+export function RepCard({ rep }: { rep: CardMember }) {
   const t = useTranslations('reps');
   const role = t(repRoleKey(rep));
   const party = usePartyLabel(rep);
@@ -145,7 +159,9 @@ export function RepCard({ rep }: { rep: Legislator }) {
   return (
     <article className="rounded-control border-[1.5px] border-line-strong bg-paper p-5">
       <div className="flex gap-4">
-        <RepPortrait rep={rep} />
+        {/* The initials alone when the photo is known to be missing at the
+            source (CardMember.portraitMissing): never an image that fails. */}
+        <RepPortrait rep={rep} photo={!rep.portraitMissing} />
         <div className="min-w-0">
           <p data-rep-role={repRoleKey(rep)} className="text-xs font-semibold tracking-[0.04em] text-ink-2">
             {role} · {party} · {rep.state}

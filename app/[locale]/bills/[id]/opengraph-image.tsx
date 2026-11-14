@@ -9,14 +9,17 @@ import { markDataUri, wordmarkDataUri, WORDMARK_RATIO } from '@/lib/og-brand';
 
 /*
  * Per-bill share card (WhatsApp/iMessage/Slack previews). Same brand idiom as
- * the locale-level card (app/[locale]/opengraph-image.tsx): ink ground,
- * MONOCHROME paper lockup (`go` is 2.75:1 on ink and never carries the mark
- * there), `go-bright` as the single dark-ground accent, system sans. Re-keyed
+ * the locale-level card (app/[locale]/opengraph-image.tsx): the band's green
+ * ground (go-deep, the owner's look of 2026-11-13), MONOCHROME paper lockup
+ * (11.32:1), `go-bright` as the single accent (6.61:1), the soft and muted
+ * paper lines at 8.82 and 6.42, the AI mark grey (paper on ink-2, 7.56),
+ * system sans, all computed with lib/contrast.ts. Re-keyed
  * to variant B 2026-08-02 — this card shipped the retired Field Notebook
  * palette for a month after the #104 refresh, so every forwarded bill link
  * previewed in the old identity while the site card previewed in the new one.
  * Palette literals restated because Satori resolves no CSS vars; keep in
- * lockstep with globals.css (--color-ink, --color-paper, --color-go-bright).
+ * lockstep with globals.css (--color-go-deep, --color-paper, --color-ink-2,
+ * --color-go-bright).
  *
  * Hard rules for this surface: a forwarded card is a redistribution surface,
  * so it never carries AllSides/lean labels (settled decision) and no advocacy
@@ -27,11 +30,12 @@ import { markDataUri, wordmarkDataUri, WORDMARK_RATIO } from '@/lib/og-brand';
  * this surface included). Never a pill: nothing in Oravan is a pill.
  */
 
-const INK = '#16191b'; // --color-ink
-const PAPER = '#ffffff'; // --color-paper
-const GO_BRIGHT = '#5fd39a'; // --color-go-bright — the dark-ground green
-const PAPER_SOFT = 'rgba(255,255,255,0.86)';
-const PAPER_MUTE = 'rgba(255,255,255,0.7)';
+const BAND = '#133f2d'; // --color-go-deep — the masthead band's green (owner's look, 2026-11-13)
+const INK_2 = '#55514a'; // --color-ink-2 — the grey AI mark (owner's pick 6, 2026-11-13)
+const PAPER = '#fcfaf4'; // --color-paper
+const GO_BRIGHT = '#7fd3a2'; // --color-go-bright — the dark-ground green
+const PAPER_SOFT = 'rgba(252,250,244,0.86)';
+const PAPER_MUTE = 'rgba(252,250,244,0.7)';
 
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
@@ -80,7 +84,7 @@ export default async function OgImage({
           flexDirection: 'column',
           justifyContent: 'space-between',
           padding: 72,
-          background: INK,
+          background: BAND,
           color: PAPER,
           fontFamily: 'sans-serif',
         }}
@@ -107,9 +111,13 @@ export default async function OgImage({
                   sync rebuilds every card; a request-time evaluation would cost
                   the whole prerender. */}
               <span style={{ color: PAPER_SOFT, fontWeight: 600 }}>
-                {tAll(
-                  `bills.status.${statusKeyFor(bill)}`
-                )}
+                {/* A bill of an ended Congress previews the approved LONG
+                    label, "Ended with the 119th Congress" (stage 3,
+                    2026-11-13): a shared link carries no page around it to
+                    say which Congress. Empty ended list today. */}
+                {statusKeyFor(bill) === 'ended'
+                  ? tAll('bill.ended.statusLong')
+                  : tAll(`bills.status.${statusKeyFor(bill)}`)}
               </span>
             </div>
           )}
@@ -129,8 +137,8 @@ export default async function OgImage({
               <div
                 style={{
                   display: 'flex',
-                  background: PAPER,
-                  color: INK,
+                  background: INK_2,
+                  color: PAPER,
                   borderRadius: 6,
                   padding: '4px 12px',
                   fontSize: 24,

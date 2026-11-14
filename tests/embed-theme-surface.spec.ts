@@ -197,14 +197,14 @@ test('the UN-themed default widget keeps Oravan\'s own note treatment — a neut
 test('accent alone still derives --oravan-accent-ink; the AI chip stays an ink mark', async ({
   page,
 }) => {
-  // A pale accent whose readable text color is the dark ink, not the default
-  // near-white — proves the derivation is computed, not hardcoded.
+  // A pale accent whose readable text color is the near-black, not white —
+  // proves the derivation is computed, not hardcoded. Text on a partner's
+  // accent is white or the near-black #16191b, never Oravan's own cream or
+  // warm ink (lib/embed-theme.ts ACCENT_TEXT_*).
   await page.emulateMedia({ colorScheme: 'light' });
   await page.goto('/embed/bill-card?locale=en&slug=' + DECODED_SLUG + '&accent=%23ffe680');
   const html = page.locator('html');
-  await expect
-    .poll(() => html.evaluate(readVar(), '--oravan-accent-ink'))
-    .toBe(MODE_DEFAULTS.light.ink);
+  await expect.poll(() => html.evaluate(readVar(), '--oravan-accent-ink')).toBe('#16191b');
   // The chip half of this test changed MEANING, not just its hex: .bc-chip-ai
   // no longer fills with the accent (embed.css — "the AI label is an INTEGRITY
   // MARK, not brand chrome"), so it renders in --_ink on a transparent ground.
@@ -212,8 +212,11 @@ test('accent alone still derives --oravan-accent-ink; the AI chip stays an ink m
   // ink and the derived accent-ink the same colour today, a color assertion
   // alone would pass either way and would no longer notice the accent coming
   // back.
+  // The owner's grey AI mark (approved 2026-11-13): with no tenant ink the
+  // chip is the ink ladder's grey, ink-2 (app/embed/embed.css --_mark); a
+  // tenant's own ink still wins.
   const chip = page.locator('.bc-chip-ai');
-  expect(await chip.evaluate((el) => getComputedStyle(el).color)).toBe(rgbOf(MODE_DEFAULTS.light.ink));
+  expect(await chip.evaluate((el) => getComputedStyle(el).color)).toBe(rgbOf(colorToken('ink-2')));
   expect(await chip.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgba(0, 0, 0, 0)');
 });
 

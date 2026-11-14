@@ -23,11 +23,11 @@ import { useTranslations } from 'next-intl';
  * IN-FLIGHT IS A REAL DISABLED STATE, not a dimmed one: opacity would drag
  * every pair below AA at once. A checking control takes the `wash` ground and
  * a `line-strong` edge - the one place that pairing is legal, because 1.4.11
- * exempts inactive components - plus `ink-2` text at 7.23:1 and
+ * exempts inactive components - plus `ink-2` text at 6.93:1 and
  * cursor-not-allowed. The status line beside it is `role="status"`, so the
  * wait is announced rather than only drawn.
  *
- * FAILURE IS NEVER CARRIED BY COLOR (go and alert are 1.19:1 apart): a 3px
+ * FAILURE IS NEVER CARRIED BY COLOR (go and alert are 1.24:1 apart): a 3px
  * ink rule, a bold uppercase label, aria-invalid and role="alert" all fire
  * before the alert tone does.
  */
@@ -129,7 +129,7 @@ export function AddressForm({
           <button
             type="submit"
             disabled={checking}
-            className="ring-gap inline-flex min-h-12 items-center justify-center gap-2 rounded-control border-2 border-go bg-go px-6 py-3 font-bold text-paper enabled:hover:border-go-deep enabled:hover:bg-go-deep disabled:cursor-not-allowed disabled:border-line-strong disabled:bg-wash disabled:text-ink-2"
+            className="ring-edge inline-flex min-h-12 items-center justify-center gap-2 rounded-control border-2 border-ink bg-urgent px-6 py-3 font-bold text-ink enabled:hover:bg-urgent-deep disabled:cursor-not-allowed disabled:border-line-strong disabled:bg-wash disabled:text-ink-2"
           >
             {t('refineCta')}
             <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />

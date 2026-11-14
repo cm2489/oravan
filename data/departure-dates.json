@@ -1,0 +1,146 @@
+[
+  {
+    "bioguide": "C001078",
+    "served_until": "2025-05-21",
+    "source": {
+      "kind": "house-clerk",
+      "url": "https://clerk.house.gov/Members/ViewVacancies",
+      "read": "2026-11-13"
+    }
+  },
+  {
+    "bioguide": "C001127",
+    "served_until": "2026-04-21",
+    "source": {
+      "kind": "house-clerk",
+      "url": "https://clerk.house.gov/Members/ViewVacancies",
+      "read": "2026-11-13"
+    }
+  },
+  {
+    "bioguide": "G000359",
+    "served_until": "2026-07-11",
+    "source": {
+      "kind": "bioguide",
+      "url": "https://bioguide.congress.gov/search/bio/G000359",
+      "read": "2026-11-13"
+    }
+  },
+  {
+    "bioguide": "G000551",
+    "served_until": "2025-03-13",
+    "source": {
+      "kind": "house-clerk",
+      "url": "https://clerk.house.gov/Members/ViewVacancies",
+      "read": "2026-11-13"
+    }
+  },
+  {
+    "bioguide": "G000590",
+    "served_until": "2025-07-20",
+    "source": {
+      "kind": "house-clerk",
+      "url": "https://clerk.house.gov/Members/ViewVacancies",
+      "read": "2026-11-13"
+    }
+  },
+  {
+    "bioguide": "G000594",
+    "served_until": "2026-04-14",
+    "source": {
+      "kind": "house-clerk",
+      "url": "https://clerk.house.gov/Members/ViewVacancies",
+      "read": "2026-11-13"
+    }
+  },
+  {
+    "bioguide": "G000596",
+    "served_until": "2026-01-05",
+    "source": {
+      "kind": "house-clerk",
+      "url": "https://clerk.house.gov/Members/ViewVacancies",
+      "read": "2026-11-13"
+    }
+  },
+  {
+    "bioguide": "L000578",
+    "served_until": "2026-01-06",
+    "source": {
+      "kind": "house-clerk",
+      "url": "https://clerk.house.gov/Members/ViewVacancies",
+      "read": "2026-11-13"
+    }
+  },
+  {
+    "bioguide": "M001190",
+    "served_until": "2026-03-23",
+    "source": {
+      "kind": "bioguide",
+      "url": "https://bioguide.congress.gov/search/bio/M001190",
+      "read": "2026-11-13"
+    }
+  },
+  {
+    "bioguide": "R000595",
+    "served_until": "2025-01-20",
+    "source": {
+      "kind": "bioguide",
+      "url": "https://bioguide.congress.gov/search/bio/R000595",
+      "read": "2026-11-13"
+    }
+  },
+  {
+    "bioguide": "S001157",
+    "served_until": "2026-04-22",
+    "source": {
+      "kind": "house-clerk",
+      "url": "https://clerk.house.gov/Members/ViewVacancies",
+      "read": "2026-11-13"
+    }
+  },
+  {
+    "bioguide": "S001193",
+    "served_until": "2026-04-14",
+    "source": {
+      "kind": "house-clerk",
+      "url": "https://clerk.house.gov/Members/ViewVacancies",
+      "read": "2026-11-13"
+    }
+  },
+  {
+    "bioguide": "S001207",
+    "served_until": "2025-11-20",
+    "source": {
+      "kind": "house-clerk",
+      "url": "https://clerk.house.gov/Members/ViewVacancies",
+      "read": "2026-11-13"
+    }
+  },
+  {
+    "bioguide": "T000489",
+    "served_until": "2025-03-05",
+    "source": {
+      "kind": "house-clerk",
+      "url": "https://clerk.house.gov/Members/ViewVacancies",
+      "read": "2026-11-13"
+    }
+  },
+  {
+    "bioguide": "V000137",
+    "served_until": "2025-01-10",
+    "source": {
+      "kind": "bioguide",
+      "url": "https://bioguide.congress.gov/search/bio/V000137",
+      "read": "2026-11-13"
+    }
+  },
+  {
+    "bioguide": "W000823",
+    "served_until": "2025-01-20",
+    "source": {
+      "kind": "house-clerk",
+      "url": "https://clerk.house.gov/Members/ViewVacancies",
+      "read": "2026-11-13"
+    }
+  }
+]

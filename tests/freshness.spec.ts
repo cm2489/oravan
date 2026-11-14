@@ -389,7 +389,7 @@ const calendarChamberOf = (slug: string): 'house' | 'senate' | null => {
 };
 
 test.describe('R2b: the green floor panel never fires off a stale placement', () => {
-  const PANEL = 'section.bg-go-deep';
+  const PANEL = 'section[data-crown]';
   const split = calendarPlacementSlugs(Date.now());
   // A placement sitting exactly on the 14-day edge can flip between `next
   // build` baking the page and this assertion running minutes later.
@@ -438,7 +438,7 @@ test.describe('R2b: the green floor panel never fires off a stale placement', ()
  * wrong one.
  */
 test.describe('R2c: a fresh PENDING floor vote earns the same band the crown promises', () => {
-  const PANEL = 'section.bg-go-deep';
+  const PANEL = 'section[data-crown]';
   const pending = floorPendingSlugs(Date.now());
   const PENDING_STABLE = stableAcross((at) => floorPendingSlugs(at));
   const CHIP = { house: 'Floor vote pending in the House', senate: 'Floor vote pending in the Senate' };

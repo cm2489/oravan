@@ -79,7 +79,7 @@ export default function LocaleError({
         <button
           type="button"
           onClick={reset}
-          className="ring-gap inline-flex min-h-12 items-center justify-center rounded-control border-2 border-go bg-go px-6 font-bold text-paper transition-colors hover:border-go-deep hover:bg-go-deep"
+          className="ring-edge inline-flex min-h-12 items-center justify-center rounded-control border-2 border-ink bg-urgent px-6 font-bold text-ink transition-colors hover:bg-urgent-deep"
         >
           {t('retry')}
         </button>

@@ -14,6 +14,10 @@ Owner, 2026-09-27 02:35: features (keep, cut, later) → core flows → grayscal
 
 Owner, 2026-09-26 03:58 and 2026-09-27 02:35: green is the brand — the masthead band and the wordmark; yellow (`#ffc933`, "lamp") marks only what you can act on; each has one light, flat tint used once or twice per main page — tints, not gradients. Status and date tags are plain text. Links are ink, underlined. The Call tab in the island bar is not yellow (2026-09-27 00:43; this reversed 2026-09-26 13:50, which reversed the card l5 note — only the last stands). Alert stays an orange-brown, never a flag red. On Today, a yellow tag marks a floor notice (owner, 2026-09-29, typed: "if there is a vote this week scheduled it needs to have a yellow tag or something that explicitly draws attention to it"); for that one tag this replaces "Status and date tags are plain text". Contrast pairs are recomputed for these tokens before anything ships (page 1, rule 7; method in `docs/accessibility.md`).
 
+Owner, 2026-11-13 6:33 PM ET, his answer on the Last Look page (the look across the whole site, #491): "Yes. Merge it once the check and the tests pass."
+
+Owner, 2026-11-13 12:40 PM ET, his five clicks on the Colour Mix page (the look built as #491): the line under the headline, "Green line, as in the picture you tapped"; the button inside the stone panel, "Green button, as c1 had it"; the date label inside the panel, "Yellow label, as on the live site"; which green for links, "This look's green, a little deeper"; is this the look, "Yes. This is the look. Finish it across the site."
+
 **A hue change is a copy change.** ~~Shipped copy names the colour of the floor panel in both languages: `home.weekNote` and `home.weekNoteAnnounced` begin "The green panel…" / "El panel verde…". Change the panel's colour and those two strings change in the same PR, in `messages/en.json` and `messages/es.json`.~~ (Struck 2026-09-28: the owner cut the homepage's green-panel explainer, UX inventory H13 "cut", and those were its two strings.) Since that cut no string in `messages/en.json` or `messages/es.json` names a colour (searched 2026-09-28). If one ever does again, it changes in the same PR as the hue, in both languages.
 
 ## Shape
@@ -58,6 +62,8 @@ The impeccable skill is a lint and a rubric, not an explorer (audit card a8, 202
 
 Newest first. One line per change: date · who · the words or the card · what line changed.
 
+- `2026-11-13 · owner · his five clicks on the Colour Mix page, 12:40 PM ET ("Green line, as in the picture you tapped"; "Green button, as c1 had it"; "Yellow label, as on the live site"; "This look's green, a little deeper"; "Yes. This is the look. Finish it across the site.") → colour: one dated line recording them, under Colour`
+- `2026-09-30 · owner · "For now start on skin c" (his pick from the colour direction page, as the orchestrator relayed it) → colour: direction c, warm paper and bottle green with a green masthead band, built as #425`
 - `2026-09-30 · owner · "31 a but add floor first" and "29 a" (typed, his reply to the Run 1 Report) → on /today the floor band comes before "The chambers", and the phone tab reads "Big Questions" / "Grandes preguntas" on two lines`
 - `2026-09-29 · owner · "if there is a vote this week scheduled it needs to have a yellow tag or something that explicitly draws attention to it" (typed) → colour: on Today, a yellow tag marks a floor notice; "Status and date tags are plain text" no longer covers that one tag`
 - `2026-09-29 · owner · "The 'Call' button in the header needs to be removed and 'Today in Congress' needs to come first on the header" (typed), "Desktop only" (picker), "I'd like the phone to say Big Questions instead of just questions if possible" (typed) → layout: the desktop row is Today in Congress · Bills · Big Questions · My reps; the phone bar keeps five tabs and says Big Questions`

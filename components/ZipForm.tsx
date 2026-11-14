@@ -16,7 +16,7 @@ import { lookupMembers } from '@/lib/members-action';
  * actually decides whether two controls fit side by side. A viewport query
  * would leave the rail's 22rem copy rendering a two-track grid on a desktop.
  *
- * FAILURE IS NEVER CARRIED BY COLOR. `go` and `alert` sit 1.19:1 apart in
+ * FAILURE IS NEVER CARRIED BY COLOR. `go` and `alert` sit 1.24:1 apart in
  * luminance, so a red-vs-green read is unavailable to a deuteranope. The
  * error block is therefore opened by a 3px ink rule, led by a bold uppercase
  * label, and wired with aria-invalid + role="alert"; the alert tone on the
@@ -235,7 +235,7 @@ function ZipFormBody({
           className={
             submitTone === 'secondary'
               ? 'ring-gap inline-flex min-h-12 items-center justify-center gap-2 rounded-control border-2 border-ink bg-paper px-6 py-3 font-bold text-ink hover:bg-ink hover:text-paper active:bg-ink active:text-paper'
-              : 'ring-gap inline-flex min-h-12 items-center justify-center gap-2 rounded-control border-2 border-go bg-go px-6 py-3 font-bold text-paper hover:border-go-deep hover:bg-go-deep active:border-go-deep active:bg-go-deep'
+              : 'ring-edge inline-flex min-h-12 items-center justify-center gap-2 rounded-control border-2 border-ink bg-urgent px-6 py-3 font-bold text-ink hover:bg-urgent-deep active:bg-urgent-deep'
           }
         >
           {t('zipCta')}

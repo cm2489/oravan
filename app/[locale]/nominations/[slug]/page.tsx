@@ -440,7 +440,7 @@ export default async function NominationPage({
                 are the two ways this could over-claim. */}
             {nomination.exec_calendar_number !== null && nomination.last_action_date && (
               <p className="mt-4">
-                <Chip tone="urgent" dateLabel={fmtShort(nomination.last_action_date)}>
+                <Chip tone="floor" dateLabel={fmtShort(nomination.last_action_date)}>
                   {t('nominations.onExecCalendar', { number: nomination.exec_calendar_number })}
                 </Chip>
               </p>

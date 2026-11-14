@@ -145,7 +145,10 @@ export function BillsBrowser({
   // The honest decode count for the trust line: bills carrying an AI
   // headline in this payload (2,572 of 2,574 at the time of writing — never
   // "every bill", because the corpus genuinely holds undecoded stragglers).
-  const decodedCount = useMemo(() => bills.filter((b) => b.headline).length, [bills]);
+  // "N of M active bills decoded": a bill of an ended Congress is not active
+  // (FeedTeaser.ended, set only on such a bill; none until January 2027).
+  const activeBills = useMemo(() => bills.filter((b) => !b.ended), [bills]);
+  const decodedCount = useMemo(() => activeBills.filter((b) => b.headline).length, [activeBills]);
 
   return (
     <div>
@@ -192,7 +195,7 @@ export function BillsBrowser({
             The count is LIVE (bills with a decode in this very payload),
             never a hardcoded claim that drifts from the data. */}
         <p className="mt-2 max-w-note text-sm text-ink-2">
-          {t('bills.searchTrust', { decoded: decodedCount, total: bills.length })}
+          {t('bills.searchTrust', { decoded: decodedCount, total: activeBills.length })}
         </p>
       </div>
 

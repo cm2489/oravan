@@ -15,7 +15,7 @@ import { FloorEvidence } from '@/components/FloorEvidence';
 import { AiMark, FloorVotePanel, Stamp, selectFloorVoteFeature, type ChipGround } from '@/components/system';
 import {
   billSlug,
-  getAllBills,
+  activeBillCount,
   getFloorFeatureCandidates,
   getNewsBills,
   getTopActions,
@@ -151,7 +151,8 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const format = await getFormatter();
   const top = getTopActions(4, locale);
   const newsRaw = getNewsBills(locale, 7);
-  const total = getAllBills().length;
+  // "Browse all N active bills": a bill of an ended Congress is not active.
+  const total = activeBillCount();
   const freshness = getFreshness();
   const dataAsOf = await dataAsOfString(locale);
   // AE3: the quiet-week claim keys on the floor alone. In the rare state
@@ -315,18 +316,18 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   /*
    * ONE QUIET AI LABEL PER BLOCK (card a9): the AI mark, one short line, and
    * a link to how this is made. Each ground keeps its own contrast-checked
-   * tokens: ink-2 on paper (7.87:1), ink-pale on the ink band (10.82:1),
-   * go-pale on the green enamel (6.86:1).
+   * tokens: ink-2 on paper (7.56:1), ink-pale on the ink band (10.33:1),
+   * ink-2 on the stone floor panel (5.95:1, its link green at 5.79:1).
    */
   const AI_LINE_TEXT: Record<ChipGround, string> = {
     paper: 'text-ink-2',
     ink: 'text-ink-pale',
-    go: 'text-go-pale',
+    stone: 'text-ink-2',
   };
   const AI_LINK: Record<ChipGround, string> = {
     paper: 'text-go hover:text-go-deep',
     ink: 'text-go-bright hover:text-paper',
-    go: 'text-paper hover:decoration-[3px]',
+    stone: 'text-go hover:decoration-[3px]',
   };
   const aiLine = (text: string, ground: ChipGround = 'paper', className = 'mt-3') => (
     <p className={`flex max-w-read items-start gap-2 text-xs ${AI_LINE_TEXT[ground]} ${className}`}>
@@ -390,7 +391,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                 390×664 in both locales (tests/home-fold.spec.ts). */}
             <a
               href="#top-actions"
-              className="ring-gap mt-5 inline-flex min-h-12 items-center gap-2 rounded-control border-2 border-go bg-go px-6 py-3 font-bold text-paper no-underline hover:border-go-deep hover:bg-go-deep"
+              className="ring-edge mt-5 inline-flex min-h-12 items-center gap-2 rounded-control border-2 border-ink bg-urgent px-6 py-3 font-bold text-ink no-underline hover:bg-urgent-deep"
             >
               {t('heroJump')}
               <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
@@ -440,20 +441,22 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       {/* ---------------------------------------------------------------
           THIS WEEK (H11, H12, H14, H15). First, straight after the hero,
           led by the floor item when the record has one. Full-width by
-          construction: the green panel is full-bleed and MUST stay inside
+          construction: the floor panel is full-bleed and MUST stay inside
           this section, so the max-width wrapper is inside it.
           --------------------------------------------------------------- */}
       <section aria-labelledby="top-actions" data-front-door="week">
         {crowned && feature && crownDate ? (
-          // THE GREEN CROWN (2026-08-01): on a hot week the masthead is the
-          // top of the green slab itself, one ground, earned by the panel.
-          <div className="mt-2 border-y-[3px] border-go bg-go-deep">
+          // THE CROWN (2026-08-01): on a hot week the masthead is the top of
+          // the floor panel's slab itself, one ground, earned by the panel.
+          // The ground is stone with ink type (the owner's look, 2026-11-13;
+          // it was the green enamel); `on-stone` tunes the focus ring to it.
+          <div className="on-stone mt-2 border-y-[3px] border-ink bg-stone">
             <div className="mx-auto max-w-5xl px-4 pt-6 md:pt-8">
               {/* Below md the heading and the next line would cross the
                   stamp's straddle band, so the row reserves it: pb-8 here,
                   mt-8 on the line after. */}
-              <div className="relative border-b-[1.5px] border-paper/35 pb-8 md:pb-3">
-                <h2 id="top-actions" className="text-h2-loud font-extrabold text-paper">
+              <div className="relative border-b-[1.5px] border-ink/35 pb-8 md:pb-3">
+                <h2 id="top-actions" className="text-h2-loud font-extrabold text-ink">
                   {t('topTitle')}
                 </h2>
                 <Stamp label={t('stampLabel')} dateLabel={stampDate} srLabel={dataAsOf} />
@@ -463,9 +466,9 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               <StalenessNote
                 checkedAt={freshness.checkedAt}
                 standalone
-                className="mt-8 max-w-read text-sm font-semibold text-paper md:mt-4"
+                className="mt-8 max-w-read text-sm font-semibold text-ink md:mt-4"
               />
-              {aiLine(t('aiWeek'), 'go', 'mt-8 md:mt-4')}
+              {aiLine(t('aiWeek'), 'stone', 'mt-8 md:mt-4')}
             </div>
             <FloorVotePanel
               flush
@@ -512,7 +515,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                         link: (chunks) => (
                           <Link
                             href={`/questions/${featureQuestion.id}`}
-                            className="inline-flex min-h-11 items-center font-semibold text-paper underline underline-offset-4 hover:decoration-[3px]"
+                            className="inline-flex min-h-11 items-center font-semibold text-go underline underline-offset-4 hover:decoration-[3px]"
                           >
                             {chunks}
                           </Link>

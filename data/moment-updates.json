@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-11-13T16:15:42.959Z"
+    "generated_at": "2026-11-14T02:44:18.893Z"
   },
   "government-funding-deadline": {
     "updates": [],
@@ -3548,8 +3548,13 @@
       }
     ],
     "summary_attempts": {
-      "day": "2026-10-01",
+      "day": "2026-11-13",
       "count": 1
+    },
+    "summary_refusals": {
+      "count": 1,
+      "day": "2026-11-13",
+      "reason": "en: absence claim \"No roll call vote\" over a record that is not empty — the grounding holds a vote or action in this window, so \"nothing happened\" is false"
     }
   }
 }

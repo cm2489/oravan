@@ -1,4 +1,5 @@
 import manifest from '@/data/portrait-manifest.json';
+import missing from '@/data/portrait-missing.json';
 
 /*
  * Mirrored-portrait manifest reader (S15, the portrait companion to F3;
@@ -52,4 +53,29 @@ export function mirroredPortraitBioguides(): string[] {
 export function mirroredPortraitBlobUrl(bioguide: string): string | null {
   if (!hasMirroredPortrait(bioguide)) return null;
   return MANIFEST[bioguide].blobUrl;
+}
+
+const MISSING = missing as Record<string, { firstMissing: string; lastChecked: string }>;
+
+/**
+ * Is this member's photo known to be missing at the portrait source (it
+ * answered 404)? data/portrait-missing.json is the record of that,
+ * written by scripts/mirror-portraits.mjs. A page that knows the answer
+ * renders the initials alone, the way the embed renders nothing for a
+ * bioguide with no mirrored portrait, rather than an image that fails.
+ * Read by the record page of a member who left (2026-11-13): Sylvester
+ * Turner's photo answers 404.
+ */
+export function portraitKnownMissing(bioguide: string): boolean {
+  return BIOGUIDE_RE.test(bioguide) && Object.prototype.hasOwnProperty.call(MISSING, bioguide);
+}
+
+/**
+ * The flag a member card reads (lib/types.ts CardMember): `{ portraitMissing:
+ * true }` for a member whose photo is known missing, `{}` for everyone else.
+ * Spread it onto the member on the server, so a card that draws in the
+ * browser (components/RepsLookup.tsx) needs no data/ file of its own.
+ */
+export function portraitFlag(bioguide: string): { portraitMissing?: true } {
+  return portraitKnownMissing(bioguide) ? { portraitMissing: true } : {};
 }
