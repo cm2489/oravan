@@ -1,13 +1,46 @@
-import type { NextFetchEvent, NextRequest } from 'next/server';
+import { NextResponse, type NextFetchEvent, type NextRequest } from 'next/server';
 import createProxy from 'next-intl/middleware';
 import { routing } from './i18n/routing';
 import { callerIp, noteDistinctAddress } from './lib/ratelimit';
-import { isCountablePageviewRequest, notePageview, pageviewSurfaceForPath } from './lib/usage';
+import { decodeShortAddressIndex, shortAddressTarget } from './lib/short-address';
+import { isCountablePageviewRequest, notePageview, pageviewSurfaceForPath, type PageviewSurface } from './lib/usage';
 
 // Next.js 16: middleware.ts -> proxy.ts. next-intl's handler still only does
 // locale negotiation/redirects here - no auth, no session, no cookie (see
 // i18n/routing.ts's localeCookie: false), nothing about a visitor stored.
 const handler = createProxy(routing);
+
+/*
+ * Short addresses for bills (/hr9340 -> the bill page; lib/short-address.ts
+ * carries the full argument). Which bills exist is a ~3 KB bitset that
+ * next.config.ts encodes from data/bills.json at BUILD time and inlines here
+ * as SHORT_ADDRESS_INDEX; it is decoded once per server instance, and each
+ * request costs one pattern test and one bit test. The corpus itself never
+ * enters this bundle. This is the one piece of per-request work proxy.ts
+ * does beyond locale negotiation and the two counts below, and it is named
+ * as such where CLAUDE.md rule 2's exceptions are named
+ * (tests/static-rendering.spec.ts).
+ */
+const SHORT_ADDRESS_INDEX = decodeShortAddressIndex(process.env.SHORT_ADDRESS_INDEX);
+
+/*
+ * 307, not 308. A 308 is permanent: browsers cache it with no expiry, so a
+ * reader who opened /hr1 once would keep landing on H.R. 1 of the 119th
+ * Congress after bill numbers restart in January 2027 (card d2, the owner's
+ * decision still to come). A 307 is not cached unless told to be, and
+ * `no-store` says so explicitly, so the day the Congress constant changes,
+ * every short address follows it. The target is a bare path: the request's
+ * query string is dropped, never forwarded (rule 1: a shared link never
+ * carries a stance). `noindex` keeps the short form itself out of search
+ * results; the bill page's own canonical URL is unchanged.
+ */
+function shortAddressRedirect(req: NextRequest, target: string): NextResponse {
+  const url = new URL(target, req.nextUrl.origin);
+  const res = NextResponse.redirect(url, 307);
+  res.headers.set('Cache-Control', 'no-store');
+  res.headers.set('X-Robots-Tag', 'noindex');
+  return res;
+}
 
 /*
  * The two things this file does BEYOND locale negotiation, both after the
@@ -47,10 +80,18 @@ const handler = createProxy(routing);
  * page load. A page must never fail because a counter did.
  */
 export default function proxy(req: NextRequest, event: NextFetchEvent) {
-  const res = handler(req);
+  const shortTarget =
+    req.method === 'GET' || req.method === 'HEAD'
+      ? shortAddressTarget(req.nextUrl.pathname, routing.locales, routing.defaultLocale, SHORT_ADDRESS_INDEX)
+      : null;
+  const res = shortTarget ? shortAddressRedirect(req, shortTarget) : handler(req);
   if (isCountablePageviewRequest(req)) {
+    // A short-address redirect counts as the 'short' template (owner, card
+    // d3, 2026-09-26: "one number a day, nothing about who"): which bill it
+    // named is dropped here like every other path segment.
+    const surface: PageviewSurface = shortTarget ? 'short' : pageviewSurfaceForPath(req.nextUrl.pathname, routing.locales);
     try {
-      event.waitUntil(notePageview(pageviewSurfaceForPath(req.nextUrl.pathname, routing.locales)).catch(() => {}));
+      event.waitUntil(notePageview(surface).catch(() => {}));
     } catch {
       // No waitUntil available (or it refused) - drop the count, never the page.
     }

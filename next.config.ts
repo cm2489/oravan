@@ -1,6 +1,9 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import type { NextConfig } from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
 import { REVIEW_ENDED_ENV, reviewEndedCongressFrom } from './lib/ended-state.mjs';
+import { encodeShortAddressIndex, SHORT_ADDRESS_CONGRESS, type ShortAddressBill } from './lib/short-address';
 
 const withNextIntl = createNextIntlPlugin();
 
@@ -23,11 +26,21 @@ if (reviewedEndedCongress !== null) {
   );
 }
 
+// Short addresses for bills (/hr9340, lib/short-address.ts): which bills of
+// the current Congress exist, as a ~3 KB bitset, computed here at BUILD time
+// from the committed corpus and inlined into proxy.ts's bundle by `env`
+// below. Only the bitset crosses; the corpus stays out of the proxy bundle.
+// Not a secret: it says which public bill numbers the public corpus holds.
+const bills = JSON.parse(readFileSync(join(process.cwd(), 'data/bills.json'), 'utf8')) as ShortAddressBill[];
+
 const nextConfig: NextConfig = {
-  // A review build only: bake the reviewed Congress into this build's server
-  // and browser code, so routes rendered on request read what the prerendered
-  // pages read (lib/ended-state.mjs). Absent on every real build.
-  ...(reviewedEndedCongress !== null ? { env: { ORAVAN_REVIEW_ENDED_CONGRESS: String(reviewedEndedCongress) } } : {}),
+  env: {
+    SHORT_ADDRESS_INDEX: encodeShortAddressIndex(bills, SHORT_ADDRESS_CONGRESS),
+    // A review build only: bake the reviewed Congress into this build's server
+    // and browser code, so routes rendered on request read what the prerendered
+    // pages read (lib/ended-state.mjs). Absent on every real build.
+    ...(reviewedEndedCongress !== null ? { ORAVAN_REVIEW_ENDED_CONGRESS: String(reviewedEndedCongress) } : {}),
+  },
   images: {
     remotePatterns: [
       // Public-domain congressional portraits (unitedstates project)
@@ -35,6 +48,12 @@ const nextConfig: NextConfig = {
     ],
   },
   async redirects() {
+    // Short addresses are NOT listed here (2026-09-29): one config redirect
+    // per bill would be ~6,450 rules, past Next's own 1,000-route warning,
+    // matched in order on every request, and a config redirect forwards the
+    // request's query string, which a short address must drop (rule 1).
+    // proxy.ts answers them instead; see lib/short-address.ts.
+    //
     // Route rename (owner decision, 2026-08): /moments → /questions,
     // /impact → /record. `:path*` matches zero segments, so the bare paths
     // are covered by the same rules as their children (and #fragments

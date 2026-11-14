@@ -242,6 +242,9 @@ const RAW_REFERER_MATERIAL = /referer|referrer|pathname|nexturl|\bhref\b|\bsearc
 // 'member' and 'today' added 2026-09-27 (the 2026-09-27 audit, SY-49): the
 // member-page template (/reps/<id>) and the daily-brief template (/today,
 // /today/<date>). Both were counted under 'other' until then.
+// 'short' added 2026-09-29 (owner, card d3, 2026-09-26): requests a short
+// address (/hr9340) redirected to a bill page — the short-address template,
+// never which bill (lib/short-address.ts, proxy.ts).
 const ALLOWED_PAGEVIEW_SURFACES = new Set([
   'home',
   'bills-index',
@@ -253,6 +256,7 @@ const ALLOWED_PAGEVIEW_SURFACES = new Set([
   'record',
   'nominations',
   'today',
+  'short',
   'other',
 ]);
 // Matches lib/usage.ts's `export const PAGEVIEW_SURFACES = [ ... ]`. Kept
