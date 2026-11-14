@@ -148,7 +148,7 @@ The first command was **run on 2026-11-13 and refused**: the Census geocoder ans
 Found on 2026-11-13 by simulating the switch: an independent check bumped the tracked Congress and ran the suite. The stage 8 pull request, which bumps `lib/congress.mjs` and fills the ended list, must update these in the same change. **Not run here:** stage 8 is not built.
 
 - `tests/departed-members.unit.spec.ts`:
-  - five fixture tests hard-code 2025 and 2026 days against a policy derived from the tracked Congress (`BEFORE`, `AFTER`, `START_DAY`, `ENDED_DAY`); after the bump those days fall outside the "tracked" term;
+  - four fixture tests hard-code 2025 and 2026 days against a policy derived from the tracked Congress (`BEFORE`, `AFTER`, `START_DAY`, `ENDED_DAY`); after the bump those days fall outside the "tracked" term. A fifth, "names the switch the code is aimed at", fails as soon as the Congress number is bumped (counted by an independent reviewer who simulated the switch on 2026-11-13; not run on the real switch);
   - "today's sixteen …" compares each day against the tracked Congress's first day, which becomes 2027-01-03;
   - "the ended list is empty" in the "today" block fails by design: it is the tripwire that says this file must be revisited.
 - `tests/reps-zip-address.spec.ts` (fixes the address answer to NY-12) and `tests/district.spec.ts` (names Daniel S. Goldman, Jerrold Nadler, Charles E. Schumer, Kirsten E. Gillibrand and Nick LaLota) pin sitting members. Both are already on `main`. They fail if one of those members leaves, or if the 120th map moves those addresses.

@@ -384,7 +384,13 @@ test.describe('today', () => {
     for (const [b, day] of Object.entries(SIXTEEN)) {
       // One of them back in Congress is a sitting member again: their member
       // page replaces the record, and this test must not need an edit then.
-      if (SITTING.has(b)) continue;
+      // If they later leave a second time, the weekly refresh writes a NEW
+      // record (a later `left_file`, no official source, no page until a date
+      // is confirmed): that record is a different departure from the one
+      // pinned here, so it is skipped too. All sixteen were recorded on
+      // 2026-11-13; a removed record or a changed day still fails below.
+      const rec = RECORDS.find((r) => r.bioguide === b);
+      if (SITTING.has(b) || (rec && String(rec.left_file) > '2026-11-13')) continue;
       expect(getDepartedMember(b)?.served_until, b).toBe(day);
       expect(hasMemberPage(b), b).toBe(true);
     }
