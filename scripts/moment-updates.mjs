@@ -196,7 +196,15 @@ import {
   statusDiffToCandidate,
   suppressRedundantStatusChanges,
 } from './moment-updates-map.mjs';
-import { isRecheckable, recheckStore } from '../lib/moment-updates-recheck.mjs';
+import {
+  RECHECK_ACCEPT_PATH,
+  acceptListProblems,
+  acceptedIds,
+  amendmentsNamedInStore,
+  isRecheckable,
+  recheckPendingIds,
+  recheckStore,
+} from '../lib/moment-updates-recheck.mjs';
 
 // ---- caps (v2 spec §6; every one of them code-enforced) ----
 const MODE = process.env.MOMENT_UPDATES_MODE === 'nightly' ? 'nightly' : 'incremental';
@@ -468,67 +476,102 @@ async function collectVehicleActions() {
 }
 
 /* ------------------------------------------------------------------ *
- * 0 · the nightly re-check of every stored line against the record
- *     (owner, 2026-11-14, answer 92 a). Nightly only.
+ * 4b · the nightly re-check of every stored line against the record
+ *      (owner, 2026-11-14, answer 92 a). Nightly only.
  *
- * The rule, the outcomes and the guards are lib/moment-updates-recheck.mjs;
- * this does the fetching, the logging and the step summary. One whole action
- * list per bill that has a re-checkable row (Congress.gov, free; at most
- * RECHECK_MAX_PAGES requests per bill, so ~5 requests a night today).
+ * The rules, the outcomes and the guards are lib/moment-updates-recheck.mjs;
+ * this does the fetching, the logging and the step summary.
  *
- * WHAT A CORRECTED ROW PRINTS. Its stored one-liner was written from the
- * earlier words, so it never survives the correction: the row prints the
- * record's new words, quoted (fallbackTextFor, `ai: false`), and joins this
- * run's ONE batched decode call so a plain-language line of the new words
- * can replace that quote, under the same lint as every line. If the decode
- * is skipped, fails or is refused, the quote stands. Cost: about 100 input and
- * 60 output tokens per corrected row inside a call the run usually makes
- * anyway — well under $0.001 a row at Haiku 4.5's $1/$5 per million tokens;
- * on a night with no other new event it opens that call itself, about
- * $0.002. A correction is rare (2 rows in the file's whole history so far).
+ * WHEN. After tonight's collection is merged and pruned, so a row is judged
+ * against every action the run has already stored (an action another stored
+ * row quotes is never taken as this row's rewording), then the store is
+ * pruned again so a corrected row folds into a twin as any row would.
+ *
+ * WHAT IT FETCHES. One whole action list per bill that has a re-checkable row,
+ * and one per amendment such a row names (rule 6), from Congress.gov (free; at
+ * most RECHECK_MAX_PAGES requests each; about 6 a night today).
+ *
+ * WHAT A CORRECTED ROW PRINTS. Its stored line was written from the earlier
+ * words, so it never survives the correction: the row prints the record's new
+ * words, quoted (fallbackTextFor, `ai: false`), then a decode of the new words
+ * is asked for in a call of its own (decodeUpdates, the same lint as every
+ * line). A decode that fails, is refused or is skipped leaves the quote.
+ * A quote the update lint refuses is never written: the row is HELD (hidden).
+ * Cost: about 100 input and 60 output tokens per corrected row on Haiku 4.5
+ * ($1/$5 per million) inside one call with the usual prompt, about $0.0004 to
+ * $0.002 on a night with a correction, nothing on a night without one.
+ *
+ * WHEN IT FAILS. Anything it throws is caught: the night's collection and
+ * summaries still run and are written, the re-check writes nothing, and the
+ * step ends red (process.exitCode) so a person sees it. A refused night
+ * (lib/moment-updates-recheck.mjs's guards) ends red the same way; the
+ * runbook docs/runbooks/record-recheck.md says how a person lets a real batch
+ * through for one night (data/record-recheck-accept.json).
  * ------------------------------------------------------------------ */
 
-/** The most pages of 250 actions read for one bill's whole list. */
+/** The most pages of 250 actions read for one bill's or amendment's whole list. */
 const RECHECK_MAX_PAGES = 4;
 
 /**
- * One bill's WHOLE action list, every page, with the count the response says
- * the list holds. `fetchPage` is injectable for tests. Throws on a failed
- * request; the caller then skips the bill.
- * @param {string} slug
+ * One WHOLE action list, every page, with the count and the request the
+ * response gives. `fetchPage` is injectable for tests. Throws on a failed
+ * request; the caller then skips that list.
+ * @param {string} path a Congress.gov path ending /actions
  * @param {(path: string, params: { limit: number, offset: number }) => Promise<any>} [fetchPage]
- * @returns {Promise<{ actions: any[], total: number|null }>}
+ * @returns {Promise<{ actions: any[], total: number|null, request: Record<string, any>|null }>}
  */
-export async function fetchWholeActionList(slug, fetchPage = cg) {
+export async function fetchWholeActionList(path, fetchPage = cg) {
   const actions = [];
   let total = null;
+  let request = null;
   for (let page = 0; page < RECHECK_MAX_PAGES; page++) {
-    const res = await fetchPage(vehicleActionsPath(slug), { limit: 250, offset: page * 250 });
+    const res = await fetchPage(path, { limit: 250, offset: page * 250 });
     const got = Array.isArray(res?.actions) ? res.actions : [];
     total = Number.isInteger(res?.pagination?.count) ? res.pagination.count : null;
+    request ??= res?.request && typeof res.request === 'object' ? res.request : null;
     actions.push(...got);
     if (total === null || got.length === 0 || actions.length >= total) break;
   }
-  return { actions, total };
+  return { actions, total, request };
+}
+
+/** "119-samdt-6776" -> "/amendment/119/samdt/6776/actions". */
+export function amendmentActionsPath(key) {
+  const [congress, type, number] = String(key).split('-');
+  return `/amendment/${congress}/${type}/${number}/actions`;
 }
 
 /**
  * The night's re-check report, as markdown for the step summary: every
- * correction and withdrawal, named.
+ * correction, withdrawal, hold and reinstatement, named.
  */
 export function recheckSummaryMarkdown(result) {
   const lines = ['### Record re-check of stored update lines', ''];
   const quote = (t) => `"${String(t ?? '').replace(/\|/g, '\\|')}"`;
-  const label = { reworded: 'corrected to the record\'s words', withdrawn: 'withdrawn (the record no longer holds it)', reinstated: 'reinstated (the record holds it again)' };
-  if (result.refused) lines.push(`**Refused, nothing changed:** ${result.refused}.`, '', 'Held back:');
+  const label = {
+    reworded: "corrected to the record's words",
+    withdrawn: 'withdrawn (the record no longer holds it)',
+    held: "held back (the record's new words fail the update lint, so the row is hidden)",
+    reinstated: 'reinstated (the record holds it again)',
+  };
+  if (result.refused) lines.push(`**Refused, nothing changed:** ${result.refused}.`, '', 'Held back (to accept them for one night, see docs/runbooks/record-recheck.md):');
   else lines.push(`${result.checked} stored row(s) checked; ${result.changes.length} changed.`);
   for (const c of result.changes) {
     const id = c.newId && c.newId !== c.id ? `${c.id} → ${c.newId}` : c.id;
-    lines.push(`- ${c.momentId} · ${c.vehicle} · ${c.day} · ${id}: ${label[c.kind]}. Was ${quote(c.was)}${c.now ? `; now ${quote(c.now)}` : ''}.`);
+    lines.push(`- ${c.momentId} · ${c.vehicle} · ${c.day} · ${id}: ${label[c.kind]}${c.how ? ` (${c.how})` : ''}${c.accepted ? ' — accepted for tonight' : ''}. Was ${quote(c.was)}${c.now ? `; now ${quote(c.now)}` : ''}.`);
   }
   for (const l of result.left) lines.push(`- left: ${l}`);
   for (const k of result.skipped) lines.push(`- skipped: ${k}`);
   return `${lines.join('\n')}\n`;
+}
+
+/** The update lint on a row's printed line, both languages (lintPair) plus the length ceiling. */
+function recheckLint(row) {
+  const out = [...lintPair(row.text, row.class, row.source?.outlet_names ?? [])];
+  for (const lang of ['en', 'es']) {
+    if (String(row.text?.[lang] ?? '').length > TEXT_MAX_CHARS) out.push(`${lang}: longer than ${TEXT_MAX_CHARS} characters`);
+  }
+  return out;
 }
 
 async function recheckStoredLines() {
@@ -540,25 +583,45 @@ async function recheckStoredLines() {
       if (isRecheckable(u, retentionFloor) && vehicleSlugs.includes(u.vehicle)) slugs.add(u.vehicle);
     }
   }
-  /** @type {Map<string, { actions: any[], total: number|null }>} */
   const lists = new Map();
   for (const slug of [...slugs].sort()) {
     try {
-      lists.set(slug, await fetchWholeActionList(slug));
+      lists.set(slug, await fetchWholeActionList(vehicleActionsPath(slug)));
     } catch (e) {
       console.error(`  recheck ${slug}: list FAILED: ${e.message} — not checked tonight`);
     }
   }
-  const result = recheckStore(store, lists, { now, fallbackText: fallbackTextFor });
-  console.log(`record re-check: ${result.checked} stored row(s) checked on ${lists.size} bill(s), ${result.changes.length} change(s)${result.refused ? ' REFUSED' : ''}`);
+  const amendmentLists = new Map();
+  for (const key of amendmentsNamedInStore(store, { now })) {
+    try {
+      amendmentLists.set(key, await fetchWholeActionList(amendmentActionsPath(key)));
+    } catch (e) {
+      console.warn(`  recheck amendment ${key}: list FAILED: ${e.message} — rows naming it are left as they are`);
+    }
+  }
+  // The one-night override (docs/runbooks/record-recheck.md). A malformed file
+  // accepts nothing and says so.
+  let accept = new Set();
+  if (existsSync(RECHECK_ACCEPT_PATH)) {
+    const raw = readJSON(RECHECK_ACCEPT_PATH);
+    const problems = acceptListProblems(raw);
+    if (problems.length) for (const p of problems) console.error(`::error::moment-updates record re-check: ${p} — nothing is accepted`);
+    else accept = acceptedIds(raw, todayET);
+    if (accept.size) console.log(`  recheck: ${accept.size} row(s) accepted for ${todayET} by ${RECHECK_ACCEPT_PATH}`);
+  }
+  const result = recheckStore(store, lists, { now, fallbackText: fallbackTextFor, lintText: recheckLint, amendmentLists, accept });
+  console.log(`record re-check: ${result.checked} stored row(s) checked on ${lists.size} bill(s) and ${amendmentLists.size} amendment(s), ${result.changes.length} change(s)${result.refused ? ' REFUSED' : ''}`);
   for (const k of result.skipped) console.log(`  recheck skipped ${k}`);
   for (const l of result.left) console.warn(`::warning::moment-updates record re-check: ${l}`);
   for (const c of result.changes) {
-    const verb = result.refused ? 'WOULD HAVE' : '';
-    const what = c.kind === 'reworded' ? `corrected ${c.id} → ${c.newId}: "${c.was}" → "${c.now}"` : `${c.kind} ${c.id}: "${c.was}"`;
-    console.log(`  recheck ${verb ? `${verb} ` : ''}${c.momentId} ${c.vehicle} ${c.day} ${what}`);
+    const verb = result.refused ? 'WOULD HAVE ' : '';
+    const what =
+      c.kind === 'reworded'
+        ? `corrected ${c.id}${c.newId !== c.id ? ` → ${c.newId}` : ''} (${c.how}): "${c.was}" → "${c.now}"`
+        : `${c.kind} ${c.id}${c.how ? ` (${c.how})` : ''}: "${c.was}"${c.now ? ` (record now: "${c.now}"; ${c.why})` : ''}`;
+    console.log(`  recheck ${verb}${c.momentId} ${c.vehicle} ${c.day} ${what}`);
   }
-  if (result.refused) console.error(`::error::moment-updates record re-check refused: ${result.refused}`);
+  if (result.refused) console.error(`::error::moment-updates record re-check refused: ${result.refused}. Nothing was changed; docs/runbooks/record-recheck.md says how to accept these rows for one night.`);
   if (process.env.GITHUB_STEP_SUMMARY && (result.changes.length || result.left.length || result.refused)) {
     try {
       appendFileSync(process.env.GITHUB_STEP_SUMMARY, recheckSummaryMarkdown(result));
@@ -566,14 +629,60 @@ async function recheckStoredLines() {
       console.warn(`recheck: step summary not written: ${e.message}`);
     }
   }
-  if (result.refused) return { refused: result.refused, corrected: [], rechecked: new Set() };
+  if (result.refused) return { refused: result.refused, corrected: [] };
   store = result.store;
-  const applied = result.changes;
   return {
     refused: null,
-    corrected: applied.filter((c) => c.kind === 'reworded').map((c) => ({ momentId: c.momentId, id: c.newId })),
-    rechecked: new Set(applied.map((c) => c.newId ?? c.id)),
+    corrected: result.changes.filter((c) => c.kind === 'reworded').map((c) => ({ momentId: c.momentId, id: c.newId })),
   };
+}
+
+/**
+ * Run the re-check so that nothing it does can cost the night anything else.
+ * A throw anywhere inside it restores the store as it was before it ran
+ * (`getStore`/`setStore`), is logged as an error, and is reported as
+ * `failed: 'threw'`; a refused night is `failed: 'refused'`. The caller turns
+ * either into a red step after everything else is written.
+ * @param {() => Promise<{ refused: string|null, corrected: { momentId: string, id: string }[] }>} run
+ * @param {() => Record<string, any>} getStore
+ * @param {(s: Record<string, any>) => void} setStore
+ * @returns {Promise<{ failed: null|'refused'|'threw', corrected: { momentId: string, id: string }[] }>}
+ */
+export async function guardedRecheck(run, getStore, setStore) {
+  const before = getStore();
+  try {
+    const r = await run();
+    return { failed: r?.refused ? 'refused' : null, corrected: r?.refused ? [] : (r?.corrected ?? []) };
+  } catch (e) {
+    setStore(before);
+    console.error(`::error::moment-updates record re-check failed and changed nothing: ${e?.stack ?? e}`);
+    return { failed: 'threw', corrected: [] };
+  }
+}
+
+/**
+ * Ask for a plain-language line of each corrected row's new words, in one
+ * call of its own, and write back whatever passes the lint (assignUpdateText:
+ * a line that fails keeps the record's words, quoted). Mutates the store's rows.
+ */
+async function redecodeCorrected(anthropic, corrected) {
+  const rows = corrected
+    .map(({ momentId, id }) => {
+      const row = (store[momentId]?.updates ?? []).find((u) => u.id === id);
+      return row ? { ...structuredClone(row), [MOMENT_KEY]: momentId } : null;
+    })
+    .filter(Boolean)
+    .slice(0, BATCH_CAP);
+  if (!rows.length) return;
+  const decoded = await decodeUpdates(anthropic, rows);
+  assignUpdateText(rows, [], decoded);
+  for (const c of rows) {
+    const row = (store[c[MOMENT_KEY]]?.updates ?? []).find((u) => u.id === c.id);
+    if (!row) continue;
+    row.text = c.text;
+    row.ai = c.ai;
+    console.log(`  recheck: ${c.id} now prints ${c.ai ? "a decode of the record's new words" : "the record's new words, quoted"}`);
+  }
 }
 
 /* ------------------------------------------------------------------ *
@@ -2043,7 +2152,6 @@ export function summaryCallsOnDay(storeArg, day) {
  *   intradayCap?: number,
  *   unsupportedStatus?: (bill: Record<string, any>|undefined) => boolean,
  *   policy?: { tracked: number, ended: ReadonlyArray<{ number: number, ended: string }> },
- *   rechecked?: Set<string>,
  * }} args
  * @returns {{ momentId: string, generate: boolean, recordOnly?: boolean, reason: string, statuses: Record<string,string>, statusKeys: Record<string,string>, records: Record<string, any>, votes: Record<string, any>[], rollCallsOnRecord: string[] | null, intraday: boolean, day: string }[]}
  */
@@ -2059,7 +2167,6 @@ export function planSummaries({
   intradayCap = INTRADAY_SUMMARY_CAP,
   unsupportedStatus = statusUnsupported,
   policy = CONGRESS_POLICY,
-  rechecked = new Set(),
 }) {
   const today = etDay(nowArg);
   const nowMs = nowArg instanceof Date ? nowArg.getTime() : Number(nowArg);
@@ -2122,16 +2229,16 @@ export function planSummaries({
       const unsupported = new Set(slugs.filter((s) => unsupportedStatus(bills?.get(s))));
       why = summaryRefreshReason(entry, statuses, nowArg, { unsupported, statusKeys });
       // THE RE-CHECK (2026-11-14): a model-written "Where it stands" that
-      // cites a row tonight's re-check corrected or withdrew was written from
-      // words the record no longer holds, so it is rewritten from the record
-      // as it stands (rule 4). Out of the same daily budget as every other
-      // summary call; a record-only or hand-authored revision quotes no row.
-      if (!why && rechecked.size) {
-        const last = entry.summary_revisions?.at(-1);
-        const cited = (last?.grounded_in?.update_ids ?? []).filter((id) => rechecked.has(id));
-        if (cited.length && last.model !== RECORD_ONLY_MODEL && last.model !== 'hand-authored') {
-          why = `the record re-check changed ${cited.join(', ')}, which the current summary cites`;
-        }
+      // cites a row the re-check changed AFTER it was written was written
+      // from words the record no longer holds, so it is rewritten from the
+      // record as it stands (rule 4), out of the same daily budget as every
+      // other summary call. Read off the stored file (recheckPendingIds), not
+      // tonight's run: a night whose budget ran out leaves it due, and the
+      // next night asks again until a revision written after the change
+      // stands. A record-only or hand-authored revision quotes no row.
+      if (!why) {
+        const pending = recheckPendingIds(entry);
+        if (pending.length) why = `the record re-check changed ${pending.join(', ')}, which the current summary cites`;
       }
       if (!why) {
         plan.push({ ...base, generate: false, reason: 'nothing moved' });
@@ -2308,10 +2415,6 @@ async function main() {
   console.log(`moment-updates: mode=${MODE}, ET day ${todayET}`);
   loadRunState();
 
-  // FIRST, before anything is collected, so tonight's candidates are judged
-  // against the record's current words (recheckStoredLines). Nightly only.
-  const recheck = MODE === 'nightly' ? await recheckStoredLines() : null;
-
   const candidates = [];
   candidates.push(...collectStatusChanges());
   candidates.push(...(await collectVehicleActions()));
@@ -2357,30 +2460,12 @@ async function main() {
       `batch cap: ${overflow.length} event(s) past MOMENT_UPDATE_BATCH_CAP=${BATCH_CAP} are STORED with the verbatim record — never dropped, because the store keeps every qualified event (§3)`,
     );
   }
-  // A row the re-check corrected tonight rides the same batch, after the new
-  // events and inside BATCH_CAP, so the record's new words can get a
-  // plain-language line (see recheckStoredLines for what it prints until then).
-  const redecode = (recheck?.corrected ?? [])
-    .map(({ momentId, id }) => {
-      const row = (store[momentId]?.updates ?? []).find((u) => u.id === id);
-      return row ? { ...structuredClone(row), [MOMENT_KEY]: momentId } : null;
-    })
-    .filter(Boolean)
-    .slice(0, Math.max(0, BATCH_CAP - batch.length));
-  const decodeBatch = [...batch, ...redecode];
-  const decodedByIndex = await decodeUpdates(anthropic, decodeBatch);
+  const decodedByIndex = await decodeUpdates(anthropic, batch);
   console.log(
-    `decode: ${decodeBatch.length} event(s) batched${decodeBatch.length ? '' : ' (skipped — empty batch, zero API calls)'}${redecode.length ? ` (${redecode.length} of them corrected by the record re-check)` : ''}, ${decodedByIndex.size} line(s) returned`,
+    `decode: ${batch.length} event(s) batched${batch.length ? '' : ' (skipped — empty batch, zero API calls)'}, ${decodedByIndex.size} line(s) returned`,
   );
 
-  const { aiCount, fallbackCount } = assignUpdateText(decodeBatch, overflow, decodedByIndex);
-  for (const c of redecode) {
-    const row = (store[c[MOMENT_KEY]]?.updates ?? []).find((u) => u.id === c.id);
-    if (!row) continue;
-    row.text = c.text;
-    row.ai = c.ai;
-    console.log(`  recheck: ${c.id} now prints ${c.ai ? 'a decode of the record\'s new words' : 'the record\'s new words, quoted'}`);
-  }
+  const { aiCount, fallbackCount } = assignUpdateText(batch, overflow, decodedByIndex);
   console.log(`text: ${aiCount} AI-decoded, ${fallbackCount} verbatim-record fallback`);
 
   // A fallback can itself fail the lint: the speculation layer is NOT
@@ -2461,6 +2546,21 @@ async function main() {
     console.log(`prune: ${momentId} entry deleted (moment retired or removed)`);
   }
 
+  // ---- the record re-check (nightly): AFTER collection, BEFORE summaries ----
+  // See recheckStoredLines. Caught whole: a failure of the re-check alone
+  // never costs the night its collection or its summaries.
+  let recheckFailed = null;
+  if (MODE === 'nightly') {
+    const recheck = await guardedRecheck(recheckStoredLines, () => store, (s) => {
+      store = s;
+    });
+    recheckFailed = recheck.failed;
+    if (recheck.corrected.length) {
+      pruneStore(store, moments, { now, mode: MODE });
+      await redecodeCorrected(anthropic, recheck.corrected);
+    }
+  }
+
   // AFTER the prune: only a vote row that survived it is a landing.
   const landedVotes = landedVoteVehicles(mergedVotes, store);
   console.log(
@@ -2482,7 +2582,6 @@ async function main() {
     floorSignals,
     landedVotes,
     now,
-    rechecked: recheck?.rechecked ?? new Set(),
   });
   // ONE daily budget for both modes: what the ET day has already spent, read
   // off the stored counters, comes out of MOMENT_SUMMARY_DAILY_CAP.
@@ -2499,7 +2598,7 @@ async function main() {
   // A refused re-check wrote none of its changes (everything else this run
   // did is written); the step goes red so the night's error is seen.
   // continue-on-error on the workflow step keeps the rest of the night going.
-  if (recheck?.refused) process.exitCode = 1;
+  if (recheckFailed) process.exitCode = 1;
 }
 
 /*

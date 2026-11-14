@@ -5,15 +5,18 @@ import { expect, test } from '@playwright/test';
  * record: a line the record no longer holds is corrected to the record's
  * words or marked withdrawn, and the run says so."
  *
- * Every outcome and every guard is pinned here on stubbed action lists, with
- * the two college-athletes rows the card found as the worked case: S. 4668's
- * "The committee substitute withdrawn by Voice Vote." (u_d5eaf6d9, 2026-09-24),
- * which Congress.gov's list now gives as "… tabled by Voice Vote.", and
- * "Cloture motion on amendment SA 6776 presented in Senate." (u_682cca41,
- * 2026-09-17), which no row of the list holds. The list stub is the
- * committed S. 4668 fixture (Congress.gov, 2026-09-25) with the one change
- * the record has made since: "withdrawn" read as "tabled" (both words appear
- * in the repo's tests already). Pure: no network, no model.
+ * Every rule, outcome and guard of lib/moment-updates-recheck.mjs is pinned
+ * here on stubbed action lists, including each case the independent check of
+ * 2026-11-14 raised: a corrected vote tally, a long action edited past its
+ * id's first 120 characters, punctuation-only edits, outcome flips, a wrong
+ * bill's list, a list missing a day, a row naming an amendment, a quote the
+ * lint refuses, the one-night override, a re-check that throws, and a
+ * summary rewrite that must stay due until done.
+ *
+ * The list stub is the committed S. 4668 fixture (Congress.gov, 2026-09-25)
+ * with the one change the record has made since, read on 2026-09-30:
+ * "withdrawn" became "tabled" (both words appear in the repo's tests
+ * already). Pure: no network, no model.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -23,38 +26,57 @@ import {
   collapseSameActions,
   computeUpdateId,
   liveUpdates,
+  lintUpdateText,
   recheckFieldProblems,
 } from '../lib/moment-updates-gate.mjs';
 import {
+  OUTCOME_CLASSES,
   RECHECK_MAX_CHANGES,
-  isRewording,
+  acceptListProblems,
+  acceptedIds,
+  amendmentNamed,
+  amendmentsNamedInStore,
   judgeBill,
   listProblem,
+  recheckPendingIds,
   recheckStore,
   recheckWords,
+  rewordingProblem,
+  withinReach,
 } from '../lib/moment-updates-recheck.mjs';
 import { verifyMomentUpdates } from '../lib/verify-moment-updates.mjs';
 import { readableEntry } from '../lib/moment-updates';
 import { fallbackTextFor } from '../scripts/moment-updates-map.mjs';
-import { fetchWholeActionList, planSummaries, recheckSummaryMarkdown, recordMovedSince } from '../scripts/moment-updates.mjs';
+import {
+  amendmentActionsPath,
+  fetchWholeActionList,
+  guardedRecheck,
+  planSummaries,
+  recheckSummaryMarkdown,
+  recordMovedSince,
+} from '../scripts/moment-updates.mjs';
 
 // The rows are the stored JSON shape, read loosely, as the gate itself reads them.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Row = Record<string, any>;
+type List = { actions: Row[]; total: number | null; request: Row | null };
 
 const MOMENT = 'paying-college-athletes';
 const VEHICLE = 's-4668-119';
 const NOW = Date.parse('2026-11-14T23:00:00Z'); // 6 PM ET
 const TODAY = '2026-11-14';
 const readJson = (p: string) => JSON.parse(readFileSync(join(process.cwd(), p), 'utf8'));
+const REQUEST = { billType: 's', billNumber: '4668', congress: '119' };
 
 const FIXTURE: Row[] = readJson('tests/fixtures/congress-actions-s4668.json').actions;
 /** S. 4668's list as the record holds it now: the fixture, with "withdrawn" read as "tabled". */
 const RECORD_NOW: Row[] = FIXTURE.map((a) =>
   a.text === 'The committee substitute withdrawn by Voice Vote.' ? { ...a, text: 'The committee substitute tabled by Voice Vote.' } : a,
 );
-const list = (actions: Row[], total: number | null = actions.length) => ({ actions, total });
+const list = (actions: Row[], total: number | null = actions.length, request: Row | null = REQUEST): List => ({ actions, total, request });
 const lists = (actions: Row[] = RECORD_NOW) => new Map([[VEHICLE, list(actions)]]);
+const senate = (day: string, text: string, extra: Row = {}) => ({ actionDate: day, text, sourceSystem: { name: 'Senate' }, ...extra });
+const newestFirst = (actions: Row[]) => [...actions].sort((a, b) => (a.actionDate < b.actionDate ? 1 : a.actionDate > b.actionDate ? -1 : 0));
 
 function row(over: Row): Row {
   const base: Row = {
@@ -73,8 +95,9 @@ function row(over: Row): Row {
   if (over.day && !over.occurred_at) base.occurred_at = over.day;
   return { ...base, id: over.id ?? computeUpdateId(MOMENT, base) };
 }
+const said = (text: string, over: Row = {}) => row({ ...over, record: { action_text: text, action_code: null, action_type: 'Floor', source_system: 'Senate', ...(over.record ?? {}) } });
 
-/** The two rows as the store holds them on 2026-11-14, verbatim. */
+/** The two college-athletes rows as the store holds them on 2026-11-14, verbatim. */
 const WITHDRAWN_WORDS = row({
   class: 'status_change',
   day: '2026-09-24',
@@ -97,12 +120,12 @@ const CLOTURE_SA6776 = row({
   record: { action_text: 'Cloture motion on amendment SA 6776 presented in Senate.', action_code: null, action_type: 'Floor', source_system: 'Senate' },
   ai: true,
 });
-/** Rows of the same bill the record still holds (one with its citation since added). */
+/** Rows of the same bill the record still holds (spacing and a citation aside). */
 const HELD = [
-  row({ record: { action_text: 'Cloture motion on the measure presented in Senate.', action_code: null, action_type: 'Floor', source_system: 'Senate' } }),
-  row({ record: { action_text: 'Motion to proceed to measure considered in Senate.', action_code: null, action_type: 'Floor', source_system: 'Senate' } }),
-  row({ class: 'vote', day: '2026-09-24', record: { action_text: 'Cloture on the measure, as amended, invoked in Senate by Yea-Nay Vote. 74 - 25. Record Vote Number: 243.', action_code: null, action_type: 'Floor', source_system: 'Senate' } }),
-  row({ day: '2026-09-22', class: 'status_change', record: { action_text: 'Considered by Senate.   (consideration: CR S4851)', action_code: null, action_type: 'latestAction', source_system: 'Congress.gov bill detail' } }),
+  said('Cloture motion on the measure presented in Senate.'),
+  said('Motion to proceed to measure considered in Senate.'),
+  said('Cloture on the measure, as amended, invoked in Senate by Yea-Nay Vote. 74 - 25. Record Vote Number: 243.', { class: 'vote', day: '2026-09-24' }),
+  said('Considered by Senate.   (consideration: CR S4851)', { day: '2026-09-22', class: 'status_change', record: { action_type: 'latestAction', source_system: 'Congress.gov bill detail' } }),
 ];
 const REVISION = {
   id: 's_00000001',
@@ -117,165 +140,259 @@ const store = (updates: Row[] = [WITHDRAWN_WORDS, CLOTURE_SA6776, ...HELD], revi
   _meta: { schema: 1, generated_at: '2026-11-13T21:27:01.988Z' },
   [MOMENT]: { updates, summary_revisions: revisions },
 });
-const run = (s: Row, l = lists()) => recheckStore(s, l, { now: NOW, fallbackText: fallbackTextFor });
+const lintText = (r: Row) => (['en', 'es'] as const).flatMap((lang) => lintUpdateText(r.text[lang], lang, r.class, []));
+const run = (s: Row, l: Map<string, List> = lists(), extra: Row = {}) => recheckStore(s, l, { now: NOW, fallbackText: fallbackTextFor, lintText, ...extra });
 const byId = (s: Row, id: string) => s[MOMENT].updates.find((u: Row) => u.id === id);
+const kinds = (r: Row) => r.changes.map((c: Row) => [c.kind, c.id]);
 
-test.describe('the matching rule', () => {
-  test('whitespace, case and citations are never a change', () => {
-    expect(recheckWords('Considered by Senate.   (consideration: CR S4851)')).toBe(recheckWords('considered by senate.'));
-    expect(recheckWords('Passed/agreed to in Senate: Passed Senate. (CR S5044)')).toBe(recheckWords('Passed Senate.'));
+test.describe('words and the rewording test', () => {
+  test('spacing, case, citations and punctuation are never a change', () => {
+    const same = (a: string, b: string) => expect(recheckWords(a)).toEqual(recheckWords(b));
+    same('Considered by Senate.   (consideration: CR S4851)', 'considered by senate.');
+    same('Passed/agreed to in Senate: Passed Senate. (CR S5044)', 'Passed Senate.');
+    same("Motion by Senator Thune's office", 'Motion by Senator Thune’s office');
+    same('Yea-Nay Vote. 74 - 25.', 'Yea-Nay Vote. 74–25.');
+    same('Received S. 4668 in the House.', 'Received S.4668 in the House.');
   });
 
-  test('one word swapped is a rewording; a changed number, or a different action of the same shape, is not', () => {
-    const w = (t: string) => recheckWords(t);
-    expect(isRewording(w('The committee substitute withdrawn by Voice Vote.'), w('The committee substitute tabled by Voice Vote.'))).toBe(true);
-    expect(isRewording(w('Cloture invoked by Yea-Nay Vote. 74 - 25.'), w('Cloture invoked by Yea-Nay Vote. 74 - 24.'))).toBe(false);
-    expect(
-      isRewording(w('Cloture motion on the measure presented in Senate.'), w('Cloture motion on the motion to proceed to the measure presented in Senate.')),
-    ).toBe(false);
-    expect(isRewording(w('Held at the desk.'), w('Received in the House.'))).toBe(false);
-    expect(isRewording(w('Cloture motion on amendment SA 6776 presented in Senate.'), w('Cloture motion on the measure presented in Senate.'))).toBe(false);
+  test('the outcome classes are the ones written in the header', () => {
+    expect(OUTCOME_CLASSES).toEqual({ carried: ['agreed', 'passed', 'invoked'], did_not_carry: ['rejected', 'failed'], set_aside: ['withdrawn', 'tabled', 'fell'] });
+  });
+
+  test('a swap inside one outcome class passes; anything that changes which way it went fails', () => {
+    const p = (a: string, b: string) => rewordingProblem(recheckWords(a), recheckWords(b));
+    expect(p('The committee substitute withdrawn by Voice Vote.', 'The committee substitute tabled by Voice Vote.')).toBeNull();
+    expect(p('Motion to proceed agreed to in Senate by Voice Vote.', 'Motion to proceed rejected in Senate by Voice Vote.')).not.toBeNull();
+    expect(p('Amendment SA 1 agreed in Senate.', 'Amendment SA 1 rejected in Senate.')).toMatch(/changes which way it went \(carried → did_not_carry\)/);
+    expect(p('Amendment SA 1 passed in Senate.', 'Amendment SA 1 tabled in Senate.')).toMatch(/changes which way it went/);
+    expect(p('Motion to proceed agreed to in Senate.', 'Motion to proceed not agreed to in Senate.')).toMatch(/added or removed/);
+    expect(p('Cloture on the measure invoked in Senate.', 'Cloture on the measure not invoked in Senate.')).toMatch(/added or removed/);
+    expect(p('Passed Senate without amendment by Voice Vote.', 'Passed House without amendment by Voice Vote.')).toMatch(/not a swap between two outcome words/);
+    expect(p('Motion to proceed made in Senate.', 'Motion to proceed considered in Senate.')).toMatch(/not a swap between two outcome words/);
+    expect(p('Motion A withdrawn in Senate.', 'Motion B tabled in Senate.')).toMatch(/2 words changed/);
+    expect(p('Cloture invoked by Yea-Nay Vote. 74 - 25.', 'Cloture invoked by Yea-Nay Vote. 74 - 24.')).toMatch(/not a swap between two outcome words/);
+    expect(p('Amendment SA 1 withdrawn in Senate.', 'Amendment SA 1 tabled by Senator Cruz in Senate.')).toMatch(/added or removed/);
+  });
+
+  test('reach: two words at most, never more than a quarter of the sentence', () => {
+    const r = (a: string, b: string) => withinReach(recheckWords(a), recheckWords(b));
+    expect(r('The committee substitute withdrawn by Voice Vote.', 'The committee substitute tabled by Voice Vote.')).toBe(true);
+    expect(r('Held at the desk.', 'Received in the House.')).toBe(false);
   });
 });
 
-test.describe('the three outcomes, on the two college-athletes rows', () => {
-  test('REWORDED: "withdrawn by Voice Vote" becomes the record\'s "tabled by Voice Vote", with the earlier words and id kept', () => {
+test.describe('the two college-athletes rows', () => {
+  test('"withdrawn by Voice Vote" takes the record\'s "tabled by Voice Vote" (one set-aside word for another), with the earlier words and id kept', () => {
     const r = run(store());
     expect(r.refused).toBeNull();
     const change = r.changes.find((c: Row) => c.id === WITHDRAWN_WORDS.id)!;
-    expect(change).toMatchObject({ kind: 'reworded', was: 'The committee substitute withdrawn by Voice Vote.', now: 'The committee substitute tabled by Voice Vote.' });
+    expect(change).toMatchObject({ kind: 'reworded', how: 'a rewording', now: 'The committee substitute tabled by Voice Vote.' });
     const fixed = byId(r.store, change.newId!);
     expect(fixed.record.action_text).toBe('The committee substitute tabled by Voice Vote.');
     expect(fixed.id).toBe(computeUpdateId(MOMENT, fixed));
-    expect(fixed.id).not.toBe(WITHDRAWN_WORDS.id);
-    expect(fixed.rechecks).toEqual([{ on: TODAY, outcome: 'reworded', was: 'The committee substitute withdrawn by Voice Vote.', was_id: WITHDRAWN_WORDS.id }]);
-    // The line printed before was written from the old words: it is replaced
-    // by the record's new words in both languages, never kept.
+    expect(fixed.rechecks).toEqual([
+      { on: TODAY, at: new Date(NOW).toISOString(), outcome: 'reworded', was: 'The committee substitute withdrawn by Voice Vote.', was_id: WITHDRAWN_WORDS.id },
+    ]);
     expect(fixed.text).toEqual(fallbackTextFor(fixed));
-    expect(fixed.text.en).toContain('tabled');
     expect(fixed.text.es).toContain('tabled');
     expect(fixed.ai).toBe(false);
-    expect(byId(r.store, WITHDRAWN_WORDS.id)).toBeUndefined();
+    expect(r.store[MOMENT].summary_revisions[0].grounded_in.update_ids).toEqual([fixed.id, CLOTURE_SA6776.id]);
   });
 
-  test('a summary that cited the corrected row now cites it by its new id', () => {
+  test('the cloture motion on SA 6776 is LEFT, not withdrawn, while the amendment\'s own list has not been read', () => {
     const r = run(store());
-    const newId = r.changes.find((c: Row) => c.kind === 'reworded')!.newId;
-    expect(r.store[MOMENT].summary_revisions[0].grounded_in.update_ids).toEqual([newId, CLOTURE_SA6776.id]);
+    expect(byId(r.store, CLOTURE_SA6776.id)).toBe(CLOTURE_SA6776);
+    expect(r.left.join('\n')).toMatch(/u_682cca41 .*names amendment 119-samdt-6776/);
+    expect(kinds(r)).toEqual([['reworded', WITHDRAWN_WORDS.id]]);
   });
 
-  test('a correction that named the corrected row names its new id', () => {
-    const correction = row({ class: 'correction', day: '2026-09-25', corrects: WITHDRAWN_WORDS.id, record: { action_text: 'A correction.', action_code: null, action_type: 'Floor', source_system: 'Senate' } });
-    const r = run(store([WITHDRAWN_WORDS, CLOTURE_SA6776, ...HELD, correction]));
-    const newId = r.changes.find((c: Row) => c.kind === 'reworded')!.newId;
-    expect(byId(r.store, correction.id).corrects).toBe(newId);
-  });
-
-  test('WITHDRAWN: the cloture motion on SA 6776, on no row of the record, is kept and marked with the day it was found gone', () => {
-    const r = run(store());
-    expect(r.changes.find((c: Row) => c.id === CLOTURE_SA6776.id)).toMatchObject({ kind: 'withdrawn', was: 'Cloture motion on amendment SA 6776 presented in Senate.' });
-    const gone = byId(r.store, CLOTURE_SA6776.id);
-    expect(gone.withdrawn_on).toBe(TODAY);
-    expect(gone.rechecks).toEqual([{ on: TODAY, outcome: 'withdrawn' }]);
-    expect(gone.record).toEqual(CLOTURE_SA6776.record);
-    expect(gone.text).toEqual(CLOTURE_SA6776.text);
-  });
-
-  test('UNCHANGED: every other row is the same object, and the night has exactly two changes', () => {
-    const r = run(store());
-    expect(r.changes.map((c: Row) => c.kind).sort()).toEqual(['reworded', 'withdrawn']);
-    for (const u of HELD) expect(byId(r.store, u.id)).toBe(u);
-    expect(r.checked).toBe(6);
-  });
-
-  test('a second night writes nothing', () => {
+  test('the rest is untouched, and a second night writes nothing', () => {
     const first = run(store());
+    for (const u of HELD) expect(byId(first.store, u.id)).toBe(u);
     const second = run(first.store);
     expect(second.changes).toEqual([]);
-    expect(second.store).toEqual(first.store);
-  });
-
-  test('REINSTATED: a withdrawn row the record lists again is an event again, and the return is logged', () => {
-    const first = run(store());
-    const back = [...RECORD_NOW, { actionDate: '2026-09-17', text: 'Cloture motion on amendment SA 6776 presented in Senate.', sourceSystem: { name: 'Senate' } }]
-      .sort((a, b) => (a.actionDate < b.actionDate ? 1 : a.actionDate > b.actionDate ? -1 : 0));
-    const r = run(first.store, lists(back));
-    expect(r.changes.map((c: Row) => [c.kind, c.id])).toEqual([['reinstated', CLOTURE_SA6776.id]]);
-    const row2 = byId(r.store, CLOTURE_SA6776.id);
-    expect(Object.hasOwn(row2, 'withdrawn_on')).toBe(false);
-    expect(row2.rechecks.map((e: Row) => e.outcome)).toEqual(['withdrawn', 'reinstated']);
+    expect(second.store).toBe(first.store);
   });
 });
 
-test.describe('left as it is, never guessed', () => {
-  test('the words now sit on another date: left, with a warning', () => {
-    const moved = row({ day: '2026-09-16', record: { action_text: 'Cloture motion on the measure presented in Senate.', action_code: null, action_type: 'Floor', source_system: 'Senate' } });
-    const r = run(store([moved]));
+test.describe('rule 1: a vote is never hidden when the record corrects it', () => {
+  const VOTE = said('Cloture on the measure, as amended, invoked in Senate by Yea-Nay Vote. 74 - 25. Record Vote Number: 243.', {
+    class: 'vote',
+    day: '2026-09-24',
+    record: { roll_call: { chamber: 'senate', number: 243 } },
+  });
+  const corrected = (text: string) =>
+    newestFirst([...RECORD_NOW.filter((a) => !/Record Vote Number: 243/.test(a.text)), senate('2026-09-24', text, { recordedVotes: [{ chamber: 'Senate', rollNumber: 243 }] })]);
+
+  test('a corrected tally becomes the record\'s words, under the same id, and stays on the page', () => {
+    const words = 'Cloture on the measure, as amended, invoked in Senate by Yea-Nay Vote. 74 - 24. Record Vote Number: 243.';
+    const r = run(store([VOTE, ...HELD.slice(0, 2)], []), lists(corrected(words)));
+    expect(kinds(r)).toEqual([['reworded', VOTE.id]]);
+    const fixed = byId(r.store, VOTE.id);
+    expect(fixed.record.action_text).toBe(words);
+    expect(Object.hasOwn(fixed, 'withdrawn_on')).toBe(false);
+    expect(readableEntry(r.store[MOMENT]).updates.map((u) => u.id)).toContain(VOTE.id);
+    expect(r.changes[0].how).toBe('same roll call (senate:243)');
+  });
+
+  test('the roll number in the record\'s words is enough when recordedVotes is absent', () => {
+    const words = 'Cloture on the measure, as amended, invoked in Senate by Yea-Nay Vote. 75 - 25. Record Vote Number: 243.';
+    const actions = newestFirst([...RECORD_NOW.filter((a) => !/Record Vote Number: 243/.test(a.text)), senate('2026-09-24', words)]);
+    const r = run(store([VOTE, ...HELD.slice(0, 2)], []), lists(actions));
+    expect(byId(r.store, VOTE.id).record.action_text).toBe(words);
+  });
+
+  test('even "invoked" to "not invoked" is taken when the roll number names the vote', () => {
+    const words = 'Cloture on the measure, as amended, not invoked in Senate by Yea-Nay Vote. 74 - 25. Record Vote Number: 243.';
+    const r = run(store([VOTE, ...HELD.slice(0, 2)], []), lists(corrected(words)));
+    expect(byId(r.store, VOTE.id).record.action_text).toBe(words);
+  });
+
+  test("the chamber's own row is preferred to the Library of Congress echo of the same roll call", () => {
+    const words = 'Cloture on the measure, as amended, invoked in Senate by Yea-Nay Vote. 74 - 24. Record Vote Number: 243.';
+    const actions = newestFirst([
+      ...RECORD_NOW.filter((a) => !/Record Vote Number: 243/.test(a.text)),
+      senate('2026-09-24', words, { recordedVotes: [{ chamber: 'Senate', rollNumber: 243 }] }),
+      { actionDate: '2026-09-24', text: 'Cloture invoked in Senate: Cloture on the measure, as amended, invoked in Senate by Yea-Nay Vote. 74 - 23. Record Vote Number: 243.', sourceSystem: { name: 'Library of Congress' }, recordedVotes: [{ chamber: 'Senate', rollNumber: 243 }] },
+    ]);
+    const r = run(store([VOTE, ...HELD.slice(0, 2)], []), lists(actions));
+    expect(byId(r.store, VOTE.id).record.action_text).toBe(words);
+  });
+
+  test('two different sentences carrying the roll number: left, never hidden', () => {
+    const actions = newestFirst([
+      ...RECORD_NOW.filter((a) => !/Record Vote Number: 243/.test(a.text)),
+      senate('2026-09-24', 'Cloture invoked. 74 - 24. Record Vote Number: 243.'),
+      senate('2026-09-24', 'Cloture invoked. 74 - 23. Record Vote Number: 243.'),
+    ]);
+    const r = run(store([VOTE, ...HELD.slice(0, 2)], []), lists(actions));
+    expect(r.changes).toEqual([]);
+    expect(r.left.join('\n')).toContain('carry roll call senate:243');
+  });
+
+  test('rule 3: a long action edited past its id\'s first 120 characters is never withdrawn', () => {
+    const long = 'Motion by Senator Thune to recommit to Senate Committee on Commerce, Science, and Transportation with instructions to report back forthwith with the following amendment (SA 6781) withdrawn in Senate.';
+    const r0 = said(long, { day: '2026-09-22' });
+    const edit = (tail: string) => newestFirst([...RECORD_NOW.filter((a) => !/Thune to recommit/.test(a.text) || a.actionDate !== '2026-09-22'), senate('2026-09-22', long.replace('withdrawn in Senate.', tail))]);
+    // An outcome flip past the 120 characters: left, never hidden.
+    const flip = run(store([r0, ...HELD], []), lists(edit('agreed in Senate.')));
+    expect(flip.changes).toEqual([]);
+    expect(flip.left.join('\n')).toContain("still carries this row's id");
+    // A swap inside one class: taken, same id.
+    const swap = run(store([r0, ...HELD], []), lists(edit('tabled in Senate.')));
+    expect(kinds(swap)).toEqual([['reworded', r0.id]]);
+    expect(swap.changes[0].newId).toBe(r0.id);
+  });
+});
+
+test.describe('rule 2: punctuation-only edits are unchanged, on both nights', () => {
+  for (const [stored, listed] of [
+    ["Motion by Senator Thune's office made in Senate.", 'Motion by Senator Thune’s office made in Senate.'],
+    ['Cloture invoked in Senate by Yea-Nay Vote. 74 - 25.', 'Cloture invoked in Senate by Yea-Nay Vote. 74–25.'],
+    ['Received S. 4668 in the Senate.', 'Received S.4668 in the Senate.'],
+  ]) {
+    test(`"${stored}" against "${listed}"`, () => {
+      const u = said(stored, { day: '2026-09-15' });
+      const actions = newestFirst([...RECORD_NOW, senate('2026-09-15', listed)]);
+      const first = run(store([u, ...HELD], []), lists(actions));
+      expect(first.changes).toEqual([]);
+      expect(first.left).toEqual([]);
+      expect(first.store).toBe(first.store);
+      expect(run(first.store, lists(actions)).changes).toEqual([]);
+    });
+  }
+});
+
+test.describe('left as it is', () => {
+  test('the words now sit on another date: left, with a warning, not withdrawn', () => {
+    const moved = said('Cloture motion on the measure presented in Senate.', { day: '2026-09-16' });
+    const r = run(store([moved, ...HELD.slice(1)], []));
     expect(r.changes).toEqual([]);
     expect(r.left.join('\n')).toContain('the record lists these words on 2026-09-17');
   });
 
-  test('two actions that day could be its rewording: left', () => {
-    const actions = [
-      { actionDate: '2026-09-17', text: 'Amendment SA 1 adopted in Senate.', sourceSystem: { name: 'Senate' } },
-      { actionDate: '2026-09-17', text: 'Amendment SA 1 rejected in Senate.', sourceSystem: { name: 'Senate' } },
-    ];
-    const r = run(store([row({ record: { action_text: 'Amendment SA 1 withdrawn in Senate.', action_code: null, action_type: 'Floor', source_system: 'Senate' } })]), lists(actions));
-    expect(r.changes).toEqual([]);
-    expect(r.left.join('\n')).toContain('2 actions that day could be its rewording');
-  });
-
-  test('an action another stored row already reads as is never taken as this row\'s rewording', () => {
-    const actions = [{ actionDate: '2026-09-17', text: 'Motion to proceed adopted in Senate.', sourceSystem: { name: 'Senate' } }];
-    const held = row({ class: 'vote', record: { action_text: 'Motion to proceed adopted in Senate.', action_code: null, action_type: 'Floor', source_system: 'Senate' } });
-    const near = row({ record: { action_text: 'Motion to proceed rejected in Senate.', action_code: null, action_type: 'Floor', source_system: 'Senate' } });
-    const r = run(store([held, near]), lists(actions));
-    expect(r.changes.map((c: Row) => [c.kind, c.id])).toEqual([['withdrawn', near.id]]);
-  });
-
-  test('another chamber, or another action code, is another action', () => {
-    const house = [{ actionDate: '2026-09-17', text: 'Motion to proceed adopted in House.', actionCode: 'H1', sourceSystem: { name: 'House floor actions' } }];
-    // One word apart, so only the chamber tells them apart.
-    const senateRow = row({ record: { action_text: 'Motion to proceed adopted in Senate.', action_code: null, action_type: 'Floor', source_system: 'Senate' } });
-    expect(isRewording(recheckWords(senateRow.record.action_text), recheckWords(house[0].text))).toBe(true);
-    expect(run(store([senateRow]), lists(house)).changes.map((c: Row) => c.kind)).toEqual(['withdrawn']);
-    // One word apart, same chamber: only the code tells them apart.
-    const coded = row({ record: { action_text: 'Motion to proceed rejected in House.', action_code: 'H2', action_type: 'Floor', source_system: 'House floor actions' } });
-    expect(isRewording(recheckWords(coded.record.action_text), recheckWords(house[0].text))).toBe(true);
-    expect(run(store([coded]), lists(house)).changes.map((c: Row) => c.kind)).toEqual(['withdrawn']);
-  });
-
-  test('two stored rows that would take one action: both left', () => {
-    const actions = [{ actionDate: '2026-09-17', text: 'Motion A made in Senate.', sourceSystem: { name: 'Senate' } }];
-    const a = row({ record: { action_text: 'Motion B made in Senate.', action_code: null, action_type: 'Floor', source_system: 'Senate' } });
-    const b = row({ class: 'status_change', record: { action_text: 'Motion C made in Senate.', action_code: null, action_type: 'latestAction', source_system: 'Congress.gov bill detail' } });
-    const r = run(store([a, b]), lists(actions));
-    expect(r.changes).toEqual([]);
-    expect(r.left).toHaveLength(2);
-  });
-
   test('a rewording that would give the row the id of a stored row: left', () => {
-    const actions = [{ actionDate: '2026-09-17', text: 'Motion A made in Senate.', sourceSystem: { name: 'Senate' } }];
-    const old = row({ record: { action_text: 'Motion B made in Senate.', action_code: null, action_type: 'Floor', source_system: 'Senate' } });
-    // A withdrawn twin already holds the record's words (and so the id they hash to).
-    const twin = { ...row({ record: { action_text: 'Motion A made in Senate.', action_code: null, action_type: 'Floor', source_system: 'Senate' } }), withdrawn_on: '2026-10-01', rechecks: [{ on: '2026-10-01', outcome: 'withdrawn' }] };
-    const r = run(store([old, twin]), lists(actions.concat([])));
-    // The twin is reinstated (the record holds its words); the old row is left.
-    expect(r.changes.map((c: Row) => c.kind)).toEqual(['reinstated']);
+    const day = '2026-09-16';
+    const actions = newestFirst([...RECORD_NOW, senate(day, 'Motion B tabled in Senate.')]);
+    const old = said('Motion B withdrawn in Senate.', { day });
+    // A withdrawn twin already holds the record's words, and so the id they hash to.
+    const twin: Row = { ...said('Motion B tabled in Senate.', { day }), withdrawn_on: '2026-10-01', rechecks: [{ on: '2026-10-01', at: '2026-10-01T20:00:00.000Z', outcome: 'withdrawn' }] };
+    const r = run(store([old, twin, ...HELD], []), lists(actions));
+    expect(kinds(r)).toEqual([['reinstated', twin.id]]);
     expect(r.left.join('\n')).toContain('would give it the id of stored row');
   });
+});
 
+test.describe('which rows are read', () => {
   test('rows the action list never carried are never checked: a roll call read from the vote record, a floor-feed signal', () => {
-    const roll = row({ class: 'vote', source: { kind: 'roll_call', refs: ['https://www.senate.gov/x.xml'] }, record: { action_text: 'On Passage of the Bill S. 4668: Bill Passed.', action_code: null, action_type: 'roll_call', source_system: 'senate.gov' } });
-    const signal = row({ class: 'scheduled', source: { kind: 'tier0_feed', refs: ['https://www.congress.gov/rss'] }, record: { action_text: 'S.4668 on the floor today', action_code: null, action_type: 'tier0', source_system: 'feed' } });
-    const r = run(store([roll, signal]));
+    const roll = said('On Passage of the Bill S. 4668: Bill Passed.', { class: 'vote', source: { kind: 'roll_call', refs: ['https://www.senate.gov/x.xml'] }, record: { action_type: 'roll_call', source_system: 'senate.gov' } });
+    const signal = said('S.4668 on the floor today', { class: 'scheduled', source: { kind: 'tier0_feed', refs: ['https://www.congress.gov/rss'] }, record: { action_type: 'tier0', source_system: 'feed' } });
+    const r = run(store([roll, signal, ...HELD], []));
     expect(r.changes).toEqual([]);
-    expect(r.checked).toBe(0);
+    expect(r.checked).toBe(HELD.length);
   });
 
   test('a row older than retention is not checked', () => {
-    const old = row({ day: '2026-08-05', record: { action_text: 'Not on the record.', action_code: null, action_type: 'Floor', source_system: 'Senate' } });
-    expect(run(store([old])).changes).toEqual([]);
+    const old = said('Not on the record.', { day: '2026-08-05' });
+    const r = run(store([old, ...HELD], []));
+    expect(r.changes).toEqual([]);
+    expect(r.checked).toBe(HELD.length);
+  });
+});
+
+test.describe('rule 4: an outcome flip is never printed as the record\'s words', () => {
+  const day = '2026-09-15';
+  const base = RECORD_NOW.filter((a) => a.actionDate !== day);
+  for (const [stored, listed] of [
+    ['Motion to proceed agreed to in Senate by Voice Vote.', 'Motion to proceed rejected in Senate by Voice Vote.'],
+    ['Motion to proceed agreed to in Senate by Voice Vote.', 'Motion to proceed not agreed to in Senate by Voice Vote.'],
+    ['Cloture on the motion to proceed invoked in Senate.', 'Cloture on the motion to proceed not invoked in Senate.'],
+  ]) {
+    test(`"${stored}" → "${listed}": left as it is, with a warning, not rewritten, not withdrawn`, () => {
+      const u = said(stored, { day });
+      const r = run(store([u, ...HELD], []), lists(newestFirst([...base, senate(day, listed)])));
+      expect(r.changes).toEqual([]);
+      expect(r.left.join('\n')).toContain(`${u.id} `);
+    });
+  }
+
+  test('"Passed Senate" → "Passed House" where neither row names a chamber in its source: left', () => {
+    const u = said('Passed Senate without amendment by Voice Vote.', { day, record: { source_system: 'Library of Congress' } });
+    const r = run(store([u, ...HELD], []), lists(newestFirst([...base, { actionDate: day, text: 'Passed House without amendment by Voice Vote.', sourceSystem: { name: 'Library of Congress' } }])));
+    expect(r.changes).toEqual([]);
+    expect(r.left).toHaveLength(1);
+  });
+
+  test('another chamber, or another action code, with an otherwise acceptable swap: left', () => {
+    // One same-class word apart; only the chamber (read from the source) or the code tells them apart.
+    const house = [{ actionDate: day, text: 'Motion to proceed passed by Voice Vote.', actionCode: 'H1', sourceSystem: { name: 'House floor actions' } }];
+    const u1 = said('Motion to proceed agreed by Voice Vote.', { day });
+    expect(run(store([u1, ...HELD], []), lists(newestFirst([...base, ...house]))).left.join('\n')).toContain('chamber or action code');
+    const u2 = said('Motion to proceed agreed by Voice Vote.', { day, record: { action_code: 'H2', source_system: 'House floor actions' } });
+    expect(run(store([u2, ...HELD], []), lists(newestFirst([...base, ...house]))).left.join('\n')).toContain('chamber or action code');
+  });
+
+  test('two actions within reach that day: left', () => {
+    const u = said('Amendment SA 1 withdrawn in Senate.', { day });
+    const actions = newestFirst([...base, senate(day, 'Amendment SA 1 tabled in Senate.'), senate(day, 'Amendment SA 1 fell in Senate.')]);
+    const r = run(store([u, ...HELD], []), lists(actions), { amendmentLists: new Map() });
+    expect(r.changes).toEqual([]);
+    expect(r.left.join('\n')).toContain('2 actions that day are within reach');
+  });
+
+  test('an action another stored row (one collected tonight included) already quotes is never this row\'s rewording', () => {
+    const quoted = said('Motion to proceed tabled in Senate.', { day, class: 'vote' });
+    const u = said('Motion to proceed withdrawn in Senate.', { day });
+    const r = run(store([quoted, u, ...HELD], []), lists(newestFirst([...base, senate(day, 'Motion to proceed tabled in Senate.')])));
+    expect(kinds(r)).toEqual([['withdrawn', u.id]]);
+  });
+
+  test('two rows that would take one action: both left', () => {
+    const a = said('Motion A withdrawn in Senate.', { day });
+    const b = said('Motion A fell in Senate.', { day, class: 'status_change', record: { action_type: 'latestAction', source_system: 'Congress.gov bill detail' } });
+    const r = run(store([a, b, ...HELD], []), lists(newestFirst([...base, senate(day, 'Motion A tabled in Senate.')])));
+    expect(r.changes).toEqual([]);
+    expect(r.left.join('\n')).toContain('2 stored rows would take the same action');
   });
 });
 
@@ -284,10 +401,12 @@ test.describe('the guards: a wrong night from the source never withdraws a row',
   for (const [name, l] of [
     ['the list did not arrive', new Map()],
     ['it arrived empty', lists([])],
-    ['it is shorter than the count it gives (a partial page)', new Map([[VEHICLE, list(RECORD_NOW.slice(0, 10), RECORD_NOW.length)]])],
+    ['it is shorter than the count it gives', new Map([[VEHICLE, list(RECORD_NOW.slice(0, 10), RECORD_NOW.length)]])],
     ['it gives no count', new Map([[VEHICLE, list(RECORD_NOW, null)]])],
     ['it is not newest first', lists([...RECORD_NOW].reverse())],
-  ] as [string, Map<string, { actions: Row[]; total: number | null }>][]) {
+    ["it is another bill's list", new Map([[VEHICLE, list(RECORD_NOW, RECORD_NOW.length, { billType: 's', billNumber: '4784', congress: '119' })]])],
+    ['it names no bill', new Map([[VEHICLE, list(RECORD_NOW, RECORD_NOW.length, null)]])],
+  ] as [string, Map<string, List>][]) {
     test(`${name}: the bill is not checked, nothing changes`, () => {
       const r = run(s, l);
       expect(r.changes).toEqual([]);
@@ -297,66 +416,185 @@ test.describe('the guards: a wrong night from the source never withdraws a row',
   }
 
   test('listProblem names each', () => {
-    expect(listProblem(undefined)).toMatch(/not fetched/);
-    expect(listProblem(list([]))).toMatch(/empty/);
-    expect(listProblem(list(RECORD_NOW.slice(0, 3), 25))).toMatch(/holds 3 of the 25/);
-    expect(listProblem(list(RECORD_NOW, null))).toMatch(/does not say how many/);
-    expect(listProblem(list([...RECORD_NOW].reverse()))).toMatch(/not newest first/);
-    expect(listProblem(list(RECORD_NOW))).toBeNull();
+    expect(listProblem(undefined, { slug: VEHICLE })).toMatch(/not fetched/);
+    expect(listProblem(list([]), { slug: VEHICLE })).toMatch(/empty/);
+    expect(listProblem(list(RECORD_NOW.slice(0, 3), 25), { slug: VEHICLE })).toMatch(/holds 3 of the 25/);
+    expect(listProblem(list(RECORD_NOW, null), { slug: VEHICLE })).toMatch(/does not say how many/);
+    expect(listProblem(list([...RECORD_NOW].reverse()), { slug: VEHICLE })).toMatch(/not newest first/);
+    expect(listProblem(list(RECORD_NOW), { slug: 'hr-1-119' })).toMatch(/does not name the bill asked for/);
+    expect(listProblem(list(RECORD_NOW), { slug: VEHICLE })).toBeNull();
   });
 
-  test('a row dated after the newest action in the list is not judged', () => {
-    const later = row({ day: '2026-10-05', record: { action_text: 'Held at the desk.', action_code: 'H15000', action_type: 'Floor', source_system: 'House floor actions' } });
-    const { checked, results } = judgeBill([later], list(RECORD_NOW), '2026-09-15');
+  test("a wrong bill's list on a bill with two rows (one a vote) changes nothing", () => {
+    const vote = said('Passed Senate by Yea-Nay Vote. 60 - 40. Record Vote Number: 9.', { class: 'vote', day: '2026-10-01', vehicle: 'hr-1-119', record: { roll_call: { chamber: 'senate', number: 9 } } });
+    const other = said('Held at the desk.', { day: '2026-10-01', vehicle: 'hr-1-119' });
+    const wrong = list(RECORD_NOW, RECORD_NOW.length, REQUEST); // S. 4668's list, served for H.R. 1
+    const r = recheckStore(store([vote, other], []), new Map([['hr-1-119', wrong]]), { now: NOW, fallbackText: fallbackTextFor });
+    expect(r.changes).toEqual([]);
+    expect(r.skipped.join('\n')).toContain('does not name the bill asked for');
+  });
+
+  test('every checked row of one bill changing at once is refused, however few', () => {
+    const one = said('Motion to proceed withdrawn in Senate.', { day: '2026-09-16' });
+    const actions = newestFirst([...RECORD_NOW.filter((a) => a.actionDate !== '2026-09-16'), senate('2026-09-16', 'Motion to proceed tabled in Senate.')]);
+    const r = run(store([one], []), lists(actions));
+    expect(r.refused).toMatch(/every one of s-4668-119's 1 checked row/);
+    expect(r.store[MOMENT].updates[0]).toBe(one);
+  });
+
+  test('more than half of one bill\'s checked rows (from 3 up) is refused', () => {
+    const a = said('Motion X withdrawn in Senate.', { day: '2026-09-16' });
+    const b = said('Motion Y withdrawn in Senate.', { day: '2026-09-16' });
+    const actions = newestFirst([...RECORD_NOW.filter((x) => x.actionDate !== '2026-09-16'), senate('2026-09-16', 'Motion X tabled in Senate.'), senate('2026-09-16', 'Motion Y tabled in Senate.')]);
+    const r = run(store([a, b, HELD[0]], []), lists(actions));
+    expect(r.refused).toMatch(/2 of s-4668-119's 3 checked rows/);
+  });
+
+  test(`more than ${RECHECK_MAX_CHANGES} changes in one night: refused, store untouched, every row named`, () => {
+    const many = Array.from({ length: RECHECK_MAX_CHANGES + 1 }, (_, i) => said(`Motion ${i} withdrawn in Senate.`, { day: '2026-09-16' }));
+    const actions = newestFirst([...RECORD_NOW.filter((x) => x.actionDate !== '2026-09-16'), ...many.map((_, i) => senate('2026-09-16', `Motion ${i} tabled in Senate.`))]);
+    const held = Array.from({ length: 10 }, (_, i) => ({ ...HELD[0], id: `u_0000000${i}` }));
+    const s2 = store([...many, ...held], []);
+    const r = run(s2, lists(actions));
+    expect(r.refused).toMatch(new RegExp(`${RECHECK_MAX_CHANGES + 1} rows would be corrected`));
+    expect(r.store).toBe(s2);
+    const md = recheckSummaryMarkdown(r);
+    for (const u of many) expect(md).toContain(u.id);
+    expect(md).toContain('docs/runbooks/record-recheck.md');
+  });
+
+  test('a list missing a middle day is read as partial: the rows of that day are left, not withdrawn, and nothing flips back the next night', () => {
+    const missing = RECORD_NOW.filter((a) => a.actionDate !== '2026-09-22');
+    const a = said('Motion by Senator Thune to recommit fell in Senate.', { day: '2026-09-22' });
+    const b = said('Considered by Senate.', { day: '2026-09-22' });
+    const s1 = store([a, b, ...HELD.slice(0, 2)], []);
+    const night1 = run(s1, lists(missing));
+    expect(night1.changes).toEqual([]);
+    expect(night1.left.join('\n')).toContain('list missing a day');
+    const night2 = run(night1.store, lists(RECORD_NOW));
+    expect(night2.changes.filter((c: Row) => c.kind === 'reinstated')).toEqual([]);
+  });
+
+  test('a row dated after the newest action on its list is not judged', () => {
+    const later = said('Held at the desk.', { day: '2026-10-05', record: { action_code: 'H15000', source_system: 'House floor actions' } });
+    const { checked, results } = judgeBill(MOMENT, [later], list(RECORD_NOW), { retentionFloor: '2026-09-15' });
     expect(checked).toBe(0);
     expect(results).toEqual([]);
   });
+});
 
-  test(`more than ${RECHECK_MAX_CHANGES} changes in one night: every change is refused, the store is untouched, and the reason says so`, () => {
-    const gone = Array.from({ length: RECHECK_MAX_CHANGES + 1 }, (_, i) =>
-      row({ record: { action_text: `Not on the record ${i}.`, action_code: null, action_type: 'Floor', source_system: 'Senate' } }),
-    );
-    const held = Array.from({ length: 10 }, () => HELD[0]).map((u, i) => ({ ...u, id: `u_0000000${i}` }));
-    const s2 = store([...gone, ...held]);
-    const r = run(s2);
-    expect(r.refused).toMatch(new RegExp(`${RECHECK_MAX_CHANGES + 1} rows would be corrected or withdrawn in one night`));
-    expect(r.store).toBe(s2);
-    expect(r.changes).toHaveLength(RECHECK_MAX_CHANGES + 1);
-    expect(recheckSummaryMarkdown(r)).toContain('Refused, nothing changed');
+test.describe('rule 6: a row that names an amendment', () => {
+  const KEY = '119-samdt-6776';
+  const amendmentList = (actions: Row[], request: Row | null = { amendmentNumber: '6776', congress: 119, type: 'SAMDT' }) => ({ actions, total: actions.length, request });
+
+  test('reads the amendment it names, in every spelling', () => {
+    expect(amendmentNamed('Cloture motion on amendment SA 6776 presented in Senate.', 119)).toBe(KEY);
+    expect(amendmentNamed('On the Amendment S.Amdt. 6776 to S. 4668', 119)).toBe(KEY);
+    expect(amendmentNamed('H.Amdt. 12 agreed to', 119)).toBe('119-hamdt-12');
+    expect(amendmentNamed('Considered by Senate.', 119)).toBeNull();
+    expect(amendmentsNamedInStore(store(), { now: NOW })).toEqual([KEY]);
+    expect(amendmentActionsPath(KEY)).toBe('/amendment/119/samdt/6776/actions');
   });
 
-  test(`exactly ${RECHECK_MAX_CHANGES} changes is allowed`, () => {
-    const gone = Array.from({ length: RECHECK_MAX_CHANGES }, (_, i) =>
-      row({ record: { action_text: `Not on the record ${i}.`, action_code: null, action_type: 'Floor', source_system: 'Senate' } }),
-    );
-    const r = run(store([...gone, ...HELD, ...HELD.map((u, i) => ({ ...u, id: `u_1000000${i}` }))]));
-    expect(r.refused).toBeNull();
-    expect(r.changes).toHaveLength(RECHECK_MAX_CHANGES);
+  test("held by the amendment's own list that day: unchanged", () => {
+    const own = amendmentList([senate('2026-09-17', 'Cloture motion on amendment SA 6776 presented in Senate. (CR S4789)')]);
+    const r = run(store(), lists(), { amendmentLists: new Map([[KEY, own]]) });
+    expect(byId(r.store, CLOTURE_SA6776.id)).toBe(CLOTURE_SA6776);
+    expect(r.left.join('\n')).not.toContain(CLOTURE_SA6776.id);
   });
 
-  test('more than half of one bill\'s checked rows at once: refused', () => {
-    const r = run(store([CLOTURE_SA6776, WITHDRAWN_WORDS, HELD[0]]));
-    expect(r.refused).toMatch(/2 of s-4668-119's 3 checked rows/);
-    expect(r.changes.every((c: Row) => c.kind !== 'reinstated')).toBe(true);
+  test("on neither the bill's list nor the amendment's: withdrawn", () => {
+    const own = amendmentList([senate('2026-09-22', 'Cloture on amendment SA 6776 invoked in Senate by Yea-Nay Vote. 70 - 21. Record Vote Number: 240.')]);
+    const r = run(store(), lists(), { amendmentLists: new Map([[KEY, own]]) });
+    expect(r.changes.find((c: Row) => c.id === CLOTURE_SA6776.id)).toMatchObject({ kind: 'withdrawn', how: `on neither the bill's list nor amendment ${KEY}'s` });
+    const gone = byId(r.store, CLOTURE_SA6776.id);
+    expect(gone.withdrawn_on).toBe(TODAY);
+    expect(readableEntry(r.store[MOMENT]).updates.map((u) => u.id)).not.toContain(CLOTURE_SA6776.id);
+  });
+
+  test("another amendment's list, or a partial one: left", () => {
+    for (const bad of [amendmentList([senate('2026-09-17', 'x')], { amendmentNumber: '6777', congress: 119 }), { ...amendmentList([senate('2026-09-17', 'x')]), total: 9 }]) {
+      const r = run(store(), lists(), { amendmentLists: new Map([[KEY, bad]]) });
+      expect(byId(r.store, CLOTURE_SA6776.id)).toBe(CLOTURE_SA6776);
+      expect(r.left.join('\n')).toContain('names amendment');
+    }
   });
 });
 
-test.describe('what the page, the summaries and the collapses do with a withdrawn row', () => {
-  const after = run(store()).store;
+test.describe('held: a quote the update lint refuses is never written', () => {
+  test('the row is hidden with both sets of words kept, and the file still passes the gate and the pre-commit check', () => {
+    const u = said('Motion to proceed withdrawn in Senate.', { day: '2026-09-16' });
+    const actions = newestFirst([...RECORD_NOW.filter((a) => a.actionDate !== '2026-09-16'), senate('2026-09-16', 'Motion to proceed tabled in Senate.')]);
+    const refuse = () => ['en: refused by the lint'];
+    const r = run(store([u, ...HELD], []), lists(actions), { lintText: refuse });
+    expect(kinds(r)).toEqual([['held', u.id]]);
+    const kept = byId(r.store, u.id);
+    expect(kept.withdrawn_on).toBe(TODAY);
+    expect(kept.record.action_text).toBe('Motion to proceed withdrawn in Senate.');
+    expect(kept.rechecks.at(-1)).toMatchObject({ outcome: 'held', now: 'Motion to proceed tabled in Senate.' });
+    expect(recheckFieldProblems(kept, TODAY)).toEqual([]);
+    expect(run(r.store, lists(actions), { lintText: refuse }).changes).toEqual([]);
+  });
+
+  test('the pre-commit check now runs the same update lint as CI, so a line CI rejects never commits', () => {
+    const bad = { ...HELD[0], text: { en: 'The Senate is expected to vote.', es: 'Se espera que el Senado vote.' } };
+    const { failures } = verifyMomentUpdates({ updates: store([bad], []), now: NOW });
+    expect(failures.join('\n')).toContain('fail the lint check-moment-updates runs');
+  });
+});
+
+test.describe('reinstated', () => {
+  test('a withdrawn row the record lists again is an event again, and nothing else re-judges a withdrawn row', () => {
+    const u: Row = { ...said('Motion Z made in Senate.', { day: '2026-09-17' }), withdrawn_on: '2026-10-01', rechecks: [{ on: '2026-10-01', at: '2026-10-01T23:00:00.000Z', outcome: 'withdrawn' }] };
+    const back = run(store([u, ...HELD], []), lists(newestFirst([...RECORD_NOW, senate('2026-09-17', 'Motion Z made in Senate.')])));
+    expect(kinds(back)).toEqual([['reinstated', u.id]]);
+    expect(Object.hasOwn(byId(back.store, u.id), 'withdrawn_on')).toBe(false);
+    const near = run(store([u, ...HELD], []), lists(newestFirst([...RECORD_NOW, senate('2026-09-17', 'Motion Z presented in Senate.')])));
+    expect(near.changes).toEqual([]);
+  });
+});
+
+test.describe('the one-night override', () => {
+  const many = Array.from({ length: RECHECK_MAX_CHANGES + 1 }, (_, i) => said(`Motion ${i} withdrawn in Senate.`, { day: '2026-09-16' }));
+  const actions = newestFirst([...RECORD_NOW.filter((x) => x.actionDate !== '2026-09-16'), ...many.map((_, i) => senate('2026-09-16', `Motion ${i} tabled in Senate.`))]);
+  const held = Array.from({ length: 10 }, (_, i) => ({ ...HELD[0], id: `u_0000000${i}` }));
+  const file = { accept: [{ night: TODAY, ids: [many[0].id, many[1].id], why: 'Read both against congress.gov All Actions today.' }] };
+
+  test('rows a person accepted for tonight are left out of the counts, on that night only', () => {
+    expect(run(store([...many, ...held], []), lists(actions)).refused).not.toBeNull();
+    const tonight = run(store([...many, ...held], []), lists(actions), { accept: acceptedIds(file, TODAY) });
+    expect(tonight.refused).toBeNull();
+    expect(tonight.changes.filter((c: Row) => c.accepted).map((c: Row) => c.id)).toEqual([many[0].id, many[1].id]);
+    expect(acceptedIds(file, '2026-11-15').size).toBe(0);
+  });
+
+  test('a malformed file accepts nothing, and CI names what is wrong', () => {
+    for (const bad of [{ accept: [{ night: 'tonight', ids: [many[0].id], why: 'a good long reason' }] }, { accept: [{ night: TODAY, ids: [], why: 'a good long reason' }] }, { accept: [{ night: TODAY, ids: ['x'], why: 'a good long reason' }] }, { accept: [{ night: TODAY, ids: [many[0].id], why: '' }] }, { nope: true }]) {
+      expect(acceptListProblems(bad).length).toBeGreaterThan(0);
+      expect(acceptedIds(bad, TODAY).size).toBe(0);
+    }
+    expect(acceptListProblems(file)).toEqual([]);
+    expect(acceptListProblems(undefined)).toEqual([]);
+  });
+});
+
+test.describe('what the page, the summaries and the collapses do with a hidden row', () => {
+  const KEY = '119-samdt-6776';
+  const after = run(store(), lists(), { amendmentLists: new Map([[KEY, { actions: [senate('2026-09-01', 'Submitted in the Senate.')], total: 1, request: { amendmentNumber: 6776, congress: 119 } }]]) }).store;
   const updates: Row[] = after[MOMENT].updates;
 
   test('the page never reads it', () => {
+    expect(byId(after, CLOTURE_SA6776.id).withdrawn_on).toBe(TODAY);
     const read = readableEntry(after[MOMENT]);
     expect(read.updates.map((u) => u.id)).not.toContain(CLOTURE_SA6776.id);
-    expect(read.updates).toHaveLength(updates.length - 1);
     expect(liveUpdates(updates).map((u: Row) => u.id)).not.toContain(CLOTURE_SA6776.id);
   });
 
   test('a live row is never folded into it, and it is never folded into a live one', () => {
     const gone = byId(after, CLOTURE_SA6776.id);
-    const same = row({ recorded_at: '2026-09-19T00:00:00Z', record: { ...CLOTURE_SA6776.record, action_text: `${CLOTURE_SA6776.record.action_text} (CR S1)` } });
+    const same = said(`${CLOTURE_SA6776.record.action_text} (CR S1)`, { recorded_at: '2026-09-19T00:00:00Z' });
     expect(collapseSameActions([gone, same]).kept).toHaveLength(2);
-    const status = row({ class: 'status_change', record: { ...CLOTURE_SA6776.record, action_type: 'latestAction', source_system: 'Congress.gov bill detail' } });
+    const status = said(CLOTURE_SA6776.record.action_text, { class: 'status_change', record: { action_type: 'latestAction', source_system: 'Congress.gov bill detail' } });
     expect(collapseRedundantStatusChanges([gone, status]).kept).toHaveLength(2);
   });
 
@@ -365,15 +603,19 @@ test.describe('what the page, the summaries and the collapses do with a withdraw
     expect(recordMovedSince(entry, [], '2026-09-01')).toBe(false);
   });
 
-  test('a model-written summary that cites a changed row is rewritten; a record-only one is not', () => {
+  test('a model-written summary citing a row changed after it was written stays due until a later revision stands; a record-only one never is', () => {
+    const entry = (rev: Row) => ({ updates, summary_revisions: [rev] });
+    const cites = { ...REVISION, generated_at: '2026-11-10T12:00:00Z' };
+    expect(recheckPendingIds(entry(cites))).toContain(CLOTURE_SA6776.id);
+    // A night later, the budget spent: still due, read off the file.
+    expect(recheckPendingIds(entry(cites))).toEqual(recheckPendingIds(entry(cites)));
+    expect(recheckPendingIds(entry({ ...cites, generated_at: '2026-11-15T01:00:00Z' }))).toEqual([]);
+    expect(recheckPendingIds(entry({ ...cites, model: 'record-only' }))).toEqual([]);
+
     const moments = { [MOMENT]: { status: 'live', vehicles: [{ slug: VEHICLE }] } };
     const bills = new Map([[VEHICLE, { status: 'floor_vote', last_action_text: 'x', last_action_date: '2026-09-24', bill_type: 's' }]]);
-    const rev = { ...REVISION, generated_at: '2026-11-14T12:00:00Z', grounded_in: { ...REVISION.grounded_in, update_ids: [CLOTURE_SA6776.id] } };
-    const plan = (r: Row, rechecked: Set<string>) =>
-      planSummaries({ mode: 'nightly', moments, store: { [MOMENT]: { updates, summary_revisions: [r] } }, billBySlug: bills, now: NOW, rechecked, unsupportedStatus: () => false })[0];
-    expect(plan(rev, new Set([CLOTURE_SA6776.id]))).toMatchObject({ generate: true, reason: expect.stringContaining('record re-check') });
-    expect(plan(rev, new Set()).generate).toBe(false);
-    expect(plan({ ...rev, model: 'record-only' }, new Set([CLOTURE_SA6776.id])).generate).toBe(false);
+    const plan = (rev: Row) => planSummaries({ mode: 'nightly', moments, store: { [MOMENT]: entry(rev) }, billBySlug: bills, now: Date.parse('2026-11-15T02:00:00Z'), unsupportedStatus: () => false })[0];
+    expect(plan({ ...cites, grounded_in: { ...cites.grounded_in, vehicle_statuses: { [VEHICLE]: 'floor_vote' } } })).toMatchObject({ reason: expect.stringContaining('record re-check') });
   });
 });
 
@@ -381,9 +623,9 @@ test.describe('the CI gate and the pre-commit check', () => {
   const moments = readJson('data/moments.json');
   const bills: { full_identifier: string }[] = readJson('data/bills.json');
   const slugs = new Set(bills.map((b) => b.full_identifier));
-  const violationsOf = (s: Row) =>
-    checkMomentUpdates(s, moments, slugs, { now: NOW }).violations.filter((v: string) => /rechecks|withdrawn_on/.test(v));
+  const violationsOf = (s: Row) => checkMomentUpdates(s, moments, slugs, { now: NOW }).violations.filter((v: string) => /rechecks|withdrawn_on/.test(v));
   const failuresOf = (s: Row) => verifyMomentUpdates({ updates: s, now: NOW }).failures.filter((f: string) => f.includes('re-check'));
+  const at = new Date(NOW).toISOString();
 
   test('accept what the re-check writes', () => {
     const after = run(store()).store;
@@ -391,17 +633,21 @@ test.describe('the CI gate and the pre-commit check', () => {
     expect(failuresOf(after)).toEqual([]);
   });
 
-  const gone = (over: Row) => ({ ...CLOTURE_SA6776, withdrawn_on: TODAY, rechecks: [{ on: TODAY, outcome: 'withdrawn' }], ...over });
+  const gone = (over: Row) => ({ ...CLOTURE_SA6776, withdrawn_on: TODAY, rechecks: [{ on: TODAY, at, outcome: 'withdrawn' }], ...over });
   for (const [name, u] of [
     ['withdrawn_on with no rechecks entry', { ...CLOTURE_SA6776, withdrawn_on: TODAY }],
-    ['withdrawn_on in the future', gone({ withdrawn_on: '2026-11-20', rechecks: [{ on: '2026-11-20', outcome: 'withdrawn' }] })],
-    ['withdrawn_on before the row\'s own day', gone({ withdrawn_on: '2026-09-01', rechecks: [{ on: '2026-09-01', outcome: 'withdrawn' }] })],
+    ['withdrawn_on in the future', gone({ withdrawn_on: '2026-11-20', rechecks: [{ on: '2026-11-20', at: '2026-11-20T23:00:00.000Z', outcome: 'withdrawn' }] })],
+    ["withdrawn_on before the row's own day", gone({ withdrawn_on: '2026-09-01', rechecks: [{ on: '2026-09-01', at: '2026-09-01T20:00:00.000Z', outcome: 'withdrawn' }] })],
     ['withdrawn_on that is not a day', gone({ withdrawn_on: 'yesterday' })],
-    ['a last entry that withdrew the row, with no withdrawn_on', { ...CLOTURE_SA6776, rechecks: [{ on: TODAY, outcome: 'withdrawn' }] }],
-    ['a correction that does not keep the earlier words', { ...CLOTURE_SA6776, rechecks: [{ on: TODAY, outcome: 'reworded', was_id: 'u_00000001' }] }],
-    ['a correction with no earlier id', { ...CLOTURE_SA6776, rechecks: [{ on: TODAY, outcome: 'reworded', was: 'x' }] }],
-    ['an unknown outcome', { ...CLOTURE_SA6776, rechecks: [{ on: TODAY, outcome: 'deleted' }] }],
-    ['entries out of order', { ...CLOTURE_SA6776, rechecks: [{ on: TODAY, outcome: 'reinstated' }, { on: '2026-10-01', outcome: 'reinstated' }] }],
+    ['a last entry that hid the row, with no withdrawn_on', { ...CLOTURE_SA6776, rechecks: [{ on: TODAY, at, outcome: 'held', now: 'x' }] }],
+    ['a correction that does not keep the earlier words', { ...CLOTURE_SA6776, rechecks: [{ on: TODAY, at, outcome: 'reworded', was_id: 'u_00000001' }] }],
+    ['a correction with no earlier id', { ...CLOTURE_SA6776, rechecks: [{ on: TODAY, at, outcome: 'reworded', was: 'x' }] }],
+    ["a hold that does not keep the record's words", gone({ rechecks: [{ on: TODAY, at, outcome: 'held' }] })],
+    ['an entry with no time', gone({ rechecks: [{ on: TODAY, outcome: 'withdrawn' }] })],
+    ['an entry whose time is a number, not an ISO string', gone({ rechecks: [{ on: TODAY, at: NOW, outcome: 'withdrawn' }] })],
+    ['an entry whose time is on another day', gone({ rechecks: [{ on: TODAY, at: '2026-11-10T12:00:00.000Z', outcome: 'withdrawn' }] })],
+    ['an unknown outcome', { ...CLOTURE_SA6776, rechecks: [{ on: TODAY, at, outcome: 'deleted' }] }],
+    ['entries out of order', { ...CLOTURE_SA6776, rechecks: [{ on: TODAY, at, outcome: 'reinstated' }, { on: '2026-10-01', at: '2026-10-01T20:00:00.000Z', outcome: 'reinstated' }] }],
     ['an empty log', { ...CLOTURE_SA6776, rechecks: [] }],
     ['re-check fields on a row the action list never carried', gone({ source: { kind: 'roll_call', refs: ['https://www.senate.gov/x.xml'] } })],
   ] as [string, Row][]) {
@@ -414,27 +660,58 @@ test.describe('the CI gate and the pre-commit check', () => {
 });
 
 test.describe('the runner', () => {
-  test('fetchWholeActionList reads every page until it holds the count the response gives', async () => {
+  test('fetchWholeActionList reads every page, and keeps the request the response names', async () => {
     const all = Array.from({ length: 600 }, (_, i) => ({ actionDate: '2026-09-17', text: `a${i}` }));
     const offsets: number[] = [];
-    const got = await fetchWholeActionList(VEHICLE, async (_path: string, p: { limit: number; offset: number }) => {
+    const got = await fetchWholeActionList('/bill/119/s/4668/actions', async (_path: string, p: { limit: number; offset: number }) => {
       offsets.push(p.offset);
-      return { actions: all.slice(p.offset, p.offset + p.limit), pagination: { count: all.length } };
+      return { actions: all.slice(p.offset, p.offset + p.limit), pagination: { count: all.length }, request: REQUEST };
     });
     expect(offsets).toEqual([0, 250, 500]);
+    expect(got).toMatchObject({ total: 600, request: REQUEST });
     expect(got.actions).toHaveLength(600);
-    expect(got.total).toBe(600);
   });
 
-  test('the step summary names every correction and withdrawal', () => {
+  test('a re-check that throws costs the night nothing: the store is restored and the failure is reported', async () => {
+    let s: Row = { a: 1 };
+    const out = await guardedRecheck(
+      async () => {
+        s = { a: 2 };
+        throw new Error('boom');
+      },
+      () => s,
+      (next: Row) => {
+        s = next;
+      },
+    );
+    expect(out).toEqual({ failed: 'threw', corrected: [] });
+    expect(s).toEqual({ a: 1 });
+    expect(await guardedRecheck(async () => ({ refused: 'x', corrected: [{ momentId: 'm', id: 'u' }] }), () => s, () => {})).toEqual({ failed: 'refused', corrected: [] });
+    expect(await guardedRecheck(async () => ({ refused: null, corrected: [{ momentId: 'm', id: 'u' }] }), () => s, () => {})).toEqual({ failed: null, corrected: [{ momentId: 'm', id: 'u' }] });
+  });
+
+  test('main() runs the re-check AFTER the night\'s collection is merged and pruned, and BEFORE the summaries', () => {
+    const src = readFileSync(join(process.cwd(), 'scripts/moment-updates.mjs'), 'utf8');
+    const body = src.slice(src.indexOf('async function main()'));
+    const merge = body.indexOf('// ---- merge ----');
+    const prune = body.indexOf('pruneStore(store, moments');
+    const recheck = body.indexOf('guardedRecheck(recheckStoredLines');
+    const plan = body.indexOf('planSummaries({');
+    expect(merge).toBeGreaterThan(0);
+    expect(prune).toBeGreaterThan(merge);
+    expect(recheck).toBeGreaterThan(prune);
+    expect(plan).toBeGreaterThan(recheck);
+  });
+
+  test('the step summary names every change', () => {
     const md = recheckSummaryMarkdown(run(store()));
-    expect(md).toContain('was "The committee substitute withdrawn by Voice Vote."'.replace('was', 'Was'));
+    expect(md).toContain('Was "The committee substitute withdrawn by Voice Vote."');
     expect(md).toContain('now "The committee substitute tabled by Voice Vote."');
-    expect(md).toContain(`${CLOTURE_SA6776.id}: withdrawn (the record no longer holds it)`);
+    expect(md).toContain('left: paying-college-athletes/u_682cca41');
   });
 });
 
-test('the committed file passes the gate with no re-check fields yet, and every row it holds is one the reader prints', () => {
+test('the committed file carries no malformed re-check field', () => {
   const real = readJson('data/moment-updates.json');
   for (const [id, entry] of Object.entries(real) as [string, Row][]) {
     if (id === '_meta') continue;
