@@ -326,7 +326,10 @@ test.describe('name addresses', () => {
     const shared = nameOf(true);
     const unique = nameOf(false);
     const titleOf = (html: string) => /<title>([^<]*)<\/title>/.exec(html)?.[1];
-    const reference = titleOf(await (await request.get('/this-page-does-not-exist-404')).text());
+    const reference = {
+      en: titleOf(await (await request.get('/this-page-does-not-exist-404')).text()),
+      es: titleOf(await (await request.get('/es/this-page-does-not-exist-404')).text()),
+    };
     const notFound = [
       ...(shared ? [`/${shared.name}`, `/es/${shared.name}`] : []),
       ...(unique ? [`/${unique.name}-x`, `/x-${unique.name}`, `/${unique.name.replace(/-/g, '_')}`] : []),
@@ -334,7 +337,7 @@ test.describe('name addresses', () => {
     for (const from of notFound) {
       const res = await request.get(from, { maxRedirects: 0 });
       expect(res.status(), from).toBe(404);
-      expect(titleOf(await res.text()), from).toBe(reference);
+      expect(titleOf(await res.text()), from).toBe(from.startsWith('/es/') ? reference.es : reference.en);
     }
     for (const path of ['/privacy', '/es/privacy', '/bills', '/today', '/about']) {
       const res = await request.get(path, { maxRedirects: 0 });
