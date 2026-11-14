@@ -112,7 +112,8 @@ export default async function MomentsPage({ params }: { params: Promise<{ locale
           /* Opened by the same 3px ink rule that opens a section — the page
              already knows that mark means "stop and read this". A wash
              ground with no side edges, so no `line-strong`-on-wash edge is
-             ever asked to clear 3:1 (it lands at 2.97). */
+             ever asked to clear 3:1 (it landed at 2.97 in the July palette; 3.89
+             now). */
           <div className="mt-6 max-w-read border-t-[3px] border-ink bg-wash p-6">
             <p className="text-lg font-bold text-ink">{t('moments.emptyTitle')}</p>
             <p className="mt-2 text-sm text-ink-2">{t('moments.emptyBody')}</p>

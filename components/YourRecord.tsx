@@ -203,7 +203,7 @@ export function YourRecord({ standalone = false }: { standalone?: boolean }) {
             <p className="mt-3">
               <Link
                 href="/bills"
-                className="inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-go visited:text-go-deep hover:text-go-deep hover:underline"
+                className="inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-ink underline visited:text-ink-2 hover:decoration-[3px]"
               >
                 {t('followCta')}
                 <ArrowRight className="h-4 w-4 flex-none" aria-hidden />
@@ -300,9 +300,9 @@ export function YourRecord({ standalone = false }: { standalone?: boolean }) {
                   {t('confirmErase')}
                 </button>
                 {/* Cancel takes bg-paper: its border-line-strong edge sat
-                    directly on the wash panel at 2.97:1 — the exact
-                    enabled-control case the contrast ledger marks FAIL
-                    (line-strong needs paper on at least one side). */}
+                    directly on the wash panel at 2.97:1 in the July
+                    palette, which the ledger then marked FAIL (today's
+                    line-strong clears wash at 3.89:1; the paper stays). */}
                 <button
                   type="button"
                   onClick={() => setConfirming(false)}

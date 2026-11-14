@@ -152,10 +152,10 @@ export function MomentVehicleCard({
       {onCalendar && (
         <p className="mb-3">
           <Chip
-            tone="urgent"
+            tone="floor"
             // date-only string => UTC, or the certifying date prints a day
             // early for every US viewer — and a printed date is the whole
-            // reason this mark is allowed to be amber.
+            // reason this mark may claim the floor.
             dateLabel={format.dateTime(new Date(lastActionDate!), {
               year: 'numeric',
               month: 'short',
@@ -176,7 +176,7 @@ export function MomentVehicleCard({
         ))}
       </div>
       <h3 className="mt-2 text-lg leading-tight font-bold text-ink">
-        <Link href={`/bills/${slug}`} className="hover:underline hover:decoration-go hover:decoration-[3px]">
+        <Link href={`/bills/${slug}`} className="hover:underline hover:decoration-ink hover:decoration-[3px]">
           <HeadlineOrTitle headline={headline} title={title} />
         </Link>
       </h3>

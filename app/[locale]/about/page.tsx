@@ -45,7 +45,7 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
               href="https://github.com/cm2489/oravan"
               target="_blank"
               rel="noopener noreferrer"
-              className="font-semibold text-go underline underline-offset-2 hover:text-go-deep"
+              className="font-semibold text-ink underline underline-offset-2 hover:decoration-[3px]"
             >
               {t('repoLinkLabel')}
             </a>
@@ -67,7 +67,7 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
                 href={DONATE_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-semibold text-go underline underline-offset-2 hover:text-go-deep"
+                className="font-semibold text-ink underline underline-offset-2 hover:decoration-[3px]"
               >
                 {t('fundingSupportCta')}
               </a>
