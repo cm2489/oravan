@@ -17,6 +17,7 @@ import { CONGRESS_START, wholeLifeStart } from '../scripts/coverage-query.mjs';
 import { congressFirstYear as votesFirstYear, sessionForYear as votesSessionForYear } from '../lib/votes-core.mjs';
 import { ROLLOVER_DEADLINE } from '../lib/rollover-tripwire.mjs';
 import { SITTING_CONGRESS } from '../lib/district';
+import { SHORT_ADDRESS_CONGRESS } from '../lib/short-address';
 
 /*
  * ONE SOURCE FOR THE TRACKED CONGRESS (2026-11-12).
@@ -82,6 +83,13 @@ test.describe('every former copy reads the one source', () => {
     expect(MAP_CONGRESS).toBe(CURRENT_CONGRESS.number);
     expect(NOMINATION_CONGRESS).toBe(CURRENT_CONGRESS.number);
     expect(SITTING_CONGRESS).toBe(CURRENT_CONGRESS.number);
+  });
+
+  test('short addresses for bills (lib/short-address.ts, #404) mean the tracked Congress', () => {
+    // A new use, declared here the way the former copies are. What a short
+    // address means after the change of Congress is the owner's open
+    // decision; tests/short-address.unit.spec.ts guards it.
+    expect(SHORT_ADDRESS_CONGRESS).toBe(CURRENT_CONGRESS.number);
   });
 
   test('the newsdesk turns a bare citation into a slug of the tracked Congress', () => {

@@ -2,6 +2,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
 import { getAllLegislators, getVacancies, vacancySlug } from '../lib/core';
+import { encodeShortAddressIndex, SHORT_ADDRESS_CONGRESS, type ShortAddressBill } from '../lib/short-address';
 import { briefWindow } from '../lib/today';
 import { voteMembersPath } from '../lib/vote-members-path';
 import { allRollCalls } from '../lib/votes';
@@ -245,12 +246,20 @@ test('any re-added loading boundary under [locale] is a client component', () =>
 });
 
 test('the short-address lookup in proxy.ts carries a build-time bitset, never the corpus', () => {
-  // Source half: the lookup module imports nothing (so it cannot reach
-  // data/), and proxy.ts reaches the corpus only through it.
+  // Source half: the lookup module imports only lib/congress.mjs (the one
+  // source of the Congress number, since 2026-11-12), which itself imports
+  // nothing, so neither can reach data/; proxy.ts reaches the corpus only
+  // through the build-time bitset.
+  const importsOf = (source: string) =>
+    source.split('\n').filter((line) => /^\s*import\s/.test(line));
   for (const file of Object.keys(PER_REQUEST_IN_PROXY)) {
     const source = readFileSync(join(process.cwd(), file), 'utf8');
-    expect(source, `${file} must import nothing`).not.toMatch(/^\s*import\s/m);
+    expect(importsOf(source), `${file} may import lib/congress.mjs and nothing else`).toEqual([
+      "import { CURRENT_CONGRESS } from './congress.mjs';",
+    ]);
   }
+  const congress = readFileSync(join(process.cwd(), 'lib/congress.mjs'), 'utf8');
+  expect(importsOf(congress), 'lib/congress.mjs must import nothing').toEqual([]);
   const proxy = readFileSync(join(process.cwd(), 'proxy.ts'), 'utf8');
   expect(proxy).toContain("from './lib/short-address'");
   const proxyImports = proxy.split('\n').filter((line) => /^\s*import\s/.test(line));
@@ -271,4 +280,23 @@ test('the short-address lookup in proxy.ts carries a build-time bitset, never th
     expect(text, `${file} carries corpus fields`).not.toContain('full_identifier');
     expect(text, `${file} carries corpus fields`).not.toContain('ai_summary');
   }
+
+  // Browser half: nothing of the lookup reaches a file a browser downloads.
+  // Neither the pattern nor the bitset (which `env` would inline wherever
+  // process.env.SHORT_ADDRESS_INDEX is read) is in .next/static.
+  const index = encodeShortAddressIndex(
+    JSON.parse(readFileSync(join(process.cwd(), 'data/bills.json'), 'utf8')) as ShortAddressBill[],
+    SHORT_ADDRESS_CONGRESS,
+  );
+  expect(index.length, 'the build-time index is not empty').toBeGreaterThan(100);
+  const staticDir = join(process.cwd(), '.next/static');
+  const browserFiles = readdirSync(staticDir, { withFileTypes: true, recursive: true })
+    .filter((e) => e.isFile() && /\.(js|json|css|html|txt)$/.test(e.name))
+    .map((e) => join(e.parentPath ?? staticDir, e.name));
+  expect(browserFiles.length, 'the build has browser files to read').toBeGreaterThan(0);
+  const leaks = browserFiles.filter((file) => {
+    const text = readFileSync(file, 'utf8');
+    return text.includes(marker) || text.includes(index.slice(0, 64)) || text.includes('SHORT_ADDRESS_INDEX');
+  });
+  expect(leaks, 'a browser file carries the short-address lookup').toEqual([]);
 });

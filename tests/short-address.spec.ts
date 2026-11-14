@@ -108,9 +108,85 @@ test.describe('short addresses', () => {
   });
 
   test('a real route is never taken for a short address', async ({ request }) => {
-    for (const path of ['/bills', '/es/bills', '/about', '/today', '/reps', '/questions']) {
+    for (const path of [
+      '/bills', '/es/bills', '/about', '/today', '/reps', '/questions', '/call', '/citations', '/embeds',
+      '/follow', '/glossary', '/mcp', '/nominations', '/partners', '/privacy', '/terms', '/record', '/why-call',
+      '/es/privacy', '/es/today', '/llms.txt', '/robots.txt', '/sitemap.xml', '/feed/whats-moving.json',
+      '/es/feed/whats-moving.json', '/icon.svg',
+    ]) {
       const res = await request.get(path, { maxRedirects: 0 });
       expect(res.status(), path).not.toBe(307);
     }
+  });
+
+  /*
+   * The addresses named in the brief of 2026-11-13, each decided from the
+   * corpus itself (a held bill redirects, an unheld one is the 404), so a
+   * nightly sync can never make this test lie. S. 123, H.Res. 5 and S. 1
+   * are not in the corpus today; H.R. 9340, H.J.Res. 1 and S.Con.Res. 29 are.
+   */
+  test('named addresses: each type and spelling, held or not', async ({ request }) => {
+    const held = new Set(bills.map(slugOf));
+    const cases: Array<[string, string, string]> = [
+      ['/hr9340', '', 'hr-9340'],
+      ['/HR9340', '', 'hr-9340'],
+      ['/hr-9340', '', 'hr-9340'],
+      ['/es/hr9340', '/es', 'hr-9340'],
+      ['/en/hr9340', '', 'hr-9340'],
+      ['/s123', '', 's-123'],
+      ['/s1', '', 's-1'],
+      ['/hjres1', '', 'hjres-1'],
+      ['/HJRES1', '', 'hjres-1'],
+      ['/sconres29', '', 'sconres-29'],
+      ['/es/sconres29', '/es', 'sconres-29'],
+      ['/hres5', '', 'hres-5'],
+      ['/sres5', '', 'sres-5'],
+    ];
+    for (const [from, prefix, stem] of cases) {
+      const slug = `${stem}-${SHORT_ADDRESS_CONGRESS}`;
+      const res = await request.get(from, { maxRedirects: 0, headers: { accept: 'text/html' } });
+      if (held.has(slug)) {
+        expect(res.status(), from).toBe(307);
+        expect(new URL(res.headers()['location'] ?? '', 'http://x').pathname, from).toBe(`${prefix}/bills/${slug}`);
+      } else {
+        expect(res.status(), `${from} (not in the corpus)`).toBe(404);
+      }
+    }
+  });
+
+  test('a trailing slash still reaches the bill, with no query carried', async ({ request }) => {
+    const bill = samples()[0];
+    const short = `${bill.bill_type}${bill.bill_number}`;
+    for (const [from, to] of [
+      [`/${short}/`, `/bills/${slugOf(bill)}`],
+      [`/es/${short}/?stance=support`, `/es/bills/${slugOf(bill)}`],
+    ] as const) {
+      const res = await request.get(from, { headers: { accept: 'text/html' } });
+      expect(res.status(), from).toBe(200);
+      const landed = new URL(res.url());
+      expect(landed.pathname, from).toBe(to);
+      expect(landed.search, from).toBe('');
+    }
+  });
+
+  test('a fragment survives the redirect in the browser, and a query does not', async ({ page }) => {
+    const bill = samples()[0];
+    await page.goto(`/${bill.bill_type}${bill.bill_number}?stance=support#top`);
+    const landed = new URL(page.url());
+    expect(landed.pathname).toBe(`/bills/${slugOf(bill)}`);
+    expect(landed.search).toBe('');
+    expect(landed.hash).toBe('#top');
+  });
+
+  test('the sitemap and robots.txt carry no short address', async ({ request }) => {
+    const shortShape = /^(?:\/(?:en|es))?\/(?:hconres|sconres|hjres|sjres|hres|sres|hr|s)-?\d+\/?$/i;
+    const sitemap = await (await request.get('/sitemap.xml')).text();
+    const paths = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => new URL(m[1]).pathname);
+    expect(paths.length).toBeGreaterThan(1000);
+    expect(paths.some((p) => p.startsWith('/bills/'))).toBe(true);
+    expect(paths.filter((p) => shortShape.test(p))).toEqual([]);
+    const robots = await (await request.get('/robots.txt')).text();
+    const rules = robots.split('\n').map((l) => l.replace(/^(?:Allow|Disallow):\s*/i, '').trim());
+    expect(rules.filter((r) => shortShape.test(r))).toEqual([]);
   });
 });

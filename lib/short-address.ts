@@ -13,8 +13,10 @@
  * bitset per bill type (one bit per bill number), encoded at BUILD time by
  * next.config.ts from data/bills.json and inlined into the proxy bundle as a
  * string. The corpus itself is never imported here or in proxy.ts, and the
- * lookup is a constant-time bit test. This file has no imports on purpose:
- * next.config.ts, proxy.ts and the unit specs all load it as-is.
+ * lookup is a constant-time bit test. Its one import is lib/congress.mjs, the
+ * single source of the Congress number, which is itself import-free (no
+ * imports, no I/O, no environment), so next.config.ts, proxy.ts and the unit
+ * specs can all load this file as-is and it can never reach data/.
  *
  * WHAT IT NEVER DOES: carry a query string onward (a shared link never
  * carries a stance, CLAUDE.md rule 1), answer for a bill the corpus does not
@@ -23,23 +25,29 @@
  * app/ tree and proves none matches the pattern).
  */
 
-/**
- * The Congress a short address means. A short address carries no Congress
- * number, so /hr1 resolves to H.R. 1 of THIS Congress.
- *
- * OWNER DECISION PENDING (card d2, answered 2026-09-26 "Decide in
- * December"): bill numbers restart when the 120th Congress convenes in
- * January 2027, and what /hr1 should mean then is the owner's call, not this
- * file's. tests/short-address.unit.spec.ts fails loudly the day the corpus
- * holds a newer Congress, or two Congresses with the same type and number,
- * while SHORT_ADDRESS_ROLLOVER_RULING below is still null.
- */
-export const SHORT_ADDRESS_CONGRESS = 119;
+import { CURRENT_CONGRESS } from './congress.mjs';
 
 /**
- * The owner's dated ruling on the Congress rollover (card d2), quoted, once
- * he gives it. Null until then. Setting it is the deliberate act that lets
- * the corpus hold more than one Congress under the same short addresses.
+ * The Congress a short address means. A short address carries no Congress
+ * number, so /hr1 resolves to H.R. 1 of THIS Congress: the one the whole
+ * build tracks, read from lib/congress.mjs (since 2026-11-12 the only place
+ * the number is written; tests/congress-source.unit.spec.ts pins this use).
+ *
+ * The owner's go (2026-11-13, 11:21 AM ET: "Go: merge #404 as built, with bill
+ * numbers") covers the 119th Congress only. What /hr1 means once the 120th
+ * convenes on Jan 3, 2027 is HIS decision, still open. Until he rules,
+ * tests/short-address.unit.spec.ts fails the moment lib/congress.mjs lists
+ * an ended Congress, or the corpus holds a Congress other than this one, so
+ * the January switch cannot quietly re-point every short address.
+ */
+export const SHORT_ADDRESS_CONGRESS: number = CURRENT_CONGRESS.number;
+
+/**
+ * The owner's dated ruling on what a short address means after the change
+ * of Congress, quoted word for word with its date, once he gives it. Null
+ * until then. Setting it is the deliberate act that lets the corpus hold
+ * more than one Congress under the same short addresses, and it lands in the
+ * same pull request that builds what he chose.
  */
 export const SHORT_ADDRESS_ROLLOVER_RULING: string | null = null;
 

@@ -13,7 +13,8 @@ import {
   shortAddressTarget,
   type ShortAddressBill,
 } from '../lib/short-address';
-import { APP_DIR, localeTopSegments } from './routes';
+import { CURRENT_CONGRESS, ENDED_CONGRESSES } from '../lib/congress.mjs';
+import { APP_DIR, LOCALE_DIR, localeTopSegments } from './routes';
 
 /*
  * Short addresses for bills (lib/short-address.ts): /hr9340 opens that bill.
@@ -193,8 +194,17 @@ function topLevelNames(): string[] {
     }
   };
   walkTop(APP_DIR);
-  // Everything under app/[locale], in both locales (the segment names are the same).
+  // Everything under app/[locale], in both locales (the segment names are the
+  // same): every route's first segment, and every entry of the folder itself
+  // (metadata files such as manifest.webmanifest and opengraph-image too).
   for (const segment of localeTopSegments()) add(segment);
+  for (const e of fs.readdirSync(LOCALE_DIR)) add(e);
+  // A locale's own folder outside [locale] (app/es/feed serves /es/feed/…):
+  // /es/<name> is a shape shortAddressTarget reads, so its names count too.
+  for (const locale of LOCALES) {
+    const dir = path.join(APP_DIR, locale);
+    if (fs.existsSync(dir)) for (const e of fs.readdirSync(dir)) add(e);
+  }
   // Files served from public/.
   for (const e of fs.readdirSync(path.join(process.cwd(), 'public'))) add(e);
   // The config redirects' old names (next.config.ts) and Next's own prefixes.
@@ -212,32 +222,100 @@ test('no short address shadows a real route, in either locale', () => {
   expect(collisions, 'a route segment that reads as a short address would be shadowed by the redirect').toEqual([]);
 });
 
-// --- the Congress constant (owner decision pending: card d2) -------------------------
+// --- the Congress constant (owner decision pending since 2026-09-26, card d2) ---------
 
-test('the Congress constant is the corpus Congress, and a rollover fails loudly until the owner rules', () => {
-  const congresses = [...new Set(bills.map((b) => b.congress_number))].sort((a, b) => a - b);
-  expect(congresses, `SHORT_ADDRESS_CONGRESS (${SHORT_ADDRESS_CONGRESS}) holds no bill in the corpus`).toContain(
-    SHORT_ADDRESS_CONGRESS,
-  );
+test('short addresses mean the tracked Congress, read from lib/congress.mjs', () => {
+  expect(SHORT_ADDRESS_CONGRESS).toBe(CURRENT_CONGRESS.number);
+});
+
+/**
+ * THE JANUARY GUARD: the one place the change of Congress stops for short
+ * addresses. The owner's go of 2026-11-13 covers short addresses for the
+ * 119th Congress. What /hr1 means once the 120th convenes (Jan 3, 2027) is
+ * his decision and is still open.
+ *
+ * The switch (stage 8 of the new-Congress work) has to rewrite #486's own
+ * tripwires anyway: tests/congress-ended.unit.spec.ts pins ENDED_CONGRESSES
+ * empty, tests/congress-source.unit.spec.ts pins the 119th, and
+ * tests/ended-state.unit.spec.ts pins the site dormant. Those are edited
+ * deliberately in the switch's own pull request. THIS test is different: it
+ * is not the switch's to rewrite. While SHORT_ADDRESS_ROLLOVER_RULING is null
+ * it fails, with one message naming every trigger at once, the first time
+ * any of these is true:
+ *
+ *   - lib/congress.mjs lists an ended Congress (the switch fills
+ *     ENDED_CONGRESSES and moves the tracked number to 120; on its own that
+ *     would point every short address at the 120th and send every typed
+ *     119th address to a 404 or to a different bill);
+ *   - the corpus holds a bill of a Congress other than SHORT_ADDRESS_CONGRESS
+ *     (or none of it);
+ *   - one short address names bills of two Congresses.
+ *
+ * tests/congress-ended.unit.spec.ts points here from the very assertion the
+ * switch has to edit (ENDED_CONGRESSES is empty), so whoever fills the list
+ * reads this guard's purpose before they meet its failure.
+ */
+const ROLLOVER_MESSAGE =
+  'OWNER DECISION NEEDED: what does a short address such as oravan.org/hr1 open once the 120th Congress has ' +
+  'started? Bill numbers restart with each Congress, so /hr1 can now name two different bills. His go of ' +
+  'Nov 13, 2026 ("Go: merge #404 as built, with bill numbers") covered the 119th Congress only. The choices: ' +
+  "(a) the newest Congress's bill, falling back to the ended Congress's page when Oravan holds no newer bill " +
+  'with that number; (b) the newest Congress only; (c) short addresses keep meaning the 119th until he says ' +
+  'otherwise. Do not edit this test or lib/congress.mjs to make it pass. Ask the owner; quote his ruling, with ' +
+  'its date, in SHORT_ADDRESS_ROLLOVER_RULING (lib/short-address.ts); build what he chose in the same pull ' +
+  'request; then rewrite this test to pin the new behaviour. Background: pull request #404.';
+
+/** Every reason the guard trips, as plain sentences; empty while nothing has changed. */
+function rolloverTrips(
+  endedList: ReadonlyArray<{ number: number }> = ENDED_CONGRESSES,
+  corpus: readonly ShortAddressBill[] = bills,
+  meant: number = SHORT_ADDRESS_CONGRESS,
+): string[] {
+  const trips: string[] = [];
+  const ended = endedList.map((e) => e.number);
+  if (ended.length > 0) trips.push(`lib/congress.mjs lists ended Congress(es) ${ended.join(', ')}.`);
+
+  const congresses = [...new Set(corpus.map((b) => b.congress_number))].sort((a, b) => a - b);
+  if (congresses.length !== 1 || congresses[0] !== meant) {
+    trips.push(`the corpus (data/bills.json) holds Congress(es) ${congresses.join(', ')}; short addresses mean ${meant}.`);
+  }
 
   const byAddress = new Map<string, Set<number>>();
-  for (const b of bills) {
+  for (const b of corpus) {
     const key = `${b.bill_type}${b.bill_number}`;
     const set = byAddress.get(key) ?? new Set<number>();
     set.add(b.congress_number);
     byAddress.set(key, set);
   }
   const shared = [...byAddress].filter(([, set]) => set.size > 1).map(([key, set]) => `${key} (${[...set].join(', ')})`);
-  const newer = congresses.filter((c) => c > SHORT_ADDRESS_CONGRESS);
-
-  if (SHORT_ADDRESS_ROLLOVER_RULING === null) {
-    const message =
-      'BILL NUMBERS HAVE RESTARTED. The corpus now holds a Congress other than the one short addresses ' +
-      `mean (SHORT_ADDRESS_CONGRESS = ${SHORT_ADDRESS_CONGRESS}), so /hr1 could name two bills. What a short ` +
-      'address means after the rollover is the OWNER\'S decision (card d2, "Decide in December"). Do not ' +
-      'just bump the constant: get his ruling, quote it in SHORT_ADDRESS_ROLLOVER_RULING ' +
-      '(lib/short-address.ts), set the constant to match it, and then update this test.';
-    expect(newer, message).toEqual([]);
-    expect(shared.slice(0, 20), message).toEqual([]);
+  if (shared.length > 0) {
+    trips.push(`${shared.length} short address(es) name bills of two Congresses, e.g. ${shared.slice(0, 5).join('; ')}.`);
   }
+  return trips;
+}
+
+test('January guard: no ended Congress and no second Congress in the corpus until the owner rules', () => {
+  if (SHORT_ADDRESS_ROLLOVER_RULING !== null) return;
+  const trips = rolloverTrips();
+  expect(trips, `${ROLLOVER_MESSAGE} [Tripped by: ${trips.join(' ')}]`).toEqual([]);
+});
+
+test('January guard: it trips on the switch as #486 builds it, naming every trigger', () => {
+  // The switch as tests/congress-ended.unit.spec.ts models it: 119 ended,
+  // 120 tracked, the corpus holding both. Fixtures only; nothing is edited.
+  const ended = [{ number: 119, ended: '2027-01-03' }];
+  const mixed: ShortAddressBill[] = [
+    { bill_type: 'hr', bill_number: 1, congress_number: 119 },
+    { bill_type: 'hr', bill_number: 1, congress_number: 120 },
+    { bill_type: 's', bill_number: 5, congress_number: 119 },
+  ];
+  const trips = rolloverTrips(ended, mixed, 120);
+  expect(trips).toHaveLength(3);
+  expect(trips[0]).toContain('ended Congress(es) 119');
+  expect(trips[1]).toContain('holds Congress(es) 119, 120; short addresses mean 120');
+  expect(trips[2]).toContain('hr1 (119, 120)');
+  // A bare bump with no ended list and an all-119 corpus trips too.
+  expect(rolloverTrips([], [mixed[0], mixed[2]], 120)).toHaveLength(1);
+  // Today's state trips nothing.
+  expect(rolloverTrips()).toEqual([]);
 });
