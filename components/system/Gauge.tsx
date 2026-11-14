@@ -5,8 +5,8 @@ import type { ReactNode } from 'react';
  *
  * One 6px green bar capped at 3px (`rounded-stamp`), and it is used in exactly
  * two ways across the whole product. As a SEGMENT it is drawn to scale and
- * MEASURES something true — the five minutes on the homepage, a bill's
- * progress on the bill page. As a STROKE it sits under the hero's promise, at
+ * MEASURES something true — a bill's progress on the bill page. (The
+ * homepage's "How a call works" times are printed, not drawn.) As a STROKE it sits under the hero's promise, at
  * the same weight and the same cap, because the promise is the thing being
  * measured (that one is a two-line CSS pseudo-element on the h1, not this
  * component).
