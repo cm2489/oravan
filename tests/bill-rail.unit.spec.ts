@@ -6,7 +6,7 @@ import en from '../messages/en.json';
 import es from '../messages/es.json';
 import { billRail } from '../lib/bill-rail';
 import { actionPanelEndedLines } from '../lib/embed-ended';
-import { withoutEndedMessages } from '../lib/ended-messages';
+import { ENDED_ONLY_KEYS, withoutEndedMessages } from '../lib/ended-messages';
 import { clientMessages } from '../i18n/client-messages';
 import { embedDicts } from '../components/embed/embed-dicts';
 import { withSitePolicyForTest } from '../lib/ended-state.mjs';
@@ -193,14 +193,24 @@ test.describe('the ended-only strings stay off the browser until a Congress has 
       expect(hasEndedKeys(today)).toBe(false);
       const text = JSON.stringify(today);
       for (const s of ENDED_SENTENCES) expect(text).not.toContain(s);
-      // Nothing else is dropped: put the three keys back and it is the input
+      // Nothing else is dropped: put the ended-only keys back and it is the input
       // (the glossary's terms aside, which clientMessages always drops).
       const { terms: _t, ...chrome } = catalog.glossary as Record<string, unknown>;
       void _t;
       const restored = JSON.parse(JSON.stringify(today));
-      restored.bill.ended = catalog.bill.ended;
-      restored.bills.status.ended = catalog.bills.status.ended;
-      restored.bills.statusWord.ended = catalog.bills.statusWord.ended;
+      // Every ended-only key goes back (the ended sentences, and the member
+      // pages' changeover wording; tests/ended-member-messages.unit.spec.ts).
+      for (const path of ENDED_ONLY_KEYS) {
+        const keys = path.split('.');
+        const leaf = keys.pop()!;
+        let from: Record<string, unknown> = catalog as unknown as Record<string, unknown>;
+        let into: Record<string, unknown> = restored;
+        for (const k of keys) {
+          from = from[k] as Record<string, unknown>;
+          into = into[k] as Record<string, unknown>;
+        }
+        into[leaf] = from[leaf];
+      }
       expect(JSON.stringify(sortKeys(restored))).toBe(JSON.stringify(sortKeys({ ...catalog, glossary: chrome })));
 
       const ended = ended119(() => clientMessages(catalog)) as typeof en;
