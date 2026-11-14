@@ -148,9 +148,10 @@ The first command was **run on 2026-11-13 and refused**: the Census geocoder ans
 Found on 2026-11-13 by simulating the switch: an independent check bumped the tracked Congress and ran the suite. The stage 8 pull request, which bumps `lib/congress.mjs` and fills the ended list, must update these in the same change. **Not run here:** stage 8 is not built.
 
 - `tests/departed-members.unit.spec.ts`:
-  - four fixture tests hard-code 2025 and 2026 days against a policy derived from the tracked Congress (`BEFORE`, `AFTER`, `START_DAY`, `ENDED_DAY`); after the bump those days fall outside the "tracked" term. A fifth, "names the switch the code is aimed at", fails as soon as the Congress number is bumped (counted by an independent reviewer who simulated the switch on 2026-11-13; not run on the real switch);
+  - four fixture tests hard-code 2025 and 2026 days against a policy derived from the tracked Congress (`BEFORE`, `AFTER`, `START_DAY`, `ENDED_DAY`); after the bump those days fall outside the "tracked" term. A fifth, "names the switch the code is aimed at", fails only while the number is bumped and the ended list is still empty; it passes once stage 8 changes both (counted by two independent reviewers who simulated the switch on 2026-11-13; not run on the real switch);
   - "today's sixteen …" compares each day against the tracked Congress's first day, which becomes 2027-01-03;
   - "the ended list is empty" in the "today" block fails by design: it is the tripwire that says this file must be revisited.
+- `tests/short-address.unit.spec.ts` (short bill addresses, #404): its January guard fails on purpose, with an "OWNER DECISION NEEDED" message, until the owner's ruling on what a short address opens in the new Congress is quoted, with its date, in `SHORT_ADDRESS_ROLLOVER_RULING`. It is not the switch's to rewrite: get the ruling first (an independent reviewer simulated the switch on 2026-11-13 and saw four short-address tests fail with that message).
 - `tests/reps-zip-address.spec.ts` (fixes the address answer to NY-12) and `tests/district.spec.ts` (names Daniel S. Goldman, Jerrold Nadler, Charles E. Schumer, Kirsten E. Gillibrand and Nick LaLota) pin sitting members. Both are already on `main`. They fail if one of those members leaves, or if the 120th map moves those addresses.
 
 ## A refused week
