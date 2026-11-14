@@ -140,8 +140,17 @@ test.describe('buildDescendsFrom: a production build that contains the pushed co
   let dir: string;
   let origin: string;
   let runner: string;
+  // These git calls build throwaway repositories under a temp folder. They
+  // must never see a GIT_DIR, GIT_WORK_TREE or other GIT_* location variable
+  // from the caller's environment: with one set, `git init` and `git commit`
+  // here act on THAT repository instead of the temp one (2026-11-14: a run
+  // with GIT_DIR exported made stray commits in a real checkout and wrote
+  // core.worktree into its config). So the environment is scrubbed of them.
+  const GIT_ENV = Object.fromEntries(
+    Object.entries(process.env).filter(([k]) => !/^GIT_(DIR|WORK_TREE|INDEX_FILE|COMMON_DIR|OBJECT_DIRECTORY|ALTERNATE_OBJECT_DIRECTORIES|NAMESPACE|CEILING_DIRECTORIES|PREFIX)$/.test(k)),
+  ) as NodeJS.ProcessEnv;
   const git = (cwd: string, ...args: string[]) => {
-    const r = spawnSync('git', args, { cwd, encoding: 'utf8' });
+    const r = spawnSync('git', args, { cwd, encoding: 'utf8', env: GIT_ENV });
     if (r.status !== 0) throw new Error(`git ${args.join(' ')}: ${r.stderr}`);
     return r.stdout.trim();
   };
