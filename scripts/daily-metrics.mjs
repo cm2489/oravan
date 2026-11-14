@@ -644,8 +644,13 @@ async function main() {
     surface,
     stats: seriesStats(spikeWindow(pageviews.surfaces[surface]), Infinity),
   }));
+  // The total leaves out 'short' (2026-09-29): a short-address visit is a
+  // redirect, and the bill page it lands on is already counted as 'bill', so
+  // adding it would count one visit twice. Its own line still prints above.
   const siteTotal = seriesStats(
-    spikeWindow(sumWindows(PAGEVIEW_SURFACES.map((surface) => pageviews.surfaces[surface]))),
+    spikeWindow(
+      sumWindows(PAGEVIEW_SURFACES.filter((surface) => surface !== 'short').map((surface) => pageviews.surfaces[surface]))
+    ),
     Infinity
   );
 
