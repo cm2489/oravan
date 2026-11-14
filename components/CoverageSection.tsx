@@ -54,6 +54,7 @@ export function CoverageSection({
   articles,
   tier,
   checkedAt,
+  twinCitations = [],
 }: {
   articles: CoverageArticle[];
   tier: CoverageTier;
@@ -62,6 +63,13 @@ export function CoverageSection({
    *  here: this is a client component, and importing lib/coverage.ts would
    *  ship all of data/coverage.json to the browser. */
   checkedAt: string | null;
+  /** Citations of the bills the record lists as identical to this one whose
+   *  stored articles are in `articles` (lib/coverage.ts, getCoverageWithTwins;
+   *  owner, 2026-11-13: "Yes, show it under the bill as it is."). Each article
+   *  is shown as it is; only the intro and the one-side note say whose
+   *  coverage the list is, because "Coverage of this bill" alone would no
+   *  longer be true (hard rule 4). Empty: every sentence reads as before. */
+  twinCitations?: string[];
 }) {
   const t = useTranslations('coverage');
   const format = useFormatter();
@@ -70,13 +78,21 @@ export function CoverageSection({
   if (articles.length === 0) return null;
 
   const newestAt = newestPublishedAt(articles);
+  const hasTwins = twinCitations.length > 0;
 
   return (
     <section aria-labelledby="coverage-heading" className="pt-8 md:pt-12">
       <h2 id="coverage-heading" className="text-h2 font-extrabold text-ink">
         {t('heading')}
       </h2>
-      <p className="mt-2 max-w-read text-ink-2">{t('subhead')}</p>
+      <p className="mt-2 max-w-read text-ink-2">
+        {hasTwins
+          ? t('subheadTwins', {
+              citations: format.list(twinCitations, { type: 'conjunction' }),
+              count: twinCitations.length,
+            })
+          : t('subhead')}
+      </p>
       {/* THE AGE OF WHAT THIS SECTION IS ACTUALLY SHOWING.
           The bill page prints a "Data as of" stamp ~20 lines above this
           section, and that stamp tracks the Congress.gov BILL sync — it says
@@ -106,7 +122,7 @@ export function CoverageSection({
       {tier === 'one_sided' && (
         <p className="mt-4 flex max-w-read items-start gap-2 rounded-control bg-wash p-3 text-sm text-ink">
           <Info className="mt-0.5 h-4 w-4 flex-none text-ink-2" aria-hidden />
-          <span>{t('oneSidedNote')}</span>
+          <span>{hasTwins ? t('oneSidedNoteTwins') : t('oneSidedNote')}</span>
         </p>
       )}
 

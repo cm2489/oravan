@@ -606,6 +606,7 @@
   "coverage": {
     "heading": "How it's being covered",
     "subhead": "Coverage of this bill from across the press. Each outlet's political lean is labeled where AllSides has rated it, and marked \"Not rated\" where it has not.",
+    "subheadTwins": "Coverage of this bill and of {citations}, {count, plural, one {a bill} other {bills}} the official record lists as identical to it, from across the press. Each outlet's political lean is labeled where AllSides has rated it, and marked \"Not rated\" where it has not.",
     "newestLabel": "Newest of these articles",
     "checkedLabel": "Checked",
     "ageNote": "newer coverage may exist that we haven't collected",
@@ -621,6 +622,7 @@
     "snippetQuote": "“{text}”",
     "snippetAttribution": "— {source}",
     "oneSidedNote": "Coverage of this bill so far comes from one side of the spectrum. Read it with that in mind.",
+    "oneSidedNoteTwins": "Coverage of these bills so far comes from one side of the spectrum. Read it with that in mind.",
     "foreignLanguageNote": "Some linked articles may be in another language."
   },
   "news": {

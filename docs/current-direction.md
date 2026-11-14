@@ -62,6 +62,7 @@ The impeccable skill is a lint and a rubric, not an explorer (audit card a8, 202
 
 Newest first. One line per change: date · who · the words or the card · what line changed.
 
+- `2026-11-13 · owner · his card "Show news about a bill's twin under the bill? Whether an article about a bill's twin in the other chamber, or a later bill carrying the same policy, is shown under the bill." answered "Yes, show it under the bill as it is." → a bill page's coverage box also lists, unchanged, the articles stored under a bill the record calls an "Identical bill" (built 2026-11-14; later vehicles are not shown, because the record's related-bills list has no label that says one carries the same policy)`
 - `2026-11-13 · owner · his five clicks on the Colour Mix page, 12:40 PM ET ("Green line, as in the picture you tapped"; "Green button, as c1 had it"; "Yellow label, as on the live site"; "This look's green, a little deeper"; "Yes. This is the look. Finish it across the site.") → colour: one dated line recording them, under Colour`
 - `2026-09-30 · owner · "For now start on skin c" (his pick from the colour direction page, as the orchestrator relayed it) → colour: direction c, warm paper and bottle green with a green masthead band, built as #425`
 - `2026-09-30 · owner · "31 a but add floor first" and "29 a" (typed, his reply to the Run 1 Report) → on /today the floor band comes before "The chambers", and the phone tab reads "Big Questions" / "Grandes preguntas" on two lines`

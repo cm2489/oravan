@@ -535,6 +535,23 @@ jobs:
             export COVERAGE_TAIL_SHARE="${{ inputs.coverage_tail_share }}"
           fi
           node scripts/sync-coverage.mjs
+      - name: Read identical bills from the record (for the coverage box)
+        # The owner's 2026-11-13 card on a bill's twin ("Yes, show it under the
+        # bill as it is."): a bill page's coverage box also lists the articles
+        # stored under a bill Congress.gov's related-bills list calls an
+        # "Identical bill". This step reads that list for bills with stored
+        # coverage — never-checked first, then the oldest, each at most once a
+        # week — into data/related-bills.json. lib/related-bills.mjs keeps the
+        # "Identical bill" relation only. AFTER the coverage sync, so tonight's
+        # new coverage bills are in the pool; BEFORE verify-sync.mjs, which
+        # gates the file before the commit.
+        # Cost: $0. At most 200 free Congress.gov requests (RELATED_PER_NIGHT).
+        # continue-on-error: the relation is additive; a failed read leaves the
+        # file as it was and must never cost the night its corpus work.
+        continue-on-error: true
+        env:
+          CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}
+        run: node scripts/sync-related.mjs
       - name: Collect Moment updates (Moments v2 live layer, nightly)
         # Nightly mode = the incremental pass PLUS press clusters, retention
         # pruning, and the "Where it stands" state summaries. Runs AFTER the
