@@ -78,6 +78,12 @@ function night(actions: Record<string, unknown>[], prepare: (dir: string) => voi
 const RECORD_NOW = FIXTURE.map((a) =>
   a.text === 'The committee substitute withdrawn by Voice Vote.' ? { ...a, text: 'The committee substitute tabled by Voice Vote.' } : a,
 );
+/** The same, carrying the House's Oct 5 actions too (data/bills.json's latest action for S. 4668). */
+const WITH_LATEST = [
+  { actionDate: '2026-10-05', text: 'Held at the desk.', actionCode: 'H15000', sourceSystem: { name: 'House floor actions' } },
+  { actionDate: '2026-10-05', text: 'Received in the House.', actionCode: 'H14000', sourceSystem: { name: 'House floor actions' } },
+  ...RECORD_NOW,
+];
 
 test.describe.configure({ mode: 'serial' });
 
@@ -103,7 +109,9 @@ test("the owner's proof night: data/moment-updates.json is byte-identical, nothi
 });
 
 test('a night a guard would refuse: still byte-identical, still nothing applied, every row reported', () => {
-  const broken = RECORD_NOW.map((a, i) =>
+  // The bill's latest action is on the list (so it is the bill's list), and
+  // every September line is gone: a guard would refuse the night.
+  const broken = WITH_LATEST.map((a, i) =>
     String(a.actionDate) >= '2026-09-15' && String(a.actionDate) <= '2026-09-24' ? { ...a, text: `Stub action ${i} with no relation to any stored line.`, recordedVotes: undefined } : a,
   );
   const r = night(broken);
@@ -112,7 +120,11 @@ test('a night a guard would refuse: still byte-identical, still nothing applied,
   expect(r.log).toContain('would have refused the night');
   expect(r.log).not.toContain('record re-check refused:');
   expect(r.log).not.toContain('recheck follow-up');
-  expect(Object.keys(r.report.rows).length).toBeGreaterThan(4);
+  // T1: no row is named as differing on such a night; the refusal is recorded.
+  expect(r.report.rows).toEqual({});
+  expect(r.report.would_refuse).toMatchObject({ why: expect.stringContaining('rows would be corrected') });
+  expect(r.log).toContain('SUSPECT SOURCE (not reported as a difference)');
+  expect(r.log).not.toMatch(/record re-check REPORT: would/);
 });
 
 test('a night with a HELD row already in the file (from an earlier apply era): report-only leaves it exactly as it is', () => {
@@ -129,4 +141,31 @@ test('a night with a HELD row already in the file (from an earlier apply era): r
   expect(r.same).toBe(true);
   expect(r.log).not.toContain('shows again');
   expect(r.log).not.toContain('recheck follow-up');
+});
+
+test('S1 · a hand-made stale model summary citing a held row: report mode writes no record-only revision, nothing at all', () => {
+  const r = night(WITH_LATEST, (dir) => {
+    const path = join(dir, 'data/moment-updates.json');
+    const file = JSON.parse(readFileSync(path, 'utf8'));
+    const entry = file['paying-college-athletes'];
+    const row = entry.updates.find((u: { id: string }) => u.id === 'u_682cca41');
+    const heldAt = new Date(Date.now() - 3_600_000).toISOString();
+    row.withdrawn_on = etDay(heldAt);
+    row.rechecks = [{ on: etDay(heldAt), at: heldAt, outcome: 'held', was: 'Earlier words.', was_id: 'u_00000000', now: row.record.action_text }];
+    const last = entry.summary_revisions.at(-1);
+    entry.summary_revisions.push({
+      ...last,
+      id: 's_0000abcd',
+      generated_at: new Date(Date.now() - 7_200_000).toISOString(),
+      as_of_day: etDay(new Date(Date.now() - 7_200_000)),
+      model: 'claude-sonnet-5-5',
+      grounded_in: { ...last.grounded_in, update_ids: ['u_682cca41'] },
+    });
+    entry.summary_revisions = entry.summary_revisions.slice(-30);
+    writeFileSync(path, `${JSON.stringify(file, null, 2)}\n`);
+  });
+  expect(r.status, r.log.slice(-2000)).toBe(0);
+  expect(r.same).toBe(true);
+  expect(r.log).not.toContain('record-only: the re-check changed a cited line');
+  expect(r.log).not.toContain('the record re-check changed');
 });

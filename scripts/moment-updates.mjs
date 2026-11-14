@@ -575,14 +575,25 @@ export function recheckSummaryMarkdown(result, { mode = 'apply' } = {}) {
   if (mode === 'report') lines.push('**Report only: nothing in data/moment-updates.json was changed.** Automatic correction is switched off (`RECHECK_MODE` in lib/moment-updates-recheck.mjs).', '');
   if (result.refused) {
     lines.push(
-      mode === 'report' ? `A guard would have refused this night: ${result.refused}.` : `**Refused, nothing changed:** ${result.refused}. To accept these rows for one night, see docs/runbooks/record-recheck.md.`,
+      mode === 'report'
+        ? `**A guard would have refused this night: the source looks wrong (${result.refused}).** The rows below are what that source said; they are not reported as differences.`
+        : `**Refused, nothing changed:** ${result.refused}. To accept these rows for one night, see docs/runbooks/record-recheck.md.`,
       '',
     );
   }
   lines.push(`${result.checked} of ${result.recheckable ?? '?'} re-checkable stored row(s) checked; ${result.changes.length} ${would ? 'would change' : 'changed'}; ${(result.leftRows ?? []).length} left as they are.`, '');
   const rows = [
-    ...result.changes.map((c) => [verdict[c.kind] + (c.accepted ? ' (accepted for tonight)' : ''), c.momentId, c.newId && c.newId !== c.id ? `${c.id} → ${c.newId}` : c.id, c.day, c.was, c.now ?? c.record, c.how ?? '']),
+    ...result.changes.map((c) => [
+      verdict[c.kind] + (c.accepted ? ' (accepted for tonight)' : ''),
+      c.momentId,
+      c.newId && c.newId !== c.id ? (would ? `${c.id} (would become ${c.newId})` : `${c.id} → ${c.newId}`) : c.id,
+      c.day,
+      c.was,
+      c.now ?? c.record,
+      c.how ?? '',
+    ]),
     ...(result.leftRows ?? []).map((l) => ['left as it is', l.momentId, l.id, l.day, l.stored, l.record, l.why]),
+    ...(result.newerRows ?? []).map((n) => ['newer than the list (not judged)', n.momentId, n.id, n.day, n.stored, `the list ends ${n.newest}`, '']),
   ];
   if (rows.length) {
     lines.push('| What | Question | Row | Day | Stored words | What the record holds now | Why |', '| --- | --- | --- | --- | --- | --- | --- |');
@@ -636,12 +647,16 @@ async function recheckStoredLines() {
     else accept = acceptedIds(raw, todayET);
     if (accept.size) console.log(`  recheck: ${accept.size} row(s) accepted for ${todayET} by ${RECHECK_ACCEPT_PATH}`);
   }
-  const result = recheckStore(store, lists, { now, fallbackText: fallbackTextFor, lintText: recheckLint, amendmentLists, accept });
+  // The bills the collector reads tonight: the same scope the fetch above
+  // used, so an ENDED Congress's rows are out of scope in both places.
+  const scope = new Set(vehicleSlugs);
+  const latestBySlug = new Map([...billBySlug].map(([slug, b]) => [slug, { date: b?.last_action_date ?? null, text: b?.last_action_text ?? null }]));
+  const result = recheckStore(store, lists, { now, fallbackText: fallbackTextFor, lintText: recheckLint, amendmentLists, accept, scope, latestBySlug });
   const report = RECHECK_MODE === 'report';
   const applied = !report && !result.refused;
   const would = report || result.refused;
   console.log(
-    `record re-check (${report ? 'REPORT ONLY: nothing is written to data/moment-updates.json' : 'apply'}): ${result.checked} of ${result.recheckable} re-checkable stored row(s) checked on ${lists.size} bill(s) and ${amendmentLists.size} amendment(s); ${result.changes.length} ${would ? 'would change' : 'changed'}, ${result.leftRows.length} left as they are${result.refused ? `; ${report ? 'a guard would refuse the night' : 'REFUSED'}` : ''}`,
+    `record re-check (${report ? 'REPORT ONLY: nothing is written to data/moment-updates.json' : 'apply'}): ${result.checked} of ${result.recheckable} re-checkable stored row(s) checked on ${lists.size} bill(s) and ${amendmentLists.size} amendment(s); ${result.changes.length} ${would ? 'would change' : 'changed'}, ${result.leftRows.length} left as they are, ${result.newerRows.length} newer than their list${result.outOfScope ? `; ${result.outOfScope} row(s) out of scope (their bill is not read tonight: an ended Congress's)` : ''}${result.refused ? `; ${report ? 'a guard would refuse the night' : 'REFUSED'}` : ''}`,
   );
   for (const k of result.skipped) console.log(`  recheck skipped ${k}`);
   if (result.recheckable > 0 && result.checked === 0) {
@@ -650,14 +665,20 @@ async function recheckStoredLines() {
     );
   }
   // One line per row the comparison found, in both modes: what is stored,
-  // what the record holds now, and what it did or would do.
+  // what the record holds now, and what it did or would do. On a night a
+  // guard refuses, the source looks wrong: the lines say so, and none is a
+  // REPORT (pipeline-health names no row from such a night).
+  const tag = result.refused ? 'SUSPECT SOURCE (not reported as a difference)' : 'REPORT';
   for (const c of result.changes) {
-    const verdict = { reworded: 'correct', withdrawn: 'withdraw', held: 'hold', reinstated: 'reinstate' }[c.kind];
-    const line = `moment-updates record re-check REPORT: ${would ? 'would ' : ''}${verdict}${would ? '' : 'ed'} ${c.momentId}/${c.id} (${c.vehicle} ${c.day}, /questions/${c.momentId}) — stored: "${c.was}" — the record holds now: "${c.now ?? c.record}"${c.how ? ` — ${c.how}` : ''}`;
+    const verdict = (would ? { reworded: 'would correct', withdrawn: 'would withdraw', held: 'would hold', reinstated: 'would reinstate' } : { reworded: 'corrected', withdrawn: 'withdrawn', held: 'held', reinstated: 'reinstated' })[c.kind];
+    const line = `moment-updates record re-check ${tag}: ${verdict} ${c.momentId}/${c.id} (${c.vehicle} ${c.day}, /questions/${c.momentId}) — stored: "${c.was}" — the record holds now: "${c.now ?? c.record}"${c.how ? ` — ${c.how}` : ''}`;
     console.log(would ? `::notice::${line}` : `  ${line}`);
   }
+  for (const n of result.newerRows) {
+    console.warn(`::warning::moment-updates record re-check: ${n.momentId}/${n.id} (${n.vehicle} ${n.day}) is dated after the newest action on its bill's list (${n.newest}); not judged tonight`);
+  }
   for (const l of result.leftRows) {
-    console.warn(`::warning::moment-updates record re-check REPORT: left ${l.momentId}/${l.id} (${l.vehicle} ${l.day}, /questions/${l.momentId}) — stored: "${l.stored}" — the record holds now: "${l.record}" — ${l.why}`);
+    console.warn(`::warning::moment-updates record re-check ${tag}: left ${l.momentId}/${l.id} (${l.vehicle} ${l.day}, /questions/${l.momentId}) — stored: "${l.stored}" — the record holds now: "${l.record}" — ${l.why}`);
   }
   if (result.refused) {
     if (report) console.warn(`::warning::moment-updates record re-check (report only) would have refused the night: ${result.refused}`);
@@ -1981,10 +2002,12 @@ export function recordOnlyRevision({ momentId, entry, statuses, records, votes, 
  * with no model call. That happens only when the rewrite did not land
  * tonight: a revision that landed was written after the change and clears
  * the condition. Mutates `storeArg`; returns how many it wrote.
- * @param {{ plan: Record<string, any>[], store: Record<string, any>, moments: Record<string, any> }} args
+ * @param {{ plan: Record<string, any>[], store: Record<string, any>, moments: Record<string, any>, recheckMode?: 'report'|'apply' }} args
  */
-export function writeStaleRecheckFallbacks({ plan, store: storeArg, moments: momentsArg }) {
+export function writeStaleRecheckFallbacks({ plan, store: storeArg, moments: momentsArg, recheckMode = RECHECK_MODE }) {
   let written = 0;
+  // The re-check writes nothing in report mode, this included.
+  if (recheckMode !== 'apply') return written;
   for (const p of plan ?? []) {
     const entry = storeArg?.[p.momentId];
     if (!entry || recheckPendingIds(entry).length === 0) continue;
@@ -2346,6 +2369,7 @@ export function summaryCallsOnDay(storeArg, day) {
  *   intradayCap?: number,
  *   unsupportedStatus?: (bill: Record<string, any>|undefined) => boolean,
  *   policy?: { tracked: number, ended: ReadonlyArray<{ number: number, ended: string }> },
+ *   recheckMode?: 'report'|'apply',
  * }} args
  * @returns {{ momentId: string, generate: boolean, recordOnly?: boolean, reason: string, statuses: Record<string,string>, statusKeys: Record<string,string>, records: Record<string, any>, votes: Record<string, any>[], rollCallsOnRecord: string[] | null, intraday: boolean, day: string }[]}
  */
@@ -2361,6 +2385,7 @@ export function planSummaries({
   intradayCap = INTRADAY_SUMMARY_CAP,
   unsupportedStatus = statusUnsupported,
   policy = CONGRESS_POLICY,
+  recheckMode = RECHECK_MODE,
 }) {
   const today = etDay(nowArg);
   const nowMs = nowArg instanceof Date ? nowArg.getTime() : Number(nowArg);
@@ -2430,7 +2455,7 @@ export function planSummaries({
       // tonight's run: a night whose budget ran out leaves it due, and the
       // next night asks again until a revision written after the change
       // stands. A record-only or hand-authored revision quotes no row.
-      if (!why) {
+      if (!why && recheckMode === 'apply') {
         const pending = recheckPendingIds(entry);
         if (pending.length) why = `the record re-check changed ${pending.join(', ')}, which the current summary cites`;
       }
