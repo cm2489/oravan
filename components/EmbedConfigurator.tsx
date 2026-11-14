@@ -511,7 +511,7 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
                 type="button"
                 onClick={() => void suggestTheme()}
                 disabled={matchStatus === 'loading'}
-                className="ring-gap inline-flex min-h-12 items-center rounded-control border-2 border-go bg-go px-5 font-bold text-paper hover:border-go-deep hover:bg-go-deep disabled:cursor-not-allowed disabled:border-line-strong disabled:bg-wash disabled:text-ink-2"
+                className="ring-edge inline-flex min-h-12 items-center rounded-control border-2 border-ink bg-urgent px-5 font-bold text-ink hover:bg-urgent-deep disabled:cursor-not-allowed disabled:border-line-strong disabled:bg-wash disabled:text-ink-2"
               >
                 {t('matchSiteCta')}
               </button>
@@ -757,7 +757,7 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
                 <button
                   type="button"
                   onClick={copySnippet}
-                  className="ring-gap mt-3 inline-flex min-h-12 items-center rounded-control border-2 border-go bg-go px-5 font-bold text-paper hover:border-go-deep hover:bg-go-deep"
+                  className="ring-edge mt-3 inline-flex min-h-12 items-center rounded-control border-2 border-ink bg-urgent px-5 font-bold text-ink hover:bg-urgent-deep"
                 >
                   {copied ? t('copied') : t('copySnippet')}
                 </button>

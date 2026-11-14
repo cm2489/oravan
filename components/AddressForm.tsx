@@ -129,7 +129,7 @@ export function AddressForm({
           <button
             type="submit"
             disabled={checking}
-            className="ring-gap inline-flex min-h-12 items-center justify-center gap-2 rounded-control border-2 border-go bg-go px-6 py-3 font-bold text-paper enabled:hover:border-go-deep enabled:hover:bg-go-deep disabled:cursor-not-allowed disabled:border-line-strong disabled:bg-wash disabled:text-ink-2"
+            className="ring-edge inline-flex min-h-12 items-center justify-center gap-2 rounded-control border-2 border-ink bg-urgent px-6 py-3 font-bold text-ink enabled:hover:bg-urgent-deep disabled:cursor-not-allowed disabled:border-line-strong disabled:bg-wash disabled:text-ink-2"
           >
             {t('refineCta')}
             <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />

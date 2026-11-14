@@ -56,8 +56,15 @@ export function Stamp({ label, dateLabel, srLabel, className }: StampProps) {
         // straddles the parent's closing rule: half the mark hangs below it
         'absolute right-6 bottom-0 z-[1] translate-y-1/2 -rotate-2 origin-[100%_50%]',
         'inline-grid justify-items-center gap-0.5 whitespace-nowrap',
-        'rounded-stamp border-2 border-ink-2 bg-paper px-3 py-1',
-        'text-2xs font-extrabold tracking-[0.16em] text-ink-2 uppercase leading-tight',
+        // Warm grey with cream type (the owner's pick 5, 2026-11-13): paper on
+        // ink-2 is 7.56. The 2px halo in the ground's own colour
+        // (`--stamp-halo`: paper, or stone inside `.on-stone`) keeps a focus
+        // ring that runs under the stamp's edge off the grey: the ring meets
+        // the halo (ink on paper 16.50, on stone 12.98), never ink-2 (2.18).
+        // A shadow, so it costs no layout.
+        'rounded-stamp border-2 border-ink-2 bg-ink-2 px-3 py-1',
+        'shadow-[0_0_0_2px_var(--stamp-halo,var(--color-paper))]',
+        'text-2xs font-extrabold tracking-[0.16em] text-paper uppercase leading-tight',
         className ?? '',
       ]
         .join(' ')
@@ -67,13 +74,13 @@ export function Stamp({ label, dateLabel, srLabel, className }: StampProps) {
           is not a component radius: it rounds hairlines and focus rings only */}
       <span
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0.5 rounded-hair border border-ink-2"
+        className="pointer-events-none absolute inset-0.5 rounded-hair border border-paper"
       />
       <span className="sr-only">{srLabel}</span>
       <span aria-hidden="true">{label}</span>
       <span
         aria-hidden="true"
-        className="mt-0.5 block border-t-[1.5px] border-ink-2 pt-0.5 text-xs tracking-[0.08em] tabular-nums"
+        className="mt-0.5 block border-t-[1.5px] border-paper pt-0.5 text-xs tracking-[0.08em] tabular-nums"
       >
         {dateLabel}
       </span>

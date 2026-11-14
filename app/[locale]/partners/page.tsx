@@ -47,7 +47,7 @@ export default async function PartnersPage({ params }: { params: Promise<{ local
           {EMBEDS_PAGES_PUBLIC && (
             <Link
               href="/embeds"
-              className="ring-gap mt-4 inline-flex min-h-12 items-center gap-2 rounded-control border-2 border-go bg-go px-5 font-bold text-paper no-underline hover:border-go-deep hover:bg-go-deep"
+              className="ring-edge mt-4 inline-flex min-h-12 items-center gap-2 rounded-control border-2 border-ink bg-urgent px-5 font-bold text-ink no-underline hover:bg-urgent-deep"
             >
               {t('newsroomsCta')} <span aria-hidden>→</span>
             </Link>

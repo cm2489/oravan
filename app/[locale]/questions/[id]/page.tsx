@@ -751,7 +751,7 @@ export default async function MomentPage({
                   affordance survives with no client JavaScript and no icon. */}
               {priorRevisions.length > 0 && (
                 <details className="mt-5 max-w-read rounded-control border border-line-strong bg-paper px-4 pb-2">
-                  <summary className="min-h-11 cursor-pointer py-3 text-sm font-bold text-ink select-none marker:text-ink-2 hover:underline">
+                  <summary className="min-h-11 cursor-pointer py-3 text-sm font-bold text-ink select-none marker:text-ink-2 hover:text-go-deep">
                     {t('moments.updates.revisionsToggle', { count: priorRevisions.length })}
                   </summary>
                   {/* The label follows the AI text. When the current summary is

@@ -55,7 +55,7 @@ export function ConcurrentExplainer({
       <p data-concurrent-general="">{t.rich('general', { term: glossaryTag('concurrent-resolution') })}</p>
       {reading.warPowers5c && (
         <details className="group border-t border-line" data-concurrent-disclosure="">
-          <summary className="inline-flex min-h-11 cursor-pointer list-none items-center gap-2 text-sm font-semibold text-ink hover:underline [&::-webkit-details-marker]:hidden">
+          <summary className="inline-flex min-h-11 cursor-pointer list-none items-center gap-2 text-sm font-semibold text-ink hover:text-go-deep [&::-webkit-details-marker]:hidden">
             <span
               aria-hidden
               className="inline-flex h-5 w-5 flex-none items-center justify-center rounded-stamp border-[1.5px] border-ink text-xs leading-none font-extrabold"

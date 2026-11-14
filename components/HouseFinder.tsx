@@ -76,7 +76,7 @@ export function HouseFinder({ zip, rows }: { zip: string; rows: FinderRow[] }) {
                 data-finder-member={r.member?.bioguide}
               >
                 <span className="inline-flex min-w-0 flex-wrap items-center gap-x-2">
-                  <span className="rounded-stamp border-[1.5px] border-line-strong px-1.5 text-xs font-bold text-ink tabular-nums">
+                  <span className="rounded-stamp border-[1.5px] border-ink-2 px-1.5 text-xs font-bold text-ink-2 tabular-nums">
                     {t('settled.finderDistrict', { state: r.state, district: String(r.district) })}
                   </span>
                   {r.member ? (

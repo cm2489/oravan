@@ -342,7 +342,7 @@ export function RepLookupWidget({
               )}
               {rep.offices.length > 0 && (
                 <details style={{ marginTop: 10 }}>
-                  <summary style={{ cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem' }}>
+                  <summary style={{ cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem' }}>
                     {t.reps.localOffices} ({rep.offices.length})
                   </summary>
                   <ul style={{ margin: '4px 0 0', padding: 0, listStyle: 'none' }}>

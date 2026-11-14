@@ -264,6 +264,19 @@ body {
    bounded even when a tenant accent is near-invisible against their own
    background), the weight shift to 700, and the fill. Color is never the
    only carrier. */
+/* A toggle's focus ring stays clear of its neighbour. The language toggles
+   sit 4px apart, and the default ring (2px offset + 3px) reached 1px over
+   the next cell: on a pressed lamp cell in dark mode that was a cream ring
+   on yellow, 1.47:1. This ring is 2px at a 1px offset, so it ends 3px out,
+   1px short of the neighbour, and touches only the surface around it
+   (16.50:1 for the default pair in either mode; a tenant's focus colour is
+   emitted only when it clears 3:1 on their surface, lib/embed-theme.ts).
+   Outline only: no box moves. */
+.re-toggle:focus-visible {
+  outline-width: 2px;
+  outline-offset: 1px;
+}
+
 .re-toggle[aria-pressed='true'],
 .re-toggle[aria-checked='true'] {
   background: var(--_accent);

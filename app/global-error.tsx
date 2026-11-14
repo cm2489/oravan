@@ -48,7 +48,7 @@ export default function GlobalError({
           <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0 }}>
             Something went wrong
           </h1>
-          <p style={{ fontSize: '1rem', lineHeight: 1.6, color: '#55514a' }}>
+          <p style={{ fontSize: '1.05rem', lineHeight: 1.6, color: '#55514a' }}>
             Oravan hit an unexpected error. Reloading usually fixes it.
           </p>
           <p style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>

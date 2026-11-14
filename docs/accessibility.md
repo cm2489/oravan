@@ -8,7 +8,7 @@ Moved here from `DESIGN.md` on 2026-09-27, when `DESIGN.md` was retired (its Foc
 
 Semantic HTML, visible focus, AA contrast, 44px touch targets. A link sitting inline inside a sentence is exempt from the 44px floor (WCAG 2.5.8) — inflating it breaks the line. Everything else uses `min-h-11` (44px) or better.
 
-Gates: `tests/bill-a11y.spec.ts` sweeps the bill page (at rest and with the call panel open) for targets under 44×44 with exactly that inline exemption, and for visible focus; the other pages have no such sweep yet (the 2026-09-27 audit, SY-56). `tests/contrast.unit.spec.ts` pins the contrast math. The `webkit-320` Playwright project runs every test tagged `@reflow` at 320px, where WCAG 1.4.10 is specified.
+Gates: `tests/bill-a11y.spec.ts` sweeps the bill page (at rest and with the call panel open) for targets under 44×44 with exactly that inline exemption, and for visible focus; the other pages have no such sweep yet (the 2026-09-27 audit, SY-56). `tests/contrast.unit.spec.ts` pins the contrast math and the ledger. `tests/colour-states.spec.ts` (since 2026-11-13) measures the pages in the browser in their states (hover, keyboard focus, visited, a picked stance, an error, a disabled or busy control) on the bill page, the members lookup, links on every ground and the three embeds in light and dark: text at 4.5:1 and edges at 3:1 from computed styles, and every focus ring at 3:1 against what it touches, read from a screenshot. The `webkit-320` Playwright project runs every test tagged `@reflow` at 320px, where WCAG 1.4.10 is specified.
 
 ## Focus
 
@@ -22,13 +22,15 @@ go fill │ paper border 7.36 │ paper gap │ ink ring 16.50 │ paper page 16
 
 Every adjacency clears 3:1.
 
-In the owner's look (a draft for his last look, 2026-11-13; the colour layer at the end of `app/globals.css`), every filled action but one is the lamp with ink type and an ink edge, so its stack reads `lamp fill │ ink edge 11.20 │ paper gap 16.50 │ ink ring 16.50 │ paper page 16.50`. The one green button is the floor panel's own (his click: "Green button, as c1 had it"), on the panel's stone: `go fill │ stone border 5.79 │ stone gap │ ink ring 12.98 │ stone panel 12.98` (on hover the fill is go-deep, 8.91 against the stone border).
+In the owner's look (2026-11-13), every filled action but one is the lamp with ink type and an ink edge (`bg-urgent`, deepening to `urgent-deep` on hover and press, ink on it 8.81). Its ring class is `.ring-edge`, which keeps the ink edge on focus at the same 1px offset, so its stack reads `lamp fill │ ink edge 11.20 │ paper gap 16.50 │ ink ring 16.50 │ paper page 16.50`. The one green button is the floor panel's own (his click: "Green button, as c1 had it"), on the panel's stone: `go fill │ stone border 5.79 │ stone gap │ ink ring 12.98 │ stone panel 12.98` (on hover the fill is go-deep, 8.91 against the stone border).
 
 Ground contexts retune the two tones:
 
 - `.on-dark` — any ink enamel ground (footer, voicemail, transcript title bar). Ring = paper (16.50 on ink), gap = ink.
-- `.on-go` — the floor panel (the home page's This-week panel and a bill page's floor panel). In direction c it is green enamel: ring = paper (11.32 on go-deep), gap = go-deep, stack `paper fill │ go-deep border 11.32 │ go-deep gap │ paper ring 11.32 │ go-deep panel 11.32`. In the owner's look it is stone (#e6dfd0) with ink type: ring = ink (12.98 on stone), gap = stone, and its button's stack is the green one above.
-- `.on-band` — the masthead band (the site header on `go-deep`). Ring = paper (11.32 on the band, where the default ink ring would be 1.46), gap = go-deep. Unlike `.on-go` it leaves the type's line-heights alone. The skip link carries it too: it is an ink pill shown over the band, and its paper ring is 16.50 against the pill and 11.32 against the band.
+- `.on-stone` — the floor panel (the home page's This-week panel and a bill page's floor panel), stone (#e6dfd0) with ink type since the owner's look of 2026-11-13 (it was the green enamel, `.on-go`). Ring = ink (12.98 on stone), gap = stone; its button's stack is the green one above. The panel also carries `.ground-leading`, which keeps the dark-ground line heights it had as the enamel, so the recolour moved no line.
+- The dated stamp carries a 2px halo in its ground's colour (paper, or stone inside `.on-stone`): where a focus ring runs under the stamp's edge (the walkthrough toggle on a bill page), the ring meets the halo (16.50 on paper, 12.98 on stone), never the grey (2.18).
+- In the embeds, a language or stance toggle's ring is 2px at a 1px offset (`.re-toggle:focus-visible`, `app/embed/embed.css`): the toggles sit 4px apart, so the ring ends 1px short of the neighbouring cell and touches only the surface (16.50 with the default pair, light and dark). The default 3px ring at 2px reached 1px over a pressed yellow cell (1.47 in dark mode).
+- `.on-band` — the masthead band (the site header on `go-deep`). Ring = paper (11.32 on the band, where the default ink ring would be 1.46), gap = go-deep. Unlike the floor panel it leaves the type's line-heights alone. The skip link carries it too: it is an ink pill shown over the band, and its paper ring is 16.50 against the pill and 11.32 against the band.
 
 Focus is **never** removed. It is never drawn in `go`, because `go` is what buttons are filled with, and a green ring on a green button is 1.00:1 — the general form of that rule is: never draw the ring in the colour of the thing it surrounds.
 

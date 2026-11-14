@@ -17,11 +17,12 @@ import type { RollCall } from '@/lib/types';
  * THE BAR IS ONE NEUTRAL METER, NEVER A COLOUR PER POSITION. A vote position
  * is words, never a colour (tests/nonpartisan-render.unit.spec.ts; rule 3):
  * so the bar is a single fill — the Yea share of the roll call — on a track,
- * both in the panel's own paper tints, and it is aria-hidden. The tally under
+ * a green segment on a cream track, and it is aria-hidden. The tally under
  * it, in the record's four words, is the information.
  *
- * It sits inside the green enamel panel (components/system/FloorVotePanel.tsx
- * `aside`), so its text uses the panel's pale ink, 8.26:1 on go-deep.
+ * It sits inside the stone floor panel (components/system/FloorVotePanel.tsx
+ * `aside`), so its text is ink (12.98:1 on stone) and its secondary lines
+ * ink-2 (5.95:1).
  */
 const POSITIONS = ['yea', 'nay', 'present', 'notVoting'] as const;
 
@@ -41,19 +42,24 @@ export async function HomeLatestVote({ rollCall }: { rollCall: RollCall }) {
   const shown = POSITIONS.filter((p) => p === 'yea' || p === 'nay' || totals[p] > 0);
 
   return (
-    <div data-latest-vote={rollCall.id} className="grid gap-2 text-sm leading-dark text-go-pale">
+    <div data-latest-vote={rollCall.id} className="grid gap-2 text-sm leading-dark text-ink-2">
       <p className="font-semibold tabular-nums">
         {t('latestVote', { chamber: rollCall.chamber, date, roll: rollCall.roll })}
       </p>
-      <p className="text-paper">
-        <span className="text-go-pale">{tVotes('asRecorded')}:</span>{' '}
+      <p className="text-ink">
+        <span className="text-ink-2">{tVotes('asRecorded')}:</span>{' '}
         <q lang="en" className="font-semibold">
           {rollCall.question}
         </q>{' '}
         · <span lang="en">{rollCall.result}</span>
       </p>
-      <span aria-hidden="true" className="mt-1 block h-3 w-full overflow-hidden rounded-hair bg-paper/25">
-        <span className="block h-full bg-paper" style={{ width: `${share}%` }} />
+      {/* The bar on the stone panel: a green segment (7.36 on its track) on a
+          cream track. The track takes a 1px line-strong edge drawn inside it
+          (3.34 on stone; cream alone is 1.27 there), so the bar's whole
+          length, which is what makes the share readable, stays visible. An
+          inset shadow, so the edge costs no layout. */}
+      <span aria-hidden="true" className="mt-1 block h-3 w-full overflow-hidden rounded-hair bg-paper shadow-[inset_0_0_0_1px_var(--color-line-strong)]">
+        <span className="block h-full bg-go" style={{ width: `${share}%` }} />
       </span>
       <p className="tabular-nums">
         {shown.map((p, i) => (

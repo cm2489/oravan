@@ -39,12 +39,17 @@ import type { ReactNode } from 'react';
  * because of its SCALE. See DESIGN.md, shape law.
  *
  * GROUND: `ground` names the surface the chip is standing on, because the
- * two dark grounds do not resolve the same way — an ink ground takes
- * `ink-pale`, the green enamel panel takes `go-pale`. Pass the same ground
- * the wrapper's `on-dark` / `on-go` class names. Every combination below is
- * a computed pass: paper-on-ink 16.50 · ink-pale-on-ink 10.33 ·
- * paper-on-go-deep 11.32 · go-pale-on-go-deep 8.26 · ink-on-lamp 11.20 ·
- * ink-2-on-paper 7.56 · line-strong edge on paper 4.24.
+ * grounds do not resolve the same way — an ink ground takes `ink-pale`, the
+ * stone floor panel takes `ink-2`. Pass the same ground the wrapper's
+ * `on-dark` / `on-stone` class names. Every combination below is a computed
+ * pass: ink-pale-on-ink 10.33 · ink-2-on-paper 7.56 · ink-2-on-stone 5.95 ·
+ * paper-on-ink-2 (the AI mark) 7.56 · ink-on-lamp 11.20 · line-strong edge
+ * on paper 4.24.
+ *
+ * GREY (the owner's pick 6, 2026-11-13): the AI mark is warm grey with cream
+ * type on every ground, and the outlined status, stale and floor labels are
+ * warm grey (`ink-2`) on paper and on stone. On an ink ground they keep
+ * `ink-pale`, because ink-2 there would be 2.18:1.
  *
  * BILINGUAL: every string is a prop, already localized. That includes
  * `marker` — the AI mark is "AI" in English and "IA" in Spanish, so it is NOT
@@ -52,7 +57,7 @@ import type { ReactNode } from 'react';
  * calls `useTranslations`, so the two locales cannot drift apart inside it.
  */
 
-export type ChipGround = 'paper' | 'ink' | 'go';
+export type ChipGround = 'paper' | 'ink' | 'stone';
 
 type ChipBase = {
   children: ReactNode;
@@ -87,26 +92,37 @@ export type ChipProps = ChipBase &
 
 const SHELL = 'inline-flex w-fit items-center gap-2 rounded-stamp leading-tight';
 
-/** Outline + text tones per ground, for the three outlined tones. */
+/** Outline + text tones per ground, for the two bordered tones. */
 const OUTLINE: Record<ChipGround, string> = {
-  paper: 'border-ink text-ink',
+  paper: 'border-ink-2 text-ink-2',
   ink: 'border-ink-pale text-ink-pale',
-  go: 'border-go-pale text-go-pale',
+  stone: 'border-ink-2 text-ink-2',
+};
+
+/** The `floor` tone's outline, drawn INSIDE the chip as a 1.5px inset shadow
+ *  rather than a border, so the chip keeps exactly the box of the `urgent`
+ *  chip it replaces (a border would grow it 3px each way). */
+const FLOOR: Record<ChipGround, string> = {
+  paper: 'text-ink-2 shadow-[inset_0_0_0_1.5px_var(--color-ink-2)]',
+  ink: 'text-ink-pale shadow-[inset_0_0_0_1.5px_var(--color-ink-pale)]',
+  stone: 'text-ink-2 shadow-[inset_0_0_0_1.5px_var(--color-ink-2)]',
 };
 
 /** The unboxed AI caption's text tone per ground. Computed passes at 12px
- *  bold: ink-2-on-paper 7.56 · ink-pale-on-ink 10.33 · go-pale-on-go-deep
- *  8.26. */
+ *  bold: ink-2-on-paper 7.56 · ink-pale-on-ink 10.33 · ink-2-on-stone 5.95. */
 const AI_TEXT: Record<ChipGround, string> = {
   paper: 'text-ink-2',
   ink: 'text-ink-pale',
-  go: 'text-go-pale',
+  stone: 'text-ink-2',
 };
 
+/** The AI mark: warm grey with cream type on every ground (paper on ink-2,
+ *  7.56). It is a fill carrying its own text, so it needs no edge against
+ *  the ground. */
 const AI_MARKER: Record<ChipGround, string> = {
-  paper: 'bg-ink text-paper',
-  ink: 'bg-paper text-ink',
-  go: 'bg-paper text-go-deep',
+  paper: 'bg-ink-2 text-paper',
+  ink: 'bg-ink-2 text-paper',
+  stone: 'bg-ink-2 text-paper',
 };
 
 /**
@@ -128,21 +144,30 @@ export function AiMark({ ground = 'paper', children }: ChipBase) {
 const TAG: Record<ChipGround, string> = {
   paper: 'border-line-strong text-ink-2',
   ink: 'border-ink-pale text-ink-pale',
-  go: 'border-go-pale text-go-pale',
+  stone: 'border-ink-2 text-ink-2',
 };
+
+/**
+ * The two dated floor labels' classes, one function so they can only differ
+ * in colour: the same shell, padding and type, the lamp fill for `urgent`,
+ * the grey inset outline for `floor`. Exported for
+ * tests/colour-states.spec.ts, which proves the two boxes match to the
+ * pixel.
+ */
+export function datedChipClass(tone: 'urgent' | 'floor', ground: ChipGround = 'paper'): string {
+  const colour = tone === 'urgent' ? 'bg-urgent text-ink' : FLOOR[ground];
+  return `${SHELL} px-3 py-1 text-xs font-bold tracking-[0.04em] uppercase tabular-nums ${colour}`;
+}
 
 export function Chip(props: ChipProps) {
   const { children, ground = 'paper', className = '' } = props;
 
   if (props.tone === 'floor') {
-    // The dated floor fact in ink: the outline tones of its ground, the same
-    // type and the same two spans as `urgent`, so the claim reads the same
-    // on the page it links to. `data-floor-chip` is how specs find it.
+    // The dated floor fact in grey: the same box, type and two spans as
+    // `urgent`, so the claim reads the same on the page it links to; only
+    // the colour differs (an inset outline instead of the lamp fill).
     return (
-      <span
-        data-floor-chip
-        className={`${SHELL} border-[1.5px] px-3 py-1 text-xs font-bold tracking-[0.04em] uppercase tabular-nums ${OUTLINE[ground]} ${className}`}
-      >
+      <span className={`${datedChipClass('floor', ground)} ${className}`}>
         <span>{children}</span>
         <span className="font-extrabold">{props.dateLabel}</span>
       </span>
@@ -153,9 +178,7 @@ export function Chip(props: ChipProps) {
     // The lamp is a fill, so it resolves the same on every ground: ink text,
     // 11.20:1, with the date printed beside the claim.
     return (
-      <span
-        className={`${SHELL} bg-urgent px-3 py-1 text-xs font-bold tracking-[0.04em] text-ink uppercase tabular-nums ${className}`}
-      >
+      <span className={`${datedChipClass('urgent', ground)} ${className}`}>
         <span>{children}</span>
         <span className="font-extrabold">{props.dateLabel}</span>
       </span>

@@ -82,11 +82,11 @@ export async function FloorEvidence({
 
   return (
     <>
-      <span className="mb-1 block text-2xs font-extrabold tracking-[0.1em] text-go-pale uppercase not-italic">
+      <span className="mb-1 block text-2xs font-extrabold tracking-[0.1em] text-ink-2 uppercase not-italic">
         {t('evidenceLead')}
       </span>
       <span lang="en">{`“${announcement.quote}”`}</span>
-      <span className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 font-sans text-sm text-go-pale">
+      <span className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 font-sans text-sm text-ink-2">
         <span>
           {t(
             announcement.source === 'daily-digest'
@@ -112,7 +112,7 @@ export async function FloorEvidence({
           href={announcement.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex min-h-11 items-center gap-1.5 font-semibold text-paper underline underline-offset-4 hover:decoration-[3px]"
+          className="inline-flex min-h-11 items-center gap-1.5 font-semibold text-go underline underline-offset-4 hover:decoration-[3px]"
         >
           {t('evidenceLink')}
           <ExternalLink className="h-4 w-4 flex-none" aria-hidden />

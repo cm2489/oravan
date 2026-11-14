@@ -69,7 +69,8 @@ import { votesCoverage, votesForBill, votingMember } from '@/lib/votes';
  * disclosure, so the reading column and the rail both break the first
  * screen instead of starting a thousand pixels down.
  *
- * DATA-GATED LOUDNESS: at most one full-bleed green enamel band, and only
+ * DATA-GATED LOUDNESS: at most one full-bleed floor panel (stone since the
+ * owner's look of 2026-11-13; the green enamel before), and only
  * when one of the three dated floor facts amber is allowed to carry is true of
  * this bill — the chamber's OWN published schedule names it (`announced`, the
  * ladder's T0 rung, quoted with its attribution), or the record says it stands
@@ -718,7 +719,7 @@ export default async function BillPage({
             </ul>
           )}
           <details className="group mt-4 max-w-read">
-            <summary className="inline-flex min-h-11 cursor-pointer list-none items-center gap-2 text-sm font-semibold text-ink hover:underline [&::-webkit-details-marker]:hidden">
+            <summary className="inline-flex min-h-11 cursor-pointer list-none items-center gap-2 text-sm font-semibold text-ink hover:text-go-deep [&::-webkit-details-marker]:hidden">
               <span
                 aria-hidden
                 className="inline-flex h-5 w-5 flex-none items-center justify-center rounded-stamp border-[1.5px] border-ink text-xs font-extrabold leading-none"

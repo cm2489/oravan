@@ -15,11 +15,14 @@
      wordmark. `go` (#1d5e43) is spent on the floor panel's one button, the
      6px gauge and links in text, and on nothing else. Not a heading, not a
      rule.
-     DRAFT (the owner's look, 2026-11-13): links in text are green, as on the
-     live site, and keep their underline; every filled action is the lamp, ink
-     type and an ink edge, except the floor panel's own button, which is green
-     because he chose it ("Green button, as c1 had it", 12:40 PM ET). The
-     floor panel itself is stone (the layer at the end of this file).
+     THE OWNER'S LOOK (his picks and clicks of 2026-11-13): links in text are
+     green, as on the live site, and keep their underline; every filled
+     action is the lamp (`bg-urgent`), ink type and an ink edge, deepening to
+     `urgent-deep` on hover, EXCEPT the floor panel's own button, which is
+     green because he chose it ("Green button, as c1 had it", 12:40 PM ET).
+     The floor panel itself is `stone` with ink type (`.on-stone`). Each
+     component states these colours in its own classes; there is no override
+     layer.
      `tint` (#e5eee2) means YOURS — what the user picked, typed, or was handed.
      Never a topic tag, never a status, never decoration.
      `urgent` (#ffc933, "the lamp") marks what you can act on: every filled
@@ -83,6 +86,7 @@
      paper (mix panel button) on go ...... 7.36  AAA   <- mix: the floor panel's green button (his click)
      paper (mix panel button) on go-deep . 11.32  AAA   <- mix: the same button on hover
      ink (mix date label) on urgent ...... 11.20  AAA   <- mix: the floor panel's lamp date label (his click)
+     ink (lamp hover) on urgent-deep ..... 8.81  AAA   <- a filled action on hover or press
    The House finder's light lamp button is `bg-urgent/30` over paper (#fdebba):
    ink on it computes to 14.57 (tests/house-finder.unit.spec.ts measures it).
    A stance choice's hover is the half-lamp, `bg-urgent/50` over paper
@@ -105,6 +109,11 @@
      paper (mix hairline) on ink-2 .. 7.56  PASS  <- mix: the stamp's inner hairline
      ink (mix lamp edge) on paper .. 16.50  PASS  <- mix: a lamp button's ink edge on the page
      urgent (mix lamp) on ink ..... 11.20  PASS  <- mix: a lamp button on an ink ground
+     ink (lamp hover edge) on urgent-deep .. 8.81  PASS  <- the ink edge against the hovered fill
+     urgent-deep (lamp hover) on ink .... 8.81  PASS  <- the hovered fill on an ink ground
+     paper (stamp halo) on ink-2 .... 7.56  PASS  <- the stamp's 2px halo against its grey
+     ink (ring at the halo) on paper .. 16.50  PASS  <- a focus ring meeting the stamp's halo
+     ink (ring at the halo) on stone .. 12.98  PASS  <- the same on the stone panel
      ink (mix ring) on stone ...... 12.98  PASS  <- mix: the focus ring on the panel
      go (mix panel button) on stone .... 5.79  PASS  <- mix: the green button's fill against the panel
      go-deep (mix panel button) on stone .. 8.91  PASS  <- mix: the same fill on hover
@@ -139,8 +148,13 @@
      own 2px border to the gap tone on focus (`.ring-gap`), so the stack reads
      outward: go fill | paper border 7.36 | paper gap | ink ring 16.50 | paper
      page 16.50. Every adjacency clears 3:1.
-     On the green enamel panel (`.on-go`) it inverts: paper fill | go-deep
-     border 11.32 | go-deep gap | paper ring 11.32 | go-deep panel 11.32.
+     A LAMP-FILLED control keeps its ink edge on focus instead
+     (`.ring-edge`): lamp fill | ink edge 11.20 | paper gap 16.50 | ink ring
+     16.50 | paper page 16.50; the edge is what makes a lamp findable, so it
+     never swaps to the gap tone.
+     On the stone floor panel (`.on-stone`) the ring is ink and the gap stone:
+     go fill | stone border 5.79 | stone gap | ink ring 12.98 | stone panel
+     12.98.
      On the masthead band (`.on-band`) the ring is paper too: 11.32 against
      the band, where the default ink ring would be 1.46. The skip link, an
      ink pill that appears over the band, carries `.on-band` as well: its
@@ -190,7 +204,8 @@
   --color-tint: #e5eee2;         /* YOURS: what the user chose or wrote */
   --color-urgent: #ffc933;       /* the lamp: what you can act on, ink text */
   --color-alert: #a0461f;        /* failure, and only failure */
-  --color-stone: #e6dfd0;        /* DRAFT mix: the floor panel's ground (home and bill page), ink type */
+  --color-urgent-deep: #ebb000;  /* the lamp on hover or press, ink text (8.81:1) */
+  --color-stone: #e6dfd0;        /* the floor panel's ground (home and bill page), ink type */
   /* WHY THIS HEX (re-measured 2026-09-30 for the bottle-green palette).
      `alert` is confusable with `go` for a deuteranope, and no hex separates
      it from both `go` and `ink` at once: a darker one collapses into ink, a
@@ -351,10 +366,9 @@ figcaption {
 }
 
 /* Link COLOR is not set here on purpose — the shell's nav, the footer and the
-   green panel all carry links that must inherit their ground's tone. Content
-   links are green and underlined (DRAFT, owner's picks 2026-11-13: green as
-   on the live site, the underline kept so a link never rests on colour
-   alone): `text-go underline hover:text-go-deep`; visited is spent on bills
+   floor panel all carry links that must inherit their ground's tone. Content
+   links are green and underlined (the owner's picks 2026-11-13: green as on
+   the live site, the underline kept so a link never rests on colour alone): `text-go underline hover:text-go-deep`; visited is spent on bills
    and articles only (`visited:text-go-deep` — a weight shift inside green,
    not a second hue) and never on navigation. */
 a {
@@ -375,15 +389,17 @@ a {
 }
 
 /* Ground contexts. Put `on-dark` on any ink enamel ground (footer, voicemail,
-   transcript title bar) and `on-go` on the green enamel panel. They only
-   retune the focus indicator; text colors stay explicit at the call site. */
+   transcript title bar) and `on-stone` on the stone floor panel. They only
+   retune the focus indicator (and, on stone, the stamp's halo); text colors
+   stay explicit at the call site. */
 .on-dark {
   --focus: var(--color-paper);
   --focus-gap: var(--color-ink);
 }
-.on-go {
-  --focus: var(--color-paper);
-  --focus-gap: var(--color-go-deep);
+.on-stone {
+  --focus: var(--color-ink);
+  --focus-gap: var(--color-stone);
+  --stamp-halo: var(--color-stone);
 }
 /* The masthead band (components/Header.tsx): the site header on `go-deep`.
    The same ring as the green panel — paper, 11.32:1 on the band, where the
@@ -405,9 +421,12 @@ a {
    the element that declares them, so the utility's own pair still wins. The
    fix is to restate the pairs themselves on the ground. One rule replaces
    ~20 hand-applied utilities; anything with an explicit `leading-*` is
-   untouched, by design. */
+   untouched, by design.
+   `ground-leading` is the same rule by name, for the floor panel: it was the
+   green enamel until the owner's look made it stone (2026-11-13), and it
+   keeps the line heights it had, so the recolour moved no line. */
 .on-dark,
-.on-go {
+.ground-leading {
   --text-2xs--line-height: var(--leading-dark);
   --text-xs--line-height: var(--leading-dark);
   --text-sm--line-height: var(--leading-dark);
@@ -444,6 +463,12 @@ label,
    is never adjacent to the fill. Opt in on any solid button: `class="ring-gap"`. */
 .ring-gap:focus-visible {
   border-color: var(--focus-gap);
+  outline-offset: 1px;
+}
+/* A lamp-filled control keeps its ink edge on focus (the edge is what makes
+   the lamp findable: 11.20 against it, 16.50 against paper), with the ring
+   at the same 1px offset as `ring-gap`. Opt in: `class="ring-edge"`. */
+.ring-edge:focus-visible {
   outline-offset: 1px;
 }
 
@@ -507,60 +532,3 @@ label,
   stroke-dashoffset: 24;
   animation: draw-stroke 0.35s cubic-bezier(0.25, 1, 0.5, 1) 0.3s forwards;
 }
-
-/* ============================================================================
-   THE OWNER'S LOOK (his seven picks of 2026-11-13, 10:10 to 10:15 AM ET, and
-   his five clicks of 12:40 PM ET). A draft for his last look, not for merge.
-   Over direction c (warm cream page, the bottle-green band, cream logo), one
-   layer so it reads, and comes out, as a unit:
-     - every filled action is the lamp, ink type, ink edge (variation 3), with
-       ONE exception he chose: the floor panel's own button is green, as
-       variation 1 had it (his click 2, "Green button, as c1 had it");
-     - the floor panel (FloorVotePanel: the home page's This-week panel and a
-       bill page's floor panel alike) is light stone with ink type; its date
-       label is the lamp, as on the live site (his click 3), and its text
-       links are green;
-     - the stamp, the AI mark and the outlined status, floor and topic labels
-       elsewhere are warm grey (variation 1);
-     - links in text are green, underlined (classes in the components).
-   Token: `stone` (#e6dfd0) in @theme. Every pair is in the ledger above.
-   ========================================================================= */
-
-/* The floor panel leaves the green: a stone ground with ink type and an ink
-   rule, on the home page (the wrapper div and the panel inside it) and on a
-   bill page (the panel section on its own). */
-div.border-go.bg-go-deep, section.on-go { background-color: #e6dfd0 !important; }
-div.border-go.bg-go-deep, section.on-go.border-go { border-color: #1c1b18 !important; }
-div.border-go.bg-go-deep, section.on-go {
-  --color-go-deep: var(--color-stone); --color-paper: var(--color-ink); --color-go-pale: var(--color-ink-2); --color-go-bright: var(--color-ink);
-  --focus: var(--color-ink); --focus-gap: var(--color-stone);
-}
-/* A text link on the panel is green, as on the page (5.79 on stone). */
-:is(div.border-go.bg-go-deep, section.on-go) a.underline:not(.bg-paper) { color: #1d5e43; }
-/* The vote bar: a green segment on a paper track. */
-:is(div.border-go.bg-go-deep, section.on-go) [data-latest-vote] > span[aria-hidden] { background-color: #fcfaf4 !important; box-shadow: inset 0 0 0 1px #7f7768; }
-:is(div.border-go.bg-go-deep, section.on-go) [data-latest-vote] > span[aria-hidden] > span { background-color: #1d5e43 !important; }
-/* THE ONE GREEN BUTTON (owner's click, 2026-11-13 12:40 PM ET: "Green button,
-   as c1 had it"). The panel's button is a filled green action with cream type:
-   paper on go 7.36, on go-deep (hover) 11.32; the fill against stone is 5.79
-   (hover 8.91). On focus `ring-gap` gets its border back as stone, so the
-   stack reads go fill | stone border 5.79 | stone gap | ink ring 12.98 | stone
-   panel 12.98. */
-:is(div.border-go.bg-go-deep, section.on-go) a.bg-paper { background-color: #1d5e43 !important; border-color: #1d5e43 !important; color: #fcfaf4 !important; }
-:is(div.border-go.bg-go-deep, section.on-go) a.bg-paper:hover { background-color: #133f2d !important; border-color: #133f2d !important; }
-:is(div.border-go.bg-go-deep, section.on-go) a.bg-paper:focus-visible { border-color: #e6dfd0 !important; }
-
-/* Every other filled action is the lamp, with ink type and an ink edge ("green
-   is brand and yellow is action", owner 2026-09-26). The floor panel's button
-   is the one exception, above. A disabled button keeps its own disabled look. */
-:is(a, button).bg-go:not(header *):not(:disabled), :is(a, button).bg-go:not(header *):not(:disabled):hover { background-color: #ffc933 !important; color: #1c1b18 !important; border-color: #1c1b18 !important; }
-:is(a, button).bg-go:not(header *):not(:disabled) * { color: #1c1b18 !important; }
-
-/* GREY STAMPS: warm grey (ink-2, #55514a) from the ink ladder: the dated
-   stamp, the AI mark, and the outlined status, floor and topic labels. The
-   +/- box inside a disclosure toggle is part of a control, so it keeps ink.
-   The floor panel's date label is not here: it is the lamp (Chip `urgent`). */
-[data-oravan-stamp] { background-color: #55514a !important; border-color: #55514a !important; color: #fcfaf4 !important; }
-[data-oravan-stamp] > span.absolute, [data-oravan-stamp] > span.border-t-\[1\.5px\] { border-color: #fcfaf4 !important; }
-span.flex-none.rounded-stamp.px-1 { background-color: #55514a !important; color: #fcfaf4 !important; }
-[data-floor-chip], span.rounded-stamp.border-\[1\.5px\]:not(summary *) { border-color: #55514a !important; color: #55514a !important; }

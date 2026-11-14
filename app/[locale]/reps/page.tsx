@@ -20,7 +20,7 @@ import { membersFor } from '@/lib/members';
  * THE LOOKUP SURFACE, as ruled paper.
  *
  * This page changes shape zero times. That is deliberate: data-gated loudness
- * means the full-bleed green enamel panel is spent on ONE bill standing on the
+ * means the full-bleed floor panel is spent on ONE bill standing on the
  * floor calendar, and the page that earns it is the one whose subject is a
  * bill. A ZIP lookup's subject is three phone numbers, so every band here is
  * paper - bordered cards for people, a rule-and-`wash` note for anything the
