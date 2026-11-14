@@ -1,13 +1,16 @@
 import { expect, test } from '@playwright/test';
 import billsJson from '../data/bills.json';
 import {
+  decodeNameTables,
   decodeShortAddressFallback,
   decodeShortAddressIndex,
   encodeShortAddressFallback,
   encodeShortAddressIndex,
+  nameAddressTarget,
   SHORT_ADDRESS_CONGRESS,
   shortAddressTarget,
 } from '../lib/short-address';
+import { nameTablesForBuild } from '../lib/short-address-build';
 
 /*
  * Short addresses for bills, against the production build: /hr9340 answers
@@ -248,5 +251,94 @@ test.describe('short addresses', () => {
     const robots = await (await request.get('/robots.txt')).text();
     const rules = robots.split('\n').map((l) => l.replace(/^(?:Allow|Disallow):\s*/i, '').trim());
     expect(rules.filter((r) => shortShape.test(r))).toEqual([]);
+  });
+});
+
+/*
+ * NAME ADDRESSES (the owner's card 191, Nov 14, 2026: "Names beside numbers.
+ * Each name comes from the bill's own official short title in the record,
+ * never chosen by Oravan."). The names are picked from the table the build
+ * makes from data/short-titles.json, BY KIND (the first name one bill alone
+ * carries, the first name two or more bills share), never by a hard-coded
+ * name, so a nightly can never make this lie. Until the nightly first fills
+ * data/short-titles.json there is no table, and every test here skips with
+ * that reason.
+ */
+const NAMES = decodeNameTables(nameTablesForBuild(corpus));
+const NO_NAMES = 'data/short-titles.json holds no short title yet (the nightly fills it), so no name resolves';
+const nameOf = (shared: boolean): { name: string; target: string | null } | undefined => {
+  for (const table of NAMES) {
+    for (const [name, address] of table.names) {
+      if ((address === null) !== shared) continue;
+      // The expectation through the same order the proxy uses: a number first, then a name.
+      return { name, target: expectedTarget(`/${name}`) ?? nameAddressTarget(`/${name}`, ['en', 'es'], 'en', NAMES) };
+    }
+  }
+  return undefined;
+};
+
+test.describe('name addresses', () => {
+  test('a name one bill alone carries redirects (307) to that bill, in both languages and any case', async ({ request }) => {
+    test.skip(NAMES.length === 0, NO_NAMES);
+    const unique = nameOf(false);
+    test.skip(!unique, 'no name is carried by one bill alone');
+    const to = unique!.target!;
+    expect(to).toMatch(/^\/bills\/[a-z]+-\d+-\d+$/);
+    for (const [from, expected] of [
+      [`/${unique!.name}`, to],
+      [`/${unique!.name.toUpperCase()}`, to],
+      [`/en/${unique!.name}`, to],
+      [`/es/${unique!.name}`, `/es${to}`],
+      [`/${unique!.name}?stance=support&utm_source=x`, to],
+      [`/es/${unique!.name}?stance=oppose`, `/es${to}`],
+    ] as const) {
+      const res = await request.get(from, { maxRedirects: 0, headers: { accept: 'text/html' } });
+      expect(res.status(), from).toBe(307);
+      const location = new URL(res.headers()['location'] ?? '', 'http://x');
+      expect(location.pathname, from).toBe(expected);
+      expect(location.search, from).toBe('');
+      expect(res.headers()['cache-control'], from).toContain('no-store');
+      expect(res.headers()['x-robots-tag'], from).toBe('noindex');
+      expect(res.headers()['set-cookie'], from).toBeUndefined();
+    }
+  });
+
+  test('a name lands on the bill page itself, with its canonical URL unchanged', async ({ page }) => {
+    test.skip(NAMES.length === 0, NO_NAMES);
+    const unique = nameOf(false);
+    test.skip(!unique, 'no name is carried by one bill alone');
+    const to = unique!.target!;
+    for (const [from, landed, lang] of [
+      [`/${unique!.name}/`, to, 'en'],
+      [`/es/${unique!.name}`, `/es${to}`, 'es'],
+    ] as const) {
+      const res = await page.goto(from);
+      expect(res?.status(), from).toBe(200);
+      expect(new URL(page.url()).pathname, from).toBe(landed);
+      await expect(page.locator('html')).toHaveAttribute('lang', lang);
+      const canonical = await page.locator('link[rel="canonical"]').getAttribute('href');
+      expect(new URL(canonical ?? '').pathname, from).toBe(landed);
+    }
+  });
+
+  test('a name two or more bills share, a near miss and a reserved word are the normal 404 or the real page', async ({ request }) => {
+    test.skip(NAMES.length === 0, NO_NAMES);
+    const shared = nameOf(true);
+    const unique = nameOf(false);
+    const titleOf = (html: string) => /<title>([^<]*)<\/title>/.exec(html)?.[1];
+    const reference = titleOf(await (await request.get('/this-page-does-not-exist-404')).text());
+    const notFound = [
+      ...(shared ? [`/${shared.name}`, `/es/${shared.name}`] : []),
+      ...(unique ? [`/${unique.name}-x`, `/x-${unique.name}`, `/${unique.name.replace(/-/g, '_')}`] : []),
+    ].filter((p) => expectedTarget(p) === null && nameAddressTarget(p, ['en', 'es'], 'en', NAMES) === null);
+    for (const from of notFound) {
+      const res = await request.get(from, { maxRedirects: 0 });
+      expect(res.status(), from).toBe(404);
+      expect(titleOf(await res.text()), from).toBe(reference);
+    }
+    for (const path of ['/privacy', '/es/privacy', '/bills', '/today', '/about']) {
+      const res = await request.get(path, { maxRedirects: 0 });
+      expect(res.status(), path).not.toBe(307);
+    }
   });
 });

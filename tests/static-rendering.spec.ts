@@ -8,6 +8,7 @@ import {
   SHORT_ADDRESS_CONGRESS,
   type ShortAddressBill,
 } from '../lib/short-address';
+import { nameTablesForBuild } from '../lib/short-address-build';
 import { briefWindow } from '../lib/today';
 import { voteMembersPath } from '../lib/vote-members-path';
 import { allRollCalls } from '../lib/votes';
@@ -98,11 +99,20 @@ const RENDERED_ON_DEMAND: Record<string, string> = {
  *   tracked Congress, one per ended Congress the corpus holds (none until
  *   one is listed). The test below
  *   pins that the corpus itself never enters the proxy bundle.
+ *
+ *   name addresses (2026-11-14, the owner's card 191): /laken-riley-act is
+ *   answered the same way when no number address matched, from one more
+ *   build-time table (each record short title's name and its bill's type and
+ *   number, per Congress; empty until the nightly fills
+ *   data/short-titles.json): one pattern test and at most one Map lookup
+ *   per Congress. The same test pins that the table never reaches a browser
+ *   file.
  */
 const PER_REQUEST_IN_PROXY: Record<string, string> = {
   'lib/short-address.ts':
     'short addresses for bills: at most one constant-time bit test per build-time bitset, ' +
-    'answered with a 307; no corpus in the bundle',
+    'then (names) at most one Map lookup per build-time name table, answered with a 307; ' +
+    'no corpus in the bundle',
 };
 
 /**
@@ -272,6 +282,9 @@ test('the short-address lookup in proxy.ts carries a build-time bitset, never th
   expect(proxy).toContain("from './lib/short-address'");
   const proxyImports = proxy.split('\n').filter((line) => /^\s*import\s/.test(line));
   expect(proxyImports.join('\n')).not.toMatch(/data\/|bills\.json|lib\/core/);
+  // The name table's build-time readers (they read data/short-titles.json and
+  // the route tree) stay out of the proxy too: only their output crosses.
+  expect(proxyImports.join('\n')).not.toMatch(/short-address-build|route-segments|short-titles/);
 
   // Build half: find the server bundle(s) that hold the short-address
   // pattern and prove none of them carries corpus text.
@@ -300,6 +313,13 @@ test('the short-address lookup in proxy.ts carries a build-time bitset, never th
     (t) => t !== '',
   );
   expect(tables.join('').length, 'the build-time index is not empty').toBeGreaterThan(100);
+  // The name table, computed exactly as next.config.ts computes it: '' until
+  // the nightly fills data/short-titles.json, so it joins the search only
+  // when there is one. Searched by its first 64 characters and, because a
+  // single name is short, by a few whole entries from its middle as well.
+  const names = nameTablesForBuild(corpus);
+  if (names !== '') tables.push(names);
+  const nameEntries = names === '' ? [] : names.split(/[,|@]/).filter((e) => e.length >= 24).slice(0, 400).filter((_, i) => i % 40 === 0);
   // A table of a few bytes (a new Congress's first bills) is too short to
   // search for without matching by chance; the long one is the one to find.
   const searchable = tables.filter((t) => t.length >= 40);
@@ -313,8 +333,10 @@ test('the short-address lookup in proxy.ts carries a build-time bitset, never th
     return (
       text.includes(marker) ||
       searchable.some((t) => text.includes(t.slice(0, 64))) ||
+      nameEntries.some((e) => text.includes(e)) ||
       text.includes('SHORT_ADDRESS_INDEX') ||
-      text.includes('SHORT_ADDRESS_FALLBACK')
+      text.includes('SHORT_ADDRESS_FALLBACK') ||
+      text.includes('SHORT_ADDRESS_NAMES')
     );
   });
   expect(leaks, 'a browser file carries the short-address lookup').toEqual([]);

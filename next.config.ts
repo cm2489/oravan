@@ -9,6 +9,7 @@ import {
   SHORT_ADDRESS_CONGRESS,
   type ShortAddressBill,
 } from './lib/short-address';
+import { nameTablesForBuild } from './lib/short-address-build';
 
 const withNextIntl = createNextIntlPlugin();
 
@@ -44,10 +45,20 @@ if (reviewedEndedCongress !== null) {
 // Congress, so until the switch the proxy has exactly one table.
 const bills = JSON.parse(readFileSync(join(process.cwd(), 'data/bills.json'), 'utf8')) as ShortAddressBill[];
 
+// Name addresses (/continuing-appropriations-act-2027, lib/short-address.ts): per Congress, in
+// the same search order, every name a bill's record short titles give it
+// (data/short-titles.json, filled nightly; absent until the first fill, and
+// then this is the empty string and no name resolves). Every first segment
+// of a real route (read from app/ and public/ right now, so a route added
+// later is reserved by the build that adds it) and every reserved word is
+// left out. Only the names and bill numbers cross into the proxy bundle.
+// (lib/short-address-build.ts computes it; the specs call the same function.)
+
 const nextConfig: NextConfig = {
   env: {
     SHORT_ADDRESS_INDEX: encodeShortAddressIndex(bills, SHORT_ADDRESS_CONGRESS),
     SHORT_ADDRESS_FALLBACK: encodeShortAddressFallback(bills),
+    SHORT_ADDRESS_NAMES: nameTablesForBuild(bills),
     // A review build only: bake the reviewed Congress into this build's server
     // and browser code, so routes rendered on request read what the prerendered
     // pages read (lib/ended-state.mjs). Absent on every real build.

@@ -172,6 +172,14 @@ curl -s -o /dev/null -w "%{http_code} %{redirect_url}\n" https://oravan.org/hr93
 
 Run on 2026-11-14 against the live site (before the switch): `307 …/bills/hr-1-119` and `307 …/bills/hr-9340-119`, as expected. **Not run against the switch itself**: it has not happened. The same two requests on a production build of a scratch copy with the switch simulated gave `/bills/hr-1-120` and `/bills/hr-9340-119` with a few 120th bills in the corpus, and `/bills/hr-1-119` and `/bills/hr-9340-119` with none.
 
+**Name addresses** (`oravan.org/continuing-appropriations-act-2027`, built 2026-11-14 on the owner's card 191) follow the same order with nothing to edit: the 120th's names first, then the 119th's, and a name two bills of the same Congress share opens neither. They exist only once the nightly has filled `data/short-titles.json` (it reads up to 500 bills a night; the first fill takes about a week). On switch day, if that file holds H.R. 1 of the 119th, try:
+
+```sh
+curl -s -o /dev/null -w "%{http_code} %{redirect_url}\n" https://oravan.org/one-big-beautiful-bill-act
+```
+
+**Proves it worked:** `307` ending in `/bills/hr-1-119` (the 119th's H.R. 1, which became law, so its page shows the law) until a 120th bill carries the short title "One Big Beautiful Bill Act" (then that bill, or a `404` if two 120th bills carry it). A `404` before that means the name table was not built: check that `data/short-titles.json` exists and holds `hr-1-119` with that title. (Not `laken-riley-act`: S. 5 and H.R. 29 of the 119th both carry that title, so it opens neither.) **Not run against the switch**: it has not happened; checked on 2026-11-14 on unit fixtures shaped like the switch (`tests/short-address-names.unit.spec.ts`).
+
 **Undo:** revert the stage 8 pull request; short addresses go back to the 119th with it.
 
 ## A refused week

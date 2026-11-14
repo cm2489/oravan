@@ -45,6 +45,13 @@
  *     doesn't exist — on HEAD or in the working tree. The judgement lives in
  *     lib/verify-moment-updates.mjs; see that file's header for why the
  *     retention caps are checked here as well as in check-moment-updates.mjs.
+ *   - data/short-titles.json (the record's short titles, which name addresses
+ *     read; 2026-11-14) doesn't parse, holds a key the corpus doesn't, an
+ *     entry that isn't { titles, as_of }, an empty, repeated, over-long or
+ *     unsorted title, or, against HEAD, lost more than 10% of its titled
+ *     bills overnight or every title of one bill. Skipped cleanly when the
+ *     file doesn't exist. The judgement lives in lib/short-titles.mjs
+ *     (verifyShortTitles)
  *   - data/conversation.json (the conversation lamp's committed evidence)
  *     doesn't parse, carries an unknown schema or a window this build doesn't
  *     read, blew its size ceiling, dates an observation in the future or
@@ -98,6 +105,7 @@ import { existsSync, readFileSync, statSync } from 'node:fs';
 import { CONVERSATION_PATH, verifyConversation } from '../lib/conversation.mjs';
 import { MOMENT_UPDATES_PATH, verifyMomentUpdates } from '../lib/verify-moment-updates.mjs';
 import { QUESTION_PRESS_PATH, verifyQuestionPress } from '../lib/question-press.mjs';
+import { SHORT_TITLES_PATH, verifyShortTitles } from '../lib/short-titles.mjs';
 // Import-clean by contract: congress-fetch.mjs reads CONGRESS_API_KEY per
 // fetch, never at import, so pulling CONGRESS in here needs no secrets and
 // makes no network call. One definition of "the Congress we track" — bumping
@@ -387,6 +395,33 @@ if (!existsSync(CONVERSATION_PATH)) {
     });
     for (const n of notes) console.log(n);
     for (const w of warnings) warn(w);
+    for (const f of failures) fail(f);
+  }
+}
+
+// --- short-titles: the record's short titles, which name addresses read -----
+//
+// data/short-titles.json (2026-11-14) is written by scripts/sync-short-titles
+// .mjs, which refuses to write a file this gate refuses. Re-checked here before
+// the commit (hard rule 11): it parses; every key is a bill the corpus holds;
+// every entry is exactly { titles, as_of }; every title is a distinct,
+// non-empty string of the record's, in code-point order; and, against HEAD,
+// the bills carrying a short title did not fall by more than 10% and no bill
+// lost all of its titles. Skipped cleanly when the file doesn't exist (every
+// night until the first fill). The judgement lives in lib/short-titles.mjs.
+if (!existsSync(SHORT_TITLES_PATH)) {
+  console.log(`${SHORT_TITLES_PATH} not present — skipping the short-titles checks`);
+} else {
+  const shortTitles = parse(SHORT_TITLES_PATH, readFileSync(SHORT_TITLES_PATH, 'utf8'));
+  if (shortTitles !== null) {
+    let before = null;
+    try {
+      before = JSON.parse(execSync(`git show HEAD:${SHORT_TITLES_PATH}`, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'ignore'] }));
+    } catch {
+      console.log(`HEAD:${SHORT_TITLES_PATH} not readable (not committed yet?) — the overnight comparison is skipped`);
+    }
+    const { failures, notes } = verifyShortTitles({ data: shortTitles, bills: Array.isArray(bills) ? bills : [], before });
+    for (const n of notes) console.log(n);
     for (const f of failures) fail(f);
   }
 }

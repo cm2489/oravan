@@ -506,6 +506,26 @@ jobs:
         env:
           CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}
         run: node scripts/sync-votes.mjs
+      - name: Read the record's short titles (name addresses)
+        # data/short-titles.json (scripts/sync-short-titles.mjs): the short
+        # titles Congress.gov's own titles list labels as each bill's, which
+        # next.config.ts turns into name addresses (oravan.org/continuing-
+        # appropriations-act-2027; the owner's card 191, Nov 14, 2026). AFTER the bill sync, so
+        # tonight's new bills are read tonight.
+        #
+        # A SEPARATE script and step, continue-on-error, on the votes
+        # precedent: a titles-side outage must never cost the night's bill
+        # statuses. The script refuses to write a file its gate refuses, and
+        # scripts/verify-sync.mjs re-checks it before the commit.
+        #
+        # Cost: $0. One free Congress.gov request per bill read, at most 500 a
+        # night (SHORT_TITLES_MAX_PER_NIGHT): every bill never read first, then
+        # every bill whose last action moved. The first fill takes ~7 nights.
+        # No Anthropic key.
+        continue-on-error: true
+        env:
+          CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}
+        run: node scripts/sync-short-titles.mjs
       - name: Backfill coverage search inputs
         # Drains press_names/news_query for bills decoded before search-input
         # generation existed (~1,090 at introduction; 835 left after night one,

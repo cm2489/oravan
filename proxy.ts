@@ -2,7 +2,13 @@ import { NextResponse, type NextFetchEvent, type NextRequest } from 'next/server
 import createProxy from 'next-intl/middleware';
 import { routing } from './i18n/routing';
 import { callerIp, noteDistinctAddress } from './lib/ratelimit';
-import { decodeShortAddressFallback, decodeShortAddressIndex, shortAddressTarget } from './lib/short-address';
+import {
+  decodeNameTables,
+  decodeShortAddressFallback,
+  decodeShortAddressIndex,
+  nameAddressTarget,
+  shortAddressTarget,
+} from './lib/short-address';
 import { isCountablePageviewRequest, notePageview, pageviewSurfaceForPath, type PageviewSurface } from './lib/usage';
 
 // Next.js 16: middleware.ts -> proxy.ts. next-intl's handler still only does
@@ -26,6 +32,17 @@ const handler = createProxy(routing);
  */
 const SHORT_ADDRESS_INDEX = decodeShortAddressIndex(process.env.SHORT_ADDRESS_INDEX);
 const SHORT_ADDRESS_FALLBACK = decodeShortAddressFallback(process.env.SHORT_ADDRESS_FALLBACK);
+/*
+ * Name addresses (/continuing-appropriations-act-2027 -> the bill whose record short title it
+ * is; lib/short-address.ts). SHORT_ADDRESS_NAMES holds, per Congress in the
+ * same search order, each name with its bill's type and number, built at
+ * BUILD time from data/short-titles.json; the empty string (no table, no
+ * name resolves) until the nightly first fills that file. Asked only when the
+ * path is not a number address, so a number always wins; a name never equals
+ * a real route's segment (next.config.ts leaves those out). One pattern test
+ * and at most one Map lookup per Congress.
+ */
+const SHORT_ADDRESS_NAMES = decodeNameTables(process.env.SHORT_ADDRESS_NAMES);
 
 /*
  * 307, not 308. A 308 is permanent: browsers cache it with no expiry, so a
@@ -88,19 +105,20 @@ function shortAddressRedirect(req: NextRequest, target: string): NextResponse {
 export default function proxy(req: NextRequest, event: NextFetchEvent) {
   const shortTarget =
     req.method === 'GET' || req.method === 'HEAD'
-      ? shortAddressTarget(
+      ? (shortAddressTarget(
           req.nextUrl.pathname,
           routing.locales,
           routing.defaultLocale,
           SHORT_ADDRESS_INDEX,
           SHORT_ADDRESS_FALLBACK,
-        )
+        ) ?? nameAddressTarget(req.nextUrl.pathname, routing.locales, routing.defaultLocale, SHORT_ADDRESS_NAMES))
       : null;
   const res = shortTarget ? shortAddressRedirect(req, shortTarget) : handler(req);
   if (isCountablePageviewRequest(req)) {
-    // A short-address redirect counts as the 'short' template (owner, card
-    // d3, 2026-09-26: "one number a day, nothing about who"): which bill it
-    // named is dropped here like every other path segment.
+    // A short-address redirect, by number or by name, counts as the 'short'
+    // template (owner, card d3, 2026-09-26: "one number a day, nothing about
+    // who"): which address and which bill are dropped here like every other
+    // path segment.
     const surface: PageviewSurface = shortTarget ? 'short' : pageviewSurfaceForPath(req.nextUrl.pathname, routing.locales);
     try {
       event.waitUntil(notePageview(surface).catch(() => {}));
