@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-14T17:58:03.837Z",
+    "fetched_at": "2026-11-14T19:49:36.817Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-14T17:58:03.837Z"
+        "checked_at": "2026-11-14T19:49:36.817Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-08",
         "week_label": "Most-Viewed Bills - Week of November 8, 2026",
         "entries": 6,
-        "checked_at": "2026-11-14T17:58:03.837Z"
+        "checked_at": "2026-11-14T19:49:36.817Z"
       },
       "leans": {
         "center": {
@@ -1279,7 +1279,14 @@
           "url": "https://news.google.com/rss/articles/CBMijwFBVV95cUxPTVY3SElZaUJyVVU4NFV2RXI4aVFRdVgzRWgxeEF1ckJxM1FaR3lTU00yNE1jamZ1ZHFFSzhGMEZHSWtSY3I2NXVxZ3RqVXZPZEktdHJPR19WcXh1RHJHdk9Vc3dBNnMtakFsM1AtSFpJYm02bDFaZHg4U0g3ZXhKQzN1VWNPSWl1cEtGMklUaw?oc=5"
         }
       ],
-      "unratedOutlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "kfgo.com",
+          "firstSeen": "2026-11-14",
+          "lastSeen": "2026-11-14",
+          "url": "https://news.google.com/rss/articles/CBMingFBVV95cUxQcFhJbk5JM1pSWUJVcnZaWjllb2VCYWE0Z19oWmo0c1hDbUVvQUliM243Q3lZc0xfSUhVNUw5bHUxTW5KTkVfR3dmTFBlVWdHbDF3QU5RLVdxVlN1aERCVmc4MENlSGpNQ1NNaUhUODU5UzJfLU9wN3BaMWFwX0l4aURab0VsNWV0dmxNN3FNMnVaZzQxMlJyUEl1NFByUQ?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "s-4528-119": {
