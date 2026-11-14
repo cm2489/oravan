@@ -309,6 +309,72 @@ function withId(momentId, update) {
   };
 }
 
+/* ------------------------------------------------------------------ *
+ * THE RECORD'S OWN SAME-DAY ORDER (owner, 2026-11-14, answer 89 a: "Store
+ * each action's position as the record lists it at intake … and order
+ * same-day items by it from then on. Past items keep today's order.").
+ *
+ * WHAT THE SOURCE GIVES. Congress.gov's /bill/{congress}/{type}/{n}/actions
+ * returns one `actions` array, NEWEST FIRST: actionDate never increases down
+ * the list. Read on every saved response in the repo
+ * (tests/fixtures/congress-actions-*.json, five bills) and on seven fetched
+ * 2026-09-30; tests/moment-updates-record-order.unit.spec.ts pins it on the
+ * S. 4668 fixture. Inside one day the list keeps an order of its own (for
+ * S. 4668 on 2026-09-17: the motion to proceed considered, then agreed to,
+ * then the measure laid before the Senate, the recommit motion made, and the
+ * cloture motion presented, read from the bottom up). The API does not
+ * document that order as chronological; it is the record's order, and it is
+ * the only order the record gives, so it is the one stored.
+ *
+ * WHAT IS STORED. `record.day_position`: how many actions of the SAME
+ * actionDate the list places below this one. 0 is the action the record lists
+ * last on that day (its first that day); each later one counts up. Counted
+ * within the day, not across the whole list, so it does not move when the
+ * record adds actions on a later day (they arrive at the top) or edits a row
+ * on another day; only an edit inside the same day can shift it.
+ *
+ * WHEN NOTHING IS STORED (fail closed: the row keeps the old order, never a
+ * guessed one). The list is not newest first, so it is not the shape read
+ * above; an action with no date; and, on a page the API cut short (its
+ * `pagination.count` says more actions exist than it returned), the page's
+ * OLDEST day, which may continue on the next page.
+ * ------------------------------------------------------------------ */
+
+/**
+ * Each action's `day_position`, index for index with `actions`, or null where
+ * none is stored (see above). Pure.
+ *
+ * @param {Record<string, any>[]} actions a Congress.gov /actions array, as returned
+ * @param {{ total?: number|null }} [opts] `total`: the response's pagination.count
+ * @returns {(number|null)[]}
+ */
+export function recordDayPositions(actions, { total = null } = {}) {
+  const list = Array.isArray(actions) ? actions : [];
+  const dayOf = (a) => {
+    const d = String(a?.actionDate ?? '').slice(0, 10);
+    return /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : null;
+  };
+  const days = list.map(dayOf);
+  const dated = days.filter(Boolean);
+  for (let i = 1; i < dated.length; i++) {
+    if (dated[i] > dated[i - 1]) return list.map(() => null);
+  }
+  const cutShort = Number.isInteger(total) && total > list.length;
+  const oldestDay = dated.length ? dated[dated.length - 1] : null;
+  /** @type {Map<string, number>} actions of each day seen so far, from the bottom */
+  const below = new Map();
+  const out = new Array(list.length).fill(null);
+  for (let i = list.length - 1; i >= 0; i--) {
+    const day = days[i];
+    if (!day) continue;
+    const n = below.get(day) ?? 0;
+    below.set(day, n + 1);
+    if (cutShort && day === oldestDay) continue;
+    out[i] = n;
+  }
+  return out;
+}
+
 /**
  * One Congress.gov action -> one update candidate, or null.
  *
@@ -321,9 +387,14 @@ function withId(momentId, update) {
  * The roll-call URL rides the payload and becomes a second ref — the
  * falsifiability §2.4 promises: one tap from our sentence to the tally.
  *
- * @param {{momentId: string, vehicle: string, action: Record<string, any>, billUrl?: string, recordedAt?: string}} args
+ * `dayPosition` (2026-11-14) is the action's place among its own day's
+ * actions in Congress.gov's list, from recordDayPositions below. Stored as
+ * `record.day_position` when it is a whole number; null or absent stores
+ * nothing, and the row keeps the order every row had before.
+ *
+ * @param {{momentId: string, vehicle: string, action: Record<string, any>, billUrl?: string, recordedAt?: string, dayPosition?: number|null}} args
  */
-export function actionToCandidate({ momentId, vehicle, action, billUrl, recordedAt }) {
+export function actionToCandidate({ momentId, vehicle, action, billUrl, recordedAt, dayPosition = null }) {
   const klass = classifyAction(action);
   if (!klass) return null;
   const day = String(action?.actionDate ?? '').slice(0, 10);
@@ -340,6 +411,7 @@ export function actionToCandidate({ momentId, vehicle, action, billUrl, recorded
     source_system: action.sourceSystem?.name ?? null,
   };
   if (roll) record.roll_call = { chamber: roll.chamber, number: roll.number };
+  if (Number.isInteger(dayPosition) && dayPosition >= 0) record.day_position = dayPosition;
   if (!record.action_text) return null;
 
   return withId(momentId, {

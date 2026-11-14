@@ -176,6 +176,7 @@ import {
 } from '../lib/moment-updates-gate.mjs';
 import {
   actionToCandidate,
+  recordDayPositions,
   billLabel,
   congressGovUrlForSlug,
   dailyEventCount,
@@ -415,6 +416,7 @@ async function collectVehicleActions() {
     }
 
     let actions;
+    let total = null;
     try {
       // The vehicle's OWN Congress, from its slug (vehicleActionsPath,
       // 2026-11-12): never the tracked number, which after the switch would
@@ -422,14 +424,19 @@ async function collectVehicleActions() {
       // A slug with no Congress throws here and is skipped like any failed fetch.
       const page = await cg(vehicleActionsPath(slug), { limit: 250 });
       actions = page.actions ?? [];
+      total = Number.isInteger(page.pagination?.count) ? page.pagination.count : null;
     } catch (e) {
       console.error(`  actions ${slug} FAILED: ${e.message}`);
       continue;
     }
 
+    // The record's own same-day order, read off this response's list
+    // (recordDayPositions, 2026-11-14). Null where the list is not the shape
+    // it is read as, so those rows keep the old order.
+    const positions = recordDayPositions(actions, { total });
     const momentIds = vehicles.filter((v) => v.slug === slug).map((v) => v.momentId);
     let kept = 0;
-    for (const action of actions) {
+    for (const [index, action] of actions.entries()) {
       const day = String(action?.actionDate ?? '').slice(0, 10);
       if (!day) continue;
       // Never collect an event the very next prune would delete, and never a
@@ -442,6 +449,7 @@ async function collectVehicleActions() {
           action,
           billUrl: congressGovUrlForSlug(slug),
           recordedAt: nowISO,
+          dayPosition: positions[index],
         });
         if (!c) continue;
         push(out, momentId, c);
