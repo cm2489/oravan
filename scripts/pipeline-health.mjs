@@ -77,6 +77,7 @@ import {
   producerStillRunning,
   refusedSummaries,
   parseRecheckTrouble,
+  recheckFindings,
   recheckHeldRows,
   runThatWroteCursor,
 } from '../lib/pipeline-health.mjs';
@@ -568,7 +569,13 @@ export function buildReport({ now = Date.now() } = {}) {
     // questions only, when data/moments.json was read.
     // The nightly record re-check: a refusal or a throw from the night's log,
     // and the rows it holds from the committed file.
-    recheck: { ...(recheckTrouble ?? { refused: null, failed: false, acceptMalformed: false }), held: recheckHeldRows(readJsonFile('data/moment-updates.json')) },
+    recheck: {
+      ...(recheckTrouble ?? { refused: null, failed: false, acceptMalformed: false, zeroChecked: false, reported: 0 }),
+      held: recheckHeldRows(readJsonFile('data/moment-updates.json')),
+      // What the comparison still has unresolved, across nights (first-seen
+      // dates and streaks), from its own committed file.
+      findings: recheckFindings(readJsonFile('data/record-recheck-report.json'), { now }),
+    },
     summaryRefusals: refusedSummaries(readJsonFile('data/moment-updates.json'), {
       liveIds: moments ? Object.entries(moments).filter(([, m]) => m?.status === 'live').map(([id]) => id) : null,
     }),

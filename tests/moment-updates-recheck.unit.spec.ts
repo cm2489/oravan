@@ -27,6 +27,7 @@ import {
   computeUpdateId,
   liveUpdates,
   lintUpdateText,
+  pruneEntry,
   recheckFieldProblems,
 } from '../lib/moment-updates-gate.mjs';
 import {
@@ -39,7 +40,9 @@ import {
   heldRows,
   isHeld,
   judgeBill,
+  nextRecheckReport,
   parseAcceptFile,
+  recheckReportProblems,
   releaseHeldRow,
   voteFrame,
   listProblem,
@@ -60,8 +63,10 @@ import {
   recheckSummaryMarkdown,
   recollectDayCandidates,
   recordMovedSince,
+  writeStaleRecheckFallbacks,
+  writeSummaries,
 } from '../scripts/moment-updates.mjs';
-import { alarms, formatHealthAlarmComment, parseRecheckTrouble, recheckHeldRows } from '../lib/pipeline-health.mjs';
+import { alarms, formatHealthAlarmComment, parseRecheckTrouble, recheckFindings, recheckHeldRows } from '../lib/pipeline-health.mjs';
 
 // The rows are the stored JSON shape, read loosely, as the gate itself reads them.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -426,7 +431,7 @@ test.describe('round 3: trouble reaches a person', () => {
     expect(t.refused).toMatch(/^every one of s-4668-119/);
     expect(t.failed).toBe(true);
     expect(t.acceptMalformed).toBe(true);
-    expect(parseRecheckTrouble('nothing to see')).toEqual({ refused: null, failed: false, acceptMalformed: false });
+    expect(parseRecheckTrouble('nothing to see')).toEqual({ refused: null, failed: false, acceptMalformed: false, zeroChecked: false, reported: 0 });
   });
 
   test('each becomes a ⛔ alarm on the standing issue, and a held row does too', () => {
@@ -855,10 +860,10 @@ test.describe('the runner', () => {
         s = next;
       },
     );
-    expect(out).toEqual({ failed: 'threw', corrected: [], recollect: [] });
+    expect(out).toEqual({ failed: 'threw', mode: null, corrected: [], recollect: [] });
     expect(s).toEqual({ a: 1 });
-    expect(await guardedRecheck(async () => ({ refused: 'x', corrected: [{ momentId: 'm', id: 'u' }], recollect: [] }), () => s, () => {})).toEqual({ failed: 'refused', corrected: [], recollect: [] });
-    expect(await guardedRecheck(async () => ({ refused: null, corrected: [{ momentId: 'm', id: 'u' }], recollect: [] }), () => s, () => {})).toEqual({ failed: null, corrected: [{ momentId: 'm', id: 'u' }], recollect: [] });
+    expect(await guardedRecheck(async () => ({ mode: 'apply', refused: 'x', corrected: [{ momentId: 'm', id: 'u' }], recollect: [] }), () => s, () => {})).toEqual({ failed: 'refused', mode: 'apply', corrected: [], recollect: [] });
+    expect(await guardedRecheck(async () => ({ mode: 'apply', refused: null, corrected: [{ momentId: 'm', id: 'u' }], recollect: [] }), () => s, () => {})).toEqual({ failed: null, mode: 'apply', corrected: [{ momentId: 'm', id: 'u' }], recollect: [] });
   });
 
   test('main() runs the re-check AFTER the night\'s collection is merged and pruned, and BEFORE the summaries', () => {
@@ -876,9 +881,11 @@ test.describe('the runner', () => {
 
   test('the step summary names every change', () => {
     const md = recheckSummaryMarkdown(run(store()));
-    expect(md).toContain('Was "The committee substitute withdrawn by Voice Vote."');
-    expect(md).toContain('now "The committee substitute tabled by Voice Vote."');
-    expect(md).toContain('left: paying-college-athletes/u_682cca41');
+    expect(md).toContain("| corrected to the record's words | paying-college-athletes | u_d5eaf6d9 → u_5e188495 | 2026-09-24 | The committee substitute withdrawn by Voice Vote. | The committee substitute tabled by Voice Vote. |");
+    expect(md).toContain('| left as it is | paying-college-athletes | u_682cca41 | 2026-09-17 | Cloture motion on amendment SA 6776 presented in Senate. |');
+    const report = recheckSummaryMarkdown(run(store()), { mode: 'report' });
+    expect(report).toContain('Report only: nothing in data/moment-updates.json was changed.');
+    expect(report).toContain('| would correct | paying-college-athletes |');
   });
 });
 
@@ -888,4 +895,175 @@ test('the committed file carries no malformed re-check field', () => {
     if (id === '_meta') continue;
     for (const u of entry.updates) expect(recheckFieldProblems(u, TODAY), `${id}/${u.id}`).toEqual([]);
   }
+});
+
+test.describe('round 4: the report file, the alarms, and the apply-mode fixes', () => {
+  const r0 = run(store());
+
+  test('nextRecheckReport: what would change and what is left, each with what the record holds now and the day first seen', () => {
+    const notApplied = nextRecheckReport(null, r0, { today: TODAY, applied: false });
+    expect(Object.keys(notApplied.rows)).toEqual(['paying-college-athletes/u_682cca41', 'paying-college-athletes/u_d5eaf6d9']);
+    expect(notApplied.rows['paying-college-athletes/u_d5eaf6d9']).toMatchObject({ first_seen: TODAY, verdict: 'would-correct', stored: 'The committee substitute withdrawn by Voice Vote.', record: 'The committee substitute tabled by Voice Vote.' });
+    expect(recheckReportProblems(notApplied)).toEqual([]);
+    // Applied: the corrected row is no longer a finding; the left row still is.
+    expect(Object.keys(nextRecheckReport(null, r0, { today: TODAY, applied: true }).rows)).toEqual(['paying-college-athletes/u_682cca41']);
+    // A later night keeps the first-seen day; a resolved row drops out.
+    const later = nextRecheckReport(notApplied, r0, { today: '2026-11-20', applied: false });
+    expect(later.rows['paying-college-athletes/u_d5eaf6d9'].first_seen).toBe(TODAY);
+    expect(JSON.stringify(later)).toBe(JSON.stringify(notApplied)); // nothing new: the file does not change
+  });
+
+  test('item 1: a bill not checked keeps a streak, and every list failing is recorded as zero checked', () => {
+    const none = run(store(), new Map());
+    expect(none.checked).toBe(0);
+    expect(none.recheckable).toBeGreaterThan(0);
+    const n1 = nextRecheckReport(null, none, { today: '2026-11-14', applied: false });
+    const n2 = nextRecheckReport(n1, none, { today: '2026-11-15', applied: false });
+    const n3 = nextRecheckReport(n2, none, { today: '2026-11-16', applied: false });
+    expect(n3.unchecked[VEHICLE]).toMatchObject({ since: '2026-11-14', last: '2026-11-16' });
+    expect(n3.zero_checked).toEqual({ since: '2026-11-14', last: '2026-11-16' });
+    const morning = (file: Row, day: string) => recheckFindings(file, { now: Date.parse(`${day}T13:00:00Z`) });
+    // One night: nothing is raised. Two nights of nothing checked: the silent alarm. Three nights: the bill alarm too.
+    const codes = (file: Row, day: string) => alarms({ nightly: { conclusion: 'success' }, recheck: { findings: morning(file, day) } }).map((a: Row) => a.code);
+    expect(codes(n1, '2026-11-15')).not.toContain('record-recheck-silent');
+    expect(codes(n1, '2026-11-15')).not.toContain('record-recheck-unchecked');
+    expect(codes(n2, '2026-11-16')).toContain('record-recheck-silent');
+    expect(codes(n2, '2026-11-16')).not.toContain('record-recheck-unchecked');
+    expect(codes(n3, '2026-11-17')).toContain('record-recheck-unchecked');
+    // A night that checks again ends both streaks.
+    const back = nextRecheckReport(n3, run(store()), { today: '2026-11-17', applied: false });
+    expect(back.unchecked).toEqual({});
+    expect(back.zero_checked).toBeUndefined();
+  });
+
+  test('item 2: a new finding is NAMED once (page, stored words, what the record holds), then counted each day while it lasts', () => {
+    const file = nextRecheckReport(null, r0, { today: '2026-11-14', applied: true });
+    const day1 = alarms({ nightly: { conclusion: 'success' }, recheck: { findings: recheckFindings(file, { now: Date.parse('2026-11-15T13:00:00Z') }) } });
+    const named = day1.find((a: Row) => a.code === 'record-recheck-new')!;
+    expect(named.text).toContain('paying-college-athletes/u_682cca41 on /questions/paying-college-athletes (2026-09-17): stored "Cloture motion on amendment SA 6776 presented in Senate."');
+    expect(named.text).toContain('the record holds now');
+    expect(named.text).toContain('docs/runbooks/record-recheck.md');
+    const day3 = alarms({ nightly: { conclusion: 'success' }, recheck: { findings: recheckFindings(file, { now: Date.parse('2026-11-17T13:00:00Z') }) } });
+    expect(day3.map((a: Row) => a.code)).toEqual(expect.arrayContaining(['record-recheck-open']));
+    expect(day3.map((a: Row) => a.code)).not.toContain('record-recheck-new');
+    expect(day3.find((a: Row) => a.code === 'record-recheck-open')!.text).toMatch(/^1 stored timeline line\(s\) still differ/);
+  });
+
+  test('pipeline-health on five logs: report-only, refusal, zero-checked, left-row, and an ordinary night that raises nothing', () => {
+    const reportLog = '::notice::moment-updates record re-check REPORT: would correct paying-college-athletes/u_d5eaf6d9 (s-4668-119 2026-09-24, /questions/paying-college-athletes) — stored: "a" — the record holds now: "b"';
+    const refusalLog = '##[error]moment-updates record re-check refused: 5 rows would be corrected, withdrawn or held in one night. Nothing was changed; see the runbook.';
+    const zeroLog = '##[error]moment-updates record re-check checked 0 of 23 re-checkable row(s) tonight: every list failed or was rejected (s-4668-119: x)';
+    const leftLog = '##[warning]moment-updates record re-check REPORT: left paying-college-athletes/u_682cca41 (s-4668-119 2026-09-17, /questions/paying-college-athletes) — stored: "a" — the record holds now: "b" — why';
+    const ordinary = 'record re-check (apply): 18 of 23 re-checkable stored row(s) checked on 4 bill(s) and 0 amendment(s); 0 changed, 0 left as they are\nDONE: no change';
+    expect(parseRecheckTrouble(reportLog)).toMatchObject({ reported: 1, refused: null, zeroChecked: false });
+    expect(parseRecheckTrouble(refusalLog).refused).toBe('5 rows would be corrected, withdrawn or held in one night');
+    expect(parseRecheckTrouble(zeroLog).zeroChecked).toBe(true);
+    expect(parseRecheckTrouble(leftLog).reported).toBe(1);
+    expect(parseRecheckTrouble(ordinary)).toEqual({ refused: null, failed: false, acceptMalformed: false, zeroChecked: false, reported: 0 });
+    const quiet = { schema: 1, rows: {}, unchecked: {} };
+    const raised = alarms({ nightly: { conclusion: 'success' }, recheck: { ...parseRecheckTrouble(ordinary), held: [], findings: recheckFindings(quiet, { now: NOW }) } });
+    expect(raised.filter((a: Row) => a.code.startsWith('record-recheck'))).toEqual([]);
+    expect(alarms({ nightly: { conclusion: 'success' }, recheck: { ...parseRecheckTrouble(refusalLog), held: [], findings: null } }).map((a: Row) => a.code)).toContain('record-recheck-refused');
+  });
+
+  test('the report file shape is enforced, and absent is fine', () => {
+    expect(recheckReportProblems(undefined)).toEqual([]);
+    expect(recheckReportProblems({ schema: 1, rows: { bad: {} }, unchecked: {} }).length).toBeGreaterThan(0);
+    expect(recheckReportProblems({ schema: 1, rows: {}, unchecked: { x: { since: '2026-11-15', last: '2026-11-14', why: '' } } }).length).toBe(1);
+    expect(recheckFindings({ schema: 2 }, { now: NOW })).toBeNull();
+    expect(recheckReportProblems({ schema: 2, rows: {}, unchecked: {} })).toEqual([`data/record-recheck-report.json.schema: must be 1`]);
+  });
+
+  test('item 3: the follow-up runs under the same restore-and-report: a forced throw restores the store and names the stage', async () => {
+    let s: Row = { a: 1 };
+    const errors: string[] = [];
+    const orig = console.error;
+    console.error = (m: string) => errors.push(String(m));
+    try {
+      const out = await guardedRecheck(
+        async () => {
+          s = { a: 'half-done' };
+          throw new Error('decode exploded');
+        },
+        () => s,
+        (next: Row) => {
+          s = next;
+        },
+        'record re-check follow-up',
+      );
+      expect(out.failed).toBe('threw');
+    } finally {
+      console.error = orig;
+    }
+    expect(s).toEqual({ a: 1 });
+    expect(errors.join('\n')).toContain('moment-updates record re-check follow-up failed and changed nothing');
+    expect(parseRecheckTrouble(errors.join('\n')).failed).toBe(true);
+    const src = readFileSync(join(process.cwd(), 'scripts/moment-updates.mjs'), 'utf8');
+    expect(src).toMatch(/guardedRecheck\(\s*async \(\) => \{\s*if \(recheck\.corrected\.length\) pruneStore[\s\S]*?await recheckFollowUp\(anthropic, recheck\);[\s\S]*?'record re-check follow-up',/);
+  });
+
+  test('item 4: when the rewrite of a stale model summary does not land (the call fails), the record-only sentence is written that night', async () => {
+    const day = '2026-09-16';
+    const u = said('Motion to proceed withdrawn in Senate.', { day });
+    const actions = newestFirst([...RECORD_NOW.filter((a) => a.actionDate !== day), senate(day, 'Motion to proceed tabled in Senate.')]);
+    const rev = { ...REVISION, generated_at: '2026-11-13T12:00:00Z', grounded_in: { vehicle_statuses: { [VEHICLE]: 'floor_vote' }, update_ids: [u.id] } };
+    const after = run(store([u, ...HELD], [rev]), lists(actions)).store;
+    expect(recheckPendingIds(after[MOMENT]).length).toBe(1);
+    const moments = { [MOMENT]: { status: 'live', vehicles: [{ slug: VEHICLE }] } };
+    const bills = new Map([[VEHICLE, { status: 'floor_vote', last_action_text: 'x', last_action_date: '2026-09-24', bill_type: 's' }]]);
+    const plan = planSummaries({ mode: 'nightly', moments, store: after, billBySlug: bills, now: Date.parse('2026-11-15T02:00:00Z'), unsupportedStatus: () => false });
+    expect(plan[0].reason).toContain('record re-check');
+    const failing = { messages: { create: async () => { throw new Error('model down'); } } };
+    await writeSummaries({ plan, store: after, moments, anthropic: failing, cap: 8 });
+    expect(after[MOMENT].summary_revisions.at(-1).model).not.toBe('record-only');
+    expect(writeStaleRecheckFallbacks({ plan, store: after, moments })).toBe(1);
+    const last = after[MOMENT].summary_revisions.at(-1);
+    expect(last.model).toBe('record-only');
+    expect(last.text.en).toBeTruthy();
+    expect(last.text.es).toBeTruthy();
+    expect(recheckPendingIds(after[MOMENT])).toEqual([]);
+    expect(writeStaleRecheckFallbacks({ plan, store: after, moments })).toBe(0);
+    // main() runs it right after writeSummaries, every night.
+    const src = readFileSync(join(process.cwd(), 'scripts/moment-updates.mjs'), 'utf8');
+    const body = src.slice(src.indexOf('async function main()'));
+    expect(body).toMatch(/await writeSummaries\(\{[^}]*\}\);\s*\/\/[\s\S]{0,400}?const fallbacks = writeStaleRecheckFallbacks\(\{ plan, store, moments \}\);/);
+  });
+
+  test('item 5: re-collection never adds an action a stored row of the bill already quotes on another day', () => {
+    const moved = said('Cloture motion on amendment SA 6776 to the measure presented in Senate, as modified by unanimous consent.', { day: '2026-09-17' });
+    const actions = newestFirst([...RECORD_NOW, senate('2026-09-18', moved.record.action_text)]);
+    const got = recollectDayCandidates([{ momentId: MOMENT, vehicle: VEHICLE, day: '2026-09-18', list: list(actions) }], store([moved, ...HELD], []), { now: new Date(NOW), recordedAt: new Date(NOW).toISOString(), room: 40 });
+    expect(got.map((c: Row) => c.record.action_text)).not.toContain(moved.record.action_text);
+  });
+
+  test('confirm: a held row whose record words later change beyond the rewording rule is left (still hidden) and reported; changed out of reach, it is withdrawn', () => {
+    const day = '2026-09-16';
+    const u = said('Motion to proceed withdrawn in Senate.', { day });
+    const first = newestFirst([...RECORD_NOW.filter((a) => a.actionDate !== day), senate(day, 'Motion to proceed tabled in Senate.')]);
+    const held = run(store([u, ...HELD], []), lists(first), { lintText: () => ['x'] });
+    const heldId = held.changes[0].newId;
+    const near = newestFirst([...RECORD_NOW.filter((a) => a.actionDate !== day), senate(day, 'Motion to proceed rejected in Senate.')]);
+    const n2 = run(held.store, lists(near));
+    expect(n2.changes).toEqual([]);
+    expect(isHeld(byId(n2.store, heldId))).toBe(true);
+    expect(n2.leftRows.map((l: Row) => l.id)).toEqual([heldId]);
+    expect(nextRecheckReport(null, n2, { today: TODAY, applied: true }).rows[`${MOMENT}/${heldId}`].verdict).toBe('left');
+    const far = newestFirst([...RECORD_NOW.filter((a) => a.actionDate !== day), senate(day, 'Something else entirely happened in the Senate today.')]);
+    const n3 = run(held.store, lists(far));
+    expect(n3.changes.map((c: Row) => c.kind)).toEqual(['withdrawn']);
+  });
+
+  test('confirm and fix: hidden rows do not count toward the 12-a-day ceiling, so they never crowd out a live row', () => {
+    const day = '2026-09-17';
+    const live = Array.from({ length: 12 }, (_, i) => said(`Live action ${i} presented in Senate.`, { day }));
+    const hidden: Row[] = Array.from({ length: 3 }, (_, i) => ({ ...said(`Hidden action ${i} in Senate.`, { day, class: 'vote' }), withdrawn_on: TODAY, rechecks: [{ on: TODAY, at: new Date(NOW).toISOString(), outcome: 'withdrawn' }] }));
+    const pruned = pruneEntry({ updates: [...hidden, ...live], summary_revisions: [] }, { now: NOW })!;
+    const ids = pruned.updates.map((u: Row) => u.id);
+    for (const u of live) expect(ids).toContain(u.id);
+    for (const u of hidden) expect(ids).toContain(u.id);
+    expect(verifyMomentUpdates({ updates: store(pruned.updates, []), now: NOW }).failures.filter((f: string) => f.includes('per-day'))).toEqual([]);
+    const moments = readJson('data/moments.json');
+    const slugs = new Set((readJson('data/bills.json') as { full_identifier: string }[]).map((b) => b.full_identifier));
+    expect(checkMomentUpdates(store(pruned.updates, []), moments, slugs, { now: NOW }).violations.filter((v: string) => v.includes('per-day storage ceiling'))).toEqual([]);
+  });
 });

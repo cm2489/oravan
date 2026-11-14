@@ -4,9 +4,18 @@ Each night the Moment-updates collector (`scripts/moment-updates.mjs`, nightly m
 
 Owner's decision behind it: answer 92 a, 2026-11-14 — *"A nightly re-check of every stored update text against the record: a line the record no longer holds is corrected to the record's words or marked withdrawn, and the run says so."*
 
+## The switch: report only, or apply
+
+`RECHECK_MODE` in `lib/moment-updates-recheck.mjs` is one committed line.
+
+- **`'report'` (as shipped, 2026-11-14): report only.** The nightly comparison runs in full and writes nothing to `data/moment-updates.json`. It lists every stored line it would change and every line it would leave, with what the record holds now, in the log, in the step summary's table, and in `data/record-recheck-report.json`. Pipeline-health raises them as alarms (below).
+- **`'apply'`: automatic correction.** The comparison corrects, withdraws or holds lines as its rules say, and still reports what it leaves.
+
+Turning correction on is a one-line pull request changing `'report'` to `'apply'`, merged only after an independent check has passed the automatic correction.
+
 ## What a normal night looks like
 
-The step "Collect Moment updates (Moments v2 live layer, nightly)" logs one line, `record re-check: N stored row(s) checked …, 0 change(s)`. On a night with a change, the log and the step summary name every row: corrected (old words, new words, old and new id), withdrawn, held, or reinstated. Each changed row keeps a `rechecks` log in `data/moment-updates.json`, so the change can be read back later.
+The step "Collect Moment updates (Moments v2 live layer, nightly)" logs one line, `record re-check (REPORT ONLY …)` or `record re-check (apply)`, with how many stored lines it checked, how many would change or changed, and how many it left. On a night with a change, the log and the step summary name every row: corrected (old words, new words, old and new id), withdrawn, held, or reinstated. Each changed row keeps a `rechecks` log in `data/moment-updates.json`, so the change can be read back later.
 
 ## When the step goes red
 
@@ -65,8 +74,23 @@ While a row is held, every nightly run prints a warning naming it (`… is HELD 
 
 ## How trouble reaches a person
 
-The collector's step is `continue-on-error`, so the nightly run stays green when the re-check refuses, throws or holds a row. The daily pipeline-health report (`daily-metrics.yml`, `scripts/pipeline-health.mjs`) reads the nightly's log and the committed file, and posts a ⛔ alarm comment on its standing `pipeline-health` issue for each: a refusal (with its reason), a re-check that threw, a malformed accept list, and every held row.
+The collector's step is `continue-on-error`, so the nightly run stays green whatever the comparison finds. The daily pipeline-health report (`daily-metrics.yml`, `scripts/pipeline-health.mjs`) reads the nightly's log, `data/moment-updates.json` and `data/record-recheck-report.json`, and posts a ⛔ alarm comment on its standing `pipeline-health` issue for:
 
-## Lines left as they are
+- **lines that differ from the record** (would-correct, would-withdraw, or left as they are): each one is **named** the morning after it is first found, with its page, the stored words and what the record holds now; after that the alarm gives a daily **count** while it lasts;
+- **a bill not checked 3 nights running** (its list failed or was rejected; one or two flaky nights raise nothing);
+- **nothing checked at all for 2 nights running** while there are lines to check (every list failing: the comparison has gone quiet);
+- a refused night (apply mode), a re-check or follow-up that threw, a malformed accept list, and every held row.
+
+## A line left as it is, or reported while correction is off
+
+The alarm names the line: its question (`/questions/<id>`), its row id, the stored words, and what the record holds now. To correct it by hand:
+
+1. Open the bill's "All Actions" on congress.gov and confirm what the record says on that date.
+2. In a pull request that edits nothing else in `data/moment-updates.json`, on that row:
+   - **reworded:** set `record.action_text` to the record's words exactly; set `text.en` and `text.es` to one plain sentence each stating them (or the record's words, quoted, with the Spanish frame `Registro oficial, en inglés: "…"`), `"ai": false`. The row's `id` must then be the one its content hashes to: run `node scripts/check-moment-updates.mjs`, and if it names the expected id, use that id and change every `grounded_in.update_ids` entry that named the old one;
+   - **gone from the record:** add `"withdrawn_on": "<today, ET>"` and `"rechecks": [{ "on": "<today, ET>", "at": "<now, ISO>", "outcome": "withdrawn" }]`.
+3. Run `node scripts/check-moment-updates.mjs` (it must pass) and merge. The line drops out of the report the next night.
+
+## Lines left as they are (detail)
 
 A warning `record re-check: … left as it is — …` means the re-check saw a difference it would not resolve by itself: two possible matches, a change that would alter an outcome, a number or a chamber, an action that moved to another date, a list missing that day, or a line naming an amendment whose own record could not be read. The stored line stays as it is. If the record really changed it, correct it by hand in a reviewed pull request that edits nothing else.

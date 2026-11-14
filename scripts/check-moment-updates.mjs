@@ -27,7 +27,7 @@
 import { readFileSync, statSync, existsSync } from 'node:fs';
 import { checkMomentUpdates, CLASS_PRIORITY, UPDATE_CLASSES } from '../lib/moment-updates-gate.mjs';
 import { PRESS_ALLOWLIST_PATH, loadPressOutletPolicy } from '../lib/press-outlets.mjs';
-import { RECHECK_ACCEPT_PATH, parseAcceptFile } from '../lib/moment-updates-recheck.mjs';
+import { RECHECK_ACCEPT_PATH, RECHECK_REPORT_PATH, parseAcceptFile, recheckReportProblems } from '../lib/moment-updates-recheck.mjs';
 
 // The priority table and the class list must never drift apart: a class with
 // no priority silently sorts last and can be crowded out of its own day.
@@ -88,6 +88,14 @@ for (const p of pressPolicy.problems) violations.push(`${PRESS_ALLOWLIST_PATH}: 
 // written for would accept nothing.
 if (existsSync(url(RECHECK_ACCEPT_PATH))) {
   for (const p of parseAcceptFile(readFileSync(url(RECHECK_ACCEPT_PATH), 'utf8')).problems) violations.push(p);
+}
+// The comparison's report file (pipeline-health reads it): well-formed or absent.
+if (existsSync(url(RECHECK_REPORT_PATH))) {
+  try {
+    for (const p of recheckReportProblems(read(RECHECK_REPORT_PATH))) violations.push(p);
+  } catch (e) {
+    violations.push(`${RECHECK_REPORT_PATH}: is not valid JSON (${e.message})`);
+  }
 }
 
 for (const w of warnings) console.warn(`::warning::check-moment-updates: ${w}`);
