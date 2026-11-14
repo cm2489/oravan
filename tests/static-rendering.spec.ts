@@ -2,7 +2,12 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
 import { getAllLegislators, getVacancies, vacancySlug } from '../lib/core';
-import { encodeShortAddressIndex, SHORT_ADDRESS_CONGRESS, type ShortAddressBill } from '../lib/short-address';
+import {
+  encodeShortAddressFallback,
+  encodeShortAddressIndex,
+  SHORT_ADDRESS_CONGRESS,
+  type ShortAddressBill,
+} from '../lib/short-address';
 import { briefWindow } from '../lib/today';
 import { voteMembersPath } from '../lib/vote-members-path';
 import { allRollCalls } from '../lib/votes';
@@ -88,13 +93,15 @@ const RENDERED_ON_DEMAND: Record<string, string> = {
  *   bill's page. A redirect cannot be a prerendered page, and generating one
  *   config redirect per bill (~6,450 rules) would be matched in order on
  *   every request and would forward the query string. The proxy instead does
- *   one pattern test and one bit test against a ~3 KB bitset that
- *   next.config.ts builds from data/bills.json at BUILD time. The test below
+ *   one pattern test and at most one bit test per ~3 KB bitset that
+ *   next.config.ts builds from data/bills.json at BUILD time: one for the
+ *   tracked Congress, one per ended Congress the corpus holds (none until
+ *   one is listed). The test below
  *   pins that the corpus itself never enters the proxy bundle.
  */
 const PER_REQUEST_IN_PROXY: Record<string, string> = {
   'lib/short-address.ts':
-    'short addresses for bills: a constant-time bit test against a build-time bitset, ' +
+    'short addresses for bills: at most one constant-time bit test per build-time bitset, ' +
     'answered with a 307; no corpus in the bundle',
 };
 
@@ -247,15 +254,16 @@ test('any re-added loading boundary under [locale] is a client component', () =>
 
 test('the short-address lookup in proxy.ts carries a build-time bitset, never the corpus', () => {
   // Source half: the lookup module imports only lib/congress.mjs (the one
-  // source of the Congress number, since 2026-11-12), which itself imports
-  // nothing, so neither can reach data/; proxy.ts reaches the corpus only
-  // through the build-time bitset.
+  // source of the Congress number and the ended list, since 2026-11-12),
+  // which itself imports nothing, so neither can reach data/; proxy.ts
+  // reaches the corpus only through the build-time bitsets (the tracked
+  // Congress's, and one per ended Congress once one is listed).
   const importsOf = (source: string) =>
     source.split('\n').filter((line) => /^\s*import\s/.test(line));
   for (const file of Object.keys(PER_REQUEST_IN_PROXY)) {
     const source = readFileSync(join(process.cwd(), file), 'utf8');
     expect(importsOf(source), `${file} may import lib/congress.mjs and nothing else`).toEqual([
-      "import { CURRENT_CONGRESS } from './congress.mjs';",
+      "import { CONGRESS_POLICY, CURRENT_CONGRESS } from './congress.mjs';",
     ]);
   }
   const congress = readFileSync(join(process.cwd(), 'lib/congress.mjs'), 'utf8');
@@ -282,13 +290,19 @@ test('the short-address lookup in proxy.ts carries a build-time bitset, never th
   }
 
   // Browser half: nothing of the lookup reaches a file a browser downloads.
-  // Neither the pattern nor the bitset (which `env` would inline wherever
-  // process.env.SHORT_ADDRESS_INDEX is read) is in .next/static.
-  const index = encodeShortAddressIndex(
-    JSON.parse(readFileSync(join(process.cwd(), 'data/bills.json'), 'utf8')) as ShortAddressBill[],
-    SHORT_ADDRESS_CONGRESS,
+  // Neither the pattern nor either bitset (which `env` would inline wherever
+  // process.env.SHORT_ADDRESS_INDEX or SHORT_ADDRESS_FALLBACK is read) is in
+  // .next/static. Right after the January switch the tracked Congress's
+  // table is tiny and the ended Congress's carries the bulk, so the
+  // non-vacuity check is on the two together.
+  const corpus = JSON.parse(readFileSync(join(process.cwd(), 'data/bills.json'), 'utf8')) as ShortAddressBill[];
+  const tables = [encodeShortAddressIndex(corpus, SHORT_ADDRESS_CONGRESS), encodeShortAddressFallback(corpus)].filter(
+    (t) => t !== '',
   );
-  expect(index.length, 'the build-time index is not empty').toBeGreaterThan(100);
+  expect(tables.join('').length, 'the build-time index is not empty').toBeGreaterThan(100);
+  // A table of a few bytes (a new Congress's first bills) is too short to
+  // search for without matching by chance; the long one is the one to find.
+  const searchable = tables.filter((t) => t.length >= 40);
   const staticDir = join(process.cwd(), '.next/static');
   const browserFiles = readdirSync(staticDir, { withFileTypes: true, recursive: true })
     .filter((e) => e.isFile() && /\.(js|json|css|html|txt)$/.test(e.name))
@@ -296,7 +310,12 @@ test('the short-address lookup in proxy.ts carries a build-time bitset, never th
   expect(browserFiles.length, 'the build has browser files to read').toBeGreaterThan(0);
   const leaks = browserFiles.filter((file) => {
     const text = readFileSync(file, 'utf8');
-    return text.includes(marker) || text.includes(index.slice(0, 64)) || text.includes('SHORT_ADDRESS_INDEX');
+    return (
+      text.includes(marker) ||
+      searchable.some((t) => text.includes(t.slice(0, 64))) ||
+      text.includes('SHORT_ADDRESS_INDEX') ||
+      text.includes('SHORT_ADDRESS_FALLBACK')
+    );
   });
   expect(leaks, 'a browser file carries the short-address lookup').toEqual([]);
 });

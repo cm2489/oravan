@@ -151,8 +151,28 @@ Found on 2026-11-13 by simulating the switch: an independent check bumped the tr
   - four fixture tests hard-code 2025 and 2026 days against a policy derived from the tracked Congress (`BEFORE`, `AFTER`, `START_DAY`, `ENDED_DAY`); after the bump those days fall outside the "tracked" term. A fifth, "names the switch the code is aimed at", fails only while the number is bumped and the ended list is still empty; it passes once stage 8 changes both (counted by two independent reviewers who simulated the switch on 2026-11-13; not run on the real switch);
   - "today's sixteen …" compares each day against the tracked Congress's first day, which becomes 2027-01-03;
   - "the ended list is empty" in the "today" block fails by design: it is the tripwire that says this file must be revisited.
-- `tests/short-address.unit.spec.ts` (short bill addresses, #404): its January guard fails on purpose, with an "OWNER DECISION NEEDED" message, until the owner's ruling on what a short address opens in the new Congress is quoted, with its date, in `SHORT_ADDRESS_ROLLOVER_RULING`. It is not the switch's to rewrite: get the ruling first (an independent reviewer simulated the switch on 2026-11-13 and saw four short-address tests fail with that message).
+- `tests/short-address.unit.spec.ts` (short bill addresses, #404): **nothing to change.** The owner ruled on Saturday, Nov 14, 2026, 12:41 PM ET (decision 190). Asked "Once the new Congress starts, which bill should a short address open?", he chose: "The newest Congress, falling back to the ended one when the new one has no such bill yet." That is built and recorded in `SHORT_ADDRESS_ROLLOVER_RULING` (`lib/short-address.ts`). The old guard that failed the switch until he ruled is gone; the tests now pin his rule on fixtures shaped like the switch. Bumping `lib/congress.mjs` and filling the ended list is the whole change for short addresses: the build reads both from there. This includes the first hours of the switch, before the corpus holds any 120th bill: every 119th bill then opens its own page. Checked on 2026-11-14 by simulating the switch on a scratch copy in three states (no 120th bill, a few 120th bills, and today's state; see "Switch day: short addresses" below). From 2029, when more than one Congress has ended, a short address searches them from the most recent backwards: that extension is the orchestrating session's reading of his words, dated 2026-11-14, not his own sentence.
 - `tests/reps-zip-address.spec.ts` (fixes the address answer to NY-12) and `tests/district.spec.ts` (names Daniel S. Goldman, Jerrold Nadler, Charles E. Schumer, Kirsten E. Gillibrand and Nick LaLota) pin sitting members. Both are already on `main`. They fail if one of those members leaves, or if the 120th map moves those addresses.
+
+### 9. Switch day: short addresses
+
+A short address such as `oravan.org/hr1` now opens the 120th Congress's bill when Oravan holds it, and otherwise the 119th's. What the 119th's page shows depends on how the bill stood when the Congress ended: an unfinished bill shows the ended note ("This bill ended with the 119th Congress on January 3, 2027, …"); a bill that became law or was otherwise decided shows its outcome (the law or settled panel), not the ended note. Neither shows a call. Nothing to edit. After the stage 8 pull request is live, try two addresses:
+
+```sh
+curl -s -o /dev/null -w "%{http_code} %{redirect_url}\n" https://oravan.org/hr1
+curl -s -o /dev/null -w "%{http_code} %{redirect_url}\n" https://oravan.org/hr9340
+```
+
+**Proves it worked:** both print `307`. The first ends in `/bills/hr-1-120` once the 120th's H.R. 1 is in the corpus. Until then it ends in `/bills/hr-1-119`, and that page shows H.R. 1 of the 119th as a law (it became law in 2025), not the ended note. The second ends in `/bills/hr-9340-119` until the 120th reaches H.R. 9340. Open the second in a browser: H.R. 9340 of the 119th was unfinished on 2026-11-14, so it should show the ended note (if it was decided before Jan 3, 2027, it shows its outcome instead). A `404` for `hr9340` means the ended table was not built: check that `lib/congress.mjs` lists the 119th as ended and that `data/bills.json` still holds its bills.
+
+**What outlives a number being taken over.** When the 120th Congress reaches a number (say H.R. 9340), the short address moves to the new bill at once: it is never cached. Three things outside Oravan's control can still show the old bill for a while:
+- a browser's history and address-bar suggestions can still offer the old full address (`/bills/hr-9340-119`), which keeps opening the old bill, as promised;
+- Back and Forward can bring back the old page the reader already had open;
+- a chat or social-media link preview of `oravan.org/hr9340` can keep showing the old bill's card for as long as that app keeps its own copy.
+
+Run on 2026-11-14 against the live site (before the switch): `307 …/bills/hr-1-119` and `307 …/bills/hr-9340-119`, as expected. **Not run against the switch itself**: it has not happened. The same two requests on a production build of a scratch copy with the switch simulated gave `/bills/hr-1-120` and `/bills/hr-9340-119` with a few 120th bills in the corpus, and `/bills/hr-1-119` and `/bills/hr-9340-119` with none.
+
+**Undo:** revert the stage 8 pull request; short addresses go back to the 119th with it.
 
 ## A refused week
 

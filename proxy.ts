@@ -2,7 +2,7 @@ import { NextResponse, type NextFetchEvent, type NextRequest } from 'next/server
 import createProxy from 'next-intl/middleware';
 import { routing } from './i18n/routing';
 import { callerIp, noteDistinctAddress } from './lib/ratelimit';
-import { decodeShortAddressIndex, shortAddressTarget } from './lib/short-address';
+import { decodeShortAddressFallback, decodeShortAddressIndex, shortAddressTarget } from './lib/short-address';
 import { isCountablePageviewRequest, notePageview, pageviewSurfaceForPath, type PageviewSurface } from './lib/usage';
 
 // Next.js 16: middleware.ts -> proxy.ts. next-intl's handler still only does
@@ -14,22 +14,28 @@ const handler = createProxy(routing);
  * Short addresses for bills (/hr9340 -> the bill page; lib/short-address.ts
  * carries the full argument). Which bills exist is a ~3 KB bitset that
  * next.config.ts encodes from data/bills.json at BUILD time and inlines here
- * as SHORT_ADDRESS_INDEX; it is decoded once per server instance, and each
- * request costs one pattern test and one bit test. The corpus itself never
- * enters this bundle. This is the one piece of per-request work proxy.ts
- * does beyond locale negotiation and the two counts below, and it is named
- * as such where CLAUDE.md rule 2's exceptions are named
- * (tests/static-rendering.spec.ts).
+ * as SHORT_ADDRESS_INDEX, plus SHORT_ADDRESS_FALLBACK: one more bitset per
+ * ended Congress the corpus holds, most recently ended first (empty, so
+ * absent, until lib/congress.mjs lists an ended Congress). All are decoded
+ * once per server instance, and each request costs one pattern test and at
+ * most one bit test per table (today: one). The corpus itself never enters
+ * this bundle. This is the one
+ * piece of per-request work proxy.ts does beyond locale negotiation and the
+ * two counts below, and it is named as such where CLAUDE.md rule 2's
+ * exceptions are named (tests/static-rendering.spec.ts).
  */
 const SHORT_ADDRESS_INDEX = decodeShortAddressIndex(process.env.SHORT_ADDRESS_INDEX);
+const SHORT_ADDRESS_FALLBACK = decodeShortAddressFallback(process.env.SHORT_ADDRESS_FALLBACK);
 
 /*
  * 307, not 308. A 308 is permanent: browsers cache it with no expiry, so a
  * reader who opened /hr1 once would keep landing on H.R. 1 of the 119th
- * Congress after bill numbers restart in January 2027 (card d2, the owner's
- * decision still to come). A 307 is not cached unless told to be, and
- * `no-store` says so explicitly, so the day the Congress constant changes,
- * every short address follows it. The target is a bare path: the request's
+ * Congress after bill numbers restart in January 2027. Under the owner's
+ * ruling of Nov 14, 2026 (lib/short-address.ts) a short address's target
+ * changes twice in its life: at the switch, and again the day the new
+ * Congress introduces that number. A 307 is not cached unless told to be,
+ * and `no-store` says so explicitly, so every short address follows the
+ * build it is answered by. The target is a bare path: the request's
  * query string is dropped, never forwarded (rule 1: a shared link never
  * carries a stance). `noindex` keeps the short form itself out of search
  * results; the bill page's own canonical URL is unchanged.
@@ -82,7 +88,13 @@ function shortAddressRedirect(req: NextRequest, target: string): NextResponse {
 export default function proxy(req: NextRequest, event: NextFetchEvent) {
   const shortTarget =
     req.method === 'GET' || req.method === 'HEAD'
-      ? shortAddressTarget(req.nextUrl.pathname, routing.locales, routing.defaultLocale, SHORT_ADDRESS_INDEX)
+      ? shortAddressTarget(
+          req.nextUrl.pathname,
+          routing.locales,
+          routing.defaultLocale,
+          SHORT_ADDRESS_INDEX,
+          SHORT_ADDRESS_FALLBACK,
+        )
       : null;
   const res = shortTarget ? shortAddressRedirect(req, shortTarget) : handler(req);
   if (isCountablePageviewRequest(req)) {
