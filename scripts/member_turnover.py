@@ -40,11 +40,49 @@ fixtures, the same split scripts/vacancy_diff.py keeps with process-data.py.
    departed member's page must not read as a live call (hard rule 6).
 
    `served_until` is null when the historical file does not list the member
-   yet (the volunteers who keep it can lag); a later run fills it. The site
-   builds a page only for a record whose `served_until` is the last day of a
-   Congress on lib/congress.mjs's ended list, because that is the only date
-   the approved wording states ("Served in the {chamber} until January 3,
-   2027."). A member who left mid-term keeps a record here and no page.
+   yet (the volunteers who keep it can lag); a later run fills it.
+
+3. WHICH DATES A PAGE MAY PRINT (hard rule 6: no date the record does not
+   hold). The historical file is kept by volunteers, and on 2026-11-13 it was
+   a day off for five of the sixteen members who left the 119th Congress
+   mid-term. So a record carries `served_until_source`:
+
+     - an official source ({"kind": "house-clerk" | "bioguide", "url",
+       "read"}) when the date was set from the Clerk of the House's vacancy
+       list or the Biographical Directory of the United States Congress. The
+       dates come from the committed table data/departure-dates.json, which
+       a person fills from those two places in a pull request (runbook: "A
+       member left mid-term: confirm the date");
+     - null when the date is still the historical file's alone.
+
+   The site (lib/departed-members.ts) gives a mid-term departure a record
+   page ("Served in the House until April 21, 2026.") only with an official
+   source. A NEW mid-term departure is recorded with the file's date and a
+   null source, so it gets no page (the not-found page, as before) until the
+   table confirms it; the refresh says so in its log and opens an issue
+   (attention_report).
+
+   A table entry is applied only to the departure it was written for
+   (official_mismatch): its day must be within a day of the historical
+   file's, and not before the start of the member's last term (so an entry
+   left over from an earlier departure is never reused when a member who
+   returned leaves again). An entry that does not fit, or one for a member
+   who is sitting again, is not applied and is reported.
+
+   WHAT REACHES A PERSON (attention, attention_report), in the run where it
+   happens, through one open issue labeled departure-date-unconfirmed:
+     - a member left this run and the historical file has no day for them
+       yet (they wait; the next runs print only the "undated" warning);
+     - a mid-term day became known this run without an official source:
+       the member left this run with a day, or a record stored without a
+       day got one (the historical file listed them late);
+     - a table entry that does not fit its departure, and a table entry for
+       a sitting member: reported on every run until the table is fixed.
+
+   The change of Congress is told apart by its date: Jan 3 of an odd year
+   (is_term_change_day) is fixed by the Twentieth Amendment and has its own
+   approved sentence, so a record ending that day needs no table entry and
+   is never reported as unconfirmed.
 """
 from datetime import date, timedelta
 from typing import Dict, Iterable, List, Optional, Tuple
@@ -93,6 +131,12 @@ WINDOW_WORDS = (
 # Only these leave the member file when a member leaves; everything that
 # could reach a visitor as a way to contact them is left behind.
 DEPARTED_FIELDS = ('bioguide', 'name', 'first', 'last', 'type', 'state', 'district', 'party')
+# The order every record is written in (a stable file diff).
+RECORD_ORDER = DEPARTED_FIELDS + ('served_until', 'served_until_source', 'left_file')
+SOURCE_KINDS = {
+    'house-clerk': 'https://clerk.house.gov/Members/ViewVacancies',
+    'bioguide': 'https://bioguide.congress.gov/search/bio/',
+}
 FORBIDDEN_FIELDS = ('phone', 'url', 'offices', 'address', 'contact_form', 'lis')
 
 
@@ -270,6 +314,299 @@ def refusal_report(problems: List[str], dropped: List[dict], today: str) -> str:
     return '\n'.join(lines)
 
 
+def is_term_change_day(day: Optional[str]) -> bool:
+    """Jan 3 of an odd year: the day every House term ends (Twentieth
+    Amendment). A departure that day is the change of Congress, not a
+    mid-term departure."""
+    if not day:
+        return False
+    try:
+        d = date.fromisoformat(day)
+    except ValueError:
+        return False
+    return term_change_day(d.year) == d
+
+
+def real_day(v) -> bool:
+    """A real calendar day written YYYY-MM-DD (2026-02-30 is not one)."""
+    import re
+
+    if not (isinstance(v, str) and re.fullmatch(r'\d{4}-\d{2}-\d{2}', v)):
+        return False
+    try:
+        date.fromisoformat(v)
+    except ValueError:
+        return False
+    return True
+
+
+# The fields a data/departure-dates.json entry may carry. `overrides_file_day`
+# is optional and deliberate: see official_mismatch.
+ENTRY_FIELDS = {'bioguide', 'served_until', 'source'}
+ENTRY_OPTIONAL = {'overrides_file_day'}
+
+
+def entry_problems(e) -> List[str]:
+    """Why one table entry cannot be used, or []."""
+    import re
+
+    if not isinstance(e, dict):
+        return [f'an entry is not an object: {e!r}']
+    b = e.get('bioguide')
+    who = b if isinstance(b, str) else repr(b)
+    if not isinstance(b, str) or not re.fullmatch(r'[A-Z]\d{6}', b):
+        return [f'an entry has a malformed bioguide id: {e!r}']
+    out = []
+    if not ENTRY_FIELDS <= set(e) or set(e) - ENTRY_FIELDS - ENTRY_OPTIONAL:
+        out.append(f'{who} has fields {sorted(e)} (expected bioguide, served_until, source and, if deliberately set, overrides_file_day)')
+    if not real_day(e.get('served_until')):
+        out.append(f'{who} served_until {e.get("served_until")!r} is not a real day written YYYY-MM-DD')
+    if 'overrides_file_day' in e and not real_day(e['overrides_file_day']):
+        out.append(f'{who} overrides_file_day {e["overrides_file_day"]!r} is not a real day written YYYY-MM-DD')
+    out += [f'{who} {p}' for p in source_problems(e.get('source'))]
+    return out
+
+
+def split_official(table) -> Tuple[Dict[str, dict], List[str]]:
+    """data/departure-dates.json, checked entry by entry: the usable entries
+    by bioguide, and one line per entry that cannot be used (never applied;
+    the weekly refresh reports them and runs on). A bioguide listed twice is
+    unusable in both entries."""
+    if not isinstance(table, list):
+        return {}, [f'data/departure-dates.json is not a JSON list ({type(table).__name__})']
+    bad, by_id, counts = [], {}, {}
+    for e in table:
+        if isinstance(e, dict) and isinstance(e.get('bioguide'), str):
+            counts[e['bioguide']] = counts.get(e['bioguide'], 0) + 1
+    for e in table:
+        problems = entry_problems(e)
+        if problems:
+            bad += problems
+            continue
+        if counts[e['bioguide']] > 1:
+            if e['bioguide'] not in by_id:
+                bad.append(f"{e['bioguide']} is listed {counts[e['bioguide']]} times")
+            by_id[e['bioguide']] = None
+            continue
+        by_id[e['bioguide']] = e
+    return {b: e for b, e in by_id.items() if e is not None}, bad
+
+
+def official_problems(table) -> List[str]:
+    """Every line split_official reports: the seed script refuses on any."""
+    return [f'departure-dates: {p}' for p in split_official(table)[1]]
+
+
+def source_problems(src) -> List[str]:
+    """An official source: its kind, the address read, the day it was read."""
+    if not isinstance(src, dict) or set(src) != {'kind', 'url', 'read'}:
+        return [f'source {src!r} is not {{kind, url, read}}']
+    out = []
+    prefix = SOURCE_KINDS.get(src['kind'])
+    if prefix is None:
+        out.append(f'source kind {src["kind"]!r} is not one of {sorted(SOURCE_KINDS)}')
+    elif not str(src['url']).startswith(prefix):
+        out.append(f'source url {src["url"]!r} is not on {prefix}')
+    if not real_day(src['read']):
+        out.append(f'source read {src["read"]!r} is not a real day written YYYY-MM-DD')
+    return out
+
+
+def changeover(r: dict) -> bool:
+    """A departure at the change of Congress: the last day is Jan 3 of an
+    odd year AND the member was still in the member file that day or later.
+    A member who left the file earlier keeps a scheduled term end of Jan 3
+    in the historical file until a volunteer corrects it: that is a mid-term
+    departure with an unconfirmed day, never the changeover (3rd review)."""
+    su, left = r.get('served_until'), r.get('left_file')
+    return is_term_change_day(su) and isinstance(left, str) and left >= su
+
+
+def _ordered(r: dict) -> dict:
+    return {k: r.get(k) for k in RECORD_ORDER}
+
+
+def unconfirmed(departed: List[dict], bioguides: Iterable[str]) -> List[dict]:
+    """Of the given members, the records whose mid-term date is the
+    historical file's alone (no official source): no record page yet."""
+    ids = set(bioguides)
+    return [
+        r for r in departed
+        if r['bioguide'] in ids and r.get('served_until') and r.get('served_until_source') is None
+        and not changeover(r)
+    ]
+
+
+def unconfirmed_line(r: dict) -> str:
+    """The one log line for a new mid-term departure whose date is unconfirmed."""
+    return (
+        f"{r['name']} ({r['bioguide']}) left the member file; the volunteer historical file dates their last day "
+        f"{r['served_until']}, not yet confirmed against the Clerk of the House or the Biographical Directory, "
+        'so they get no record page until a pull request confirms it '
+        '(docs/runbooks/new-congress-switch.md, "A member left mid-term: confirm the date")'
+    )
+
+
+def _seat(r: dict) -> str:
+    return f"{r['state']}{'' if r.get('district') is None else '-' + str(r['district'])} {'Senate' if r['type'] == 'sen' else 'House'}"
+
+
+def attention_report(found: Dict[str, list], today: str) -> str:
+    """The issue body (label departure-date-unconfirmed) for what this run
+    found: members whose last day still needs an official source, and table
+    entries a person must fix. Every case leaves the member without a record
+    page: their address shows "not found", as it did before."""
+    about_members = found['undated'] or found['unconfirmed'] or found['mismatched']
+    lines = [
+        f'The weekly members refresh of {today} (UTC) found member(s) who left mid-term whose last day is not '
+        'confirmed by an official source. **They get no record page yet**: their address shows "not found", as it '
+        'did before, until a person confirms the date.'
+        if about_members
+        else f'The weekly members refresh of {today} (UTC) found entries in `data/departure-dates.json` that a person '
+        'must fix. They are not applied to anyone; no page changes because of them.',
+        '',
+    ]
+    if found['undated']:
+        lines += ['## Left, and no date known yet', '',
+                  'The volunteer historical file does not give their last day yet. Look it up in an official place '
+                  'below; the next runs repeat only a warning line in the log, not this issue.', '',
+                  '| Member | Seat |', '| --- | --- |',
+                  *[f"| {r['name']} ({r['bioguide']}) | {_seat(r)} |" for r in found['undated']], '']
+    if found['unconfirmed']:
+        lines += ['## Date known from the historical file only', '',
+                  '| Member | Seat | Last day in the historical file |', '| --- | --- | --- |',
+                  *[f"| {r['name']} ({r['bioguide']}) | {_seat(r)} | {r['served_until']} |" for r in found['unconfirmed']], '']
+    if found['mismatched']:
+        lines += ['## A table entry that does not fit (not applied)', '',
+                  *[f"- {r['name']} ({r['bioguide']}): {why}." for r, why in found['mismatched']],
+                  '', 'Look again at the official source and correct `data/departure-dates.json`.', '']
+    if found['sitting']:
+        lines += ['## A table entry for a sitting member (not applied)', '',
+                  *[f'- {b} is in the member file now. Remove their entry from `data/departure-dates.json`.'
+                    for b in found['sitting']], '']
+    if found.get('bad_entries'):
+        lines += ['## A malformed entry in data/departure-dates.json (not applied)', '',
+                  *[f'- {line}. Fix `data/departure-dates.json` in a pull request.' for line in found['bad_entries']], '']
+    if not about_members:
+        lines += ['Steps: `docs/runbooks/new-congress-switch.md`, "A member left mid-term: confirm the date".', '']
+        return '\n'.join(lines)
+    lines += [
+        '## Confirm each date in one of the two official places',
+        '',
+        f"- House members: the Clerk of the House's vacancy list, {SOURCE_KINDS['house-clerk']}",
+        f"- Senators (and any member): the Biographical Directory of the United States Congress, {SOURCE_KINDS['bioguide']}<bioguide id>",
+        '',
+        'Then add the date and the source to `data/departure-dates.json` in a pull request and run '
+        '`scripts/seed-departed-members.py` (steps: `docs/runbooks/new-congress-switch.md`, '
+        '"A member left mid-term: confirm the date"). The page goes live when that merges.',
+        '',
+    ]
+    return '\n'.join(lines)
+
+
+def official_mismatch(entry: dict, historical_by_id: Optional[Dict[str, dict]]) -> Optional[str]:
+    """Why a data/departure-dates.json entry may NOT be applied to the
+    member's departure as the historical file records it, or None when it
+    fits: the historical file lists them, the entry's day is within one day
+    of the file's last day, and not before the start of their last term.
+    Shared by the weekly refresh and scripts/seed-departed-members.py."""
+    rec = (historical_by_id or {}).get(entry['bioguide'])
+    terms = (rec or {}).get('terms') or []
+    file_day = last_term_end(historical_by_id or {}, entry['bioguide'])
+    if not terms or file_day is None:
+        return 'the historical file gives no last day for them yet, so the entry cannot be matched to this departure'
+    start = terms[-1].get('start')
+    if isinstance(start, str) and entry['served_until'] < start:
+        return (
+            f"the entry's day {entry['served_until']} is before the start of their last term ({start}): "
+            'it belongs to an earlier departure'
+        )
+    gap = abs((date.fromisoformat(entry['served_until']) - date.fromisoformat(file_day)).days)
+    if gap > 1:
+        # THE OVERRIDE (3rd review, 2026-11-13). When the official day is
+        # right and the volunteer file is wrong by more than a day, a person
+        # may record that they looked: `overrides_file_day` set to the exact
+        # day the historical file shows. It applies only while the file
+        # still shows exactly that day (if the file changes, the entry is
+        # reported again), never past the term-start check above, and never
+        # by default: nothing writes it but a person in a pull request.
+        if entry.get('overrides_file_day') == file_day:
+            return None
+        return (
+            f"the entry says {entry['served_until']} and the historical file says {file_day}, {gap} days apart "
+            '(if the official day is right and the historical file is wrong, see the runbook section '
+            '"A member left mid-term: confirm the date" for the deliberate override)'
+        )
+    return None
+
+
+def official_sitting(table: List[dict], members: List[dict]) -> List[str]:
+    """Table entries for members who are in the member file now: never
+    applied to anyone, reported until a person removes them."""
+    now = {m['bioguide'] for m in members}
+    return [e['bioguide'] for e in table if e.get('bioguide') in now]
+
+
+def attention(
+    departed: List[dict],
+    prev_departed: List[dict],
+    leaving: Iterable[str],
+    official: Dict[str, dict],
+    historical_by_id: Optional[Dict[str, dict]],
+    members: List[dict],
+    bad_entries: Optional[List[str]] = None,
+) -> Dict[str, list]:
+    """What this run must bring to a person (see the module header):
+    `undated` (left this run, no day yet), `unconfirmed` (a mid-term day
+    known this run, no official source), `mismatched` ([record, reason]),
+    `sitting` (bioguide ids with a table entry who sit again)."""
+    left = set(leaving)
+    was_undated = {r['bioguide'] for r in prev_departed if r.get('served_until') is None}
+    undated = [r for r in departed if r['bioguide'] in left and r.get('served_until') is None]
+    unconfirmed_now = [
+        r for r in unconfirmed(departed, left | was_undated)
+        if r['bioguide'] not in official or official_mismatch(official[r['bioguide']], historical_by_id) is None
+    ]
+    mismatched = []
+    for r in departed:
+        if r.get('served_until_source') is None and r['bioguide'] in official and r.get('served_until'):
+            why = official_mismatch(official[r['bioguide']], historical_by_id)
+            if why:
+                mismatched.append([r, why])
+    return {
+        'undated': undated,
+        'unconfirmed': unconfirmed_now,
+        'mismatched': mismatched,
+        'sitting': official_sitting(list(official.values()), members),
+        'bad_entries': list(bad_entries or []),
+    }
+
+
+def attention_lines(found: Dict[str, list]) -> List[str]:
+    """One log line per item."""
+    out = [
+        f"{r['name']} ({r['bioguide']}) left the member file; the volunteer historical file gives no last day for "
+        'them yet, so they get no record page; the issue asks a person to find the official date'
+        for r in found['undated']
+    ]
+    out += [unconfirmed_line(r) for r in found['unconfirmed']]
+    out += [
+        f"{r['name']} ({r['bioguide']}): data/departure-dates.json was not applied because {why}; no record page "
+        'until a person corrects the table'
+        for r, why in found['mismatched']
+    ]
+    out += [
+        f'data/departure-dates.json has an entry for {b}, who is in the member file now; it is not applied to '
+        'anyone; remove it in a pull request'
+        for b in found['sitting']
+    ]
+    out += [
+        f'data/departure-dates.json: {line}; not applied to anyone; fix data/departure-dates.json in a pull request'
+        for line in found.get('bad_entries', [])
+    ]
+    return out
+
+
 def last_term_end(historical_by_id: Dict[str, dict], bioguide: str) -> Optional[str]:
     """The end date of the member's last term in the historical file, or None."""
     rec = historical_by_id.get(bioguide)
@@ -287,6 +624,7 @@ def departed_records(
     prev_departed: List[dict],
     historical_by_id: Optional[Dict[str, dict]],
     today: str,
+    official: Optional[Dict[str, dict]] = None,
 ) -> Tuple[List[dict], List[str]]:
     """The next data/departed-members.json, and the bioguides still missing a
     `served_until` (for a ::warning).
@@ -294,7 +632,16 @@ def departed_records(
     - a member who left the file this run is added, from their record in the
       committed member file, with `left_file` = today;
     - a record already kept stays as it is, except that a missing
-      `served_until` is filled when the historical file now has it;
+      `served_until` is filled when the historical file now has it, and a
+      record with no official source takes its date and source from
+      `official` (data/departure-dates.json, by bioguide) once that has it;
+    - a new record's date is the official one when `official` has an entry
+      that fits this departure (official_mismatch), else the historical
+      file's with `served_until_source` null;
+    - `left_file` is the run's day: the day the refresh first found them
+      gone, or, for the sixteen recorded by scripts/seed-departed-members.py
+      on 2026-11-13, the day they were recorded (they had left before the
+      file existed);
     - a member who is back in the file (re-elected after a gap, appointed)
       leaves this list: the member file is the one source for a sitting
       member.
@@ -303,21 +650,35 @@ def departed_records(
     """
     now = {m['bioguide'] for m in new_members}
     hist = historical_by_id or {}
+    off = official or {}
     kept: Dict[str, dict] = {}
     for r in prev_departed:
         if r['bioguide'] in now:
             continue
         r = dict(r)
+        r.setdefault('served_until_source', None)
         if r.get('served_until') is None:
             r['served_until'] = last_term_end(hist, r['bioguide'])
-        kept[r['bioguide']] = r
+        if (
+            r['served_until_source'] is None
+            and r['bioguide'] in off
+            and official_mismatch(off[r['bioguide']], historical_by_id) is None
+        ):
+            r['served_until'] = off[r['bioguide']]['served_until']
+            r['served_until_source'] = off[r['bioguide']]['source']
+        kept[r['bioguide']] = _ordered(r)
     for m in dropped_members(new_members, prev_members):
         if m['bioguide'] in kept:
             continue
         rec = {k: m.get(k) for k in DEPARTED_FIELDS}
-        rec['served_until'] = last_term_end(hist, m['bioguide'])
+        if m['bioguide'] in off and official_mismatch(off[m['bioguide']], historical_by_id) is None:
+            rec['served_until'] = off[m['bioguide']]['served_until']
+            rec['served_until_source'] = off[m['bioguide']]['source']
+        else:
+            rec['served_until'] = last_term_end(hist, m['bioguide'])
+            rec['served_until_source'] = None
         rec['left_file'] = today
-        kept[m['bioguide']] = rec
+        kept[m['bioguide']] = _ordered(rec)
     out = [kept[b] for b in sorted(kept)]
     return out, [r['bioguide'] for r in out if r['served_until'] is None]
 
@@ -330,7 +691,7 @@ def departed_problems(departed: List[dict], new_members: List[dict]) -> List[str
     problems = []
     now = {m['bioguide'] for m in new_members}
     seen = set()
-    allowed = set(DEPARTED_FIELDS) | {'served_until', 'left_file'}
+    allowed = set(RECORD_ORDER)
     for r in departed:
         b = r.get('bioguide')
         if not isinstance(b, str) or not re.fullmatch(r'[A-Z]\d{6}', b):
@@ -352,8 +713,10 @@ def departed_problems(departed: List[dict], new_members: List[dict]) -> List[str
             problems.append(f'{b} has no name')
         for k in ('served_until', 'left_file'):
             v = r.get(k)
-            if v is not None and not (isinstance(v, str) and re.fullmatch(r'\d{4}-\d{2}-\d{2}', v)):
-                problems.append(f'{b} {k} {v!r} is not YYYY-MM-DD')
+            if v is not None and not real_day(v):
+                problems.append(f'{b} {k} {v!r} is not a real day written YYYY-MM-DD')
         if not r.get('left_file'):
             problems.append(f'{b} has no left_file date')
+        if r.get('served_until_source') is not None:
+            problems += [f'{b} served_until_source: {p}' for p in source_problems(r['served_until_source'])]
     return problems

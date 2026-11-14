@@ -66,7 +66,7 @@ gh run list --workflow=refresh-legislators.yml --limit 1
 node -e "const d=require('./data/departed-members.json');console.log(d.length,'kept;',d.filter(r=>r.served_until==='2027-01-03').length,'served until 2027-01-03;',d.filter(r=>!r.served_until).map(r=>r.bioguide).join(' ')||'none undated')"
 ```
 
-On 2026-11-13 it printed `0 kept; 0 served until 2027-01-03; none undated`. After the switch it should print about 80 and about 80. A member listed as undated has no page yet; the next run fills the date once the historical file lists them (re-run step 3 a day later).
+On 2026-11-13 it printed `0 kept; 0 served until 2027-01-03; none undated`; once the 16 members who left mid-term were recorded the same day (see the end of this page), it prints `16 kept; 0 served until 2027-01-03; none undated`. After the switch it should print about 96 kept and about 80 served until 2027-01-03. A member listed as undated has no page yet; the next run fills the date once the historical file lists them (re-run step 3 a day later).
 
 **Undo:** revert the data commit through a pull request, never a push to `main`:
 
@@ -143,6 +143,17 @@ The first command was **run on 2026-11-13 and refused**: the Census geocoder ans
 
 **Undo:** revert that pull request.
 
+### 8. Tests the stage 8 pull request must update
+
+Found on 2026-11-13 by simulating the switch: an independent check bumped the tracked Congress and ran the suite. The stage 8 pull request, which bumps `lib/congress.mjs` and fills the ended list, must update these in the same change. **Not run here:** stage 8 is not built.
+
+- `tests/departed-members.unit.spec.ts`:
+  - four fixture tests hard-code 2025 and 2026 days against a policy derived from the tracked Congress (`BEFORE`, `AFTER`, `START_DAY`, `ENDED_DAY`); after the bump those days fall outside the "tracked" term. A fifth, "names the switch the code is aimed at", fails only while the number is bumped and the ended list is still empty; it passes once stage 8 changes both (counted by two independent reviewers who simulated the switch on 2026-11-13; not run on the real switch);
+  - "today's sixteen …" compares each day against the tracked Congress's first day, which becomes 2027-01-03;
+  - "the ended list is empty" in the "today" block fails by design: it is the tripwire that says this file must be revisited.
+- `tests/short-address.unit.spec.ts` (short bill addresses, #404): its January guard fails on purpose, with an "OWNER DECISION NEEDED" message, until the owner's ruling on what a short address opens in the new Congress is quoted, with its date, in `SHORT_ADDRESS_ROLLOVER_RULING`. It is not the switch's to rewrite: get the ruling first (an independent reviewer simulated the switch on 2026-11-13 and saw four short-address tests fail with that message).
+- `tests/reps-zip-address.spec.ts` (fixes the address answer to NY-12) and `tests/district.spec.ts` (names Daniel S. Goldman, Jerrold Nadler, Charles E. Schumer, Kirsten E. Gillibrand and Nick LaLota) pin sitting members. Both are already on `main`. They fail if one of those members leaves, or if the 120th map moves those addresses.
+
 ## A refused week
 
 **What happens.** When a run is refused (any `::error::` in step 2's list), nothing is written or committed and the workflow opens one GitHub issue labeled `legislators-refused`, titled "Weekly members refresh refused: nothing committed", or comments on it if it is already open. The issue says what was refused, names the members who left, and, when it applies, gives the exact command to accept the week. **A refused week never clears by itself**: every later run compares against the same committed member file, so it refuses again until the upstream file changes or someone accepts the week.
@@ -180,8 +191,76 @@ Run on 2026-11-13: it printed nothing (none open; the label does not exist until
 
 **Undo:** an accepted week is a normal refresh commit; undo it as in step 3.
 
+## A member left mid-term: confirm the date
+
+**Why.** Hard rule 6: no date the record does not hold. The weekly refresh takes a departing member's last day from the volunteer congress-legislators historical file. On 2026-11-13 that file was a day off for five of the sixteen members who left the 119th Congress mid-term. So a NEW mid-term departure is recorded with the file's date marked unconfirmed (`served_until_source: null` in `data/departed-members.json`), and it gets **no record page**: its address stays "not found", with no sitemap entry and no sponsor link, until a pull request confirms the date. The change of Congress is not affected: a record whose last day is Jan 3 of an odd year needs no confirmation (that date is fixed by the Twentieth Amendment, and its sentence is the approved one), **provided the member was still in the member file that day or later**. A member who left the member file earlier, for example on Dec 7, 2026, while the historical file still shows the scheduled term end of 2027-01-03, is treated as a mid-term departure with an unconfirmed day: they get no page and the issue hears about them.
+
+**How you learn about it.** One GitHub issue labeled `departure-date-unconfirmed` ("A member left mid-term: confirm their last day"), opened the first time and commented on after that. Each case also gets one line in the refresh's log and step summary. The refresh writes to the issue:
+
+| What happened | When the issue hears about it |
+|---|---|
+| A member left and the historical file gives **no day yet** ("Left, and no date known yet") | Once, the week they leave. Later weeks print only a warning line in the log until the day arrives. |
+| A mid-term day is **known only from the historical file** ("Date known from the historical file only") | The week they leave with a day, or the week a late day arrives. |
+| A table entry **does not fit** the departure: more than a day from the historical file's day, or before the start of the member's last term (an entry left over from an earlier departure) | Every run until the table is fixed. The entry is not applied and there is no page. |
+| A table entry for a member who is **sitting** | Every run until the entry is removed. It is not applied to anyone. |
+| A **malformed** entry in `data/departure-dates.json`: a missing field, an impossible date such as 2026-02-30, a source that is not one of the two official places, or a member listed twice | Every run until the table is fixed. The entry is not applied; the weekly refresh still runs and commits as usual. |
+
+In every case the member has no record page: their address stays "not found".
+
+**Steps:**
+
+1. Find the official last day.
+   - **House members:** the Clerk of the House's vacancy list, which answers a plain request. Replace `Turner` with the member's last name:
+
+     ```sh
+     curl -s https://clerk.house.gov/Members/ViewVacancies | python3 -c "import sys,re,html; t=re.sub(r'\s+',' ',html.unescape(re.sub(r'<[^>]+>',' ',sys.stdin.read()))); print([m.group(0) for m in re.finditer(r'District [^.]{0,60}?\d{4} Rep\. [^.]{0,40}?'+sys.argv[1], t)])" Turner
+     ```
+
+     Run on 2026-11-13 with `Turner` it printed `['District Passed Away March 05, 2025 Rep. Sylvester Turner']`.
+   - **Senators** (and any member): the Biographical Directory, `https://bioguide.congress.gov/search/bio/<bioguide id>`. Open it in a browser; it refuses plain `curl`. Read the "served … until …" sentence; for a member who died in office it says "until his death" and the date of death follows ("died … on July 11, 2026"). On 2026-11-13 this was read for V000137, R000595, M001190 and G000359 in a headless browser. **Not run as a command:** the directory has no plain-request form.
+   - If the official day and the issue's date are more than a day apart, stop and look again: that is usually a different event, not an off-by-one. The refresh and the script below both refuse to apply such an entry.
+   - **When the official day is right and the volunteer file is wrong by more than a day.** Without action, no page is possible: the refresh comments on the issue every week until the historical file is corrected upstream or the entry is removed. The way out is to record, deliberately, that you looked. Add `"overrides_file_day"` to the entry, set to the exact day the historical file shows:
+
+     ```json
+     {"bioguide": "X000001", "served_until": "2026-12-05", "source": {"kind": "house-clerk", "url": "https://clerk.house.gov/Members/ViewVacancies", "read": "2026-12-08"}, "overrides_file_day": "2027-01-03"}
+     ```
+
+     The override applies only while the historical file shows exactly that day. If the file changes, the entry is reported again. It never overrides the term-start check, and nothing writes it except a person in a pull request. The refresh's messages never print this line for you to paste: type it yourself.
+
+     **The pull request must quote the official source's own words for the day**, for example the Clerk's line "Resigned December 05, 2026" or the Directory's "served … until December 5, 2026". It must also say what the historical file shows instead. The reviewer checks the quote against the source before merging. A pull request that sets `overrides_file_day` without the quote does not merge.
+   - If the issue says "no date known yet", the official source may already have it. Add it as below; it is applied once the historical file also lists a day within one day of it.
+2. Add the day and where you read it to `data/departure-dates.json`, sorted by bioguide id, in the same form as the other entries:
+
+   ```json
+   {"bioguide": "T000489", "served_until": "2025-03-05", "source": {"kind": "house-clerk", "url": "https://clerk.house.gov/Members/ViewVacancies", "read": "2026-11-13"}}
+   ```
+
+   `kind` is `house-clerk` (url `https://clerk.house.gov/Members/ViewVacancies`) or `bioguide` (url `https://bioguide.congress.gov/search/bio/<id>`). `read` is the day you read it.
+3. Apply it. This uses the refresh's own code and takes the official day and source. It refuses if:
+   - any member who left lacks an official day;
+   - a day is more than a day from the historical file's, or before the start of the member's last term;
+   - the table has an entry for a sitting member;
+   - a member who left has no end date in the historical file yet (it prints `<id> has no end date in the historical file`);
+   - an entry is malformed (a missing field, an impossible date, a source that is not one of the two official places, a member listed twice).
+
+   ```sh
+   python3 scripts/seed-departed-members.py --since 2025-01-03 --today <today>
+   ```
+
+   (`--since` is the first day of the tracked Congress: `2025-01-03` for the 119th, `2027-01-03` after the switch.) Run on 2026-11-13 with today's data it printed `departed-members.json: 16 member(s) kept as a record (16 found in the historical file)` and wrote nothing, since all sixteen were already confirmed.
+4. Check the record:
+
+   ```sh
+   node -e "const d=require('./data/departed-members.json').find(r=>r.bioguide==='T000489');console.log(d.served_until, JSON.stringify(d.served_until_source))"
+   ```
+
+   Run on 2026-11-13 it printed `2025-03-05 {"kind":"house-clerk","url":"https://clerk.house.gov/Members/ViewVacancies","read":"2026-11-13"}`.
+5. Open a pull request with both files. When it merges, the record page goes live. Close the issue. The weekly refresh also applies a fitting table entry to a kept record on its next run, after checking it against the historical file the same way.
+
+**Undo:** revert that pull request; the record goes back to unconfirmed and the page to "not found".
+
 ## What stage 5 does not cover
 
-- A member who left **during** the 119th (resigned, died) still has no page: the approved line names Jan 3, 2027 only. On 2026-11-13, 16 such members appear in roll-call lists (their links there go to a "not found" page today) and 11 in sponsor lines (named without a link). Wording for them would need the owner.
+- **Members who left during the 119th now have record pages** (owner, 2026-11-13): "Served in the House until April 21, 2026.", with the official last day (the Clerk of the House's vacancy list or the Biographical Directory, from `data/departure-dates.json`). The 16 who left before `data/departed-members.json` existed were recorded on 2026-11-13 by `scripts/seed-departed-members.py --since 2025-01-03 --today 2026-11-13`, through the refresh's own code. Later ones are recorded by the weekly refresh as unconfirmed, with no page until their date is confirmed (see "A member left mid-term: confirm the date"). So in step 5, `<left>` must be a member whose record says `2027-01-03`: `C001078`, used there on 2026-11-13, has had a record page since.
 - The MCP `get_representative` tool answers "not found" for a member who left, as today.
 - If the historical file never lists a member who left, their record keeps `served_until: null` and they get no page; step 3's check names them.

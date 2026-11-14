@@ -33,9 +33,14 @@ from collections import defaultdict
 from datetime import datetime, timezone
 
 from vacancy_diff import ANOMALOUS_SHRINK_THRESHOLD, compute_vacancies
+from member_entry import member_entry
 from member_turnover import (
     accepts_seats,
     departed_problems,
+    attention,
+    attention_lines,
+    attention_report,
+    split_official,
     departed_records,
     dropped_members,
     parse_accept_departures,
@@ -94,34 +99,22 @@ def _load_json(path, default):
 prev_legislators = _load_json('data/legislators.json', [])
 prev_vacancies = _load_json('data/vacancies.json', [])
 prev_departed = _load_json('data/departed-members.json', [])
+# Official last days (Clerk of the House, Biographical Directory), added by a
+# person in a pull request: the only dates a mid-term record page may print
+# (scripts/member_turnover.py, "WHICH DATES A PAGE MAY PRINT").
+# A bad table never stops the weekly refresh (3rd review): the table is
+# checked first, entry by entry, and only usable entries are applied; the
+# rest are reported in the departure-date-unconfirmed issue and the member
+# simply gets no page.
+try:
+    official_dates = _load_json('data/departure-dates.json', [])
+except ValueError as e:  # not JSON at all
+    official_dates = f'unreadable ({e})'
+official_by_id, official_bad = split_official(official_dates)
+if isinstance(official_dates, str):
+    official_bad = [f'data/departure-dates.json could not be read as JSON: {official_dates}']
 
-out = []
-for l in legs:
-    t = l['terms'][-1]
-    bid = l['id']['bioguide']
-    offs = [
-        {'city': o.get('city'), 'state': o.get('state'), 'phone': o.get('phone')}
-        for o in office_map.get(bid, []) if o.get('phone')
-    ]
-    entry = {
-        'bioguide': bid,
-        'name': l['name'].get('official_full') or (l['name']['first'] + ' ' + l['name']['last']),
-        'first': l['name']['first'],
-        'last': l['name']['last'],
-        'type': t['type'],  # sen | rep
-        'state': t['state'],
-        'district': t.get('district'),
-        'party': t.get('party'),
-        'phone': t.get('phone'),
-        'url': t.get('url'),
-        'offices': offs,
-    }
-    # The Senate's roll-call XML identifies senators by LIS member id only,
-    # never bioguide, so scripts/sync-votes.mjs joins on this. Senators only:
-    # a House member has no LIS id to carry.
-    if t['type'] == 'sen' and l['id'].get('lis'):
-        entry['lis'] = l['id']['lis']
-    out.append(entry)
+out = [member_entry(l, office_map.get(l['id']['bioguide'], [])) for l in legs]
 
 # Vacancy-diff step. Never infers occupancy from any one legislator's own
 # term data (the footgun this replaces) - purely a seat-set comparison
@@ -145,10 +138,16 @@ if ACCEPT is not None and not problems and not anomalous:
     )
 
 # The record of members who left. The historical file is read only when it
-# can add something: a member left this run, or a kept record lacks its date.
+# can add something: a member left this run, a kept record lacks its date, or
+# a kept record without an official source has a table entry to check
+# against the file (member_turnover.official_mismatch).
 leaving = {m['bioguide'] for m in prev_legislators} - {m['bioguide'] for m in out}
 historical_by_id = None
-if not anomalous and not problems and (leaving or any(r.get('served_until') is None for r in prev_departed)):
+if not anomalous and not problems and (
+    leaving
+    or any(r.get('served_until') is None for r in prev_departed)
+    or any(r.get('served_until_source') is None and r['bioguide'] in official_by_id for r in prev_departed)
+):
     hist_path, hist_url = HISTORICAL
     try:
         if DOWNLOAD:
@@ -161,7 +160,7 @@ if not anomalous and not problems and (leaving or any(r.get('served_until') is N
     finally:
         if DOWNLOAD and os.path.exists(hist_path):
             os.remove(hist_path)
-departed, undated = departed_records(out, prev_legislators, prev_departed, historical_by_id, today)
+departed, undated = departed_records(out, prev_legislators, prev_departed, historical_by_id, today, official_by_id)
 problems += departed_problems(departed, out)
 
 if not anomalous and not problems:
@@ -176,8 +175,27 @@ if not anomalous and not problems:
         json.dump(departed, open('data/departed-members.json', 'w'), ensure_ascii=False, indent=2)
     if leaving or departed != prev_departed:
         print(f'departed-members.json: {len(departed)} member(s) kept as a record, {len(leaving)} left the file this run')
+    # What a person must see this run (member_turnover.attention): a member
+    # who left with no day yet, a mid-term day known without an official
+    # source (new, or filled in late), a table entry that does not fit, an
+    # entry for a sitting member. One line each in the log and the step
+    # summary, and the report the workflow files on the one issue.
+    found = attention(departed, prev_departed, leaving, official_by_id, historical_by_id, out, official_bad)
+    new_undated = {r['bioguide'] for r in found['undated']}
     for b in undated:
-        print(f'::warning::{b} left the member file but legislators-historical gives no end date yet; no page until it does')
+        if b not in new_undated:  # already reported the week they left
+            print(f'::warning::{b} left the member file but legislators-historical gives no end date yet; no page until it does')
+    lines = attention_lines(found)
+    for line in lines:
+        print(f'::warning::{line}')
+    summary_path = os.environ.get('GITHUB_STEP_SUMMARY')
+    if lines and summary_path:
+        with open(summary_path, 'a') as f:
+            f.write(''.join(f'- {line}\n' for line in lines))
+    report_path = os.environ.get('UNCONFIRMED_REPORT')
+    if lines and report_path:
+        with open(report_path, 'w') as f:
+            f.write(attention_report(found, today))
 
 for v in newly_detected:
     print(
