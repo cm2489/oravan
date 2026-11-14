@@ -127,7 +127,7 @@ export function UrgencyEmptyState({
         </p>
         <a
           href={moving.href}
-          className="mt-2 inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-go underline underline-offset-4 hover:text-go-deep"
+          className="mt-2 inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-ink underline underline-offset-4 hover:decoration-[3px]"
         >
           {t('nothingDecidingCta')}
           <ArrowDown className="h-4 w-4" aria-hidden />

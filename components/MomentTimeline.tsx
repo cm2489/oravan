@@ -80,7 +80,7 @@ const VERBATIM = VERBATIM_MODE; // re-exported from lib so ONE flag governs ever
    across files, because a shared "link class" constant is how a design system
    quietly grows a second button. */
 const CONTENT_LINK =
-  'inline-flex min-h-11 items-center gap-1.5 font-bold text-go underline transition-colors hover:text-go-deep';
+  'inline-flex min-h-11 items-center gap-1.5 font-bold text-ink underline transition-colors hover:decoration-[3px]';
 
 export interface TimelineVehicle {
   /** Display citation, e.g. "H.R. 9770" — already built by the caller. */

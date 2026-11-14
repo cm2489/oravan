@@ -15,13 +15,13 @@ const TAGLINES: Record<string, { tag: string; sub: string }> = {
 // lockstep with globals.css: --color-ink, --color-paper, --color-go-bright.
 //
 // The lockup is MONOCHROME on this dark ground, matching the footer's treatment:
-// `go` (#0f6c4a) sits at 2.75:1 on ink and must never carry the mark there. The
-// dark-ground green token, `go-bright`, is spent on the tagline only (9.48:1 on
-// ink — an earlier comment here claimed 10.3:1; recomputed 2026-08-02).
-const INK = '#16191b'; // --color-ink
-const PAPER = '#ffffff'; // --color-paper
-const GO_BRIGHT = '#5fd39a'; // --color-go-bright — the dark-ground green
-const PAPER_SOFT = 'rgba(255,255,255,0.86)';
+// `go` (#1d5e43) sits at 2.24:1 on ink and must never carry the mark there. The
+// dark-ground green token, `go-bright`, is spent on the tagline only (9.63:1 on
+// ink; recomputed 2026-09-30 for the warm-paper palette).
+const INK = '#1c1b18'; // --color-ink
+const PAPER = '#fcfaf4'; // --color-paper
+const GO_BRIGHT = '#7fd3a2'; // --color-go-bright — the dark-ground green
+const PAPER_SOFT = 'rgba(252,250,244,0.86)';
 
 export default async function OgImage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;

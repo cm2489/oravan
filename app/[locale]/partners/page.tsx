@@ -64,9 +64,9 @@ export default async function PartnersPage({ params }: { params: Promise<{ local
           <p className="mt-2">{t('orgsBody')}</p>
         </section>
 
-        {/* A recessed `wash` panel, so its own edge is `ink-2` (7.23:1), not
-            `line-strong` — line-strong on wash is 2.97:1 and only an inactive
-            control may take it. */}
+        {/* A recessed `wash` panel, so its own edge is `ink-2` (6.93:1). The
+            July palette's line-strong missed on wash (2.97:1); today's clears
+            it (3.89:1), but the ink-2 edge stays. */}
         <section className="mt-8 rounded-control border border-ink-2 bg-wash p-6">
           <h2 className="text-h3 font-extrabold">{t('licensingTitle')}</h2>
           <p className="mt-2">{t('licensingBody')}</p>

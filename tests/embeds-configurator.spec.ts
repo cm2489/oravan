@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
+import { MODE_DEFAULTS } from '../lib/embed-theme';
 import { EMBEDS_PAGES_PUBLIC } from '../lib/site';
 import { decodedBill, decodedBillSlug } from './corpus-samples';
 
@@ -260,12 +261,14 @@ test.describe('widened theme controls (mode, new fonts, custom surface/ink pair)
     await expect(page.getByLabel(en.embeds.surfaceLabel, { exact: true })).toBeVisible();
     await expect(page.getByLabel(en.embeds.inkLabel, { exact: true })).toBeVisible();
     // The prefilled defaults are the brand pair — they pass AA, no warning.
-    // Re-keyed to variant B's paper/ink (17.66:1); the property is unchanged —
-    // the configurator prefills Oravan's OWN shipped pair, and that pair clears
-    // AA on its own, so a tenant who touches nothing cannot ship a failing embed.
+    // Read from lib/embed-theme.ts's MODE_DEFAULTS (the warm paper/ink pair
+    // since 2026-09-30, 16.50:1) rather than restated; the property is
+    // unchanged — the configurator prefills Oravan's OWN shipped pair, and
+    // that pair clears AA on its own, so a tenant who touches nothing cannot
+    // ship a failing embed.
     await expect(page.getByText(en.embeds.contrastWarning)).toHaveCount(0);
-    await expect(page.locator('pre code')).toContainText('data-surface="#ffffff"');
-    await expect(page.locator('pre code')).toContainText('data-ink="#16191b"');
+    await expect(page.locator('pre code')).toContainText(`data-surface="${MODE_DEFAULTS.light.surface}"`);
+    await expect(page.locator('pre code')).toContainText(`data-ink="${MODE_DEFAULTS.light.ink}"`);
   });
 
   test('a failing pair warns AND is omitted from snippet + preview', async ({ page }) => {

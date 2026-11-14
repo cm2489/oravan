@@ -98,7 +98,7 @@ export default async function CitationsPage({ params }: { params: Promise<{ loca
           {t('mcpNoteBody')}{' '}
           <Link
             href="/mcp"
-            className="font-semibold text-go underline underline-offset-2 hover:text-go-deep"
+            className="font-semibold text-ink underline underline-offset-2 hover:decoration-[3px]"
           >
             {t('mcpNoteLinkText')} →
           </Link>

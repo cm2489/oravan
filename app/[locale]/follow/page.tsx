@@ -47,7 +47,7 @@ function FeedAddress({ title, body, path, type }: { title: string; body: string;
       <a
         href={path}
         type={type}
-        className="mt-2 inline-flex min-h-11 items-center break-all font-mono text-sm font-semibold text-go underline underline-offset-2 hover:text-go-deep"
+        className="mt-2 inline-flex min-h-11 items-center break-all font-mono text-sm font-semibold text-ink underline underline-offset-2 hover:decoration-[3px]"
       >
         {`${SITE_ORIGIN}${path}`}
       </a>
@@ -110,7 +110,7 @@ export default async function FollowPage({ params }: { params: Promise<{ locale:
           </ul>
           <Link
             href="/mcp"
-            className="mt-4 inline-flex min-h-11 items-center gap-1.5 font-semibold text-go underline underline-offset-2 hover:text-go-deep"
+            className="mt-4 inline-flex min-h-11 items-center gap-1.5 font-semibold text-ink underline underline-offset-2 hover:decoration-[3px]"
           >
             {t('mcpLink')} <span aria-hidden>→</span>
           </Link>
@@ -127,7 +127,7 @@ export default async function FollowPage({ params }: { params: Promise<{ locale:
             <p className="mt-2">{t('embedsBody')}</p>
             <Link
               href="/embeds"
-              className="mt-4 inline-flex min-h-11 items-center gap-1.5 font-semibold text-go underline underline-offset-2 hover:text-go-deep"
+              className="mt-4 inline-flex min-h-11 items-center gap-1.5 font-semibold text-ink underline underline-offset-2 hover:decoration-[3px]"
             >
               {t('embedsLink')} <span aria-hidden>→</span>
             </Link>
@@ -135,7 +135,8 @@ export default async function FollowPage({ params }: { params: Promise<{ locale:
         )}
 
         {/* Empty by design — see the header comment. A recessed `wash` panel
-            with an ink-2 edge (line-strong on wash is 2.97:1), the same
+            with an ink-2 edge (6.93:1 on wash; line-strong on wash was 2.97:1 in
+            the July palette and is 3.89:1 now), the same
             treatment /partners gives its licensing note. */}
         <section
           aria-labelledby="follow-broadcast"
