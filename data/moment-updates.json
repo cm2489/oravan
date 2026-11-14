@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-11-13T21:27:01.988Z"
+    "generated_at": "2026-11-14T02:44:18.893Z"
   },
   "government-funding-deadline": {
     "updates": [],
@@ -3309,34 +3309,6 @@
   },
   "penny-production-and-cash-rounding": {
     "updates": [
-      {
-        "id": "u_cf968af1",
-        "class": "status_change",
-        "vehicle": "hr-10167-119",
-        "day": "2026-11-12",
-        "occurred_at": "2026-11-12",
-        "occurred_precision": "day",
-        "recorded_at": "2026-11-13T21:27:01.988Z",
-        "text": {
-          "en": "H.R. 10167 was presented to the president on November 12, 2026.",
-          "es": "H.R. 10167 fue presentado al presidente el 12 de noviembre de 2026."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/house-bill/10167"
-          ]
-        },
-        "record": {
-          "action_text": "Presented to President.",
-          "action_code": null,
-          "action_type": "latestAction",
-          "source_system": "Congress.gov bill detail",
-          "status_from": "passed_chamber",
-          "status_to": "passed_chamber"
-        },
-        "ai": true
-      },
       {
         "id": "u_cbb3a86d",
         "class": "floor_action",
