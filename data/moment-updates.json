@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-11-14T02:44:18.893Z"
+    "generated_at": "2026-11-14T11:25:20.953Z"
   },
   "government-funding-deadline": {
     "updates": [],
@@ -2774,34 +2774,7 @@
     }
   },
   "annual-defense-policy": {
-    "updates": [
-      {
-        "id": "u_f8eea00b",
-        "class": "floor_action",
-        "vehicle": "hr-8800-119",
-        "day": "2026-09-14",
-        "occurred_at": "2026-09-14",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-25T13:41:33.041Z",
-        "text": {
-          "en": "“Received in the Senate.”",
-          "es": "Registro oficial, en inglés: “Received in the Senate.”"
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/house-bill/8800"
-          ]
-        },
-        "record": {
-          "action_text": "Received in the Senate.",
-          "action_code": null,
-          "action_type": "IntroReferral",
-          "source_system": "Senate"
-        },
-        "ai": false
-      }
-    ],
+    "updates": [],
     "summary_revisions": [
       {
         "id": "s_366592aa",
@@ -3410,32 +3383,6 @@
           "action_code": null,
           "action_type": "IntroReferral",
           "source_system": "Senate"
-        },
-        "ai": true
-      },
-      {
-        "id": "u_8ad1a209",
-        "class": "floor_action",
-        "vehicle": "hr-10167-119",
-        "day": "2026-09-14",
-        "occurred_at": "2026-09-14",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-26T01:03:33.669Z",
-        "text": {
-          "en": "H.R. 10167 passed the House on September 14, 2026, by voice vote under suspension of the rules.",
-          "es": "H.R. 10167 pasó la Cámara el 14 de septiembre de 2026, por votación de viva voz bajo la suspensión de las reglas."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/house-bill/10167"
-          ]
-        },
-        "record": {
-          "action_text": "Passed/agreed to in House: On motion to suspend the rules and pass the bill Agreed to by voice vote.",
-          "action_code": "8000",
-          "action_type": "Floor",
-          "source_system": "Library of Congress"
         },
         "ai": true
       }

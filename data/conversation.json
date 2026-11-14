@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-14T02:44:14.357Z",
+    "fetched_at": "2026-11-14T11:25:18.227Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-14T02:44:14.357Z"
+        "checked_at": "2026-11-14T11:25:18.227Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-08",
         "week_label": "Most-Viewed Bills - Week of November 8, 2026",
         "entries": 6,
-        "checked_at": "2026-11-14T02:44:14.357Z"
+        "checked_at": "2026-11-14T11:25:18.227Z"
       },
       "leans": {
         "center": {
@@ -789,6 +789,12 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "baltimoresun.com",
+          "firstSeen": "2026-11-14",
+          "lastSeen": "2026-11-14",
+          "url": "https://news.google.com/rss/articles/CBMiwgFBVV95cUxOVFlHdEVMVUYzOU1DZHhpeENSdHpEMXJaZ3VKaUcyVEEyUVFlNkFFWXctc1luWHR5dzFMS2l1cEZkTDRpY1VzVEV4UWxzb0tMdzVtX2R3STZMbm50Q1MycThPSHVGWThkcGF5eWxjRUFlWVpBNktselltdmx1djdDWDROZ2hKV2FCMnZHNG5RNHNKMVRlQ1pibVY3SENFYUk0dlZhekozT3FiTjhBdUFRWjNLNXY5TkFfV1NJeXNkSnVXdw?oc=5"
+        },
+        {
           "domain": "tapinto.net",
           "firstSeen": "2026-11-14",
           "lastSeen": "2026-11-14",
@@ -998,6 +1004,18 @@
           "firstSeen": "2026-11-12",
           "lastSeen": "2026-11-12",
           "url": "https://news.google.com/rss/articles/CBMiiwFBVV95cUxNdmhMdEl6dFM2RjNYOUxaS1FqckFiWnFyTENEZXVPUjRld3VNQzFJdnI0OVFZN1pYZUppUW02aWdIYkd1UGliZ3dSandaeGhKMk9SUFBWTjBoTVNhcDlOOFFlMjlOUlBCMUVwTVI1UkxnOGU0SHpYeng5Uzc0TEdMbVN4VV9UajdFc2lV?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-8957-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "cryptonews.net",
+          "firstSeen": "2026-11-14",
+          "lastSeen": "2026-11-14",
+          "url": "https://news.google.com/rss/articles/CBMiWEFVX3lxTFBUZEVXVVBwUWtBVmJVUEpMR1VtU1dfaXhGd2xNX3JDbWNnSXZDYTNyU0h5WnVwUWpnRzZIX21UbmVWVW8taFlTYUdzYWJxUUd6d1NxVzBiSXA?oc=5"
         }
       ],
       "mostViewed": null
@@ -1216,6 +1234,19 @@
           "url": "https://news.google.com/rss/articles/CBMikAFBVV95cUxONG9hTThoOFNqZ1otcUZjbjNEOElwWFp4UmNaZWlDRE5ZWDRHLW9QcXFxakgtYXVxbGRKa0VuTzdjRk45MFFQM2ZQclE0b0hMVnM2ZjNIb0NWWVN0azcxbXI1eWF3cWd5UGVEU2MzYlRSeGs2al9vazRmZWVYckdXNXZwLWZPcDVWaFFhUmRLcGY?oc=5"
         }
       ],
+      "mostViewed": null
+    },
+    "s-4328-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-11-14",
+          "lastSeen": "2026-11-14",
+          "url": "https://thehill.com/the-120/6219817-musk-faces-democratic-oversight/"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "s-4369-119": {
