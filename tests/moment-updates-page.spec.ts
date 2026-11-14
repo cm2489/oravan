@@ -12,6 +12,8 @@ import {
 } from '../lib/moment-updates';
 import { createTranslator } from 'next-intl';
 import { collapseQuietDays, revisionReasons, timelineDays, type TimelineRow } from '../lib/moments-ui';
+import { etDay, shiftDay } from '../lib/moment-updates-gate.mjs';
+import { frameDays, visitorEtDay } from './moment-frame';
 
 /*
  * e2e coverage for the Moments LIVE LAYER (v2 spec §7): the "Where it
@@ -27,11 +29,17 @@ import { collapseQuietDays, revisionReasons, timelineDays, type TimelineRow } fr
  * `context_refs` yet; no seeded day overflows the render cap), the test
  * asserts the ABSENCE honestly rather than pretending to cover it.
  *
- * CLOCK: the pages are statically generated, so "today" is the BUILD's ET
- * day and these assertions use the runner's. Days that carry updates render
- * regardless of the frame, so every content assertion below is clock-proof;
- * only the quiet-day variants could skew, and only if a run straddles ET
- * midnight. tests/moments.spec.ts already accepts that same exposure.
+ * CLOCK: the pages are statically generated, so the timeline's frame — which
+ * day is "today", which fourteen days are quiet — is the BUILD's Eastern day,
+ * and a CI run that straddles midnight Eastern builds on one day and asserts
+ * on the next (run 43558569518, 2026-11-14: six failures, all in the quiet-day
+ * tests below). So no expectation here reads this process's clock. The frame
+ * comes from the page itself (`data-frame-day`, tests/moment-frame.ts), and
+ * the one clock-dependent line — the newest quiet row's "yet today", decided
+ * in the visitor's browser by components/MomentQuietDay.tsx — is asserted
+ * against the BROWSER's clock, then exercised with that clock moved across
+ * midnight (the last describe block). Days that carry updates render
+ * regardless of the frame, so the other timeline tests are clock-proof.
  */
 
 const WINDOW_DAYS = 14;
@@ -254,9 +262,9 @@ test.describe('"What\'s moved" — the timeline', () => {
     test(`${m.id}: quiet days render as quiet days, and today's silence reads differently`, async ({
       page,
     }) => {
-      const days = timelineDays(m.id, WINDOW_DAYS);
-      const quiet = days.filter((d) => d.quiet);
       await page.goto(`/questions/${m.id}`);
+      const days = await frameDays(page, m.id, WINDOW_DAYS);
+      const quiet = days.filter((d) => d.quiet);
 
       const past = page.getByText(en.moments.updates.quietDay, { exact: true });
       const today = page.getByText(en.moments.updates.quietToday, { exact: true });
@@ -271,12 +279,18 @@ test.describe('"What\'s moved" — the timeline', () => {
       // of two or more consecutive quiet, non-today days folds into ONE
       // spanned row, while a singleton renders exactly as before. Derived
       // through the same helper the component renders with, so the two
-      // cannot drift. (The suite's ET-midnight exposure — see the header
-      // comment — extends to run boundaries here: the same accepted risk.)
+      // cannot drift.
       const rows = collapseQuietDays(days);
       const singles = rows.filter((r) => r.kind === 'day' && r.day.quiet && !r.day.isToday);
       const runs = quietRuns(days);
-      await expect(past).toHaveCount(singles.length);
+      // The newest row is the day the page was BUILT for. It says "yet today"
+      // only while the visitor's own Eastern day is that day; any later and it
+      // reads as the plain past-tense line a past quiet day gets
+      // (components/MomentQuietDay.tsx). Both facts come from the browser and
+      // the page, never from this process's clock.
+      const newestIsQuiet = days[0].quiet;
+      const stillToday = days[0].day === (await visitorEtDay(page));
+      await expect(past).toHaveCount(singles.length + (newestIsQuiet && !stillToday ? 1 : 0));
 
       // Two equal-length runs print IDENTICAL sentences, so count per
       // distinct sentence (the Map/toHaveCount idiom the revision-history
@@ -307,7 +321,7 @@ test.describe('"What\'s moved" — the timeline', () => {
           )
         ).toBeVisible();
       }
-      if (quiet.some((d) => d.isToday)) await expect(today).toHaveCount(1);
+      await expect(today).toHaveCount(newestIsQuiet && stillToday ? 1 : 0);
     });
 
     test(`${m.id}: source links are https, open safely, and never carry a lean`, async ({ page }) => {
@@ -351,8 +365,8 @@ test.describe('"What\'s moved" — the timeline', () => {
 test.describe('the ES live layer', () => {
   for (const m of withUpdates) {
     test(`${m.id}: /es renders Spanish update text with no English chrome`, async ({ page }) => {
-      const days = timelineDays(m.id, WINDOW_DAYS);
       await page.goto(`/es/questions/${m.id}`);
+      const days = await frameDays(page, m.id, WINDOW_DAYS);
 
       await expect(
         page.getByRole('heading', { level: 2, name: es.moments.updates.timelineHeading })
@@ -470,4 +484,91 @@ test.describe('live-layer accessibility', () => {
     await first.focus();
     await expect(first).toBeFocused();
   });
+});
+
+/*
+ * THE NEWEST QUIET ROW FOLLOWS THE VISITOR'S CLOCK, NOT THE BUILD'S.
+ *
+ * The page is prerendered, so its newest row is the day it was BUILT for.
+ * From midnight Eastern until the next deploy that day is yesterday, and the
+ * row used to keep saying "Nothing recorded yet today." under yesterday's
+ * date. Here the BROWSER's clock is pinned (page.clock) to each side of that
+ * midnight and the page is asked what a visitor then reads: "yet today" on
+ * the row's own day, the plain past-tense line on any other, never both and
+ * never neither. The corpus decides whether a newest quiet row exists at all
+ * (a question with a recorded action on its build day has none to move), so
+ * that case skips with its reason, like the sections above.
+ */
+test.describe("the newest quiet row follows the visitor's clock, not the build's", () => {
+  const HOUR = 3_600_000;
+  const LOCALES = [
+    { prefix: '', messages: en },
+    { prefix: '/es', messages: es },
+  ] as const;
+
+  /** The first instant of Eastern day `day`, found rather than assumed, so
+   *  the test holds on both sides of the November clock change. */
+  const startOfEtDay = (day: string): number => {
+    const ms = [4, 5]
+      .map((h) => Date.parse(`${day}T0${h}:00:00Z`))
+      .find((t) => etDay(t) === day && etDay(t - 1) !== day);
+    if (ms === undefined) throw new Error(`no Eastern midnight found for ${day}`);
+    return ms;
+  };
+
+  for (const m of withUpdates) {
+    test(`${m.id}: "yet today" on the row's own day, the plain line on any other`, async ({ page }) => {
+      for (const { prefix, messages } of LOCALES) {
+        const path = `${prefix}/questions/${m.id}`;
+        await page.goto(path);
+        const days = await frameDays(page, m.id, WINDOW_DAYS);
+        test.skip(!days[0].quiet, 'a recorded action sits on the build day: there is no quiet newest row to move');
+        const built = days[0].day;
+        const singles = collapseQuietDays(days).filter(
+          (r) => r.kind === 'day' && r.day.quiet && !r.day.isToday
+        ).length;
+
+        const today = page.getByText(messages.moments.updates.quietToday, { exact: true });
+        const plain = page.getByText(messages.moments.updates.quietDay, { exact: true });
+        const at = {
+          'the build day itself': { ms: startOfEtDay(built) + 12 * HOUR, live: true },
+          'the next day (the build is stale)': { ms: startOfEtDay(shiftDay(built, 1)) + 12 * HOUR, live: false },
+          'the day before (a clock set behind)': { ms: startOfEtDay(shiftDay(built, -1)) + 12 * HOUR, live: false },
+        };
+        for (const [when, { ms, live }] of Object.entries(at)) {
+          await page.clock.setFixedTime(ms);
+          await page.reload();
+          const label = `${prefix || '/en'} on ${when}`;
+          await expect(today, label).toHaveCount(live ? 1 : 0);
+          await expect(plain, label).toHaveCount(singles + (live ? 0 : 1));
+          // The row's own date is printed either way — the claim never
+          // depends on the reader knowing the date.
+          await expect(page.getByText(fmtDay(built, prefix ? 'es' : 'en'), { exact: true }).first(), label).toBeVisible();
+        }
+      }
+    });
+
+    test(`${m.id}: a tab left open across midnight Eastern stops saying "yet today"`, async ({ page }) => {
+      await page.goto(`/questions/${m.id}`);
+      const days = await frameDays(page, m.id, WINDOW_DAYS);
+      test.skip(!days[0].quiet, 'a recorded action sits on the build day: there is no quiet newest row to move');
+      const built = days[0].day;
+      const singles = collapseQuietDays(days).filter(
+        (r) => r.kind === 'day' && r.day.quiet && !r.day.isToday
+      ).length;
+      const midnight = startOfEtDay(shiftDay(built, 1));
+
+      const today = page.getByText(en.moments.updates.quietToday, { exact: true });
+      const plain = page.getByText(en.moments.updates.quietDay, { exact: true });
+      await page.clock.install({ time: midnight - 20_000 });
+      await page.goto(`/questions/${m.id}`);
+      await expect(today).toHaveCount(1);
+      await expect(plain).toHaveCount(singles);
+
+      // Forty seconds on, the visitor's clock reads the next Eastern day.
+      await page.clock.runFor(40_000);
+      await expect(today).toHaveCount(0);
+      await expect(plain).toHaveCount(singles + 1);
+    });
+  }
 });
