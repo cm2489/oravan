@@ -174,6 +174,12 @@ Run on 2026-11-14 against the live site (before the switch): `307 …/bills/hr-1
 
 **Undo:** revert the stage 8 pull request; short addresses go back to the 119th with it.
 
+## Before a second Congress ends (by January 2029)
+
+The note an unfinished ended bill shows is written for the 119th Congress only, date included: `bill.ended.note` in `messages/en.json` ("This bill ended with the 119th Congress on January 3, 2027, …") and in `messages/es.json` ("… terminó con el Congreso 119 el 3 de enero de 2027, …"). Its three sibling keys (`bill.ended.statusLong`, `bill.ended.lawLine`, `bill.ended.presented`) name the 119th the same way. That is right for the January 2027 switch. It would be wrong once the 120th ends too: a 120th bill would say it ended with the 119th.
+
+`tests/ended-note-congress.unit.spec.ts` fails, naming those keys, as soon as `ENDED_CONGRESSES` in `lib/congress.mjs` holds any Congress other than the 119th. **Before** a second Congress is added to that list, change the note (and its siblings) in both files to take the Congress and its end date as values, have the bill page pass the bill's own Congress, and update `tests/ended-state.unit.spec.ts`, which pins today's wording word for word. The new wording is the owner's to approve. Added 2026-11-14; nothing is wrong today or at the January 2027 switch.
+
 ## A refused week
 
 **What happens.** When a run is refused (any `::error::` in step 2's list), nothing is written or committed and the workflow opens one GitHub issue labeled `legislators-refused`, titled "Weekly members refresh refused: nothing committed", or comments on it if it is already open. The issue says what was refused, names the members who left, and, when it applies, gives the exact command to accept the week. **A refused week never clears by itself**: every later run compares against the same committed member file, so it refuses again until the upstream file changes or someone accepts the week.
