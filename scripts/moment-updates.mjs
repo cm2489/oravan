@@ -198,10 +198,12 @@ import {
 } from './moment-updates-map.mjs';
 import {
   RECHECK_ACCEPT_PATH,
-  acceptListProblems,
   acceptedIds,
   amendmentsNamedInStore,
+  heldRows,
   isRecheckable,
+  parseAcceptFile,
+  releaseHeldRow,
   recheckPendingIds,
   recheckStore,
 } from '../lib/moment-updates-recheck.mjs';
@@ -603,8 +605,7 @@ async function recheckStoredLines() {
   // accepts nothing and says so.
   let accept = new Set();
   if (existsSync(RECHECK_ACCEPT_PATH)) {
-    const raw = readJSON(RECHECK_ACCEPT_PATH);
-    const problems = acceptListProblems(raw);
+    const { value: raw, problems } = parseAcceptFile(readFileSync(RECHECK_ACCEPT_PATH, 'utf8'));
     if (problems.length) for (const p of problems) console.error(`::error::moment-updates record re-check: ${p} — nothing is accepted`);
     else accept = acceptedIds(raw, todayET);
     if (accept.size) console.log(`  recheck: ${accept.size} row(s) accepted for ${todayET} by ${RECHECK_ACCEPT_PATH}`);
@@ -629,11 +630,19 @@ async function recheckStoredLines() {
       console.warn(`recheck: step summary not written: ${e.message}`);
     }
   }
-  if (result.refused) return { refused: result.refused, corrected: [] };
+  if (result.refused) return { refused: result.refused, corrected: [], recollect: [] };
   store = result.store;
   return {
     refused: null,
     corrected: result.changes.filter((c) => c.kind === 'reworded').map((c) => ({ momentId: c.momentId, id: c.newId })),
+    // A withdrawn row's day is read again from the list already in hand
+    // (recollectDays): the record may have replaced the line with one the
+    // collector would collect, and without this it waits until the bill
+    // next moves.
+    recollect: result.changes
+      .filter((c) => c.kind === 'withdrawn')
+      .map((c) => ({ momentId: c.momentId, vehicle: c.vehicle, day: c.day, list: lists.get(c.vehicle) }))
+      .filter((x) => x.list),
   };
 }
 
@@ -646,43 +655,123 @@ async function recheckStoredLines() {
  * @param {() => Promise<{ refused: string|null, corrected: { momentId: string, id: string }[] }>} run
  * @param {() => Record<string, any>} getStore
  * @param {(s: Record<string, any>) => void} setStore
- * @returns {Promise<{ failed: null|'refused'|'threw', corrected: { momentId: string, id: string }[] }>}
+ * @returns {Promise<{ failed: null|'refused'|'threw', corrected: { momentId: string, id: string }[], recollect: any[] }>}
  */
 export async function guardedRecheck(run, getStore, setStore) {
   const before = getStore();
   try {
     const r = await run();
-    return { failed: r?.refused ? 'refused' : null, corrected: r?.refused ? [] : (r?.corrected ?? []) };
+    if (r?.refused) return { failed: 'refused', corrected: [], recollect: [] };
+    return { failed: null, corrected: r?.corrected ?? [], recollect: r?.recollect ?? [] };
   } catch (e) {
     setStore(before);
     console.error(`::error::moment-updates record re-check failed and changed nothing: ${e?.stack ?? e}`);
-    return { failed: 'threw', corrected: [] };
+    return { failed: 'threw', corrected: [], recollect: [] };
   }
 }
 
 /**
- * Ask for a plain-language line of each corrected row's new words, in one
- * call of its own, and write back whatever passes the lint (assignUpdateText:
- * a line that fails keeps the record's words, quoted). Mutates the store's rows.
+ * The candidates a withdrawn row's day yields when read again from the same
+ * list (the record may have replaced the line with a longer one the hourly
+ * path would only collect when the bill next moves). The ordinary intake
+ * rules decide (actionToCandidate: milestones and votes only; the record's
+ * same-day position stored), then the ordinary "is it new", "would the prune
+ * keep it" and daily-ceiling tests. Pure but for the clock-free inputs passed.
+ * @param {{ momentId: string, vehicle: string, day: string, list: { actions: any[], total: number|null } }[]} days
+ * @param {Record<string, any>} storeArg
+ * @param {{ now: Date, recordedAt: string, room: number }} opts
  */
-async function redecodeCorrected(anthropic, corrected) {
-  const rows = corrected
-    .map(({ momentId, id }) => {
-      const row = (store[momentId]?.updates ?? []).find((u) => u.id === id);
-      return row ? { ...structuredClone(row), [MOMENT_KEY]: momentId } : null;
-    })
-    .filter(Boolean)
-    .slice(0, BATCH_CAP);
-  if (!rows.length) return;
-  const decoded = await decodeUpdates(anthropic, rows);
-  assignUpdateText(rows, [], decoded);
-  for (const c of rows) {
-    const row = (store[c[MOMENT_KEY]]?.updates ?? []).find((u) => u.id === c.id);
+export function recollectDayCandidates(days, storeArg, { now: nowArg, recordedAt, room }) {
+  const out = [];
+  const seen = new Set();
+  for (const { momentId, vehicle, day, list } of days ?? []) {
+    if (seen.has(`${momentId}|${vehicle}|${day}`)) continue;
+    seen.add(`${momentId}|${vehicle}|${day}`);
+    const positions = recordDayPositions(list.actions, { total: list.total });
+    list.actions.forEach((action, i) => {
+      if (String(action?.actionDate ?? '').slice(0, 10) !== day) return;
+      const c = actionToCandidate({ momentId, vehicle, action, billUrl: congressGovUrlForSlug(vehicle), recordedAt, dayPosition: positions[i] });
+      if (c) out.push({ ...c, [MOMENT_KEY]: momentId });
+    });
+  }
+  const { kept } = survivingCandidates(freshCandidates(out, storeArg), storeArg, nowArg);
+  return kept.slice(0, Math.max(0, room));
+}
+
+/**
+ * The re-check's follow-up, after it has written: ONE decode call (skipped
+ * when there is nothing to ask) for
+ *   - each row corrected tonight: a plain-language line of the new words
+ *     replaces the quote when it passes the lint (assignUpdateText);
+ *   - each HELD row in the store: the first decode that passes the lint is
+ *     printed and the row shows again (releaseHeldRow); otherwise it stays
+ *     held and the run warns, every night;
+ *   - the candidates of a withdrawn row's day, read again (recollectDayCandidates),
+ *     stored like any collected action (a line that fails the lint is dropped,
+ *     exactly as in the main path).
+ * Mutates the store; prunes it after a merge.
+ */
+async function recheckFollowUp(anthropic, recheck) {
+  const findRow = (momentId, id) => (store[momentId]?.updates ?? []).find((u) => u.id === id);
+  const clone = (momentId, row) => ({ ...structuredClone(row), [MOMENT_KEY]: momentId });
+  const corrected = (recheck.corrected ?? []).map(({ momentId, id }) => findRow(momentId, id) && clone(momentId, findRow(momentId, id))).filter(Boolean);
+  const held = heldRows(store).map(({ momentId, id }) => clone(momentId, findRow(momentId, id)));
+  const room = Math.max(0, DAILY_EVENTS - dailyEventCount(store, todayUTC));
+  const fresh = recollectDayCandidates(recheck.recollect ?? [], store, { now, recordedAt: nowISO, room });
+  const batch = [...corrected, ...held, ...fresh].slice(0, BATCH_CAP);
+  const overflow = [...corrected, ...held, ...fresh].slice(BATCH_CAP);
+  if (!batch.length && !overflow.length) return;
+  const decoded = await decodeUpdates(anthropic, batch);
+  assignUpdateText(batch, overflow, decoded);
+  console.log(
+    `recheck follow-up: ${batch.length} line(s) (${corrected.length} corrected, ${held.length} held, ${fresh.length} re-collected) ${anthropic ? `asked of one decode call, ${decoded.size} returned` : 'not decoded: ANTHROPIC_API_KEY unset, so no call; each keeps the record quote (a held row stays held)'}`,
+  );
+
+  for (const c of corrected) {
+    const row = findRow(c[MOMENT_KEY], c.id);
     if (!row) continue;
     row.text = c.text;
     row.ai = c.ai;
     console.log(`  recheck: ${c.id} now prints ${c.ai ? "a decode of the record's new words" : "the record's new words, quoted"}`);
   }
+  for (const c of held) {
+    const momentId = c[MOMENT_KEY];
+    const entry = store[momentId];
+    const i = (entry?.updates ?? []).findIndex((u) => u.id === c.id);
+    if (i < 0) continue;
+    if (recheckLint(c).length === 0) {
+      entry.updates[i] = releaseHeldRow(entry.updates[i], c.text, c.ai, now);
+      console.log(`  recheck: held row ${momentId}/${c.id} shows again with ${c.ai ? 'a decode' : 'the quote'} of "${c.record.action_text}"`);
+    }
+  }
+  const merged = [];
+  for (const c of fresh) {
+    const momentId = c[MOMENT_KEY];
+    if (recheckLint(c).length) {
+      console.error(`  recheck re-collect DROPPED ${c.id} (${c.class} ${c.vehicle} ${c.day}) — even the verbatim record fails the lint`);
+      continue;
+    }
+    const row = { ...c };
+    delete row[MOMENT_KEY];
+    store[momentId].updates = dedupeUpdates(store[momentId].updates ?? [], [row]);
+    merged.push(`${momentId}/${row.id} (${row.class} ${row.vehicle} ${row.day}): "${row.record.action_text}"`);
+  }
+  for (const m of merged) console.log(`  recheck re-collected ${m}`);
+  if (merged.length) pruneStore(store, moments, { now, mode: MODE });
+}
+
+/**
+ * Every night while a row stays HELD, say so (the runbook's "Held rows"
+ * section has the fix). Returns the count.
+ */
+function warnHeld() {
+  const held = heldRows(store);
+  for (const h of held) {
+    console.warn(
+      `::warning::moment-updates record re-check: ${h.momentId}/${h.id} (${h.vehicle} ${h.day}) is HELD since ${h.since} — the record's words "${h.words}" fail the update lint and no decode has passed yet, so the line is hidden; see docs/runbooks/record-recheck.md, "Held rows"`,
+    );
+  }
+  return held.length;
 }
 
 /* ------------------------------------------------------------------ *
@@ -2555,10 +2644,11 @@ async function main() {
       store = s;
     });
     recheckFailed = recheck.failed;
-    if (recheck.corrected.length) {
-      pruneStore(store, moments, { now, mode: MODE });
-      await redecodeCorrected(anthropic, recheck.corrected);
+    if (!recheck.failed) {
+      if (recheck.corrected.length) pruneStore(store, moments, { now, mode: MODE });
+      await recheckFollowUp(anthropic, recheck);
     }
+    warnHeld();
   }
 
   // AFTER the prune: only a vote row that survived it is a landing.

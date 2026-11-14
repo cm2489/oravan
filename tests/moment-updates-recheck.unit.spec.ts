@@ -36,7 +36,12 @@ import {
   acceptedIds,
   amendmentNamed,
   amendmentsNamedInStore,
+  heldRows,
+  isHeld,
   judgeBill,
+  parseAcceptFile,
+  releaseHeldRow,
+  voteFrame,
   listProblem,
   recheckPendingIds,
   recheckStore,
@@ -53,8 +58,10 @@ import {
   guardedRecheck,
   planSummaries,
   recheckSummaryMarkdown,
+  recollectDayCandidates,
   recordMovedSince,
 } from '../scripts/moment-updates.mjs';
+import { alarms, formatHealthAlarmComment, parseRecheckTrouble, recheckHeldRows } from '../lib/pipeline-health.mjs';
 
 // The rows are the stored JSON shape, read loosely, as the gate itself reads them.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -262,8 +269,8 @@ test.describe('rule 1: a vote is never hidden when the record corrects it', () =
   test('two different sentences carrying the roll number: left, never hidden', () => {
     const actions = newestFirst([
       ...RECORD_NOW.filter((a) => !/Record Vote Number: 243/.test(a.text)),
-      senate('2026-09-24', 'Cloture invoked. 74 - 24. Record Vote Number: 243.'),
-      senate('2026-09-24', 'Cloture invoked. 74 - 23. Record Vote Number: 243.'),
+      senate('2026-09-24', 'Cloture on the measure, as amended, invoked in Senate by Yea-Nay Vote. 74 - 24. Record Vote Number: 243.'),
+      senate('2026-09-24', 'Cloture on the measure, as amended, invoked in Senate by Yea-Nay Vote. 74 - 23. Record Vote Number: 243.'),
     ]);
     const r = run(store([VOTE, ...HELD.slice(0, 2)], []), lists(actions));
     expect(r.changes).toEqual([]);
@@ -320,6 +327,127 @@ test.describe('left as it is', () => {
     const r = run(store([old, twin, ...HELD], []), lists(actions));
     expect(kinds(r)).toEqual([['reinstated', twin.id]]);
     expect(r.left.join('\n')).toContain('would give it the id of stored row');
+  });
+});
+
+test.describe('round 3: a row never quotes another action, and is never hidden while the record holds it', () => {
+  const VOTE = said('Cloture on the measure, as amended, invoked in Senate by Yea-Nay Vote. 74 - 25. Record Vote Number: 243.', {
+    class: 'vote',
+    day: '2026-09-24',
+    record: { roll_call: { chamber: 'senate', number: 243 } },
+  });
+  const without243 = RECORD_NOW.filter((a) => !/Record Vote Number: 243/.test(a.text));
+  const RECONSIDER = 'Motion to reconsider the vote by which cloture on the measure was invoked (Record Vote No. 243) entered in Senate.';
+
+  test('1a · the vote is gone from its day and a motion to reconsider carries roll 243 in recordedVotes: left, never rewritten', () => {
+    const actions = newestFirst([...without243, senate('2026-09-24', RECONSIDER, { recordedVotes: [{ chamber: 'Senate', rollNumber: 243 }] })]);
+    const r = run(store([VOTE, ...HELD.slice(0, 2)], []), lists(actions));
+    expect(r.changes).toEqual([]);
+    expect(byId(r.store, VOTE.id).record.action_text).toBe(VOTE.record.action_text);
+    expect(r.left.join('\n')).toContain('is on that day\'s list only in another sentence');
+  });
+
+  test('1b · the same, with "Record Vote Number: 243" in the other action\'s own words', () => {
+    const actions = newestFirst([...without243, senate('2026-09-24', 'Motion to reconsider entered in Senate. Record Vote Number: 243.')]);
+    const r = run(store([VOTE, ...HELD.slice(0, 2)], []), lists(actions));
+    expect(r.changes).toEqual([]);
+    expect(r.left).toHaveLength(1);
+  });
+
+  test("1c · the vote's own sentence corrected, but another stored row already quotes it: left", () => {
+    const words = 'Cloture on the measure, as amended, invoked in Senate by Yea-Nay Vote. 74 - 24. Record Vote Number: 243.';
+    const quoting = said(words, { day: '2026-09-24', class: 'status_change', record: { action_type: 'latestAction', source_system: 'Congress.gov bill detail' } });
+    const actions = newestFirst([...without243, senate('2026-09-24', words, { recordedVotes: [{ chamber: 'Senate', rollNumber: 243 }] })]);
+    const r = run(store([VOTE, quoting, ...HELD.slice(0, 2)], []), lists(actions));
+    expect(r.changes).toEqual([]);
+    expect(byId(r.store, VOTE.id).record.action_text).toBe(VOTE.record.action_text);
+  });
+
+  test('1d · no action that day carries the roll number at all: left, never withdrawn, never rewritten', () => {
+    const actions = newestFirst([...without243, senate('2026-09-24', 'Some other action entirely in Senate.')]);
+    const r = run(store([VOTE, ...HELD.slice(0, 2)], []), lists(actions));
+    expect(r.changes).toEqual([]);
+    expect(r.left.join('\n')).toContain('is not on that day\'s list; a recorded vote is never withdrawn');
+  });
+
+  test('voteFrame keeps every word but digits, outcome words and "not"', () => {
+    expect(voteFrame(recheckWords('Cloture not invoked by Yea-Nay Vote. 49 - 50.'))).toEqual(['cloture', 'by', 'yea', 'nay', 'vote']);
+  });
+
+  test("2 · the row's own words on another date win over a near-twin on its day: left, not rewritten to the twin", () => {
+    const u = said('Motion to proceed to measure withdrawn in Senate.', { day: '2026-09-17' });
+    const actions = newestFirst([...RECORD_NOW, senate('2026-09-18', 'Motion to proceed to measure withdrawn in Senate.'), senate('2026-09-17', 'Motion to proceed to measure tabled in Senate.')]);
+    const r = run(store([u, ...HELD], []), lists(actions));
+    expect(r.changes).toEqual([]);
+    expect(r.left.join('\n')).toContain('the record lists these words on 2026-09-18, not 2026-09-17');
+  });
+
+  const KEY = '119-samdt-6776';
+  const amendment = (actions: Row[]) => new Map([[KEY, { actions: newestFirst(actions), total: actions.length, request: { amendmentNumber: '6776', congress: '119', type: 'SAMDT' } }]]);
+  test("3a · the amendment's own list has the words on another date: left, not withdrawn", () => {
+    const r = run(store(), lists(), { amendmentLists: amendment([senate('2026-09-18', 'Cloture motion on amendment SA 6776 presented in Senate.')]) });
+    expect(byId(r.store, CLOTURE_SA6776.id)).toBe(CLOTURE_SA6776);
+    expect(r.left.join('\n')).toContain(`amendment ${KEY}'s own record lists these words on 2026-09-18`);
+  });
+
+  test("3b · the amendment's own list has it reworded that day (\"filed\"): left, not withdrawn, not rewritten", () => {
+    const r = run(store(), lists(), { amendmentLists: amendment([senate('2026-09-17', 'Cloture motion on amendment SA 6776 filed in Senate.')]) });
+    expect(byId(r.store, CLOTURE_SA6776.id)).toBe(CLOTURE_SA6776);
+    expect(r.left.join('\n')).toContain('lists something close that day');
+  });
+});
+
+test.describe('round 3: a withdrawn row\'s day is read again in the same run', () => {
+  test('a longer sentence the record put in its place is collected (with its position), and one already stored is not', () => {
+    const day = '2026-09-17';
+    const longer = 'Cloture motion on amendment SA 6776 to the measure presented in Senate, as modified by unanimous consent.';
+    const actions = newestFirst([...RECORD_NOW, senate(day, longer)]);
+    // One stored row is the list's own action, word for word (its id is the candidate's).
+    const exact = said('Motion to proceed to measure considered in Senate. (CR S4773-4774)', { day });
+    const s0 = store([HELD[0], exact], []);
+    const got = recollectDayCandidates([{ momentId: MOMENT, vehicle: VEHICLE, day, list: list(actions) }], s0, { now: new Date(NOW), recordedAt: new Date(NOW).toISOString(), room: 40 });
+    const texts = got.map((c: Row) => c.record.action_text);
+    expect(texts).toContain(longer);
+    expect(texts).not.toContain('Cloture motion on the measure presented in Senate. (CR S4789)'); // already stored (same action)
+    expect(got.map((c: Row) => c.id)).not.toContain(exact.id); // already stored, same id
+    expect(got.find((c: Row) => c.record.action_text === longer)!.record.day_position).toBeGreaterThanOrEqual(0);
+    expect(recollectDayCandidates([{ momentId: MOMENT, vehicle: VEHICLE, day, list: list(actions) }], s0, { now: new Date(NOW), recordedAt: new Date(NOW).toISOString(), room: 0 })).toEqual([]);
+  });
+});
+
+test.describe('round 3: trouble reaches a person', () => {
+  test("pipeline-health reads a refusal, a throw and a malformed accept list from the nightly's log, in either annotation form", () => {
+    const log = [
+      'sync\tCollect Moment updates\t2026-11-15T02:01:00Z ##[error]moment-updates record re-check refused: every one of s-4668-119\'s 1 checked row(s) would be corrected, withdrawn or held in one night — that looks like the wrong list for that bill. Nothing was changed; docs/runbooks/record-recheck.md says how to accept these rows for one night.',
+      '::error::moment-updates record re-check failed and changed nothing: Error: boom',
+      '::error::moment-updates record re-check: data/record-recheck-accept.json: is not valid JSON (x) — nothing is accepted',
+    ].join('\n');
+    const t = parseRecheckTrouble(log);
+    expect(t.refused).toMatch(/^every one of s-4668-119/);
+    expect(t.failed).toBe(true);
+    expect(t.acceptMalformed).toBe(true);
+    expect(parseRecheckTrouble('nothing to see')).toEqual({ refused: null, failed: false, acceptMalformed: false });
+  });
+
+  test('each becomes a ⛔ alarm on the standing issue, and a held row does too', () => {
+    const day = '2026-09-16';
+    const u = said('Motion to proceed withdrawn in Senate.', { day });
+    const actions = newestFirst([...RECORD_NOW.filter((a) => a.actionDate !== day), senate(day, 'Motion to proceed tabled in Senate.')]);
+    const heldStore = run(store([u, ...HELD], []), lists(actions), { lintText: () => ['x'] }).store;
+    const list2 = alarms({ nightly: { conclusion: 'success' }, recheck: { refused: 'too many', failed: true, acceptMalformed: true, held: recheckHeldRows(heldStore) } });
+    const codes = list2.map((a: Row) => a.code);
+    expect(codes).toEqual(expect.arrayContaining(['record-recheck-refused', 'record-recheck-failed', 'record-recheck-accept-malformed', 'record-recheck-held']));
+    const comment = formatHealthAlarmComment({ date: '2026-11-15', alarms: list2, runUrl: null });
+    expect(comment).toContain('refused to change stored timeline lines');
+    expect(comment).toContain('HELD by the record re-check');
+    expect(alarms({ nightly: { conclusion: 'success' }, recheck: { refused: null, failed: false, acceptMalformed: false, held: [] } }).map((a: Row) => a.code)).not.toContain('record-recheck-held');
+  });
+
+  test('a malformed accept file names the file and the fix, never a raw SyntaxError', () => {
+    const { value, problems } = parseAcceptFile('{ "accept": [ ');
+    expect(value).toBeUndefined();
+    expect(problems[0]).toMatch(/^data\/record-recheck-accept\.json: is not valid JSON .* fix it to the shape .* or delete the file$/);
+    expect(parseAcceptFile('{"accept":[]}').problems).toEqual([]);
   });
 });
 
@@ -521,22 +649,62 @@ test.describe('rule 6: a row that names an amendment', () => {
   });
 });
 
-test.describe('held: a quote the update lint refuses is never written', () => {
-  test('the row is hidden with both sets of words kept, and the file still passes the gate and the pre-commit check', () => {
-    const u = said('Motion to proceed withdrawn in Senate.', { day: '2026-09-16' });
-    const actions = newestFirst([...RECORD_NOW.filter((a) => a.actionDate !== '2026-09-16'), senate('2026-09-16', 'Motion to proceed tabled in Senate.')]);
-    const refuse = () => ['en: refused by the lint'];
+test.describe('held: a corrected line the update lint refuses is stored but hidden until a decode passes', () => {
+  const day = '2026-09-16';
+  const u = said('Motion to proceed withdrawn in Senate.', { day });
+  const actions = newestFirst([...RECORD_NOW.filter((a) => a.actionDate !== day), senate(day, 'Motion to proceed tabled in Senate.')]);
+  const refuse = () => ['en: refused by the lint'];
+
+  test("the row takes the record's words and id, keeps its old line, and is hidden; the file passes the gate and the pre-commit check", () => {
     const r = run(store([u, ...HELD], []), lists(actions), { lintText: refuse });
-    expect(kinds(r)).toEqual([['held', u.id]]);
-    const kept = byId(r.store, u.id);
+    expect(r.changes.map((c: Row) => c.kind)).toEqual(['held']);
+    const newId = r.changes[0].newId;
+    const kept = byId(r.store, newId);
+    expect(kept.record.action_text).toBe('Motion to proceed tabled in Senate.');
+    expect(kept.text).toEqual(u.text);
     expect(kept.withdrawn_on).toBe(TODAY);
-    expect(kept.record.action_text).toBe('Motion to proceed withdrawn in Senate.');
-    expect(kept.rechecks.at(-1)).toMatchObject({ outcome: 'held', now: 'Motion to proceed tabled in Senate.' });
+    expect(kept.rechecks.at(-1)).toMatchObject({ outcome: 'held', was: 'Motion to proceed withdrawn in Senate.', was_id: u.id, now: 'Motion to proceed tabled in Senate.' });
+    expect(isHeld(kept)).toBe(true);
+    expect(heldRows(r.store)).toEqual([{ momentId: MOMENT, id: newId, vehicle: VEHICLE, day, since: TODAY, words: 'Motion to proceed tabled in Senate.' }]);
+    expect(readableEntry(r.store[MOMENT]).updates.map((x) => x.id)).not.toContain(newId);
     expect(recheckFieldProblems(kept, TODAY)).toEqual([]);
+    expect(verifyMomentUpdates({ updates: r.store, now: NOW }).failures).toEqual([]);
+    // A second night: the record still says it, so nothing is written.
     expect(run(r.store, lists(actions), { lintText: refuse }).changes).toEqual([]);
   });
 
-  test('the pre-commit check now runs the same update lint as CI, so a line CI rejects never commits', () => {
+  test('a held row is re-judged against its NEWEST words: when the record changes them again to words that pass, it shows', () => {
+    const night1 = run(store([u, ...HELD], []), lists(actions), { lintText: refuse });
+    const later = newestFirst([...RECORD_NOW.filter((a) => a.actionDate !== day), senate(day, 'Motion to proceed fell in Senate.')]);
+    const night2 = run(night1.store, lists(later));
+    expect(night2.changes.map((c: Row) => c.kind)).toEqual(['reworded']);
+    const shown = byId(night2.store, night2.changes[0].newId);
+    expect(Object.hasOwn(shown, 'withdrawn_on')).toBe(false);
+    expect(shown.record.action_text).toBe('Motion to proceed fell in Senate.');
+    expect(recheckFieldProblems(shown, TODAY)).toEqual([]);
+  });
+
+  test('a decode that passes the lint releases it (releaseHeldRow), and the gate accepts the result', () => {
+    const night1 = run(store([u, ...HELD], []), lists(actions), { lintText: refuse });
+    const held = byId(night1.store, night1.changes[0].newId);
+    const out = releaseHeldRow(held, { en: 'The Senate tabled the motion to proceed.', es: 'El Senado dejó sobre la mesa la moción para proceder.' }, true, NOW);
+    expect(Object.hasOwn(out, 'withdrawn_on')).toBe(false);
+    expect(out.ai).toBe(true);
+    expect(out.rechecks.at(-1)).toMatchObject({ outcome: 'reinstated', on: TODAY });
+    expect(recheckFieldProblems(out, TODAY)).toEqual([]);
+  });
+
+  test('the real lint: a vote corrected through its roll number to words with "expected to" is held, not printed', () => {
+    const vote = said('Cloture on the measure invoked in Senate by Yea-Nay Vote. 74 - 25. Record Vote Number: 243.', { class: 'vote', day: '2026-09-24', record: { roll_call: { chamber: 'senate', number: 243 } } });
+    const words = 'Cloture on the measure invoked in Senate by Yea-Nay Vote. 74 - 24. Record Vote Number: 243.';
+    // (A frame-preserving correction cannot add words, so the real-lint case is
+    // shown on the quote the gate would print: the lint is what decides.)
+    const r = run(store([vote, ...HELD.slice(0, 2)], []), lists(newestFirst([...RECORD_NOW.filter((a) => !/Record Vote Number: 243/.test(a.text)), senate('2026-09-24', words, { recordedVotes: [{ chamber: 'Senate', rollNumber: 243 }] })])), { lintText: () => lintUpdateText('The vote is expected to stand.', 'en', 'vote', []) });
+    expect(r.changes.map((c: Row) => c.kind)).toEqual(['held']);
+    expect(byId(r.store, vote.id).record.action_text).toBe(words);
+  });
+
+  test('the pre-commit check runs the same update lint as CI, so a line CI rejects never commits', () => {
     const bad = { ...HELD[0], text: { en: 'The Senate is expected to vote.', es: 'Se espera que el Senado vote.' } };
     const { failures } = verifyMomentUpdates({ updates: store([bad], []), now: NOW });
     expect(failures.join('\n')).toContain('fail the lint check-moment-updates runs');
@@ -643,6 +811,9 @@ test.describe('the CI gate and the pre-commit check', () => {
     ['a correction that does not keep the earlier words', { ...CLOTURE_SA6776, rechecks: [{ on: TODAY, at, outcome: 'reworded', was_id: 'u_00000001' }] }],
     ['a correction with no earlier id', { ...CLOTURE_SA6776, rechecks: [{ on: TODAY, at, outcome: 'reworded', was: 'x' }] }],
     ["a hold that does not keep the record's words", gone({ rechecks: [{ on: TODAY, at, outcome: 'held' }] })],
+    ['a hold that does not keep the earlier words', gone({ rechecks: [{ on: TODAY, at, outcome: 'held', now: CLOTURE_SA6776.record.action_text, was_id: 'u_00000001' }] })],
+    ['a hold with no earlier id', gone({ rechecks: [{ on: TODAY, at, outcome: 'held', now: CLOTURE_SA6776.record.action_text, was: 'x' }] })],
+    ["a hold whose words are not the row's record words", gone({ rechecks: [{ on: TODAY, at, outcome: 'held', now: 'other words', was: 'x', was_id: 'u_00000001' }] })],
     ['an entry with no time', gone({ rechecks: [{ on: TODAY, outcome: 'withdrawn' }] })],
     ['an entry whose time is a number, not an ISO string', gone({ rechecks: [{ on: TODAY, at: NOW, outcome: 'withdrawn' }] })],
     ['an entry whose time is on another day', gone({ rechecks: [{ on: TODAY, at: '2026-11-10T12:00:00.000Z', outcome: 'withdrawn' }] })],
@@ -684,10 +855,10 @@ test.describe('the runner', () => {
         s = next;
       },
     );
-    expect(out).toEqual({ failed: 'threw', corrected: [] });
+    expect(out).toEqual({ failed: 'threw', corrected: [], recollect: [] });
     expect(s).toEqual({ a: 1 });
-    expect(await guardedRecheck(async () => ({ refused: 'x', corrected: [{ momentId: 'm', id: 'u' }] }), () => s, () => {})).toEqual({ failed: 'refused', corrected: [] });
-    expect(await guardedRecheck(async () => ({ refused: null, corrected: [{ momentId: 'm', id: 'u' }] }), () => s, () => {})).toEqual({ failed: null, corrected: [{ momentId: 'm', id: 'u' }] });
+    expect(await guardedRecheck(async () => ({ refused: 'x', corrected: [{ momentId: 'm', id: 'u' }], recollect: [] }), () => s, () => {})).toEqual({ failed: 'refused', corrected: [], recollect: [] });
+    expect(await guardedRecheck(async () => ({ refused: null, corrected: [{ momentId: 'm', id: 'u' }], recollect: [] }), () => s, () => {})).toEqual({ failed: null, corrected: [{ momentId: 'm', id: 'u' }], recollect: [] });
   });
 
   test('main() runs the re-check AFTER the night\'s collection is merged and pruned, and BEFORE the summaries', () => {

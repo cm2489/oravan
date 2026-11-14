@@ -47,6 +47,26 @@ Only after reading the held-back rows in the step summary and checking each agai
 
 The override cannot be set by accident: it takes a reviewed commit naming one night and the exact rows.
 
+## Held rows
+
+A **held** row is one whose record words changed to a sentence Oravan may not print as it stands: quoted, the record's new words fail the update lint (a forecast phrase such as "expected to" or "set to" is refused even inside a quote, the same rule that keeps a freshly collected action with those words out of the file). The row stores the record's new words and is hidden. Every night the collector asks for a plain-language line of those words; the first one that passes the lint is printed and the row shows again by itself.
+
+While a row is held, every nightly run prints a warning naming it (`… is HELD since …`), and the pipeline-health report raises it on its standing issue every morning.
+
+**The fix, when a row stays held for more than a night or two:**
+
+1. Check the nightly log for `ANTHROPIC_API_KEY unset` or decode errors. If decodes are not running, fix that; the next nightly releases the row by itself.
+2. If decodes run but keep failing the lint, write the line by hand in a pull request that edits nothing else in `data/moment-updates.json`. On that row:
+   - set `text.en` and `text.es` to one plain sentence each stating what the record's words (`record.action_text`) say, with no forecast words;
+   - set `"ai": false`;
+   - delete `withdrawn_on`;
+   - append `{ "on": "<today, US Eastern, YYYY-MM-DD>", "at": "<now, ISO>", "outcome": "reinstated" }` to `rechecks`.
+3. Run `node scripts/check-moment-updates.mjs` (it must pass) and merge.
+
+## How trouble reaches a person
+
+The collector's step is `continue-on-error`, so the nightly run stays green when the re-check refuses, throws or holds a row. The daily pipeline-health report (`daily-metrics.yml`, `scripts/pipeline-health.mjs`) reads the nightly's log and the committed file, and posts a ⛔ alarm comment on its standing `pipeline-health` issue for each: a refusal (with its reason), a re-check that threw, a malformed accept list, and every held row.
+
 ## Lines left as they are
 
 A warning `record re-check: … left as it is — …` means the re-check saw a difference it would not resolve by itself: two possible matches, a change that would alter an outcome, a number or a chamber, an action that moved to another date, a list missing that day, or a line naming an amendment whose own record could not be read. The stored line stays as it is. If the record really changed it, correct it by hand in a reviewed pull request that edits nothing else.

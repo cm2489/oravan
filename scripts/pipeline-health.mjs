@@ -76,6 +76,8 @@ import {
   pressFeedHealth,
   producerStillRunning,
   refusedSummaries,
+  parseRecheckTrouble,
+  recheckHeldRows,
   runThatWroteCursor,
 } from '../lib/pipeline-health.mjs';
 import { RECHECK_DAYS as PORTRAIT_RECHECK_DAYS } from './mirror-portraits.mjs';
@@ -297,6 +299,7 @@ export function buildReport({ now = Date.now() } = {}) {
   let pregen = null;
   let portrait404s = null;
   let upstashCacheFailures = null;
+  let recheckTrouble = null;
   /** Every nightly log read today, newest first, with its DONE line. */
   const nightlyReads = [];
   /** Every nightly DONE line read today, by run id — the cursor row needs the one that wrote the committed cursor. */
@@ -336,6 +339,7 @@ export function buildReport({ now = Date.now() } = {}) {
     pregen = parsePregen(log);
     portrait404s = countPortrait404s(log);
     upstashCacheFailures = countUpstashCacheFailures(log);
+    recheckTrouble = parseRecheckTrouble(log);
   }
 
   /* -- side workflows --------------------------------------------- */
@@ -562,6 +566,9 @@ export function buildReport({ now = Date.now() } = {}) {
     // SUMMARY_REFUSAL_ALARM_RUNS or more runs in a row, read from the
     // committed counter (lib/pipeline-health.mjs refusedSummaries). Live
     // questions only, when data/moments.json was read.
+    // The nightly record re-check: a refusal or a throw from the night's log,
+    // and the rows it holds from the committed file.
+    recheck: { ...(recheckTrouble ?? { refused: null, failed: false, acceptMalformed: false }), held: recheckHeldRows(readJsonFile('data/moment-updates.json')) },
     summaryRefusals: refusedSummaries(readJsonFile('data/moment-updates.json'), {
       liveIds: moments ? Object.entries(moments).filter(([, m]) => m?.status === 'live').map(([id]) => id) : null,
     }),

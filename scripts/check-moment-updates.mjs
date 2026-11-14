@@ -27,7 +27,7 @@
 import { readFileSync, statSync, existsSync } from 'node:fs';
 import { checkMomentUpdates, CLASS_PRIORITY, UPDATE_CLASSES } from '../lib/moment-updates-gate.mjs';
 import { PRESS_ALLOWLIST_PATH, loadPressOutletPolicy } from '../lib/press-outlets.mjs';
-import { RECHECK_ACCEPT_PATH, acceptListProblems } from '../lib/moment-updates-recheck.mjs';
+import { RECHECK_ACCEPT_PATH, parseAcceptFile } from '../lib/moment-updates-recheck.mjs';
 
 // The priority table and the class list must never drift apart: a class with
 // no priority silently sorts last and can be crowded out of its own day.
@@ -87,7 +87,7 @@ for (const p of pressPolicy.problems) violations.push(`${PRESS_ALLOWLIST_PATH}: 
 // absent is normal; present, it must be well-formed, or the night it was
 // written for would accept nothing.
 if (existsSync(url(RECHECK_ACCEPT_PATH))) {
-  for (const p of acceptListProblems(read(RECHECK_ACCEPT_PATH))) violations.push(p);
+  for (const p of parseAcceptFile(readFileSync(url(RECHECK_ACCEPT_PATH), 'utf8')).problems) violations.push(p);
 }
 
 for (const w of warnings) console.warn(`::warning::check-moment-updates: ${w}`);
