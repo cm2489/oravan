@@ -3,7 +3,12 @@ import { join } from 'node:path';
 import type { NextConfig } from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
 import { REVIEW_ENDED_ENV, reviewEndedCongressFrom } from './lib/ended-state.mjs';
-import { encodeShortAddressIndex, SHORT_ADDRESS_CONGRESS, type ShortAddressBill } from './lib/short-address';
+import {
+  encodeShortAddressFallback,
+  encodeShortAddressIndex,
+  SHORT_ADDRESS_CONGRESS,
+  type ShortAddressBill,
+} from './lib/short-address';
 
 const withNextIntl = createNextIntlPlugin();
 
@@ -31,11 +36,17 @@ if (reviewedEndedCongress !== null) {
 // from the committed corpus and inlined into proxy.ts's bundle by `env`
 // below. Only the bitset crosses; the corpus stays out of the proxy bundle.
 // Not a secret: it says which public bill numbers the public corpus holds.
+// The second value is the same kind of bitset for the most recently ended
+// Congress the corpus holds (the owner's ruling of Nov 14, 2026: a short
+// address falls back to the ended Congress's bill when the new one has no
+// such bill yet). It is the empty string while lib/congress.mjs lists no
+// ended Congress, so until the switch the proxy has exactly one table.
 const bills = JSON.parse(readFileSync(join(process.cwd(), 'data/bills.json'), 'utf8')) as ShortAddressBill[];
 
 const nextConfig: NextConfig = {
   env: {
     SHORT_ADDRESS_INDEX: encodeShortAddressIndex(bills, SHORT_ADDRESS_CONGRESS),
+    SHORT_ADDRESS_FALLBACK: encodeShortAddressFallback(bills),
     // A review build only: bake the reviewed Congress into this build's server
     // and browser code, so routes rendered on request read what the prerendered
     // pages read (lib/ended-state.mjs). Absent on every real build.

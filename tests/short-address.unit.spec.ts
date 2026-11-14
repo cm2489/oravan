@@ -3,17 +3,21 @@ import path from 'node:path';
 import { expect, test } from '@playwright/test';
 import billsJson from '../data/bills.json';
 import {
+  decodeShortAddressFallback,
   decodeShortAddressIndex,
+  encodeShortAddressFallback,
   encodeShortAddressIndex,
   indexHas,
   parseShortAddress,
   SHORT_ADDRESS_CONGRESS,
   SHORT_ADDRESS_ROLLOVER_RULING,
   SHORT_ADDRESS_TYPES,
+  shortAddressFallbackCongress,
   shortAddressTarget,
   type ShortAddressBill,
+  type ShortAddressPolicy,
 } from '../lib/short-address';
-import { CURRENT_CONGRESS, ENDED_CONGRESSES } from '../lib/congress.mjs';
+import { CONGRESS_POLICY, CURRENT_CONGRESS, ENDED_CONGRESSES, congressTerm } from '../lib/congress.mjs';
 import { APP_DIR, LOCALE_DIR, localeTopSegments } from './routes';
 
 /*
@@ -25,6 +29,7 @@ import { APP_DIR, LOCALE_DIR, localeTopSegments } from './routes';
 const bills = billsJson as unknown as ShortAddressBill[];
 const LOCALES = ['en', 'es'];
 const INDEX = decodeShortAddressIndex(encodeShortAddressIndex(bills, SHORT_ADDRESS_CONGRESS));
+const FALLBACK = decodeShortAddressFallback(encodeShortAddressFallback(bills));
 const current = bills.filter((b) => b.congress_number === SHORT_ADDRESS_CONGRESS);
 
 // --- the parser ---------------------------------------------------------------
@@ -101,7 +106,10 @@ test('the corpus holds only bill types the parser knows', () => {
 // --- the build-time index ------------------------------------------------------
 
 test('index: every bill of the current Congress resolves, and nothing else does', () => {
-  expect(current.length).toBeGreaterThan(1000);
+  // Non-vacuity: the real corpus. (Right after the January switch the new
+  // Congress holds only a few bills; the corpus as a whole is still large.)
+  expect(bills.length).toBeGreaterThan(1000);
+  expect(current.length).toBeGreaterThan(0);
   const missing = current.filter((b) => !indexHas(INDEX, { type: b.bill_type as never, number: b.bill_number }));
   expect(missing.map((b) => `${b.bill_type}${b.bill_number}`)).toEqual([]);
 
@@ -109,6 +117,21 @@ test('index: every bill of the current Congress resolves, and nothing else does'
   let bits = 0;
   for (const bytes of INDEX.values()) for (const byte of bytes) for (let i = 0; i < 8; i++) bits += (byte >> i) & 1;
   expect(bits).toBe(current.length);
+});
+
+test('fallback: every bill of the ended Congress that the new one has no number for resolves to the ended bill', () => {
+  // Runs on the real corpus once lib/congress.mjs lists an ended Congress
+  // (from the January 2027 switch on); today there is no fallback table.
+  if (FALLBACK === null) return;
+  const ended = bills.filter((b) => b.congress_number === FALLBACK.congress);
+  expect(ended.length).toBeGreaterThan(1000);
+  for (const b of ended) {
+    const tracked = indexHas(INDEX, { type: b.bill_type as never, number: b.bill_number });
+    const congress = tracked ? SHORT_ADDRESS_CONGRESS : FALLBACK.congress;
+    expect(shortAddressTarget(`/${b.bill_type}${b.bill_number}`, LOCALES, 'en', INDEX, FALLBACK)).toBe(
+      `/bills/${b.bill_type}-${b.bill_number}-${congress}`,
+    );
+  }
 });
 
 test('index: small enough to inline into the proxy bundle', () => {
@@ -222,100 +245,173 @@ test('no short address shadows a real route, in either locale', () => {
   expect(collisions, 'a route segment that reads as a short address would be shadowed by the redirect').toEqual([]);
 });
 
-// --- the Congress constant (owner decision pending since 2026-09-26, card d2) ---------
+// --- the Congress constant and the change of Congress -------------------------------
 
-test('short addresses mean the tracked Congress, read from lib/congress.mjs', () => {
+test('short addresses mean the tracked Congress first, read from lib/congress.mjs', () => {
   expect(SHORT_ADDRESS_CONGRESS).toBe(CURRENT_CONGRESS.number);
 });
 
-/**
- * THE JANUARY GUARD: the one place the change of Congress stops for short
- * addresses. The owner's go of 2026-11-13 covers short addresses for the
- * 119th Congress. What /hr1 means once the 120th convenes (Jan 3, 2027) is
- * his decision and is still open.
+/*
+ * THE OWNER'S RULING (decision 190, clicked Saturday, Nov 14, 2026,
+ * 12:41 PM ET). The card asked: "Short addresses are built: oravan.org/hr9340
+ * opens that bill. Congress reuses bill numbers every two years. Once the new
+ * Congress starts, which bill should a short address open?" He chose option
+ * a: "The newest Congress, falling back to the ended one when the new one has
+ * no such bill yet." The card's examples for a: someone who types
+ * oravan.org/hr1 in February 2027 gets "the new H.R. 1 once it exists; until
+ * then, the old one, marked as ended"; a link shared in 2026 to
+ * oravan.org/hr9340 "keeps opening the old bill, marked as ended, until the
+ * new Congress reaches H.R. 9340; then it opens the new one." And its
+ * promise: "Whatever you choose, the full address
+ * (oravan.org/bills/hr-9340-119) always opens the same bill."
  *
- * The switch (stage 8 of the new-Congress work) has to rewrite #486's own
- * tripwires anyway: tests/congress-ended.unit.spec.ts pins ENDED_CONGRESSES
- * empty, tests/congress-source.unit.spec.ts pins the 119th, and
- * tests/ended-state.unit.spec.ts pins the site dormant. Those are edited
- * deliberately in the switch's own pull request. THIS test is different: it
- * is not the switch's to rewrite. While SHORT_ADDRESS_ROLLOVER_RULING is null
- * it fails, with one message naming every trigger at once, the first time
- * any of these is true:
- *
- *   - lib/congress.mjs lists an ended Congress (the switch fills
- *     ENDED_CONGRESSES and moves the tracked number to 120; on its own that
- *     would point every short address at the 120th and send every typed
- *     119th address to a 404 or to a different bill);
- *   - the corpus holds a bill of a Congress other than SHORT_ADDRESS_CONGRESS
- *     (or none of it);
- *   - one short address names bills of two Congresses.
- *
- * tests/congress-ended.unit.spec.ts points here from the very assertion the
- * switch has to edit (ENDED_CONGRESSES is empty), so whoever fills the list
- * reads this guard's purpose before they meet its failure.
+ * Until the switch these tests replaced a guard that failed the switch until
+ * he ruled. They pin what he chose, on fixtures shaped like the switch as
+ * #486 models it (119 ended, 120 tracked), so the switch itself needs no
+ * short-address change: moving the tracked number and filling the ended list
+ * in lib/congress.mjs is enough, and next.config.ts builds both tables from
+ * whatever the corpus then holds.
  */
-const ROLLOVER_MESSAGE =
-  'OWNER DECISION NEEDED: what does a short address such as oravan.org/hr1 open once the 120th Congress has ' +
-  'started? Bill numbers restart with each Congress, so /hr1 can now name two different bills. His go of ' +
-  'Nov 13, 2026 ("Go: merge #404 as built, with bill numbers") covered the 119th Congress only. The choices: ' +
-  "(a) the newest Congress's bill, falling back to the ended Congress's page when Oravan holds no newer bill " +
-  'with that number; (b) the newest Congress only; (c) short addresses keep meaning the 119th until he says ' +
-  'otherwise. Do not edit this test or lib/congress.mjs to make it pass. Ask the owner; quote his ruling, with ' +
-  'its date, in SHORT_ADDRESS_ROLLOVER_RULING (lib/short-address.ts); build what he chose in the same pull ' +
-  'request; then rewrite this test to pin the new behaviour. Background: pull request #404.';
 
-/** Every reason the guard trips, as plain sentences; empty while nothing has changed. */
-function rolloverTrips(
-  endedList: ReadonlyArray<{ number: number }> = ENDED_CONGRESSES,
-  corpus: readonly ShortAddressBill[] = bills,
-  meant: number = SHORT_ADDRESS_CONGRESS,
-): string[] {
-  const trips: string[] = [];
-  const ended = endedList.map((e) => e.number);
-  if (ended.length > 0) trips.push(`lib/congress.mjs lists ended Congress(es) ${ended.join(', ')}.`);
-
-  const congresses = [...new Set(corpus.map((b) => b.congress_number))].sort((a, b) => a - b);
-  if (congresses.length !== 1 || congresses[0] !== meant) {
-    trips.push(`the corpus (data/bills.json) holds Congress(es) ${congresses.join(', ')}; short addresses mean ${meant}.`);
-  }
-
-  const byAddress = new Map<string, Set<number>>();
-  for (const b of corpus) {
-    const key = `${b.bill_type}${b.bill_number}`;
-    const set = byAddress.get(key) ?? new Set<number>();
-    set.add(b.congress_number);
-    byAddress.set(key, set);
-  }
-  const shared = [...byAddress].filter(([, set]) => set.size > 1).map(([key, set]) => `${key} (${[...set].join(', ')})`);
-  if (shared.length > 0) {
-    trips.push(`${shared.length} short address(es) name bills of two Congresses, e.g. ${shared.slice(0, 5).join('; ')}.`);
-  }
-  return trips;
-}
-
-test('January guard: no ended Congress and no second Congress in the corpus until the owner rules', () => {
-  if (SHORT_ADDRESS_ROLLOVER_RULING !== null) return;
-  const trips = rolloverTrips();
-  expect(trips, `${ROLLOVER_MESSAGE} [Tripped by: ${trips.join(' ')}]`).toEqual([]);
+test('the ruling is recorded, with its date, in the words of the card', () => {
+  expect(SHORT_ADDRESS_ROLLOVER_RULING).not.toBeNull();
+  const ruling = SHORT_ADDRESS_ROLLOVER_RULING ?? '';
+  expect(ruling).toContain('Decision 190');
+  expect(ruling).toContain('Nov 14, 2026, 12:41 PM ET');
+  expect(ruling).toContain(
+    '"The newest Congress, falling back to the ended one when the new one has no such bill yet."',
+  );
 });
 
-test('January guard: it trips on the switch as #486 builds it, naming every trigger', () => {
-  // The switch as tests/congress-ended.unit.spec.ts models it: 119 ended,
-  // 120 tracked, the corpus holding both. Fixtures only; nothing is edited.
-  const ended = [{ number: 119, ended: '2027-01-03' }];
-  const mixed: ShortAddressBill[] = [
-    { bill_type: 'hr', bill_number: 1, congress_number: 119 },
-    { bill_type: 'hr', bill_number: 1, congress_number: 120 },
-    { bill_type: 's', bill_number: 5, congress_number: 119 },
+test('today: nothing has ended, so there is no fallback table and the lookup is the one-table lookup of #404', () => {
+  // While lib/congress.mjs lists no ended Congress, the second table is the
+  // empty string at build time and decodes to nothing: every short address
+  // answers exactly as it did before the ruling.
+  if (ENDED_CONGRESSES.length > 0) return; // after the switch: the fixtures below carry the proof
+  expect(shortAddressFallbackCongress(bills)).toBeNull();
+  expect(encodeShortAddressFallback(bills)).toBe('');
+  expect(FALLBACK).toBeNull();
+  for (const b of current.slice(0, 200)) {
+    const path = `/${b.bill_type}${b.bill_number}`;
+    expect(shortAddressTarget(path, LOCALES, 'en', INDEX, FALLBACK)).toBe(shortAddressTarget(path, LOCALES, 'en', INDEX));
+  }
+});
+
+test('the corpus holds only the tracked Congress and Congresses on the ended list', () => {
+  // A bill of any other Congress gets no short address, by design: it is
+  // neither the newest nor the ended one. scripts/verify-sync.mjs refuses
+  // such a corpus anyway; this says so for short addresses.
+  const known = new Set([CONGRESS_POLICY.tracked, ...CONGRESS_POLICY.ended.map((e) => e.number)]);
+  const stray = [...new Set(bills.map((b) => b.congress_number))].filter((c) => !known.has(c));
+  expect(stray).toEqual([]);
+});
+
+/** The switch as tests/congress-ended.unit.spec.ts models it: 119 ended, 120 tracked. */
+const SWITCHED: ShortAddressPolicy = Object.freeze({
+  tracked: 120,
+  ended: Object.freeze([Object.freeze({ number: 119, ended: congressTerm(119).end })]),
+});
+
+/** A corpus holding both Congresses: H.R. 1 in both, H.R. 9340 and S. 5 in the 119th only, S. 7 in the 120th only. */
+const SWITCHED_CORPUS: ShortAddressBill[] = [
+  { bill_type: 'hr', bill_number: 1, congress_number: 119 },
+  { bill_type: 'hr', bill_number: 1, congress_number: 120 },
+  { bill_type: 'hr', bill_number: 9340, congress_number: 119 },
+  { bill_type: 's', bill_number: 5, congress_number: 119 },
+  { bill_type: 's', bill_number: 7, congress_number: 120 },
+  { bill_type: 'hjres', bill_number: 3, congress_number: 119 },
+];
+
+/** What proxy.ts does after the switch: both tables built the way next.config.ts builds them. */
+function switchedTarget(
+  pathname: string,
+  corpus: readonly ShortAddressBill[] = SWITCHED_CORPUS,
+  policy: ShortAddressPolicy = SWITCHED,
+): string | null {
+  const index = decodeShortAddressIndex(encodeShortAddressIndex(corpus, policy.tracked));
+  const fallback = decodeShortAddressFallback(encodeShortAddressFallback(corpus, policy));
+  return shortAddressTarget(pathname, LOCALES, 'en', index, fallback, policy.tracked);
+}
+
+test('after the switch: the newest Congress when it holds the bill', () => {
+  // "the new H.R. 1 once it exists"
+  expect(switchedTarget('/hr1')).toBe('/bills/hr-1-120');
+  expect(switchedTarget('/HR-1')).toBe('/bills/hr-1-120');
+  expect(switchedTarget('/es/hr1')).toBe('/es/bills/hr-1-120');
+  expect(switchedTarget('/s7')).toBe('/bills/s-7-120');
+});
+
+test('after the switch: the ended Congress when the new one has no such bill yet', () => {
+  // "keeps opening the old bill, marked as ended, until the new Congress reaches H.R. 9340"
+  expect(switchedTarget('/hr9340')).toBe('/bills/hr-9340-119');
+  expect(switchedTarget('/HR9340/')).toBe('/bills/hr-9340-119');
+  expect(switchedTarget('/en/hr-9340')).toBe('/bills/hr-9340-119');
+  expect(switchedTarget('/es/hr9340')).toBe('/es/bills/hr-9340-119');
+  expect(switchedTarget('/es/S-5')).toBe('/es/bills/s-5-119');
+  expect(switchedTarget('/hjres3')).toBe('/bills/hjres-3-119');
+  // "then it opens the new one": the day the corpus holds the 120th's H.R. 9340.
+  const reached = [...SWITCHED_CORPUS, { bill_type: 'hr', bill_number: 9340, congress_number: 120 }];
+  expect(switchedTarget('/hr9340', reached)).toBe('/bills/hr-9340-120');
+  expect(switchedTarget('/es/hr9340', reached)).toBe('/es/bills/hr-9340-120');
+});
+
+test('after the switch: a number neither Congress holds is still the normal 404, and the shapes are unchanged', () => {
+  for (const pathname of ['/hr2', '/s1', '/hres10', '/hr99999', '/hr-1-119', '/bills/hr1', '/hr1/extra', '/fr/hr1', '/es/es/hr1']) {
+    expect(switchedTarget(pathname), pathname).toBeNull();
+  }
+  // The target is always a bare bill path of one of the two Congresses.
+  for (const pathname of ['/hr1', '/es/hr9340', '/S5', '/s7']) {
+    expect(switchedTarget(pathname), pathname).toMatch(/^(\/es)?\/bills\/[a-z]+-\d+-(119|120)$/);
+  }
+});
+
+test('the fallback is the most recently ended Congress the corpus holds, and only one', () => {
+  const twoEnded: ShortAddressPolicy = Object.freeze({
+    tracked: 121,
+    ended: Object.freeze([
+      Object.freeze({ number: 119, ended: congressTerm(119).end }),
+      Object.freeze({ number: 120, ended: congressTerm(120).end }),
+    ]),
+  });
+  const corpus: ShortAddressBill[] = [
+    { bill_type: 'hr', bill_number: 1, congress_number: 121 },
+    { bill_type: 'hr', bill_number: 2, congress_number: 120 },
+    { bill_type: 'hr', bill_number: 2, congress_number: 119 },
+    { bill_type: 'hr', bill_number: 3, congress_number: 119 },
   ];
-  const trips = rolloverTrips(ended, mixed, 120);
-  expect(trips).toHaveLength(3);
-  expect(trips[0]).toContain('ended Congress(es) 119');
-  expect(trips[1]).toContain('holds Congress(es) 119, 120; short addresses mean 120');
-  expect(trips[2]).toContain('hr1 (119, 120)');
-  // A bare bump with no ended list and an all-119 corpus trips too.
-  expect(rolloverTrips([], [mixed[0], mixed[2]], 120)).toHaveLength(1);
-  // Today's state trips nothing.
-  expect(rolloverTrips()).toEqual([]);
+  expect(shortAddressFallbackCongress(corpus, twoEnded)).toBe(120);
+  // Listed in either order, the later-ended one wins.
+  expect(shortAddressFallbackCongress(corpus, { ...twoEnded, ended: [...twoEnded.ended].reverse() })).toBe(120);
+  expect(switchedTarget('/hr1', corpus, twoEnded)).toBe('/bills/hr-1-121');
+  expect(switchedTarget('/hr2', corpus, twoEnded)).toBe('/bills/hr-2-120');
+  // "the ended one": one fallback Congress, never a walk back through older ones.
+  expect(switchedTarget('/hr3', corpus, twoEnded)).toBeNull();
+  // An ended Congress the corpus holds none of is skipped.
+  expect(shortAddressFallbackCongress(corpus.filter((b) => b.congress_number !== 120), twoEnded)).toBe(119);
+  // A Congress the corpus holds but the ended list does not name is never a fallback.
+  expect(shortAddressFallbackCongress(corpus, { tracked: 121, ended: [] })).toBeNull();
+  expect(shortAddressFallbackCongress(SWITCHED_CORPUS, SWITCHED)).toBe(119);
+});
+
+test('the full address always opens the same bill: short addresses never touch /bills/', () => {
+  // The card's promise: "the full address (oravan.org/bills/hr-9340-119)
+  // always opens the same bill." No full address is a short address, before
+  // or after the switch.
+  for (const pathname of ['/bills/hr-9340-119', '/es/bills/hr-9340-119', '/bills/hr-1-120', '/hr-9340-119']) {
+    expect(switchedTarget(pathname), pathname).toBeNull();
+    expect(shortAddressTarget(pathname, LOCALES, 'en', INDEX, FALLBACK), pathname).toBeNull();
+  }
+});
+
+test('a malformed fallback table means no fallback, never a throw', () => {
+  for (const bad of [undefined, '', '119', '@hr:AQ==', '0@hr:AQ==', 'x@hr:AQ==', '119@', '119@hr:!!!', '119@nocolon']) {
+    expect(decodeShortAddressFallback(bad), String(bad)).toBeNull();
+  }
+  expect(decodeShortAddressFallback('119@hr:Ag==')?.congress).toBe(119);
+});
+
+test('both tables together stay small enough to inline into the proxy bundle', () => {
+  // A full 119th and a full 120th corpus: two tables of the size measured today.
+  const encoded = encodeShortAddressIndex(bills, SHORT_ADDRESS_CONGRESS);
+  expect(encoded.length * 2 + 10).toBeLessThan(16_000);
 });
