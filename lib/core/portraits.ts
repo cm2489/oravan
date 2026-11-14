@@ -69,3 +69,13 @@ const MISSING = missing as Record<string, { firstMissing: string; lastChecked: s
 export function portraitKnownMissing(bioguide: string): boolean {
   return BIOGUIDE_RE.test(bioguide) && Object.prototype.hasOwnProperty.call(MISSING, bioguide);
 }
+
+/**
+ * The flag a member card reads (lib/types.ts CardMember): `{ portraitMissing:
+ * true }` for a member whose photo is known missing, `{}` for everyone else.
+ * Spread it onto the member on the server, so a card that draws in the
+ * browser (components/RepsLookup.tsx) needs no data/ file of its own.
+ */
+export function portraitFlag(bioguide: string): { portraitMissing?: true } {
+  return portraitKnownMissing(bioguide) ? { portraitMissing: true } : {};
+}

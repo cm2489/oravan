@@ -23,6 +23,7 @@ import {
   getVacancyBySlug,
   localizeBill,
   memberTurnover,
+  portraitFlag,
   portraitKnownMissing,
   reviewTreatsAsNew,
   senatorsForState,
@@ -246,7 +247,10 @@ function MemberBody({
   return (
     <>
       <header className="mt-6 flex items-start gap-4 md:gap-6">
-        <RepPortrait rep={rep} large />
+        {/* Initials alone when the photo is known to be missing at the source
+            (the sitting members on data/portrait-missing.json, from 2026-11-13):
+            never an image that fails. */}
+        <RepPortrait rep={rep} large photo={!portraitKnownMissing(rep.bioguide)} />
         <div className="min-w-0">
           {/* Party is ink text at the same weight as the role and the seat -
               the record's own label, nothing added to it. */}
@@ -452,7 +456,7 @@ function VacancyBody({
           <p className="mt-2 max-w-read text-sm text-ink-2">{t('senatorsNote')}</p>
           <div className="mt-4 grid gap-4 md:grid-cols-3">
             {senators.map((s) => (
-              <RepCard key={s.bioguide} rep={s} />
+              <RepCard key={s.bioguide} rep={{ ...s, ...portraitFlag(s.bioguide) }} />
             ))}
           </div>
         </section>

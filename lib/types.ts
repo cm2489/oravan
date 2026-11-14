@@ -209,6 +209,15 @@ export interface Legislator {
 }
 
 /**
+ * A sitting member as a member card receives them: the member, plus
+ * `portraitMissing` when their photo is known to be missing at the source
+ * (lib/core/portraits.ts portraitKnownMissing). The flag is set on the server
+ * (portraitFlag), because a card can draw in the browser, where it must not
+ * read data/ itself (scripts/check-client-bundle). Absent means draw the photo.
+ */
+export type CardMember = Legislator & { portraitMissing?: true };
+
+/**
  * A member who has left data/legislators.json, as data/departed-members.json
  * keeps them (scripts/member_turnover.py writes it from the member file as it
  * stood before the run). The seat they held and the end date of their last
