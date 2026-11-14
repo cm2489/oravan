@@ -483,7 +483,10 @@ class OverrideTest(unittest.TestCase):
 
     def test_it_applies_only_to_the_exact_file_day(self):
         from member_turnover import official_mismatch
-        self.assertIn('overrides_file_day', official_mismatch(self.entry('2026-12-07'), self.hist(TERM_END)))
+        why = official_mismatch(self.entry('2026-12-07'), self.hist(TERM_END))
+        # Points to the runbook; never prints a line that could be pasted (4th review).
+        self.assertIn('deliberate override', why)
+        self.assertNotIn('overrides_file_day', why)
         self.assertIsNone(official_mismatch(self.entry('2026-12-07', overrides_file_day=TERM_END), self.hist(TERM_END)))
         # The file changes: the override no longer applies and it is reported again.
         self.assertIsNotNone(official_mismatch(self.entry('2026-12-07', overrides_file_day=TERM_END), self.hist('2026-12-05')))

@@ -332,7 +332,10 @@ test.describe('today', () => {
     for (const e of TABLE.values()) {
       expect(isRealDay(e.served_until), `${e.bioguide} ${e.served_until}`).toBe(true);
       expect(hasOfficialDate({ served_until_source: e.source }), e.bioguide).toBe(true);
-      expect(SITTING.has(e.bioguide), `${e.bioguide} has an entry but is sitting`).toBe(false);
+      // Not asserted here: an entry for a member who returned to Congress.
+      // The weekly refresh keeps it, never applies it and reports it every
+      // week (scripts/test_process_data.py pins that on a fixture); failing
+      // main's CI on it would only add a second, louder alarm (4th review).
     }
     expect(Object.keys(OFFICIAL_SOURCES).sort()).toEqual(['bioguide', 'house-clerk']);
   });
@@ -379,6 +382,9 @@ test.describe('today', () => {
       S001193: '2026-04-14', C001127: '2026-04-21', S001157: '2026-04-22', G000359: '2026-07-11',
     };
     for (const [b, day] of Object.entries(SIXTEEN)) {
+      // One of them back in Congress is a sitting member again: their member
+      // page replaces the record, and this test must not need an edit then.
+      if (SITTING.has(b)) continue;
       expect(getDepartedMember(b)?.served_until, b).toBe(day);
       expect(hasMemberPage(b), b).toBe(true);
     }

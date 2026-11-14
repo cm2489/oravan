@@ -534,7 +534,8 @@ def official_mismatch(entry: dict, historical_by_id: Optional[Dict[str, dict]]) 
             return None
         return (
             f"the entry says {entry['served_until']} and the historical file says {file_day}, {gap} days apart "
-            f'(if the official day is right, set "overrides_file_day": "{file_day}" in the entry deliberately)'
+            '(if the official day is right and the historical file is wrong, see the runbook section '
+            '"A member left mid-term: confirm the date" for the deliberate override)'
         )
     return None
 

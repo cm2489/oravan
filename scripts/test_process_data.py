@@ -437,7 +437,9 @@ class UnconfirmedDeparture(unittest.TestCase):
         b = gone[0]['id']['bioguide']
         plain = self.run_(prev, new, historical=gone, official=[official_entry(b, '2026-12-05')]).go('--today', '2026-12-07')
         self.assertIsNone(plain.read('departed-members.json')[0]['served_until_source'])
-        self.assertIn('overrides_file_day', plain.report('unconfirmed.md'))
+        body = plain.report('unconfirmed.md')
+        self.assertIn('deliberate override', body)
+        self.assertNotIn('overrides_file_day', body)
         entry = dict(official_entry(b, '2026-12-05'), overrides_file_day=TERM_END)
         r = self.run_(prev, new, historical=gone, official=[entry]).go('--today', '2026-12-07')
         self.assertEqual(r.code, 0, r.out)

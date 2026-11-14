@@ -143,6 +143,16 @@ The first command was **run on 2026-11-13 and refused**: the Census geocoder ans
 
 **Undo:** revert that pull request.
 
+### 8. Tests the stage 8 pull request must update
+
+Found on 2026-11-13 by simulating the switch: an independent check bumped the tracked Congress and ran the suite. The stage 8 pull request, which bumps `lib/congress.mjs` and fills the ended list, must update these in the same change. **Not run here:** stage 8 is not built.
+
+- `tests/departed-members.unit.spec.ts`:
+  - five fixture tests hard-code 2025 and 2026 days against a policy derived from the tracked Congress (`BEFORE`, `AFTER`, `START_DAY`, `ENDED_DAY`); after the bump those days fall outside the "tracked" term;
+  - "today's sixteen …" compares each day against the tracked Congress's first day, which becomes 2027-01-03;
+  - "the ended list is empty" in the "today" block fails by design: it is the tripwire that says this file must be revisited.
+- `tests/reps-zip-address.spec.ts` (fixes the address answer to NY-12) and `tests/district.spec.ts` (names Daniel S. Goldman, Jerrold Nadler, Charles E. Schumer, Kirsten E. Gillibrand and Nick LaLota) pin sitting members. Both are already on `main`. They fail if one of those members leaves, or if the 120th map moves those addresses.
+
 ## A refused week
 
 **What happens.** When a run is refused (any `::error::` in step 2's list), nothing is written or committed and the workflow opens one GitHub issue labeled `legislators-refused`, titled "Weekly members refresh refused: nothing committed", or comments on it if it is already open. The issue says what was refused, names the members who left, and, when it applies, gives the exact command to accept the week. **A refused week never clears by itself**: every later run compares against the same committed member file, so it refuses again until the upstream file changes or someone accepts the week.
@@ -214,7 +224,9 @@ In every case the member has no record page: their address stays "not found".
      {"bioguide": "X000001", "served_until": "2026-12-05", "source": {"kind": "house-clerk", "url": "https://clerk.house.gov/Members/ViewVacancies", "read": "2026-12-08"}, "overrides_file_day": "2027-01-03"}
      ```
 
-     The override applies only while the historical file shows exactly that day. If the file changes, the entry is reported again. It never overrides the term-start check, and nothing writes it except a person in a pull request.
+     The override applies only while the historical file shows exactly that day. If the file changes, the entry is reported again. It never overrides the term-start check, and nothing writes it except a person in a pull request. The refresh's messages never print this line for you to paste: type it yourself.
+
+     **The pull request must quote the official source's own words for the day**, for example the Clerk's line "Resigned December 05, 2026" or the Directory's "served … until December 5, 2026". It must also say what the historical file shows instead. The reviewer checks the quote against the source before merging. A pull request that sets `overrides_file_day` without the quote does not merge.
    - If the issue says "no date known yet", the official source may already have it. Add it as below; it is applied once the historical file also lists a day within one day of it.
 2. Add the day and where you read it to `data/departure-dates.json`, sorted by bioguide id, in the same form as the other entries:
 
