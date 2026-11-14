@@ -292,6 +292,10 @@ test.describe('colour in every state', () => {
     await page.goto(`/bills/${callableBillSlug()}`);
     const support = page.getByRole('radio', { name: en.bill.stance.support });
     const oppose = page.getByRole('radio', { name: en.bill.stance.oppose });
+    // A review build with the Congress shown as ended has no open decision:
+    // the call panel (and its stances) is not on the page.
+    await page.waitForLoadState('networkidle');
+    test.skip((await support.count()) === 0, 'no call panel on this bill in this build (an ended-Congress review build)');
     await support.scrollIntoViewIfNeeded();
     await hover(page, oppose);
     record('stance, hover (half lamp)', [...(await textChecks(page, oppose, 'oppose hover')), ...(await boundaryCheck(page, oppose, 'oppose hover'))]);
