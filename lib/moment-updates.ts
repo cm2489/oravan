@@ -104,6 +104,11 @@ export interface UpdateRecord {
   action_type: string;
   source_system: string;
   roll_call?: RollCall;
+  /** The action's place among its day's actions in Congress.gov's own list,
+   *  0 for the one listed last that day (2026-11-14+; absent on older rows and
+   *  on rows the list never placed). Orders a day's rows; never rendered.
+   *  lib/moment-updates-gate.mjs orderDayByRecord. */
+  day_position?: number;
 }
 
 export interface MomentUpdate {
