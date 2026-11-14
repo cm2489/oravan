@@ -14,11 +14,12 @@ const handler = createProxy(routing);
  * Short addresses for bills (/hr9340 -> the bill page; lib/short-address.ts
  * carries the full argument). Which bills exist is a ~3 KB bitset that
  * next.config.ts encodes from data/bills.json at BUILD time and inlines here
- * as SHORT_ADDRESS_INDEX, plus a second one, SHORT_ADDRESS_FALLBACK, for the
- * most recently ended Congress the corpus holds (empty, so absent, until
- * lib/congress.mjs lists an ended Congress). Both are decoded once per
- * server instance, and each request costs one pattern test and at most two
- * bit tests. The corpus itself never enters this bundle. This is the one
+ * as SHORT_ADDRESS_INDEX, plus SHORT_ADDRESS_FALLBACK: one more bitset per
+ * ended Congress the corpus holds, most recently ended first (empty, so
+ * absent, until lib/congress.mjs lists an ended Congress). All are decoded
+ * once per server instance, and each request costs one pattern test and at
+ * most one bit test per table (today: one). The corpus itself never enters
+ * this bundle. This is the one
  * piece of per-request work proxy.ts does beyond locale negotiation and the
  * two counts below, and it is named as such where CLAUDE.md rule 2's
  * exceptions are named (tests/static-rendering.spec.ts).

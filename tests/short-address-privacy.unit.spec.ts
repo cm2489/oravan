@@ -47,7 +47,9 @@ const LOCALES = ['en', 'es'];
 const bills = billsJson as unknown as ShortAddressBill[];
 const INDEX = decodeShortAddressIndex(encodeShortAddressIndex(bills, SHORT_ADDRESS_CONGRESS));
 const FALLBACK = decodeShortAddressFallback(encodeShortAddressFallback(bills));
-const current = bills.filter((b) => b.congress_number === SHORT_ADDRESS_CONGRESS);
+/** One bill of a type whose short address the site answers today (tracked table, else a fallback), or undefined. */
+const answered = (type: string) =>
+  bills.find((b) => b.bill_type === type && shortAddressTarget(`/${type}${b.bill_number}`, LOCALES, 'en', INDEX, FALLBACK) !== null);
 
 /** Collapse whitespace, so a call reads the same however it is wrapped. */
 const flat = (source: string) => source.replace(/\s+/g, ' ').replace(/\( /g, '(').replace(/,? \)/g, ')');
@@ -106,7 +108,7 @@ test('source: proxy.ts counts a short address as the literal label and builds th
  */
 async function drivenBurst(
   index: ShortAddressIndex,
-  fallback: ShortAddressFallback | null,
+  fallback: ShortAddressFallback,
   congress: number,
   redirected: string[],
   notRedirected: string[],
@@ -193,8 +195,12 @@ async function drivenBurst(
 }
 
 test('driven: a burst of short-address requests leaves one daily "short" count on the wire, and nothing about path, bill, query, language or visitor', async () => {
-  const hr = current.find((b) => b.bill_type === 'hr')!;
-  const s = current.find((b) => b.bill_type === 's')!;
+  // Drawn from every bill a short address answers (the tracked Congress, else
+  // an ended one), so this holds on switch day with no new bill yet.
+  const hr = answered('hr');
+  const s = answered('s');
+  test.skip(!hr || !s, 'the corpus holds no House bill or no Senate bill a short address can open');
+  if (!hr || !s) return;
   await drivenBurst(
     INDEX,
     FALLBACK,
@@ -238,7 +244,7 @@ test('driven, after the switch: a fallback to the ended Congress counts the same
   const policy = { tracked: 120, ended: [{ number: 119, ended: congressTerm(119).end }] };
   const index = decodeShortAddressIndex(encodeShortAddressIndex(corpus, 120));
   const fallback = decodeShortAddressFallback(encodeShortAddressFallback(corpus, policy));
-  expect(fallback?.congress).toBe(119);
+  expect(fallback.map((t) => t.congress)).toEqual([119]);
 
   const targets = await drivenBurst(
     index,

@@ -93,14 +93,15 @@ const RENDERED_ON_DEMAND: Record<string, string> = {
  *   bill's page. A redirect cannot be a prerendered page, and generating one
  *   config redirect per bill (~6,450 rules) would be matched in order on
  *   every request and would forward the query string. The proxy instead does
- *   one pattern test and at most two bit tests against ~3 KB bitsets that
- *   next.config.ts builds from data/bills.json at BUILD time (the second,
- *   for the ended Congress, is empty until one is listed). The test below
+ *   one pattern test and at most one bit test per ~3 KB bitset that
+ *   next.config.ts builds from data/bills.json at BUILD time: one for the
+ *   tracked Congress, one per ended Congress the corpus holds (none until
+ *   one is listed). The test below
  *   pins that the corpus itself never enters the proxy bundle.
  */
 const PER_REQUEST_IN_PROXY: Record<string, string> = {
   'lib/short-address.ts':
-    'short addresses for bills: at most two constant-time bit tests against build-time bitsets, ' +
+    'short addresses for bills: at most one constant-time bit test per build-time bitset, ' +
     'answered with a 307; no corpus in the bundle',
 };
 
@@ -256,7 +257,7 @@ test('the short-address lookup in proxy.ts carries a build-time bitset, never th
   // source of the Congress number and the ended list, since 2026-11-12),
   // which itself imports nothing, so neither can reach data/; proxy.ts
   // reaches the corpus only through the build-time bitsets (the tracked
-  // Congress's, and the ended Congress's fallback once one is listed).
+  // Congress's, and one per ended Congress once one is listed).
   const importsOf = (source: string) =>
     source.split('\n').filter((line) => /^\s*import\s/.test(line));
   for (const file of Object.keys(PER_REQUEST_IN_PROXY)) {

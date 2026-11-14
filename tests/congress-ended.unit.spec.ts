@@ -123,8 +123,8 @@ test.describe('today: the ended list is empty', () => {
     // Short addresses (tests/short-address.unit.spec.ts, #404) need no edit
     // when it is filled: under the owner's ruling of Nov 14, 2026
     // (SHORT_ADDRESS_ROLLOVER_RULING in lib/short-address.ts), /hr1 opens the
-    // tracked Congress's bill and falls back to the most recently ended
-    // Congress's bill, and next.config.ts builds both tables from this list.
+    // tracked Congress's bill and falls back to the ended Congresses' bills,
+    // most recent first, and next.config.ts builds the tables from this list.
     expect(ENDED_CONGRESSES).toEqual([]);
     expect(Object.isFrozen(ENDED_CONGRESSES)).toBe(true);
     expect(Object.isFrozen(CONGRESS_POLICY)).toBe(true);

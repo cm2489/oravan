@@ -36,11 +36,12 @@ if (reviewedEndedCongress !== null) {
 // from the committed corpus and inlined into proxy.ts's bundle by `env`
 // below. Only the bitset crosses; the corpus stays out of the proxy bundle.
 // Not a secret: it says which public bill numbers the public corpus holds.
-// The second value is the same kind of bitset for the most recently ended
-// Congress the corpus holds (the owner's ruling of Nov 14, 2026: a short
-// address falls back to the ended Congress's bill when the new one has no
-// such bill yet). It is the empty string while lib/congress.mjs lists no
-// ended Congress, so until the switch the proxy has exactly one table.
+// The second value holds the same kind of bitset for each ended Congress the
+// corpus holds, most recently ended first (the owner's ruling of Nov 14,
+// 2026: a short address falls back to the ended Congress's bill when the new
+// one has no such bill yet; lib/short-address.ts says how that extends to
+// several). It is the empty string while lib/congress.mjs lists no ended
+// Congress, so until the switch the proxy has exactly one table.
 const bills = JSON.parse(readFileSync(join(process.cwd(), 'data/bills.json'), 'utf8')) as ShortAddressBill[];
 
 const nextConfig: NextConfig = {
