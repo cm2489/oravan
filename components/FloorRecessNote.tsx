@@ -135,7 +135,7 @@ export async function FloorRecessNote({ chamber }: { chamber: Chamber }) {
               href={source.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex min-h-11 items-center gap-1.5 font-semibold text-go underline underline-offset-4 visited:text-go-deep hover:text-go-deep"
+              className="inline-flex min-h-11 items-center gap-1.5 font-semibold text-ink underline underline-offset-4 visited:text-ink-2 hover:decoration-[3px]"
             >
               {t('home.evidenceLink')}
               <ExternalLink className="h-4 w-4 flex-none" aria-hidden />

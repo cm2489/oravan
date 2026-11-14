@@ -109,8 +109,10 @@ function hsl(hex: string): { hue: number; sat: number } {
 /**
  * A color reads as party-coded when it is saturated enough to be seen as a
  * hue at all AND that hue is red or blue. The 0.2 floor is what keeps the
- * project's own near-neutrals (#16191b ink, #4a544e ink-2, #d7ded9 line) out
- * of it — they are grays that happen to lean a few degrees.
+ * project's own near-neutrals (#1c1b18 ink, #55514a ink-2) out of it — they
+ * are grays that happen to lean a few degrees. The warm paper greys (#e3ddd0
+ * line, #f4f0e6 wash) clear the floor but sit at 41-43 degrees, a warm
+ * yellow-grey outside both bands.
  */
 function isPartisanHue(hex: string): boolean {
   const { hue, sat } = hsl(hex);
@@ -332,8 +334,8 @@ test.describe('the shared palette these surfaces draw from', () => {
     // clean by measuring nothing.
     expect(isPartisanHue('#d22730'), 'a party red').toBe(true);
     expect(isPartisanHue('#1d4ed8'), 'a party blue').toBe(true);
-    expect(isPartisanHue('#0f6c4a'), 'the action green is not a party color').toBe(false);
-    expect(isPartisanHue('#16191b'), 'near-black ink is not a party color').toBe(false);
-    expect(isPartisanHue('#d7ded9'), 'the hairline gray is not a party color').toBe(false);
+    expect(isPartisanHue('#1d5e43'), 'the action green is not a party color').toBe(false);
+    expect(isPartisanHue('#1c1b18'), 'near-black ink is not a party color').toBe(false);
+    expect(isPartisanHue('#e3ddd0'), 'the hairline gray is not a party color').toBe(false);
   });
 });

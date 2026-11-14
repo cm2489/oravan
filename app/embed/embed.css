@@ -4,7 +4,8 @@
  * and self-contained (the project records §5 - "system
  * fonts, no client framework bloat"), and this keeps it that way rather
  * than pulling in the whole app theme for one widget. The default palette
- * below is the same variant-B palette as app/globals.css's @theme block,
+ * below is the same palette as app/globals.css's @theme block (warm paper,
+ * bottle green, 2026-09-30),
  * hand-copied (not shared custom properties) so this file has zero
  * dependency on it. That copy is a standing LOCKSTEP obligation, spelled
  * out in DESIGN.md § "Embed lockstep": a change to the @theme color block
@@ -13,12 +14,12 @@
  * pair — four mirrors, one move.
  *
  * THE TWO LAWS, as they apply to a white-label surface (DESIGN.md):
- *   COLOR — `go` (#0f6c4a) is the un-themed default accent and it means GO;
+ *   COLOR — `go` (#1d5e43) is the un-themed default accent and it means GO;
  *   it is reachable ONLY through --_accent, i.e. only where the tenant's own
  *   --oravan-accent would land, so a tenant palette always displaces it.
- *   Amber is spent on exactly one fact site-wide — a bill standing on the
- *   floor calendar, with the date printed — and no widget renders that fact,
- *   so THERE IS NO AMBER IN THIS FILE. `.re-note` is a neutral wash. Failure,
+ *   The lamp yellow is the site's own action mark (and its one dated floor
+ *   notice on Today); no widget renders either on a partner's page, so
+ *   THERE IS NO LAMP OR AMBER IN THIS FILE. `.re-note` is a neutral wash. Failure,
  *   and only failure, is red, and it never carries meaning alone (3px ink
  *   rule + bold label + role="alert"; color is the third signal).
  *   SHAPE — radius is assigned by SCALE, not by interactivity. Small marks
@@ -44,15 +45,15 @@
 
 :root {
   color-scheme: light dark;
-  --_surface: var(--oravan-surface, #ffffff);
-  --_ink: var(--oravan-ink, #16191b);
+  --_surface: var(--oravan-surface, #fcfaf4);
+  --_ink: var(--oravan-ink, #1c1b18);
   /* GO. The un-themed default only; --oravan-accent displaces it, and
      lib/embed-theme.ts guarantees a tenant who supplied a palette without
      an accent gets THEIR ink emitted here rather than falling through to
      this literal. Oravan green can therefore never appear on a widget
      wearing someone else's colors. */
-  --_accent: var(--oravan-accent, #0f6c4a);
-  --_accent-ink: var(--oravan-accent-ink, #ffffff);
+  --_accent: var(--oravan-accent, #1d5e43);
+  --_accent-ink: var(--oravan-accent-ink, #fcfaf4);
   /* Focus ring falls back to INK, not accent: the server only emits
      --oravan-focus once it has confirmed the accent contrasts on the surface
      (>=3:1). With just an accent set (auto mode — the common case), the raw
@@ -60,12 +61,12 @@
      always-visible focus outline. Ink always contrasts with the surface (it's
      the body text), so the ring stays visible. */
   --_focus: var(--oravan-focus, var(--_ink));
-  /* Failure, and only failure: `alert` (#8c3a1f) from the variant-B palette
+  /* Failure, and only failure: `alert` (#a0461f) from the site palette
      at 12%, written as a flat rgba rather than a color-mix so it needs no
      @supports twin — it is the one tone in this file that is NOT derived
      from the tenant tokens, on purpose. Red is a universal signal and must
      not take on a tenant's (possibly green) brand color. */
-  --_alert-wash: rgba(140, 58, 31, 0.12);
+  --_alert-wash: rgba(160, 70, 31, 0.12);
 
   /* SHAPE, by scale. */
   --_radius-control: var(--oravan-radius, 8px);
@@ -73,23 +74,23 @@
   --_radius-hair: 2px; /* the focus indicator's own rounding. Never a box. */
 
   /* Static fallbacks for engines without color-mix. --_line-strong is HALF
-     ink: that is what puts a component edge at 3.37:1 on the default light
-     surface and 5.24:1 on the dark one, clearing 1.4.11. --_line stays
+     ink: that is what puts a component edge at 3.27:1 on the default light
+     surface and 5.05:1 on the dark one, clearing 1.4.11. --_line stays
      decorative (1.36:1) and is never an edge. */
-  --_line: rgba(22, 25, 27, 0.15);
-  --_line-strong: rgba(22, 25, 27, 0.5);
-  --_line-faint: rgba(22, 25, 27, 0.08);
-  --_ink-hover: #393c3d;
+  --_line: rgba(28, 27, 24, 0.15);
+  --_line-strong: rgba(28, 27, 24, 0.5);
+  --_line-faint: rgba(28, 27, 24, 0.08);
+  --_ink-hover: #3e3c39;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --_surface: var(--oravan-surface, #16191b);
-    --_ink: var(--oravan-ink, #ffffff);
-    --_line: rgba(255, 255, 255, 0.15);
-    --_line-strong: rgba(255, 255, 255, 0.5);
-    --_line-faint: rgba(255, 255, 255, 0.08);
-    --_ink-hover: #dcdddd;
+    --_surface: var(--oravan-surface, #1c1b18);
+    --_ink: var(--oravan-ink, #fcfaf4);
+    --_line: rgba(252, 250, 244, 0.15);
+    --_line-strong: rgba(252, 250, 244, 0.5);
+    --_line-faint: rgba(252, 250, 244, 0.08);
+    --_ink-hover: #dad9d3;
   }
 }
 
@@ -314,9 +315,9 @@ body {
   letter-spacing: 0.01em;
 }
 
-/* Secondary text is one opacity, not three: 0.75 of ink lands at 7.76:1 on
-   the default light surface and 10.32:1 on the dark one — the same footing
-   as the citizen site's `ink-2` (7.87:1). */
+/* Secondary text is one opacity, not three: 0.75 of ink lands at 7.38:1 on
+   the default light surface and 9.68:1 on the dark one — the same footing
+   as the citizen site's `ink-2` (7.56:1). */
 .re-meta {
   font-size: 0.8125rem;
   font-weight: 600;
@@ -362,11 +363,10 @@ body {
   color: inherit;
 }
 
-/* Info/prompt note. NO AMBER: amber is spent site-wide on exactly one fact —
-   a bill standing on the floor calendar, with its date printed — and no
-   widget renders that fact, so a "heads up, this ZIP spans two districts"
-   callout has no claim on it. The un-themed default is a neutral ink wash
-   (ink text on it: 15.06:1 light, 14.21:1 dark); a genuinely themed widget
+/* Info/prompt note. NO AMBER: the site's lamp yellow is its own action and
+   floor-notice mark, and no widget renders either, so a "heads up, this ZIP
+   spans two districts" callout has no claim on it. The un-themed default is a neutral ink wash
+   (ink text on it: 14.06:1 light, 13.19:1 dark); a genuinely themed widget
    still gets --oravan-note-* from the server (an accent tint over the
    surface), so a white-label embed wears the tenant's color instead. The
    error box below stays red — a universal "something went wrong" signal that
@@ -385,10 +385,10 @@ body {
    and no box around it, because a box around a failure reads as a card ABOUT
    the failure rather than the failure itself; it is also the only way a 3px
    rule can run edge to edge instead of dying into a corner radius. The red is
-   decorative reinforcement only: `go` and `alert` sit 1.19:1 apart in
+   decorative reinforcement only: `go` and `alert` sit 1.24:1 apart in
    luminance, so to a deuteranope they are near-identical. The signals that
-   actually carry the state are the 3px INK rule (17.66:1 on the default
-   surface, either mode), the bold text (14.54:1 light / 16.58:1 dark on the
+   actually carry the state are the 3px INK rule (16.50:1 on the default
+   surface, either mode), the bold text (13.82:1 light / 15.15:1 dark on the
    tinted ground), and role="alert" on the element itself — exactly the
    mitigation the contrast ledger mandates. Color is the third signal. */
 .re-error {

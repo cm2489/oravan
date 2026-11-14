@@ -352,7 +352,7 @@ export default async function NominationPage({
       <p className="pt-3">
         <Link
           href="/questions"
-          className="inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-go visited:text-go-deep hover:text-go-deep hover:underline"
+          className="inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-ink underline visited:text-ink-2 hover:decoration-[3px]"
         >
           <ArrowLeft className="h-4 w-4 flex-none" aria-hidden />
           {t('moments.crumb')}
@@ -440,7 +440,7 @@ export default async function NominationPage({
                 are the two ways this could over-claim. */}
             {nomination.exec_calendar_number !== null && nomination.last_action_date && (
               <p className="mt-4">
-                <Chip tone="urgent" dateLabel={fmtShort(nomination.last_action_date)}>
+                <Chip tone="floor" dateLabel={fmtShort(nomination.last_action_date)}>
                   {t('nominations.onExecCalendar', { number: nomination.exec_calendar_number })}
                 </Chip>
               </p>
@@ -489,7 +489,7 @@ export default async function NominationPage({
                 href={nomination.congress_gov_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-go underline visited:text-go-deep hover:text-go-deep"
+                className="inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-ink underline visited:text-ink-2 hover:decoration-[3px]"
               >
                 {t('nominations.viewOfficial')}
                 <ExternalLink className="h-4 w-4 flex-none" aria-hidden />
