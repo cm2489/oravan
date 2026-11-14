@@ -62,6 +62,7 @@ The impeccable skill is a lint and a rubric, not an explorer (audit card a8, 202
 
 Newest first. One line per change: date · who · the words or the card · what line changed.
 
+- `2026-11-14 · owner · decision 190, clicked 12:41 PM ET: "The newest Congress, falling back to the ended one when the new one has no such bill yet." (his answer to "Once the new Congress starts, which bill should a short address open?") → short addresses: after the change of Congress, /hr1 opens the newest Congress's bill, and the ended Congress's while the new one has none`
 - `2026-11-13 · owner · his five clicks on the Colour Mix page, 12:40 PM ET ("Green line, as in the picture you tapped"; "Green button, as c1 had it"; "Yellow label, as on the live site"; "This look's green, a little deeper"; "Yes. This is the look. Finish it across the site.") → colour: one dated line recording them, under Colour`
 - `2026-09-30 · owner · "For now start on skin c" (his pick from the colour direction page, as the orchestrator relayed it) → colour: direction c, warm paper and bottle green with a green masthead band, built as #425`
 - `2026-09-30 · owner · "31 a but add floor first" and "29 a" (typed, his reply to the Run 1 Report) → on /today the floor band comes before "The chambers", and the phone tab reads "Big Questions" / "Grandes preguntas" on two lines`
