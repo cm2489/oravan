@@ -184,7 +184,7 @@ export default async function CitationsPage({ params }: { params: Promise<{ loca
               on 2026-09-28. */}
           <a
             href="mailto:hello@oravan.org"
-            className="ring-gap mt-4 inline-flex min-h-12 items-center rounded-control border-2 border-go bg-go px-5 font-bold text-paper no-underline hover:border-go-deep hover:bg-go-deep"
+            className="ring-edge mt-4 inline-flex min-h-12 items-center rounded-control border-2 border-ink bg-urgent px-5 font-bold text-ink no-underline hover:bg-urgent-deep"
           >
             {t('correctionLinkText')}
           </a>

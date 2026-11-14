@@ -78,7 +78,7 @@ export default async function WhyCallPage({ params }: { params: Promise<{ locale
 
         <Link
           href="/bills"
-          className="ring-gap mt-12 inline-flex min-h-12 items-center gap-2 rounded-control border-2 border-go bg-go px-6 font-bold text-paper no-underline hover:border-go-deep hover:bg-go-deep"
+          className="ring-edge mt-12 inline-flex min-h-12 items-center gap-2 rounded-control border-2 border-ink bg-urgent px-6 font-bold text-ink no-underline hover:bg-urgent-deep"
         >
           {t('cta')}
           <ArrowRight className="h-4 w-4" aria-hidden />

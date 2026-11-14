@@ -1,9 +1,11 @@
 import { expect, test } from '@playwright/test';
+import { readFileSync } from 'node:fs';
 // Relative import on purpose: plain lib modules resolve under the Playwright
 // runner without the @/ alias (same note as tests/embed-referrer.unit.spec.ts).
 import {
   FONT_VALUES,
   MODE_DEFAULTS,
+  MODE_MARKS,
   RADIUS_VALUES,
   buildThemeCss,
   resolveEmbedTheme,
@@ -114,14 +116,20 @@ test.describe('resolveEmbedTheme', () => {
   });
 
   test('accentInk derives from accent by contrast; focus needs a surface', () => {
-    // With no tenant pair the pick is between the shipped default pair's two
-    // halves (pickTextColor's defaults mirror MODE_DEFAULTS.light).
+    // With no tenant pair the pick is between white and a near-black, never
+    // Oravan's cream: a partner's accent must not carry Oravan's colour
+    // (lib/embed-theme.ts ACCENT_TEXT_*, the values main shipped).
     const noSurface = resolveEmbedTheme({ accent: '#82632a' });
-    expect(noSurface.accentInk).toBe(MODE_DEFAULTS.light.surface);
+    expect(noSurface.accentInk).toBe('#ffffff');
     expect(noSurface.focus).toBeUndefined();
 
     const light = resolveEmbedTheme({ accent: '#ffe680' });
-    expect(light.accentInk).toBe(MODE_DEFAULTS.light.ink);
+    expect(light.accentInk).toBe('#16191b');
+
+    // A forced mode pins Oravan's palette for the widget, but that is not the
+    // partner's choice: text on their accent stays white or near-black.
+    expect(resolveEmbedTheme({ accent: '#82632a', mode: 'light' }).accentInk).toBe('#ffffff');
+    expect(resolveEmbedTheme({ accent: '#ffe680', mode: 'dark' }).accentInk).toBe('#16191b');
 
     // With a tenant pair, accentInk uses the TENANT's own light/dark, not
     // Oravan's defaults — a black accent on a light/near-black brand yields
@@ -141,6 +149,20 @@ test.describe('resolveEmbedTheme', () => {
     const illegible = resolveEmbedTheme({ accent: '#f0e9da', surface: '#f3ecdd', ink: '#2a2318' });
     expect(illegible.focus).toBe('#2a2318');
   });
+
+  test('accentInk always clears AA, even where neither white nor the near-black does', () => {
+    // The near-black is not black: on a mid-tone accent like #d2503c the
+    // better of white and #16191b is 4.24:1. The last fallback is pure white
+    // or black, which clears >= 4.58 on any colour (lib/embed-theme.ts).
+    const accent = '#d2503c';
+    expect(contrastRatio(accent, '#ffffff')).toBeLessThan(4.5);
+    expect(contrastRatio(accent, '#16191b')).toBeLessThan(4.5);
+    const noPair = resolveEmbedTheme({ accent });
+    expect(contrastRatio(accent, noPair.accentInk!)).toBeGreaterThanOrEqual(4.5);
+    // With a tenant pair whose halves also miss on this accent, the floor holds.
+    const tenant = resolveEmbedTheme({ accent, surface: '#f5f0e8', ink: '#2b2b2b' });
+    expect(contrastRatio(accent, tenant.accentInk!)).toBeGreaterThanOrEqual(4.5);
+  });
 });
 
 test.describe('buildThemeCss', () => {
@@ -149,6 +171,28 @@ test.describe('buildThemeCss', () => {
     expect(css).toBe(
       `:root:root{--oravan-radius:${RADIUS_VALUES.soft};--oravan-font:${FONT_VALUES.system}}`
     );
+  });
+
+  test("the AI chip is grey in every mode unless the partner sets their own ink", () => {
+    // Auto, no palette: embed.css's own grey stands (nothing emitted).
+    expect(buildThemeCss(resolveEmbedTheme({}))).not.toContain('--oravan-mark');
+    // A forced mode sends its grey, because embed.css's fallback follows the
+    // visitor's system scheme, which a forced mode overrides.
+    expect(buildThemeCss(resolveEmbedTheme({ mode: 'light' }))).toContain(`--oravan-mark:${MODE_MARKS.light}`);
+    expect(buildThemeCss(resolveEmbedTheme({ mode: 'dark' }))).toContain(`--oravan-mark:${MODE_MARKS.dark}`);
+    // A partner's own ink still wins, in any mode.
+    const tenant = { surface: '#fdfcfa', ink: '#121212' };
+    expect(resolveEmbedTheme(tenant).mark).toBe(tenant.ink);
+    expect(resolveEmbedTheme({ ...tenant, mode: 'dark' }).mark).toBe(tenant.ink);
+    // The grey reads on its mode's surface (the AI label can never be lost).
+    expect(contrastRatio(MODE_MARKS.light, MODE_DEFAULTS.light.surface)).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(MODE_MARKS.dark, MODE_DEFAULTS.dark.surface)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  test('the forced-mode greys are the literals embed.css ships as its --_mark fallbacks', () => {
+    const css = readFileSync('app/embed/embed.css', 'utf8');
+    const marks = [...css.matchAll(/--_mark:\s*var\(--oravan-mark,\s*(#[0-9a-f]{6})\)/g)].map((m) => m[1]);
+    expect(marks).toEqual([MODE_MARKS.light, MODE_MARKS.dark]);
   });
 
   test('forced dark pins palette + color-scheme', () => {

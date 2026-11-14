@@ -150,7 +150,7 @@ export function MomentNominationCard({
     <article className="flex flex-col rounded-control border border-line-strong bg-paper p-5">
       {onExecCalendar && (
         <p className="mb-3">
-          <Chip tone="urgent" dateLabel={fmt(lastActionDate!)}>
+          <Chip tone="floor" dateLabel={fmt(lastActionDate!)}>
             {t('nominations.onExecCalendar', { number: execCalendarNumber })}
           </Chip>
         </p>

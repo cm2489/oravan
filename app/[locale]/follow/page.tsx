@@ -135,7 +135,8 @@ export default async function FollowPage({ params }: { params: Promise<{ locale:
         )}
 
         {/* Empty by design — see the header comment. A recessed `wash` panel
-            with an ink-2 edge (line-strong on wash is 2.97:1), the same
+            with an ink-2 edge (6.93:1 on wash; line-strong on wash was 2.97:1 in
+            the July palette and is 3.89:1 now), the same
             treatment /partners gives its licensing note. */}
         <section
           aria-labelledby="follow-broadcast"

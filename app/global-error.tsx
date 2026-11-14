@@ -9,7 +9,8 @@
  * English-only is therefore a structural constraint, not an oversight or a
  * bilingual-parity exception: there is no locale to read here. Styles are
  * inline for the same reason — a root-layout failure may mean the stylesheet
- * never attached. Colors are the live tokens (--color-ink, --color-paper),
+ * never attached. Colors are the live tokens (--color-ink, --color-paper,
+ * --color-ink-2, and --color-urgent for the filled button, ink type, ink edge),
  * restated as literals because no CSS variables are guaranteed at this point.
  *
  * app/[locale]/error.tsx is the boundary users will actually see; this one is
@@ -37,8 +38,8 @@ export default function GlobalError({
           alignItems: 'center',
           justifyContent: 'center',
           padding: '2rem',
-          background: '#ffffff',
-          color: '#16191b',
+          background: '#fcfaf4',
+          color: '#1c1b18',
           fontFamily:
             'system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif',
         }}
@@ -47,7 +48,7 @@ export default function GlobalError({
           <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0 }}>
             Something went wrong
           </h1>
-          <p style={{ fontSize: '1.05rem', lineHeight: 1.6, color: '#4a544e' }}>
+          <p style={{ fontSize: '1.05rem', lineHeight: 1.6, color: '#55514a' }}>
             Oravan hit an unexpected error. Reloading usually fixes it.
           </p>
           <p style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
@@ -58,9 +59,9 @@ export default function GlobalError({
                 minHeight: '3rem',
                 padding: '0 1.5rem',
                 borderRadius: '8px',
-                border: '2px solid #0f6c4a',
-                background: '#0f6c4a',
-                color: '#ffffff',
+                border: '2px solid #1c1b18',
+                background: '#ffc933',
+                color: '#1c1b18',
                 fontWeight: 700,
                 fontSize: '1rem',
                 cursor: 'pointer',
@@ -81,8 +82,8 @@ export default function GlobalError({
                 alignItems: 'center',
                 padding: '0 1.5rem',
                 borderRadius: '8px',
-                border: '2px solid #16191b',
-                color: '#16191b',
+                border: '2px solid #1c1b18',
+                color: '#1c1b18',
                 fontWeight: 700,
                 textDecoration: 'none',
               }}

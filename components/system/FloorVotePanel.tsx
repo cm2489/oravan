@@ -206,24 +206,24 @@ export function FloorVotePanel({
      the headline it supports. It carries its own attribution row (source,
      date and link) from the caller. */
   const quote = evidence ? (
-    <blockquote className="max-w-read border-l-[3px] border-paper/35 pl-4 font-reading text-base leading-dark text-go-pale">
+    <blockquote className="max-w-read border-l-[3px] border-ink/35 pl-4 font-reading text-base leading-dark text-ink-2">
       {evidence}
     </blockquote>
   ) : null;
 
   const main = (
     <>
-      <Chip tone="urgent" ground="go" dateLabel={dateLabel}>
+      <Chip tone="urgent" ground="stone" dateLabel={dateLabel}>
         {calendarLabel}
       </Chip>
 
       {/* text-h2, one rung under the section masthead it can sit beneath
           (owner, 2026-08-01: the loudness is the ground and the amber, not
           a headline outshouting its own section title). */}
-      <Heading id={headingId} className="max-w-[36ch] text-h2 font-extrabold text-paper">
+      <Heading id={headingId} className="max-w-[36ch] text-h2 font-extrabold text-ink">
         <a
           href={href}
-          className="inline-flex min-h-11 items-center text-paper no-underline hover:underline hover:decoration-[3px]"
+          className="inline-flex min-h-11 items-center text-ink no-underline hover:underline hover:decoration-[3px]"
         >
           {headline}
         </a>
@@ -236,15 +236,19 @@ export function FloorVotePanel({
       {/* The identifier rides the meta row, under the headline — the same
           headline → citation → meta order every plain listing uses (owner,
           2026-08-01: it sat alone above the headline before). */}
-      <div className="flex flex-wrap items-center gap-4 text-sm leading-dark tracking-dark text-go-pale">
+      <div className="flex flex-wrap items-center gap-4 text-sm leading-dark tracking-dark text-ink-2">
         <span className="font-semibold tabular-nums">{identifier}</span>
         {meta}
       </div>
 
       <div>
-        {/* white fill on the enamel: `ring-gap` swaps this button's own
-            border to go-deep on focus, so the white ring never touches the
-            white fill. 9.75:1 at every adjacency. */}
+        {/* THE ONE GREEN FILLED BUTTON on the site (owner's click,
+            2026-11-13 12:40 PM ET: "Green button, as c1 had it"); every other
+            filled action is the lamp. Cream type on go 7.36 (on go-deep, the
+            hover, 11.32); the fill against the stone panel 5.79 (hover 8.91).
+            `ring-gap` swaps the button's own border to stone on focus, so the
+            stack reads go fill | stone border 5.79 | stone gap | ink ring
+            12.98 | stone panel 12.98. */}
         {/* data-call-cta: FloatingCallButton's stand-down contract — on a
             floor-calendar bill page both CTAs were visible at once, and at
             320px the floating button overlapped this one (Phase-1 P1).
@@ -252,7 +256,7 @@ export function FloorVotePanel({
         <a
           href={href}
           data-call-cta=""
-          className="ring-gap inline-flex min-h-12 items-center justify-center gap-2 rounded-control border-2 border-paper bg-paper px-6 py-3 font-bold text-go-deep no-underline hover:border-tint hover:bg-tint"
+          className="ring-gap inline-flex min-h-12 items-center justify-center gap-2 rounded-control border-2 border-go bg-go px-6 py-3 font-bold text-paper no-underline hover:border-go-deep hover:bg-go-deep"
         >
           {ctaLabel}
         </a>
@@ -261,14 +265,16 @@ export function FloorVotePanel({
   );
 
   return (
-    // `on-go` retunes the focus indicator for this ground: white ring, go-deep
-    // gap. The ring is never green, because the buttons here are green-filled.
+    // THE GROUND is stone with ink type and an ink rule (the owner's look,
+    // 2026-11-13; it was the green enamel). `on-stone` retunes the focus
+    // indicator to it: ink ring 12.98, stone gap. `ground-leading` keeps the
+    // line heights the panel had on the enamel, so the look moved no line.
     // `data-crown` is a test hook (the homepage crown and the bill page's
     // band alike), so specs never have to find this panel by its colour class.
     <section
       data-crown=""
-      className={`on-go bg-go-deep text-paper ${
-        flush ? 'pt-5 pb-8 md:pb-12' : 'border-y-[3px] border-go py-8 md:py-12'
+      className={`on-stone ground-leading bg-stone text-ink ${
+        flush ? 'pt-5 pb-8 md:pb-12' : 'border-y-[3px] border-ink py-8 md:py-12'
       } ${className}`}
     >
       {aside ? (

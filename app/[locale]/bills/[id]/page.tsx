@@ -69,7 +69,8 @@ import { votesCoverage, votesForBill, votingMember } from '@/lib/votes';
  * disclosure, so the reading column and the rail both break the first
  * screen instead of starting a thousand pixels down.
  *
- * DATA-GATED LOUDNESS: at most one full-bleed green enamel band, and only
+ * DATA-GATED LOUDNESS: at most one full-bleed floor panel (stone since the
+ * owner's look of 2026-11-13; the green enamel before), and only
  * when one of the three dated floor facts amber is allowed to carry is true of
  * this bill — the chamber's OWN published schedule names it (`announced`, the
  * ladder's T0 rung, quoted with its attribution), or the record says it stands

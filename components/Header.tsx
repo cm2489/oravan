@@ -20,15 +20,19 @@ import { LocaleSwitcher } from './LocaleSwitcher';
  * budget: at 390px it is ONE row, 56px tall, and it is the only thing between
  * the top of the screen and the page's own headline.
  *
- * GROUND: paper, closed by a `line` rule. `line` (1.37:1) is legal here
- * because it SEPARATES two paper areas — it is not a component edge, and it is
- * not the only thing making a control findable.
+ * GROUND: the masthead band — bottle green (`go-deep`, #133f2d) with the
+ * wordmark and nav in cream (`paper`, 11.32:1) and the trust line in
+ * `go-pale` (8.26:1). Page 2 (docs/current-direction.md, Colour): "green is
+ * the brand — the masthead band and the wordmark"; built for the owner's
+ * pick of colour direction c, 2026-09-30. `.on-band` (app/globals.css)
+ * turns the focus ring to paper, 11.32:1 on the band, where the default ink
+ * ring would be 1.46:1. The band closes on its own colour, so the old 1px
+ * `line` rule keeps its pixel and changes no height.
  *
- * "YOU ARE HERE" IS AN INK FILL, and nothing else. That is the language
- * switch's own convention in the reference, so the nav borrows it and one mark
- * means one thing across the whole bar. The action green is spent on actions;
- * navigating is not an action, and the go-mark (the 6px bar) never underlines
- * a link.
+ * "YOU ARE HERE" IS AN INVERTED FILL, and nothing else: a paper cell with
+ * band-green type (11.32:1), the language switch's own convention, so one
+ * mark means one thing across the whole bar. Navigating is not an action,
+ * and the go-mark (the 6px bar) never underlines a link.
  *
  * SHAPE: nav items are hand-sized, so 8px (`rounded-control`). The language
  * switch is a small mark, so 3px. That is the shape law — radius by scale.
@@ -187,15 +191,15 @@ export function Header() {
 
   return (
     <>
-      <header className="border-b border-line bg-paper">
+      <header className="on-band border-b border-go-deep bg-go-deep">
         <div className="mx-auto flex min-h-14 max-w-5xl items-center gap-3 px-4 md:min-h-16">
-          <Link href="/" className="inline-flex min-h-11 items-center text-ink">
+          <Link href="/" className="inline-flex min-h-11 items-center text-paper">
             {/* Sized AGAINST the language switch, not by eye: the switch box
                 measures 46px tall, and the lockup's art height is the mark
                 times RAVAN_SCALE (1.0657). 2.5rem puts the art at ~42.6px, so
                 the two objects read as a matched pair inside both the 56px
                 mobile bar and the 64px desktop one. */}
-            <OravanLockup markRem={2.5} markClassName="text-go" />
+            <OravanLockup markRem={2.5} />
           </Link>
 
           {/* THE TRUST LINE (2026-08 design pick A1): the product's
@@ -209,7 +213,7 @@ export function Header() {
               switcher to 25px cells and swallowed its clicks). Spanish
               carries the SAME two sentences in the sub-bar below. */}
           {locale === 'en' && (
-            <p className="hidden border-l-[1.5px] border-line pl-3 text-xs leading-tight text-ink-2 lg:block">
+            <p className="hidden border-l-[1.5px] border-go-pale pl-3 text-xs leading-tight text-go-pale lg:block">
               {t('trustLine1')}
               <br />
               {t('trustLine2')}
@@ -228,7 +232,7 @@ export function Header() {
                   href={href}
                   aria-current={active ? 'page' : undefined}
                   className={`inline-flex min-h-11 items-center rounded-control px-2 text-sm font-semibold whitespace-nowrap transition-colors lg:px-3 ${
-                    active ? 'bg-ink text-paper' : 'text-ink hover:bg-wash active:bg-wash'
+                    active ? 'bg-paper text-go-deep' : 'text-paper hover:bg-go active:bg-go'
                   }`}
                 >
                   <RowLabel short={t(`navShort.${key}`)} full={t(`nav.${key}`)} />
@@ -245,8 +249,8 @@ export function Header() {
             (see the EN inline note above for the measured 686px-nav reason).
             Wide screens only, matching the EN variant's scope. */}
         {locale === 'es' && (
-          <div className="hidden border-t border-line bg-wash lg:block">
-            <p className="mx-auto max-w-5xl px-4 py-1 text-center text-2xs font-semibold tracking-[0.06em] text-ink-2">
+          <div className="hidden border-t border-go-pale bg-go-deep lg:block">
+            <p className="mx-auto max-w-5xl px-4 py-1 text-center text-2xs font-semibold tracking-[0.06em] text-go-pale">
               {t('trustLine1')} {t('trustLine2')}
             </p>
           </div>
@@ -256,7 +260,7 @@ export function Header() {
       {/* The thumb bar. Paper, not ink: the footer is the page's only dark
           mass, and a permanent dark band across the bottom of every phone
           screen would take that meaning away from it. Its top rule is
-          `line-strong` (3.24:1 on paper) because THAT rule is a real
+          `line-strong` (4.24:1 on paper) because THAT rule is a real
           boundary — the only thing separating a fixed bar from the content
           scrolling underneath it — and `line` would not clear 1.4.11.
           `data-thumb-bar` is how an in-place glossary box finds the bar's

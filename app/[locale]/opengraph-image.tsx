@@ -12,16 +12,18 @@ const TAGLINES: Record<string, { tag: string; sub: string }> = {
 
 // Palette is the live token set from app/globals.css, restated as literals because
 // Satori resolves neither CSS vars nor currentColor (see lib/og-brand.ts). Keep in
-// lockstep with globals.css: --color-ink, --color-paper, --color-go-bright.
+// lockstep with globals.css: --color-go-deep, --color-paper, --color-go-bright.
 //
-// The lockup is MONOCHROME on this dark ground, matching the footer's treatment:
-// `go` (#0f6c4a) sits at 2.75:1 on ink and must never carry the mark there. The
-// dark-ground green token, `go-bright`, is spent on the tagline only (9.48:1 on
-// ink — an earlier comment here claimed 10.3:1; recomputed 2026-08-02).
-const INK = '#16191b'; // --color-ink
-const PAPER = '#ffffff'; // --color-paper
-const GO_BRIGHT = '#5fd39a'; // --color-go-bright — the dark-ground green
-const PAPER_SOFT = 'rgba(255,255,255,0.86)';
+// The ground is the masthead band's green, cream lockup on it, as at the top of
+// every page (the owner's look, 2026-11-13: "dark green strip, cream logo"). The
+// lockup is MONOCHROME: paper on go-deep is 11.32:1, while `go` (#1d5e43) on
+// go-deep is 1.54:1 and must never carry the mark. `go-bright` is spent on the
+// tagline only (6.61:1 on go-deep); the soft paper line is 8.82:1. Computed
+// with lib/contrast.ts.
+const BAND = '#133f2d'; // --color-go-deep — the masthead band's green (owner's look, 2026-11-13)
+const PAPER = '#fcfaf4'; // --color-paper
+const GO_BRIGHT = '#7fd3a2'; // --color-go-bright — the dark-ground green
+const PAPER_SOFT = 'rgba(252,250,244,0.86)';
 
 export default async function OgImage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -37,7 +39,7 @@ export default async function OgImage({ params }: { params: Promise<{ locale: st
           flexDirection: 'column',
           justifyContent: 'center',
           padding: 80,
-          background: INK,
+          background: BAND,
           color: PAPER,
           fontFamily: 'sans-serif',
         }}

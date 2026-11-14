@@ -73,7 +73,7 @@ export function RepPortrait({
   const initials = `${rep.first?.[0] ?? ''}${rep.last?.[0] ?? ''}`.toUpperCase();
   return (
     <span
-      className={`relative flex shrink-0 items-center justify-center overflow-hidden rounded-stamp border-[1.5px] border-line-strong bg-wash ${
+      className={`relative flex shrink-0 items-center justify-center overflow-hidden rounded-stamp border-[1.5px] border-ink-2 bg-wash text-ink-2 ${
         large ? 'h-36 w-30' : 'h-22 w-18'
       }`}
     >
