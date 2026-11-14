@@ -215,6 +215,14 @@ export interface Legislator {
  * term, and nothing a visitor could use to contact them: no phone, no office,
  * no website. Empty until a member leaves the file after 2026-11-13.
  */
+/** An official place a member's last day was read from. */
+export interface DepartureDateSource {
+  kind: 'house-clerk' | 'bioguide';
+  url: string;
+  /** YYYY-MM-DD, the day a person read it. */
+  read: string;
+}
+
 export interface DepartedMember {
   bioguide: string;
   name: string;
@@ -224,10 +232,19 @@ export interface DepartedMember {
   state: string;
   district: number | null;
   party: string | null;
-  /** The last day of their last term, from the congress-legislators
-   *  historical file; null until that file lists them. */
+  /** Their last day: the official one when `served_until_source` names it,
+   *  else the congress-legislators historical file's; null until that file
+   *  lists them. */
   served_until: string | null;
-  /** The day the weekly refresh first found them gone from the member file. */
+  /** Where `served_until` comes from: the Clerk of the House's vacancy list
+   *  or the Biographical Directory, with the address read and the day read
+   *  (data/departure-dates.json). Null when the date is still the volunteer
+   *  historical file's alone: then a mid-term departure has no page. */
+  served_until_source?: DepartureDateSource | null;
+  /** The day the weekly refresh first found them gone from the member file;
+   *  for the sixteen who left before this file existed, recorded by
+   *  scripts/seed-departed-members.py, the day they were recorded
+   *  (2026-11-13). Nothing on the site reads it. */
   left_file: string;
 }
 

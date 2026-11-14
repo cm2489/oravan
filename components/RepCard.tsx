@@ -60,9 +60,13 @@ export function usePartyLabel(rep: Pick<Legislator, 'party'>): string | null {
 export function RepPortrait({
   rep,
   large = false,
+  photo = true,
 }: {
   rep: Pick<Legislator, 'bioguide' | 'first' | 'last'>;
   large?: boolean;
+  /** False when the photo is known to be missing at the source
+   *  (lib/core/portraits.ts portraitKnownMissing): the initials alone. */
+  photo?: boolean;
 }) {
   const initials = `${rep.first?.[0] ?? ''}${rep.last?.[0] ?? ''}`.toUpperCase();
   return (
@@ -79,13 +83,15 @@ export function RepPortrait({
           {initials}
         </span>
       )}
-      <Image
-        src={portraitUrl(rep.bioguide)}
-        alt=""
-        width={large ? 120 : 72}
-        height={large ? 144 : 88}
-        className="absolute inset-0 h-full w-full object-cover"
-      />
+      {photo && (
+        <Image
+          src={portraitUrl(rep.bioguide)}
+          alt=""
+          width={large ? 120 : 72}
+          height={large ? 144 : 88}
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+      )}
     </span>
   );
 }

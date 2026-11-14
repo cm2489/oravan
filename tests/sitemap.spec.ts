@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { getAllBills, getAllLegislators, getVacancies, vacancySlug } from '../lib/core';
+import { getAllBills, getAllLegislators, getDepartedMembers, getVacancies, vacancySlug } from '../lib/core';
 import { getAllNominations, nominationSlug } from '../lib/core/nominations';
 import { getMoments, getMomentsForNomination, momentClaimsVehicles, vehicleKind } from '../lib/moments';
 import { BRIEF_WINDOW_DAYS, briefWindow } from '../lib/today';
@@ -73,8 +73,10 @@ test.describe('sitemap.xml', () => {
     // Moments (v2 slice S5): every non-retired moment ships, both locales.
     const totalMoments = getMoments().filter((m) => m.state !== 'retired').length;
     const cited = citedNominationSlugs();
-    // Member pages: every sitting member plus every vacant seat (keyed on the seat).
-    const totalRepPages = getAllLegislators().length + getVacancies().length;
+    // Member pages: every sitting member, every member who left and keeps a
+    // record page (lib/departed-members.ts), and every vacant seat (keyed on
+    // the seat).
+    const totalRepPages = getAllLegislators().length + getDepartedMembers().length + getVacancies().length;
     const locCount = (body.match(/<loc>/g) ?? []).length;
     expect(STATIC_PATH_COUNT, 'the route registry found no static pages').toBeGreaterThan(0);
     expect(locCount).toBe(
@@ -104,6 +106,11 @@ test.describe('sitemap.xml', () => {
     const member = getAllLegislators()[0].bioguide;
     expect(body).toContain(`<loc>${SITE_ORIGIN}/reps/${member}</loc>`);
     expect(body).toContain(`<loc>${SITE_ORIGIN}/es/reps/${member}</loc>`);
+    // Every member who left and keeps a record page, both locales.
+    for (const d of getDepartedMembers()) {
+      expect(body).toContain(`<loc>${SITE_ORIGIN}/reps/${d.bioguide}</loc>`);
+      expect(body).toContain(`<loc>${SITE_ORIGIN}/es/reps/${d.bioguide}</loc>`);
+    }
     const seat = getVacancies()[0];
     if (seat) {
       expect(body).toContain(`<loc>${SITE_ORIGIN}/reps/${vacancySlug(seat)}</loc>`);
