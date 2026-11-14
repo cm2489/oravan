@@ -20,19 +20,20 @@
  */
 import {
   districtsForZip,
+  portraitFlag,
   repsForDistrict,
   specialElectionsFor,
   vacancyForDistrict,
   vacancySlug,
 } from '@/lib/core';
 import { parseDistrictParam } from '@/lib/district';
-import type { Legislator, SeatElections } from '@/lib/types';
+import type { CardMember, SeatElections } from '@/lib/types';
 
 export interface MembersDistrict {
   state: string;
   district: number;
   /** House member first, then the senators (repsForDistrict's order). */
-  reps: Legislator[];
+  reps: CardMember[];
   /** The vacant seat's page, when the House seat has no occupant. */
   vacancyHref: string | null;
   elections?: SeatElections;
@@ -82,7 +83,7 @@ export function membersFor(rawZip: string | null | undefined, rawDistrict?: stri
       return {
         state: d.state,
         district: d.district,
-        reps: repsForDistrict(d),
+        reps: repsForDistrict(d).map((r) => ({ ...r, ...portraitFlag(r.bioguide) })),
         vacancyHref: vacancy ? `/reps/${vacancySlug(vacancy)}` : null,
         ...(elections ? { elections } : {}),
       };
