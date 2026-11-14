@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
+import billsData from '../data/bills.json';
 import coverageData from '../data/coverage.json';
 import relatedBills from '../data/related-bills.json';
 import { twinsOf } from '../lib/related-bills.mjs';
@@ -21,6 +22,11 @@ import { formatCitation } from '../lib/format';
  */
 const cov = coverageData as unknown as Record<string, { url: string }[]>;
 const slugs = Object.keys(cov).filter((k) => !k.startsWith('_'));
+const PAGES = new Set(
+  (billsData as { bill_type: string; bill_number: number; congress_number: number }[]).map(
+    (b) => `${b.bill_type}-${b.bill_number}-${b.congress_number}`
+  )
+);
 
 type Pick = { slug: string; twin: string; url: string; source: string; lean: keyof typeof en.coverage.lean };
 function pick(): Pick | null {
@@ -28,7 +34,9 @@ function pick(): Pick | null {
   // articles can give a bill its first box.
   const candidates = new Set<string>(slugs);
   for (const s of slugs) for (const t of twinsOf(relatedBills, s)) candidates.add(t);
-  for (const s of [...candidates].sort()) {
+  // Only bills with a page: the record can name an identical bill the corpus
+  // does not hold.
+  for (const s of [...candidates].sort().filter((x) => PAGES.has(x))) {
     const { articles, twins } = getCoverageWithTwins(s);
     const shown = coverageForBillPage(articles, getMomentsForBill(s).length > 0);
     if (shown.length === 0 || twins.length === 0) continue;
