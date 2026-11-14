@@ -20,12 +20,15 @@ const useHydrated = () =>
  * (the project records §3) — and this component exists
  * because only one of them is knowable at build time.
  *
- * The quiet-day lines themselves ("nothing recorded yet today" vs. a past
- * day's plain "nothing recorded") are server-rendered by
- * components/MomentTimeline.tsx off the reader's own `isToday` flag: they are
- * statements about the RECORD, which does not change between the build and
- * the visitor. This sentinel carries the other sentence — the one about OUR
- * PIPELINE — and it cannot be baked, for the same reason StalenessNote
+ * The quiet-day lines ("nothing recorded" for a past day) are server-rendered
+ * by components/MomentTimeline.tsx: a day's silence is a statement about the
+ * RECORD, which does not change between the build and the visitor. The word
+ * "today" is not — it is a statement about the visitor's day, so the newest
+ * row's "yet today" is decided in the browser (components/MomentQuietDay.tsx).
+ * (This comment used to put both lines on the server; "yet today" then read
+ * as November 13 for hours after midnight on November 14.) This sentinel
+ * carries the other sentence — the one about OUR PIPELINE — and it cannot be
+ * baked, for the same reason StalenessNote
  * cannot: a verdict computed at build time would freeze as "fresh" forever
  * on a ~1,000-page static site the moment the sync dies, which is precisely
  * the silent failure the KTD-2 beacon pattern was introduced to close.

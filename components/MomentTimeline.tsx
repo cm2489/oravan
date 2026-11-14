@@ -5,14 +5,19 @@ import { Chip } from '@/components/system';
 import { collapseQuietDays, linkHost, timelineDays } from '@/lib/moments-ui';
 import { getUpdates, type MomentUpdate, VERBATIM_MODE } from '@/lib/moment-updates';
 import { rollCallPage } from '@/lib/roll-call-page';
+import { MomentQuietDay } from './MomentQuietDay';
 
 /*
  * "What's moved" — the dated timeline of a Moment's recorded activity
- * (the project records §3, §7). A SERVER component: it
- * ships zero client JavaScript, because a ledger of days that already
- * happened has nothing to react to. The one clock-dependent sentence on this
- * surface ("we have not been able to check since…") lives in its own client
- * sentinel, components/MomentQuietNote.tsx.
+ * (the project records §3, §7). A SERVER component: a ledger of days that
+ * already happened has nothing to react to, so it ships no client JavaScript
+ * of its own. The two clock-dependent sentences on this surface live in their
+ * own client islands, because a prerendered page's clock is the BUILD's and
+ * only the visitor's is true: "we have not been able to check since…"
+ * (components/MomentQuietNote.tsx) and "nothing recorded yet today"
+ * (components/MomentQuietDay.tsx). The frame's own day is printed as
+ * `data-frame-day` below, so a test can read the day the page was built for
+ * instead of guessing it from its own clock.
  *
  * ---------------------------------------------------------------------------
  * THE EDITORIAL LAW this component renders under (owner-settled 2026-07-25,
@@ -149,7 +154,7 @@ export function MomentTimeline({
     });
 
   return (
-    <div className="mt-6">
+    <div className="mt-6" data-frame-day={days[0]?.day}>
       {hasAi && (
         <p className="mb-6">
           <Chip tone="ai" marker={t('common.aiMarker')} className="max-w-read">
@@ -187,7 +192,7 @@ export function MomentTimeline({
             className="flex flex-wrap items-baseline gap-x-3 border-t border-line py-1 text-sm text-ink-2"
           >
             <span className="font-semibold tabular-nums">{fmtDay(day.day)}</span>
-            <span>{day.isToday ? t('moments.updates.quietToday') : t('moments.updates.quietDay')}</span>
+            {day.isToday ? <MomentQuietDay day={day.day} /> : <span>{t('moments.updates.quietDay')}</span>}
           </p>
         ) : (
           <div key={day.day} id={dayAnchor(day.day)} className="border-t border-line pt-4 pb-2">
