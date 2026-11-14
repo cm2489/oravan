@@ -23,10 +23,30 @@ import { sitePolicy } from './ended-state.mjs';
  *     label is computed on the server and passed in (app/embed/bill-card),
  *     and the action-panel embed's ended frame is rendered on the server.
  *
+ * The same holds for the member pages' changeover wording (members who leave,
+ * #487): "Served in the {chamber} until January 3, 2027." is printed only for
+ * a member whose last day is the ended Congress's (lib/departed-members.ts
+ * servedLine, which needs `memberTurnover()`, null while nothing has ended),
+ * and the new-member line "No recorded votes yet on a bill Oravan tracks." only
+ * when `showsNoVotesYet` allows it (also null-turnover false). Both are
+ * rendered on the server, so no browser reads them. What the sixteen mid-term
+ * record pages show today (`departedServedOn`, `departedChamber`, `formerRole`,
+ * `crumbRecord`) is NOT in this list: those pages display it now.
+ * `votesNoneYet` is the superseded first wording, kept in the catalog for the
+ * record and shown by no page at all.
+ *
  * Server-rendered text reads the full catalog through next-intl as before.
- * tests/bill-rail.unit.spec.ts pins both halves.
+ * tests/bill-rail.unit.spec.ts and tests/ended-member-messages.unit.spec.ts
+ * pin both halves.
  */
-export const ENDED_ONLY_KEYS = ['bill.ended', 'bills.status.ended', 'bills.statusWord.ended'] as const;
+export const ENDED_ONLY_KEYS = [
+  'bill.ended',
+  'bills.status.ended',
+  'bills.statusWord.ended',
+  'rep.departedServed',
+  'rep.votesNoneYet',
+  'rep.votesNoneYetTracked',
+] as const;
 
 type Json = { [key: string]: unknown };
 
