@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-14T11:25:18.227Z",
+    "fetched_at": "2026-11-14T17:58:03.837Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-14T11:25:18.227Z"
+        "checked_at": "2026-11-14T17:58:03.837Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-08",
         "week_label": "Most-Viewed Bills - Week of November 8, 2026",
         "entries": 6,
-        "checked_at": "2026-11-14T11:25:18.227Z"
+        "checked_at": "2026-11-14T17:58:03.837Z"
       },
       "leans": {
         "center": {
@@ -1325,6 +1325,18 @@
       ],
       "mostViewed": null
     },
+    "s-4659-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "newsfromthestates.com",
+          "firstSeen": "2026-11-14",
+          "lastSeen": "2026-11-14",
+          "url": "https://news.google.com/rss/articles/CBMitwFBVV95cUxPV3ZwRk1xRHdZWnhKOVNzTnpNcVotczRzdFpfdGNjRVB3UTJuZk9xZGc1N3dkUzhWWnVESVFKY1lsZUw4NFl2eHBFT1F6LTJrYXJNX3BPajAtS0ZFc2tBcGJrQ2MxZmpXTzRWVjhFN1NhWVphSWtFczROUzJxakdEUmFlWkNVUTU5a1dDTmFCbTA4ak93TWRNUDBxUm5YUkJ6c2E4THE2VDZvM0VGN3NCVGp6R0N2UG8?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "s-4668-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1464,6 +1476,13 @@
     },
     "sjres-185-119": {
       "outlets7d": [
+        {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-11-14",
+          "lastSeen": "2026-11-14",
+          "url": "https://www.foxnews.com/politics/anti-trump-republican-courts-other-defectors-house-weighs-another-vote-against-iran-war"
+        },
         {
           "domain": "thehill.com",
           "lean": "center",
