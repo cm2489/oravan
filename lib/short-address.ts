@@ -290,24 +290,33 @@ export function shortAddressTarget(
  * the record has a number address only.
  *
  * THE SLUG RULE (nameSlug), one paragraph a reader can check by hand: take
- * the short title exactly as the record gives it; delete every
- * apostrophe-like mark (the straight apostrophe ', the curly quotes ‘ and ’,
- * the modifier-letter apostrophe ʼ, the okina ʻ, the acute accent ´ and the
- * grave accent `), so "America's" -> "americas" and "Hawaiʻi" -> "hawaii";
- * split accented letters into letter and accent and drop the accent (é -> e,
- * ñ -> n; Unicode NFKD). If any letter or digit is then left that is not a
- * to z or 0 to 9 (Æ, Ø, Ł, ß, a Greek, Cyrillic, Chinese or Japanese
- * character, an Arabic numeral), the title gets NO name: nothing is dropped
- * or rewritten to make one. Otherwise lower-case it; turn every run of
- * anything that is not a-z or 0-9 into one hyphen ("&", spaces, commas,
- * dashes, periods and parentheses alike); drop a hyphen at either end. No
+ * the short title exactly as the record gives it; split each accented letter
+ * into its letter and its accent (Unicode NFD, which never turns one
+ * character into several letters); read a non-breaking space as a space;
+ * delete every apostrophe-like mark (the straight apostrophe ', the curly
+ * quotes ‘ and ’, the modifier-letter apostrophe ʼ, the okina ʻ, the acute
+ * accent ´ and the grave accent `), so "America's" -> "americas" and
+ * "Hawaiʻi" -> "hawaii"; drop the accents (é -> e, ñ -> n). If the title then
+ * holds ANY character other than the letters A to Z and a to z, the digits 0
+ * to 9, the space, and these punctuation marks: hyphen -, en dash –, em dash
+ * —, comma, period, colon, semicolon, ampersand &, slash /, parentheses ( ),
+ * straight double quote ", curly double quotes “ ”, exclamation mark ! and
+ * question mark ?, it gets NO name. So a letter such as Æ, Ø, Ł or ß, any
+ * non-Latin character, a non-ASCII digit, a symbol (™, №, ½, a Roman-numeral
+ * or ligature character, a full-width letter), any other apostrophe-like
+ * mark (′, ‛, ՚, a full-width apostrophe) and every invisible character (soft
+ * hyphen, zero-width space, zero-width joiner and non-joiner, word joiner,
+ * byte-order mark) all mean no name: nothing is dropped, split, joined or
+ * rewritten to make one. Otherwise lower-case it; turn every run of spaces
+ * and allowed punctuation into one hyphen; drop a hyphen at either end. No
  * word is dropped, added or changed: no stop-word is removed, "of 2026"
  * stays, "&" does not become "and". A title whose result has no letter
  * (only a number, or nothing) gets no name.
  *
  * WHEN A NAME IS AN ADDRESS (nameAddressAllowed): it has 4 to 200
- * characters; it is not itself a number address (a title that slugs to "hr1"
- * or "s-2" never becomes a name); proxy.ts actually runs on it in every
+ * characters; it does not read as a number address, with or without its
+ * hyphens (a title that slugs to "hr1", "s-2" or "h-r-1" never becomes a
+ * name, so no name can look like /hr1); proxy.ts actually runs on it in every
  * language (its `matcher` skips paths starting with "api", "_next",
  * "_vercel", "embed/" or equal to "embed", and paths with a dot, so a name
  * like "apiary-act" would answer in Spanish and not in English: it is
@@ -320,8 +329,9 @@ export function shortAddressTarget(
  * NEVER CHOOSING BETWEEN BILLS. Many bills share a short title (a House bill
  * and its Senate twin usually do). A name resolves only when exactly ONE bill
  * of the Congress being searched carries it, among the bills Oravan tracks:
- * A name opens a bill when no other bill Oravan tracks carries that short
- * title. A twin Oravan does not track (most bills of a Congress are never in
+ * A name opens a bill when no other bill Oravan tracks has a short title that
+ * makes the same name ("SAFE Act" and "Safe Act" make one name, and so do
+ * "Twin Spelling Act" and "Twin-Spelling Act"). A twin Oravan does not track (most bills of a Congress are never in
  * the corpus) is not counted, so which bill a name opens depends on which
  * bills Oravan tracks, and a name can stop opening its bill the day a twin
  * enters the corpus. The Congresses are searched in
@@ -390,18 +400,36 @@ export const NAME_ADDRESS_LOCALES: readonly string[] = Object.freeze(['en', 'es'
 
 /** Apostrophe-like marks the slug rule deletes: ' ‘ ’ ʼ ʻ ´ ` (U+0027, U+2018, U+2019, U+02BC, U+02BB, U+00B4, U+0060). */
 const APOSTROPHE_LIKE = /['\u2018\u2019\u02BC\u02BB\u00B4\u0060]/g;
-/** A letter or digit that is not a-z, A-Z or 0-9 (after accents are dropped). */
-const FOREIGN_LETTER_OR_DIGIT = /[^\P{L}A-Za-z]|[^\P{N}0-9]/u;
+/**
+ * Everything a title may hold once accents are dropped: A-Z, a-z, 0-9, the
+ * space, and - – — , . : ; & / ( ) " “ ” ! ? (the punctuation the rule above
+ * lists). Anything else means no name.
+ */
+const ALLOWED_AFTER_ACCENTS = /^[A-Za-z0-9 \-\u2013\u2014,.:;&/()"\u201C\u201D!?]*$/;
 
-/** The slug rule above: a short title as the record gives it -> its name, or null when it gets none. */
-export function nameSlug(title: string): string | null {
-  const plain = title.replace(APOSTROPHE_LIKE, '').normalize('NFKD').replace(/\p{M}/gu, '');
-  if (FOREIGN_LETTER_OR_DIGIT.test(plain)) return null;
+/** The slug rule, with its reason when a title gets no name (the build log prints it). */
+export function slugTitle(title: string): { name: string; reason: null } | { name: null; reason: string } {
+  const plain = title
+    .normalize('NFD')
+    .replace(/\u00A0/g, ' ')
+    .replace(APOSTROPHE_LIKE, '')
+    .replace(/\p{M}/gu, '');
+  if (!ALLOWED_AFTER_ACCENTS.test(plain)) {
+    const bad = [...plain].find((ch) => !ALLOWED_AFTER_ACCENTS.test(ch)) ?? '';
+    const code = bad.codePointAt(0)?.toString(16).toUpperCase().padStart(4, '0');
+    return { name: null, reason: `the title holds a character outside the allowed set (U+${code})` };
+  }
   const name = plain
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
-  return /[a-z]/.test(name) ? name : null;
+  if (!/[a-z]/.test(name)) return { name: null, reason: 'the title has no letter' };
+  return { name, reason: null };
+}
+
+/** The slug rule above: a short title as the record gives it -> its name, or null when it gets none. */
+export function nameSlug(title: string): string | null {
+  return slugTitle(title).name;
 }
 
 /** Why a name is not an address, or null when it is one. One plain reason per refusal, for the build log. */
@@ -413,7 +441,7 @@ export function nameAddressRefusal(
   if (name.length < NAME_MIN) return `shorter than ${NAME_MIN} characters`;
   if (name.length > NAME_MAX) return `longer than ${NAME_MAX} characters`;
   if (!NAME_SHAPE.test(name) || !/[a-z]/.test(name)) return 'not a-z, 0-9 and single hyphens with a letter';
-  if (parseShortAddress(name) !== null) return 'it reads as a number address';
+  if (parseShortAddress(name) !== null || parseShortAddress(name.replace(/-/g, '')) !== null) return 'it reads as a number address';
   if (![`/${name}`, ...locales.map((l) => `/${l}/${name}`)].every(proxySeesPath)) {
     return "proxy.ts's matcher skips it in at least one language";
   }
@@ -463,9 +491,10 @@ export function namesOfCongress(
     for (const title of entry?.titles ?? []) {
       if (typeof title !== 'string') continue;
       const slug = `${bill.bill_type}-${bill.bill_number}-${bill.congress_number}`;
-      const name = nameSlug(title);
+      const slugged = slugTitle(title);
+      const name = slugged.name;
       if (!name) {
-        if (/[a-z]/i.test(title)) onRefused?.({ slug, title, name: null, reason: 'the title has a letter or digit outside a-z and 0-9' });
+        onRefused?.({ slug, title, name: null, reason: slugged.reason ?? 'no name' });
         continue;
       }
       const reason = nameAddressRefusal(name, reserved);
@@ -501,6 +530,14 @@ export function encodeNameTables(
     if (names.size === 0) continue;
     const entries = [...names.keys()].sort().map((name) => {
       const holders = names.get(name)!;
+      if (holders.size > 1) {
+        // A shared name is in the table (so the search stops there) but opens nothing: say so too.
+        const bills = [...holders].sort().map((h) => {
+          const a = parseShortAddress(h)!;
+          return `${a.type}-${a.number}-${congress}`;
+        });
+        onRefused?.({ slug: bills.join(' '), title: '', name, reason: `shared by ${holders.size} bills, so it opens none of them` });
+      }
       return `${name}=${holders.size === 1 ? [...holders][0] : ''}`;
     });
     parts.push(`${congress}@${entries.join(',')}`);

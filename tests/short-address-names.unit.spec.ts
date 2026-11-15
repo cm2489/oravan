@@ -16,6 +16,7 @@ import {
   nameAddressAllowed,
   nameAddressRefusal,
   PROXY_MATCHER,
+  slugTitle,
   proxySeesPath,
   nameAddressTarget,
   nameSlug,
@@ -28,7 +29,7 @@ import {
   type ShortAddressPolicy,
   type ShortTitleFile,
 } from '../lib/short-address';
-import { nameTablesForBuild, readShortTitles, reservedNames } from '../lib/short-address-build';
+import { nameTablesForBuild, readShortTitles, refusalLine, reservedNames } from '../lib/short-address-build';
 import { topRouteSegments } from '../lib/route-segments.mjs';
 import { isRecordShortTitleType, shortTitlesFromRecord } from '../lib/short-titles.mjs';
 import { congressTerm } from '../lib/congress.mjs';
@@ -160,8 +161,92 @@ test('slug rule: a letter or digit outside a-z and 0-9 gives NO name; apostrophe
   expect(nameSlug('Ethan`s Law')).toBe('ethans-law');
   // Accents still just drop; a ligature and full-width letters decompose to a-z.
   expect(nameSlug('Café Act')).toBe('cafe-act');
-  expect(nameSlug('\ufb01nancial Act')).toBe('financial-act');
-  expect(nameSlug('\uff21\uff23\uff25 Act')).toBe('ace-act');
+  // Since 2026-11-15 a ligature or a full-width letter is not decomposed into
+  // letters (NFD, not NFKD): it is outside the allowed set, so no name.
+  expect(nameSlug('\ufb01nancial Act')).toBeNull();
+  expect(nameSlug('\uff21\uff23\uff25 Act')).toBeNull();
+});
+
+test('slug rule (2026-11-15): a strict allow-list; nothing is split, joined, expanded or added to make a name', () => {
+  // The reviewer's cases, through the real function. Each holds a character
+  // outside the allowed set after NFD, so each gets NO name.
+  const none: Array<[string, string]> = [
+    ['America\u2032s Act', 'a prime used as an apostrophe'],
+    ['America\uff07s Act', 'a full-width apostrophe'],
+    ['America\u201bs Act', 'a reversed quotation mark'],
+    ['America\u055as Act', 'the Armenian apostrophe'],
+    ['A\u00adct of 2026', 'a soft hyphen inside a word'],
+    ['A\u200bct of 2026', 'a zero-width space inside a word'],
+    ['A\u200cct of 2026', 'a zero-width non-joiner'],
+    ['A\u200dct of 2026', 'a zero-width joiner'],
+    ['A\u2060ct of 2026', 'a word joiner'],
+    ['\ufeffSafe Act', 'a byte-order mark'],
+    ['XYZ\u2122 Act', 'the trade mark sign'],
+    ['\u2116 1 Act', 'the numero sign'],
+    ['\u00bd Measure Act', 'a vulgar fraction'],
+    ['Title \u2161 Act', 'a Roman-numeral character'],
+    ['\ufb01nancial Act', 'the fi ligature'],
+    ['Sta\ufb00 Act', 'the ff ligature'],
+    ['\uff21\uff23\uff25 Act', 'full-width letters'],
+    ['Safe\tAct', 'a tab'],
+    ['Safe+ Act', 'a plus sign'],
+    ['Safe Act #2', 'a number sign'],
+  ];
+  for (const [title, why] of none) expect(nameSlug(title), why).toBeNull();
+  // The allowed punctuation, each turning into a hyphen with no word changed.
+  expect(nameSlug('Safe-Act \u2013 Part\u2014One, Two. Three: Four; Five & Six / Seven (Eight) "Nine" \u201cTen\u201d! Eleven?')).toBe(
+    'safe-act-part-one-two-three-four-five-six-seven-eight-nine-ten-eleven',
+  );
+  // A non-breaking space is read as a space: it never joins two words.
+  expect(nameSlug('Safe\u00a0Act')).toBe('safe-act');
+  // NFD splits only accented letters; the listed apostrophe-like marks are deleted after it.
+  expect(nameSlug('Ethan\u00b4s Law')).toBe('ethans-law');
+  expect(nameSlug('Hawai\u02bbi Act')).toBe('hawaii-act');
+  expect(nameSlug('Jos\u00e9 Mart\u00ed Act')).toBe('jose-marti-act');
+  expect(nameSlug('Jose\u0301 Act')).toBe('jose-act'); // an accent already written as a separate mark
+  // Two different titles that make the same name are one name.
+  expect(nameSlug('SAFE Act')).toBe(nameSlug('Safe Act'));
+  expect(nameSlug('Twin Spelling Act')).toBe(nameSlug('Twin-Spelling Act'));
+  // The reason is given for the build log.
+  expect(slugTitle('XYZ\u2122 Act')).toEqual({ name: null, reason: 'the title holds a character outside the allowed set (U+2122)' });
+  expect(slugTitle('2026')).toEqual({ name: null, reason: 'the title has no letter' });
+});
+
+test('two different titles that make the same name block each other, like the same title', () => {
+  const corpus: ShortAddressBill[] = [
+    { bill_type: 'hr', bill_number: 7001, congress_number: C },
+    { bill_type: 's', bill_number: 7002, congress_number: C },
+  ];
+  const titles: ShortTitleFile = { [`hr-7001-${C}`]: { titles: ['SAFE Act'] }, [`s-7002-${C}`]: { titles: ['Safe Act'] } };
+  const tables = decodeNameTables(encodeNameTables(corpus, titles, [C], NONE));
+  expect(nameAddressTarget('/safe-act', LOCALES, 'en', tables)).toBeNull();
+});
+
+test('the build log names every title that gets no address and every shared name', () => {
+  const corpus: ShortAddressBill[] = [
+    { bill_type: 'hr', bill_number: 7101, congress_number: C },
+    { bill_type: 's', bill_number: 7102, congress_number: C },
+    { bill_type: 'hr', bill_number: 7103, congress_number: C },
+    { bill_type: 'hr', bill_number: 7104, congress_number: C },
+    { bill_type: 'hr', bill_number: 7105, congress_number: C },
+    { bill_type: 'hr', bill_number: 7106, congress_number: C },
+  ];
+  const titles: ShortTitleFile = {
+    [`hr-7101-${C}`]: { titles: ['Twin Act'] },
+    [`s-7102-${C}`]: { titles: ['Twin Act'] },
+    [`hr-7103-${C}`]: { titles: ['2026'] },
+    [`hr-7104-${C}`]: { titles: ['H.R. 1'] },
+    [`hr-7105-${C}`]: { titles: ['Privacy'] },
+    [`hr-7106-${C}`]: { titles: ['Clean Act'] },
+  };
+  const lines: string[] = [];
+  encodeNameTables(corpus, titles, [C], new Set(['privacy']), (r) => lines.push(refusalLine(r)));
+  expect(lines).toEqual([
+    `short-address names: hr-7103-${C} "2026" -> no name left out: the title has no letter`,
+    `short-address names: hr-7104-${C} "H.R. 1" -> "h-r-1" left out: it reads as a number address`,
+    `short-address names: hr-7105-${C} "Privacy" -> "privacy" left out: a route or reserved word of that name`,
+    `short-address names: "twin-act" opens nothing: shared by 2 bills, so it opens none of them (hr-7101-${C} s-7102-${C})`,
+  ]);
 });
 
 test('the proxy can see every name in both languages: names its matcher skips are refused', () => {
@@ -217,11 +302,15 @@ test('a name is an address only when it is 4 to 200 characters, never a number a
     expect(parseShortAddress(name), title).not.toBeNull();
     expect(nameAddressAllowed(name, NONE), title).toBe(false);
   }
-  // "H.R. 1" slugs to h-r-1, which is not a number address (the parser takes
-  // one hyphen between type and number, none inside the type), so it does not
-  // shadow /hr1; it would be a name only if a bill's short title were "H.R. 1".
+  // "H.R. 1" slugs to h-r-1. The parser does not read it as a number address,
+  // but it looks like one, so it is refused as number-like (2026-11-15): with
+  // its hyphens removed it is "hr1".
   expect(nameSlug('H.R. 1')).toBe('h-r-1');
   expect(parseShortAddress('h-r-1')).toBeNull();
+  for (const name of ['h-r-1', 'h-r-9340', 's-j-res-5', 'h-con-res-12', 'hj-res-3']) {
+    expect(nameAddressRefusal(name, NONE), name).toBe('it reads as a number address');
+  }
+  expect(nameAddressAllowed('hr1-act', NONE)).toBe(true); // a number inside a longer name is fine
   expect(nameAddressAllowed('abc', NONE)).toBe(false); // under 4: a locale-sized word
   expect(nameAddressAllowed('abcd', NONE)).toBe(true);
   expect(nameAddressAllowed('a'.repeat(200), NONE)).toBe(true);
@@ -401,6 +490,11 @@ test('a number address always wins over a name, and a name never reads as a numb
   const anyHr = bills.find((b) => b.bill_type === 'hr' && b.congress_number === C);
   test.skip(!anyHr, 'no House bill of the tracked Congress');
   expect(both(`/hr${anyHr!.bill_number}`)).toBe(`/bills/hr-${anyHr!.bill_number}-${C}`);
+  // A hand-made table naming "h-r-<n>" for another bill: /hr<n> still opens the number, and the
+  // build would never write that name (it reads as a number address).
+  const lookalike = decodeNameTables(`${C}@h-r-${anyHr!.bill_number}=s5`);
+  expect(both(`/hr${anyHr!.bill_number}`, lookalike)).toBe(`/bills/hr-${anyHr!.bill_number}-${C}`);
+  expect(nameAddressAllowed(`h-r-${anyHr!.bill_number}`, NONE)).toBe(false);
   // Even a hand-made table naming "hr<n>" for another bill cannot win.
   const rigged = decodeNameTables(`${C}@hr${anyHr!.bill_number}=s5`);
   expect(both(`/hr${anyHr!.bill_number}`, rigged)).toBe(`/bills/hr-${anyHr!.bill_number}-${C}`);

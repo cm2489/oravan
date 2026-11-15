@@ -3,9 +3,13 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'no
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
+import { alarms, parseShortTitlesTrouble } from '../lib/pipeline-health.mjs';
 import {
   planShortTitleReads,
   readTitlesAnswer,
+  retryWaitDays,
+  serializeRetries,
+  verifyShortTitleRetries,
   serializeShortTitles,
   SHORT_TITLES_MAX_CONSECUTIVE_FAILURES,
   SHORT_TITLES_MAX_PER_NIGHT,
@@ -64,6 +68,13 @@ test('a read counts only when the answer is plainly about this bill and whole', 
   expect(fail({ request: LIVE.request, titles: { items: LIVE.titles } })).toContain('no list');
   expect(fail({ request: LIVE.request, titles: [] })).toContain('empty');
   expect(fail({ ...LIVE, pagination: { count: 40 } })).toContain('incomplete');
+  expect(fail({ ...LIVE, pagination: { count: 4 } })).toContain('incomplete');
+  // The count is required, and a count sent as a string still counts.
+  expect(fail({ ...LIVE, pagination: {} })).toContain('no count');
+  expect(fail({ request: LIVE.request, titles: LIVE.titles })).toContain('no count');
+  expect(fail({ ...LIVE, pagination: { count: 'many' } })).toContain('no count');
+  expect(fail({ ...LIVE, pagination: { count: '40' } })).toContain('incomplete');
+  expect(readTitlesAnswer({ ...LIVE, pagination: { count: String(LIVE.titles.length) } }, hr9770).ok).toBe(true);
   expect(fail({ error: { code: 'OVER_RATE_LIMIT', message: 'x' } })).toContain('error');
   expect(fail({ ...LIVE, error: 'x' })).toContain('error');
   expect(fail(null)).toContain('not an object');
@@ -93,6 +104,44 @@ test('plan: never read, then last action moved, then not read for the refresh in
   expect(SHORT_TITLES_MAX_CONSECUTIVE_FAILURES).toBe(10);
 });
 
+test('a failed bill waits 1, 2, 4, 8, 16, then 32 days, and comes after every other bill when its wait is over', () => {
+  expect([1, 2, 3, 4, 5, 6, 7, 50].map(retryWaitDays)).toEqual([1, 2, 4, 8, 16, 32, 32, 32]);
+  const bills = [bill('hr', 1, '2026-01-01', 0.9), bill('hr', 2, '2026-01-01', 0.8), bill('hr', 3, '2026-01-01', 0.1), bill('hr', 4, '2026-01-01', 0.05)];
+  const retry = {
+    'hr-1-119': { failures: 1, last_tried: '2026-11-14', reason: 'HTTP 404' }, // waited 1 day: due, at the back
+    'hr-2-119': { failures: 3, last_tried: '2026-11-13', reason: 'HTTP 404' }, // 2 of 4 days: still waiting
+  };
+  const plan = planShortTitleReads({ bills, file: {}, retry, cap: 10, today: TODAY });
+  expect(plan.run).toEqual(['hr-3-119', 'hr-4-119', 'hr-1-119']);
+  expect(plan).toMatchObject({ neverRead: 2, retrying: 1, waiting: 1 });
+  expect(planShortTitleReads({ bills, file: {}, retry, cap: 2, today: TODAY }).run).toEqual(['hr-3-119', 'hr-4-119']);
+});
+
+test('the retry file has its own gate', () => {
+  const bills = [bill('s', 5, null)];
+  const ok = { 's-5-119': { failures: 2, last_tried: TODAY, reason: 'HTTP 404' } };
+  expect(verifyShortTitleRetries({ data: ok, bills }).failures).toEqual([]);
+  expect(verifyShortTitleRetries({ data: { 's-6-119': ok['s-5-119'] }, bills }).failures).toEqual([]); // a note
+  for (const bad of [[], { abc: ok['s-5-119'] }, { 's-5-119': { failures: 0, last_tried: TODAY, reason: 'x' } }, { 's-5-119': { failures: 1, last_tried: 'x', reason: 'x' } }, { 's-5-119': { failures: 1, last_tried: TODAY, reason: '' } }, { 's-5-119': { failures: 1, last_tried: TODAY } }]) {
+    expect(verifyShortTitleRetries({ data: bad, bills }).failures.length, JSON.stringify(bad)).toBeGreaterThan(0);
+  }
+  expect(serializeRetries({ 's-5-119': ok['s-5-119'], 'hr-1-119': ok['s-5-119'] }, bills)).toBe(
+    '{\n"s-5-119":{"failures":2,"last_tried":"2026-11-15","reason":"HTTP 404"}\n}\n',
+  );
+});
+
+test('the daily pipeline-health digest raises the TROUBLE line as an alarm', () => {
+  const changed = 'nightly\tRead the record\'s short titles\t2026-11-15T14:40:00.0Z SHORT TITLES TROUBLE: the source has changed: 20 of 20 answers tonight were refused for the same reason ("x"); stopped, and no bill is marked as failed for it; 0 bill(s) read before it are kept';
+  expect(parseShortTitlesTrouble(changed)).toMatchObject({ sourceChanged: true });
+  expect(alarms({ nightly: { conclusion: 'success' }, shortTitlesTrouble: parseShortTitlesTrouble(changed) }).map((a) => a.code)).toContain('short-titles-source-changed');
+  const down = 'SHORT TITLES TROUBLE: stopped early: 10 requests in a row got no usable answer from Congress.gov (the source is down); 3 bill(s) read before it are kept';
+  expect(parseShortTitlesTrouble(down)).toMatchObject({ sourceChanged: false });
+  expect(alarms({ nightly: { conclusion: 'success' }, shortTitlesTrouble: parseShortTitlesTrouble(down) }).map((a) => a.code)).toContain('short-titles-stopped');
+  expect(parseShortTitlesTrouble('short titles: 500 request(s), 500 bill(s) read')).toBeNull();
+  // The script prints exactly that line.
+  expect(readFileSync(join(process.cwd(), 'scripts/sync-short-titles.mjs'), 'utf8')).toContain('console.log(`SHORT TITLES TROUBLE: ${trouble}');
+});
+
 test('the file: one line per bill, sorted, bills the corpus no longer holds dropped', () => {
   const bills = [bill('s', 5, null), bill('hr', 4, null)];
   const text = serializeShortTitles(
@@ -117,7 +166,8 @@ test('the gate refuses every kind of damage it names, and passes a good file', (
   const fails = (data: unknown, before: unknown = null) => verifyShortTitles({ data, bills, before }).failures;
   expect(fails([])).toHaveLength(1);
   expect(fails({ ...good, 'laken-riley-act': { titles: [], as_of: null, ...R } }).join()).toContain('not a bill slug');
-  expect(fails({ ...good, 's-6-119': { titles: [], as_of: null, ...R } }).join()).toContain('not in data/bills.json');
+  // A bill the corpus no longer holds: a note, not a failure (the name table only walks the corpus).
+  expect(fails({ ...good, 's-6-119': { titles: [], as_of: null, ...R } })).toEqual([]);
   expect(fails({ ...good, 's-5-119': { titles: ['A'], as_of: null, ...R, extra: 1 } }).join()).toContain('expected [as_of,read_on,titles]');
   expect(fails({ ...good, 's-5-119': { titles: ['A'], as_of: null } }).join()).toContain('read_on');
   expect(fails({ ...good, 's-5-119': { titles: [''], as_of: null, ...R } }).join()).toContain('empty');
@@ -127,7 +177,9 @@ test('the gate refuses every kind of damage it names, and passes a good file', (
   expect(fails({ ...good, 's-5-119': { titles: ['B', 'A'], as_of: null, ...R } }).join()).toContain('code-point order');
   expect(fails({ ...good, 's-5-119': { titles: [], as_of: '2025-1-1', ...R } }).join()).toContain('as_of');
   expect(fails({ ...good, 's-5-119': { titles: 'A', as_of: null, ...R } }).join()).toContain('not an array');
-  expect(fails({ ...good, 's-5-119': { titles: [], as_of: null, ...R } }, good).join()).toContain('now has none');
+  // A bill whose record no longer gives a short title: a note (hard rule 6: the name goes).
+  expect(fails({ ...good, 's-5-119': { titles: [], as_of: null, ...R } }, good)).toEqual([]);
+  expect(verifyShortTitles({ data: { ...good, 's-5-119': { titles: [], as_of: null, ...R } }, bills, before: good }).notes.join()).toContain('now gives it none');
   const many = Object.fromEntries(Array.from({ length: 30 }, (_, i) => [`hr-${i + 1}-119`, { titles: [`Act ${i}`], as_of: null, ...R }]));
   const manyBills = Array.from({ length: 30 }, (_, i) => bill('hr', i + 1, null));
   const shrunk = Object.fromEntries(Object.entries(many).slice(0, 20));
@@ -156,50 +208,77 @@ test('the nightly runs the gate before it writes, the step is bounded, and it ca
 // --- the script itself, offline -------------------------------------------------------
 
 /**
- * Run scripts/sync-short-titles.mjs with globalThis.fetch replaced by `stub`
- * (a function body taking `url` and returning a Response or a Promise), on a
- * small corpus, writing to a scratch file. Nothing reaches the network.
+ * A scratch place for the script's two files, kept across several "nights".
+ * Each run replaces globalThis.fetch with `stub` (a function body with `url`
+ * and `init` in scope, returning a Response or a Promise) on a small corpus.
+ * Nothing reaches the network, and nothing is written in the repository.
  */
-function runOffline(stub: string, opts: { corpus: unknown[]; before?: unknown; env?: Record<string, string> }) {
+function scratch() {
   const dir = mkdtempSync(join(tmpdir(), 'short-titles-'));
+  const outFile = join(dir, 'short-titles.json');
+  const retryFile = join(dir, 'short-titles-retry.json');
+  const read = (f: string) => (existsSync(f) ? JSON.parse(readFileSync(f, 'utf8')) : null);
+  return {
+    seed(before: unknown) {
+      writeFileSync(outFile, JSON.stringify(before));
+    },
+    seedRetry(retry: unknown) {
+      writeFileSync(retryFile, JSON.stringify(retry));
+    },
+    night(stub: string, corpus: unknown[], env: Record<string, string> = {}) {
+      const corpusFile = join(dir, 'bills.json');
+      writeFileSync(corpusFile, JSON.stringify(corpus));
+      const preload = join(dir, 'stub.mjs');
+      writeFileSync(
+        preload,
+        `globalThis.__calls = 0;\nglobalThis.fetch = async (input, init) => { globalThis.__calls++; const url = new URL(String(input)); ${stub} };\nprocess.on('exit', () => console.log('STUB-CALLS ' + globalThis.__calls));\n`,
+      );
+      const r = spawnSync(process.execPath, ['--import', preload, 'scripts/sync-short-titles.mjs'], {
+        cwd: process.cwd(),
+        encoding: 'utf8',
+        timeout: 60_000,
+        env: {
+          NODE_ENV: 'test',
+          PATH: process.env.PATH ?? '',
+          CONGRESS_API_KEY: 'offline-test-key',
+          SHORT_TITLES_FILE: outFile,
+          SHORT_TITLES_RETRY_FILE: retryFile,
+          SHORT_TITLES_BILLS: corpusFile,
+          SHORT_TITLES_REQUEST_TIMEOUT_MS: '300',
+          SHORT_TITLES_RETRY_DELAY_MS: '10',
+          SHORT_TITLES_TODAY: TODAY,
+          ...env,
+        },
+      });
+      const out = `${r.stdout}\n${r.stderr}`;
+      const calls = Number(/STUB-CALLS (\d+)/.exec(out)?.[1] ?? -1);
+      return { status: r.status, out, calls, after: read(outFile), retry: read(retryFile) };
+    },
+    done() {
+      rmSync(dir, { recursive: true, force: true });
+    },
+  };
+}
+
+/** One-night shorthand. */
+function runOffline(stub: string, opts: { corpus: unknown[]; before?: unknown; env?: Record<string, string> }) {
+  const sc = scratch();
   try {
-    const corpusFile = join(dir, 'bills.json');
-    const outFile = join(dir, 'short-titles.json');
-    writeFileSync(corpusFile, JSON.stringify(opts.corpus));
-    if (opts.before) writeFileSync(outFile, JSON.stringify(opts.before));
-    const preload = join(dir, 'stub.mjs');
-    writeFileSync(
-      preload,
-      `globalThis.__calls = 0;\nglobalThis.fetch = async (input, init) => { globalThis.__calls++; const url = new URL(String(input)); ${stub} };\nprocess.on('exit', () => console.log('STUB-CALLS ' + globalThis.__calls));\n`,
-    );
-    const r = spawnSync(process.execPath, ['--import', preload, 'scripts/sync-short-titles.mjs'], {
-      cwd: process.cwd(),
-      encoding: 'utf8',
-      timeout: 60_000,
-      env: {
-        NODE_ENV: 'test',
-        PATH: process.env.PATH ?? '',
-        CONGRESS_API_KEY: 'offline-test-key',
-        SHORT_TITLES_FILE: outFile,
-        SHORT_TITLES_BILLS: corpusFile,
-        SHORT_TITLES_REQUEST_TIMEOUT_MS: '300',
-        SHORT_TITLES_RETRY_DELAY_MS: '10',
-        ...(opts.env ?? {}),
-      },
-    });
-    const after = existsSync(outFile) ? JSON.parse(readFileSync(outFile, 'utf8')) : null;
-    return { status: r.status, out: `${r.stdout}\n${r.stderr}`, after };
+    if (opts.before) sc.seed(opts.before);
+    return sc.night(stub, opts.corpus, opts.env);
   } finally {
-    rmSync(dir, { recursive: true, force: true });
+    sc.done();
   }
 }
 
-/** A stub that answers each bill with LIVE's shape, about the bill the URL names. */
-const ANSWER_FOR_URL = `
-  const [, congress, type, number] = /\\/bill\\/(\\d+)\\/([a-z]+)\\/(\\d+)\\/titles/.exec(url.pathname);
+/** The bill a request is about, from its URL. */
+const WHO = `const [, congress, type, number] = /\\/bill\\/(\\d+)\\/([a-z]+)\\/(\\d+)\\/titles/.exec(url.pathname);`;
+/** Answers each bill with LIVE's shape, about the bill the URL names, its short titles renamed for it. */
+const ANSWER = `
   const titles = ${JSON.stringify(LIVE.titles)}.map((t) => ({ ...t, title: t.titleType.startsWith('Short') ? 'Fixture ' + type + number + ' Act' : t.title }));
   return new Response(JSON.stringify({ pagination: { count: titles.length }, request: { billNumber: number, billType: type, congress, format: 'json' }, titles }), { status: 200 });
 `;
+const ANSWER_FOR_URL = `${WHO}${ANSWER}`;
 
 const corpus = [bill('hr', 9770, '2026-11-01', 0.9), bill('s', 5, '2026-01-01', 0.5), bill('hr', 29, '2026-01-02', 0.1)];
 const good = {
@@ -212,41 +291,102 @@ test('offline: good answers are read, and the key never appears in what the scri
   expect(r.after['hr-9770-119'].titles).toEqual(['Fixture hr9770 Act']);
   expect(r.after['s-5-119'].titles).toEqual(['Fixture s5 Act']);
   expect(Object.keys(r.after)).toHaveLength(3);
-  expect(r.out).toContain('STUB-CALLS 3');
+  expect(r.calls).toBe(3);
+  expect(r.retry).toBeNull(); // nothing failed: no retry file written
   expect(r.out).not.toContain('offline-test-key');
 });
 
 test('offline: an answer about another bill is a failed read and keeps what was stored', () => {
-  // Every request is answered with H.R. 1's titles, whatever bill it asked for.
   const wrong = `return new Response(JSON.stringify({ ...${JSON.stringify(LIVE)}, request: { billNumber: '1', billType: 'hr', congress: '119' } }), { status: 200 });`;
   const r = runOffline(wrong, { corpus, before: good });
   expect(r.status).toBe(0);
   expect(r.out).toContain('another bill');
-  expect(r.after).toEqual(good); // nothing replaced, nothing new stored
-  expect(r.out).toContain('no bill read');
+  expect(r.after).toEqual(good);
+  expect(Object.keys(r.retry).sort()).toEqual(['hr-29-119', 'hr-9770-119', 's-5-119']);
 });
 
-test('offline: a reshaped answer (no titles list) marks nothing as read', () => {
-  const reshaped = `return new Response(JSON.stringify({ request: { billNumber: url.pathname.split('/')[5], billType: url.pathname.split('/')[4], congress: '119' }, bill_titles: [] }), { status: 200 });`;
+test('offline: a reshaped answer or an error body marks nothing as read', () => {
+  const reshaped = `${WHO} return new Response(JSON.stringify({ request: { billNumber: number, billType: type, congress }, bill_titles: [] }), { status: 200 });`;
   const r = runOffline(reshaped, { corpus, before: good });
   expect(r.status).toBe(0);
   expect(r.out).toContain('no list of titles');
   expect(r.after).toEqual(good);
-  // An error body, with a 200, is a failed read too.
   const errorBody = `return new Response(JSON.stringify({ error: { code: 'API_KEY_INVALID', message: 'x' } }), { status: 200 });`;
   expect(runOffline(errorBody, { corpus, before: good }).after).toEqual(good);
 });
 
-test('offline: ten failed reads in a row stop the night with one clear line; the reads before them are kept', () => {
+/** 40 bills, most urgent first; the ten most urgent always come back refused. */
+const forty = Array.from({ length: 40 }, (_, i) => bill('hr', i + 1, '2026-01-01', 1 - i / 100));
+const BAD_TEN = `/\\/hr\\/(10|[1-9])\\/titles/.test(url.pathname)`;
+
+for (const [label, bad] of [
+  ['an empty list', `return new Response(JSON.stringify({ pagination: { count: 0 }, request: { billNumber: number, billType: type, congress }, titles: [] }), { status: 200 });`],
+  ['a 404', `return new Response('{}', { status: 404 });`],
+] as const) {
+  test(`offline, three nights: ten bills that always answer with ${label} never block the bills behind them`, () => {
+    const sc = scratch();
+    try {
+      const stub = `${WHO} if (${BAD_TEN}) { ${bad} } ${ANSWER}`;
+      const cap = { SHORT_TITLES_MAX: '15' };
+      // Night 1: the ten bad bills are refused (their own failure, not the
+      // source's), and the five bills behind them are read in the same night.
+      const n1 = sc.night(stub, forty, { ...cap, SHORT_TITLES_TODAY: '2026-11-15' });
+      expect(n1.status).toBe(0);
+      expect(n1.out).not.toContain('SHORT TITLES TROUBLE');
+      expect(Object.keys(n1.after).sort()).toEqual(['hr-11-119', 'hr-12-119', 'hr-13-119', 'hr-14-119', 'hr-15-119']);
+      expect(Object.keys(n1.retry)).toHaveLength(10);
+      expect(n1.retry['hr-1-119']).toMatchObject({ failures: 1, last_tried: '2026-11-15' });
+      // Night 2: their one-day wait is over, so they come LAST; the queue reads 15 new bills first.
+      const n2 = sc.night(stub, forty, { ...cap, SHORT_TITLES_TODAY: '2026-11-16' });
+      expect(Object.keys(n2.after)).toHaveLength(20);
+      expect(n2.calls).toBe(15);
+      expect(n2.retry['hr-1-119']).toMatchObject({ failures: 1 }); // not tried tonight
+      // Night 3: the rest of the corpus, then the ten bad ones at the back, tried again and failed again.
+      const n3 = sc.night(stub, forty, { SHORT_TITLES_TODAY: '2026-11-17' });
+      expect(Object.keys(n3.after)).toHaveLength(30);
+      expect(n3.retry['hr-1-119']).toMatchObject({ failures: 2, last_tried: '2026-11-17' });
+      // Night 4, a day later: their wait is now two days, so none is tried.
+      const n4 = sc.night(stub, forty, { SHORT_TITLES_TODAY: '2026-11-18' });
+      expect(n4.calls).toBe(0);
+    } finally {
+      sc.done();
+    }
+  });
+}
+
+test('offline: a bill that failed before and now reads cleanly leaves the retry file', () => {
+  const sc = scratch();
+  try {
+    sc.seedRetry({ 'hr-29-119': { failures: 3, last_tried: '2026-11-01', reason: 'HTTP 404' }, 's-5-119': { failures: 1, last_tried: TODAY, reason: 'HTTP 404' } });
+    const r = sc.night(ANSWER_FOR_URL, corpus);
+    expect(r.after['hr-29-119'].titles).toEqual(['Fixture hr29 Act']);
+    expect(r.retry).toEqual({ 's-5-119': { failures: 1, last_tried: TODAY, reason: 'HTTP 404' } }); // still waiting, untouched
+  } finally {
+    sc.done();
+  }
+});
+
+test('offline: ten TRANSPORT failures in a row stop the night with one TROUBLE line; the reads before them are kept', () => {
   const many = Array.from({ length: 30 }, (_, i) => bill('hr', i + 1, '2026-01-01', 1 - i / 100));
-  // The first two bills (most urgent) answer; every one after fails with a 503.
   const stub = `if (/\\/hr\\/(1|2)\\/titles/.test(url.pathname)) { ${ANSWER_FOR_URL} } return new Response('down', { status: 503 });`;
   const r = runOffline(stub, { corpus: many });
   expect(r.status).toBe(0);
-  expect(r.out).toContain('stopped early because 10 reads in a row failed');
+  expect(r.out).toContain('SHORT TITLES TROUBLE: stopped early: 10 requests in a row got no usable answer');
   expect(Object.keys(r.after).sort()).toEqual(['hr-1-119', 'hr-2-119']);
   // 2 good requests, then 10 bills with one retry each: 22. Never more.
-  expect(r.out).toContain('STUB-CALLS 22');
+  expect(r.calls).toBe(22);
+  expect(Object.keys(r.retry)).toHaveLength(10);
+});
+
+test('offline: when most answers are refused for one reason, the source has changed: stop, say so once, mark no bill', () => {
+  const reshaped = `${WHO} return new Response(JSON.stringify({ request: { billNumber: number, billType: type, congress }, data: { titles: [] } }), { status: 200 });`;
+  const r = runOffline(reshaped, { corpus: forty, before: good });
+  expect(r.status).toBe(1);
+  expect(r.calls).toBe(20);
+  expect(r.out.match(/SHORT TITLES TROUBLE: the source has changed/g)).toHaveLength(1);
+  expect(r.out).toContain('::error::short titles: the source has changed');
+  expect(r.after).toEqual(good);
+  expect(r.retry).toBeNull();
 });
 
 test('offline: a hanging endpoint costs at most the per-request ceiling, twice, per bill, and the budget stops the night', () => {
@@ -258,9 +398,61 @@ test('offline: a hanging endpoint costs at most the per-request ceiling, twice, 
   const r = runOffline(hang, { corpus: many, before: good, env: { SHORT_TITLES_BUDGET_MS: '1500' } });
   const ms = Date.now() - t0;
   expect(r.status).toBe(0);
-  // Each bill costs two 300 ms ceilings: the 1.5 s budget runs out after about three bills, long before ten failures.
-  expect(r.out).toMatch(/stopped early because the step's \d+-minute budget ran out/);
-  expect(r.out).toContain(`no answer within 300 ms`);
+  // Each bill costs two 300 ms ceilings: the 1.5 s budget runs out after about three bills.
+  expect(r.out).toMatch(/SHORT TITLES TROUBLE: stopped early: the step's \d+-minute budget ran out/);
+  expect(r.out).toContain('no answer within 300 ms');
   expect(r.after).toEqual(good);
   expect(ms).toBeLessThan(30_000);
+});
+
+/** Pages of 250 for a bill with `n` titles (short ones every 100th), honouring offset and limit. */
+const PAGED = (n: string) => `${WHO}
+  const total = ${n};
+  const offset = Number(url.searchParams.get('offset') ?? 0), limit = Number(url.searchParams.get('limit'));
+  const all = Array.from({ length: Number(total) }, (_, i) => i % 100 === 0
+    ? { title: 'Part ' + i + ' Act', titleType: 'Short Title(s) as Introduced', titleTypeCode: 101, updateDate: 'x' }
+    : { title: 'Title ' + i, titleType: i === 1 ? 'Official Title as Introduced' : 'Official Title from EH (Engrossed in House) bill text', titleTypeCode: 6, updateDate: 'x' });
+  return new Response(JSON.stringify({ pagination: { count: total }, request: { billNumber: number, billType: type, congress }, titles: all.slice(offset, offset + limit) }), { status: 200 });`;
+
+test('offline: a bill with more than 250 titles is read page by page, up to 4 pages; more is that bill’s failure', () => {
+  const one = [bill('hr', 8800, '2026-09-01')];
+  const r = runOffline(PAGED('612'), { corpus: one });
+  expect(r.status).toBe(0);
+  expect(r.calls).toBe(3);
+  expect(r.after['hr-8800-119'].titles).toEqual(['Part 0 Act', 'Part 100 Act', 'Part 200 Act', 'Part 300 Act', 'Part 400 Act', 'Part 500 Act', 'Part 600 Act']);
+  // A count sent as a string still decides the pages and the completeness check.
+  const asString = runOffline(PAGED("'612'"), { corpus: one });
+  expect(asString.after['hr-8800-119'].titles).toHaveLength(7);
+  // 1,001 titles: past the 4-page cap, one clear line, the bill waits to be tried again.
+  const huge = runOffline(PAGED('1001'), { corpus: one });
+  expect(huge.calls).toBe(1);
+  expect(huge.out).toContain('the bill has 1001 titles, more than the 1000 this step reads');
+  expect(huge.after).toBeNull();
+  expect(huge.retry['hr-8800-119'].failures).toBe(1);
+});
+
+test('offline: when the record’s whole answer no longer lists a short title, the name goes with it (hard rule 6)', () => {
+  const officialOnly = `${WHO} const titles = ${JSON.stringify(LIVE.titles.filter((t: { titleType: string }) => !/^Short/.test(t.titleType)))};
+    return new Response(JSON.stringify({ pagination: { count: titles.length }, request: { billNumber: number, billType: type, congress }, titles }), { status: 200 });`;
+  const r = runOffline(officialOnly, { corpus: [corpus[0]], before: good });
+  expect(r.status).toBe(0);
+  expect(r.after['hr-9770-119'].titles).toEqual([]);
+  expect(r.out).toContain('::warning::hr-9770-119: the record’s whole titles list no longer gives a short title'.replace('’', "'"));
+});
+
+test('an entry for a bill the corpus dropped is a note for the gate, and the next write prunes it', () => {
+  const stale = { ...good, 'hr-99999-119': { titles: ['Gone Act'], as_of: null, read_on: '2026-10-01' } };
+  // What verify-sync sees on a night the titles step read nothing (or crashed): a note, not a failure.
+  const v = verifyShortTitles({ data: stale, bills: corpus, before: stale });
+  expect(v.failures).toEqual([]);
+  expect(v.notes.join('\n')).toContain('hr-99999-119');
+  expect(v.notes.join('\n')).toContain('no longer holds');
+  // A night that reads nothing leaves the file as it was, and does not fail.
+  const nothing = runOffline(`return new Response('down', { status: 503 });`, { corpus, before: stale });
+  expect(nothing.status).toBe(0);
+  expect(nothing.after).toEqual(stale);
+  expect(nothing.out).not.toContain('::error::');
+  // A night that reads: the entry is gone.
+  const r = runOffline(ANSWER_FOR_URL, { corpus, before: stale });
+  expect(r.after['hr-99999-119']).toBeUndefined();
 });

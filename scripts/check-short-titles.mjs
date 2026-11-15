@@ -14,7 +14,7 @@
  * first writes it.
  */
 import { existsSync, readFileSync } from 'node:fs';
-import { SHORT_TITLES_PATH, verifyShortTitles } from '../lib/short-titles.mjs';
+import { SHORT_TITLES_PATH, SHORT_TITLES_RETRY_PATH, verifyShortTitleRetries, verifyShortTitles } from '../lib/short-titles.mjs';
 
 if (process.argv.includes('--self-test')) {
   const bills = [
@@ -30,7 +30,7 @@ if (process.argv.includes('--self-test')) {
     ['a good file', good, null, false],
     ['not an object', [], null, true],
     ['a key that is not a slug', { ...good, 'laken-riley-act': { titles: [], as_of: null, ...R } }, null, true],
-    ['a bill the corpus does not hold', { ...good, 's-6-119': { titles: [], as_of: null, ...R } }, null, true],
+    ['a bill the corpus no longer holds (a note, not a failure)', { ...good, 's-6-119': { titles: [], as_of: null, ...R } }, null, false],
     ['an extra field', { ...good, 's-5-119': { titles: ['Laken Riley Act'], as_of: null, ...R, popular: 'x' } }, null, true],
     ['an empty title', { ...good, 's-5-119': { titles: [' '], as_of: null, ...R } }, null, true],
     ['a repeated title', { ...good, 's-5-119': { titles: ['A Act', 'A Act'], as_of: null, ...R } }, null, true],
@@ -39,7 +39,7 @@ if (process.argv.includes('--self-test')) {
     ['a bad as_of', { ...good, 's-5-119': { titles: [], as_of: 'yesterday', ...R } }, null, true],
     ['no read_on', { ...good, 's-5-119': { titles: [], as_of: null } }, null, true],
     ['a bad read_on', { ...good, 's-5-119': { titles: [], as_of: null, read_on: 'today' } }, null, true],
-    ['a bill that lost its titles overnight', { ...good, 's-5-119': { titles: [], as_of: null, ...R } }, good, true],
+    ['a bill the record stopped giving a short title (a note)', { ...good, 's-5-119': { titles: [], as_of: null, ...R } }, good, false],
   ];
   let bad = 0;
   for (const [label, data, before, shouldFail] of cases) {
@@ -49,16 +49,42 @@ if (process.argv.includes('--self-test')) {
       console.error(`::error::self-test: ${label}: expected ${shouldFail ? 'a failure' : 'no failure'}, got ${JSON.stringify(failures)}`);
     }
   }
+  const retryCases = [
+    ['a good retry file', { 's-5-119': { failures: 2, last_tried: '2026-11-15', reason: 'HTTP 404' } }, false],
+    ['a retry entry with no reason', { 's-5-119': { failures: 2, last_tried: '2026-11-15' } }, true],
+    ['a retry count of zero', { 's-5-119': { failures: 0, last_tried: '2026-11-15', reason: 'x' } }, true],
+    ['a retry date that is not a date', { 's-5-119': { failures: 1, last_tried: 'today', reason: 'x' } }, true],
+    ['a retry key that is not a slug', { 'abc': { failures: 1, last_tried: '2026-11-15', reason: 'x' } }, true],
+  ];
+  for (const [label, data, shouldFail] of retryCases) {
+    const { failures } = verifyShortTitleRetries({ data, bills });
+    if ((failures.length > 0) !== shouldFail) {
+      bad++;
+      console.error(`::error::self-test: ${label}: expected ${shouldFail ? 'a failure' : 'no failure'}, got ${JSON.stringify(failures)}`);
+    }
+  }
   if (bad) process.exit(1);
-  console.log(`check-short-titles self-test: ${cases.length} case(s) behave`);
+  console.log(`check-short-titles self-test: ${cases.length + retryCases.length} case(s) behave`);
   process.exit(0);
 }
 
+const bills = JSON.parse(readFileSync('data/bills.json', 'utf8'));
+let retryFailed = false;
+if (existsSync(SHORT_TITLES_RETRY_PATH)) {
+  try {
+    const { failures, notes } = verifyShortTitleRetries({ data: JSON.parse(readFileSync(SHORT_TITLES_RETRY_PATH, 'utf8')), bills });
+    for (const n of notes) console.log(n);
+    for (const f of failures) console.error(`::error::${f}`);
+    retryFailed = failures.length > 0;
+  } catch (e) {
+    console.error(`::error::${SHORT_TITLES_RETRY_PATH} does not parse as JSON: ${e.message}`);
+    retryFailed = true;
+  }
+}
 if (!existsSync(SHORT_TITLES_PATH)) {
   console.log(`${SHORT_TITLES_PATH} not present — nothing to check (the nightly writes it)`);
-  process.exit(0);
+  process.exit(retryFailed ? 1 : 0);
 }
-const bills = JSON.parse(readFileSync('data/bills.json', 'utf8'));
 let data;
 try {
   data = JSON.parse(readFileSync(SHORT_TITLES_PATH, 'utf8'));
@@ -69,4 +95,4 @@ try {
 const { failures, notes } = verifyShortTitles({ data, bills });
 for (const n of notes) console.log(n);
 for (const f of failures) console.error(`::error::${f}`);
-process.exit(failures.length ? 1 : 0);
+process.exit(failures.length || retryFailed ? 1 : 0);

@@ -105,7 +105,7 @@ import { existsSync, readFileSync, statSync } from 'node:fs';
 import { CONVERSATION_PATH, verifyConversation } from '../lib/conversation.mjs';
 import { MOMENT_UPDATES_PATH, verifyMomentUpdates } from '../lib/verify-moment-updates.mjs';
 import { QUESTION_PRESS_PATH, verifyQuestionPress } from '../lib/question-press.mjs';
-import { SHORT_TITLES_PATH, verifyShortTitles } from '../lib/short-titles.mjs';
+import { SHORT_TITLES_PATH, SHORT_TITLES_RETRY_PATH, verifyShortTitleRetries, verifyShortTitles } from '../lib/short-titles.mjs';
 // Import-clean by contract: congress-fetch.mjs reads CONGRESS_API_KEY per
 // fetch, never at import, so pulling CONGRESS in here needs no secrets and
 // makes no network call. One definition of "the Congress we track" — bumping
@@ -403,12 +403,14 @@ if (!existsSync(CONVERSATION_PATH)) {
 //
 // data/short-titles.json (2026-11-14) is written by scripts/sync-short-titles
 // .mjs, which refuses to write a file this gate refuses. Re-checked here before
-// the commit (hard rule 11): it parses; every key is a bill the corpus holds;
-// every entry is exactly { titles, as_of, read_on }; every title is a distinct,
-// non-empty string of the record's, in code-point order; and, against HEAD,
-// the bills carrying a short title did not fall by more than 10% and no bill
-// lost all of its titles. Skipped cleanly when the file doesn't exist (every
-// night until the first fill). The judgement lives in lib/short-titles.mjs.
+// the commit (hard rule 11): it parses; every key is a bill slug (one the
+// corpus no longer holds is a note, pruned on the next write); every entry is
+// exactly { titles, as_of, read_on }; every title is a distinct, non-empty
+// string of the record's, in code-point order; and, against HEAD, the bills
+// carrying a short title did not fall by more than 10% (one bill the record
+// stopped giving a short title is a note). data/short-titles-retry.json, the
+// bills whose last read failed, is checked beside it. Each is skipped cleanly
+// when it doesn't exist. The judgement lives in lib/short-titles.mjs.
 if (!existsSync(SHORT_TITLES_PATH)) {
   console.log(`${SHORT_TITLES_PATH} not present — skipping the short-titles checks`);
 } else {
@@ -421,6 +423,14 @@ if (!existsSync(SHORT_TITLES_PATH)) {
       console.log(`HEAD:${SHORT_TITLES_PATH} not readable (not committed yet?) — the overnight comparison is skipped`);
     }
     const { failures, notes } = verifyShortTitles({ data: shortTitles, bills: Array.isArray(bills) ? bills : [], before });
+    for (const n of notes) console.log(n);
+    for (const f of failures) fail(f);
+  }
+}
+if (existsSync(SHORT_TITLES_RETRY_PATH)) {
+  const retries = parse(SHORT_TITLES_RETRY_PATH, readFileSync(SHORT_TITLES_RETRY_PATH, 'utf8'));
+  if (retries !== null) {
+    const { failures, notes } = verifyShortTitleRetries({ data: retries, bills: Array.isArray(bills) ? bills : [] });
     for (const n of notes) console.log(n);
     for (const f of failures) fail(f);
   }
