@@ -203,6 +203,7 @@ import {
   acceptedIds,
   latestActionsBySlug,
   nextRecheckReport,
+  renderRecord,
   recheckReportProblems,
   recheckWords,
   amendmentsNamedInStore,
@@ -574,14 +575,8 @@ export function recheckSummaryMarkdown(result, { mode = 'apply' } = {}) {
   };
   const lines = ['### Record re-check of stored update lines', ''];
   if (mode === 'report') lines.push('**Report only: nothing in data/moment-updates.json was changed.** Automatic correction is switched off (`RECHECK_MODE` in lib/moment-updates-recheck.mjs).', '');
-  if (result.refused) {
-    lines.push(
-      mode === 'report'
-        ? `**A guard would have refused this night: the source looks wrong (${result.refused}).** The rows below are what that source said; they are not reported as differences.`
-        : `**Refused, nothing changed:** ${result.refused}. To accept these rows for one night, see docs/runbooks/record-recheck.md.`,
-      '',
-    );
-  }
+  if (result.refused) lines.push(`**Refused, nothing changed:** ${result.refused}. To accept these rows for one night, see docs/runbooks/record-recheck.md.`, '');
+  for (const b of result.suspectBills ?? []) lines.push(`**The source looks wrong for ${b.slug}:** ${b.why}. Its lines below are unconfirmed, not differences.`, '');
   lines.push(`${result.checked} of ${result.recheckable ?? '?'} re-checkable stored row(s) checked; ${result.changes.length} ${would ? 'would change' : 'changed'}; ${(result.leftRows ?? []).length} left as they are.`, '');
   const rows = [
     ...result.changes.map((c) => [
@@ -589,12 +584,13 @@ export function recheckSummaryMarkdown(result, { mode = 'apply' } = {}) {
       c.momentId,
       c.newId && c.newId !== c.id ? (would ? `${c.id} (would become ${c.newId})` : `${c.id} → ${c.newId}`) : c.id,
       c.day,
-      c.was,
-      (c.now ?? c.record) || '(the record no longer holds it)',
+      `"${c.was}"`,
+      renderRecord(c.note, c.record),
       c.how ?? '',
     ]),
-    ...(result.leftRows ?? []).map((l) => ['left as it is', l.momentId, l.id, l.day, l.stored, l.record, l.why]),
-    ...(result.newerRows ?? []).map((n) => ['newer than the list (not judged)', n.momentId, n.id, n.day, n.stored, `the list ends ${n.newest}`, '']),
+    ...(result.leftRows ?? []).map((l) => ['left as it is', l.momentId, l.id, l.day, `"${l.stored}"`, renderRecord(l.note, l.record), l.why]),
+    ...(result.newerRows ?? []).map((n) => ['newer than the list (not judged)', n.momentId, n.id, n.day, `"${n.stored}"`, `the list's newest action is dated ${n.newest}`, '']),
+    ...(result.unconfirmed ?? []).map((u) => [`unconfirmed (${u.verdict}; the source looked wrong)`, u.momentId, u.id, u.day, `"${u.was ?? u.stored}"`, renderRecord(u.note, u.record), '']),
   ];
   if (rows.length) {
     lines.push('| What | Question | Row | Day | Stored words | What the record holds now | Why |', '| --- | --- | --- | --- | --- | --- | --- |');
@@ -652,12 +648,12 @@ async function recheckStoredLines() {
   // used, so an ENDED Congress's rows are out of scope in both places.
   const scope = new Set(vehicleSlugs);
   const latestBySlug = latestActionsBySlug(billBySlug.values());
-  const result = recheckStore(store, lists, { now, fallbackText: fallbackTextFor, lintText: recheckLint, amendmentLists, accept, scope, latestBySlug });
+  const result = recheckStore(store, lists, { now, fallbackText: fallbackTextFor, lintText: recheckLint, amendmentLists, accept, scope, latestBySlug, perBill: RECHECK_MODE === 'report' });
   const report = RECHECK_MODE === 'report';
   const applied = !report && !result.refused;
   const would = report || result.refused;
   console.log(
-    `record re-check (${report ? 'REPORT ONLY: nothing is written to data/moment-updates.json' : 'apply'}): ${result.checked} of ${result.recheckable} re-checkable stored row(s) checked on ${lists.size} bill(s) and ${amendmentLists.size} amendment(s); ${result.changes.length} ${would ? 'would change' : 'changed'}, ${result.leftRows.length} left as they are, ${result.newerRows.length} newer than their list${result.outOfScope ? `; ${result.outOfScope} row(s) out of scope (their bill is not read tonight: an ended Congress's)` : ''}${result.refused ? `; ${report ? 'a guard would refuse the night' : 'REFUSED'}` : ''}`,
+    `record re-check (${report ? 'REPORT ONLY: nothing is written to data/moment-updates.json' : 'apply'}): ${result.checked} of ${result.recheckable} re-checkable stored row(s) checked on ${lists.size} bill(s) and ${amendmentLists.size} amendment(s); ${result.changes.length} ${would ? 'would change' : 'changed'}, ${result.leftRows.length} left as they are, ${result.newerRows.length} newer than their list${result.outOfScope ? `; ${result.outOfScope} row(s) out of scope (their bill is not read tonight: an ended Congress's)` : ''}${result.suspectBills.length ? `; ${result.unconfirmed.length} unconfirmed on ${result.suspectBills.length} bill(s) whose source looked wrong` : ''}${result.refused ? '; REFUSED' : ''}`,
   );
   for (const k of result.skipped) console.log(`  recheck skipped ${k}`);
   if (result.recheckable > 0 && result.checked === 0) {
@@ -666,28 +662,28 @@ async function recheckStoredLines() {
     );
   }
   // One line per row the comparison found, in both modes: what is stored,
-  // what the record holds now, and what it did or would do. On a night a
-  // guard refuses, the source looks wrong: the lines say so, and none is a
-  // REPORT (pipeline-health names no row from such a night).
-  const tag = result.refused ? 'SUSPECT SOURCE (not reported as a difference)' : 'REPORT';
+  // what the record holds now (renderRecord: only the record's words inside
+  // quotation marks, rule 6), and what it did or would do.
   for (const c of result.changes) {
     const verdict = (would ? { reworded: 'would correct', withdrawn: 'would withdraw', held: 'would hold', reinstated: 'would reinstate' } : { reworded: 'corrected', withdrawn: 'withdrawn', held: 'held', reinstated: 'reinstated' })[c.kind];
-    // Only the record's words go inside quotation marks (rule 6).
-    const holds = c.now ?? c.record;
-    const line = `moment-updates record re-check ${tag}: ${verdict} ${c.momentId}/${c.id} (${c.vehicle} ${c.day}, /questions/${c.momentId}) — stored: "${c.was}" — ${holds ? `the record holds now: "${holds}"` : 'the record no longer holds it'}${c.how ? ` — ${c.how}` : ''}`;
+    const line = `moment-updates record re-check REPORT: ${verdict} ${c.momentId}/${c.id} (${c.vehicle} ${c.day}, /questions/${c.momentId}) — stored: "${c.was}" — ${renderRecord(c.note, c.record)}${c.how ? ` — ${c.how}` : ''}`;
     console.log(would ? `::notice::${line}` : `  ${line}`);
   }
   for (const n of result.newerRows) {
     console.warn(`::warning::moment-updates record re-check: ${n.momentId}/${n.id} (${n.vehicle} ${n.day}) is dated after the newest action on its bill's list (${n.newest}); not judged tonight`);
   }
   for (const l of result.leftRows) {
-    console.warn(`::warning::moment-updates record re-check ${tag}: left ${l.momentId}/${l.id} (${l.vehicle} ${l.day}, /questions/${l.momentId}) — stored: "${l.stored}" — the record holds now: "${l.record}" — ${l.why}`);
+    console.warn(`::warning::moment-updates record re-check REPORT: left ${l.momentId}/${l.id} (${l.vehicle} ${l.day}, /questions/${l.momentId}) — stored: "${l.stored}" — ${renderRecord(l.note, l.record)} — ${l.why}`);
   }
-  if (result.refused) {
-    if (report) console.warn(`::warning::moment-updates record re-check (report only) would have refused the night: ${result.refused}`);
-    else console.error(`::error::moment-updates record re-check refused: ${result.refused}. Nothing was changed; docs/runbooks/record-recheck.md says how to accept these rows for one night.`);
+  // A bill whose list looked wrong: its rows are UNCONFIRMED, never REPORTs.
+  for (const b of result.suspectBills) {
+    console.warn(`::warning::moment-updates record re-check: the source looks wrong for ${b.slug} tonight; its lines are unconfirmed, not reported as differences: ${b.why}`);
   }
-  if (process.env.GITHUB_STEP_SUMMARY && (result.changes.length || result.leftRows.length || result.refused || result.skippedBills.length)) {
+  for (const u of result.unconfirmed) {
+    console.log(`  moment-updates record re-check UNCONFIRMED (the source looked wrong): ${u.verdict} ${u.momentId}/${u.id} (${u.vehicle} ${u.day}) — stored: "${u.was ?? u.stored}" — ${renderRecord(u.note, u.record)}`);
+  }
+  if (result.refused) console.error(`::error::moment-updates record re-check refused: ${result.refused}. Nothing was changed; docs/runbooks/record-recheck.md says how to accept these rows for one night.`);
+  if (process.env.GITHUB_STEP_SUMMARY && (result.changes.length || result.leftRows.length || result.unconfirmed.length || result.refused || result.skippedBills.length)) {
     try {
       appendFileSync(process.env.GITHUB_STEP_SUMMARY, recheckSummaryMarkdown(result, { mode: RECHECK_MODE }));
     } catch (e) {
@@ -870,7 +866,7 @@ function warnHeld() {
   const held = heldRows(store);
   for (const h of held) {
     console.warn(
-      `::warning::moment-updates record re-check: ${h.momentId}/${h.id} (${h.vehicle} ${h.day}) is HELD since ${h.since} — the record's words "${h.words}" fail the update lint and no decode has passed yet, so the line is hidden; see docs/runbooks/record-recheck.md, "Held rows"`,
+      `::warning::moment-updates record re-check: ${h.momentId}/${h.id} (${h.vehicle} ${h.day}) is HELD since ${h.since} — the record's words "${h.words}" fail the update lint and no decode has passed yet, so the line is hidden; see docs/runbooks/record-recheck.md, section Held rows`,
     );
   }
   return held.length;

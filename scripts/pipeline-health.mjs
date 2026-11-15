@@ -78,7 +78,7 @@ import {
   refusedSummaries,
   parseRecheckTrouble,
   HEALTH_ISSUE_TITLE,
-  lastReportDayFromBody,
+  namedThroughFromBody,
   recheckFindings,
   recheckHeldRows,
   runThatWroteCursor,
@@ -241,10 +241,11 @@ function previousBlob(path, back = 1) {
 
 /**
  * The comparison's findings, told apart: an absent report file (null), one
- * that cannot be parsed or fails its shape (`malformed`), or a good one. The
- * previous report that ran is read off the standing issue's "Last update"
- * stamp (the body this run is about to rewrite), so a skipped report day is
- * caught up rather than lost.
+ * that cannot be parsed or fails its shape (`malformed`), or a good one.
+ * What was already named is read off the standing issue's marker
+ * `<!-- recheck-named-through: DAY -->` (namedThroughFromBody), which
+ * daily-metrics advances only once the morning's comment is posted: a skipped
+ * report, or a comment that failed to post, is caught up rather than lost.
  */
 function readRecheckFindings(now) {
   const path = 'data/record-recheck-report.json';
@@ -257,14 +258,14 @@ function readRecheckFindings(now) {
       unreadable = e.message;
     }
   }
-  let lastReportDay = null;
+  let lastReportDay = null; // looked for: null when the marker is missing or unreadable
   // The same lookup daily-metrics uses to find the standing issue.
   const issues = ghJson(['issue', 'list', '--repo', REPO, '--state', 'open', '--search', `in:title "${HEALTH_ISSUE_TITLE}"`, '--json', 'number,title,body']);
   if (Array.isArray(issues)) {
     const issue = issues.find((i) => i?.title === HEALTH_ISSUE_TITLE);
-    lastReportDay = lastReportDayFromBody(issue?.body);
+    lastReportDay = namedThroughFromBody(issue?.body);
   }
-  return recheckFindings(file, { now, lastReportDay, unreadable });
+  return { findings: recheckFindings(file, { now, lastReportDay, unreadable }), namedThrough: lastReportDay };
 }
 
 export function buildReport({ now = Date.now() } = {}) {
@@ -604,7 +605,9 @@ export function buildReport({ now = Date.now() } = {}) {
       held: recheckHeldRows(readJsonFile('data/moment-updates.json')),
       // What the comparison still has unresolved, across nights (first-seen
       // dates and streaks), from its own committed file.
-      findings: readRecheckFindings(now),
+      // `namedThrough`: the marker as read, which daily-metrics carries
+      // forward until this morning's comment is posted.
+      ...readRecheckFindings(now),
     },
     summaryRefusals: refusedSummaries(readJsonFile('data/moment-updates.json'), {
       liveIds: moments ? Object.entries(moments).filter(([, m]) => m?.status === 'live').map(([id]) => id) : null,

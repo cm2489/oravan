@@ -74,17 +74,19 @@ While a row is held, every nightly run prints a warning naming it (`… is HELD 
 
 ## How trouble reaches a person
 
-The collector's step is `continue-on-error`, so the nightly run stays green whatever the comparison finds. The daily pipeline-health report (`daily-metrics.yml`, 13:00 UTC, before that day's nightly at 14:15 UTC) reads the nightly's log, `data/moment-updates.json` and `data/record-recheck-report.json`. It rewrites the standing `pipeline-health` issue's body every day (the `record re-check` row counts everything open) and posts **one ⛔ comment a day only when something is due**. For the comparison, everything follows one calendar: **a comment the first morning it is worth one, then one reminder a week while it lasts; the body counts it every day.** A report that is skipped or late loses nothing: the next one that runs reads the previous run's "Last update" stamp in the issue body and catches up, once.
+The collector's step is `continue-on-error`, so the nightly run stays green whatever the comparison finds. The daily pipeline-health report (`daily-metrics.yml`, 13:00 UTC, before that day's nightly at 14:15 UTC) reads the nightly's log, `data/moment-updates.json` and `data/record-recheck-report.json`. It rewrites the standing `pipeline-health` issue's body every day (the `record re-check` row counts everything open) and posts **one ⛔ comment a day only when something is due**. For the comparison, everything follows one calendar: **a comment the first morning it is worth one, then one reminder a week while it lasts; the body counts it every day.** A report that is skipped or late, or a comment that fails to post, loses nothing: the issue body carries a marker, `<!-- recheck-named-through: DAY -->`, which daily-metrics advances only after the morning's comment is posted (or when none is due), and the next report names whatever came due after it, once. If the marker is missing or unreadable, the report names every line still open (the 60-day window bounds it).
 
 | What | First comment | Then |
 | --- | --- | --- |
-| A line found to differ, or left for a person | the morning after the night that found it, named with its page, the stored words and what the record holds now (or "the record no longer holds it") | weekly reminder for all open lines |
-| A night a guard refused or would refuse ("the source looks wrong") | the next morning; **no line is named as differing**, and the lines it would have touched are listed as **unconfirmed** so a person can still look | weekly while it lasts |
+| A stored line the record now words differently; one the record no longer holds; one that could not be confirmed and is left for a person (each under its own heading, with the reason) | the morning after the night that found it, named with its page, the stored words and the record's own sentences, each quoted on its own with its date outside the quotation marks | weekly reminder for all open lines |
+| A bill whose list looked wrong ("a source that looked wrong") | the next morning, and again whenever a line joins its unconfirmed list; **none of its lines is named as differing**, and they are listed as **unconfirmed** so a person can still look. In report mode only that bill is set apart; every other bill's findings stand (apply mode refuses the whole night) | weekly while it lasts |
 | A bill not checked (its list failed, was rejected, or does not look like that bill's), with the lines it left unchecked | the morning after its **3rd** night running | weekly |
 | A line dated after the newest action on its bill's list (the record may have deleted it) | the morning after its **3rd** night running | weekly |
 | Nothing checked at all while there are lines to check | the morning after the **2nd** night running | weekly |
 | A malformed `data/record-recheck-report.json` | every morning (it silences the rest) | — |
 | Apply mode: a refused night, a re-check or follow-up that threw, a malformed accept list, a held line | that morning (held lines: daily while held) | — |
+
+**Only the record's words are ever in quotation marks** in these comments (and the stored line's own words). Oravan's words (what a sentence is, its date, which amendment's list it is from, why a line was left) stay outside them.
 
 **A bill with one line** is judged on its own: the every-line guard starts at 2 lines, so a real change to a one-line bill is reported as that change, not as "the source looks wrong".
 

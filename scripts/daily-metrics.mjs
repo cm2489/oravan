@@ -162,6 +162,7 @@ import {
   HEALTH_ISSUE_TITLE,
   formatHealthAlarmComment,
   formatHealthIssueBody,
+  healthDayOf,
   formatHealthSection,
 } from '../lib/pipeline-health.mjs';
 import { buildReport } from './pipeline-health.mjs';
@@ -452,7 +453,14 @@ function maintainHealthIssue(report) {
     ]).trim();
     const matches = raw ? JSON.parse(raw) : [];
     const existing = matches.find((m) => m.title === HEALTH_ISSUE_TITLE) ?? null;
-    const bodyFile = writeTempFile(formatHealthIssueBody(report));
+    // The record re-check's "named through" marker (lib/pipeline-health.mjs
+    // namedThroughFromBody): carried forward unchanged now, and advanced to
+    // today only once today's comment is posted, or when none is due. So a
+    // comment that fails to post leaves its findings due tomorrow.
+    const today = healthDayOf(Date.parse(report.generatedAt ?? new Date().toISOString()));
+    const carried = report.recheck?.namedThrough ?? null;
+    const list = report.alarms ?? [];
+    const bodyFile = writeTempFile(formatHealthIssueBody(report, { namedThrough: list.length ? carried : today }));
 
     let issueNumber;
     let issueUrl;
@@ -485,15 +493,22 @@ function maintainHealthIssue(report) {
       }
     }
 
-    const list = report.alarms ?? [];
     if (!list.length) {
       console.log('pipeline health: no ⛔ conditions — body refreshed, no comment posted');
       return issueUrl;
     }
+    const advance = () => {
+      try {
+        gh(['issue', 'edit', String(issueNumber), '--repo', REPO, '--body-file', writeTempFile(formatHealthIssueBody(report, { namedThrough: today }))]);
+      } catch (e) {
+        console.log(`::warning::pipeline health: the named-through marker could not be advanced (${e.message}) — tomorrow's report names today's findings again`);
+      }
+    };
     const date = (report.generatedAt ?? new Date().toISOString()).slice(0, 10);
     const marker = `<!-- pipeline-health:${date} -->`;
     if (Number.isFinite(issueNumber) && hasCommentWithMarker(issueNumber, marker)) {
       console.log(`pipeline health: today's (${date}) ⛔ comment already posted — body refreshed only`);
+      advance();
       return issueUrl;
     }
     const commentFile = writeTempFile(
@@ -501,6 +516,8 @@ function maintainHealthIssue(report) {
     );
     gh(['issue', 'comment', String(issueNumber), '--repo', REPO, '--body-file', commentFile]);
     console.log(`pipeline health: ${list.length} ⛔ condition(s) — dated comment appended to ${issueUrl}`);
+    // Only now: the findings it named are named.
+    advance();
     return issueUrl;
   } catch (e) {
     console.log(

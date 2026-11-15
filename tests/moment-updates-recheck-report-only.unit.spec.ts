@@ -104,7 +104,7 @@ test("the owner's proof night: data/moment-updates.json is byte-identical, nothi
   // The report names both of the owner's rows, with what the record holds now.
   expect(r.log).toMatch(/REPORT: would correct paying-college-athletes\/u_d5eaf6d9 .*the record holds now: "The committee substitute tabled by Voice Vote\."/);
   expect(r.log).toMatch(/REPORT: left paying-college-athletes\/u_682cca41 /);
-  expect(r.report.rows['paying-college-athletes/u_d5eaf6d9']).toMatchObject({ verdict: 'would-correct', record: 'The committee substitute tabled by Voice Vote.' });
+  expect(r.report.rows['paying-college-athletes/u_d5eaf6d9']).toMatchObject({ verdict: 'would-correct', record: [{ text: 'The committee substitute tabled by Voice Vote.' }], note: 'the record holds now' });
   expect(r.report.rows['paying-college-athletes/u_682cca41']).toMatchObject({ verdict: 'left' });
 });
 
@@ -126,15 +126,15 @@ test('a night a guard would refuse: still byte-identical, still nothing applied,
   });
   expect(r.status, r.log.slice(-2000)).toBe(0);
   expect(r.same).toBe(true);
-  expect(r.log).toContain('would have refused the night');
+  expect(r.log).toContain('the source looks wrong for s-4668-119 tonight; its lines are unconfirmed, not reported as differences');
   expect(r.log).not.toContain('record re-check refused:');
   expect(r.log).not.toContain('recheck follow-up');
-  // T1: no row is named as differing on such a night; the refusal is recorded.
-  expect(r.report.rows).toEqual({});
-  expect(r.report.would_refuse).toMatchObject({ why: expect.stringContaining('would be corrected') });
-  expect(Object.keys(r.report.would_refuse.rows).length).toBeGreaterThan(4); // the rows involved, unconfirmed
-  expect(r.log).toContain('SUSPECT SOURCE (not reported as a difference)');
-  expect(r.log).not.toMatch(/record re-check REPORT: would/);
+  // Report mode refuses PER BILL: S. 4668's lines are unconfirmed, none named as differing.
+  expect(Object.keys(r.report.rows).filter((k) => r.report.rows[k].vehicle === 's-4668-119')).toEqual([]);
+  expect(r.report.suspect['s-4668-119']).toMatchObject({ why: expect.stringContaining('would be corrected') });
+  expect(Object.keys(r.report.suspect['s-4668-119'].rows).length).toBeGreaterThan(4); // the rows involved, unconfirmed
+  expect(r.log).toContain('UNCONFIRMED (the source looked wrong)');
+  expect(r.log).not.toMatch(/record re-check REPORT: would \w+ paying-college-athletes/);
 });
 
 test('a night with a HELD row already in the file (from an earlier apply era): report-only leaves it exactly as it is', () => {
@@ -186,6 +186,6 @@ test("item 3 · a would-withdraw line in the log keeps Oravan's words outside th
   const r = night(changed);
   expect(r.status, r.log.slice(-2000)).toBe(0);
   expect(r.same).toBe(true);
-  expect(r.log).toMatch(/REPORT: would withdraw paying-college-athletes\/u_f0db9993 .* — the record no longer holds it — on no date of the bill's list; that day the record lists "An unrelated action of that day, for this test\."/);
+  expect(r.log).toMatch(/REPORT: would withdraw paying-college-athletes\/u_f0db9993 .* — stored: "Cloture motion on the measure presented in Senate\." — the record no longer holds it; that day it lists: "An unrelated action of that day, for this test\." \(2026-09-17\), /);
   expect(r.log).not.toMatch(/the record holds now: "(nothing like it|on no date)/);
 });
