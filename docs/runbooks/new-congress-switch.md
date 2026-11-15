@@ -184,11 +184,42 @@ curl -s -o /dev/null -w "%{http_code} %{redirect_url}\n" https://oravan.org/one-
 - a twin enters the corpus: another bill of the same Congress with the same short title (Oravan starts tracking it, or the record gives it that title). The name then opens neither bill; the number addresses still work;
 - a route of that name is added to the site: the build that adds the route drops the name and prints one line in the build log saying so ("short-address names: … left out: a route or reserved word of that name");
 - the record corrects or removes a short title: the nightly reads every bill again at least every 56 days, and sooner when its last action moves. After that read, a name made from a title the record no longer gives stops resolving, and this holds also when the record removes every short title of a bill (the read stores none, and the nightly log prints a warning naming the bill). A read that FAILED (no answer, a refused or broken answer) changes nothing: the names stay as they were until a whole answer arrives;
-- the bill's read keeps failing: it waits 1, 2, 4, 8, 16, then 32 days between tries (`data/short-titles-retry.json`), and its stored names stay as they were meanwhile; if most of a night's answers fail for one reason, the step stops, prints `SHORT TITLES TROUBLE: the source has changed …`, and the daily pipeline-health digest raises it as an alarm;
+- the bill's read keeps failing: it waits 1, 2, 4, 8, 16, then 32 days between tries (`data/short-titles-retry.json`), and its stored names stay as they were meanwhile (see "Short titles: when the nightly read reports trouble" below);
 
 A visitor who types the name in capitals after `/ES/` (`oravan.org/ES/<name>`) first gets the site's usual locale redirect, as for any `/ES/` address; the name itself is matched in any case.
 
 **Undo:** revert the stage 8 pull request; short addresses go back to the 119th with it.
+
+## Short titles: when the nightly read reports trouble
+
+The nightly step `Read the record's short titles` (`scripts/sync-short-titles.mjs`, with the night's rules in `lib/short-titles-night.mjs`) never stops, refuses a file or exits with an error without printing one line that starts `SHORT TITLES TROUBLE:`. The daily pipeline-health digest turns that line into an alarm: `short-titles-source-changed` when the source itself seems to have changed, `short-titles-stopped` for everything else. The step is `continue-on-error`, so it never holds the bill sync or the commit.
+
+The rules, as the code applies them:
+- **One bill's problem stays that bill's.** An answer that arrived but cannot be used (about another bill, reshaped, empty, incomplete, a 404, or a short title the file's own gate would refuse: a control character, more than 400 characters) fails only that bill. It keeps what it had and waits 1, 2, 4, 8, 16, then 32 days before it is tried again, behind every healthy bill.
+- **The source has changed** when, over the whole night, at least 20 answers came from bills not already waiting in the retry file and more than half of those were refused for one and the same reason.
+- **The night stops early** only for the source: 10 transport failures in a row (no answer, a network error, a 429 or a 5xx), the 400-request cap, or the 20-minute budget. What was read before the stop is kept, and the bills refused that night are recorded so they back off.
+- **Bills piling up:** while the retry file holds more than a tenth of the corpus (and more than 50 bills), the line appears every night, whatever the cause.
+
+**A real mass change: the one-run override.** When the record really drops short titles from more than a tenth of the titled bills in one night, the gate's count-drop floor (hard rule 11) refuses the file and prints `SHORT TITLES TROUBLE: bills with a short title would fall N -> M, more than 10% in one night, so nothing was written …`. Every night after that refuses the same way until a person lets one run through. Check first that the drop is real (open a few of the bills named in the nightly log on Congress.gov). Then:
+
+```sh
+gh workflow run sync-bills.yml -f short_titles_allow_drop=true
+```
+
+That run alone sets `SHORT_TITLES_ALLOW_DROP=1` for this step and for `verify-sync.mjs`. A scheduled run never sets it, and the script ignores it when `GITHUB_EVENT_NAME` is `schedule`. That run prints `SHORT TITLES TROUBLE: bills with a short title fell N -> M …; the one-run override let it through`. The next scheduled night compares against the new file, so nothing more is needed.
+
+**Short titles: requests.** Congress.gov allows one key 5,000 requests an hour. This step is capped at 400 a night, retries and extra pages included (`SHORT_TITLES_MAX_REQUESTS`), and 300 bills (`SHORT_TITLES_MAX_PER_NIGHT`). It used to allow 1,200 and 500 and was lowered on 2026-11-15, because 1,200 did not clearly fit. The arithmetic, for the hour around the step (it runs after the bill sync, nominations and votes steps of the 14:15 UTC nightly; how long after was not measured), from each script's own cap or the counts its own comments record:
+
+| In the hour | Typical night | Catch-up night |
+|---|---|---|
+| Twice-daily hot-bill refresh, 13:47 UTC (`HOT_BILLS_FETCH_LIMIT` 100) | 101 | 101 |
+| Hourly newsdesk at :07, two runs (floor record 2, nickname list 1, new roll calls, Big Question updates) | ~200 | ~200 |
+| Nightly bill sync (list pages, ~340 refreshed bills one request each, up to 60 new decodes × 2, 40 text probes) | ~650 | up to ~3,200 (`MAX_DAY_COMPLETION` 3,000 bills) |
+| Nominations, votes, nightly Big Question updates | ~130 | ~130 |
+| This step | ≤ 400 | ≤ 400 |
+| Total | ~1,500 | ~4,030 |
+
+The catch-up column leaves about 970 requests of headroom; at the old 1,200 cap it would have been about 4,830, too close to call a fit. Not counted: retries inside the other scripts (their shared fetcher retries a failing request up to four more times). If Congress.gov starts answering 429, this step reads those as transport failures and stops after 10 in a row, so it adds at most about 20 requests to a rate-limited hour. Not measured on a real night.
 
 ## Before a second Congress ends (by January 2029)
 

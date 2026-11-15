@@ -437,7 +437,10 @@ if (!existsSync(SHORT_TITLES_PATH)) {
     } catch {
       console.log(`HEAD:${SHORT_TITLES_PATH} not readable (not committed yet?) — the overnight comparison is skipped`);
     }
-    const { failures, notes } = verifyShortTitles({ data: shortTitles, bills: Array.isArray(bills) ? bills : [], before });
+    // The one-run override for a real mass change (docs/runbooks/new-congress-switch.md): set by a person on a
+    // manual dispatch, the same condition scripts/sync-short-titles.mjs reads; never honoured on a schedule.
+    const allowDrop = process.env.SHORT_TITLES_ALLOW_DROP === '1' && process.env.GITHUB_EVENT_NAME !== 'schedule';
+    const { failures, notes } = verifyShortTitles({ data: shortTitles, bills: Array.isArray(bills) ? bills : [], before, allowDrop });
     for (const n of notes) console.log(n);
     for (const f of failures) fail(f);
   }
