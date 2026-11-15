@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-15T17:41:02.618Z",
+    "fetched_at": "2026-11-15T20:24:04.374Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-15T17:41:02.618Z"
+        "checked_at": "2026-11-15T20:24:04.374Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-08",
         "week_label": "Most-Viewed Bills - Week of November 8, 2026",
         "entries": 6,
-        "checked_at": "2026-11-15T17:41:02.618Z"
+        "checked_at": "2026-11-15T20:24:04.374Z"
       },
       "leans": {
         "center": {
@@ -683,6 +683,18 @@
       ],
       "mostViewed": null
     },
+    "hr-588-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "queticosuperior.org",
+          "firstSeen": "2026-11-15",
+          "lastSeen": "2026-11-15",
+          "url": "https://news.google.com/rss/articles/CBMiogFBVV95cUxNRDlNTGYxRnhJaEg2Y2pLVnZEdEF3dG82eWVfQ3lmOVpremloSDZvdklzWHlfbDZldHhQS3I2b1l3Mk50MlZjVjNYd3BZQmJ2Um1mNGt1aS1mX2QwVHVCaFdyTkZrX0RibVpIc25pOGR5bGlQamxRaHlBbW1STGo4cWNQTkYtaHlTdHRibG5EcldPTTdKMGc1VXo3S0xmTXZKenc?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-6047-119": {
       "outlets7d": [
         {
@@ -1007,6 +1019,19 @@
       ],
       "mostViewed": null
     },
+    "hr-8786-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-11-15",
+          "lastSeen": "2026-11-15",
+          "url": "https://thehill.com/homenews/campaign/6221530-scott-colom-democrats-invest-mississippi/"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hr-8885-119": {
       "outlets7d": [
         {
@@ -1294,6 +1319,18 @@
       "unratedOutlets7d": [],
       "mostViewed": null
     },
+    "s-4337-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "aol.com",
+          "firstSeen": "2026-11-15",
+          "lastSeen": "2026-11-15",
+          "url": "https://news.google.com/rss/articles/CBMif0FVX3lxTE52Tm5aRkRmaUxGLWwzR3VxZW1FcjdVR2FxaC1zUXQ5VGNHSkFOM1pHR2VhYlcyQUtoenlHWU1keG15a2paVEN2WVhDeVY2T3FfWFl6WmNqc2tsem9RZTExdnlrNk92Z2s2OW8wRUVwTnJpQVh2ODJCVDRqUEhlWU0?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "s-4369-119": {
       "outlets7d": [
         {
@@ -1380,6 +1417,12 @@
     "s-4621-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "coindesk.com",
+          "firstSeen": "2026-11-15",
+          "lastSeen": "2026-11-15",
+          "url": "https://news.google.com/rss/articles/CBMiyAFBVV95cUxPSmpaMzEyMUJxT0FVWGdZaDFHQ2NQcGRPOTJkdVowNFZqZmkxS01UZG1MY0RBNm95bXAxQ1BhZXBGanMzcUdOZWxhM3dqSmxITnJUakZ4NEhfTnY3a0FnQjl4WG9OTE5rRXJ1QVJSQlgxOFpqRzRaU3ZXQ3VyVDdUMWZoMlJxcGtoZlF4dmo4eTh4QjY0dlAxVmN6RVBENUpzM1hxQkJ1T2hpWFBpSEVxV204VUhGZTNBTUxkNVBVRnFpTWRyWUtZdg?oc=5"
+        },
         {
           "domain": "newswire.com",
           "firstSeen": "2026-11-13",
