@@ -37,8 +37,11 @@ import { sharedNamePages, sharedNamePath, type SharedNamePage } from '@/lib/shar
  * (lib/shared-names.ts). The page says so.
  *
  * STATIC (hard rule 2): one page per reachable shared name, in both
- * languages, prerendered from the committed data; dynamicParams is false, so
- * any other address here is the normal not-found. While data/short-titles.json
+ * languages, prerendered from the committed data. Any other address here is
+ * the normal not-found, inside the locale boundary: the bills/[id] posture,
+ * `dynamicParams = true` + notFound() (with `false`, Next answers above the
+ * locale boundary, so /es got the bare English not-found, and the proxy ran
+ * twice for one visit: measured 2026-11-15). While data/short-titles.json
  * does not exist there are no such pages. NOINDEX: an aid for a typed or
  * shared name, it must not compete with the bill pages in search; it is in no
  * sitemap or feed and uses the site's default share image.
@@ -48,7 +51,7 @@ import { sharedNamePages, sharedNamePath, type SharedNamePage } from '@/lib/shar
  * client reads them, and leaving them in would change every page on the site.
  */
 
-export const dynamicParams = false;
+export const dynamicParams = true;
 
 function pageFor(congress: string, name: string): SharedNamePage | undefined {
   return sharedNamePages(getAllBills()).find((p) => String(p.congress) === congress && p.name === name);

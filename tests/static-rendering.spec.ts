@@ -238,7 +238,7 @@ test('the daily brief prerenders every dated permalink in its window, in both la
 test('every shared-name page is prerendered in both languages, and there is no other', () => {
   // app/[locale]/names/[congress]/[name] (2026-11-15, draft #510): one page per
   // shared name the proxy can reach (lib/shared-names.ts), from the committed
-  // data; dynamicParams is false. None while data/short-titles.json does not
+  // data (unknown addresses are notFound(), the bills/[id] posture). None while data/short-titles.json does not
   // exist, so this then pins that the route prerendered nothing at all.
   const prerendered = routes();
   const expected = ['en', 'es'].flatMap((locale) =>

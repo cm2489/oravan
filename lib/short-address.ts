@@ -535,12 +535,12 @@ export function encodeNameTables(
     const entries = [...names.keys()].sort().map((name) => {
       const holders = names.get(name)!;
       if (holders.size > 1) {
-        // A shared name is in the table (so the search stops there) but opens nothing: say so too.
+        // A shared name is in the table (so the search stops there) and opens no single bill: say so too.
         const bills = [...holders].sort().map((h) => {
           const a = parseShortAddress(h)!;
           return `${a.type}-${a.number}-${congress}`;
         });
-        onRefused?.({ slug: bills.join(' '), title: '', name, reason: `shared by ${holders.size} bills, so it opens none of them` });
+        onRefused?.({ slug: bills.join(' '), title: '', name, reason: `shared by ${holders.size} bills, so it opens the page that lists them, /names/${congress}/${name}` });
       }
       return `${name}=${holders.size === 1 ? [...holders][0] : ''}`;
     });

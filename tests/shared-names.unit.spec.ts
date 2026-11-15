@@ -158,7 +158,9 @@ test('the committed state: no titles file, so no page; the page reads its string
   expect(sharedNamePages(getAllBills())).toEqual([]);
   expect(Object.keys(en.namesPage).sort()).toEqual(Object.keys(es.namesPage).sort());
   const page = readFileSync(join(process.cwd(), 'app/[locale]/names/[congress]/[name]/page.tsx'), 'utf8');
-  expect(page).toContain('export const dynamicParams = false;');
+  // The bills/[id] posture: unknown addresses are notFound() inside the locale boundary.
+  expect(page).toContain('export const dynamicParams = true;');
+  expect(page).toContain('if (!page) notFound();');
   expect(page).toContain('robots: { index: false');
   expect(page).not.toMatch(/ActionPanel|CallPrompt|call-button|RepsLookup|CoverageSection|ZipForm/);
 });

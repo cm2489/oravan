@@ -246,7 +246,7 @@ test('the build log names every title that gets no address and every shared name
     `short-address names: hr-7103-${C} "2026" -> no name left out: the title has no letter`,
     `short-address names: hr-7104-${C} "H.R. 1" -> "h-r-1" left out: it reads as a number address`,
     `short-address names: hr-7105-${C} "Privacy" -> "privacy" left out: a route or reserved word of that name`,
-    `short-address names: "twin-act" opens nothing: shared by 2 bills, so it opens none of them (hr-7101-${C} s-7102-${C})`,
+    `short-address names: "twin-act" opens no single bill: shared by 2 bills, so it opens the page that lists them, /names/${C}/twin-act (hr-7101-${C} s-7102-${C})`,
   ]);
 });
 
