@@ -38,6 +38,7 @@ import {
   SCHEMA_VERSION,
   collapseRedundantStatusChanges,
   groupByDay,
+  liveUpdates,
 } from './moment-updates-gate.mjs';
 
 export type UpdateClass =
@@ -127,6 +128,13 @@ export interface MomentUpdate {
   record: UpdateRecord | null;
   /** Present on `correction`: the id of the update being corrected. */
   corrects?: string;
+  /** The ET day the nightly re-check found the record no longer holds this
+   *  row's words (2026-11-14). Such a row is never returned by this module. */
+  withdrawn_on?: string;
+  /** What the nightly re-check changed on this row, oldest first: a
+   *  correction to the record's new words keeps the earlier words and id.
+   *  Never rendered. */
+  rechecks?: { on: string; outcome: 'reworded' | 'withdrawn' | 'reinstated'; was?: string; was_id?: string }[];
   /** Honesty labeling: true when a model wrote the one-liner. */
   ai: boolean;
 }
@@ -192,7 +200,15 @@ const EMPTY: MomentUpdatesEntry = { updates: [], summary_revisions: [] };
 
 function entryFor(id: string): MomentUpdatesEntry {
   if (id === '_meta') return EMPTY;
-  const entry = FILE[id] as MomentUpdatesEntry | undefined;
+  return readableEntry(FILE[id]);
+}
+
+/**
+ * One stored entry as every page reads it. Exported (pure) so the unit suite
+ * can drive it with rows the committed file does not hold.
+ */
+export function readableEntry(raw: unknown): MomentUpdatesEntry {
+  const entry = raw as MomentUpdatesEntry | undefined;
   if (!entry || !Array.isArray(entry.updates)) return EMPTY;
   return {
     // One event renders once (2026-11-13): a status_change that repeats a
@@ -200,7 +216,12 @@ function entryFor(id: string): MomentUpdatesEntry {
     // repeat the collector's prune has not yet healed never reaches the page.
     // The collector and the pre-commit check enforce the same rule on write
     // (collapseRedundantStatusChanges, lib/moment-updates-gate.mjs).
-    updates: collapseRedundantStatusChanges(entry.updates).kept as MomentUpdate[],
+    //
+    // A row the record no longer holds (2026-11-14, `withdrawn_on`, written by
+    // the nightly re-check) is not an event: it stays in the file and is never
+    // read here, so no page, feed or count prints it. Why hidden rather than
+    // shown struck: lib/moment-updates-gate.mjs, above isWithdrawn.
+    updates: collapseRedundantStatusChanges(liveUpdates(entry.updates)).kept as MomentUpdate[],
     summary_revisions: Array.isArray(entry.summary_revisions) ? entry.summary_revisions : [],
   };
 }
