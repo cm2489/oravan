@@ -157,7 +157,7 @@ import {
   spikeIssueContent,
   sumWindows,
 } from '../lib/traffic-metrics.mjs';
-import { formatHealthSection, maintainHealthIssue as maintainHealthIssueWith } from '../lib/pipeline-health.mjs';
+import { formatHealthSection, lastWorkflowComment, workflowCommentWith, maintainHealthIssue as maintainHealthIssueWith } from '../lib/pipeline-health.mjs';
 import { buildReport } from './pipeline-health.mjs';
 
 const REPO = 'cm2489/oravan';
@@ -248,7 +248,10 @@ function findOpenDeclineIssue(series) {
 function hasCommentWithMarker(issueNumber, marker) {
   const raw = gh(['issue', 'view', String(issueNumber), '--repo', REPO, '--json', 'comments']).trim();
   const comments = JSON.parse(raw).comments ?? [];
-  return comments.some((c) => typeof c.body === 'string' && c.body.includes(marker));
+  // Only this workflow's own comments count (byWorkflow): on a public
+  // repository anyone can comment, and a marker in their comment must not
+  // silence the day's comment.
+  return workflowCommentWith(comments, marker) !== null;
 }
 
 /**
@@ -449,8 +452,10 @@ function maintainHealthIssue(report) {
 function postOrEditTodaysComment(issueNumber, date, body) {
   const marker = `<!-- daily-metrics:${date} -->`;
   const commentsRaw = gh(['issue', 'view', issueNumber, '--repo', REPO, '--json', 'comments']).trim();
-  const comments = JSON.parse(commentsRaw).comments ?? [];
-  const last = comments[comments.length - 1];
+  // This workflow's own last comment (byWorkflow): `--edit-last` edits the
+  // last comment by the account it runs as, and someone else's comment
+  // carrying today's marker must not stand in for it.
+  const last = lastWorkflowComment(JSON.parse(commentsRaw).comments);
   const bodyFile = writeTempFile(body);
   if (last && typeof last.body === 'string' && last.body.includes(marker)) {
     gh(['issue', 'comment', issueNumber, '--repo', REPO, '--edit-last', '--body-file', bodyFile]);

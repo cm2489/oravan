@@ -85,7 +85,10 @@ import {
   maintainHealthIssue,
   namedThroughFromBody,
   namedThroughMarker,
-  namedThroughOf,
+  recheckMarkersFrom,
+  workflowCommentWith,
+  lastWorkflowComment,
+  WORKFLOW_COMMENT_LOGIN,
   parseRecheckTrouble,
   recheckFindings,
   recheckHeldRows,
@@ -1362,7 +1365,7 @@ test.describe('round 6: the last two truths, and the alarm calendar', () => {
     expect(namedThroughFromBody(f.issue.body)).toBe('2026-11-14');
     const file = fileWith([['m/u_00000001', '2026-11-14']]);
     expect(f.morning(file, '2026-11-15T13:00:00Z')).toEqual([]); // the post fails
-    expect(namedThroughOf(f.issue.body, f.issue.comments)).toBe('2026-11-14'); // not advanced
+    expect(namedThroughFromBody(f.issue.body)).toBe('2026-11-14'); // not advanced
   });
 
   test('30 mornings with one open row: one comment, then exactly one reminder a week', () => {
@@ -1613,11 +1616,14 @@ function readerQuotes(md: string, { table = false } = {}) {
 }
 
 /** A standing issue for maintainHealthIssue, with gh faked the way GitHub answers. */
-function fakeIssue({ failCommentIf = (_b: string): boolean => false, failAdvance = false }: { failCommentIf?: (b: string) => boolean; failAdvance?: boolean } = {}) {
-  const issue = { body: null as string | null, comments: [] as { body: string }[] };
+function fakeIssue({
+  failCommentIf = (): boolean => false,
+  saveThenFailIf = (): boolean => false,
+  failAdvance = false,
+}: { failCommentIf?: (b: string) => boolean; saveThenFailIf?: (b: string) => boolean; failAdvance?: boolean } = {}) {
+  const issue = { body: null as string | null, comments: [] as { body: string; author: { login: string } }[] };
   const files = new Map<string, string>();
   let n = 0;
-  let postedThisRun = false;
   let editsThisRun = 0;
   const log: string[] = [];
   const gh = (args: string[]) => {
@@ -1630,7 +1636,7 @@ function fakeIssue({ failCommentIf = (_b: string): boolean => false, failAdvance
     if (args[1] === 'pin') return '';
     if (args[1] === 'view') return JSON.stringify({ comments: issue.comments });
     if (args[1] === 'edit') {
-      // failAdvance: every edit after a run's first (the body rewrite) fails, so the marker can only move on a quiet day.
+      // failAdvance: every edit after a run's first (the body rewrite) fails.
       editsThisRun++;
       if (failAdvance && editsThisRun > 1) throw new Error('simulated: the issue edit failed');
       if (file().length > 65_536) throw new Error('HTTP 422: body is too long (maximum is 65536 characters)');
@@ -1641,27 +1647,32 @@ function fakeIssue({ failCommentIf = (_b: string): boolean => false, failAdvance
       const b = file();
       if (b.length > 65_536) throw new Error('HTTP 422: body is too long (maximum is 65536 characters)');
       if (failCommentIf(b)) throw new Error('simulated: the comment post failed');
-      issue.comments.push({ body: b });
-      postedThisRun = true;
+      issue.comments.push({ body: b, author: { login: WORKFLOW_COMMENT_LOGIN } });
+      if (saveThenFailIf(b)) throw new Error('simulated: a timeout after GitHub saved the comment');
       return '';
     }
     throw new Error(`unexpected gh ${args.join(' ')}`);
   };
   const io = { gh, repo: 'o/r', writeTempFile: (t: string) => { const k = `f${n++}`; files.set(k, t); return k; }, log: (l: string) => log.push(l) };
-  /** One run of the report at `iso`, reading the marker as scripts/pipeline-health.mjs does; returns the comments it posted. */
-  const morning = (file: Row | null, iso: string, nightly: Row = { conclusion: 'success' }) => {
-    postedThisRun = false;
+  /** A comment by someone else (the repository is public). */
+  const hostile = (body: string) => issue.comments.push({ body, author: { login: 'someone-else' } });
+  /**
+   * One run of the report at `iso`, reading the markers as scripts/pipeline-health.mjs does
+   * (recheckMarkersFrom on the issue list; `readFails`: that read failed); returns the comments it posted.
+   */
+  const morning = (file: Row | null, iso: string, nightly: Row = { conclusion: 'success' }, { readFails = false } = {}) => {
     editsThisRun = 0;
     const now = Date.parse(iso);
-    const lastReportDay = issue.body === null ? null : namedThroughOf(issue.body, issue.comments);
-    const recheck = { held: [], findings: recheckFindings(file, { now, lastReportDay }), namedThrough: lastReportDay };
+    const issues = readFails ? null : issue.body === null ? [] : [{ number: 1, title: HEALTH_ISSUE_TITLE, body: issue.body }];
+    const { lastReportDay, namedThrough, leftOutSince } = recheckMarkersFrom(issues, now);
+    const recheck = { held: [], findings: recheckFindings(file, { now, lastReportDay }), namedThrough, leftOutSince };
     const report: Row = { generatedAt: new Date(now).toISOString(), recheck };
     report.alarms = alarms({ nightly, recheck });
     const before = issue.comments.length;
     maintainHealthIssue(report, io);
     return issue.comments.slice(before).map((c) => c.body);
   };
-  return { issue, morning, log };
+  return { issue, morning, log, hostile };
 }
 
 /** A report file holding one would-correct row per [key, first_seen]. */
@@ -1747,10 +1758,17 @@ test.describe('round 8: a heavy day never blocks the comment; what the reader se
       const c = posted[0];
       expect(new TextEncoder().encode(c).length).toBeLessThanOrEqual(HEALTH_COMMENT_MAX_BYTES);
       expect(c).toContain('the nightly bill sync ended `failure`'); // the other alarm is there
-      expect(c).toContain(namedThroughMarker('2026-11-15'));
+      expect(c).not.toContain('recheck-named-through'); // markers live in the issue body only
+      expect(namedThroughFromBody(f.issue.body)).toBe('2026-11-15');
       checkComment(c, allowed);
-      expect(f.issue.body!.length).toBeLessThan(65_536);
-      expect(formatHealthSection({ alarms: alarms({ nightly: { conclusion: 'failure' }, recheck: { findings: recheckFindings(file, { now: Date.parse('2026-11-15T13:00:00Z') }) } }) }).length).toBeLessThan(65_536);
+      // The body and the digest carry a count and a pointer, never the listing.
+      const section = formatHealthSection({ alarms: alarms({ nightly: { conclusion: 'failure' }, recheck: { findings: recheckFindings(file, { now: Date.parse('2026-11-15T13:00:00Z') }) } }) });
+      for (const t of [f.issue.body!, section]) {
+        expect(t.length).toBeLessThan(10_000);
+        expect(t).not.toContain('this comment');
+        expect(t).toContain('every one is listed in data/record-recheck-report.json');
+        expect(readerQuotes(t.split('\n').filter((l) => l.startsWith('⛔') && !l.includes('nightly bill sync')).join('\n')).seen).toEqual([]);
+      }
     }
     // The 400-action day: 40 lines do not all fit, so the rest are counted outside any quotation.
     const list = alarms({ nightly: { conclusion: 'success' }, recheck: { findings: recheckFindings(h4.file, { now: Date.parse('2026-11-15T13:00:00Z'), lastReportDay: null }) } });
@@ -1762,41 +1780,39 @@ test.describe('round 8: a heavy day never blocks the comment; what the reader se
   });
 
   test('item 1c · when the comment with the re-check fails to post, the rest of the day\'s alarms still post, saying why; the lines stay due', () => {
-    const f = fakeIssue({ failCommentIf: (b) => b.includes('Stored lines') });
+    let failing = true;
+    const f = fakeIssue({ failCommentIf: (b) => failing && b.includes('Stored lines') });
     f.morning(null, '2026-11-14T13:00:00Z');
     const file = fileWith([['m/u_00000001', '2026-11-14']]);
     const posted = f.morning(file, '2026-11-15T13:00:00Z', { conclusion: 'failure' });
     expect(posted).toHaveLength(1);
     expect(posted[0]).toContain('the nightly bill sync ended `failure`');
     expect(posted[0]).toContain("The record re-check's section was left out of this comment: posting it failed (simulated: the comment post failed)");
-    expect(namedThroughOf(f.issue.body, f.issue.comments)).toBe('2026-11-14'); // not advanced
+    expect(namedThroughFromBody(f.issue.body)).toBe('2026-11-14'); // not advanced
     expect(f.log.join('\n')).toContain('the named-through marker is not advanced');
     // A re-run the same day: never a second comment, and still not advanced.
     expect(f.morning(file, '2026-11-15T15:00:00Z', { conclusion: 'failure' })).toEqual([]);
-    expect(namedThroughOf(f.issue.body, f.issue.comments)).toBe('2026-11-14');
-    // Next morning, posting works again: the line is named.
-    const g = { ...f };
-    const next = fakeIssue();
-    next.issue.body = f.issue.body;
-    next.issue.comments.push(...f.issue.comments);
-    const named = next.morning(file, '2026-11-16T13:00:00Z');
+    expect(namedThroughFromBody(f.issue.body)).toBe('2026-11-14');
+    // Next morning, posting works again: the line is named, and the left-out day is cleared.
+    failing = false;
+    const named = f.morning(file, '2026-11-16T13:00:00Z');
     expect(named).toHaveLength(1);
     expect(named[0]).toContain('m/u_00000001');
-    expect(g).toBeTruthy();
+    expect(namedThroughFromBody(f.issue.body)).toBe('2026-11-16');
+    expect(f.issue.body).not.toContain('recheck-left-out-since');
   });
 
   test('item 1c · a comment the re-check would push over the cap leaves the re-check out and keeps every other alarm', () => {
     const big = { code: 'other', text: 'x'.repeat(25_000) };
     const re = { code: 'record-recheck-left', text: 'y'.repeat(29_000) };
-    const out = buildHealthAlarmComment({ date: '2026-11-15', alarms: [big, re], namedThrough: '2026-11-15' });
+    const out = buildHealthAlarmComment({ date: '2026-11-15', alarms: [big, re] });
     expect(out.recheckIncluded).toBe(false);
     expect(out.body).toContain(big.text);
     expect(out.body).not.toContain(re.text);
     expect(out.body).toMatch(/The record re-check's section was left out of this comment: with it this comment came to [\d,]+ bytes, over this report's cap of 50,000/);
-    expect(namedThroughFromBody(out.body)).toBeNull();
-    const fits = buildHealthAlarmComment({ date: '2026-11-15', alarms: [re], namedThrough: '2026-11-15' });
+    const fits = buildHealthAlarmComment({ date: '2026-11-15', alarms: [re] });
     expect(fits.recheckIncluded).toBe(true);
-    expect(namedThroughFromBody(fits.body)).toBe('2026-11-15');
+    expect(fits.body).not.toContain('recheck-named-through');
   });
 
   test('item 2 · markdown, HTML, line breaks and quotation marks: the reader sees exactly the record\'s characters; the file keeps them raw', () => {
@@ -1870,22 +1886,116 @@ test.describe('round 8: a heavy day never blocks the comment; what the reader se
     expect(f.morning(file, '2026-11-17T01:30:00Z', { conclusion: 'failure' })).toEqual([]);
   });
 
-  test('item 4 · the issue edit failing every day while the comment posts: each line is named exactly once, and never two comments a day', () => {
+  test('item 4 (round 8, narrowed in round 9) · a re-run the same day never posts a second comment, even when the body edit fails', () => {
     const f = fakeIssue({ failAdvance: true });
     f.morning(null, '2026-11-14T13:00:00Z');
-    const days = ['2026-11-14', '2026-11-15', '2026-11-16'];
-    const all: string[] = [];
-    for (let k = 0; k < days.length; k++) {
-      const file = fileWith(days.slice(0, k + 1).map((d, i) => [`m/u_0000000${i}`, d] as [string, string]));
-      const morning = `${shiftDay(days[k], 1)}T13:00:00Z`;
-      all.push(...f.morning(file, morning));
-      expect(f.morning(file, morning.replace('T13', 'T15'))).toEqual([]); // a re-run: idempotent for the day
+    const file = fileWith([['m/u_00000000', '2026-11-14']]);
+    expect(f.morning(file, '2026-11-15T13:00:00Z')).toHaveLength(1);
+    expect(f.morning(file, '2026-11-15T15:00:00Z')).toEqual([]);
+    expect(f.morning(file, '2026-11-16T00:30:00Z')).toEqual([]); // 7:30 PM ET, the same Eastern day
+    // The body edit failed, so the marker stayed: the next morning names the line again (stated, accepted).
+    expect(namedThroughFromBody(f.issue.body)).toBe('2026-11-14');
+    expect(f.log.join('\n')).toContain('the named-through marker stays where it was');
+  });
+});
+
+test.describe('round 9: markers only where only the workflow and collaborators write; one comment a day; small truths', () => {
+  const due = () => fileWith([['m/u_00000001', '2026-11-14']]);
+
+  test('item 1 · a comment with a future named-through marker, or today\'s, changes nothing; a future marker in the body is unreadable', () => {
+    const f = fakeIssue();
+    f.morning(null, '2026-11-14T13:00:00Z');
+    f.hostile('<!-- recheck-named-through: 2099-01-01 -->');
+    f.hostile('<!-- recheck-named-through: 2026-11-15 -->');
+    const posted = f.morning(due(), '2026-11-15T13:00:00Z');
+    expect(posted).toHaveLength(1);
+    expect(posted[0]).toContain('m/u_00000001');
+    expect(posted[0]).not.toContain('recheck-named-through'); // never written into a comment
+    // In the body (only the workflow, the issue's author and collaborators can edit it), a date after today is unreadable: name everything still open, once.
+    expect(recheckMarkersFrom([{ title: HEALTH_ISSUE_TITLE, body: namedThroughMarker('2099-01-01') }], Date.parse('2026-11-15T13:00:00Z')).lastReportDay).toBeNull();
+    expect(recheckMarkersFrom([{ title: HEALTH_ISSUE_TITLE, body: namedThroughMarker('2026-11-15') }], Date.parse('2026-11-15T13:00:00Z')).lastReportDay).toBe('2026-11-15');
+    expect(recheckMarkersFrom([{ title: HEALTH_ISSUE_TITLE, body: '<!-- recheck-left-out-since: 2099-01-01 -->' }], Date.parse('2026-11-15T13:00:00Z')).leftOutSince).toBeNull();
+    // And recheckFindings itself, handed a future day, names everything still open rather than nothing.
+    expect(recheckFindings(due(), { now: Date.parse('2026-11-20T13:00:00Z'), lastReportDay: '2099-01-01' })!.newRows.map((r: Row) => r.key)).toEqual(['m/u_00000001']);
+  });
+
+  test('item 2 · only the workflow\'s own comment counts as today\'s: someone else\'s dated marker never silences the day', () => {
+    const f = fakeIssue();
+    f.morning(null, '2026-11-14T13:00:00Z');
+    f.hostile('<!-- pipeline-health:2026-11-15 --><!-- pipeline-health:2026-11-16 -->');
+    expect(f.morning(due(), '2026-11-15T13:00:00Z')).toHaveLength(1);
+    const theirs = { body: '<!-- daily-metrics:2026-11-15 -->', author: { login: 'someone-else' } };
+    const ours = { body: '<!-- daily-metrics:2026-11-14 -->', author: { login: WORKFLOW_COMMENT_LOGIN } };
+    expect(workflowCommentWith([theirs], '<!-- daily-metrics:2026-11-15 -->')).toBeNull();
+    expect(workflowCommentWith([theirs, { ...theirs, author: { login: WORKFLOW_COMMENT_LOGIN } }], '<!-- daily-metrics:2026-11-15 -->')).not.toBeNull();
+    expect(lastWorkflowComment([ours, theirs])).toBe(ours);
+    expect(lastWorkflowComment([theirs])).toBeNull();
+  });
+
+  test('item 3 · GitHub saved the comment but the call failed: today\'s comments are read again and nothing is posted twice', () => {
+    const f = fakeIssue({ saveThenFailIf: (b) => b.includes('Stored lines') });
+    f.morning(null, '2026-11-14T13:00:00Z');
+    const posted = f.morning(due(), '2026-11-15T13:00:00Z', { conclusion: 'failure' });
+    expect(posted).toHaveLength(1); // the saved one; no fallback comment after it
+    expect(posted[0]).toContain('m/u_00000001');
+    expect(namedThroughFromBody(f.issue.body)).toBe('2026-11-15'); // it carried the section: advanced
+    expect(f.log.join('\n')).toContain('there after all');
+  });
+
+  test('item 4 · a failed issue read is "yesterday", never "name everything": only a body read with no marker names everything, once', () => {
+    expect(recheckMarkersFrom(null, Date.parse('2026-11-15T13:00:00Z'))).toEqual({ lastReportDay: undefined, namedThrough: '2026-11-14', leftOutSince: null });
+    expect(recheckMarkersFrom([], Date.parse('2026-11-15T13:00:00Z')).lastReportDay).toBeNull();
+    expect(recheckMarkersFrom([{ title: HEALTH_ISSUE_TITLE, body: 'no marker' }], Date.parse('2026-11-15T13:00:00Z')).lastReportDay).toBeNull();
+    const old = fileWith([['m/u_00000001', '2026-10-01'], ['m/u_00000002', '2026-11-14']]);
+    const f = fakeIssue();
+    f.morning(null, '2026-11-14T13:00:00Z');
+    const posted = f.morning(old, '2026-11-15T13:00:00Z', { conclusion: 'success' }, { readFails: true });
+    expect(posted).toHaveLength(1);
+    expect(posted[0]).toContain('m/u_00000002');
+    expect(posted[0]).not.toContain('m/u_00000001'); // named long ago: not again
+  });
+
+  test('item 5a · one oversized line does not stop the listing: shorter lines after it are still listed', () => {
+    const huge = Array.from({ length: 5 }, (_, i) => ({ day: '2026-09-17', text: `Huge sentence ${i} ${'word '.repeat(1_400)}in Senate.` }));
+    const file: Row = fileWith([]);
+    file.rows['m/u_000000a0'] = { first_seen: '2026-11-14', verdict: 'left', vehicle: VEHICLE, day: '2026-09-17', stored: 'Huge sentence 0 in Senate.', record: huge, note: 'that day the record lists', why: 'a test' };
+    for (const k of ['a1', 'a2', 'a3']) file.rows[`m/u_000000${k}`] = { first_seen: '2026-11-14', verdict: 'left', vehicle: VEHICLE, day: '2026-09-17', stored: `Short ${k}.`, record: [{ day: '2026-09-17', text: `Short record ${k}.` }], note: 'that day the record lists', why: 'a test' };
+    const left = alarms({ nightly: { conclusion: 'success' }, recheck: { findings: recheckFindings(file, { now: Date.parse('2026-11-15T13:00:00Z') }) } }).find((a: Row) => a.code === 'record-recheck-left')! as Row;
+    expect(left.listed).toBe(3);
+    expect(left.unlisted).toBe(1);
+    expect(left.text).toContain('m/u_000000a3');
+  });
+
+  test('item 5c · $…$, GH-123 and a 40-character hash go in a code span', () => {
+    for (const t of ['Cost of $5 to $10 in Senate.', 'Refers to GH-123 in Senate.', `Commit ${'a1b2c3d4e5'.repeat(4)} in Senate.`]) {
+      const md = quoteWords(t, { md: true });
+      expect(md.startsWith('`'), md).toBe(true);
+      expect(readerQuotes(md).seen).toEqual([t]);
     }
-    expect(all).toHaveLength(3);
-    for (let i = 0; i < 3; i++) expect(all.filter((c) => c.includes(`m/u_0000000${i} `)).length).toBe(1);
-    expect(f.log.join('\n')).toContain('the posted comment carries the same marker');
-    // Each morning the body edit after the post failed; the comment's own marker carried the day.
-    expect(f.log.filter((l) => l.includes('could not be advanced')).length).toBe(3); // each morning's advance failed
+    expect(quoteWords('Plain words in Senate. 1234567', { md: true })).toBe('"Plain words in Senate. 1234567"');
+  });
+
+  test('item 5d · a section that fails to post every day: the "left out" note comes the first morning, then weekly', () => {
+    const quiet = fakeIssue({ failCommentIf: (b) => b.includes('Stored lines') });
+    quiet.morning(null, '2026-11-14T13:00:00Z');
+    const days: string[] = [];
+    for (let i = 0; i < 15; i++) {
+      const day = shiftDay('2026-11-15', i);
+      if (quiet.morning(due(), `${day}T13:00:00Z`).length) days.push(day);
+    }
+    expect(days).toEqual(['2026-11-15', '2026-11-22', '2026-11-29']);
+    expect(quiet.issue.body).toContain('<!-- recheck-left-out-since: 2026-11-15 -->');
+    // With another alarm every day, that alarm posts daily; the note only weekly.
+    const busy = fakeIssue({ failCommentIf: (b) => b.includes('Stored lines') });
+    busy.morning(null, '2026-11-14T13:00:00Z');
+    const notes: string[] = [];
+    for (let i = 0; i < 9; i++) {
+      const day = shiftDay('2026-11-15', i);
+      const posted = busy.morning(due(), `${day}T13:00:00Z`, { conclusion: 'failure' });
+      expect(posted, day).toHaveLength(1);
+      if (posted[0].includes("The record re-check's section was left out")) notes.push(day);
+    }
+    expect(notes).toEqual(['2026-11-15', '2026-11-22']);
   });
 });
 
