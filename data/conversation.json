@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-14T19:49:36.817Z",
+    "fetched_at": "2026-11-14T22:18:09.159Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-14T19:49:36.817Z"
+        "checked_at": "2026-11-14T22:18:09.159Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-08",
         "week_label": "Most-Viewed Bills - Week of November 8, 2026",
         "entries": 6,
-        "checked_at": "2026-11-14T19:49:36.817Z"
+        "checked_at": "2026-11-14T22:18:09.159Z"
       },
       "leans": {
         "center": {
@@ -324,7 +324,14 @@
           "url": "https://www.cbsnews.com/news/new-house-members-top-priorities/"
         }
       ],
-      "unratedOutlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "247wallst.com",
+          "firstSeen": "2026-11-14",
+          "lastSeen": "2026-11-14",
+          "url": "https://news.google.com/rss/articles/CBMiygFBVV95cUxPMUlteERUN0tjZDhPSWxWWFZGMmdNb3ZaU1RfTW93THhDT2d6VzI1OTktQ3Mtdk0xdmZmSThHT2Q1Ul94Q0pJS0V1dFU1ZFNiTk05dDB3Zmc1Z2ZEMDlSUW1ibjZtNkJzRlVYR25PczVmOW1mSW9BLU1HaEtwMDVNZks2c09aWVpaUXY2bkMtRDlsc0JUREM1ZnBjMkFheWdqeUs2NWQwMFY2cmF5WXZTZmExb1M2MnhZejZDWmVtTGRDZDQ4TjNHOG5B?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "hr-1945-119": {
@@ -534,7 +541,15 @@
       "mostViewed": null
     },
     "hr-4840-119": {
-      "outlets7d": [],
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-11-14",
+          "lastSeen": "2026-11-14",
+          "url": "https://thehill.com/business/6220886-trump-bipartisan-film-industry-bill/"
+        }
+      ],
       "unratedOutlets7d": [
         {
           "domain": "deadline.com",
@@ -1097,6 +1112,12 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "pilotonline.com",
+          "firstSeen": "2026-11-14",
+          "lastSeen": "2026-11-14",
+          "url": "https://news.google.com/rss/articles/CBMivgFBVV95cUxQR0dZWklLUVhxNDJkQnpxSUdOU1JZanhiWE1nRUhlY2R4NXFnekkxTG1sY2hOcmphZC1EYks2d09ocTR2SlF2NEdEbHR4clFJaXNhUHNtV2hoR09TSjJhb09PUXgwQTVHSjc3Z3dBWnA0VnRacUJvTkY1RmRXYXdBVVRSUmtQWG9lTk9yaURrOGt2VUFYT3kxUEVtSUJNT25jN003dmNmNjB3YldJbnQzXzFsNHRpcWZJUHkzdHVR?oc=5"
+        },
+        {
           "domain": "westernpriorities.org",
           "firstSeen": "2026-11-10",
           "lastSeen": "2026-11-10",
@@ -1280,6 +1301,12 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "kelo.com",
+          "firstSeen": "2026-11-14",
+          "lastSeen": "2026-11-14",
+          "url": "https://news.google.com/rss/articles/CBMingFBVV95cUxNRXdNT0xkdXFXT3FGM1g0WGJXbmNYVGh0cnlKNm92NnhzYTlsbkZ6VTNqMF9Vcm9PUm5nbkQtZ0E0SjRGTFNVcldHa205aXh6QVJyd0E2VnFfTnRETjlnWklRS3ZiM1BHSVJHcUhyOWx2LXBfZDE2dGNIWDhlSEdoOWVEUHpqQVV2T0pSNmczTHpPZkFVME5QYWYxV2tSZw?oc=5"
+        },
         {
           "domain": "kfgo.com",
           "firstSeen": "2026-11-14",
