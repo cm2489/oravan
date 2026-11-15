@@ -520,15 +520,20 @@ jobs:
         #
         # Cost: $0. At most 500 bills a night (SHORT_TITLES_MAX_PER_NIGHT):
         # every bill never read first, then every bill whose last action
-        # moved, then every bill unread for 56 days. One free Congress.gov
-        # request per bill, two at most (one retry), so at most 1,000 requests
-        # against the key's 5,000 an hour. The first fill takes ~7 nights. No
-        # Anthropic key.
+        # moved, then every bill unread for 56 days, and last the bills whose
+        # previous read failed, after a wait that doubles each time (1 to 32
+        # days; data/short-titles-retry.json). About one free Congress.gov
+        # request per bill; never more than 1,200 a night (retries and extra
+        # pages included), against the key's 5,000 an hour. The first fill
+        # takes ~7 nights. No Anthropic key.
         #
-        # BOUNDED. The script stops after 10 failed reads in a row or 20
-        # minutes, keeping what it read; this step's own ceiling is 25
-        # minutes, and continue-on-error means its failure or timeout never
-        # holds or fails the steps after it, the gates or the commit.
+        # BOUNDED. The script stops after 10 transport failures in a row, when
+        # most answers are refused for one reason (the source changed: it exits
+        # 1 and prints "SHORT TITLES TROUBLE:", which the daily pipeline-health
+        # digest raises as an alarm), or after 20 minutes, keeping what it
+        # read; this step's own ceiling is 25 minutes, and continue-on-error
+        # means its failure or timeout never holds or fails the steps after
+        # it, the gates or the commit.
         continue-on-error: true
         timeout-minutes: 25
         env:

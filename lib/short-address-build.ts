@@ -51,7 +51,14 @@ export function nameTablesForBuild(
   );
 }
 
-/** One build-log line for a record short title that gives no address. */
+/**
+ * One build-log line for each record short title that gives no address (no
+ * name at all, or a name refused: too short or long, number-like, skipped by
+ * the proxy's matcher, a route or reserved word) and for each name two or
+ * more bills share (it is in the table, so the search stops there, but it
+ * opens none of them).
+ */
 export function refusalLine(r: NameRefusal): string {
+  if (!r.title) return `short-address names: "${r.name}" opens nothing: ${r.reason} (${r.slug})`;
   return `short-address names: ${r.slug} "${r.title}" -> ${r.name ? `"${r.name}"` : 'no name'} left out: ${r.reason}`;
 }

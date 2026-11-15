@@ -66,6 +66,7 @@ import {
   parseCoverageDone,
   parseCoverageLean,
   parseCoverageOutage,
+  parseShortTitlesTrouble,
   parseFailingTests,
   parsePregen,
   parseRedecodeDone,
@@ -294,6 +295,7 @@ export function buildReport({ now = Date.now() } = {}) {
   let coverageDone = null;
   let coverageLean = null;
   let coverageOutage = null;
+  let shortTitlesTrouble = null;
   let pregen = null;
   let portrait404s = null;
   let upstashCacheFailures = null;
@@ -333,6 +335,7 @@ export function buildReport({ now = Date.now() } = {}) {
     coverageDone = parseCoverageDone(log);
     coverageLean = parseCoverageLean(log);
     coverageOutage = parseCoverageOutage(log);
+    shortTitlesTrouble = parseShortTitlesTrouble(log);
     pregen = parsePregen(log);
     portrait404s = countPortrait404s(log);
     upstashCacheFailures = countUpstashCacheFailures(log);
@@ -504,6 +507,7 @@ export function buildReport({ now = Date.now() } = {}) {
     sync,
     coverageRun: coverageDone,
     coverageOutage,
+    shortTitlesTrouble,
     coverageLean,
     corpus: {
       bills: corpusBills,
