@@ -14,6 +14,7 @@ import {
   NAME_ADDRESS_RESERVED,
   SHORT_ADDRESS_CONGRESS,
   shortAddressFallbackCongresses,
+  type NameRefusal,
   type ShortAddressBill,
   type ShortTitleFile,
 } from './short-address';
@@ -36,11 +37,21 @@ export function readShortTitles(root: string = process.cwd()): ShortTitleFile {
  * ended first), every allowed name with its bill. '' while no bill has a
  * short title.
  */
-export function nameTablesForBuild(bills: readonly ShortAddressBill[], root: string = process.cwd()): string {
+export function nameTablesForBuild(
+  bills: readonly ShortAddressBill[],
+  root: string = process.cwd(),
+  onRefused?: (refusal: NameRefusal) => void,
+): string {
   return encodeNameTables(
     bills,
     readShortTitles(root),
     [SHORT_ADDRESS_CONGRESS, ...shortAddressFallbackCongresses(bills)],
     reservedNames(root),
+    onRefused,
   );
+}
+
+/** One build-log line for a record short title that gives no address. */
+export function refusalLine(r: NameRefusal): string {
+  return `short-address names: ${r.slug} "${r.title}" -> ${r.name ? `"${r.name}"` : 'no name'} left out: ${r.reason}`;
 }

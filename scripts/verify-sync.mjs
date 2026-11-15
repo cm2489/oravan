@@ -47,7 +47,7 @@
  *     retention caps are checked here as well as in check-moment-updates.mjs.
  *   - data/short-titles.json (the record's short titles, which name addresses
  *     read; 2026-11-14) doesn't parse, holds a key the corpus doesn't, an
- *     entry that isn't { titles, as_of }, an empty, repeated, over-long or
+ *     entry that isn't { titles, as_of, read_on }, an empty, repeated, over-long or
  *     unsorted title, or, against HEAD, lost more than 10% of its titled
  *     bills overnight or every title of one bill. Skipped cleanly when the
  *     file doesn't exist. The judgement lives in lib/short-titles.mjs
@@ -404,7 +404,7 @@ if (!existsSync(CONVERSATION_PATH)) {
 // data/short-titles.json (2026-11-14) is written by scripts/sync-short-titles
 // .mjs, which refuses to write a file this gate refuses. Re-checked here before
 // the commit (hard rule 11): it parses; every key is a bill the corpus holds;
-// every entry is exactly { titles, as_of }; every title is a distinct,
+// every entry is exactly { titles, as_of, read_on }; every title is a distinct,
 // non-empty string of the record's, in code-point order; and, against HEAD,
 // the bills carrying a short title did not fall by more than 10% and no bill
 // lost all of its titles. Skipped cleanly when the file doesn't exist (every
