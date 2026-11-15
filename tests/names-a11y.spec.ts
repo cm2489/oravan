@@ -60,8 +60,11 @@ test.describe('shared-name page accessibility floor', () => {
       m.setAttribute('tabindex', '-1');
       (m as HTMLElement).focus();
     });
+    // WebKit, like Safari by default, leaves links out of plain Tab; Option+Tab
+    // walks every focusable element, links included.
+    const key = page.context().browser()?.browserType().name() === 'webkit' ? 'Alt+Tab' : 'Tab';
     for (let i = 0; i < first!.bills.length; i++) {
-      await page.keyboard.press('Tab');
+      await page.keyboard.press(key);
       const ring = await page.evaluate(() => {
         const a = document.activeElement as HTMLElement;
         const cs = getComputedStyle(a);
