@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-15T20:24:04.374Z",
+    "fetched_at": "2026-11-15T22:46:10.203Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-15T20:24:04.374Z"
+        "checked_at": "2026-11-15T22:46:10.203Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-08",
         "week_label": "Most-Viewed Bills - Week of November 8, 2026",
         "entries": 6,
-        "checked_at": "2026-11-15T20:24:04.374Z"
+        "checked_at": "2026-11-15T22:46:10.203Z"
       },
       "leans": {
         "center": {
@@ -1306,6 +1306,18 @@
       "unratedOutlets7d": [],
       "mostViewed": null
     },
+    "s-4315-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "themarijuanaherald.com",
+          "firstSeen": "2026-11-15",
+          "lastSeen": "2026-11-15",
+          "url": "https://news.google.com/rss/articles/CBMiyAFBVV95cUxPOHpWX1BaZXNaWDBsekRWX3BtTlkwYmttVnZDQnZXaVc0TGNjY2xZTTNVU1dCalFrTG1pbWh2aFI3TTJ2cXR2TjFrc3VDTU1ZNlJGWVRZeW45cmFWR0VQT2dIM2Y3TEdXMmZpbGVxSmdLMHlJbVdlcDlGM0x4RFZVODA0QkxZY0VMbFpXVG5ROFBMcDdOSGJFeHFDV2czUGtQVlM3dTk1ZHFhTkR4YTN3NWFuTWNhcHExREN2YmZsc1hfenN5V2MwSQ?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "s-4328-119": {
       "outlets7d": [
         {
@@ -1362,6 +1374,12 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "energynow.ca",
+          "firstSeen": "2026-11-15",
+          "lastSeen": "2026-11-15",
+          "url": "https://news.google.com/rss/articles/CBMiywFBVV95cUxPSVNNWU9majhNdmNoaHROd0NQcHcyZzMtb08wU0pqNmppYzdkMEIzT05IbVZIMGVOQlhqY3IzNTVIQ2pkQUZzWGQ0THYyOS1TM0YwMTMtSG9QejBoNGdYa2N2UEYyY2pCNTdNM3psbjVPSmxqWlRBZW5KYjlWRkp3Ym1wWjJFMGx4N0NaSjZ4NFZZclN1cDlmek5RR2o4b1pmUVp3WlR0bmJrTHgzbHZ4VGxpMTZnQTVZR0x2VmVyLXVfZDJaSS16Rzhnaw?oc=5"
+        },
         {
           "domain": "whbl.com",
           "firstSeen": "2026-11-15",
