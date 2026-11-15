@@ -158,7 +158,8 @@ async function drivenBurst(
 
     // Every redirect target is a bare bill path: no query, no stance.
     expect(targets).toHaveLength(redirected.length);
-    for (const target of targets) expect(target).toMatch(/^(\/es)?\/bills\/[a-z]+-\d+-\d+$/);
+    // (or, since the owner's card 193, a shared name's page: /names/<congress>/<name>)
+    for (const target of targets) expect(target).toMatch(/^(\/es)?\/(bills\/[a-z]+-\d+-\d+|names\/\d+\/[a-z0-9]+(-[a-z0-9]+)*)$/);
 
     // Two keys exist, both bare template labels with a date.
     const day = usageDayKey();
@@ -315,8 +316,10 @@ test('driven: name addresses count the same one "short" word, and the typed name
       '/es/laken-riley-act?stance=oppose&utm_source=probe',
       '/rescissions-act-of-2025?stance=support',
       '/s5', // a number beside them
+      '/save-act', // shared by two bills: the page that lists both (card 193)
+      '/es/SAVE-ACT?stance=support',
     ],
-    ['/save-act', '/es/save-act', '/laken-riley', '/laken-riley-act-of-2025', '/hr99999'],
+    ['/laken-riley', '/laken-riley-act-of-2025', '/hr99999'],
     ['laken', 'riley', 'rescission', 'save', 'act', 's5', '-5-', 'hr4'],
     names,
   );
@@ -326,5 +329,10 @@ test('driven: name addresses count the same one "short" word, and the typed name
     `/es/bills/s-5-${SHORT_ADDRESS_CONGRESS}`,
     `/bills/hr-4-${SHORT_ADDRESS_CONGRESS}`,
     `/bills/s-5-${SHORT_ADDRESS_CONGRESS}`,
+    `/names/${SHORT_ADDRESS_CONGRESS}/save-act`,
+    `/es/names/${SHORT_ADDRESS_CONGRESS}/save-act`,
   ]);
+  // The page itself is counted under the existing 'other' page shape, and nothing about the name.
+  expect(pageviewSurfaceForPath(`/names/${SHORT_ADDRESS_CONGRESS}/save-act`, LOCALES)).toBe('other');
+  expect(pageviewSurfaceForPath(`/es/names/${SHORT_ADDRESS_CONGRESS}/save-act`, LOCALES)).toBe('other');
 });

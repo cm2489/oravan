@@ -1,7 +1,8 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
-import { getAllLegislators, getVacancies, vacancySlug } from '../lib/core';
+import { getAllBills, getAllLegislators, getVacancies, vacancySlug } from '../lib/core';
+import { sharedNamePages, sharedNamePath } from '../lib/shared-names';
 import {
   encodeShortAddressFallback,
   encodeShortAddressIndex,
@@ -119,7 +120,7 @@ const PER_REQUEST_IN_PROXY: Record<string, string> = {
  * The dynamic routes whose prerendered ids each have their own test below
  * (the id set is the route's own generateStaticParams, recomputed here).
  */
-const PRERENDERED_DYNAMIC = ['/bills/[id]', '/questions/[id]', '/reps/[bioguide]', '/today/[date]'];
+const PRERENDERED_DYNAMIC = ['/bills/[id]', '/questions/[id]', '/reps/[bioguide]', '/today/[date]', '/names/[congress]/[name]'];
 
 /**
  * Every [locale] page that must be prerendered HTML, in BOTH locales: every
@@ -232,6 +233,19 @@ test('the daily brief prerenders every dated permalink in its window, in both la
       .filter((route) => !(route in prerendered)),
   );
   expect(missing).toEqual([]);
+});
+
+test('every shared-name page is prerendered in both languages, and there is no other', () => {
+  // app/[locale]/names/[congress]/[name] (2026-11-15, draft #510): one page per
+  // shared name the proxy can reach (lib/shared-names.ts), from the committed
+  // data; dynamicParams is false. None while data/short-titles.json does not
+  // exist, so this then pins that the route prerendered nothing at all.
+  const prerendered = routes();
+  const expected = ['en', 'es'].flatMap((locale) =>
+    sharedNamePages(getAllBills()).map((p) => `/${locale}${sharedNamePath(p.congress, p.name)}`),
+  );
+  const built = Object.keys(prerendered).filter((r) => /^\/(en|es)\/names\//.test(r));
+  expect(built.sort()).toEqual([...expected].sort());
 });
 
 test('any re-added loading boundary under [locale] is a client component', () => {

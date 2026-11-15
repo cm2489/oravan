@@ -20,6 +20,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { HIDDEN_PAGES } from '../lib/site';
+import { getAllBills } from '../lib/core';
+import { sharedNamePages, sharedNamePath } from '../lib/shared-names';
 import {
   briefDate,
   decodedBillSlug,
@@ -123,6 +125,14 @@ export const DYNAMIC_ROUTE_PROBES: Record<string, () => string> = {
   '/reps/[bioguide]': () => `/reps/${memberBioguide()}`,
   '/nominations/[slug]': () => `/nominations/${nominationSlugSample()}`,
   '/today/[date]': () => `/today/${briefDate()}`,
+  // A shared name's page (2026-11-15, draft #510): the first one the data
+  // gives. While data/short-titles.json does not exist there is none, and the
+  // probe is an address under the route that no page claims (the normal
+  // not-found, like the catch-all's); sharedNamePageExists() says which.
+  '/names/[congress]/[name]': () => {
+    const first = sharedNamePages(getAllBills())[0];
+    return first ? sharedNamePath(first.congress, first.name) : '/names/119/no-shared-name-yet';
+  },
   // The locale catch-all: a path no real route claims (a true 404 inside the
   // locale boundary).
   '/[...rest]': () => '/this-page-does-not-exist-404',
@@ -216,4 +226,9 @@ export function embedProbes(): Record<string, string> {
     // Paid-tier panel: no token renders the "unauthorized" refusal state.
     'action-panel': `/embed/action-panel?locale=en&slug=${decodedBillSlug()}`,
   };
+}
+
+/** Whether the data gives the shared-name route a real page to probe (none until the nightly fills data/short-titles.json). */
+export function sharedNamePageExists(): boolean {
+  return sharedNamePages(getAllBills()).length > 0;
 }

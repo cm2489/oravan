@@ -1857,5 +1857,14 @@
     "nay": "{count} no",
     "present": "{count} present",
     "notVoting": "{count} not voting"
+  },
+  "namesPage": {
+    "eyebrow": "Bills with this short title",
+    "recordWords": "{count, plural, one {The official short title, as the record writes it.} other {The official short titles, as the record writes them.}}",
+    "intro": "{count} bills Oravan tracks in the {congress, selectordinal, one {#st} two {#nd} few {#rd} other {#th}} Congress have a short title that makes this name, so this address lists them all instead of picking one.",
+    "order": "House bills are listed first, then Senate bills, each by number.",
+    "ownTitle": "Its short title:",
+    "listLabel": "Bills with this short title",
+    "metaTitle": "Bills titled “{title}”"
   }
 }

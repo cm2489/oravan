@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { decodedBillSlug, undecodedBillSlug } from './corpus-samples';
-import { hiddenLocalePages, localeRoutes, probePathFor } from './routes';
+import { hiddenLocalePages, localeRoutes, probePathFor, sharedNamePageExists } from './routes';
 
 /*
  * S22 — hreflang correctness pass. Industry data says ~75% of hreflang
@@ -36,6 +36,8 @@ const SITE_ORIGIN = 'https://oravan.org';
 const PATHS: Array<[string, string]> = [
   ...localeRoutes()
     .filter((r) => r.kind === 'page' && !r.catchAll && !hiddenLocalePages().includes(r.pattern))
+    // The shared-name page exists only once the data holds a shared name; its probe is a 404 until then.
+    .filter((r) => r.pattern !== '/names/[congress]/[name]' || sharedNamePageExists())
     .map((r): [string, string] => [r.pattern, probePathFor(r)]),
   // The bill page across the decode-status range (the route's own probe above
   // is decoded bill #1).

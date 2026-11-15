@@ -5,14 +5,22 @@
  * where a name comes from: "Names beside numbers. Each name comes from the
  * bill's own official short title in the record, never chosen by Oravan."
  *
+ * His choice on card 193 (Nov 14, 2026, 9:13 PM ET): "Then Share copies the
+ * name, or the number when a bill has no short title."
+ *
  * So the link a reader copies or shares from a bill page is the bill's
  * SHORT address, worked out at BUILD time from the same tables proxy.ts
  * answers from (lib/short-address.ts), and only when that address really
- * opens this bill today:
- *   1. a name, when one of the bill's record short titles gives a name this
- *      bill alone carries (several: the shortest, then code-point order);
+ * opens THIS bill today, so whoever receives the link lands on the bill the
+ * sharer was looking at:
+ *   1. its name, when one of its record short titles makes a name no other
+ *      bill Oravan tracks makes (several: the shortest, then code-point order);
  *   2. otherwise its number (oravan.org/hr9770), when the number opens it
- *      (always, for a bill of the tracked Congress);
+ *      (always, for a bill of the tracked Congress). This covers a bill with
+ *      no short title, AND a bill whose name is SHARED: that name opens the
+ *      page listing every bill that makes it, where the reader might pick the
+ *      other bill. The shared case is the orchestrating session's reading of
+ *      his words (2026-11-15), not his own; he can overrule it;
  *   3. otherwise the full address (/bills/<slug>), as before.
  * English at oravan.org/<address>, Spanish at oravan.org/es/<address>.
  *

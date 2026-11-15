@@ -18,10 +18,16 @@ import { browserMessagesFor } from '@/lib/ended-messages';
  * tests/glossary.unit.spec.ts pins both halves.
  *
  * Also left out while no Congress has ended: the strings that exist only for
- * the ended state (lib/ended-messages.ts, 2026-11-13).
+ * the ended state (lib/ended-messages.ts, 2026-11-13). And always left out:
+ * `namesPage`, the shared-name page's strings, read only on the server.
  */
 export function clientMessages(messages: AbstractIntlMessages): AbstractIntlMessages {
-  const withoutEnded = browserMessagesFor(messages);
+  // `namesPage` (2026-11-15, the shared-name page, app/[locale]/names): read only
+  // on the server, by that page. Left in, it would ride along on every page and
+  // change every prerendered page on the site for nothing.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { namesPage, ...rest } = messages;
+  const withoutEnded = browserMessagesFor(rest);
   const glossary = withoutEnded.glossary;
   if (!glossary || typeof glossary !== 'object') return withoutEnded;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

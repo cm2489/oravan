@@ -339,7 +339,10 @@ export function shortAddressTarget(
  * recently ended first), and the first Congress that holds the name at all
  * answers: with its one bill, or, when it holds two or more, with the normal
  * not-found. A name shared in the tracked Congress never falls through to an
- * older Congress's bill of the same name.
+ * older Congress's bill of the same name. (Since the owner's card 193, Nov 14,
+ * 2026, 9:13 PM ET, on the draft #510: the shared case opens
+ * /names/<congress>/<name>, a prerendered page listing the bills, instead of
+ * the not-found.)
  *
  * THE TABLE (encodeNameTables / decodeNameTables). Built at BUILD time by
  * next.config.ts and inlined into the proxy bundle as SHORT_ADDRESS_NAMES:
@@ -374,6 +377,7 @@ export const NAME_ADDRESS_RESERVED: readonly string[] = Object.freeze([
   'admin', 'login', 'logout', 'account', 'settings', 'help', 'static', 'assets', 'public', 'sitemap', 'robots',
   'manifest', 'favicon', 'icon', 'llms', 'mcp', 'glossary', 'citations', 'follow', 'why-call', 'law', 'laws', 'new',
   'week', 'weekly', 'brief', 'briefs', 'topics', 'topic', 'issues', 'issue', 'contact', 'news', 'press', 'blog',
+  'names', 'name',
 ]);
 
 const NAME_MIN = 4;
@@ -593,8 +597,12 @@ export function nameAddressTarget(
   for (const table of tables) {
     if (!table.names.has(name)) continue;
     const address = table.names.get(name);
-    if (!address) return null; // two or more bills of this Congress carry it: never choose
     const prefix = locale && locale !== defaultLocale ? `/${locale}` : '';
+    // Two or more bills of this Congress make the name: never choose. Since the
+    // owner's card 193 (Nov 14, 2026), the name opens the page that lists them
+    // all (app/[locale]/names/[congress]/[name], prerendered; lib/shared-names.ts),
+    // under this Congress's number, never an older Congress's bill.
+    if (!address) return `${prefix}/names/${table.congress}/${name}`;
     return `${prefix}/bills/${shortAddressSlug(address, table.congress)}`;
   }
   return null;

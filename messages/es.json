@@ -1857,5 +1857,14 @@
     "nay": "{count} no",
     "present": "{count, plural, one {# presente} other {# presentes}}",
     "notVoting": "{count, plural, one {# no votó} other {# no votaron}}"
+  },
+  "namesPage": {
+    "eyebrow": "Proyectos de ley con este título corto",
+    "recordWords": "{count, plural, one {El título corto oficial, tal como lo escribe el registro, en inglés.} other {Los títulos cortos oficiales, tal como los escribe el registro, en inglés.}}",
+    "intro": "{count} proyectos de ley que Oravan sigue en el Congreso {congress} tienen un título corto que forma este nombre, así que esta dirección los muestra todos en lugar de elegir uno.",
+    "order": "Primero aparecen los proyectos de la Cámara de Representantes y luego los del Senado, cada uno por número.",
+    "ownTitle": "Su título corto:",
+    "listLabel": "Proyectos de ley con este título corto",
+    "metaTitle": "Proyectos de ley titulados “{title}”"
   }
 }
