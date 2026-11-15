@@ -78,7 +78,7 @@ import {
   refusedSummaries,
   parseRecheckTrouble,
   HEALTH_ISSUE_TITLE,
-  namedThroughFromBody,
+  namedThroughOf,
   recheckFindings,
   recheckHeldRows,
   runThatWroteCursor,
@@ -243,7 +243,7 @@ function previousBlob(path, back = 1) {
  * The comparison's findings, told apart: an absent report file (null), one
  * that cannot be parsed or fails its shape (`malformed`), or a good one.
  * What was already named is read off the standing issue's marker
- * `<!-- recheck-named-through: DAY -->` (namedThroughFromBody), which
+ * `<!-- recheck-named-through: DAY -->` (namedThroughOf: the body and its comments), which
  * daily-metrics advances only once the morning's comment is posted: a skipped
  * report, or a comment that failed to post, is caught up rather than lost.
  */
@@ -258,12 +258,15 @@ function readRecheckFindings(now) {
       unreadable = e.message;
     }
   }
-  let lastReportDay = null; // looked for: null when the marker is missing or unreadable
-  // The same lookup daily-metrics uses to find the standing issue.
+  let lastReportDay = null; // looked for: null when no marker is found
+  // The same lookup daily-metrics uses to find the standing issue; then the
+  // newest marker in its body or in any of its comments (a posted comment
+  // carries one even when the body could not be edited after it).
   const issues = ghJson(['issue', 'list', '--repo', REPO, '--state', 'open', '--search', `in:title "${HEALTH_ISSUE_TITLE}"`, '--json', 'number,title,body']);
   if (Array.isArray(issues)) {
     const issue = issues.find((i) => i?.title === HEALTH_ISSUE_TITLE);
-    lastReportDay = namedThroughFromBody(issue?.body);
+    const viewed = issue ? ghJson(['issue', 'view', String(issue.number), '--repo', REPO, '--json', 'comments']) : null;
+    lastReportDay = namedThroughOf(issue?.body, Array.isArray(viewed?.comments) ? viewed.comments : []);
   }
   return { findings: recheckFindings(file, { now, lastReportDay, unreadable }), namedThrough: lastReportDay };
 }

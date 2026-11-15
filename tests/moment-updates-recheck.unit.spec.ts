@@ -42,6 +42,9 @@ import {
   judgeBill,
   latestActionsBySlug,
   renderRecord,
+  RECHECK_SENTENCES_PER_LINE,
+  nearestSentences,
+  quoteWords,
   listEvidence,
   nextRecheckReport,
   parseAcceptFile,
@@ -70,7 +73,23 @@ import {
   writeStaleRecheckFallbacks,
   writeSummaries,
 } from '../scripts/moment-updates.mjs';
-import { alarms, formatHealthAlarmComment, formatHealthIssueBody, formatHealthSection, namedThroughFromBody, namedThroughMarker, parseRecheckTrouble, recheckFindings, recheckHeldRows } from '../lib/pipeline-health.mjs';
+import {
+  HEALTH_COMMENT_MAX_BYTES,
+  HEALTH_ISSUE_TITLE,
+  RECHECK_SECTION_MAX_BYTES,
+  alarms,
+  buildHealthAlarmComment,
+  formatHealthAlarmComment,
+  formatHealthIssueBody,
+  formatHealthSection,
+  maintainHealthIssue,
+  namedThroughFromBody,
+  namedThroughMarker,
+  namedThroughOf,
+  parseRecheckTrouble,
+  recheckFindings,
+  recheckHeldRows,
+} from '../lib/pipeline-health.mjs';
 
 // The rows are the stored JSON shape, read loosely, as the gate itself reads them.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1337,17 +1356,13 @@ test.describe('round 6: the last two truths, and the alarm calendar', () => {
     expect(formatHealthIssueBody({ generatedAt: '2026-11-14T13:00:00Z' }, { namedThrough: '2026-11-14' })).toContain('<!-- recheck-named-through: 2026-11-14 -->');
   });
 
-  test('item 5a · daily-metrics advances the marker only after the comment is posted (or when none is due)', () => {
-    const src = readFileSync(join(process.cwd(), 'scripts/daily-metrics.mjs'), 'utf8');
-    const body = src.slice(src.indexOf('function maintainHealthIssue('));
-    // The first body write carries the marker forward when a comment is due.
-    expect(body).toMatch(/formatHealthIssueBody\(report, \{ namedThrough: list\.length \? carried : today \}\)/);
-    // Advanced right after the comment post, and on the already-posted path; never before the post.
-    const post = body.indexOf("gh(['issue', 'comment'");
-    const adv = body.indexOf('advance();', post);
-    expect(post).toBeGreaterThan(0);
-    expect(adv).toBeGreaterThan(post);
-    expect(body.indexOf('advance();')).toBeGreaterThan(body.indexOf('hasCommentWithMarker'));
+  test('item 5a · the marker advances only after the comment is posted (or when none is due): run through maintainHealthIssue', () => {
+    const f = fakeIssue({ failCommentIf: () => true });
+    f.morning(null, '2026-11-14T13:00:00Z'); // the issue exists, nothing due
+    expect(namedThroughFromBody(f.issue.body)).toBe('2026-11-14');
+    const file = fileWith([['m/u_00000001', '2026-11-14']]);
+    expect(f.morning(file, '2026-11-15T13:00:00Z')).toEqual([]); // the post fails
+    expect(namedThroughOf(f.issue.body, f.issue.comments)).toBe('2026-11-14'); // not advanced
   });
 
   test('30 mornings with one open row: one comment, then exactly one reminder a week', () => {
@@ -1471,14 +1486,16 @@ test.describe('round 7: only the record quoted, a heading per kind, one bill nev
       ...[...lists4.values()].flatMap((l) => l.actions.map((a) => String(a.text))),
       ...Object.values(all).flatMap((e: Row) => (e.updates ?? []).map((u: Row) => u.record.action_text)),
     ]);
-    const quoted = (t: string) => [...t.matchAll(/"([^"]*)"/g)].map((m) => m[1]);
+    const quoted = (t: string, table = false) => readerQuotes(t, { table }).seen;
     const comment = formatHealthAlarmComment({ date: '2026-11-15', alarms: list2, runUrl: null });
     const stray = quoted(comment).filter((q) => !allowed.has(q));
     expect(stray).toEqual([]);
     expect(quoted(comment).length).toBeGreaterThan(8);
     // The step summary obeys the same rule.
     const md = recheckSummaryMarkdown(r as never, { mode: 'report' });
-    expect(quoted(md).filter((q) => !allowed.has(q))).toEqual([]);
+    const tableRows = md.split('\n').filter((l: string) => l.startsWith('| ') && !l.startsWith('| What') && !l.startsWith('| ---')).join('\n');
+    expect(quoted(tableRows, true).filter((q) => !allowed.has(q)), md).toEqual([]);
+    expect(quoted(tableRows, true).length).toBeGreaterThan(8);
     // item 3 · each kind has its own plain heading.
     const heading = (code: string) => list2.find((a: Row) => a.code === code)!.text.split(':')[0];
     expect(heading('record-recheck-differs')).toMatch(/^Stored lines the official record now words differently/);
@@ -1536,3 +1553,342 @@ test.describe('round 7: only the record quoted, a heading per kind, one bill nev
     expect(gained[0].text).toContain('1 line(s) newly unconfirmed');
   });
 });
+
+/**
+ * What a reader of GitHub markdown sees inside each quotation: a plain
+ * quotation ("…", backslash escapes and &lt; &gt; &amp; undone) or a code
+ * span (shown as it is). `unescaped`: plain quotations holding a markdown or
+ * HTML special GitHub would render as formatting.
+ */
+function readerQuotes(md: string, { table = false } = {}) {
+  const seen: string[] = [];
+  const unescaped: string[] = [];
+  let i = 0;
+  while (i < md.length) {
+    const c = md[i];
+    if (c === '\\') {
+      i += 2;
+      continue;
+    }
+    if (c === '`') {
+      let n = 0;
+      while (md[i + n] === '`') n++;
+      let j = i + n;
+      let end = -1;
+      while (j < md.length) {
+        const k = md.indexOf('`'.repeat(n), j);
+        if (k < 0) break;
+        let m = 0;
+        while (md[k + m] === '`') m++;
+        if (m === n) {
+          end = k;
+          break;
+        }
+        j = k + m;
+      }
+      if (end < 0) {
+        i += n;
+        continue;
+      }
+      let t = md.slice(i + n, end);
+      if (t.length > 2 && t.startsWith(' ') && t.endsWith(' ') && t.trim()) t = t.slice(1, -1);
+      if (table) t = t.replace(/\\\|/g, '|');
+      seen.push(t);
+      i = end + n;
+      continue;
+    }
+    if (c === '"') {
+      const end = md.indexOf('"', i + 1);
+      if (end < 0) break;
+      const raw = md.slice(i + 1, end);
+      const stripped = raw.replace(/\\[\\`*_[\]~|]/g, '');
+      if ((table ? /[`*_[\]~<>|]|&(?!(amp|lt|gt);)/ : /[`*_[\]~<>]|&(?!(amp|lt|gt);)/).test(stripped) || /[\n\r]/.test(raw)) unescaped.push(raw);
+      seen.push(raw.replace(/\\(.)/g, '$1').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&'));
+      i = end + 1;
+      continue;
+    }
+    i++;
+  }
+  return { seen, unescaped };
+}
+
+/** A standing issue for maintainHealthIssue, with gh faked the way GitHub answers. */
+function fakeIssue({ failCommentIf = (_b: string): boolean => false, failAdvance = false }: { failCommentIf?: (b: string) => boolean; failAdvance?: boolean } = {}) {
+  const issue = { body: null as string | null, comments: [] as { body: string }[] };
+  const files = new Map<string, string>();
+  let n = 0;
+  let postedThisRun = false;
+  let editsThisRun = 0;
+  const log: string[] = [];
+  const gh = (args: string[]) => {
+    const file = () => files.get(args[args.indexOf('--body-file') + 1])!;
+    if (args[1] === 'list') return JSON.stringify(issue.body === null ? [] : [{ number: 1, title: HEALTH_ISSUE_TITLE, url: 'https://github.com/o/r/issues/1' }]);
+    if (args[1] === 'create') {
+      issue.body = file();
+      return 'https://github.com/o/r/issues/1';
+    }
+    if (args[1] === 'pin') return '';
+    if (args[1] === 'view') return JSON.stringify({ comments: issue.comments });
+    if (args[1] === 'edit') {
+      // failAdvance: every edit after a run's first (the body rewrite) fails, so the marker can only move on a quiet day.
+      editsThisRun++;
+      if (failAdvance && editsThisRun > 1) throw new Error('simulated: the issue edit failed');
+      if (file().length > 65_536) throw new Error('HTTP 422: body is too long (maximum is 65536 characters)');
+      issue.body = file();
+      return '';
+    }
+    if (args[1] === 'comment') {
+      const b = file();
+      if (b.length > 65_536) throw new Error('HTTP 422: body is too long (maximum is 65536 characters)');
+      if (failCommentIf(b)) throw new Error('simulated: the comment post failed');
+      issue.comments.push({ body: b });
+      postedThisRun = true;
+      return '';
+    }
+    throw new Error(`unexpected gh ${args.join(' ')}`);
+  };
+  const io = { gh, repo: 'o/r', writeTempFile: (t: string) => { const k = `f${n++}`; files.set(k, t); return k; }, log: (l: string) => log.push(l) };
+  /** One run of the report at `iso`, reading the marker as scripts/pipeline-health.mjs does; returns the comments it posted. */
+  const morning = (file: Row | null, iso: string, nightly: Row = { conclusion: 'success' }) => {
+    postedThisRun = false;
+    editsThisRun = 0;
+    const now = Date.parse(iso);
+    const lastReportDay = issue.body === null ? null : namedThroughOf(issue.body, issue.comments);
+    const recheck = { held: [], findings: recheckFindings(file, { now, lastReportDay }), namedThrough: lastReportDay };
+    const report: Row = { generatedAt: new Date(now).toISOString(), recheck };
+    report.alarms = alarms({ nightly, recheck });
+    const before = issue.comments.length;
+    maintainHealthIssue(report, io);
+    return issue.comments.slice(before).map((c) => c.body);
+  };
+  return { issue, morning, log };
+}
+
+/** A report file holding one would-correct row per [key, first_seen]. */
+function fileWith(rows: [string, string][], record: { day: string; text: string }[] = [{ day: '2026-09-24', text: 'The committee substitute tabled by Voice Vote.' }]) {
+  const file = {
+    schema: 1,
+    rows: Object.fromEntries(rows.map(([key, first]) => [key, { first_seen: first, verdict: 'would-correct', vehicle: VEHICLE, day: '2026-09-24', stored: `Stored words of ${key}.`, record, note: 'the record holds now', why: '' }])),
+    unchecked: {},
+    newer: {},
+    suspect: {},
+  };
+  return file;
+}
+
+test.describe('round 8: a heavy day never blocks the comment; what the reader sees is the record; one day convention', () => {
+  const amendmentAction = (i: number) => ({ day: '2026-09-17', text: `S.Amdt.${6800 + i} Amendment SA ${6800 + i} proposed by Senator Member${i} to Amendment SA 6776. (consideration: CR S47${String(i).padStart(2, '0')}-47${String(i + 1).padStart(2, '0')}; text: CR S48${String(i).padStart(2, '0')})` });
+
+  test('item 1a · a line quotes at most 5 of the record\'s sentences, the nearest to the stored words, and says outside the quotes how many more', () => {
+    const many = Array.from({ length: 120 }, (_, i) => amendmentAction(i));
+    many.splice(77, 0, { day: '2026-09-17', text: 'Cloture motion on the measure presented in Senate. (CR S4789)' });
+    const out = renderRecord('that day the record lists', many, { max: RECHECK_SENTENCES_PER_LINE, near: 'Cloture motion on amendment SA 6776 presented in Senate.' });
+    const quotedTexts = [...out.matchAll(/"([^"]*)"/g)].map((m) => m[1]);
+    expect(quotedTexts).toHaveLength(5);
+    expect(quotedTexts).toContain('Cloture motion on the measure presented in Senate. (CR S4789)'); // the nearest one
+    expect(out).toMatch(/, and 116 more actions that day; every one is in data\/record-recheck-report\.json$/);
+    // Deterministic: the same input picks the same sentences, shown in the record's own order.
+    expect(renderRecord('x', many, { max: 5, near: 'Cloture motion on amendment SA 6776 presented in Senate.' })).toBe(renderRecord('x', [...many], { max: 5, near: 'Cloture motion on amendment SA 6776 presented in Senate.' }));
+    const picked = nearestSentences(many, 'Cloture motion on amendment SA 6776 presented in Senate.', 5);
+    expect(picked.map((x) => many.indexOf(x))).toEqual([...picked.map((x) => many.indexOf(x))].sort((a, b) => a - b));
+    // Five or fewer: all of them, no note.
+    expect(renderRecord('n', many.slice(0, 5), { max: 5 })).not.toContain('more action');
+  });
+
+  /** The reviewer's input: one day with 120 amendment actions on S. 4668, four of its lines changed. */
+  function heavy120() {
+    const extra = Array.from({ length: 120 }, (_, i) => senate('2026-09-17', amendmentAction(i).text));
+    const actions = newestFirst([...RECORD_NOW, ...extra]);
+    const gone1 = said('Amendment SA 6790 withdrawn by unanimous consent in Senate.', { day: '2026-09-17' });
+    const gone2 = said('Motion to table amendment SA 6791 agreed to in Senate by Voice Vote.', { day: '2026-09-17' });
+    const steady = [
+      said('Motion to proceed to measure considered in Senate. (CR S4743)', { day: '2026-09-16' }),
+      said('Measure laid before Senate by motion. (consideration: CR S4777-4790)', { day: '2026-09-17' }),
+      said('Motion to proceed to measure considered in Senate.', { day: '2026-09-15' }),
+    ];
+    const s = store([WITHDRAWN_WORDS, CLOTURE_SA6776, gone1, gone2, ...HELD, ...steady], []);
+    const r = recheckStore(s, lists(actions), { now: NOW, fallbackText: fallbackTextFor, latestBySlug: LATEST, perBill: true });
+    return { r, actions, s, file: nextRecheckReport(null, r, { today: '2026-11-14', applied: false }) };
+  }
+
+  /** 400 actions on one day and 40 changed lines (a 60-day backlog named at once). */
+  function heavy400() {
+    const record = Array.from({ length: 400 }, (_, i) => amendmentAction(i));
+    const file: Row = fileWith([]);
+    for (let i = 0; i < 40; i++) {
+      file.rows[`${MOMENT}/u_${String(i).padStart(8, '0')}`] = { first_seen: '2026-11-14', verdict: i % 2 ? 'would-withdraw' : 'left', vehicle: VEHICLE, day: '2026-09-17', stored: `Amendment SA ${7000 + i} agreed to in Senate by Unanimous Consent.`, record, note: 'that day the record lists', why: i % 2 ? '' : 'it names an amendment whose own list was not read' };
+    }
+    return { file, record };
+  }
+
+  const checkComment = (comment: string, allowed: Set<string>) => {
+    const section = comment.split('\n').filter((l) => l.startsWith('- ') && !l.includes('nightly bill sync')).join('\n');
+    const { seen, unescaped } = readerQuotes(section);
+    expect(unescaped).toEqual([]);
+    expect(seen.filter((q) => !allowed.has(q))).toEqual([]);
+    expect(seen.filter((q) => q.includes('…'))).toEqual([]);
+    expect(seen.length).toBeGreaterThan(0);
+  };
+
+  test('item 1b/1c · the reviewer\'s input (120 actions, 4 lines) and a 400-action day with 40 lines: the comment posts under the cap with every other alarm, quoting only record sentences or stored words', () => {
+    const h = heavy120();
+    expect(recheckReportProblems(h.file)).toEqual([]);
+    expect(Object.keys(h.file.rows).length).toBe(4);
+    const h4 = heavy400();
+    expect(recheckReportProblems(h4.file)).toEqual([]);
+    for (const [file, allowed] of [
+      [h.file, new Set<string>([...h.actions.map((a) => String(a.text)), ...Object.values(h.s).flatMap((e: Row) => (e.updates ?? []).map((u: Row) => u.record.action_text))])],
+      [h4.file, new Set<string>([...h4.record.map((x) => x.text), ...Object.values(h4.file.rows as Record<string, Row>).map((r) => r.stored)])],
+    ] as [Row, Set<string>][]) {
+      const f = fakeIssue();
+      f.morning(null, '2026-11-14T13:00:00Z');
+      const posted = f.morning(file, '2026-11-15T13:00:00Z', { conclusion: 'failure', url: 'https://github.com/o/r/actions/runs/1' });
+      expect(posted).toHaveLength(1);
+      const c = posted[0];
+      expect(new TextEncoder().encode(c).length).toBeLessThanOrEqual(HEALTH_COMMENT_MAX_BYTES);
+      expect(c).toContain('the nightly bill sync ended `failure`'); // the other alarm is there
+      expect(c).toContain(namedThroughMarker('2026-11-15'));
+      checkComment(c, allowed);
+      expect(f.issue.body!.length).toBeLessThan(65_536);
+      expect(formatHealthSection({ alarms: alarms({ nightly: { conclusion: 'failure' }, recheck: { findings: recheckFindings(file, { now: Date.parse('2026-11-15T13:00:00Z') }) } }) }).length).toBeLessThan(65_536);
+    }
+    // The 400-action day: 40 lines do not all fit, so the rest are counted outside any quotation.
+    const list = alarms({ nightly: { conclusion: 'success' }, recheck: { findings: recheckFindings(h4.file, { now: Date.parse('2026-11-15T13:00:00Z'), lastReportDay: null }) } });
+    const recheckBytes = list.filter((a: Row) => a.code.startsWith('record-recheck')).reduce((n: number, a: Row) => n + new TextEncoder().encode(a.text).length, 0);
+    expect(recheckBytes).toBeLessThanOrEqual(RECHECK_SECTION_MAX_BYTES);
+    const left = list.find((a: Row) => a.code === 'record-recheck-left')! as Row;
+    expect(left.unlisted).toBeGreaterThan(0);
+    expect(left.text).toMatch(/and \d+ more line\(s\) not listed here, to keep this comment within GitHub's size limit; every one is in data\/record-recheck-report\.json\. docs/);
+  });
+
+  test('item 1c · when the comment with the re-check fails to post, the rest of the day\'s alarms still post, saying why; the lines stay due', () => {
+    const f = fakeIssue({ failCommentIf: (b) => b.includes('Stored lines') });
+    f.morning(null, '2026-11-14T13:00:00Z');
+    const file = fileWith([['m/u_00000001', '2026-11-14']]);
+    const posted = f.morning(file, '2026-11-15T13:00:00Z', { conclusion: 'failure' });
+    expect(posted).toHaveLength(1);
+    expect(posted[0]).toContain('the nightly bill sync ended `failure`');
+    expect(posted[0]).toContain("The record re-check's section was left out of this comment: posting it failed (simulated: the comment post failed)");
+    expect(namedThroughOf(f.issue.body, f.issue.comments)).toBe('2026-11-14'); // not advanced
+    expect(f.log.join('\n')).toContain('the named-through marker is not advanced');
+    // A re-run the same day: never a second comment, and still not advanced.
+    expect(f.morning(file, '2026-11-15T15:00:00Z', { conclusion: 'failure' })).toEqual([]);
+    expect(namedThroughOf(f.issue.body, f.issue.comments)).toBe('2026-11-14');
+    // Next morning, posting works again: the line is named.
+    const g = { ...f };
+    const next = fakeIssue();
+    next.issue.body = f.issue.body;
+    next.issue.comments.push(...f.issue.comments);
+    const named = next.morning(file, '2026-11-16T13:00:00Z');
+    expect(named).toHaveLength(1);
+    expect(named[0]).toContain('m/u_00000001');
+    expect(g).toBeTruthy();
+  });
+
+  test('item 1c · a comment the re-check would push over the cap leaves the re-check out and keeps every other alarm', () => {
+    const big = { code: 'other', text: 'x'.repeat(25_000) };
+    const re = { code: 'record-recheck-left', text: 'y'.repeat(29_000) };
+    const out = buildHealthAlarmComment({ date: '2026-11-15', alarms: [big, re], namedThrough: '2026-11-15' });
+    expect(out.recheckIncluded).toBe(false);
+    expect(out.body).toContain(big.text);
+    expect(out.body).not.toContain(re.text);
+    expect(out.body).toMatch(/The record re-check's section was left out of this comment: with it this comment came to [\d,]+ bytes, over this report's cap of 50,000/);
+    expect(namedThroughFromBody(out.body)).toBeNull();
+    const fits = buildHealthAlarmComment({ date: '2026-11-15', alarms: [re], namedThrough: '2026-11-15' });
+    expect(fits.recheckIncluded).toBe(true);
+    expect(namedThroughFromBody(fits.body)).toBe('2026-11-15');
+  });
+
+  test('item 2 · markdown, HTML, line breaks and quotation marks: the reader sees exactly the record\'s characters; the file keeps them raw', () => {
+    const odd = [
+      'Amendment `SA 1` agreed to in Senate.',
+      'Motion *as amended* agreed to __twice__ in Senate.',
+      'Text with <b>tag</b> & more in Senate.',
+      'Referred to [the committee](CR S1) in Senate.',
+      'Line one of the action\nline two of the action.',
+      'The "manager\'s amendment" agreed to in Senate.',
+      'Said "`x`" and ``y`` here.',
+      '`starts with a backtick and holds a " mark',
+      'Notice to @someone about #123 and :smile: at https://example.com.',
+      'Pipes | and ~tildes~ and \\ backslashes.',
+    ];
+    const seenAs = (t: string) => t.replace(/\r\n|[\n\r\u0085\u2028\u2029]/g, ' ');
+    for (const t of odd) {
+      const md = quoteWords(t, { md: true });
+      const r = readerQuotes(md);
+      expect(r.seen, md).toEqual([seenAs(t)]);
+      expect(r.unescaped, md).toEqual([]);
+      expect(md).not.toMatch(/[\n\r]/);
+      if (/["@#]|:\w+:|:\/\//.test(t)) expect(md.startsWith('`'), md).toBe(true); // a code span: unambiguous
+      else expect(md.startsWith('"'), md).toBe(true);
+    }
+    // Through the real comment and the step summary (a table), with the file keeping raw characters.
+    const rows = odd.slice(0, 6).map((t, i) => said(`Stored line ${i} withdrawn in Senate.`, { day: '2026-09-17' }));
+    const file: Row = fileWith([]);
+    rows.forEach((r, i) => {
+      file.rows[`${MOMENT}/${r.id}`] = { first_seen: '2026-11-14', verdict: 'left', vehicle: VEHICLE, day: '2026-09-17', stored: odd[(i + 6) % odd.length], record: [{ day: '2026-09-17', text: odd[i] }], note: 'that day the record lists', why: 'a test' };
+    });
+    expect(recheckReportProblems(file)).toEqual([]);
+    expect(file.rows[`${MOMENT}/${rows[4].id}`].record[0].text).toContain('\n'); // raw in the file
+    const text = alarms({ nightly: { conclusion: 'success' }, recheck: { findings: recheckFindings(file, { now: Date.parse('2026-11-15T13:00:00Z') }) } }).find((a: Row) => a.code === 'record-recheck-left')!.text;
+    const allowed = new Set(odd.map(seenAs));
+    const r = readerQuotes(text);
+    expect(r.unescaped).toEqual([]);
+    expect(r.seen.filter((q) => !allowed.has(q))).toEqual([]);
+    expect(r.seen.length).toBe(12);
+    expect(text).not.toContain('\n');
+    const md = recheckSummaryMarkdown({ checked: 6, recheckable: 6, changes: [], leftRows: rows.map((row, i) => ({ momentId: MOMENT, id: row.id, vehicle: VEHICLE, day: '2026-09-17', stored: odd[(i + 6) % odd.length], record: [{ day: '2026-09-17', text: odd[i] }], note: 'that day the record lists', why: 'a test' })), newerRows: [], unconfirmed: [], skipped: [], suspectBills: [], refused: null, skippedBills: [] } as never, { mode: 'report' });
+    const tableRows = md.split('\n').filter((l) => l.startsWith('| left'));
+    expect(tableRows).toHaveLength(6);
+    for (const line of tableRows) {
+      const t = readerQuotes(line, { table: true });
+      expect(t.unescaped, line).toEqual([]);
+      expect(t.seen.filter((q) => !allowed.has(q)), line).toEqual([]);
+      // Seven cells: no pipe inside a quotation splits a cell.
+      expect(line.replace(/\\\|/g, '').split('|').length - 2).toBe(7);
+    }
+  });
+
+  test('item 3 · one day convention (US Eastern): a manual evening run never takes the next morning\'s place', () => {
+    // The lines the nightly of Nov 15 (ET) found: first named the morning of Nov 16.
+    const file = fileWith([['m/u_00000001', '2026-11-15'], ['m/u_00000002', '2026-11-15']]);
+    const f = fakeIssue();
+    f.morning(null, '2026-11-14T13:00:00Z');
+    expect(f.morning(file, '2026-11-15T13:00:00Z')).toEqual([]); // a quiet morning: nothing posts
+    // 01:30 UTC on Nov 16 = 8:30 PM ET on Nov 15: a manual run that posts an alarm.
+    const evening = f.morning(file, '2026-11-16T01:30:00Z', { conclusion: 'failure' });
+    expect(evening).toHaveLength(1);
+    expect(evening[0]).toContain('<!-- pipeline-health:2026-11-15 -->');
+    expect(evening[0]).not.toContain('m/u_00000001');
+    // The scheduled 13:00 UTC run on Nov 16: posts, and names both lines.
+    const morning = f.morning(file, '2026-11-16T13:00:00Z');
+    expect(morning).toHaveLength(1);
+    expect(morning[0]).toContain('<!-- pipeline-health:2026-11-16 -->');
+    expect(morning[0]).toContain('m/u_00000001');
+    expect(morning[0]).toContain('m/u_00000002');
+    // And again in the evening that day: not posted twice.
+    expect(f.morning(file, '2026-11-17T01:30:00Z', { conclusion: 'failure' })).toEqual([]);
+  });
+
+  test('item 4 · the issue edit failing every day while the comment posts: each line is named exactly once, and never two comments a day', () => {
+    const f = fakeIssue({ failAdvance: true });
+    f.morning(null, '2026-11-14T13:00:00Z');
+    const days = ['2026-11-14', '2026-11-15', '2026-11-16'];
+    const all: string[] = [];
+    for (let k = 0; k < days.length; k++) {
+      const file = fileWith(days.slice(0, k + 1).map((d, i) => [`m/u_0000000${i}`, d] as [string, string]));
+      const morning = `${shiftDay(days[k], 1)}T13:00:00Z`;
+      all.push(...f.morning(file, morning));
+      expect(f.morning(file, morning.replace('T13', 'T15'))).toEqual([]); // a re-run: idempotent for the day
+    }
+    expect(all).toHaveLength(3);
+    for (let i = 0; i < 3; i++) expect(all.filter((c) => c.includes(`m/u_0000000${i} `)).length).toBe(1);
+    expect(f.log.join('\n')).toContain('the posted comment carries the same marker');
+    // Each morning the body edit after the post failed; the comment's own marker carried the day.
+    expect(f.log.filter((l) => l.includes('could not be advanced')).length).toBe(3); // each morning's advance failed
+  });
+});
+
+function shiftDay(day: string, n: number) {
+  return new Date(Date.parse(`${day}T00:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
+}

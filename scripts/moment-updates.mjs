@@ -204,6 +204,8 @@ import {
   latestActionsBySlug,
   nextRecheckReport,
   renderRecord,
+  quoteWords,
+  RECHECK_SENTENCES_PER_LINE,
   recheckReportProblems,
   recheckWords,
   amendmentsNamedInStore,
@@ -566,6 +568,11 @@ export function amendmentActionsPath(key) {
  */
 export function recheckSummaryMarkdown(result, { mode = 'apply' } = {}) {
   const cell = (t) => String(t ?? '').replace(/\|/g, '\\|').replace(/\s+/g, ' ').trim();
+  // Markdown: each quoted text escaped (quoteWords), at most
+  // RECHECK_SENTENCES_PER_LINE of the record's sentences per row, the
+  // nearest to the stored words; the report file keeps them all.
+  const q = (t) => quoteWords(t, { md: true });
+  const rec = (note, sentences, stored) => renderRecord(note, sentences, { md: true, max: RECHECK_SENTENCES_PER_LINE, near: stored });
   const would = mode === 'report' || Boolean(result.refused);
   const verdict = {
     reworded: would ? 'would correct' : "corrected to the record's words",
@@ -584,13 +591,13 @@ export function recheckSummaryMarkdown(result, { mode = 'apply' } = {}) {
       c.momentId,
       c.newId && c.newId !== c.id ? (would ? `${c.id} (would become ${c.newId})` : `${c.id} → ${c.newId}`) : c.id,
       c.day,
-      `"${c.was}"`,
-      renderRecord(c.note, c.record),
+      q(c.was),
+      rec(c.note, c.record, c.was),
       c.how ?? '',
     ]),
-    ...(result.leftRows ?? []).map((l) => ['left as it is', l.momentId, l.id, l.day, `"${l.stored}"`, renderRecord(l.note, l.record), l.why]),
-    ...(result.newerRows ?? []).map((n) => ['newer than the list (not judged)', n.momentId, n.id, n.day, `"${n.stored}"`, `the list's newest action is dated ${n.newest}`, '']),
-    ...(result.unconfirmed ?? []).map((u) => [`unconfirmed (${u.verdict}; the source looked wrong)`, u.momentId, u.id, u.day, `"${u.was ?? u.stored}"`, renderRecord(u.note, u.record), '']),
+    ...(result.leftRows ?? []).map((l) => ['left as it is', l.momentId, l.id, l.day, q(l.stored), rec(l.note, l.record, l.stored), l.why]),
+    ...(result.newerRows ?? []).map((n) => ['newer than the list (not judged)', n.momentId, n.id, n.day, q(n.stored), `the list's newest action is dated ${n.newest}`, '']),
+    ...(result.unconfirmed ?? []).map((u) => [`unconfirmed (${u.verdict}; the source looked wrong)`, u.momentId, u.id, u.day, q(u.was ?? u.stored), rec(u.note, u.record, u.was ?? u.stored), '']),
   ];
   if (rows.length) {
     lines.push('| What | Question | Row | Day | Stored words | What the record holds now | Why |', '| --- | --- | --- | --- | --- | --- | --- |');
@@ -666,21 +673,21 @@ async function recheckStoredLines() {
   // quotation marks, rule 6), and what it did or would do.
   for (const c of result.changes) {
     const verdict = (would ? { reworded: 'would correct', withdrawn: 'would withdraw', held: 'would hold', reinstated: 'would reinstate' } : { reworded: 'corrected', withdrawn: 'withdrawn', held: 'held', reinstated: 'reinstated' })[c.kind];
-    const line = `moment-updates record re-check REPORT: ${verdict} ${c.momentId}/${c.id} (${c.vehicle} ${c.day}, /questions/${c.momentId}) — stored: "${c.was}" — ${renderRecord(c.note, c.record)}${c.how ? ` — ${c.how}` : ''}`;
+    const line = `moment-updates record re-check REPORT: ${verdict} ${c.momentId}/${c.id} (${c.vehicle} ${c.day}, /questions/${c.momentId}) — stored: ${quoteWords(c.was)} — ${renderRecord(c.note, c.record)}${c.how ? ` — ${c.how}` : ''}`;
     console.log(would ? `::notice::${line}` : `  ${line}`);
   }
   for (const n of result.newerRows) {
     console.warn(`::warning::moment-updates record re-check: ${n.momentId}/${n.id} (${n.vehicle} ${n.day}) is dated after the newest action on its bill's list (${n.newest}); not judged tonight`);
   }
   for (const l of result.leftRows) {
-    console.warn(`::warning::moment-updates record re-check REPORT: left ${l.momentId}/${l.id} (${l.vehicle} ${l.day}, /questions/${l.momentId}) — stored: "${l.stored}" — ${renderRecord(l.note, l.record)} — ${l.why}`);
+    console.warn(`::warning::moment-updates record re-check REPORT: left ${l.momentId}/${l.id} (${l.vehicle} ${l.day}, /questions/${l.momentId}) — stored: ${quoteWords(l.stored)} — ${renderRecord(l.note, l.record)} — ${l.why}`);
   }
   // A bill whose list looked wrong: its rows are UNCONFIRMED, never REPORTs.
   for (const b of result.suspectBills) {
     console.warn(`::warning::moment-updates record re-check: the source looks wrong for ${b.slug} tonight; its lines are unconfirmed, not reported as differences: ${b.why}`);
   }
   for (const u of result.unconfirmed) {
-    console.log(`  moment-updates record re-check UNCONFIRMED (the source looked wrong): ${u.verdict} ${u.momentId}/${u.id} (${u.vehicle} ${u.day}) — stored: "${u.was ?? u.stored}" — ${renderRecord(u.note, u.record)}`);
+    console.log(`  moment-updates record re-check UNCONFIRMED (the source looked wrong): ${u.verdict} ${u.momentId}/${u.id} (${u.vehicle} ${u.day}) — stored: ${quoteWords(u.was ?? u.stored)} — ${renderRecord(u.note, u.record)}`);
   }
   if (result.refused) console.error(`::error::moment-updates record re-check refused: ${result.refused}. Nothing was changed; docs/runbooks/record-recheck.md says how to accept these rows for one night.`);
   if (process.env.GITHUB_STEP_SUMMARY && (result.changes.length || result.leftRows.length || result.unconfirmed.length || result.refused || result.skippedBills.length)) {
@@ -839,7 +846,7 @@ async function recheckFollowUp(anthropic, recheck) {
     if (i < 0) continue;
     if (recheckLint(c).length === 0) {
       entry.updates[i] = releaseHeldRow(entry.updates[i], c.text, c.ai, now);
-      console.log(`  recheck: held row ${momentId}/${c.id} shows again with ${c.ai ? 'a decode' : 'the quote'} of "${c.record.action_text}"`);
+      console.log(`  recheck: held row ${momentId}/${c.id} shows again with ${c.ai ? 'a decode' : 'the quote'} of ${quoteWords(c.record.action_text)}`);
     }
   }
   const merged = [];
@@ -866,7 +873,7 @@ function warnHeld() {
   const held = heldRows(store);
   for (const h of held) {
     console.warn(
-      `::warning::moment-updates record re-check: ${h.momentId}/${h.id} (${h.vehicle} ${h.day}) is HELD since ${h.since} — the record's words "${h.words}" fail the update lint and no decode has passed yet, so the line is hidden; see docs/runbooks/record-recheck.md, section Held rows`,
+      `::warning::moment-updates record re-check: ${h.momentId}/${h.id} (${h.vehicle} ${h.day}) is HELD since ${h.since} — the record's words ${quoteWords(h.words)} fail the update lint and no decode has passed yet, so the line is hidden; see docs/runbooks/record-recheck.md, section Held rows`,
     );
   }
   return held.length;
