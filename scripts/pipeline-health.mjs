@@ -261,8 +261,8 @@ function readRecheckFindings(now) {
   // The marker from the standing issue's BODY only (recheckMarkersFrom: a
   // failed read is yesterday, never "name everything").
   const issues = ghJson(['issue', 'list', '--repo', REPO, '--state', 'open', '--search', `in:title "${HEALTH_ISSUE_TITLE}"`, '--json', 'number,title,body']);
-  const { lastReportDay, namedThrough, leftOutSince } = recheckMarkersFrom(issues, now);
-  return { findings: recheckFindings(file, { now, lastReportDay, unreadable }), namedThrough, leftOutSince };
+  const { lastReportDay, namedThrough, leftOutSince, unread } = recheckMarkersFrom(issues, now);
+  return { findings: recheckFindings(file, { now, lastReportDay, unreadable }), namedThrough, leftOutSince, unread };
 }
 
 export function buildReport({ now = Date.now() } = {}) {
