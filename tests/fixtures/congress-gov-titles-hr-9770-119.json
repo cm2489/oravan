@@ -1,0 +1,57 @@
+{
+  "pagination": {
+    "count": 5
+  },
+  "request": {
+    "billNumber": "9770",
+    "billType": "hr",
+    "billUrl": "https://api.congress.gov/v3/bill/119/hr/9770?format=json",
+    "congress": "119",
+    "contentType": "application/json",
+    "format": "json"
+  },
+  "titles": [
+    {
+      "title": "Continuing Appropriations Act, 2027",
+      "titleType": "Display Title",
+      "titleTypeCode": 45,
+      "updateDate": "2026-08-13T13:08:40Z"
+    },
+    {
+      "billTextVersionCode": "EH",
+      "billTextVersionName": "Engrossed in House",
+      "chamberCode": "H",
+      "chamberName": "House",
+      "title": "Continuing Appropriations Act, 2027",
+      "titleType": "Short Title(s) as Passed House",
+      "titleTypeCode": 104,
+      "updateDate": "2026-08-13T13:08:39Z"
+    },
+    {
+      "billTextVersionCode": "EH",
+      "billTextVersionName": "Engrossed in House",
+      "chamberCode": "H",
+      "chamberName": "House",
+      "title": "Making continuing appropriations for fiscal year 2027, and for other purposes.",
+      "titleType": "Official Title from EH (Engrossed in House) bill text",
+      "titleTypeCode": 259,
+      "updateDate": "2026-07-23T03:38:22Z"
+    },
+    {
+      "billTextVersionCode": "IH",
+      "billTextVersionName": "Introduced in House",
+      "title": "Continuing Appropriations Act, 2027",
+      "titleType": "Short Title(s) as Introduced",
+      "titleTypeCode": 101,
+      "updateDate": "2026-07-22T19:53:22Z"
+    },
+    {
+      "billTextVersionCode": "IH",
+      "billTextVersionName": "Introduced in House",
+      "title": "Making continuing appropriations for fiscal year 2027, and for other purposes.",
+      "titleType": "Official Title as Introduced",
+      "titleTypeCode": 6,
+      "updateDate": "2026-07-19T13:48:29Z"
+    }
+  ]
+}

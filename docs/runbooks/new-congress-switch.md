@@ -172,7 +172,7 @@ curl -s -o /dev/null -w "%{http_code} %{redirect_url}\n" https://oravan.org/hr93
 
 Run on 2026-11-14 against the live site (before the switch): `307 …/bills/hr-1-119` and `307 …/bills/hr-9340-119`, as expected. **Not run against the switch itself**: it has not happened. The same two requests on a production build of a scratch copy with the switch simulated gave `/bills/hr-1-120` and `/bills/hr-9340-119` with a few 120th bills in the corpus, and `/bills/hr-1-119` and `/bills/hr-9340-119` with none.
 
-**Name addresses** (`oravan.org/continuing-appropriations-act-2027`, built 2026-11-14 on the owner's card 191) follow the same order with nothing to edit: the 120th's names first, then the 119th's, and a name two bills of the same Congress share opens neither. They exist only once the nightly has filled `data/short-titles.json` (it reads up to 500 bills a night; the first fill takes about a week). On switch day, if that file holds H.R. 1 of the 119th, try:
+**Name addresses** (`oravan.org/continuing-appropriations-act-2027`, built 2026-11-14 on the owner's card 191) follow the same order with nothing to edit: the 120th's names first, then the 119th's, and a name two bills of the same Congress share opens neither. A name opens a bill when no other bill Oravan tracks carries that short title. Twins Oravan does not track are not counted, so which bill a name opens depends on which bills Oravan tracks. They exist only once the nightly has filled `data/short-titles.json` (it reads up to 500 bills a night; the first fill takes about a week). On switch day, if that file holds H.R. 1 of the 119th, try:
 
 ```sh
 curl -s -o /dev/null -w "%{http_code} %{redirect_url}\n" https://oravan.org/one-big-beautiful-bill-act
@@ -180,7 +180,20 @@ curl -s -o /dev/null -w "%{http_code} %{redirect_url}\n" https://oravan.org/one-
 
 **Proves it worked:** `307` ending in `/bills/hr-1-119` (the 119th's H.R. 1, which became law, so its page shows the law) until a 120th bill carries the short title "One Big Beautiful Bill Act" (then that bill, or a `404` if two 120th bills carry it). A `404` before that means the name table was not built: check that `data/short-titles.json` exists and holds `hr-1-119` with that title. (Not `laken-riley-act`: S. 5 and H.R. 29 of the 119th both carry that title, so it opens neither.) **Not run against the switch**: it has not happened; checked on 2026-11-14 on unit fixtures shaped like the switch (`tests/short-address-names.unit.spec.ts`).
 
+**When a name stops working** (any day, not only at the switch). A name that opened a bill can become the normal not-found page, with no warning to whoever shared it, when:
+- a twin enters the corpus: another bill of the same Congress with the same short title (Oravan starts tracking it, or the record gives it that title). The name then opens neither bill; the number addresses still work;
+- a route of that name is added to the site: the build that adds the route drops the name and prints one line in the build log saying so ("short-address names: … left out: a route or reserved word of that name");
+- the record corrects or removes a short title: the nightly reads every bill again at least every 56 days, and sooner when its last action moves; the name of a title the record no longer gives stops resolving after that read.
+
+A visitor who types the name in capitals after `/ES/` (`oravan.org/ES/<name>`) first gets the site's usual locale redirect, as for any `/ES/` address; the name itself is matched in any case.
+
 **Undo:** revert the stage 8 pull request; short addresses go back to the 119th with it.
+
+## Before a second Congress ends (by January 2029)
+
+The note an unfinished ended bill shows is written for the 119th Congress only, date included: `bill.ended.note` in `messages/en.json` ("This bill ended with the 119th Congress on January 3, 2027, …") and in `messages/es.json` ("… terminó con el Congreso 119 el 3 de enero de 2027, …"). Its three sibling keys (`bill.ended.statusLong`, `bill.ended.lawLine`, `bill.ended.presented`) name the 119th the same way. That is right for the January 2027 switch. It would be wrong once the 120th ends too: a 120th bill would say it ended with the 119th.
+
+`tests/ended-note-congress.unit.spec.ts` fails, naming those keys, as soon as `ENDED_CONGRESSES` in `lib/congress.mjs` holds any Congress other than the 119th. **Before** a second Congress is added to that list, change the note (and its siblings) in both files to take the Congress and its end date as values, have the bill page pass the bill's own Congress, and update `tests/ended-state.unit.spec.ts`, which pins today's wording word for word. The new wording is the owner's to approve. Added 2026-11-14; nothing is wrong today or at the January 2027 switch.
 
 ## A refused week
 

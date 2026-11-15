@@ -9,7 +9,7 @@ import {
   SHORT_ADDRESS_CONGRESS,
   type ShortAddressBill,
 } from './lib/short-address';
-import { nameTablesForBuild } from './lib/short-address-build';
+import { nameTablesForBuild, refusalLine } from './lib/short-address-build';
 
 const withNextIntl = createNextIntlPlugin();
 
@@ -58,7 +58,15 @@ const nextConfig: NextConfig = {
   env: {
     SHORT_ADDRESS_INDEX: encodeShortAddressIndex(bills, SHORT_ADDRESS_CONGRESS),
     SHORT_ADDRESS_FALLBACK: encodeShortAddressFallback(bills),
-    SHORT_ADDRESS_NAMES: nameTablesForBuild(bills),
+    SHORT_ADDRESS_NAMES: nameTablesForBuild(
+      bills,
+      process.cwd(),
+      // The build log names every record short title that gives no address,
+      // and why (a route or reserved word of that name, a name the proxy's
+      // matcher skips, a letter outside a-z, ...). Build only: next.config.ts
+      // is read again by `next start`, which stays quiet.
+      process.argv.includes('build') ? (r) => console.log(refusalLine(r)) : undefined,
+    ),
     // A review build only: bake the reviewed Congress into this build's server
     // and browser code, so routes rendered on request read what the prerendered
     // pages read (lib/ended-state.mjs). Absent on every real build.

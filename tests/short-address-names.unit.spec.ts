@@ -11,8 +11,12 @@ import {
   encodeShortAddressFallback,
   encodeShortAddressIndex,
   NAME_ADDRESS_RESERVED,
+  NAME_ADDRESS_LOCALES,
   NAME_ADDRESS_RULING,
   nameAddressAllowed,
+  nameAddressRefusal,
+  PROXY_MATCHER,
+  proxySeesPath,
   nameAddressTarget,
   nameSlug,
   namesOfCongress,
@@ -29,6 +33,7 @@ import { topRouteSegments } from '../lib/route-segments.mjs';
 import { isRecordShortTitleType, shortTitlesFromRecord } from '../lib/short-titles.mjs';
 import { congressTerm } from '../lib/congress.mjs';
 import { APP_DIR, LOCALE_DIR, localeTopSegments } from './routes';
+import { routing } from '../i18n/routing';
 
 /*
  * NAME ADDRESSES (lib/short-address.ts): oravan.org/laken-riley-act opens the
@@ -132,6 +137,74 @@ test('slug rule: accents, apostrophes, ampersands, years, runs of punctuation, a
   expect(nameSlug('...')).toBeNull();
   expect(nameSlug('')).toBeNull();
 });
+
+test('slug rule: a letter or digit outside a-z and 0-9 gives NO name; apostrophe-like marks are deleted', () => {
+  // The reviewer's cases (2026-11-15): nothing is dropped or split to make a name.
+  for (const title of [
+    'Æsir Act',
+    'Øresund Bridge Act',
+    'Łódź Sister City Act',
+    'Straße Safety Act',
+    '日本 Japan Act',
+    'Ελλάδα Act',
+    'Москва Act',
+    'Act ٢٠٢٦', // Arabic-Indic digits
+  ]) {
+    expect(nameSlug(title), title).toBeNull();
+  }
+  // Apostrophe-like: ' ‘ ’ ʼ ʻ ´ ` are deleted, joining the letters on either side.
+  expect(nameSlug('Hawai\u02bbi Native Act')).toBe('hawaii-native-act');
+  expect(nameSlug('Ethan\u00b4s Law')).toBe('ethans-law');
+  expect(nameSlug('Ethan\u02bcs Law')).toBe('ethans-law');
+  expect(nameSlug('Ethan\u2018s Law')).toBe('ethans-law');
+  expect(nameSlug('Ethan`s Law')).toBe('ethans-law');
+  // Accents still just drop; a ligature and full-width letters decompose to a-z.
+  expect(nameSlug('Café Act')).toBe('cafe-act');
+  expect(nameSlug('\ufb01nancial Act')).toBe('financial-act');
+  expect(nameSlug('\uff21\uff23\uff25 Act')).toBe('ace-act');
+});
+
+test('the proxy can see every name in both languages: names its matcher skips are refused', () => {
+  // PROXY_MATCHER is proxy.ts's own `config.matcher`, character for character.
+  const proxy = fs.readFileSync(path.join(process.cwd(), 'proxy.ts'), 'utf8');
+  const literal = /matcher:\s*'([^']+)'/.exec(proxy)?.[1];
+  expect(literal?.replace(/\\\\/g, '\\')).toBe(PROXY_MATCHER);
+  expect([...NAME_ADDRESS_LOCALES]).toEqual([...routing.locales]);
+  // What the matcher skips, in English (the reviewer's /apiary-fixture-act case):
+  for (const p of ['/api', '/apiary-fixture-act', '/api-security-act', '/_next', '/_vercel', '/embed', '/embed/x', '/a.b']) {
+    expect(proxySeesPath(p), p).toBe(false);
+  }
+  for (const p of ['/es/apiary-fixture-act', '/embed-act', '/embeds', '/hr1', '/continuing-appropriations-act-2027', '/rapid-act']) {
+    expect(proxySeesPath(p), p).toBe(true);
+  }
+  for (const name of ['apiary-fixture-act', 'api-security-act', 'apis-act']) {
+    expect(nameAddressRefusal(name, NONE), name).toContain('matcher');
+  }
+  expect(nameAddressAllowed('embed-act', NONE)).toBe(true);
+  expect(nameAddressAllowed('rapid-act', NONE)).toBe(true);
+  // A fixture table with a name at every prefix the matcher excludes: none of
+  // them is in it, and every name in it resolves the same in English and Spanish.
+  const corpus: ShortAddressBill[] = ['Apiary Fixture Act', 'API Security Act', 'Embed', 'Embed Act', 'Next Act', 'Vercel Act', 'Rapid Act'].map(
+    (_, i) => ({ bill_type: 'hr', bill_number: 9000 + i, congress_number: C }),
+  );
+  const titles: ShortTitleFile = Object.fromEntries(
+    ['Apiary Fixture Act', 'API Security Act', 'Embed', 'Embed Act', 'Next Act', 'Vercel Act', 'Rapid Act'].map((t, i) => [`hr-${9000 + i}-${C}`, { titles: [t] }]),
+  );
+  const tables = decodeNameTables(encodeNameTables(corpus, titles, [C], reservedNames()));
+  expect([...tables[0].names.keys()].sort()).toEqual(['embed-act', 'next-act', 'rapid-act', 'vercel-act']);
+  for (const table of tables) for (const name of table.names.keys()) everyLanguageAlike(name, tables);
+});
+
+/** A name in a table: the proxy runs on it in every language, and it answers the same bill in each. */
+function everyLanguageAlike(name: string, tables: ReturnType<typeof decodeNameTables>) {
+  expect(proxySeesPath(`/${name}`), name).toBe(true);
+  const en = nameAddressTarget(`/${name}`, LOCALES, 'en', tables);
+  for (const l of NAME_ADDRESS_LOCALES) {
+    expect(proxySeesPath(`/${l}/${name}`), `/${l}/${name}`).toBe(true);
+    const t = nameAddressTarget(`/${l}/${name}`, LOCALES, 'en', tables);
+    expect(t, `/${l}/${name}`).toBe(l === 'en' ? en : en && `/${l}${en}`);
+  }
+}
 
 test('a name is an address only when it is 4 to 200 characters, never a number address, never reserved', () => {
   const reserved = new Set(['bills', 'privacy']);
@@ -403,6 +476,7 @@ test('the committed state: the table is built from data/short-titles.json alone,
   for (const table of tables) {
     for (const [name, address] of table.names) {
       expect(nameAddressAllowed(name, reserved), name).toBe(true);
+      everyLanguageAlike(name, tables);
       const carriers = bills.filter(
         (b) =>
           b.congress_number === table.congress &&

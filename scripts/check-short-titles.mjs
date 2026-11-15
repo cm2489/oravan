@@ -21,19 +21,25 @@ if (process.argv.includes('--self-test')) {
     { bill_type: 's', bill_number: 5, congress_number: 119 },
     { bill_type: 'hr', bill_number: 4, congress_number: 119 },
   ];
-  const good = { 's-5-119': { titles: ['Laken Riley Act'], as_of: '2025-01-29' }, 'hr-4-119': { titles: [], as_of: null } };
+  const good = {
+    's-5-119': { titles: ['Laken Riley Act'], as_of: '2025-01-29', read_on: '2026-11-15' },
+    'hr-4-119': { titles: [], as_of: null, read_on: '2026-11-15' },
+  };
+  const R = { read_on: '2026-11-15' };
   const cases = [
     ['a good file', good, null, false],
     ['not an object', [], null, true],
-    ['a key that is not a slug', { ...good, 'laken-riley-act': { titles: [], as_of: null } }, null, true],
-    ['a bill the corpus does not hold', { ...good, 's-6-119': { titles: [], as_of: null } }, null, true],
-    ['an extra field', { ...good, 's-5-119': { titles: ['Laken Riley Act'], as_of: null, popular: 'x' } }, null, true],
-    ['an empty title', { ...good, 's-5-119': { titles: [' '], as_of: null } }, null, true],
-    ['a repeated title', { ...good, 's-5-119': { titles: ['A Act', 'A Act'], as_of: null } }, null, true],
-    ['titles out of order', { ...good, 's-5-119': { titles: ['B Act', 'A Act'], as_of: null } }, null, true],
-    ['a control character', { ...good, 's-5-119': { titles: ['A\nAct'], as_of: null } }, null, true],
-    ['a bad as_of', { ...good, 's-5-119': { titles: [], as_of: 'yesterday' } }, null, true],
-    ['a bill that lost its titles overnight', { ...good, 's-5-119': { titles: [], as_of: null } }, good, true],
+    ['a key that is not a slug', { ...good, 'laken-riley-act': { titles: [], as_of: null, ...R } }, null, true],
+    ['a bill the corpus does not hold', { ...good, 's-6-119': { titles: [], as_of: null, ...R } }, null, true],
+    ['an extra field', { ...good, 's-5-119': { titles: ['Laken Riley Act'], as_of: null, ...R, popular: 'x' } }, null, true],
+    ['an empty title', { ...good, 's-5-119': { titles: [' '], as_of: null, ...R } }, null, true],
+    ['a repeated title', { ...good, 's-5-119': { titles: ['A Act', 'A Act'], as_of: null, ...R } }, null, true],
+    ['titles out of order', { ...good, 's-5-119': { titles: ['B Act', 'A Act'], as_of: null, ...R } }, null, true],
+    ['a control character', { ...good, 's-5-119': { titles: ['A\nAct'], as_of: null, ...R } }, null, true],
+    ['a bad as_of', { ...good, 's-5-119': { titles: [], as_of: 'yesterday', ...R } }, null, true],
+    ['no read_on', { ...good, 's-5-119': { titles: [], as_of: null } }, null, true],
+    ['a bad read_on', { ...good, 's-5-119': { titles: [], as_of: null, read_on: 'today' } }, null, true],
+    ['a bill that lost its titles overnight', { ...good, 's-5-119': { titles: [], as_of: null, ...R } }, good, true],
   ];
   let bad = 0;
   for (const [label, data, before, shouldFail] of cases) {

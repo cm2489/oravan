@@ -518,11 +518,19 @@ jobs:
         # statuses. The script refuses to write a file its gate refuses, and
         # scripts/verify-sync.mjs re-checks it before the commit.
         #
-        # Cost: $0. One free Congress.gov request per bill read, at most 500 a
-        # night (SHORT_TITLES_MAX_PER_NIGHT): every bill never read first, then
-        # every bill whose last action moved. The first fill takes ~7 nights.
-        # No Anthropic key.
+        # Cost: $0. At most 500 bills a night (SHORT_TITLES_MAX_PER_NIGHT):
+        # every bill never read first, then every bill whose last action
+        # moved, then every bill unread for 56 days. One free Congress.gov
+        # request per bill, two at most (one retry), so at most 1,000 requests
+        # against the key's 5,000 an hour. The first fill takes ~7 nights. No
+        # Anthropic key.
+        #
+        # BOUNDED. The script stops after 10 failed reads in a row or 20
+        # minutes, keeping what it read; this step's own ceiling is 25
+        # minutes, and continue-on-error means its failure or timeout never
+        # holds or fails the steps after it, the gates or the commit.
         continue-on-error: true
+        timeout-minutes: 25
         env:
           CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}
         run: node scripts/sync-short-titles.mjs
