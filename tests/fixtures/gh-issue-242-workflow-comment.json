@@ -1,0 +1,15 @@
+{
+  "id": "IC_kwDOS4SM4c8AAAABlas4pw",
+  "author": {
+    "login": "github-actions"
+  },
+  "authorAssociation": "NONE",
+  "body": "<!-- pipeline-health:2026-11-11 -->\n⛔ **Pipeline health — 2026-11-11**\n\n- 4 call(s) rejected for a low credit balance — the paid paths are dark until the console is topped up\n- the Big Question press collector (GDELT) has recorded no check since 2026-10-18 — 24d, past the 3-day alarm; its runs stay green on every GDELT outcome, so the reason is in their ::warning:: lines (429s, refused searches, an open circuit)\n\nFull report: this issue's body (rewritten this run).",
+  "createdAt": "2026-11-11T20:02:53Z",
+  "includesCreatedEdit": false,
+  "isMinimized": false,
+  "minimizedReason": "",
+  "reactionGroups": [],
+  "url": "https://github.com/cm2489/oravan/issues/242#issuecomment-6805993639",
+  "viewerDidAuthor": false
+}

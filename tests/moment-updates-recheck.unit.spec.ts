@@ -89,6 +89,7 @@ import {
   workflowCommentWith,
   lastWorkflowComment,
   WORKFLOW_COMMENT_LOGIN,
+  WORKFLOW_COMMENT_LOGINS,
   parseRecheckTrouble,
   recheckFindings,
   recheckHeldRows,
@@ -1664,8 +1665,8 @@ function fakeIssue({
     editsThisRun = 0;
     const now = Date.parse(iso);
     const issues = readFails ? null : issue.body === null ? [] : [{ number: 1, title: HEALTH_ISSUE_TITLE, body: issue.body }];
-    const { lastReportDay, namedThrough, leftOutSince } = recheckMarkersFrom(issues, now);
-    const recheck = { held: [], findings: recheckFindings(file, { now, lastReportDay }), namedThrough, leftOutSince };
+    const { lastReportDay, namedThrough, leftOutSince, unread } = recheckMarkersFrom(issues, now);
+    const recheck = { held: [], findings: recheckFindings(file, { now, lastReportDay }), namedThrough, leftOutSince, unread };
     const report: Row = { generatedAt: new Date(now).toISOString(), recheck };
     report.alarms = alarms({ nightly, recheck });
     const before = issue.comments.length;
@@ -1943,7 +1944,7 @@ test.describe('round 9: markers only where only the workflow and collaborators w
   });
 
   test('item 4 · a failed issue read is "yesterday", never "name everything": only a body read with no marker names everything, once', () => {
-    expect(recheckMarkersFrom(null, Date.parse('2026-11-15T13:00:00Z'))).toEqual({ lastReportDay: undefined, namedThrough: '2026-11-14', leftOutSince: null });
+    expect(recheckMarkersFrom(null, Date.parse('2026-11-15T13:00:00Z'))).toEqual({ lastReportDay: undefined, namedThrough: null, leftOutSince: null, unread: true });
     expect(recheckMarkersFrom([], Date.parse('2026-11-15T13:00:00Z')).lastReportDay).toBeNull();
     expect(recheckMarkersFrom([{ title: HEALTH_ISSUE_TITLE, body: 'no marker' }], Date.parse('2026-11-15T13:00:00Z')).lastReportDay).toBeNull();
     const old = fileWith([['m/u_00000001', '2026-10-01'], ['m/u_00000002', '2026-11-14']]);
@@ -1996,6 +1997,50 @@ test.describe('round 9: markers only where only the workflow and collaborators w
       if (posted[0].includes("The record re-check's section was left out")) notes.push(day);
     }
     expect(notes).toEqual(['2026-11-15', '2026-11-22']);
+  });
+});
+
+test.describe('follow-up to #505: a marker never moved unseen; the workflow\'s login in every spelling gh may use', () => {
+  test('a failed issue read writes no named-through date, so lines first seen 11-10 to 11-12 are still named in a dated comment', () => {
+    // The reviewer's input: the #242 body holds named-through 2026-11-10, and the 2026-11-14 run's issue read fails.
+    const file = fileWith([
+      ['m/u_00000010', '2026-11-10'],
+      ['m/u_00000011', '2026-11-11'],
+      ['m/u_00000012', '2026-11-12'],
+      ['m/u_00000013', '2026-11-13'],
+    ]);
+    const f = fakeIssue();
+    f.issue.body = formatHealthIssueBody({ generatedAt: '2026-11-10T13:00:00.000Z' }, { namedThrough: '2026-11-10' });
+    const first = f.morning(file, '2026-11-14T13:00:00Z', { conclusion: 'success' }, { readFails: true });
+    expect(first).toHaveLength(1); // the line due by the assumed day (first seen 11-13) is named
+    expect(first[0]).toContain('m/u_00000013');
+    // Neither rewritten to 11-13 nor advanced to 11-14: no named-through date at all.
+    expect(f.issue.body).not.toContain('recheck-named-through');
+    expect(namedThroughFromBody(f.issue.body)).toBeNull();
+    // The next morning reads a body with no marker and names every open line, once: 11-10 to 11-12 are named.
+    const next = f.morning(file, '2026-11-15T13:00:00Z');
+    expect(next).toHaveLength(1);
+    for (const id of ['u_00000010', 'u_00000011', 'u_00000012']) expect(next[0]).toContain(`m/${id}`);
+    expect(namedThroughFromBody(f.issue.body)).toBe('2026-11-15');
+    // A failed read on a day nothing is due writes no date either.
+    const quiet = fakeIssue();
+    quiet.issue.body = formatHealthIssueBody({ generatedAt: '2026-11-10T13:00:00.000Z' }, { namedThrough: '2026-11-10' });
+    expect(quiet.morning(fileWith([['m/u_00000010', '2026-11-10']]), '2026-11-14T13:00:00Z', { conclusion: 'success' }, { readFails: true })).toEqual([]);
+    expect(namedThroughFromBody(quiet.issue.body)).toBeNull();
+  });
+
+  test('a real comment of the workflow\'s, as `gh issue view 242 --json comments` returns it, is recognised; exactly three spellings count', () => {
+    // Copied whole from that read-only call on 2026-11-14 (the body is the comment's full 469 characters).
+    const real = readJson('tests/fixtures/gh-issue-242-workflow-comment.json');
+    expect(real.author.login).toBe(WORKFLOW_COMMENT_LOGIN);
+    expect(workflowCommentWith([real], '<!-- pipeline-health:2026-11-11 -->')).toBe(real);
+    expect(lastWorkflowComment([real, { ...real, author: { login: 'someone-else' } }])).toBe(real);
+    expect([...WORKFLOW_COMMENT_LOGINS]).toEqual(['github-actions', 'app/github-actions', 'github-actions[bot]']);
+    for (const login of WORKFLOW_COMMENT_LOGINS) expect(workflowCommentWith([{ ...real, author: { login } }], '<!-- pipeline-health:2026-11-11 -->'), login).not.toBeNull();
+    for (const login of ['github-actions-bot', 'app/github-actions[bot]', 'Github-Actions', 'github', 'someone-else', '', undefined]) {
+      expect(workflowCommentWith([{ ...real, author: { login } }], '<!-- pipeline-health:2026-11-11 -->'), String(login)).toBeNull();
+    }
+    expect(workflowCommentWith([{ ...real, author: undefined }], '<!-- pipeline-health:2026-11-11 -->')).toBeNull();
   });
 });
 
