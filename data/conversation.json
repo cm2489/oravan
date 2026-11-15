@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-15T10:44:45.570Z",
+    "fetched_at": "2026-11-15T17:41:02.618Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-15T10:44:45.570Z"
+        "checked_at": "2026-11-15T17:41:02.618Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-08",
         "week_label": "Most-Viewed Bills - Week of November 8, 2026",
         "entries": 6,
-        "checked_at": "2026-11-15T10:44:45.570Z"
+        "checked_at": "2026-11-15T17:41:02.618Z"
       },
       "leans": {
         "center": {
@@ -307,14 +307,26 @@
       ],
       "mostViewed": null
     },
+    "hr-1700-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "nacionale.com",
+          "firstSeen": "2026-11-15",
+          "lastSeen": "2026-11-15",
+          "url": "https://news.google.com/rss/articles/CBMitAFBVV95cUxOQjBDa1JDeGZ1aXFRYXlNU1AzZ1I2LXdpcE9GSjhVa0RCZVZHZmtzbV84QlgtWEZHanJFTVBkdlMyZExoMExYQWVvSGUwYkJ0MGNtYUxJeWp1bmRHT2ZZbWplQnlZYlZlaU5NQTZuaWxiY0ZqY296VUpXX2thSGhfcXIxS2R4UW1sOTRsTEJ1R3VEbmN5TGxvaEloeXFLMjYxaGFCalRhMVJjOGdhTHpta2dYUXc?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-1834-119": {
       "outlets7d": [
         {
           "domain": "thehill.com",
           "lean": "center",
           "firstSeen": "2026-11-09",
-          "lastSeen": "2026-11-09",
-          "url": "https://thehill.com/policy/international/6204945-democrats-foreign-policy-priorities/"
+          "lastSeen": "2026-11-15",
+          "url": "https://thehill.com/homenews/senate/6221394-van-hollen-challenges-schumer/"
         },
         {
           "domain": "cbsnews.com",
@@ -951,6 +963,18 @@
       "unratedOutlets7d": [],
       "mostViewed": null
     },
+    "hr-8483-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "hoodline.com",
+          "firstSeen": "2026-11-15",
+          "lastSeen": "2026-11-15",
+          "url": "https://news.google.com/rss/articles/CBMilAFBVV95cUxNZkN2Z3kwMU5SRFY4a1pUdGlTQXdYYTVPbzN3cUpabnBMS1p5Y0lISmxMOWdRMEh5dmJveVUwb3l3d2k4Ukd1WEtXYm9qNDZMcnJQRXc3Z1d6bkdNU2dtbHR3MUZLZmMzWjZEMFVXeUtWRXpWaW9ndUtVSDNWS2RBa1dNcDNjY2dhRHVwUGJyc2Y2LVpT?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-8552-119": {
       "outlets7d": [
         {
@@ -1301,6 +1325,12 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "whbl.com",
+          "firstSeen": "2026-11-15",
+          "lastSeen": "2026-11-15",
+          "url": "https://news.google.com/rss/articles/CBMingFBVV95cUxNSnEtcUE2czl0WVFsRFQ0N01JSnlLNlZPWGlCR0RKQ0VOVmxqcHpsV24wRktsa2xKaVRpRVRTUFk4S0ptRTNzbzd4R3RHUmstVWdXZEplT3kzYl81VC16dE9YU1JNTEo5VnhfZXN2ZDNQVjlOdDF3Z21jcjZKRjZjZjZmUVllOEZnaVNIdmFXTHlQWkp6bEVUSjlueEdVUQ?oc=5"
+        },
         {
           "domain": "wincountry.com",
           "firstSeen": "2026-11-15",
