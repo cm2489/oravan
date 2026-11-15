@@ -104,6 +104,7 @@ import { execSync } from 'node:child_process';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { CONVERSATION_PATH, verifyConversation } from '../lib/conversation.mjs';
 import { MOMENT_UPDATES_PATH, verifyMomentUpdates } from '../lib/verify-moment-updates.mjs';
+import { RECHECK_REPORT_PATH, recheckReportProblems } from '../lib/moment-updates-recheck.mjs';
 import { QUESTION_PRESS_PATH, verifyQuestionPress } from '../lib/question-press.mjs';
 import { SHORT_TITLES_PATH, SHORT_TITLES_RETRY_PATH, verifyShortTitleRetries, verifyShortTitles } from '../lib/short-titles.mjs';
 // Import-clean by contract: congress-fetch.mjs reads CONGRESS_API_KEY per
@@ -320,6 +321,20 @@ if (!existsSync(MOMENT_UPDATES_PATH)) {
     for (const w of warnings) warn(w);
     for (const f of failures) fail(f);
   }
+}
+
+// --- the record re-check's report file (2026-11-14) -------------------------
+// Written by the nightly comparison (scripts/moment-updates.mjs) and read by
+// pipeline-health; a malformed one would silence its alarms, so it does not
+// commit. Absent is normal.
+if (existsSync(RECHECK_REPORT_PATH)) {
+  let report;
+  try {
+    report = JSON.parse(readFileSync(RECHECK_REPORT_PATH, 'utf8'));
+  } catch (e) {
+    fail(`${RECHECK_REPORT_PATH} is not valid JSON (${e.message})`);
+  }
+  if (report !== undefined) for (const p of recheckReportProblems(report)) fail(p);
 }
 
 // --- floor signals: every T0 claim carries its own evidence -----------------
