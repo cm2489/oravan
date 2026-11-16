@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-16T02:25:33.603Z",
+    "fetched_at": "2026-11-16T11:02:25.163Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-16T02:25:33.603Z"
+        "checked_at": "2026-11-16T11:02:25.163Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-08",
         "week_label": "Most-Viewed Bills - Week of November 8, 2026",
         "entries": 6,
-        "checked_at": "2026-11-16T02:25:33.603Z"
+        "checked_at": "2026-11-16T11:02:25.163Z"
       },
       "leans": {
         "center": {
@@ -762,6 +762,13 @@
     "hr-6529-119": {
       "outlets7d": [
         {
+          "domain": "nytimes.com",
+          "lean": "left",
+          "firstSeen": "2026-11-16",
+          "lastSeen": "2026-11-16",
+          "url": "https://news.google.com/rss/articles/CBMimgFBVV95cUxPcUtuUVhUVjkxenZMWnZNQWx1OG9CbF8yT1VyZ1ZFOFJvTGpYSHZvaEVyWmJDWEV3bUNfMkpxOVV2OTczS011UEtkLWFjNDdqODFITVc4T1VFV0wzZy1rNTNkWGhGblVkaW5TcVEtdEkxWDJ6MUE2Y1pCVlRKS2hiNFZpVFhWQXItWFpWVU5QeXh4TFV5dFBLbWl3?oc=5"
+        },
+        {
           "domain": "newsweek.com",
           "lean": "left",
           "firstSeen": "2026-11-12",
@@ -1048,6 +1055,18 @@
           "firstSeen": "2026-11-09",
           "lastSeen": "2026-11-09",
           "url": "https://news.google.com/rss/articles/CBMisAFBVV95cUxPSGNUQW9PMzZlbDg4RFpJQk9KV1htQkdXN0tnWnk0MF8yRW1FMDhYLTNHNGFWaFM5WUF6RmFocVQ1clVFYnI0MG5fRldNQldUaTJUeWN4NEhyamc2Z3VpdUdMOFZVbnhLNFpFUC1lVzVsVS1va1lCRWtQeFRYLVVWRXNoRWFjWmREOXRYWnlLTUV3V3Q5RUNHTEx6X1YyN0FaWVljdTdLUHpCcjVsd29Rcw?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-979-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "insideradio.com",
+          "firstSeen": "2026-11-16",
+          "lastSeen": "2026-11-16",
+          "url": "https://news.google.com/rss/articles/CBMizgFBVV95cUxPLTVMS1N4cTgyUXBVeXRrSFk2enN2aWdhNm5PZlR3eVNEcHkwN1hfNERQV1NkajFkbVJnZ1JBcUlEdGZVaVV5WmF4aFM2X3RvS042NmV0VGpmaU12R2E0Z05xQnhDX2EtU2xpU2ZvVkhaa2d6aWpEV004V1NmaTRlamFDakhDWnExdnJlRkpFdmlNMksxQjJQdDQ1cllfYmo3YzFBQkZTTE5BLU54TktRMkZER05kNHdRUktVb0xaOG83WWdvbXYycFBaQ3NaZw?oc=5"
         }
       ],
       "mostViewed": null
@@ -1391,6 +1410,12 @@
     "s-4668-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "news.bgov.com",
+          "firstSeen": "2026-11-16",
+          "lastSeen": "2026-11-16",
+          "url": "https://news.google.com/rss/articles/CBMisAFBVV95cUxPbTJQOWJQZjd6QkhvUlhOX0VCVEV1R21vckN4eVliSGlLWTJuSTJYcWd4V3RZR1l0QldXSjdlSlVLdVJuOEQ2UVItdXI3eHVUOUtPS1J4SFExS1hTVjVsZ205TExQSDhtNS1iTktqZ3BOY1RyYUtOSGhFZWEtSm5ETkVmSHFrWEh0aUJMM3ZEMTY5TDVZblRScXZIZGZEc1N4SWVPUXAwWFJ1d1lxZUxIbQ?oc=5"
+        },
         {
           "domain": "bradenton.com",
           "firstSeen": "2026-11-15",
