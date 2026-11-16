@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-16T11:02:25.163Z",
+    "fetched_at": "2026-11-16T20:58:32.095Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-16T11:02:25.163Z"
+        "checked_at": "2026-11-16T20:58:32.095Z"
       },
       "most_viewed": {
         "status": "ok",
-        "week": "2026-11-08",
-        "week_label": "Most-Viewed Bills - Week of November 8, 2026",
-        "entries": 6,
-        "checked_at": "2026-11-16T11:02:25.163Z"
+        "week": "2026-11-15",
+        "week_label": "Most-Viewed Bills - Week of November 15, 2026",
+        "entries": 7,
+        "checked_at": "2026-11-16T20:58:32.095Z"
       },
       "leans": {
         "center": {
@@ -228,10 +228,10 @@
       ],
       "unratedOutlets7d": [],
       "mostViewed": {
-        "weeksOnList": 14,
-        "lastRank": 3,
+        "weeksOnList": 15,
+        "lastRank": 8,
         "lastSeen": "2026-11-16",
-        "lastWeek": "2026-11-08"
+        "lastWeek": "2026-11-15"
       }
     },
     "hr-1013-119": {
@@ -354,7 +354,12 @@
           "url": "https://news.google.com/rss/articles/CBMiqgFBVV95cUxNQ3N0ZTJxTktRczN6LUMtdkM0MDNiSG1SNng0RXFwdTl5dlFjbzlWUG1WUGhSdVJFR2dNbGlCTGlxbEhZRERxOWVkeVBCV2pYaXBIbW1wN0RBcEhQblZuTW1zd1E2UHZQbEFvWDcyVWRpY3lRZUtkX2RfV1U1MWVHYVZFc0ZJREpzNEliME5faXlYNGV1b052NlJuVHc2WHJBZnowWFhpLWdDdw?oc=5"
         }
       ],
-      "mostViewed": null
+      "mostViewed": {
+        "weeksOnList": 1,
+        "lastRank": 5,
+        "lastSeen": "2026-11-16",
+        "lastWeek": "2026-11-15"
+      }
     },
     "hr-2347-119": {
       "outlets7d": [
@@ -367,7 +372,12 @@
         }
       ],
       "unratedOutlets7d": [],
-      "mostViewed": null
+      "mostViewed": {
+        "weeksOnList": 1,
+        "lastRank": 7,
+        "lastSeen": "2026-11-16",
+        "lastWeek": "2026-11-15"
+      }
     },
     "hr-2788-119": {
       "outlets7d": [],
@@ -569,16 +579,16 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "marijuanamoment.net",
+          "firstSeen": "2026-11-11",
+          "lastSeen": "2026-11-16",
+          "url": "https://news.google.com/rss/articles/CBMi3wFBVV95cUxQcE90UzZ2WGsyVmstR1pkY3R2OHFzWGFSZmw1Uno5cGd3dUk3T05pbkl5QnlCSFplM1VoOWRsNFpMYmg4NWVCeFdKMHhRaG1vZG81Z2lacWQ1MllRV1pWbERMUHQwU3VmVUZzcldXdVkzb0JybnBBaUtqdTZuWkZhdXgtVmhSbUNGSFVWQ0ZqMkxYX1R2c2tLXzlIWTBDenc2S25TaVE3cEJZZ2RFazBMLUd3Nlc1OXJEX241dW80X2htclpmdF9oRjlEd3R3bEhxMU1VNXN2b1RrLVFKay1r?oc=5"
+        },
+        {
           "domain": "themarijuanaherald.com",
           "firstSeen": "2026-11-12",
           "lastSeen": "2026-11-12",
           "url": "https://news.google.com/rss/articles/CBMizgFBVV95cUxNemRGUnM2Z01SUW5UeHNPN1YzcDJvWGxzY3RrNG5tOXNtQ0ZMZENwTEVUb2t1ZmZRNGpjUGZVOU9IT2RFNUZiSlQxeHd4WkdOSkRiVm8yMlljemtUdDlHRGdhRWxIa3NxY3RmaDg5eUNIN1RlejIzNUhUS3RsdVZHWmVNLVNTcFdabC0wbnY3X0M3cXppemxZOUNSRGprVVZxSjJpSHJjdmxiVGhLd0FibDBiVE96NFpmejlZVW1nVmNmVDlDdzJZZWh5TXZFQQ?oc=5"
-        },
-        {
-          "domain": "marijuanamoment.net",
-          "firstSeen": "2026-11-11",
-          "lastSeen": "2026-11-11",
-          "url": "https://news.google.com/rss/articles/CBMisAFBVV95cUxOaHhLOVBJSnZ3M0VGT3llMmdjVVJYRlg4Y3hFdTdGYU9uNHlhVnIxSnFuMEJNS1NDQklIazNSQ3EtOVdmZkVhU0wyS1oyd2gzMlhKU2NkUVk1Z3lxZzlKTVo2ZXQySXp6c2xhY3phcUo5NHlQdDNvOWZzWEFnRnY5Y1BmV1V5ZmtWRFhHdUt0R19rUE0yUWlpZmJFcDk4ZlE5LU1QY3hncHR5YzRMNDJLMw?oc=5"
         }
       ],
       "mostViewed": null
@@ -611,6 +621,18 @@
           "firstSeen": "2026-11-12",
           "lastSeen": "2026-11-12",
           "url": "https://news.google.com/rss/articles/CBMidEFVX3lxTE1aUm13d0ZPeVRaME5hWlNGUjVVS01CR2ZtUldPQVJ3NjFVczNmWS03SEx5dGNQck9hbko2OFJYa01GUlo4eDltRUc5bWtIV1c2TVZIUm9zUHd2VFNtdTRyNFczZ3VteDBXYkp3c0loYTdGUlNY?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-5602-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "plasticsnews.com",
+          "firstSeen": "2026-11-16",
+          "lastSeen": "2026-11-16",
+          "url": "https://news.google.com/rss/articles/CBMiogFBVV95cUxObzJXWFUwR0Q4anhldWt4MU1jOWZxVHNBbUZEMlQzNWhNdVVPd0poUi1JV0lGZlBvZmVoMlB5NnhoUUtUM05SQndRNkIyazZBS0VLN0RPTmg2NUoxTjByQXBSZjQ5cG5QSUlra1ZXcUtyWWJycGtwZU5lZkVvREgzUkFJSkNjSHBRYzc0N3BYNUJ6R1pBcnhUODcxX2xWZEVYcHc?oc=5"
         }
       ],
       "mostViewed": null
@@ -675,6 +697,12 @@
     "hr-625-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "oklahomafarmreport.com",
+          "firstSeen": "2026-11-16",
+          "lastSeen": "2026-11-16",
+          "url": "https://news.google.com/rss/articles/CBMiyAFBVV95cUxQT2JJT0hSczEwTVVTRXB0V21WX2kzYU9TWXlId1lZR2RqR0ZQQXlXM1BHZEZiM0pfaEVvNzFMVDVidm4wakU0SE84TWtod0o0Zld5OXZvVkdWeVEtRTVrelBXWkM0QjNHT3hPeFJDVjZ2VVNtLWZmZzVfZC1kZXhDMWFoWnBfNk0xcE9RWm9QdHZQZC1TdTNWZVVMRjRDa01IMkE3dVQ1ZS1ISUQ1NkhvWUZETF91WHJNclV4LUV5MDgzT29LQkdIQQ?oc=5"
+        },
         {
           "domain": "chickashanews.com",
           "firstSeen": "2026-11-11",
@@ -753,10 +781,10 @@
       "outlets7d": [],
       "unratedOutlets7d": [],
       "mostViewed": {
-        "weeksOnList": 14,
-        "lastRank": 1,
+        "weeksOnList": 15,
+        "lastRank": 3,
         "lastSeen": "2026-11-16",
-        "lastWeek": "2026-11-08"
+        "lastWeek": "2026-11-15"
       }
     },
     "hr-6529-119": {
@@ -927,6 +955,30 @@
       "unratedOutlets7d": [],
       "mostViewed": null
     },
+    "hr-8286-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "pionline.com",
+          "firstSeen": "2026-11-16",
+          "lastSeen": "2026-11-16",
+          "url": "https://news.google.com/rss/articles/CBMirgFBVV95cUxNT0w1bEpGSkxWa2VDYXBYdk41eGFGMWI3M0EyOGpzNFVVb1V6bkhCNjYyYmFkTzFldTNkUDdXdk04ZlpzcEozS2wzSE45aG9lQ0lqZTExYndRSjlwRE1HN185em0wTWpqbG10NzZyYmJBelhhREM3aktxN0VmaGRIUUw3aUJhZk1MNkxCZURYTW9CQTNaY1k1UlQxNHk4VjgxeHBRMnYyR2d4RzI2Umc?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-8443-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "stevevladeck.com",
+          "firstSeen": "2026-11-16",
+          "lastSeen": "2026-11-16",
+          "url": "https://news.google.com/rss/articles/CBMic0FVX3lxTFB6cmY4bkNGd01KRkxYY3VyMjdOaUs1TjZKUm1kd2hJT2FjcTk2Nm1jVGw2SEhEM0E5TW1tc0lPMGRIUUpJbVZ6Q3FJb29qV1dlckNOSW1Za0tVcDVTeVBPYkdTYVgwV1Qya0ZSWW5lU1hsalU?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-8483-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -957,7 +1009,12 @@
           "url": "https://news.google.com/rss/articles/CBMipAFBVV95cUxNRkFTVmU4RHU2TW9XT1U3cEg2TWc0d1U3U3A4MkM0VTFVWC1udy0tMVlNZmUwQkFLODMxdTRJU2VNbkpoTHJqYnB3VTU3eWhZYk5uNmJ5MEtWd2ozbzBMWk84bGlzWXdCU1k5WWtQOVlJLXUwN0FpSG90ME95Z3JwbFZUdmZHcmFnazMzY3daSllyVnJhUmNDT2dPdUVBNDUtT1Znd9IBqgFBVV95cUxQcFZLLWNvZmFUOW55bHk4aFpOaGNFTnVBeGpiWjdfQjBCS05HVlplWTJURHN2NHZuUnZjaVNZZllUVUpNTWZyUEJLOGR0VHJRTi1fZnAxY0RsOWozTEs3Q0JkZk1BaVRTTHR3OTJEU0tIRmxzLXlSYklHSnVKaUE5Ql9pNXJWaEdTZ3Z1Y2NuVGo2aFM1cm5NSEZyb3lRWlloeXdKeFR4ZDloQQ?oc=5"
         }
       ],
-      "mostViewed": null
+      "mostViewed": {
+        "weeksOnList": 1,
+        "lastRank": 10,
+        "lastSeen": "2026-11-16",
+        "lastWeek": "2026-11-15"
+      }
     },
     "hr-8646-119": {
       "outlets7d": [],
@@ -1034,6 +1091,16 @@
         }
       ],
       "mostViewed": null
+    },
+    "hr-9237-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [],
+      "mostViewed": {
+        "weeksOnList": 1,
+        "lastRank": 1,
+        "lastSeen": "2026-11-16",
+        "lastWeek": "2026-11-15"
+      }
     },
     "hr-9372-119": {
       "outlets7d": [],
@@ -1476,10 +1543,10 @@
       "outlets7d": [],
       "unratedOutlets7d": [],
       "mostViewed": {
-        "weeksOnList": 4,
+        "weeksOnList": 5,
         "lastRank": 4,
         "lastSeen": "2026-11-16",
-        "lastWeek": "2026-11-08"
+        "lastWeek": "2026-11-15"
       }
     },
     "s-607-119": {
