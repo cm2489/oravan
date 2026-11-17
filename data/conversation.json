@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-17T00:02:36.683Z",
+    "fetched_at": "2026-11-17T03:46:38.366Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-17T00:02:36.683Z"
+        "checked_at": "2026-11-17T03:46:38.366Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-15",
         "week_label": "Most-Viewed Bills - Week of November 15, 2026",
         "entries": 7,
-        "checked_at": "2026-11-17T00:02:36.683Z"
+        "checked_at": "2026-11-17T03:46:38.366Z"
       },
       "leans": {
         "center": {
@@ -623,6 +623,12 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "afge.org",
+          "firstSeen": "2026-11-17",
+          "lastSeen": "2026-11-17",
+          "url": "https://news.google.com/rss/articles/CBMiwwFBVV95cUxNUXJTd0E3NUY1UmNia1NIal8zSFBSZHY5YjZCQ2FYQmNjRjA3M2E0MnRISWU5Yi13VmdaU243cF9kenFtUjlkWDdpNGV2SVdscmlrZGZmWUhFOEtXbE5Rb1hfSGp3bFhJT1JLVGNGSjNBSG9hWWpqbEZFaWFPQy1yZm5aSTNfME5pWHF2QXJhMTdUNDhnU2o0a0VHeHRKb2hXM2Q5TWFUQjhRX2NuRXU0QXNWREYxRVE4ZERtMU9vMUdENm8?oc=5"
+        },
+        {
           "domain": "taskandpurpose.com",
           "firstSeen": "2026-11-13",
           "lastSeen": "2026-11-13",
@@ -1010,6 +1016,19 @@
           "url": "https://news.google.com/rss/articles/CBMijAFBVV95cUxOTjlVNUtvMDdNT1hxdU9XODdHSFRNSGstN0tGYnJ1SlJ0THhjZkVlYnVyUEVZcEVIODB3ZktUV1dZZjhHbHlZeWlKV3hYZmNPem9WZjdDRGdLY3FYNDc0cHpEVk1RTmVRei02cHpfcHJkOXoyLUxxNFd3RDhOOGdCai1LcWFIQ09FenZNWQ?oc=5"
         }
       ],
+      "mostViewed": null
+    },
+    "hr-9495-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-11-17",
+          "lastSeen": "2026-11-17",
+          "url": "https://thehill.com/homenews/senate/6224030-senate-gop-defense-appropriations-bill/"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "hr-979-119": {
