@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-17T13:14:11.577Z",
+    "fetched_at": "2026-11-17T22:07:00.792Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-17T13:14:11.577Z"
+        "checked_at": "2026-11-17T22:07:00.792Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-15",
         "week_label": "Most-Viewed Bills - Week of November 15, 2026",
         "entries": 7,
-        "checked_at": "2026-11-17T13:14:11.577Z"
+        "checked_at": "2026-11-17T22:07:00.792Z"
       },
       "leans": {
         "center": {
@@ -151,6 +151,19 @@
     }
   },
   "slugs": {
+    "hconres-58-119": {
+      "outlets7d": [
+        {
+          "domain": "foxnews.com",
+          "lean": "right",
+          "firstSeen": "2026-11-17",
+          "lastSeen": "2026-11-17",
+          "url": "https://www.foxnews.com/politics/conservatives-launch-10m-anti-socialism-blitz-after-democrats-dominate-youth-vote"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hjres-1-119": {
       "outlets7d": [
         {
@@ -649,6 +662,18 @@
       ],
       "mostViewed": null
     },
+    "hr-6086-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "rollcall.com",
+          "firstSeen": "2026-11-17",
+          "lastSeen": "2026-11-17",
+          "url": "https://rollcall.com/2026/11/17/new-aviation-funding-request-hits-senate-turbulence/"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-625-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -804,6 +829,32 @@
           "url": "https://news.google.com/rss/articles/CBMirgFBVV95cUxNd2NQZ1pZYVd3X3lVN0lxcUEyaFBQTzlnUzVScm5KYVpuU1lFQUtuTlItbzlvbVROTUwxbmp3anZGeUZFZEk0Y3BjM0hCNV9uWFlENVI5bEJsYWt4aXctMThNMFFTUUg2M1p2Y0hyeFV5SUlaZG1uVEFfal8xTTN5Vzk2MHMwbWlGUEt1SmpDY1A1bHFWWnhQNzZxcE5kNFgzeDNVZTFSSUhKV1EzVGfSAcIBQVVfeXFMT1JvRDl2QjFOdEwyQzExbnZYemxUbjg3OU5JWUIzSHJuMjRvSTViMk9vOXFYaTFkaDZJNGx5UjRTcXhNOTRnakNVSFBHR3RpTlkxMVE1ZFRtR1htY1RLSG9fckFjd1BfTENUMjVPanhlY2xQVnlKYmhLUmZSYVRBc1ZKSE5EYWpwUUtVRWJOSjFTMDRxTEFQRHhvNURnTWNTWlhBRTFja0xmVzFSTGIxS2lZWkVhUk9Cak05QkJHY1hBTGc?oc=5"
         }
       ],
+      "mostViewed": null
+    },
+    "hr-7556-119": {
+      "outlets7d": [
+        {
+          "domain": "reason.com",
+          "lean": "right",
+          "firstSeen": "2026-11-17",
+          "lastSeen": "2026-11-17",
+          "url": "https://reason.com/2026/11/17/the-u-s-spends-half-what-france-does-on-public-pensions-but-congress-is-making-the-same-mistakes/"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-7721-119": {
+      "outlets7d": [
+        {
+          "domain": "politico.com",
+          "lean": "left",
+          "firstSeen": "2026-11-17",
+          "lastSeen": "2026-11-17",
+          "url": "https://www.politico.com/live-updates/2026/11/17/congress/mike-johnson-holdout-crackdown-01170316"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "hr-7814-119": {
@@ -1024,6 +1075,18 @@
         "lastWeek": "2026-11-15"
       }
     },
+    "hr-9260-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "capito.senate.gov",
+          "firstSeen": "2026-11-17",
+          "lastSeen": "2026-11-17",
+          "url": "https://news.google.com/rss/articles/CBMi1wFBVV95cUxOUjNiX1NwajNsQkdWVEs4S2tqRGJQZ282Qk1iNWtZRG9DYVZRM0ZXT1dCRXc2WlJjUWpCb0wzRmJqaGpHci11S0dqYzNiRmxQZzNBcEh4MmZqLVJqWkcwQUxvck9JMWFpcG4td0Nlb0xHcmFsd2E5akhUZ0Q5alE2T0U2U1Y5ck9LaEtwU2dHdDV1WU1wMVlud3VSbkY1ZGRTbHU5M2FfdllZZTIyUml0X2REZm5pQ2VlQVFxLTlFNmFlX0NHd1NYZXFQaDRvRXRtY2Zid0t2OA?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-9372-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1139,6 +1202,18 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "s-1759-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "wusa9.com",
+          "firstSeen": "2026-11-17",
+          "lastSeen": "2026-11-17",
+          "url": "https://news.google.com/rss/articles/CBMiogJBVV95cUxQNG05a0V1cVQtZHRVR2ZHSVBlQjA2T21RZ2Z5eFJvQWppUkRYbXdsc3NmRVc5UTZWcmxwNWpFbnlkR3FYZlBMZlIxUGd6VThHaXd0XzFiM0NqSDJ5NFk1YUo2bkd3VUVRa0JlY0RpOXIzTHJNODNYeWdVT3huQlh5MWpmZFRHVFJiaTJ0RUNJbUd5R1NneEdtUEJoLWR1UXNNdWZIOTlKM3ZHazM2cVp2SEdMckJMVUdsR0pSY240LUd5SS1VV1pqVUwyRC1IbHV0TnRxQ2tLYXFQRlJlVXoxaHdkcHU0TTBIajJLNzhqVFQwZEpmM0s5VWxYSEpOdWh5ZkFEYXdGOFhnLW5KQkdwRVcwWnNURjdDMHFSWEdwOVVrdw?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "s-2296-119": {
@@ -1435,6 +1510,18 @@
       ],
       "mostViewed": null
     },
+    "s-714-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "investors.com",
+          "firstSeen": "2026-11-17",
+          "lastSeen": "2026-11-17",
+          "url": "https://news.google.com/rss/articles/CBMinwFBVV95cUxNZTRmelNiTVdNVGh2VFl0dlNDd3VJRDBReVhTOG42M1JPcjI3cHBqeVpxVU1HQWlHSlRFR3NjMzJNNUtGUFk4MW1oNkFfay1HdFZjNUp2LURUdW5yb2c2TGF4ZkFfR1Z5YWtKY1p0ekRSOGo1WHB1aHlndFl4NTJxMC12ekRtMTBtdDZTTWhSTkQwVEhZUWtmZTQzTVNodjQ?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "s-766-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1475,18 +1562,18 @@
     "sjres-185-119": {
       "outlets7d": [
         {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-11-13",
+          "lastSeen": "2026-11-17",
+          "url": "https://thehill.com/policy/defense/6226459-navy-secretary-confirmation-clash/"
+        },
+        {
           "domain": "foxnews.com",
           "lean": "right",
           "firstSeen": "2026-11-14",
           "lastSeen": "2026-11-14",
           "url": "https://www.foxnews.com/politics/anti-trump-republican-courts-other-defectors-house-weighs-another-vote-against-iran-war"
-        },
-        {
-          "domain": "thehill.com",
-          "lean": "center",
-          "firstSeen": "2026-11-13",
-          "lastSeen": "2026-11-13",
-          "url": "https://thehill.com/homenews/senate/6217635-senate-democrats-threaten-shutdown-iran/"
         }
       ],
       "unratedOutlets7d": [
