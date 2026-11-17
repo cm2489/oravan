@@ -605,7 +605,7 @@
   "coverage": {
     "heading": "Cómo lo están cubriendo",
     "subhead": "Cobertura de este proyecto de ley en la prensa. La inclinación política de cada medio aparece donde AllSides la ha calificado, y se marca como \"Sin calificar\" donde no.",
-    "subheadTwins": "Cobertura de este proyecto de ley y de {citations}, {count, plural, one {un proyecto que el registro oficial señala como idéntico} other {proyectos que el registro oficial señala como idénticos}}, en la prensa. La inclinación política de cada medio aparece donde AllSides la ha calificado, y se marca como \"Sin calificar\" donde no.",
+    "subheadTwins": "Cobertura de este proyecto de ley y de {citations}, {count, plural, one {un proyecto que el registro oficial señala como idéntico a este} other {proyectos que el registro oficial señala como idénticos a este}}, en la prensa. La inclinación política de cada medio aparece donde AllSides la ha calificado, y se marca como \"Sin calificar\" donde no.",
     "newestLabel": "El más reciente de estos artículos",
     "checkedLabel": "Comprobado",
     "ageNote": "puede existir cobertura más reciente que no hemos recopilado",

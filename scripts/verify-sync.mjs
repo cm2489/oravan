@@ -269,8 +269,11 @@ if (coverage && typeof coverage === 'object' && !Array.isArray(coverage)) {
 // page's coverage box lists (owner, 2026-11-13: a twin's articles are shown
 // under the bill "as it is"). So a row the rule does not allow is damage: a
 // relation type other than the record's "Identical bill", a bill listed as its
-// own twin, a twin of another Congress, a key that is not a corpus bill, or a
-// relation with no check day. The judgement lives in lib/related-bills.mjs.
+// own twin, a twin of another Congress, or a relation with no check day. A key
+// that is no longer a corpus bill, or a day in the future, only WARNS: time or
+// the corpus can make a valid file look like that, and it must never block a
+// night (the writer prunes such a key on its next run). The judgement lives in
+// lib/related-bills.mjs.
 // Skipped cleanly when the file doesn't exist, exactly like the blocks below:
 // lib/coverage.ts imports it, so a tree without it fails the site's build
 // (and scripts/check-related-bills.mjs in CI) rather than this check.
@@ -279,13 +282,14 @@ if (!existsSync(RELATED_BILLS_PATH)) {
 } else {
   const related = parse(RELATED_BILLS_PATH, readFileSync(RELATED_BILLS_PATH, 'utf8'));
   if (related !== null) {
-    const { failures, notes } = verifyRelatedBills({
+    const { failures, warnings, notes } = verifyRelatedBills({
       data: related,
       fileBytes: statSync(RELATED_BILLS_PATH).size,
       today: new Date().toISOString().slice(0, 10),
       knownSlugs: Array.isArray(bills) ? new Set(bills.map(slugOf)) : null,
     });
     for (const n of notes) console.log(n);
+    for (const w of warnings) warn(w);
     for (const f of failures) fail(f);
   }
 }

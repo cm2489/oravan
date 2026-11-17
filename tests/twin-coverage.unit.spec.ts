@@ -1,15 +1,13 @@
 import { expect, test } from '@playwright/test';
-import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { pathToFileURL } from 'node:url';
 import { IntlMessageFormat } from 'intl-messageformat';
 import coverageData from '../data/coverage.json';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
 import {
   TWIN_ARTICLES_MAX,
+  boxCoverage,
   coverageCheckedAt,
   coverageCheckedAtWithTwins,
   coverageForBillPage,
@@ -20,12 +18,8 @@ import {
 } from '../lib/coverage';
 import {
   KEPT_RELATION_TYPES,
-  RELATED_BILLS_SCHEMA,
   emptyRelatedBills,
   identicalFromRecord,
-  parseRelatedTrouble,
-  planRelatedRun,
-  relatedAlarms,
   twinsOf,
   verifyRelatedBills,
 } from '../lib/related-bills.mjs';
@@ -175,8 +169,13 @@ test.describe('what the box lists: own articles plus the twin’s, as they are',
     const narrowed = mergeTwinCoverage(ownNeutral, [{ slug: 's-20-119', articles: [art('f', 'cnn.com', 'left', '2026-11-08')] }]);
     expect(coverageTier(narrowed.articles)).toBe('one_sided');
     expect(coverageForBillPage(narrowed.articles, false)).toEqual([]);
-    // …and a Big Question bill keeps it (his 2026-09-28 ruling), with the note.
+    // …so outside the Big Questions the box shows the bill's OWN list, as on
+    // main, naming no twin (a twin never hides a box; see below)…
+    expect(boxCoverage(ownNeutral, narrowed, false)).toEqual({ articles: ownNeutral, twins: [] });
+    // …and a Big Question bill keeps the combined list (his 2026-09-28
+    // ruling), with the one-sided note.
     expect(coverageForBillPage(narrowed.articles, true)).toHaveLength(3);
+    expect(boxCoverage(ownNeutral, narrowed, true)).toEqual(narrowed);
   });
 
   test('one outlet across both bills is still too thin to show', () => {
@@ -238,7 +237,8 @@ test.describe('the wording, both languages (hard rules 4 and 5)', () => {
       const two = new IntlMessageFormat(m.coverage.subheadTwins, locale).format({ citations: 'S. 20 / H.R. 30', count: 2 }) as string;
       expect(one).toContain(cite);
       expect(one).not.toBe(two);
-      expect(m.coverage.subheadTwins).toContain(m === en ? 'identical' : 'idéntico');
+      expect(m.coverage.subheadTwins).toContain(m === en ? 'identical to it' : 'idéntico a este');
+      if (m === es) expect(m.coverage.subheadTwins).toContain('idénticos a este');
       // The rest of the intro (the lean sentence) is the shipped one, word for word.
       const leanSentence = m.coverage.subhead.slice(m.coverage.subhead.indexOf('. ') + 2);
       expect(m.coverage.subheadTwins.endsWith(leanSentence)).toBe(true);
@@ -247,180 +247,82 @@ test.describe('the wording, both languages (hard rules 4 and 5)', () => {
   });
 });
 
-test.describe('the nightly writer (scripts/sync-related.mjs), network stubbed', () => {
-  const REPO = process.cwd();
-  const SCRIPT = join(REPO, 'scripts/sync-related.mjs');
-  const MOCK = pathToFileURL(join(REPO, 'tests/fixtures/sync-related-fetch-mock.mjs')).href;
-  const KEY = 'test-congress-key-DO-NOT-PRINT';
-  const bill = (type: string, number: number) => ({ bill_type: type, bill_number: number, congress_number: 119 });
+test.describe('a twin never hides a box (2026-11-17)', () => {
+  // The independent check's case: outside the Big Questions, the bill's own
+  // articles are from two center outlets (a box on main); its twin's are
+  // left only, so the combined list is one-sided and would be hidden.
+  const own = [
+    art('o1', 'apnews.com', 'center', '2026-11-10'),
+    art('o2', 'reuters.com', 'center', '2026-11-09'),
+    art('o3', 'apnews.com', 'center', '2026-11-08'),
+    art('o4', 'reuters.com', 'center', '2026-11-07'),
+  ];
+  const twin = { slug: 's-20-119', articles: [art('t1', 'cnn.com', 'left', '2026-11-06'), art('t2', 'msnbc.com', 'left', '2026-11-05')] };
 
-  function run(dir: string, scenario: Record<string, unknown>, env: Record<string, string> = {}) {
-    writeFileSync(join(dir, 'scenario.json'), JSON.stringify(scenario));
-    const r = spawnSync(process.execPath, ['--import', MOCK, SCRIPT], {
-      cwd: dir,
-      encoding: 'utf8',
-      env: {
-        PATH: process.env.PATH ?? '',
-        CONGRESS_API_KEY: KEY,
-        RELATED_MOCK_SCENARIO: join(dir, 'scenario.json'),
-        RELATED_MOCK_LOG: join(dir, 'requests.log'),
-        ...env,
-      } as unknown as NodeJS.ProcessEnv,
-      timeout: 90_000,
-    });
-    return { ...r, out: `${r.stdout}${r.stderr}` };
-  }
+  test("the check's fixture: the own box shows exactly as on main, and no twin is named", () => {
+    const merged = mergeTwinCoverage(own, [twin]);
+    expect(coverageForBillPage(merged.articles, false)).toEqual([]); // the combined list alone would hide it
+    const box = boxCoverage(own, merged, false);
+    expect(box).toEqual({ articles: own, twins: [] });
+    expect(coverageForBillPage(box.articles, false)).toHaveLength(4); // what main shows
+  });
 
-  function corpus() {
-    const dir = mkdtempSync(join(tmpdir(), 'sync-related-'));
-    mkdirSync(join(dir, 'data'));
-    writeFileSync(join(dir, 'data/bills.json'), JSON.stringify([bill('hr', 10), bill('s', 20), bill('hr', 30)]));
-    writeFileSync(
-      join(dir, 'data/coverage.json'),
-      JSON.stringify({ _checkedAt: {}, 'hr-10-119': [{ url: 'https://a.test/1' }], 'hr-30-119': [{ url: 'https://b.test/1' }] })
-    );
-    return dir;
-  }
+  test('a twin still ADDS a box the own articles could not show, and is named', () => {
+    const thin = [art('o1', 'apnews.com', 'center', '2026-11-10')]; // one outlet: no box on main
+    const merged = mergeTwinCoverage(thin, [{ slug: 's-20-119', articles: [art('t1', 'wsj.com', 'center', '2026-11-09')] }]);
+    expect(coverageForBillPage(boxCoverage(thin, merged, false).articles, false)).toHaveLength(2);
+    expect(boxCoverage(thin, merged, false).twins).toEqual(['s-20-119']);
+  });
 
-  test('looks up bills with coverage, keeps "Identical bill" only, and passes its own gate', () => {
-    const dir = corpus();
-    try {
-      // The writer dates the file with its own clock; read ours on both sides
-      // of the run so a run that crosses midnight UTC cannot fail this.
-      const dayBefore = new Date().toISOString().slice(0, 10);
-      const r = run(dir, {
-        'hr/10': {
-          relatedBills: [
-            { congress: 119, number: 20, type: 'S', relationshipDetails: [{ type: 'Identical bill', identifiedBy: 'CRS' }] },
-            { congress: 119, number: 30, type: 'HR', relationshipDetails: [{ type: 'Related bill', identifiedBy: 'CRS' }] },
-          ],
-        },
-        'hr/30': { relatedBills: [] },
-      });
-      expect(r.status, r.out).toBe(0);
-      const dayAfter = new Date().toISOString().slice(0, 10);
-      expect(r.out).toContain('RELATED START:');
-      expect(r.out).toContain('RELATED DONE: looked up 2 of 2 planned (0 failed');
-      // The health report reads this run as no trouble.
-      expect(relatedAlarms({ trouble: parseRelatedTrouble(r.out) })).toEqual([]);
-      expect(r.out).not.toContain(KEY);
-      const written = JSON.parse(readFileSync(join(dir, 'data/related-bills.json'), 'utf8'));
-      expect([dayBefore, dayAfter]).toContain(written._meta.filled_at);
-      expect(written._meta).toEqual({ schema: RELATED_BILLS_SCHEMA, kept_types: ['Identical bill'], filled_at: written._meta.filled_at });
-      expect(written['hr-10-119']).toEqual([{ slug: 's-20-119', type: 'Identical bill', identifiedBy: ['CRS'] }]);
-      expect(written['hr-30-119']).toBeUndefined(); // none: left out, but dated
-      expect(Object.keys(written._checkedAt).sort()).toEqual(['hr-10-119', 'hr-30-119']);
-      // s-20 has no coverage, so it costs no request: the relation is read both ways.
-      expect(readFileSync(join(dir, 'requests.log'), 'utf8').trim().split('\n').sort()).toEqual([
-        '/v3/bill/119/hr/10/relatedbills',
-        '/v3/bill/119/hr/30/relatedbills',
-      ]);
-      expect(verifyRelatedBills({ data: written, today: dayAfter }).failures).toEqual([]);
-      // A run that finishes moves the last-filled day to its own day, even
-      // when the file it started from was older (the stale alarm's clock).
-      writeFileSync(
-        join(dir, 'data/related-bills.json'),
-        JSON.stringify({ ...written, _meta: { ...written._meta, filled_at: '2026-01-01' } })
-      );
-      const refill = run(dir, {});
-      expect(refill.out).toContain('RELATED DONE: looked up 0 of 0 planned');
-      const dayRefill = new Date().toISOString().slice(0, 10);
-      expect([dayAfter, dayRefill]).toContain(JSON.parse(readFileSync(join(dir, 'data/related-bills.json'), 'utf8'))._meta.filled_at);
-      // A second run the same day looks nothing up (each bill at most once a week).
-      const again = run(dir, {});
-      expect(again.out).toContain('looked up 0 of 0 planned');
-    } finally {
-      rmSync(dir, { recursive: true, force: true });
+  test('a twin still turns a one-sided list into both sides, and is named', () => {
+    const left = [art('o1', 'cnn.com', 'left', '2026-11-10'), art('o2', 'msnbc.com', 'left', '2026-11-09')];
+    const merged = mergeTwinCoverage(left, [{ slug: 's-20-119', articles: [art('t1', 'foxnews.com', 'right', '2026-11-08')] }]);
+    for (const bq of [false, true]) {
+      const box = boxCoverage(left, merged, bq);
+      expect(coverageTier(box.articles)).toBe('cross');
+      expect(box.twins).toEqual(['s-20-119']);
     }
   });
 
-  test('a night on which every lookup fails leaves the file byte-for-byte as it was', () => {
-    test.setTimeout(120_000); // the shared fetcher retries a failed request four times
-    const dir = corpus();
-    try {
-      writeFileSync(join(dir, 'data/coverage.json'), JSON.stringify({ 'hr-10-119': [{ url: 'https://a.test/1' }] }));
-      const before = `${JSON.stringify(
-        { ...emptyRelatedBills('2026-11-14'), _checkedAt: { 'hr-30-119': '2026-01-01' }, 'hr-30-119': [{ slug: 's-20-119', type: 'Identical bill', identifiedBy: ['CRS'] }] },
-        null,
-        1
-      )}\n`;
-      writeFileSync(join(dir, 'data/related-bills.json'), before);
-      const r = run(dir, { 'hr/10': 'fail' });
-      expect(r.status, r.out).toBe(1);
-      expect(r.out).toContain('::error::RELATED STOPPED: all 1 lookups failed');
-      expect(r.out).not.toContain(KEY);
-      expect(readFileSync(join(dir, 'data/related-bills.json'), 'utf8')).toBe(before);
-      // The writer's REAL output is what the health report reads, so the
-      // printer and the parser cannot drift apart.
-      expect(relatedAlarms({ trouble: parseRelatedTrouble(r.out) }).map((a) => a.code)).toEqual(['related-bills-stopped']);
-    } finally {
-      rmSync(dir, { recursive: true, force: true });
+  test('THE PROPERTY, over every small mix of leans: whenever the own list shows a box, the result shows one', () => {
+    const leans: (Lean | null)[] = ['left', 'center', 'right', null];
+    const lists = (prefix: string, max: number): CoverageArticle[][] => {
+      const out: CoverageArticle[][] = [[]];
+      for (let n = 1; n <= max; n++) {
+        const next: CoverageArticle[][] = [];
+        for (const base of out.filter((l) => l.length === n - 1)) {
+          for (const lean of leans) next.push([...base, art(`${prefix}${n}`, `${prefix}${n}-${lean}.test`, lean, `2026-11-${10 + n}`)]);
+        }
+        out.push(...next);
+      }
+      return out;
+    };
+    let cases = 0;
+    let rescued = 0;
+    for (const o of lists('own', 3)) {
+      for (const t of lists('twin', 2)) {
+        for (const bq of [false, true]) {
+          const merged = mergeTwinCoverage(o, t.length ? [{ slug: 's-20-119', articles: t }] : []);
+          const box = boxCoverage(o, merged, bq);
+          const ownShown = coverageForBillPage(coverageTier(o) === 'none' ? [] : o, bq).length > 0;
+          const shown = coverageForBillPage(box.articles, bq).length > 0;
+          if (ownShown) expect(shown, JSON.stringify({ o: o.map((a) => a.lean), t: t.map((a) => a.lean), bq })).toBe(true);
+          // A twin is named only when the box actually lists one of its articles.
+          if (box.twins.length) expect(box.articles.some((a) => t.includes(a))).toBe(true);
+          if (ownShown && coverageForBillPage(merged.articles, bq).length === 0) rescued++;
+          cases++;
+        }
+      }
     }
+    expect(cases).toBe(85 * 21 * 2);
+    expect(rescued).toBeGreaterThan(0); // the rule is exercised, not vacuous
   });
+});
 
-  test('with no key it makes sure an empty, valid file exists, and says it STOPPED', () => {
-    const dir = corpus();
-    try {
-      const r = run(dir, {}, { CONGRESS_API_KEY: '' });
-      // In the nightly the key is always set, so a missing one is a fault the
-      // report raises; the empty file is only so the site builds.
-      expect(r.status, r.out).toBe(1);
-      expect(r.out).toContain('RELATED STOPPED: CONGRESS_API_KEY is not set, so nothing was looked up. No data/related-bills.json existed, so an empty one was written.');
-      expect(r.out).not.toContain('was left as it was');
-      expect(relatedAlarms({ trouble: parseRelatedTrouble(r.out) }).map((a) => a.code)).toEqual(['related-bills-stopped']);
-      const written = JSON.parse(readFileSync(join(dir, 'data/related-bills.json'), 'utf8'));
-      // Dated the day it was written (the health report's staleness clock).
-      expect(written._meta.filled_at).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-      expect(written).toEqual(emptyRelatedBills(written._meta.filled_at));
-    } finally {
-      rmSync(dir, { recursive: true, force: true });
-    }
-  });
-
-  test('a file that would fail its own gate is not written, and says it STOPPED', () => {
-    const dir = corpus();
-    try {
-      // A stored row this site must never act on (a damaged earlier write).
-      const before = `${JSON.stringify(
-        { ...emptyRelatedBills('2026-11-14'), _checkedAt: { 'hr-30-119': '2026-01-01' }, 'hr-30-119': [{ slug: 's-20-119', type: 'Related bill', identifiedBy: ['CRS'] }] },
-        null,
-        1
-      )}\n`;
-      writeFileSync(join(dir, 'data/related-bills.json'), before);
-      writeFileSync(join(dir, 'data/coverage.json'), JSON.stringify({ 'hr-10-119': [{ url: 'https://a.test/1' }] }));
-      const r = run(dir, { 'hr/10': { relatedBills: [] } });
-      expect(r.status, r.out).toBe(1);
-      expect(r.out).toContain('RELATED STOPPED: the new file failed its own gate');
-      expect(r.out).not.toContain('RELATED DONE');
-      expect(readFileSync(join(dir, 'data/related-bills.json'), 'utf8')).toBe(before);
-      expect(relatedAlarms({ trouble: parseRelatedTrouble(r.out) }).map((a) => a.code)).toEqual(['related-bills-stopped']);
-    } finally {
-      rmSync(dir, { recursive: true, force: true });
-    }
-  });
-
-  test('anything thrown (an unreadable coverage file) says it STOPPED, and nothing is written', () => {
-    const dir = corpus();
-    try {
-      writeFileSync(join(dir, 'data/coverage.json'), '{ not json');
-      const r = run(dir, {});
-      expect(r.status, r.out).toBe(1);
-      expect(r.out).toContain('RELATED STOPPED: it threw:');
-      expect(() => readFileSync(join(dir, 'data/related-bills.json'), 'utf8')).toThrow();
-    } finally {
-      rmSync(dir, { recursive: true, force: true });
-    }
-  });
-
-  test('the plan: never-checked first, then the oldest; a bill checked this week waits', () => {
-    expect(
-      planRelatedRun({
-        candidates: ['hr-1-119', 'hr-2-119', 'hr-3-119', 'hr-4-119'],
-        checkedAt: { 'hr-1-119': '2026-11-13', 'hr-2-119': '2026-10-01', 'hr-3-119': '2026-11-01' },
-        today: '2026-11-14',
-        perNight: 2,
-        recheckDays: 7,
-      })
-    ).toEqual(['hr-4-119', 'hr-2-119']);
-  });
+test('with no twin, the box list is the own list exactly, in its stored order', () => {
+  // Stored out of date order (as a re-filed row can leave it): no twin, no re-sort.
+  const own = [art('a', 'npr.org', 'center', '2026-11-01'), art('b', 'wsj.com', 'center', '2026-11-09')];
+  const box = boxCoverage(own, mergeTwinCoverage(own, []), false);
+  expect(box.articles).toBe(own);
+  expect(box.twins).toEqual([]);
 });

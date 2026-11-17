@@ -14,6 +14,11 @@ import relatedBillsData from '../data/related-bills.json';
 // The record's "Identical bill" relation, read one hop in both directions
 // (lib/related-bills.mjs, import-free; its header says what is left out).
 import { twinsOf } from './related-bills.mjs';
+// Whether a bill is part of a Big Question, the same reader the bill page uses
+// for its coverage rule (getCoverageWithTwins below). lib/moments reaches this
+// module back through lib/core/bills; every use on both sides is at call
+// time, never while the modules load, so the cycle is harmless.
+import { getMomentsForBill } from './moments';
 // THE CLOCK, from the ONE copy, by the import door lib/ is allowed to use
 // directly (components go through lib/signal-window.ts — see its header). The
 // "In the news" band is a present-tense claim, so it reads the same
@@ -162,23 +167,56 @@ export function mergeTwinCoverage<A extends CoverageArticleRaw>(
 }
 
 /**
+ * Which list a bill page's box gets: the combined list (own + twins), or the
+ * bill's own list alone. Pure, so the rule is pinned on fixtures.
+ *
+ * A TWIN NEVER HIDES A BOX (2026-11-17, after the independent check of #503).
+ * Every rule runs on the combined list, and a twin may ADD a box (the bill's
+ * own articles were too thin, or one-sided outside the Big Questions) or turn
+ * a one-sided list into both sides. But when the bill's OWN articles would
+ * show a box and the combined list would not (own: two center outlets; twin:
+ * left only; outside the Big Questions the combined list is one-sided and
+ * hidden), the box shows the own list exactly as it did before twins existed,
+ * and names no twin. So: whenever coverageForBillPage(own) would show
+ * something, coverageForBillPage(result) shows something too.
+ */
+export function boxCoverage(
+  own: CoverageArticle[],
+  merged: { articles: CoverageArticle[]; twins: string[] },
+  partOfBigQuestion: boolean
+): { articles: CoverageArticle[]; twins: string[] } {
+  const ownList = coverageTier(own) === 'none' ? [] : own;
+  const combined = coverageTier(merged.articles) === 'none' ? { articles: [], twins: [] } : merged;
+  if (combined.twins.length === 0) return { articles: ownList, twins: [] };
+  const combinedShows = coverageForBillPage(combined.articles, partOfBigQuestion).length > 0;
+  const ownShows = coverageForBillPage(ownList, partOfBigQuestion).length > 0;
+  if (!combinedShows && ownShows) return { articles: ownList, twins: [] };
+  return combined;
+}
+
+/**
  * What the bill page's box reads before the Big Question rule: the bill's own
  * stored articles plus its twins' (mergeTwinCoverage), each with its outlet's
- * lean, empty when the whole set is too thin (tier 'none', as getCoverage).
- * `twins` lists only bills whose articles are in `articles`.
+ * lean, empty when the whole set is too thin (tier 'none', as getCoverage),
+ * and never a list that would hide a box the bill's own articles show
+ * (boxCoverage). `twins` lists only bills whose articles are in `articles`.
+ * `partOfBigQuestion` defaults to the reader the bill page itself uses.
  *
  * getCoverage is left as it was on purpose: the homepage news band, MCP and
  * the Big Question timeline keep reading a bill's own stored coverage only.
  * His decision is about what is shown UNDER THE BILL.
  */
-export function getCoverageWithTwins(slug: string): { articles: CoverageArticle[]; twins: string[] } {
+export function getCoverageWithTwins(
+  slug: string,
+  partOfBigQuestion: boolean = getMomentsForBill(slug).length > 0
+): { articles: CoverageArticle[]; twins: string[] } {
   const enrich = (rows: CoverageArticleRaw[] | undefined): CoverageArticle[] =>
     Array.isArray(rows) ? rows.map((a) => ({ ...a, lean: leanFor(a.source) })) : [];
+  const own = enrich(COVERAGE[slug]);
   const twins = twinsOf(RELATED, slug)
     .filter((s) => Array.isArray(COVERAGE[s]))
     .map((s) => ({ slug: s, articles: enrich(COVERAGE[s]) }));
-  const merged = mergeTwinCoverage(enrich(COVERAGE[slug]), twins);
-  return coverageTier(merged.articles) === 'none' ? { articles: [], twins: [] } : merged;
+  return boxCoverage(own, mergeTwinCoverage(own, twins), partOfBigQuestion);
 }
 
 /**

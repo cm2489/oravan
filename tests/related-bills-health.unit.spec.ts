@@ -7,10 +7,14 @@ import { alarms } from '../lib/pipeline-health.mjs';
 import {
   RELATED_REASON_MAX,
   RELATED_STALE_DAYS,
+  TWIN_FALL_MIN,
   emptyRelatedBills,
   parseRelatedTrouble,
   relatedAlarms,
+  recordAnswerProblem,
   relatedStaleness,
+  twinCountFell,
+  verifyRelatedBills,
 } from '../lib/related-bills.mjs';
 
 /*
@@ -77,6 +81,8 @@ test.describe('(a) a STOPPED line', () => {
       expect(codes(a)).toEqual(['related-bills-stopped']);
       expect(a[0].text).toContain('all 4 lookups failed (the first: Congress.gov 503)');
       expect(a[0].text).toContain('docs/runbooks/related-bills.md');
+      // It promises only what it knows: nothing about the rest of the night.
+      expect(a[0].text).not.toContain('rest of the night');
     }
   });
 
@@ -148,6 +154,50 @@ test.describe('(c) the file not filled for more than 3 days (state, not the log)
 
   test('a log with no RELATED lines never raises it by itself: only the date does', () => {
     expect(relatedAlarms({ trouble: parseRelatedTrouble(REAL), staleness: relatedStaleness(emptyRelatedBills('2026-11-20'), NOW) })).toEqual([]);
+  });
+});
+
+test.describe('(d) the number of bills with a twin falling (state, not the log)', () => {
+  // A file whose last fill left `carrying` bills with a twin, from `previous`.
+  const filled = (carrying: number, previous: number | undefined) => {
+    const f: Record<string, unknown> = { ...emptyRelatedBills('2026-11-20') };
+    if (previous !== undefined) f._meta = { ...(f._meta as object), previous_carrying: previous };
+    for (let i = 1; i <= carrying; i++) f[`hr-${i}-119`] = [{ slug: `s-${i}-119`, type: 'Identical bill', identifiedBy: ['CRS'] }];
+    return f;
+  };
+  const at = (carrying: number, previous: number | undefined) =>
+    codes(relatedAlarms({ trouble: null, staleness: relatedStaleness(filled(carrying, previous), NOW) }));
+
+  test('at 125 (today\'s real count), a fall of 14 fires and a fall of 13 does not', () => {
+    expect(at(111, 125)).toEqual(['related-bills-twins-fell']);
+    expect(at(112, 125)).toEqual([]);
+    const a = relatedAlarms({ trouble: null, staleness: relatedStaleness(filled(111, 125), NOW) });
+    expect(a[0].text).toContain('fell from 125 to 111');
+    expect(a[0].text).toContain('docs/runbooks/related-bills.md');
+  });
+
+  test(`small counts: the floor is ${TWIN_FALL_MIN}, and any fall to 0 fires`, () => {
+    expect(at(14, 20)).toEqual(['related-bills-twins-fell']); // fall 6 > 5
+    expect(at(15, 20)).toEqual([]); // fall 5
+    expect(at(0, 3)).toEqual(['related-bills-twins-fell']); // the check's 3, 2, 1, 0
+    expect(at(1, 2)).toEqual([]);
+  });
+
+  test('a real night (one or two removed), the first fill (rising from 0), and a file with no count raise nothing', () => {
+    expect(at(124, 125)).toEqual([]);
+    expect(at(123, 125)).toEqual([]);
+    expect(at(125, 0)).toEqual([]);
+    expect(at(0, 0)).toEqual([]);
+    expect(at(0, undefined)).toEqual([]);
+    expect(twinCountFell(null, 10)).toBe(false);
+  });
+});
+
+test.describe('a future last-filled day (only a hand edit can write one)', () => {
+  test('is stale, and says the date has not come yet', () => {
+    const a = relatedAlarms({ trouble: null, staleness: relatedStaleness(emptyRelatedBills('2026-11-25'), NOW) });
+    expect(codes(a)).toEqual(['related-bills-stale']);
+    expect(a[0].text).toContain('a day that has not come yet');
   });
 });
 
@@ -237,7 +287,10 @@ else process.stdout.write('[]');
   test('the real pre-step nightly log and a fresh file: the report raises no related-bills alarm', () => {
     const r = report(REAL, '2026-11-20');
     expect(r.codes.filter((c) => c.startsWith('related-bills'))).toEqual([]);
-    expect(r.related).toEqual({ trouble: { started: false, done: null, stopped: null }, staleness: { readable: true, filledAt: '2026-11-20', ageDays: 1 } });
+    expect(r.related).toEqual({
+      trouble: { started: false, done: null, stopped: null },
+      staleness: { readable: true, filledAt: '2026-11-20', ageDays: 1, carrying: 0, previousCarrying: null },
+    });
   });
 
   test('the same log with a STOPPED night appended: the report raises related-bills-stopped', () => {
@@ -253,5 +306,28 @@ else process.stdout.write('[]');
 test('the CI gate still rejects every bad shape it was built to reject, last-filled day included', () => {
   const r = spawnSync(process.execPath, [join(process.cwd(), 'scripts/check-related-bills.mjs'), '--self-test'], { encoding: 'utf8' });
   expect(r.status, r.stdout + r.stderr).toBe(0);
-  expect(r.stdout).toContain('(10 bad shapes rejected)');
+  expect(r.stdout).toContain('(8 bad shapes rejected, 3 warned and passed)');
+});
+
+test.describe('the gate and the readers, at their edges', () => {
+  test('a well-shaped answer has no problem (null), an empty list included', () => {
+    expect(recordAnswerProblem({ relatedBills: [] })).toBeNull();
+    expect(recordAnswerProblem({ relatedBills: [{ relationshipDetails: [{ type: 'Identical bill' }] }] })).toBeNull();
+  });
+
+  test('a file that is not an object fails with an empty warnings list', () => {
+    expect(verifyRelatedBills({ data: null, today: '2026-11-10' })).toEqual({ failures: ['data/related-bills.json is not an object'], warnings: [], notes: [] });
+  });
+
+  test('a previous_carrying that is not a count only warns', () => {
+    const v = verifyRelatedBills({ data: { ...emptyRelatedBills('2026-11-10'), _meta: { ...emptyRelatedBills('2026-11-10')._meta, previous_carrying: -1 } }, today: '2026-11-10' });
+    expect(v.failures).toEqual([]);
+    expect(v.warnings.join('\n')).toContain('previous_carrying is -1, not a count');
+  });
+
+  test('a file with no last-filled day still carries its twin counts (so a fall to 0 is still seen)', () => {
+    const st = relatedStaleness({ _meta: { previous_carrying: 5 } }, NOW);
+    expect(st).toEqual({ readable: false, filledAt: null, ageDays: null, carrying: 0, previousCarrying: 5 });
+    expect(codes(relatedAlarms({ trouble: null, staleness: st }))).toEqual(['related-bills-stale', 'related-bills-twins-fell']);
+  });
 });

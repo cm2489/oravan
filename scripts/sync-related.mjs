@@ -1,6 +1,6 @@
 /**
- * Nightly: read the official record's "Identical bill" relations for the
- * bills that carry stored press coverage, into data/related-bills.json.
+ * Nightly: read the official record's "Identical bill" relations into
+ * data/related-bills.json.
  *
  *   node --env-file=.env.local scripts/sync-related.mjs
  *
@@ -11,62 +11,88 @@
  * related-bills list, filtered by lib/related-bills.mjs to the record's own
  * "Identical bill" label. See that file's header for what is left out and why.
  *
- * WHICH BILLS, AND HOW MANY A NIGHT. Only bills with stored coverage are
- * looked up: a twin's articles can only come from a bill that has some, and
- * twinsOf reads each relation in both directions, so the bill on the other
- * side needs no call of its own. Bills never looked at go first, then the
- * ones looked at longest ago; a bill looked at in the last RECHECK_DAYS is
- * skipped. At most RELATED_PER_NIGHT calls a night.
+ * WHICH BILLS. Every corpus bill with stored coverage (a twin's articles can
+ * only come from a bill that has some), and every bill the file already
+ * holds a relation for (so a relation the record has dropped is removed even
+ * when its bill has no coverage). twinsOf reads each relation in both
+ * directions, so the other side needs no call of its own. Never-checked bills
+ * go first, then the longest ago; a bill checked in the last RECHECK_DAYS (7)
+ * waits. So a relation the record drops can still show for up to about 8
+ * days (docs/runbooks/related-bills.md says so). At most PER_NIGHT (200)
+ * lookups a night. Bills no longer in data/bills.json are pruned first.
  *
- * COST: $0. One free Congress.gov request per bill looked at (at most
- * RELATED_PER_NIGHT = 200 a night; the key's limit is 5,000 an hour). No
- * Anthropic call, no news API call.
+ * COST: $0. Free Congress.gov requests only: one per bill, two when the
+ * first answer is a 5xx or 429. No Anthropic call, no news API call.
+ *
+ * TIME (2026-11-17, after the independent check). An ordinary night is about
+ * a minute: 520 lookups took 118 s on 2026-11-14, so 200 take about 45 s.
+ * Hard bounds, so a slow or hung Congress.gov can never cost the night:
+ *   - each attempt gets ATTEMPT_MS (15 s), body included;
+ *   - a hang or a network error is NOT retried; a 5xx or 429 is retried once
+ *     after PAUSE_MS (3 s): at most 15 + 3 + 15 = 33 s for one bill;
+ *   - MAX_FAILS_IN_A_ROW (5) failed lookups in a row stop the run;
+ *   - no new lookup starts after BUDGET_MS (5 min) from the start;
+ *   - so the run ends within about 5 min + 33 s + a few seconds of reading
+ *     and writing. The workflow step also runs it under `timeout 8m` and has
+ *     `timeout-minutes: 10` as backstops.
  *
  * WHAT IT PRINTS, so the daily health report can read every outcome
- * (lib/pipeline-health.mjs, parseRelatedTrouble, and its alarms):
+ * (lib/related-bills.mjs: parseRelatedTrouble, relatedAlarms):
  *   - `RELATED START: …` first, before anything can fail. A log with this
- *     line and neither of the two below is a crash the report alarms on.
+ *     line and neither of the two below is a crash (or a kill by the step's
+ *     timeout) the report alarms on.
  *   - `RELATED DONE: looked up N of M planned (F failed; …` when it wrote,
- *     with `_meta.filled_at` set to today (the health report alarms when that
- *     day is more than 3 days old, whatever the reason: a step skipped,
- *     deleted or doing nothing raises it too).
- *     A request that fails leaves that bill as it was (old relations, old
- *     check day), so it stays first in line for the next night; the report
- *     alarms when half or more of a night's lookups failed.
+ *     with `_meta.filled_at` set to today and `_meta.previous_carrying` set
+ *     to the number of bills that carried a twin before tonight. A lookup
+ *     that fails (no answer, an error status, or an answer not in the
+ *     documented shape) leaves that bill as it was, so it stays first in line
+ *     the next night; the report alarms when half or more failed.
  *   - `RELATED STOPPED: <why>. data/related-bills.json was left as it was.`
- *     on every other way it ends: no key, every lookup failed, the new file
- *     failed its own gate, or anything thrown. Printed as an ::error::
- *     annotation too. The file is never left half-written (written to a
- *     temporary name, then renamed).
+ *     on every other ending: no key, five failures in a row, the time
+ *     budget, every lookup failed, the new file failed its own gate, or
+ *     anything thrown. Printed as an ::error:: annotation. Whatever tonight
+ *     read is not written: the file stays exactly as the night began.
+ * The file is written to a temporary name and renamed, so it is never
+ * half-written; a kill (SIGTERM) removes the temporary file, and
+ * .gitignore keeps a leftover one out of the nightly commit.
  *
  * With no CONGRESS_API_KEY and no file yet, it writes an empty, valid file
  * (how the committed file was made) and still prints STOPPED: in the nightly
  * the key is always set, so a missing key there is a fault.
  *
- * The step is continue-on-error in sync-bills.yml: whatever happens here, the
- * rest of the night still commits. scripts/verify-sync.mjs re-checks the file
- * before the commit and, if it is damaged, puts back the committed copy rather
- * than failing the night (and prints STOPPED for the report).
+ * The step is continue-on-error in sync-bills.yml, so this script's own exit
+ * code never fails the job. scripts/verify-sync.mjs then checks the file
+ * before the commit and fails the night only on damage this script cannot
+ * write (lib/related-bills.mjs verifyRelatedBills; a bill that left the
+ * corpus or a future date only warns).
  */
-console.log('RELATED START: reading the record\'s "Identical bill" relations for bills with stored coverage');
+console.log('RELATED START: reading the record\'s "Identical bill" relations');
 
 const STOPPED_TAIL = 'data/related-bills.json was left as it was.';
-// Belt and braces: no request error should carry the key, but nothing this
-// prints may ever show one, so any api_key=… is cut out of what it prints.
+// Belt and braces: no error this prints should carry the key, but nothing it
+// prints may ever show one, so any api_key=… is cut out.
 const redact = (s) => String(s).replace(/api_key=[^&\s]*/gi, 'api_key=[redacted]');
 const stop = (why, tail = STOPPED_TAIL) => {
-  const line = `RELATED STOPPED: ${redact(why)}. ${tail}`;
-  console.log(`::error::${line}`);
+  console.log(`::error::RELATED STOPPED: ${redact(why)}. ${tail}`);
   process.exitCode = 1;
 };
 
 try {
   // Imported after the START line, so a module that fails to load still
   // leaves a START line with no DONE (the crash case the report reads).
-  const { existsSync, readFileSync, renameSync, writeFileSync } = await import('node:fs');
-  const { billApiPath, cg } = await import('./congress-fetch.mjs');
-  const { RELATED_BILLS_PATH, emptyRelatedBills, identicalFromRecord, planRelatedRun, serializeRelatedBills, verifyRelatedBills } =
-    await import('../lib/related-bills.mjs');
+  const { existsSync, readFileSync, renameSync, rmSync, writeFileSync } = await import('node:fs');
+  const { billApiPath } = await import('./congress-fetch.mjs');
+  const {
+    RELATED_BILLS_PATH,
+    carryingCount,
+    emptyRelatedBills,
+    identicalFromRecord,
+    planRelatedRun,
+    pruneToCorpus,
+    recordAnswerProblem,
+    serializeRelatedBills,
+    verifyRelatedBills,
+  } = await import('../lib/related-bills.mjs');
 
   const envNum = (name, fallback) => {
     const raw = process.env[name];
@@ -76,46 +102,116 @@ try {
   };
   const PER_NIGHT = envNum('RELATED_PER_NIGHT', 200);
   const RECHECK_DAYS = envNum('RELATED_RECHECK_DAYS', 7);
+  const ATTEMPT_MS = envNum('RELATED_ATTEMPT_TIMEOUT_MS', 15_000);
+  const PAUSE_MS = envNum('RELATED_RETRY_PAUSE_MS', 3_000);
+  const BUDGET_MS = envNum('RELATED_BUDGET_MS', 300_000);
+  const MAX_FAILS_IN_A_ROW = envNum('RELATED_MAX_FAILS_IN_A_ROW', 5);
+  const API = 'https://api.congress.gov/v3';
+  // The day the run counts as. RELATED_TODAY lets a test drive nights on
+  // pinned dates; it is accepted only when it is not after the real UTC day,
+  // so this script cannot write a future filled_at or check day.
+  const realToday = new Date().toISOString().slice(0, 10);
+  const asked = process.env.RELATED_TODAY;
+  const today = typeof asked === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(asked) && asked <= realToday ? asked : realToday;
   const readJSON = (p) => JSON.parse(readFileSync(p, 'utf8'));
-  const today = new Date().toISOString().slice(0, 10);
   const slugOf = (b) => `${b.bill_type}-${b.bill_number}-${b.congress_number}`.toLowerCase();
+  const tmp = `${RELATED_BILLS_PATH}.tmp`;
+  rmSync(tmp, { force: true });
+  // A kill (the step's timeout) must not leave the temporary file behind.
+  process.on('SIGTERM', () => {
+    rmSync(tmp, { force: true });
+    process.exit(143);
+  });
   const writeAtomic = (text) => {
-    const tmp = `${RELATED_BILLS_PATH}.tmp`;
     writeFileSync(tmp, text);
     renameSync(tmp, RELATED_BILLS_PATH);
   };
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  let requests = 0;
+
+  /** One bill's related-bills answer, or a thrown Error saying why not. */
+  const lookup = async (path) => {
+    for (let attempt = 1; ; attempt++) {
+      const url = new URL(`${API}${path}`);
+      url.searchParams.set('limit', '250');
+      url.searchParams.set('format', 'json');
+      url.searchParams.set('api_key', process.env.CONGRESS_API_KEY);
+      requests++;
+      let res;
+      let body;
+      try {
+        res = await fetch(url, { signal: AbortSignal.timeout(ATTEMPT_MS) });
+        if (res.ok) body = await res.json();
+      } catch (e) {
+        // A hang or a dropped connection is not waited out twice.
+        const hung = e?.name === 'TimeoutError' || e?.name === 'AbortError';
+        throw new Error(hung ? `no answer within ${ATTEMPT_MS / 1000} s for ${path}` : `could not read the answer for ${path} (${e?.name ?? 'error'})`);
+      }
+      if (res.ok) return body;
+      if ((res.status >= 500 || res.status === 429) && attempt < 2) {
+        await sleep(PAUSE_MS);
+        continue;
+      }
+      throw new Error(`Congress.gov ${res.status} for ${path}`);
+    }
+  };
 
   const prior = existsSync(RELATED_BILLS_PATH) ? readJSON(RELATED_BILLS_PATH) : null;
-  const file = prior ?? emptyRelatedBills(today);
-  if (!file._checkedAt || typeof file._checkedAt !== 'object') file._checkedAt = {};
 
   if (!process.env.CONGRESS_API_KEY) {
-    if (!prior) writeAtomic(serializeRelatedBills(file));
+    if (!prior) writeAtomic(serializeRelatedBills(emptyRelatedBills(today)));
     stop('CONGRESS_API_KEY is not set, so nothing was looked up', prior ? STOPPED_TAIL : 'No data/related-bills.json existed, so an empty one was written.');
   } else {
     const bills = readJSON('data/bills.json');
     const bySlug = new Map(bills.map((b) => [slugOf(b), b]));
+    const corpus = new Set(bySlug.keys());
+    const start = prior ?? emptyRelatedBills(today);
+    const pruned = pruneToCorpus({ ...start, _checkedAt: start._checkedAt ?? {} }, corpus, today);
+    const file = pruned.file;
+    const previousCarrying = carryingCount(file);
     const coverage = readJSON('data/coverage.json');
-    const candidates = Object.keys(coverage).filter((k) => !k.startsWith('_') && bySlug.has(k));
+    const withCoverage = Object.keys(coverage).filter((k) => !k.startsWith('_') && corpus.has(k));
+    const inFile = Object.keys(file).filter((k) => !k.startsWith('_'));
+    const candidates = [...new Set([...withCoverage, ...inFile])];
     const plan = planRelatedRun({ candidates, checkedAt: file._checkedAt, today, perNight: PER_NIGHT, recheckDays: RECHECK_DAYS });
 
+    const began = Date.now();
     let ok = 0;
     let failed = 0;
+    let inARow = 0;
     let firstError = null;
+    let lastError = null;
+    let stopReason = null;
     let gained = 0;
     let lost = 0;
     for (const slug of plan) {
-      let payload;
+      if (Date.now() - began > BUDGET_MS) {
+        stopReason = `it reached its ${BUDGET_MS / 1000}-second time budget after ${ok + failed} of ${plan.length} lookups, so Congress.gov is answering very slowly`;
+        break;
+      }
+      let rows;
       try {
-        payload = await cg(billApiPath(bySlug.get(slug), '/relatedbills'), { limit: '250' });
+        const payload = await lookup(billApiPath(bySlug.get(slug), '/relatedbills'));
+        const problem = recordAnswerProblem(payload);
+        if (problem) throw new Error(`the answer for ${slug} is not in the documented shape: ${problem}`);
+        rows = identicalFromRecord(payload, slug);
+        if ((payload?.pagination?.count ?? 0) > 250) {
+          console.log(`::warning::${slug} has ${payload.pagination.count} related bills; only the first 250 were read`);
+        }
       } catch (e) {
         failed++;
-        firstError ??= String(e?.message ?? e);
-        console.log(`FAIL ${slug}: ${redact(e?.message ?? e)}`);
+        inARow++;
+        lastError = redact(e?.message ?? e);
+        firstError ??= lastError;
+        console.log(`FAIL ${slug}: ${lastError}`);
+        if (inARow >= MAX_FAILS_IN_A_ROW) {
+          stopReason = `${inARow} lookups in a row failed (the last: ${lastError})`;
+          break;
+        }
         continue;
       }
       ok++;
-      const rows = identicalFromRecord(payload, slug);
+      inARow = 0;
       const before = new Set((file[slug] ?? []).map((r) => r.slug));
       const after = new Set(rows.map((r) => r.slug));
       for (const s of after) {
@@ -131,31 +227,26 @@ try {
       if (rows.length) file[slug] = rows;
       else delete file[slug];
       file._checkedAt[slug] = today;
-      if ((payload?.pagination?.count ?? 0) > 250) {
-        console.log(`::warning::${slug} has ${payload.pagination.count} related bills; only the first 250 were read`);
-      }
     }
 
-    if (ok === 0 && plan.length > 0) {
+    if (stopReason) {
+      stop(stopReason);
+    } else if (ok === 0 && plan.length > 0) {
       stop(`all ${plan.length} lookups failed (the first: ${firstError})`);
     } else {
-      // The day this run finished: the health report's staleness clock.
-      file._meta = { ...file._meta, filled_at: today };
+      // The day this run finished (the stale alarm's clock) and the count of
+      // bills with a twin before tonight (the twin-count alarm's baseline).
+      file._meta = { ...file._meta, filled_at: today, previous_carrying: previousCarrying };
       const text = serializeRelatedBills(file);
-      const { failures } = verifyRelatedBills({
-        data: JSON.parse(text),
-        fileBytes: Buffer.byteLength(text),
-        today,
-        knownSlugs: new Set(bySlug.keys()),
-      });
+      const { failures, warnings } = verifyRelatedBills({ data: JSON.parse(text), fileBytes: Buffer.byteLength(text), today, knownSlugs: corpus });
+      for (const w of warnings) console.log(`::warning::${w}`);
       if (failures.length) {
         for (const f of failures) console.log(f);
         stop(`the new file failed its own gate (${failures.length} finding(s); the first: ${failures[0]})`);
       } else {
         writeAtomic(text);
-        const carrying = Object.keys(file).filter((k) => !k.startsWith('_')).length;
         console.log(
-          `RELATED DONE: looked up ${ok} of ${plan.length} planned (${failed} failed; ${candidates.length} bills with coverage); ${gained} relation(s) added, ${lost} removed; ${carrying} bills carry an identical bill. Congress.gov requests: ${ok + failed}. Cost: $0.`
+          `RELATED DONE: looked up ${ok} of ${plan.length} planned (${failed} failed; ${candidates.length} candidate bills, ${withCoverage.length} with coverage); ${gained} relation(s) added, ${lost} removed; ${carryingCount(file)} bills carry an identical bill (${previousCarrying} before tonight); pruned ${pruned.keys} bill(s) and ${pruned.rows} twin row(s) no longer in data/bills.json${pruned.future ? `, and treated ${pruned.future} future check day(s) as never checked` : ''}. Congress.gov requests: ${requests}. Cost: $0.`
         );
       }
     }
