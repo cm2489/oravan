@@ -272,3 +272,332 @@ export function shortAddressTarget(
   const prefix = locale && locale !== defaultLocale ? `/${locale}` : '';
   return `${prefix}/bills/${shortAddressSlug(address, resolved)}`;
 }
+
+// --- name addresses: oravan.org/continuing-appropriations-act-2027 --------------
+
+/*
+ * NAME ADDRESSES (2026-11-14). A bill can also be reached by its own short
+ * title: oravan.org/continuing-appropriations-act-2027 opens H.R. 9770,
+ * /es/continuing-appropriations-act-2027 its Spanish page. (Not
+ * /laken-riley-act: S. 5 and H.R. 29 both carry that title, so it opens
+ * neither; see below.)
+ *
+ * WHERE A NAME COMES FROM (the owner's choice, NAME_ADDRESS_RULING below):
+ * only the short titles the record itself labels as the bill's
+ * (lib/short-titles.mjs, data/short-titles.json, filled nightly from
+ * Congress.gov). Never a title Oravan wrote, never an AI headline, never a
+ * popular name, never the official long title. A bill with no short title in
+ * the record has a number address only.
+ *
+ * THE SLUG RULE (nameSlug), one paragraph a reader can check by hand: take
+ * the short title exactly as the record gives it; split each accented letter
+ * into its letter and its accent (Unicode NFD, which never turns one
+ * character into several letters); read a non-breaking space as a space;
+ * delete every apostrophe-like mark (the straight apostrophe ', the curly
+ * quotes ‘ and ’, the modifier-letter apostrophe ʼ, the okina ʻ, the acute
+ * accent ´ and the grave accent `), so "America's" -> "americas" and
+ * "Hawaiʻi" -> "hawaii"; drop the accents (é -> e, ñ -> n). If the title then
+ * holds ANY character other than the letters A to Z and a to z, the digits 0
+ * to 9, the space, and these punctuation marks: hyphen -, en dash –, em dash
+ * —, comma, period, colon, semicolon, ampersand &, slash /, parentheses ( ),
+ * straight double quote ", curly double quotes “ ”, exclamation mark ! and
+ * question mark ?, it gets NO name. So a letter such as Æ, Ø, Ł or ß, any
+ * non-Latin character, a non-ASCII digit, a symbol (™, №, ½, a Roman-numeral
+ * or ligature character, a full-width letter), any other apostrophe-like
+ * mark (′, ‛, ՚, a full-width apostrophe) and every invisible character (soft
+ * hyphen, zero-width space, zero-width joiner and non-joiner, word joiner,
+ * byte-order mark) all mean no name: nothing is dropped, split, joined or
+ * rewritten to make one. Otherwise lower-case it; turn every run of spaces
+ * and allowed punctuation into one hyphen; drop a hyphen at either end. No
+ * word is dropped, added or changed: no stop-word is removed, "of 2026"
+ * stays, "&" does not become "and". A title whose result has no letter
+ * (only a number, or nothing) gets no name.
+ *
+ * WHEN A NAME IS AN ADDRESS (nameAddressAllowed): it has 4 to 200
+ * characters; it does not read as a number address, with or without its
+ * hyphens (a title that slugs to "hr1", "s-2" or "h-r-1" never becomes a
+ * name, so no name can look like /hr1); proxy.ts actually runs on it in every
+ * language (its `matcher` skips paths starting with "api", "_next",
+ * "_vercel", "embed/" or equal to "embed", and paths with a dot, so a name
+ * like "apiary-act" would answer in Spanish and not in English: it is
+ * refused, read from PROXY_MATCHER below); and it is not a reserved word: a
+ * real route's segment (read from app/ and public/ at build time, so a route
+ * added later is reserved by the build that adds it) or one of
+ * NAME_ADDRESS_RESERVED below. PRECEDENCE: a real route, then a number
+ * address, then a name.
+ *
+ * NEVER CHOOSING BETWEEN BILLS. Many bills share a short title (a House bill
+ * and its Senate twin usually do). A name resolves only when exactly ONE bill
+ * of the Congress being searched carries it, among the bills Oravan tracks:
+ * A name opens a bill when no other bill Oravan tracks in the same Congress
+ * has a short title that makes the same name and no Congress searched before
+ * that one (the tracked Congress first, then each ended Congress, most
+ * recently ended first) holds the name. ("SAFE Act" and "Safe Act" make one
+ * name, and so do "Twin Spelling Act" and "Twin-Spelling Act".) A twin Oravan does not track (most bills of a Congress are never in
+ * the corpus) is not counted, so which bill a name opens depends on which
+ * bills Oravan tracks, and a name can stop opening its bill the day a twin
+ * enters the corpus. The Congresses are searched in
+ * the number addresses' order (the tracked one, then each ended one, most
+ * recently ended first), and the first Congress that holds the name at all
+ * answers: with its one bill, or, when it holds two or more, with the normal
+ * not-found. A name shared in the tracked Congress never falls through to an
+ * older Congress's bill of the same name.
+ *
+ * THE TABLE (encodeNameTables / decodeNameTables). Built at BUILD time by
+ * next.config.ts and inlined into the proxy bundle as SHORT_ADDRESS_NAMES:
+ * per Congress, every name with its bill's type and number ("continuing-
+ * appropriations-act-2027=hr9770"), or nothing after the "=" for a name two or more bills share. The
+ * names themselves are stored, not hashes of them, so a string that is not a
+ * bill's name can never match: a false hit is impossible, not merely
+ * unlikely. Decoded once per server instance into one Map per Congress; a
+ * request costs one pattern test and at most one Map lookup per Congress.
+ */
+
+/**
+ * The owner's dated choice, in the words of the card he answered (card 191).
+ * His first ask (Sep 27, 2026): "can you do a link card with a name instead
+ * of bill number."
+ */
+export const NAME_ADDRESS_RULING =
+  'Card 191, Saturday, Nov 14, 2026, 1:06 PM ET. Asked what he meant by "A name (oravan.org/gi-bill)" (card 64, ' +
+  'Nov 13, 2026), the owner chose: "Names beside numbers. Each name comes from the bill\'s own official short ' +
+  'title in the record, never chosen by Oravan."';
+
+/**
+ * Words a name may never take, beyond the routes the build reads from app/
+ * and public/: Next's and the host's own prefixes, the locales, and words a
+ * route could plausibly take later. A name equal to one of these gets no
+ * address, today or after a route of that name exists.
+ */
+export const NAME_ADDRESS_RESERVED: readonly string[] = Object.freeze([
+  '_next', '_vercel', 'api', 'embed', 'embeds', 'en', 'es', 'bills', 'bill', 'reps', 'rep', 'members', 'member',
+  'senate', 'house', 'congress', 'call', 'calls', 'today', 'questions', 'question', 'moments', 'impact', 'record',
+  'votes', 'vote', 'nominations', 'nomination', 'feed', 'search', 'about', 'privacy', 'terms', 'donate', 'partners',
+  'admin', 'login', 'logout', 'account', 'settings', 'help', 'static', 'assets', 'public', 'sitemap', 'robots',
+  'manifest', 'favicon', 'icon', 'llms', 'mcp', 'glossary', 'citations', 'follow', 'why-call', 'law', 'laws', 'new',
+  'week', 'weekly', 'brief', 'briefs', 'topics', 'topic', 'issues', 'issue', 'contact', 'news', 'press', 'blog',
+]);
+
+const NAME_MIN = 4;
+const NAME_MAX = 200;
+const NAME_SHAPE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+/**
+ * proxy.ts's `config.matcher`, character for character. Next reads that
+ * value statically from proxy.ts itself, so it cannot be imported there;
+ * tests/short-address-names.unit.spec.ts fails if the two ever differ. A
+ * path the matcher skips never reaches the proxy, so a name there would
+ * never answer.
+ */
+export const PROXY_MATCHER = '/((?!api|_next|_vercel|embed/|embed$|.*\\..*).*)';
+const PROXY_MATCHER_RE = new RegExp(`^${PROXY_MATCHER}$`);
+
+/** Does proxy.ts run on this path? (Its matcher, read as the whole-path regular expression it is.) */
+export function proxySeesPath(pathname: string): boolean {
+  return PROXY_MATCHER_RE.test(pathname);
+}
+
+/** The site's locales (i18n/routing.ts; the names spec checks they agree). */
+export const NAME_ADDRESS_LOCALES: readonly string[] = Object.freeze(['en', 'es']);
+
+/** Apostrophe-like marks the slug rule deletes: ' ‘ ’ ʼ ʻ ´ ` (U+0027, U+2018, U+2019, U+02BC, U+02BB, U+00B4, U+0060). */
+const APOSTROPHE_LIKE = /['\u2018\u2019\u02BC\u02BB\u00B4\u0060]/g;
+/**
+ * Everything a title may hold once accents are dropped: A-Z, a-z, 0-9, the
+ * space, and - – — , . : ; & / ( ) " “ ” ! ? (the punctuation the rule above
+ * lists). Anything else means no name.
+ */
+const ALLOWED_AFTER_ACCENTS = /^[A-Za-z0-9 \-\u2013\u2014,.:;&/()"\u201C\u201D!?]*$/;
+
+/** The slug rule, with its reason when a title gets no name (the build log prints it). */
+export function slugTitle(title: string): { name: string; reason: null } | { name: null; reason: string } {
+  const plain = title
+    .normalize('NFD')
+    .replace(/\u00A0/g, ' ')
+    .replace(APOSTROPHE_LIKE, '')
+    .replace(/\p{M}/gu, '');
+  if (!ALLOWED_AFTER_ACCENTS.test(plain)) {
+    const bad = [...plain].find((ch) => !ALLOWED_AFTER_ACCENTS.test(ch)) ?? '';
+    const code = bad.codePointAt(0)?.toString(16).toUpperCase().padStart(4, '0');
+    return { name: null, reason: `the title holds a character outside the allowed set (U+${code})` };
+  }
+  const name = plain
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  if (!/[a-z]/.test(name)) return { name: null, reason: 'the title has no letter' };
+  return { name, reason: null };
+}
+
+/** The slug rule above: a short title as the record gives it -> its name, or null when it gets none. */
+export function nameSlug(title: string): string | null {
+  return slugTitle(title).name;
+}
+
+/** Why a name is not an address, or null when it is one. One plain reason per refusal, for the build log. */
+export function nameAddressRefusal(
+  name: string,
+  reserved: ReadonlySet<string>,
+  locales: readonly string[] = NAME_ADDRESS_LOCALES,
+): string | null {
+  if (name.length < NAME_MIN) return `shorter than ${NAME_MIN} characters`;
+  if (name.length > NAME_MAX) return `longer than ${NAME_MAX} characters`;
+  if (!NAME_SHAPE.test(name) || !/[a-z]/.test(name)) return 'not a-z, 0-9 and single hyphens with a letter';
+  if (parseShortAddress(name) !== null || parseShortAddress(name.replace(/-/g, '')) !== null) return 'it reads as a number address';
+  if (![`/${name}`, ...locales.map((l) => `/${l}/${name}`)].every(proxySeesPath)) {
+    return "proxy.ts's matcher skips it in at least one language";
+  }
+  if (reserved.has(name)) return 'a route or reserved word of that name';
+  return null;
+}
+
+/** Is this name an address? (Length, shape, never a number address, seen by the proxy in every language, never reserved.) */
+export function nameAddressAllowed(name: string, reserved: ReadonlySet<string>): boolean {
+  return nameAddressRefusal(name, reserved) === null;
+}
+
+/** The record's short titles, as data/short-titles.json holds them: slug -> { titles }. */
+export type ShortTitleFile = Readonly<Record<string, { readonly titles: readonly string[] }>>;
+
+/** One Congress's names: name -> its one bill, or null when two or more bills share it. */
+export type NameTable = ReadonlyMap<string, ShortAddress | null>;
+
+export type NameTables = ReadonlyArray<{ congress: number; names: NameTable }>;
+
+/**
+ * Every name of every bill of one Congress, grouped: name -> the bills
+ * (`type+number`) that carry it. Built from the record's titles alone. Pure;
+ * build time and the specs only.
+ */
+/** A record short title that gives no address, and why (next.config.ts prints one line for each). */
+export interface NameRefusal {
+  slug: string;
+  title: string;
+  name: string | null;
+  reason: string;
+}
+
+export function namesOfCongress(
+  bills: readonly ShortAddressBill[],
+  titles: ShortTitleFile,
+  congress: number,
+  reserved: ReadonlySet<string>,
+  onRefused?: (refusal: NameRefusal) => void,
+): Map<string, Set<string>> {
+  const out = new Map<string, Set<string>>();
+  for (const bill of bills) {
+    if (bill.congress_number !== congress) continue;
+    const address = parseShortAddress(`${bill.bill_type}${bill.bill_number}`);
+    if (!address) continue;
+    const entry = titles[`${bill.bill_type}-${bill.bill_number}-${bill.congress_number}`];
+    for (const title of entry?.titles ?? []) {
+      if (typeof title !== 'string') continue;
+      const slug = `${bill.bill_type}-${bill.bill_number}-${bill.congress_number}`;
+      const slugged = slugTitle(title);
+      const name = slugged.name;
+      if (!name) {
+        onRefused?.({ slug, title, name: null, reason: slugged.reason ?? 'no name' });
+        continue;
+      }
+      const reason = nameAddressRefusal(name, reserved);
+      if (reason) {
+        onRefused?.({ slug, title, name, reason });
+        continue;
+      }
+      const holders = out.get(name) ?? new Set<string>();
+      holders.add(`${address.type}${address.number}`);
+      out.set(name, holders);
+    }
+  }
+  return out;
+}
+
+/**
+ * The name tables for proxy.ts, one per Congress in `order` (the tracked
+ * Congress, then shortAddressFallbackCongresses): `<congress>@name=bill,...`
+ * joined by `|`, names sorted; `name=` (nothing after it) for a shared name.
+ * A Congress with no name is left out. '' when no bill has a short title
+ * (every build until the first nightly fills data/short-titles.json).
+ */
+export function encodeNameTables(
+  bills: readonly ShortAddressBill[],
+  titles: ShortTitleFile,
+  order: readonly number[],
+  reserved: ReadonlySet<string>,
+  onRefused?: (refusal: NameRefusal) => void,
+): string {
+  const parts: string[] = [];
+  for (const congress of order.filter((c, i, all) => all.indexOf(c) === i)) {
+    const names = namesOfCongress(bills, titles, congress, reserved, onRefused);
+    if (names.size === 0) continue;
+    const entries = [...names.keys()].sort().map((name) => {
+      const holders = names.get(name)!;
+      if (holders.size > 1) {
+        // A shared name is in the table (so the search stops there) but opens nothing: say so too.
+        const bills = [...holders].sort().map((h) => {
+          const a = parseShortAddress(h)!;
+          return `${a.type}-${a.number}-${congress}`;
+        });
+        onRefused?.({ slug: bills.join(' '), title: '', name, reason: `shared by ${holders.size} bills, so it opens none of them` });
+      }
+      return `${name}=${holders.size === 1 ? [...holders][0] : ''}`;
+    });
+    parts.push(`${congress}@${entries.join(',')}`);
+  }
+  return parts.join('|');
+}
+
+/** Decode the string above once, at module load. A malformed entry or table is skipped; the order is kept. */
+export function decodeNameTables(encoded: string | undefined): NameTables {
+  const tables: Array<{ congress: number; names: NameTable }> = [];
+  for (const part of (encoded ?? '').split('|')) {
+    const match = /^([1-9]\d{0,3})@(.+)$/.exec(part);
+    if (!match) continue;
+    const names = new Map<string, ShortAddress | null>();
+    for (const entry of match[2].split(',')) {
+      const eq = entry.indexOf('=');
+      if (eq <= 0) continue;
+      const name = entry.slice(0, eq);
+      if (!NAME_SHAPE.test(name)) continue;
+      const bill = entry.slice(eq + 1);
+      if (bill === '') {
+        names.set(name, null);
+        continue;
+      }
+      const address = parseShortAddress(bill);
+      if (address && `${address.type}${address.number}` === bill) names.set(name, address);
+    }
+    if (names.size > 0) tables.push({ congress: Number(match[1]), names });
+  }
+  return tables;
+}
+
+/**
+ * The redirect target for a request path read as a NAME address, or null.
+ * Same shapes as shortAddressTarget (/<name>, /<locale>/<name>, a trailing
+ * slash tolerated, case-insensitive) and the same targets (a bare bill path,
+ * English bare, Spanish under /es, never a query). proxy.ts asks this only
+ * when shortAddressTarget answered null, so a number address always wins.
+ */
+export function nameAddressTarget(
+  pathname: string,
+  locales: readonly string[],
+  defaultLocale: string,
+  tables: NameTables,
+): string | null {
+  if (tables.length === 0) return null;
+  const segments = pathname.split('/').filter((segment) => segment !== '');
+  let locale: string | null = null;
+  if (segments.length === 2 && locales.includes(segments[0])) locale = segments.shift() ?? null;
+  if (segments.length !== 1) return null;
+  const name = segments[0].toLowerCase();
+  if (name.length > NAME_MAX || !NAME_SHAPE.test(name)) return null;
+  for (const table of tables) {
+    if (!table.names.has(name)) continue;
+    const address = table.names.get(name);
+    if (!address) return null; // two or more bills of this Congress carry it: never choose
+    const prefix = locale && locale !== defaultLocale ? `/${locale}` : '';
+    return `${prefix}/bills/${shortAddressSlug(address, table.congress)}`;
+  }
+  return null;
+}

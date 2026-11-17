@@ -172,7 +172,82 @@ curl -s -o /dev/null -w "%{http_code} %{redirect_url}\n" https://oravan.org/hr93
 
 Run on 2026-11-14 against the live site (before the switch): `307 …/bills/hr-1-119` and `307 …/bills/hr-9340-119`, as expected. **Not run against the switch itself**: it has not happened. The same two requests on a production build of a scratch copy with the switch simulated gave `/bills/hr-1-120` and `/bills/hr-9340-119` with a few 120th bills in the corpus, and `/bills/hr-1-119` and `/bills/hr-9340-119` with none.
 
+**Name addresses** (`oravan.org/continuing-appropriations-act-2027`, built 2026-11-14 on the owner's card 191) follow the same order with nothing to edit: the 120th's names first, then the 119th's, and a name two bills of the same Congress share opens neither. A name opens a bill when no other bill Oravan tracks in the same Congress has a short title that makes the same name and no Congress searched before that one (the tracked Congress first, then each ended Congress, most recently ended first) holds the name. Twins Oravan does not track are not counted, so which bill a name opens depends on which bills Oravan tracks. They exist only once the nightly has filled `data/short-titles.json` (it reads up to 300 bills a night, so a first fill of about 3,300 bills takes about 11 nights). On switch day, if that file holds H.R. 1 of the 119th, try:
+
+```sh
+curl -s -o /dev/null -w "%{http_code} %{redirect_url}\n" https://oravan.org/one-big-beautiful-bill-act
+```
+
+**Proves it worked:** `307` ending in `/bills/hr-1-119` (the 119th's H.R. 1, which became law, so its page shows the law) until a 120th bill carries the short title "One Big Beautiful Bill Act" (then that bill, or a `404` if two 120th bills carry it). A `404` before that means the name table was not built: check that `data/short-titles.json` exists and holds `hr-1-119` with that title. (Not `laken-riley-act`: S. 5 and H.R. 29 of the 119th both carry that title, so it opens neither.) **Not run against the switch**: it has not happened; checked on 2026-11-14 on unit fixtures shaped like the switch (`tests/short-address-names.unit.spec.ts`).
+
+**When a name stops working** (any day, not only at the switch). A name that opened a bill can become the normal not-found page, with no warning to whoever shared it, when:
+- a twin enters the corpus: another bill of the same Congress with the same short title (Oravan starts tracking it, or the record gives it that title). The name then opens neither bill; the number addresses still work;
+- a route of that name is added to the site: the build that adds the route drops the name and prints one line in the build log saying so ("short-address names: … left out: a route or reserved word of that name");
+- the record corrects or removes a short title: the nightly reads every bill again when 56 days have passed since its last read, and sooner when its last action moves. An outage on the night a bill falls due pushes its read one night: in a simulated year of ordinary nights with an outage now and then, the longest gap between two reads of one bill was 57 days (pinned in `tests/short-titles-summary.unit.spec.ts`). Outage nights in a row, or more than 300 bills due on one night, push it out by that many nights. After that read, a name made from a title the record no longer gives stops resolving, and this holds also when the record removes every short title of a bill (the read stores none, and the nightly log prints a warning naming the bill). A read that FAILED (no answer, a refused or broken answer) changes nothing: the names stay as they were until a whole answer arrives;
+- the bill's read keeps failing: it waits 1, 2, 4, 8, 16, then 32 days between tries (`data/short-titles-retry.json`), and its stored names stay as they were meanwhile (see "Short titles: when the nightly read reports trouble" below);
+
+A visitor who types the name in capitals after `/ES/` (`oravan.org/ES/<name>`) first gets the site's usual locale redirect, as for any `/ES/` address; the name itself is matched in any case.
+
 **Undo:** revert the stage 8 pull request; short addresses go back to the 119th with it.
+
+## Short titles: when the nightly read reports trouble
+
+The nightly step `Read the record's short titles` (`scripts/sync-short-titles.mjs`, with the night's rules in `lib/short-titles-night.mjs`) never stops, refuses a file or exits with an error without printing one line that starts `SHORT TITLES TROUBLE:`. The daily pipeline-health digest turns that line into an alarm: `short-titles-source-changed` when the source itself seems to have changed, `short-titles-stopped` for everything else. The step is `continue-on-error`, so it never holds the bill sync or the commit.
+
+The rules, as the code applies them:
+- **One bill's problem stays that bill's.** An answer that arrived but cannot be used (about another bill, reshaped, empty, incomplete, a 404, or a short title the file's own gate would refuse: a control character, more than 400 characters) fails only that bill. It keeps what it had and waits 1, 2, 4, 8, 16, then 32 days before it is tried again, behind every healthy bill.
+- **The source has changed** when, over the whole night, at least 20 answers came from bills not already waiting in the retry file and more than half of those were refused for one and the same reason.
+- **The night stops early** only for the source: 10 transport failures in a row (no answer, an answer that stops arriving, a network error, a 401 or 403, a 429, a 5xx, or a 200 whose body is an HTML page), the 400-request cap, or the 20-minute budget. None of these counts toward "the source has changed". The stop says what happened: ten 429s in a row read "Congress.gov answered HTTP 429 to 10 requests in a row, so the key's hourly request limit was reached; N bill(s) read before it are kept"; ten 401s or 403s say the key was refused; any other mix says no usable answer came. What was read before the stop is kept, and the bills refused that night are recorded so they back off.
+- **Bills piling up:** while the retry file holds more than a tenth of the corpus (and more than 50 bills), the line appears every night, whatever the cause.
+- **A retry entry dated after today** (a clock or a hand edit) is treated as due now, and the nightly log says so once.
+
+The digest reads every `SHORT TITLES TROUBLE:` line of the night, not only the last: once any line says "the source has changed", the alarm keeps the `short-titles-source-changed` code, and every distinct reason is listed (the first four, then "and N more").
+
+### The nightly summary line and the four state alarms
+
+The TROUBLE lines catch the causes someone thought of. The summary catches the rest by looking at the state every night (the owner's card 194, 2026-11-15). Every run of the step prints exactly one line, on every path, a crash included (a crash prints what it knew and `unknown` for the rest):
+
+```
+SHORT TITLES SUMMARY: day=2026-11-17 outcome=done titled=1333 titled_7_nights_ago=1320 bills_7_nights_ago=3300 day_7_nights_ago=2026-11-10 bills=3322 newest_read_on=2026-11-17 retry=15 read_tonight=82 lost_all_titles_tonight=0 drop_approved_on=unknown
+```
+
+`titled` counts only bills still in `data/bills.json`. The "7 nights ago" numbers come from `data/short-titles-trend.json`, the last 14 nights' `{ day, titled, bills }` (plus `allow_drop: true` on a night the one-run override was used): the newest night at least 7 days back, which after a gap in nightlies can be more than 7 days back, so `day_7_nights_ago` names it and the falling alarm prints both dates. The history is a diagnostic, not corpus. CI's `scripts/check-short-titles.mjs` refuses a damaged one in a pull request; the nightly's `verify-sync.mjs` only warns about one and never fails the night for it. A missing or damaged history never stops the step either: it starts afresh, prints one TROUBLE line saying so, and "7 nights ago" reads `unknown` for a week (the falling alarm is quiet meanwhile). The gate reads no clock, so a history it accepts today it accepts on every later day.
+
+The daily pipeline-health digest reads the line from the nightly's log and raises, each with its own code (rules in `lib/short-titles-summary.mjs`):
+
+| Code | When | Look first at |
+|---|---|---|
+| `short-titles-summary-missing` | the nightly ran, the step was expected (its run line `Run node scripts/sync-short-titles.mjs` is in that nightly's log, or the history already holds a night), and the log has no summary line | the nightly's log at the step "Read the record's short titles": skipped, removed, killed, or crashed before it could print |
+| `short-titles-falling` | bills with a short title fell, between the night compared with (at least 7 days back) and tonight, by more than 10 or 2% of that night's count (whichever is larger), after allowing for bills that left the corpus; the alarm prints both dates | two bills named in the log's "no longer gives a short title" warnings, on Congress.gov: has the record renamed its short-title type? |
+| `short-titles-lost-tonight` | 5 or more bills lost every short title in one night | the same warnings, from that one night |
+| `short-titles-not-read` | the newest read is more than 3 days older than the night | the last nights' `SHORT TITLES TROUBLE` lines: the step runs but reads nothing |
+
+A bill almost never loses every short title (the record keeps the "as introduced" one beside later ones), so the falling and lost-tonight thresholds sit low; that rate was not measured on real nights. An ordinary night, the first fill (titled rising from 0) and a corpus that shrinks raise none of the four; `tests/short-titles-summary.unit.spec.ts` drives those, the renamed title type, a skipped step and a reshaped source night by night.
+
+**The first report after this change merged** raises nothing about the summary: the nightly it reads ran before the step existed, so its log has no run line for the step and the history is still empty (checked on the real log of nightly run 43978722399, Nov 16, 2026; `tests/short-titles-summary.unit.spec.ts`).
+
+**A known gap, accepted by the owner on Nov 17, 2026 (his card 195).** These alarms watch how many bills have a short title, not whether newly added bills keep getting one. If the record stopped labelling short titles only on NEW bills, the bills already read would keep their names, the count would stay flat or rise slowly, and none of the four alarms would fire; new bills would simply have no name address. No alarm for this is built yet on purpose: it is to be added after a few weeks of real nights show what share of new bills normally carries a short title.
+
+**A real mass change: the one-run override.** When the record really drops short titles from more than a tenth of the titled bills in one night, the gate's count-drop floor (hard rule 11) refuses the file and prints `SHORT TITLES TROUBLE: bills with a short title would fall N -> M, more than 10% in one night, so nothing was written …`. Every night after that refuses the same way until a person lets one run through. Check first that the drop is real (open a few of the bills named in the nightly log on Congress.gov). Then:
+
+```sh
+gh workflow run sync-bills.yml -f short_titles_allow_drop=true
+```
+
+That run alone sets `SHORT_TITLES_ALLOW_DROP=1` for this step and for `verify-sync.mjs`. A scheduled run never sets it, and the script ignores it when `GITHUB_EVENT_NAME` is `schedule`. That run prints `SHORT TITLES TROUBLE: bills with a short title fell N -> M …; the one-run override let it through`. The next scheduled night compares against the new file, so nothing more is needed. **For about 7 nights after it, `short-titles-falling` fires every morning**, because the night it compares with is still from before the drop. The history marks the override night (`allow_drop: true`), and the alarm says so in its own words ("A person let a mass drop through with the one-run override on <date>, so this alarm repeats until the night it compares with is after that date"). If that drop is the one approved, nothing more is needed.
+
+**Short titles: requests.** Congress.gov allows one key 5,000 requests an hour. This step is capped at 400 a night, retries and extra pages included (`SHORT_TITLES_MAX_REQUESTS`), and 300 bills (`SHORT_TITLES_MAX_PER_NIGHT`). It used to allow 1,200 and 500 and was lowered on 2026-11-15, because 1,200 did not clearly fit. The arithmetic, for the hour around the step (it runs after the bill sync, nominations and votes steps of the 14:15 UTC nightly; how long after was not measured), from each script's own cap or the counts its own comments record:
+
+| In the hour | Typical night | Catch-up night |
+|---|---|---|
+| Twice-daily hot-bill refresh, 13:47 UTC (`HOT_BILLS_FETCH_LIMIT` 100) | 101 | 101 |
+| Hourly newsdesk at :07, two runs (floor record 2, nickname list 1, new roll calls, Big Question updates) | ~200 | ~200 |
+| Nightly bill sync (list pages, ~340 refreshed bills one request each, up to 60 new decodes × 2, 40 text probes) | ~650 | up to ~3,200 (`MAX_DAY_COMPLETION` 3,000 bills) |
+| Nominations, votes, nightly Big Question updates | ~130 | ~130 |
+| This step | ≤ 400 | ≤ 400 |
+| Total | ~1,500 | ~4,030 |
+
+The catch-up column leaves about 970 requests of headroom; at the old 1,200 cap it would have been about 4,830, too close to call a fit. Not counted: retries inside the other scripts (their shared fetcher retries a failing request up to four more times). If Congress.gov starts answering 429, this step reads those as transport failures and stops after 10 in a row, so it adds at most about 20 requests to a rate-limited hour. Not measured on a real night.
 
 ## Before a second Congress ends (by January 2029)
 

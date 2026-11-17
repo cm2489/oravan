@@ -45,6 +45,13 @@
  *     doesn't exist — on HEAD or in the working tree. The judgement lives in
  *     lib/verify-moment-updates.mjs; see that file's header for why the
  *     retention caps are checked here as well as in check-moment-updates.mjs.
+ *   - data/short-titles.json (the record's short titles, which name addresses
+ *     read; 2026-11-14) doesn't parse, holds a key the corpus doesn't, an
+ *     entry that isn't { titles, as_of, read_on }, an empty, repeated, over-long or
+ *     unsorted title, or, against HEAD, lost more than 10% of its titled
+ *     bills overnight or every title of one bill. Skipped cleanly when the
+ *     file doesn't exist. The judgement lives in lib/short-titles.mjs
+ *     (verifyShortTitles)
  *   - data/conversation.json (the conversation lamp's committed evidence)
  *     doesn't parse, carries an unknown schema or a window this build doesn't
  *     read, blew its size ceiling, dates an observation in the future or
@@ -99,6 +106,9 @@ import { CONVERSATION_PATH, verifyConversation } from '../lib/conversation.mjs';
 import { MOMENT_UPDATES_PATH, verifyMomentUpdates } from '../lib/verify-moment-updates.mjs';
 import { RECHECK_REPORT_PATH, recheckReportProblems } from '../lib/moment-updates-recheck.mjs';
 import { QUESTION_PRESS_PATH, verifyQuestionPress } from '../lib/question-press.mjs';
+import { SHORT_TITLES_PATH, SHORT_TITLES_RETRY_PATH } from '../lib/short-titles.mjs';
+import { verifyShortTitlesFiles } from '../lib/short-titles-night.mjs';
+import { SHORT_TITLES_TREND_PATH } from '../lib/short-titles-summary.mjs';
 // Import-clean by contract: congress-fetch.mjs reads CONGRESS_API_KEY per
 // fetch, never at import, so pulling CONGRESS in here needs no secrets and
 // makes no network call. One definition of "the Congress we track" — bumping
@@ -404,6 +414,54 @@ if (!existsSync(CONVERSATION_PATH)) {
     for (const w of warnings) warn(w);
     for (const f of failures) fail(f);
   }
+}
+
+// --- short-titles: the record's short titles, which name addresses read -----
+//
+// data/short-titles.json (2026-11-14) is written by scripts/sync-short-titles
+// .mjs, which refuses to write a file this gate refuses. Re-checked here before
+// the commit (hard rule 11): it parses; every key is a bill slug (one the
+// corpus no longer holds is a note, pruned on the next write); every entry is
+// exactly { titles, as_of, read_on }; every title is a distinct, non-empty
+// string of the record's, in code-point order; and, against HEAD, the bills
+// carrying a short title did not fall by more than 10% (one bill the record
+// stopped giving a short title is a note). data/short-titles-retry.json, the
+// bills whose last read failed, is checked beside it. data/short-titles-trend
+// .json, the step's 14-night history, is a diagnostic, not corpus: it only
+// WARNS here, whatever its bytes, and never fails the night (round 6,
+// 2026-11-17; the step restarts a damaged one itself, and CI refuses a damaged
+// one in a pull request). Each is skipped cleanly when it doesn't exist. The
+// judgement lives in lib/short-titles.mjs and lib/short-titles-summary.mjs,
+// reached through verifyShortTitlesFiles.
+{
+  // One function for all three files (lib/short-titles-night.mjs verifyShortTitlesFiles), the
+  // same verifyShortTitles the nightly step runs before it writes, so the two cannot disagree.
+  const readIf = (p) => (existsSync(p) ? parse(p, readFileSync(p, 'utf8')) : null);
+  const titles = readIf(SHORT_TITLES_PATH);
+  if (titles === null) console.log(`${SHORT_TITLES_PATH} not present (or not JSON, failed above) — skipping its checks`);
+  let before = null;
+  if (titles !== null) {
+    try {
+      before = JSON.parse(execSync(`git show HEAD:${SHORT_TITLES_PATH}`, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'ignore'] }));
+    } catch {
+      console.log(`HEAD:${SHORT_TITLES_PATH} not readable (not committed yet?) — the overnight comparison is skipped`);
+    }
+  }
+  // The one-run override for a real mass change (docs/runbooks/new-congress-switch.md): set by a person on a
+  // manual dispatch, the same condition scripts/sync-short-titles.mjs reads; never honoured on a schedule.
+  const allowDrop = process.env.SHORT_TITLES_ALLOW_DROP === '1' && process.env.GITHUB_EVENT_NAME !== 'schedule';
+  const { failures, notes, warnings } = verifyShortTitlesFiles({
+    titles,
+    retry: readIf(SHORT_TITLES_RETRY_PATH),
+    // The raw bytes, never through `parse` (which fails the run on text that is not JSON).
+    trendText: existsSync(SHORT_TITLES_TREND_PATH) ? readFileSync(SHORT_TITLES_TREND_PATH, 'utf8') : null,
+    bills: Array.isArray(bills) ? bills : [],
+    before,
+    allowDrop,
+  });
+  for (const n of notes) console.log(n);
+  for (const w of warnings) warn(w);
+  for (const f of failures) fail(f);
 }
 
 // --- question-press: OPTIONAL evidence — it WARNS here and never fails -------

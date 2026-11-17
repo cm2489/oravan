@@ -4,12 +4,16 @@ import { expect, test } from '@playwright/test';
 import { NextRequest } from 'next/server';
 import billsJson from '../data/bills.json';
 import {
+  decodeNameTables,
   decodeShortAddressFallback,
   decodeShortAddressIndex,
+  encodeNameTables,
   encodeShortAddressFallback,
   encodeShortAddressIndex,
+  nameAddressTarget,
   SHORT_ADDRESS_CONGRESS,
   shortAddressTarget,
+  type NameTables,
   type ShortAddressBill,
   type ShortAddressFallback,
   type ShortAddressIndex,
@@ -84,13 +88,19 @@ test('source: proxy.ts counts a short address as the literal label and builds th
   // The lookup sees the pathname only (NextRequest keeps the query apart),
   // and the two build-time tables: the tracked Congress's and, once a
   // Congress has ended, the fallback (the owner's ruling of Nov 14, 2026).
+  // A NAME address (card 191, Nov 14, 2026) is asked only when the number
+  // lookup answered null, with the pathname and the build-time name tables
+  // alone, and its answer lands in the same `shortTarget`, so the label
+  // below is the same one word for both.
   expect(flat(proxyBody)).toContain(
-    'shortAddressTarget(req.nextUrl.pathname, routing.locales, routing.defaultLocale, SHORT_ADDRESS_INDEX, SHORT_ADDRESS_FALLBACK)',
+    'shortAddressTarget(req.nextUrl.pathname, routing.locales, routing.defaultLocale, SHORT_ADDRESS_INDEX, SHORT_ADDRESS_FALLBACK) ?? nameAddressTarget(req.nextUrl.pathname, routing.locales, routing.defaultLocale, SHORT_ADDRESS_NAMES)',
   );
+  expect(proxyBody.match(/nameAddressTarget\(/g)).toHaveLength(1);
   // Both tables come from build-time constants, decoded once at module load.
   const tables = codeOf(proxySource.slice(0, proxySource.indexOf('function shortAddressRedirect')));
   expect(tables).toContain('decodeShortAddressIndex(process.env.SHORT_ADDRESS_INDEX)');
   expect(tables).toContain('decodeShortAddressFallback(process.env.SHORT_ADDRESS_FALLBACK)');
+  expect(tables).toContain('decodeNameTables(process.env.SHORT_ADDRESS_NAMES)');
   // The redirect is the target path on this site's own origin. The query,
   // search params and headers of the request are never read for it.
   const redirect = codeOf(proxySource.slice(proxySource.indexOf('function shortAddressRedirect'), proxySource.indexOf('/*\n * The two things')));
@@ -113,6 +123,7 @@ async function drivenBurst(
   redirected: string[],
   notRedirected: string[],
   markers: string[],
+  names: NameTables = [],
 ): Promise<string[]> {
   const restoreEnv = setUpstashEnv();
   const counters = new MockUpstash();
@@ -137,7 +148,8 @@ async function drivenBurst(
       // Exactly proxy.ts's call shape.
       const shortTarget =
         r.method === 'GET' || r.method === 'HEAD'
-          ? shortAddressTarget(r.nextUrl.pathname, LOCALES, 'en', index, fallback, congress)
+          ? (shortAddressTarget(r.nextUrl.pathname, LOCALES, 'en', index, fallback, congress) ??
+            nameAddressTarget(r.nextUrl.pathname, LOCALES, 'en', names))
           : null;
       if (shortTarget) targets.push(shortTarget);
       const surface: PageviewSurface = shortTarget ? 'short' : pageviewSurfaceForPath(r.nextUrl.pathname, LOCALES);
@@ -264,5 +276,55 @@ test('driven, after the switch: a fallback to the ended Congress counts the same
     `/bills/hr-${fresh}-120`,
     `/bills/s-${s.bill_number}-119`,
     `/es/bills/s-${s.bill_number}-119`,
+  ]);
+});
+
+/*
+ * NAME ADDRESSES (card 191, Nov 14, 2026: "Names beside numbers. Each name
+ * comes from the bill's own official short title in the record, never chosen
+ * by Oravan."). The same one word, 'short', and nothing about which name was
+ * typed: not the name, not a word of it, not the bill, not whether it was a
+ * name or a number. Built from fixtures shaped like data/short-titles.json
+ * (real short titles of the record, read 2026-11-14), so this holds whether or
+ * not the nightly has filled that file yet.
+ */
+test('driven: name addresses count the same one "short" word, and the typed name never reaches the wire', async () => {
+  const corpus: ShortAddressBill[] = [
+    { bill_type: 's', bill_number: 5, congress_number: SHORT_ADDRESS_CONGRESS },
+    { bill_type: 'hr', bill_number: 4, congress_number: SHORT_ADDRESS_CONGRESS },
+    { bill_type: 'hr', bill_number: 22, congress_number: SHORT_ADDRESS_CONGRESS },
+    { bill_type: 's', bill_number: 128, congress_number: SHORT_ADDRESS_CONGRESS },
+  ];
+  const titles = {
+    [`s-5-${SHORT_ADDRESS_CONGRESS}`]: { titles: ['Laken Riley Act'] },
+    [`hr-4-${SHORT_ADDRESS_CONGRESS}`]: { titles: ['Rescissions Act of 2025'] },
+    // Shared by two bills: never resolves.
+    [`hr-22-${SHORT_ADDRESS_CONGRESS}`]: { titles: ['SAVE Act'] },
+    [`s-128-${SHORT_ADDRESS_CONGRESS}`]: { titles: ['SAVE Act'] },
+  };
+  const index = decodeShortAddressIndex(encodeShortAddressIndex(corpus, SHORT_ADDRESS_CONGRESS));
+  const names = decodeNameTables(encodeNameTables(corpus, titles, [SHORT_ADDRESS_CONGRESS], new Set()));
+  expect(names).toHaveLength(1);
+  const targets = await drivenBurst(
+    index,
+    [],
+    SHORT_ADDRESS_CONGRESS,
+    [
+      '/laken-riley-act',
+      '/LAKEN-RILEY-ACT',
+      '/es/laken-riley-act?stance=oppose&utm_source=probe',
+      '/rescissions-act-of-2025?stance=support',
+      '/s5', // a number beside them
+    ],
+    ['/save-act', '/es/save-act', '/laken-riley', '/laken-riley-act-of-2025', '/hr99999'],
+    ['laken', 'riley', 'rescission', 'save', 'act', 's5', '-5-', 'hr4'],
+    names,
+  );
+  expect(targets).toEqual([
+    `/bills/s-5-${SHORT_ADDRESS_CONGRESS}`,
+    `/bills/s-5-${SHORT_ADDRESS_CONGRESS}`,
+    `/es/bills/s-5-${SHORT_ADDRESS_CONGRESS}`,
+    `/bills/hr-4-${SHORT_ADDRESS_CONGRESS}`,
+    `/bills/s-5-${SHORT_ADDRESS_CONGRESS}`,
   ]);
 });
