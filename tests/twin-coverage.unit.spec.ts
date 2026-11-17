@@ -23,7 +23,9 @@ import {
   RELATED_BILLS_SCHEMA,
   emptyRelatedBills,
   identicalFromRecord,
+  parseRelatedTrouble,
   planRelatedRun,
+  relatedAlarms,
   twinsOf,
   verifyRelatedBills,
 } from '../lib/related-bills.mjs';
@@ -217,9 +219,12 @@ test.describe('on the committed data', () => {
     }
   });
 
-  test('the committed file passes its own gate', () => {
+  test('the committed file passes its own gate (its shape; the date rule is CI\'s check-related-bills)', () => {
     const related = JSON.parse(readFileSync(join(process.cwd(), 'data/related-bills.json'), 'utf8'));
-    expect(verifyRelatedBills({ data: related, today: new Date().toISOString().slice(0, 10) }).failures).toEqual([]);
+    // A pinned far date, not today's clock: this pins the file's shape only, so
+    // it cannot start failing by itself as days pass. The "no check day after
+    // today" rule is CI's scripts/check-related-bills.mjs, on the real clock.
+    expect(verifyRelatedBills({ data: related, today: '2099-12-31' }).failures).toEqual([]);
   });
 });
 
@@ -290,7 +295,10 @@ test.describe('the nightly writer (scripts/sync-related.mjs), network stubbed', 
         'hr/30': { relatedBills: [] },
       });
       expect(r.status, r.out).toBe(0);
+      expect(r.out).toContain('RELATED START:');
       expect(r.out).toContain('RELATED DONE: looked up 2 of 2 planned (0 failed');
+      // The health report reads this run as no trouble.
+      expect(relatedAlarms(parseRelatedTrouble(r.out))).toEqual([]);
       expect(r.out).not.toContain(KEY);
       const written = JSON.parse(readFileSync(join(dir, 'data/related-bills.json'), 'utf8'));
       expect(written._meta).toEqual({ schema: RELATED_BILLS_SCHEMA, kept_types: ['Identical bill'] });
@@ -324,21 +332,64 @@ test.describe('the nightly writer (scripts/sync-related.mjs), network stubbed', 
       )}\n`;
       writeFileSync(join(dir, 'data/related-bills.json'), before);
       const r = run(dir, { 'hr/10': 'fail' });
-      expect(r.status, r.out).toBe(0);
-      expect(r.out).toContain('all 1 lookups failed');
+      expect(r.status, r.out).toBe(1);
+      expect(r.out).toContain('::error::RELATED STOPPED: all 1 lookups failed');
+      expect(r.out).not.toContain(KEY);
       expect(readFileSync(join(dir, 'data/related-bills.json'), 'utf8')).toBe(before);
+      // The writer's REAL output is what the health report reads, so the
+      // printer and the parser cannot drift apart.
+      expect(relatedAlarms(parseRelatedTrouble(r.out)).map((a) => a.code)).toEqual(['related-bills-stopped']);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
   });
 
-  test('with no key it only makes sure an empty, valid file exists', () => {
+  test('with no key it makes sure an empty, valid file exists, and says it STOPPED', () => {
     const dir = corpus();
     try {
       const r = run(dir, {}, { CONGRESS_API_KEY: '' });
-      expect(r.status, r.out).toBe(0);
+      // In the nightly the key is always set, so a missing one is a fault the
+      // report raises; the empty file is only so the site builds.
+      expect(r.status, r.out).toBe(1);
+      expect(r.out).toContain('RELATED STOPPED: CONGRESS_API_KEY is not set');
+      expect(relatedAlarms(parseRelatedTrouble(r.out)).map((a) => a.code)).toEqual(['related-bills-stopped']);
       const written = JSON.parse(readFileSync(join(dir, 'data/related-bills.json'), 'utf8'));
       expect(written).toEqual(emptyRelatedBills());
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test('a file that would fail its own gate is not written, and says it STOPPED', () => {
+    const dir = corpus();
+    try {
+      // A stored row this site must never act on (a damaged earlier write).
+      const before = `${JSON.stringify(
+        { ...emptyRelatedBills(), _checkedAt: { 'hr-30-119': '2026-01-01' }, 'hr-30-119': [{ slug: 's-20-119', type: 'Related bill', identifiedBy: ['CRS'] }] },
+        null,
+        1
+      )}\n`;
+      writeFileSync(join(dir, 'data/related-bills.json'), before);
+      writeFileSync(join(dir, 'data/coverage.json'), JSON.stringify({ 'hr-10-119': [{ url: 'https://a.test/1' }] }));
+      const r = run(dir, { 'hr/10': { relatedBills: [] } });
+      expect(r.status, r.out).toBe(1);
+      expect(r.out).toContain('RELATED STOPPED: the new file failed its own gate');
+      expect(r.out).not.toContain('RELATED DONE');
+      expect(readFileSync(join(dir, 'data/related-bills.json'), 'utf8')).toBe(before);
+      expect(relatedAlarms(parseRelatedTrouble(r.out)).map((a) => a.code)).toEqual(['related-bills-stopped']);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test('anything thrown (an unreadable coverage file) says it STOPPED, and nothing is written', () => {
+    const dir = corpus();
+    try {
+      writeFileSync(join(dir, 'data/coverage.json'), '{ not json');
+      const r = run(dir, {});
+      expect(r.status, r.out).toBe(1);
+      expect(r.out).toContain('RELATED STOPPED: it threw:');
+      expect(() => readFileSync(join(dir, 'data/related-bills.json'), 'utf8')).toThrow();
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -354,5 +405,35 @@ test.describe('the nightly writer (scripts/sync-related.mjs), network stubbed', 
         recheckDays: 7,
       })
     ).toEqual(['hr-4-119', 'hr-2-119']);
+  });
+});
+
+test.describe('what the daily health report reads from the nightly log (pinned lines)', () => {
+  const P = 'sync\tRead identical bills from the record\t2026-11-18T14:41:07.0000000Z ';
+  test('a clean night raises nothing; a log the step never ran in raises nothing', () => {
+    const log = `${P}RELATED START: reading\n${P}RELATED DONE: looked up 120 of 200 planned (3 failed; 523 bills with coverage); 2 relation(s) added, 0 removed; 106 bills carry an identical bill. Congress.gov requests: 123. Cost: $0.`;
+    expect(parseRelatedTrouble(log)).toEqual({ started: true, done: { looked: 120, planned: 200, failed: 3 }, stopped: null });
+    expect(relatedAlarms(parseRelatedTrouble(log))).toEqual([]);
+    expect(relatedAlarms(parseRelatedTrouble(`${P}some other step's line`))).toEqual([]);
+  });
+
+  test('STOPPED, in either annotation form, is one alarm carrying the reason', () => {
+    for (const mark of ['::error::', '##[error]']) {
+      const a = relatedAlarms(parseRelatedTrouble(`${P}RELATED START: x\n${P}${mark}RELATED STOPPED: all 4 lookups failed (the first: Congress.gov 503 for /bill/119/hr/1/relatedbills). data/related-bills.json was left as it was.`));
+      expect(a.map((x) => x.code)).toEqual(['related-bills-stopped']);
+      expect(a[0].text).toContain('all 4 lookups failed');
+    }
+  });
+
+  test('START with neither DONE nor STOPPED is a crash alarm', () => {
+    expect(relatedAlarms(parseRelatedTrouble(`${P}RELATED START: x\n${P}##[error]Process completed with exit code 1.`)).map((x) => x.code)).toEqual(['related-bills-crashed']);
+  });
+
+  test('half or more lookups failing is an alarm; fewer is not', () => {
+    const at = (failed: number, planned: number) =>
+      relatedAlarms(parseRelatedTrouble(`${P}RELATED START: x\n${P}RELATED DONE: looked up ${planned - failed} of ${planned} planned (${failed} failed; 5 bills with coverage); 0 relation(s) added, 0 removed; 0 bills carry an identical bill.`)).map((x) => x.code);
+    expect(at(100, 200)).toEqual(['related-bills-lookups-failed']);
+    expect(at(99, 200)).toEqual([]);
+    expect(at(0, 0)).toEqual([]);
   });
 });
