@@ -67,6 +67,7 @@ import {
   parseCoverageLean,
   parseCoverageOutage,
   parseShortTitlesTrouble,
+  parseShortTitlesSummary,
   parseFailingTests,
   parsePregen,
   parseRedecodeDone,
@@ -327,6 +328,8 @@ export function buildReport({ now = Date.now() } = {}) {
   let coverageLean = null;
   let coverageOutage = null;
   let shortTitlesTrouble = null;
+  let shortTitlesSummary = null;
+  let shortTitlesSummaryChecked = false;
   let pregen = null;
   let portrait404s = null;
   let upstashCacheFailures = null;
@@ -368,6 +371,10 @@ export function buildReport({ now = Date.now() } = {}) {
     coverageLean = parseCoverageLean(log);
     coverageOutage = parseCoverageOutage(log);
     shortTitlesTrouble = parseShortTitlesTrouble(log);
+    // The summary line the short-titles step prints on every run: its absence
+    // in a finished nightly's log is itself an alarm (lib/short-titles-summary.mjs).
+    shortTitlesSummary = parseShortTitlesSummary(log);
+    shortTitlesSummaryChecked = true;
     pregen = parsePregen(log);
     portrait404s = countPortrait404s(log);
     upstashCacheFailures = countUpstashCacheFailures(log);
@@ -541,6 +548,8 @@ export function buildReport({ now = Date.now() } = {}) {
     coverageRun: coverageDone,
     coverageOutage,
     shortTitlesTrouble,
+    shortTitlesSummary,
+    shortTitlesSummaryChecked,
     coverageLean,
     corpus: {
       bills: corpusBills,

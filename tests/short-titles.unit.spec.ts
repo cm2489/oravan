@@ -191,13 +191,17 @@ test('the nightly runs the gate before it writes, the step is bounded, and it ca
   // The gate runs in settleNight (lib/short-titles-night.mjs), before anything is written.
   expect(sync.indexOf('settleNight(')).toBeGreaterThan(0);
   expect(sync.indexOf('settleNight(')).toBeLessThan(sync.indexOf('writeFileSync(OUT'));
-  expect(sync).toContain('if (!settled.write) return settled.code;');
+  // The titles file is written only when the gate gave a write (settled.write), never otherwise.
+  expect(sync).toContain('if (settled.write?.titles) {\n      writeFileSync(OUT, settled.write.text);');
   const night = readFileSync(join(process.cwd(), 'lib/short-titles-night.mjs'), 'utf8');
   expect(night).toContain('verifyShortTitles({ data: JSON.parse(text), bills, before, allowDrop })');
   // The URL carries the key: no line of the script prints it or a message built from it.
   expect(sync).not.toMatch(/console\.\w+\([^)]*\burl\b/);
   const verify = readFileSync(join(process.cwd(), 'scripts/verify-sync.mjs'), 'utf8');
-  expect(verify).toContain('verifyShortTitles({ data: shortTitles');
+  // verify-sync checks the three files through verifyShortTitlesFiles, which calls the same verifyShortTitles.
+  expect(verify).toContain('const { failures, notes } = verifyShortTitlesFiles({');
+  const nightLib = readFileSync(join(process.cwd(), 'lib/short-titles-night.mjs'), 'utf8');
+  expect(nightLib).toContain('const v = verifyShortTitles({ data: titles, bills, before, allowDrop });');
   const workflow = readFileSync(join(process.cwd(), '.github/workflows/sync-bills.yml'), 'utf8');
   const step = workflow.indexOf('run: node scripts/sync-short-titles.mjs');
   expect(step).toBeGreaterThan(workflow.indexOf('run: node scripts/sync-bills.mjs'));
@@ -221,6 +225,8 @@ function scratch() {
   const dir = mkdtempSync(join(tmpdir(), 'short-titles-'));
   const outFile = join(dir, 'short-titles.json');
   const retryFile = join(dir, 'short-titles-retry.json');
+  // Every file the script writes goes to the scratch folder, never into data/.
+  const trendFile = join(dir, 'short-titles-trend.json');
   const read = (f: string) => (existsSync(f) ? JSON.parse(readFileSync(f, 'utf8')) : null);
   return {
     seed(before: unknown) {
@@ -247,6 +253,7 @@ function scratch() {
           CONGRESS_API_KEY: 'offline-test-key',
           SHORT_TITLES_FILE: outFile,
           SHORT_TITLES_RETRY_FILE: retryFile,
+          SHORT_TITLES_TREND_FILE: trendFile,
           SHORT_TITLES_BILLS: corpusFile,
           SHORT_TITLES_REQUEST_TIMEOUT_MS: '300',
           SHORT_TITLES_RETRY_DELAY_MS: '10',

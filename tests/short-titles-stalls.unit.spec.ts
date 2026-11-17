@@ -3,7 +3,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'no
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
-import { alarms, parseShortTitlesTrouble } from '../lib/pipeline-health.mjs';
+import { alarms, parseShortTitlesSummary, parseShortTitlesTrouble } from '../lib/pipeline-health.mjs';
 import {
   readTitlesAnswer,
   SHORT_TITLE_MAX_LENGTH,
@@ -55,26 +55,38 @@ function answer(type: string, number: number | string, shortTitles: string[]) {
 
 // --- running the real script offline -------------------------------------------------
 
-type Files = { corpus?: unknown; corpusText?: string; before?: unknown; beforeText?: string; retry?: unknown; retryText?: string };
+type Files = {
+  corpus?: unknown;
+  corpusText?: string;
+  before?: unknown;
+  beforeText?: string;
+  retry?: unknown;
+  retryText?: string;
+  trend?: unknown;
+  trendText?: string;
+};
 
-function runScript(stub: string, files: Files, env: Record<string, string> = {}) {
+function runScript(stub: string, files: Files, env: Record<string, string> = {}, args: string[] = []) {
   const dir = mkdtempSync(join(tmpdir(), 'short-titles-stall-'));
   try {
     const corpusFile = join(dir, 'bills.json');
     const outFile = join(dir, 'short-titles.json');
     const retryFile = join(dir, 'short-titles-retry.json');
-    if (files.corpusText !== undefined) writeFileSync(corpusFile, files.corpusText);
-    else if (files.corpus !== undefined) writeFileSync(corpusFile, JSON.stringify(files.corpus));
-    if (files.beforeText !== undefined) writeFileSync(outFile, files.beforeText);
-    else if (files.before !== undefined) writeFileSync(outFile, JSON.stringify(files.before));
-    if (files.retryText !== undefined) writeFileSync(retryFile, files.retryText);
-    else if (files.retry !== undefined) writeFileSync(retryFile, JSON.stringify(files.retry));
+    const trendFile = join(dir, 'short-titles-trend.json');
+    const put = (file: string, text: string | undefined, value: unknown) => {
+      if (text !== undefined) writeFileSync(file, text);
+      else if (value !== undefined) writeFileSync(file, JSON.stringify(value));
+    };
+    put(corpusFile, files.corpusText, files.corpus);
+    put(outFile, files.beforeText, files.before);
+    put(retryFile, files.retryText, files.retry);
+    put(trendFile, files.trendText, files.trend);
     const preload = join(dir, 'stub.mjs');
     writeFileSync(
       preload,
       `globalThis.__calls = 0;\nglobalThis.fetch = async (input, init) => { globalThis.__calls++; const url = new URL(String(input)); const [, congress, type, number] = /\\/bill\\/(\\d+)\\/([a-z]+)\\/(\\d+)\\/titles/.exec(url.pathname) ?? []; ${stub} };\nprocess.on('exit', () => console.log('STUB-CALLS ' + globalThis.__calls));\n`,
     );
-    const r = spawnSync(process.execPath, ['--import', preload, 'scripts/sync-short-titles.mjs'], {
+    const r = spawnSync(process.execPath, ['--import', preload, 'scripts/sync-short-titles.mjs', ...args], {
       cwd: process.cwd(),
       encoding: 'utf8',
       timeout: 60_000,
@@ -84,6 +96,7 @@ function runScript(stub: string, files: Files, env: Record<string, string> = {})
         CONGRESS_API_KEY: 'offline-test-key',
         SHORT_TITLES_FILE: outFile,
         SHORT_TITLES_RETRY_FILE: retryFile,
+        SHORT_TITLES_TREND_FILE: trendFile,
         SHORT_TITLES_BILLS: corpusFile,
         SHORT_TITLES_REQUEST_TIMEOUT_MS: '300',
         SHORT_TITLES_RETRY_DELAY_MS: '5',
@@ -93,7 +106,7 @@ function runScript(stub: string, files: Files, env: Record<string, string> = {})
     });
     const out = `${r.stdout}\n${r.stderr}`;
     const read = (f: string) => (existsSync(f) ? readFileSync(f, 'utf8') : null);
-    return { code: r.status, out, after: read(outFile), retry: read(retryFile), dir };
+    return { code: r.status, out, after: read(outFile), retry: read(retryFile), trend: read(trendFile), dir };
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -109,26 +122,49 @@ const HANG = `return new Promise((_, reject) => { const socket = setInterval(() 
 const range = (n: number, from = 1) => Array.from({ length: n }, (_, i) => from + i);
 const titled = (ns: number[]) => Object.fromEntries(ns.map((n) => [slug(n), { titles: [`Old ${n} Act`], as_of: '2026-01-01', read_on: '2026-11-01' }]));
 
-/** Every exit path, its setup, and what it must print and return. */
+/**
+ * EVERY OUTCOME AND TROUBLE PATH, its setup, and what it must print and
+ * return. `outcome` is the summary line's outcome; `line` the TROUBLE line it
+ * must print (null: none). The source test below fails if the script has an
+ * outcome that no row here names.
+ */
 const EXIT_PATHS: Array<{
   path: string;
   stub: string;
   files: Files;
   env?: Record<string, string>;
+  args?: string[];
   code: number;
-  line: RegExp;
+  outcome: string;
+  line: RegExp | null;
   sourceChanged?: boolean;
 }> = [
-  { path: 'no API key', stub: GOOD, files: { corpus: [bill(1)] }, env: { CONGRESS_API_KEY: '' }, code: 1, line: /CONGRESS_API_KEY is not set, so 0 bills could be read/ },
-  { path: 'corpus missing', stub: GOOD, files: {}, code: 1, line: /the corpus \(.*\) could not be read/ },
-  { path: 'corpus not a list', stub: GOOD, files: { corpusText: '{}' }, code: 1, line: /could not be read \(not a list of bills\)/ },
-  { path: 'data file not JSON', stub: GOOD, files: { corpus: [bill(1)], beforeText: 'not json' }, code: 1, line: /short-titles\.json is not valid JSON .*Restore it from git/ },
-  { path: 'retry file not JSON', stub: GOOD, files: { corpus: [bill(1)], retryText: 'oops' }, code: 0, line: /short-titles-retry\.json is not valid JSON .*started afresh/ },
-  { path: 'retry file not an object', stub: GOOD, files: { corpus: [bill(1)], retryText: '[]' }, code: 0, line: /short-titles-retry\.json is not an object; it was started afresh/ },
-  { path: 'breaker: 10 transport failures in a row', stub: `return new Response('down', { status: 503 });`, files: { corpus: range(30).map((n) => bill(n)) }, code: 0, line: /stopped early: 10 requests in a row got no usable answer/ },
-  { path: 'request cap', stub: GOOD, files: { corpus: range(SHORT_TITLES_MAX_REQUESTS + 20).map((n) => bill(n)) }, env: { SHORT_TITLES_MAX: '1000' }, code: 0, line: new RegExp(`stopped early: the night's ${SHORT_TITLES_MAX_REQUESTS}-request cap is spent`) },
-  { path: 'time budget', stub: HANG, files: { corpus: range(30).map((n) => bill(n)) }, env: { SHORT_TITLES_BUDGET_MS: '700' }, code: 0, line: /stopped early: the step's \d+-minute budget ran out/ },
-  { path: 'source changed', stub: RESHAPED, files: { corpus: range(40).map((n) => bill(n)) }, code: 1, line: /the source has changed: 40 of 40 answers/, sourceChanged: true },
+  { path: 'an ordinary night', stub: GOOD, files: { corpus: range(3).map((n) => bill(n)) }, code: 0, outcome: 'done', line: null },
+  { path: 'a dry run', stub: GOOD, files: { corpus: range(3).map((n) => bill(n)) }, args: ['--dry-run'], code: 0, outcome: 'dry-run', line: null },
+  { path: 'no API key', stub: GOOD, files: { corpus: [bill(1)] }, env: { CONGRESS_API_KEY: '' }, code: 1, outcome: 'no-key', line: /CONGRESS_API_KEY is not set, so 0 bills could be read/ },
+  { path: 'corpus missing', stub: GOOD, files: {}, code: 1, outcome: 'corpus-unreadable', line: /the corpus \(.*\) could not be read/ },
+  { path: 'corpus not a list', stub: GOOD, files: { corpusText: '{}' }, code: 1, outcome: 'corpus-unreadable', line: /could not be read \(not a list of bills\)/ },
+  { path: 'titles file not JSON', stub: GOOD, files: { corpus: [bill(1)], beforeText: 'not json' }, code: 1, outcome: 'titles-file-unreadable', line: /short-titles\.json is not valid JSON .*Restore it from git/ },
+  { path: 'retry file not JSON', stub: GOOD, files: { corpus: [bill(1)], retryText: 'oops' }, code: 0, outcome: 'done', line: /short-titles-retry\.json is not valid JSON .*started afresh/ },
+  { path: 'retry file not an object', stub: GOOD, files: { corpus: [bill(1)], retryText: '[]' }, code: 0, outcome: 'done', line: /short-titles-retry\.json is not an object; it was started afresh/ },
+  { path: 'history damaged', stub: GOOD, files: { corpus: [bill(1)], trendText: '{"nights":"x"}' }, code: 0, outcome: 'done', line: /short-titles-trend\.json could not be used .*started afresh/ },
+  { path: 'history missing beside a titles file', stub: GOOD, files: { corpus: [bill(1)], before: titled([1]) }, code: 0, outcome: 'done', line: /short-titles-trend\.json is missing while .* exists; the 14-night history was started afresh/ },
+  { path: 'breaker: 10 transport failures in a row', stub: `return new Response('down', { status: 503 });`, files: { corpus: range(30).map((n) => bill(n)) }, code: 0, outcome: 'stopped-early', line: /stopped early: 10 requests in a row got no usable answer/ },
+  { path: 'a 403 is access, not the source changing', stub: `return new Response('no', { status: 403 });`, files: { corpus: range(30).map((n) => bill(n)) }, code: 0, outcome: 'stopped-early', line: /stopped early: 10 requests in a row/ },
+  { path: 'a 200 with an HTML page is transport, not the source changing', stub: `return new Response('<html><body>maintenance</body></html>', { status: 200, headers: { 'content-type': 'text/html' } });`, files: { corpus: range(30).map((n) => bill(n)) }, code: 0, outcome: 'stopped-early', line: /stopped early: 10 requests in a row/ },
+  {
+    path: 'an answer body that stops arriving is transport',
+    // (A held timer stands in for the open socket that keeps a real process waiting.)
+    stub: `return new Response(new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode('{"x":')); const socket = setInterval(() => {}, 1000); init.signal.addEventListener('abort', () => { clearInterval(socket); c.error(init.signal.reason); }); } }), { status: 200 });`,
+    files: { corpus: range(30).map((n) => bill(n)) },
+    code: 0,
+    outcome: 'stopped-early',
+    line: /stopped early: 10 requests in a row/,
+  },
+  { path: 'request cap', stub: GOOD, files: { corpus: range(SHORT_TITLES_MAX_REQUESTS + 20).map((n) => bill(n)) }, env: { SHORT_TITLES_MAX: '1000' }, code: 0, outcome: 'stopped-early', line: new RegExp(`stopped early: the night's ${SHORT_TITLES_MAX_REQUESTS}-request cap is spent`) },
+  { path: 'time budget', stub: HANG, files: { corpus: range(30).map((n) => bill(n)) }, env: { SHORT_TITLES_BUDGET_MS: '700' }, code: 0, outcome: 'stopped-early', line: /stopped early: the step's \d+-minute budget ran out/ },
+  { path: 'source changed', stub: RESHAPED, files: { corpus: range(40).map((n) => bill(n)) }, code: 1, outcome: 'source-changed', line: /the source has changed: 40 of 40 answers/, sourceChanged: true },
+  { path: 'source changed, with the HTTP status in words', stub: `return new Response('{}', { status: 404 });`, files: { corpus: range(40).map((n) => bill(n)) }, code: 1, outcome: 'source-changed', line: /refused for the same reason \("HTTP 404"\)/, sourceChanged: true },
   {
     path: 'retry pile',
     stub: GOOD,
@@ -137,6 +173,7 @@ const EXIT_PATHS: Array<{
       retry: Object.fromEntries(range(60).map((n) => [slug(n), { failures: 3, last_tried: TODAY, reason: 'HTTP 404' }])),
     },
     code: 0,
+    outcome: 'done',
     line: /60 of 100 bills are waiting to be read again \(more than 50\)/,
   },
   {
@@ -144,6 +181,7 @@ const EXIT_PATHS: Array<{
     stub: GOOD,
     files: { corpus: range(3).map((n) => bill(n)), before: { [slug(1)]: { titles: ['Bad\tTitle'], as_of: '2026-01-01', read_on: TODAY } } },
     code: 1,
+    outcome: 'refused-by-gate',
     line: /the file's gate refused tonight's files \(1 problem\(s\); first: .*control character\), so nothing was written/,
   },
   {
@@ -151,6 +189,7 @@ const EXIT_PATHS: Array<{
     stub: `if (Number(number) <= 4) { ${OFFICIAL_ONLY} } ${GOOD}`,
     files: { corpus: range(30).map((n) => bill(n, '2026-02-01')), before: titled(range(30)) },
     code: 1,
+    outcome: 'drop-floor',
     line: /bills with a short title would fall 30 -> 26, more than 10% in one night, so nothing was written/,
   },
   {
@@ -159,6 +198,7 @@ const EXIT_PATHS: Array<{
     files: { corpus: range(30).map((n) => bill(n, '2026-02-01')), before: titled(range(30)) },
     env: { SHORT_TITLES_ALLOW_DROP: '1', GITHUB_EVENT_NAME: 'workflow_dispatch' },
     code: 0,
+    outcome: 'done',
     line: /bills with a short title fell 30 -> 26 .*the one-run override let it through/,
   },
   {
@@ -167,19 +207,31 @@ const EXIT_PATHS: Array<{
     files: { corpus: range(30).map((n) => bill(n, '2026-02-01')), before: titled(range(30)) },
     env: { SHORT_TITLES_ALLOW_DROP: '1', GITHUB_EVENT_NAME: 'schedule' },
     code: 1,
+    outcome: 'drop-floor',
     line: /would fall 30 -> 26/,
   },
-  { path: 'write error', stub: GOOD, files: { corpus: [bill(1)] }, env: { SHORT_TITLES_FILE: '/nonexistent-dir-for-test/x/short-titles.json' }, code: 1, line: /could not write the files/ },
-  { path: 'uncaught exception', stub: GOOD, files: { corpusText: '[null]' }, code: 1, line: /the step crashed/ },
+  { path: 'write error, nothing written', stub: GOOD, files: { corpus: [bill(1)] }, env: { SHORT_TITLES_FILE: '/nonexistent-dir-for-test/x/short-titles.json' }, code: 1, outcome: 'write-error', line: /could not write the files .*written: none; not written: .*short-titles\.json/ },
+  { path: 'write error after the titles file was written', stub: GOOD, files: { corpus: [bill(1)] }, env: { SHORT_TITLES_TREND_FILE: '/nonexistent-dir-for-test/x/trend.json' }, code: 1, outcome: 'write-error', line: /could not write the files .*written: .*short-titles\.json.*; not written: .*trend\.json/ },
+  { path: 'uncaught exception', stub: GOOD, files: { corpusText: '[null]' }, code: 1, outcome: 'crashed', line: /the step crashed/ },
 ];
 
 for (const row of EXIT_PATHS) {
-  test(`exit path: ${row.path} prints one TROUBLE line the digest raises`, () => {
-    const r = runScript(row.stub, row.files, row.env);
+  test(`exit path: ${row.path}: exactly one summary line, and the TROUBLE line the digest raises`, () => {
+    const r = runScript(row.stub, row.files, row.env, row.args);
     expect(r.code, r.out.slice(-800)).toBe(row.code);
-    const lines = r.out.split('\n').filter((l) => l.startsWith('SHORT TITLES TROUBLE: '));
-    expect(lines.some((l) => row.line.test(l)), r.out.slice(-800)).toBe(true);
     expect(r.out).not.toContain('offline-test-key');
+    // S1: one summary line on every path, with this path's outcome and the day.
+    const summaries = r.out.split('\n').filter((l) => l.startsWith('SHORT TITLES SUMMARY: '));
+    expect(summaries, r.out.slice(-800)).toHaveLength(1);
+    const summary = parseShortTitlesSummary(r.out);
+    expect(summary?.outcome).toBe(row.outcome);
+    expect(summary?.day).toBe(TODAY);
+    const troubles = r.out.split('\n').filter((l) => l.startsWith('SHORT TITLES TROUBLE: '));
+    if (row.line === null) {
+      expect(troubles, r.out.slice(-800)).toEqual([]);
+      return;
+    }
+    expect(troubles.some((l) => row.line!.test(l)), r.out.slice(-800)).toBe(true);
     const parsed = parseShortTitlesTrouble(r.out);
     expect(parsed).not.toBeNull();
     expect(parsed!.sourceChanged).toBe(row.sourceChanged === true);
@@ -188,19 +240,29 @@ for (const row of EXIT_PATHS) {
   });
 }
 
-test('the script sets its exit code in one place, and every non-zero return follows a TROUBLE line', () => {
+test('main() leaves only through finish(), every outcome has a row, and the exit code is set in one place', () => {
   const src = readFileSync(join(process.cwd(), 'scripts/sync-short-titles.mjs'), 'utf8');
   expect(src.match(/process\.exitCode/g)).toHaveLength(1);
   expect(src).not.toMatch(/process\.exit\(/);
-  expect(src).not.toMatch(/\bthrow\b(?! new (TransportFailure|Refused|OutOfRequests)\b)(?! new Error\('not a list of bills'\))/);
-  // Every `return 1;` in main() sits right after a trouble() call (settleNight's code-1 return carries its own troubles).
-  const lines = src.split('\n');
-  lines.forEach((l, i) => {
-    if (/return 1;/.test(l)) expect(lines.slice(Math.max(0, i - 4), i).join('\n'), `line ${i + 1}`).toMatch(/trouble\(/);
-  });
-  // The paths in the table are every path the source has: one row per trouble() reason in the script.
-  const reasons = src.match(/trouble\(/g)!.length - 1; // less the helper's own definition
-  expect(reasons).toBe(9);
+  // Every `return` in main() is `return finish(…)`: a silent `return 0;`, a `return 2;` or a bare `return 1;` fails here.
+  const main = src.slice(src.indexOf('async function main()'), src.indexOf('\nmain()'));
+  const returns = main.split('\n').filter((l) => /^\s*return\b/.test(l));
+  expect(returns.length).toBeGreaterThan(5);
+  for (const l of returns) expect(l.trim(), 'a return in main() that skips finish()').toMatch(/^return finish\(/);
+  // The script's one entry point hands every way out, a crash included, to finish().
+  expect(src).toMatch(/\nmain\(\)\.catch\(\(e\) => finish\(\{ code: 1, outcome: 'crashed'/);
+  // Every outcome the script can name is in the table.
+  const outcomes = new Set<string>();
+  for (const m of main.matchAll(/outcome: '([a-z-]+)'/g)) outcomes.add(m[1]);
+  const computed = main.slice(main.indexOf('const outcome ='), main.indexOf(';', main.indexOf('const outcome =')));
+  for (const m of computed.matchAll(/'([a-z-]+)'/g)) outcomes.add(m[1]);
+  outcomes.add('crashed');
+  expect([...outcomes].sort()).toEqual([...new Set(EXIT_PATHS.map((r) => r.outcome))].sort());
+  // finish() prints a TROUBLE line for any non-zero code, reason or not, then the summary.
+  const fin = src.slice(src.indexOf('function finish('), src.indexOf('\n}\n', src.indexOf('function finish(')));
+  expect(fin).toMatch(/if \(reason\) trouble\(reason/);
+  expect(fin).toMatch(/else if \(code !== 0\) trouble\(/);
+  expect(fin).toMatch(/console\.log\(summaryLine\(/);
 });
 
 // --- (i) to (v), night by night ---------------------------------------------------------
@@ -211,7 +273,7 @@ test('(i) one bill with a tab, one with a newline, one with a 401-character titl
   const stub = `const odd = ${JSON.stringify(odd)}; if (odd[number]) { const titles = ${JSON.stringify(OFFICIAL)}.concat([{ title: odd[number], titleType: 'Short Title(s) as Introduced', titleTypeCode: 101, updateDate: 'x' }]);
     return new Response(JSON.stringify({ pagination: { count: titles.length }, request: { billNumber: number, billType: type, congress }, titles }), { status: 200 }); } ${GOOD}`;
   const before = titled(range(10));
-  const r = runScript(stub, { corpus, before });
+  const r = runScript(stub, { corpus, before, trend: { nights: [] } });
   expect(r.code, r.out).toBe(0);
   expect(r.out).not.toContain('SHORT TITLES TROUBLE');
   const after = JSON.parse(r.after!);
