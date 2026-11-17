@@ -26,7 +26,10 @@
  * (lib/pipeline-health.mjs, parseRelatedTrouble, and its alarms):
  *   - `RELATED START: …` first, before anything can fail. A log with this
  *     line and neither of the two below is a crash the report alarms on.
- *   - `RELATED DONE: looked up N of M planned (F failed; …` when it wrote.
+ *   - `RELATED DONE: looked up N of M planned (F failed; …` when it wrote,
+ *     with `_meta.filled_at` set to today (the health report alarms when that
+ *     day is more than 3 days old, whatever the reason: a step skipped,
+ *     deleted or doing nothing raises it too).
  *     A request that fails leaves that bill as it was (old relations, old
  *     check day), so it stays first in line for the next night; the report
  *     alarms when half or more of a night's lookups failed.
@@ -51,8 +54,8 @@ const STOPPED_TAIL = 'data/related-bills.json was left as it was.';
 // Belt and braces: no request error should carry the key, but nothing this
 // prints may ever show one, so any api_key=… is cut out of what it prints.
 const redact = (s) => String(s).replace(/api_key=[^&\s]*/gi, 'api_key=[redacted]');
-const stop = (why) => {
-  const line = `RELATED STOPPED: ${redact(why)}. ${STOPPED_TAIL}`;
+const stop = (why, tail = STOPPED_TAIL) => {
+  const line = `RELATED STOPPED: ${redact(why)}. ${tail}`;
   console.log(`::error::${line}`);
   process.exitCode = 1;
 };
@@ -83,12 +86,12 @@ try {
   };
 
   const prior = existsSync(RELATED_BILLS_PATH) ? readJSON(RELATED_BILLS_PATH) : null;
-  const file = prior ?? emptyRelatedBills();
+  const file = prior ?? emptyRelatedBills(today);
   if (!file._checkedAt || typeof file._checkedAt !== 'object') file._checkedAt = {};
 
   if (!process.env.CONGRESS_API_KEY) {
     if (!prior) writeAtomic(serializeRelatedBills(file));
-    stop(`CONGRESS_API_KEY is not set, so nothing was looked up${prior ? '' : ' (an empty file was written, since none existed)'}`);
+    stop('CONGRESS_API_KEY is not set, so nothing was looked up', prior ? STOPPED_TAIL : 'No data/related-bills.json existed, so an empty one was written.');
   } else {
     const bills = readJSON('data/bills.json');
     const bySlug = new Map(bills.map((b) => [slugOf(b), b]));
@@ -136,6 +139,8 @@ try {
     if (ok === 0 && plan.length > 0) {
       stop(`all ${plan.length} lookups failed (the first: ${firstError})`);
     } else {
+      // The day this run finished: the health report's staleness clock.
+      file._meta = { ...file._meta, filled_at: today };
       const text = serializeRelatedBills(file);
       const { failures } = verifyRelatedBills({
         data: JSON.parse(text),

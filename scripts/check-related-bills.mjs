@@ -27,7 +27,7 @@ const url = (p) => new URL(`../${p}`, import.meta.url);
 const today = new Date().toISOString().slice(0, 10);
 
 if (process.argv.includes('--self-test')) {
-  const meta = { schema: RELATED_BILLS_SCHEMA, kept_types: [...KEPT_RELATION_TYPES] };
+  const meta = { schema: RELATED_BILLS_SCHEMA, kept_types: [...KEPT_RELATION_TYPES], filled_at: today };
   const good = { _meta: meta, _checkedAt: { 'hr-1-119': today }, 'hr-1-119': [{ slug: 's-2-119', type: 'Identical bill', identifiedBy: ['CRS'] }] };
   const bad = [
     ['a merely related bill', { ...good, 'hr-1-119': [{ slug: 's-2-119', type: 'Related bill', identifiedBy: ['CRS'] }] }],
@@ -38,6 +38,8 @@ if (process.argv.includes('--self-test')) {
     ['a wrong schema', { ...good, _meta: { ...meta, schema: 'related-bills/v0' } }],
     ['a widened kept_types', { ...good, _meta: { ...meta, kept_types: ['Identical bill', 'Related bill'] } }],
     ['no identifier', { ...good, 'hr-1-119': [{ slug: 's-2-119', type: 'Identical bill', identifiedBy: [] }] }],
+    ['no last-filled day', { ...good, _meta: { schema: RELATED_BILLS_SCHEMA, kept_types: [...KEPT_RELATION_TYPES] } }],
+    ['a last-filled day in the future', { ...good, _meta: { ...meta, filled_at: '2999-01-01' } }],
   ];
   let ok = verifyRelatedBills({ data: good, today }).failures.length === 0;
   if (!ok) console.error('self-test: a good file was rejected');
