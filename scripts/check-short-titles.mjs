@@ -15,6 +15,7 @@
  */
 import { existsSync, readFileSync } from 'node:fs';
 import { SHORT_TITLES_PATH, SHORT_TITLES_RETRY_PATH, verifyShortTitleRetries, verifyShortTitles } from '../lib/short-titles.mjs';
+import { SHORT_TITLES_TREND_PATH, verifyShortTitlesTrend } from '../lib/short-titles-summary.mjs';
 
 if (process.argv.includes('--self-test')) {
   const bills = [
@@ -63,27 +64,57 @@ if (process.argv.includes('--self-test')) {
       console.error(`::error::self-test: ${label}: expected ${shouldFail ? 'a failure' : 'no failure'}, got ${JSON.stringify(failures)}`);
     }
   }
+  const trendCases = [
+    ['a good history', { nights: [{ day: '2026-11-16', titled: 1, bills: 2 }, { day: '2026-11-17', titled: 1, bills: 2, allow_drop: true }] }, false],
+    ['an empty history', { nights: [] }, false],
+    ['a history that is a list', [], true],
+    ['a night with more titled bills than bills', { nights: [{ day: '2026-11-17', titled: 3, bills: 2 }] }, true],
+    ['nights out of order', { nights: [{ day: '2026-11-17', titled: 1, bills: 2 }, { day: '2026-11-16', titled: 1, bills: 2 }] }, true],
+    ['an extra field', { nights: [{ day: '2026-11-17', titled: 1, bills: 2, note: 'x' }] }, true],
+    ['allow_drop that is not true', { nights: [{ day: '2026-11-17', titled: 1, bills: 2, allow_drop: false }] }, true],
+  ];
+  for (const [label, data, shouldFail] of trendCases) {
+    const { failures } = verifyShortTitlesTrend({ data });
+    if ((failures.length > 0) !== shouldFail) {
+      bad++;
+      console.error(`::error::self-test: ${label}: expected ${shouldFail ? 'a failure' : 'no failure'}, got ${JSON.stringify(failures)}`);
+    }
+  }
   if (bad) process.exit(1);
-  console.log(`check-short-titles self-test: ${cases.length + retryCases.length} case(s) behave`);
+  console.log(`check-short-titles self-test: ${cases.length + retryCases.length + trendCases.length} case(s) behave`);
   process.exit(0);
 }
 
 const bills = JSON.parse(readFileSync('data/bills.json', 'utf8'));
-let retryFailed = false;
+let sideFilesFailed = false;
+// The 14-night history (round 6, 2026-11-17): refused HERE, in a pull request, so a damaged one never
+// reaches main that way. The nightly's verify-sync only warns about it, and the gate reads no clock, so a
+// file the nightly wrote never turns this red by itself or as days pass.
+if (existsSync(SHORT_TITLES_TREND_PATH)) {
+  try {
+    const { failures } = verifyShortTitlesTrend({ data: JSON.parse(readFileSync(SHORT_TITLES_TREND_PATH, 'utf8')) });
+    for (const f of failures) console.error(`::error::${f}`);
+    sideFilesFailed ||= failures.length > 0;
+  } catch (e) {
+    console.error(`::error::${SHORT_TITLES_TREND_PATH} does not parse as JSON: ${e.message}`);
+    sideFilesFailed = true;
+  }
+}
 if (existsSync(SHORT_TITLES_RETRY_PATH)) {
   try {
     const { failures, notes } = verifyShortTitleRetries({ data: JSON.parse(readFileSync(SHORT_TITLES_RETRY_PATH, 'utf8')), bills });
     for (const n of notes) console.log(n);
     for (const f of failures) console.error(`::error::${f}`);
-    retryFailed = failures.length > 0;
+    // `||=`, never `=`: a clean retry file must not erase a failure the history check above already recorded.
+    sideFilesFailed ||= failures.length > 0;
   } catch (e) {
     console.error(`::error::${SHORT_TITLES_RETRY_PATH} does not parse as JSON: ${e.message}`);
-    retryFailed = true;
+    sideFilesFailed = true;
   }
 }
 if (!existsSync(SHORT_TITLES_PATH)) {
   console.log(`${SHORT_TITLES_PATH} not present — nothing to check (the nightly writes it)`);
-  process.exit(retryFailed ? 1 : 0);
+  process.exit(sideFilesFailed ? 1 : 0);
 }
 let data;
 try {
@@ -95,4 +126,4 @@ try {
 const { failures, notes } = verifyShortTitles({ data, bills });
 for (const n of notes) console.log(n);
 for (const f of failures) console.error(`::error::${f}`);
-process.exit(failures.length || retryFailed ? 1 : 0);
+process.exit(failures.length || sideFilesFailed ? 1 : 0);

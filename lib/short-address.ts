@@ -329,9 +329,11 @@ export function shortAddressTarget(
  * NEVER CHOOSING BETWEEN BILLS. Many bills share a short title (a House bill
  * and its Senate twin usually do). A name resolves only when exactly ONE bill
  * of the Congress being searched carries it, among the bills Oravan tracks:
- * A name opens a bill when no other bill Oravan tracks has a short title that
- * makes the same name ("SAFE Act" and "Safe Act" make one name, and so do
- * "Twin Spelling Act" and "Twin-Spelling Act"). A twin Oravan does not track (most bills of a Congress are never in
+ * A name opens a bill when no other bill Oravan tracks in the same Congress
+ * has a short title that makes the same name and no Congress searched before
+ * that one (the tracked Congress first, then each ended Congress, most
+ * recently ended first) holds the name. ("SAFE Act" and "Safe Act" make one
+ * name, and so do "Twin Spelling Act" and "Twin-Spelling Act".) A twin Oravan does not track (most bills of a Congress are never in
  * the corpus) is not counted, so which bill a name opens depends on which
  * bills Oravan tracks, and a name can stop opening its bill the day a twin
  * enters the corpus. The Congresses are searched in

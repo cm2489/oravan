@@ -19,6 +19,7 @@ import {
   coveragePriority,
   formatLeanDrift,
   gateAnswered,
+  gateVerdict,
   isCoverageEligible,
   isNewestFirst,
   leanDrift,
@@ -30,6 +31,7 @@ import {
   readRateLimitRemaining,
   recentWindowStart,
   relevancePrompt,
+  uncleanGateLine,
   wholeLifeStart,
   withoutRejected,
 } from '../scripts/coverage-query.mjs';
@@ -526,10 +528,10 @@ test.describe('the gate’s NO is not made permanent by the merge', () => {
     expect(gateAnswered('none', 0, done)).toBe(false);
   });
 
-  test('gateAnswered is stricter than parseKeptIndexes, which still decides what a night KEEPS', () => {
-    // An off-script reply keeps what it names (the keep path is unchanged)…
+  test('gateAnswered is stricter than parseKeptIndexes, so parseKeptIndexes alone never decides a keep', () => {
+    // parseKeptIndexes reads numbers out of anything…
     expect([...parseKeptIndexes('0, 3 — the rest are about other bills', 5)].sort()).toEqual([0, 3]);
-    // …but cannot delete anything.
+    // …which is why gateVerdict asks gateAnswered first.
     expect(gateAnswered('0, 3 — the rest are about other bills', 5, { stopReason: 'end_turn' })).toBe(false);
   });
 
@@ -539,6 +541,97 @@ test.describe('the gate’s NO is not made permanent by the merge', () => {
     expect(isOne(art('https://z/9', 'a  TITLE'))).toBe(true);
     expect(isOne(art('https://z/9', 'Other'))).toBe(false);
     expect(articleMatcher([])(art('https://a/1'))).toBe(false);
+  });
+});
+
+/*
+ * gateVerdict: what ONE gate reply keeps and rejects (2026-11-17). Pure: no
+ * network, no clock, no data file. The rule: only a clean list keeps or
+ * rejects anything; every other reply keeps nothing and rejects nothing, so
+ * the caller adds nothing and drops nothing for that bill tonight.
+ */
+test.describe('gateVerdict — an unclean gate reply keeps nothing new', () => {
+  const five = ['a0', 'a1', 'a2', 'a3', 'a4'].map((t) => ({ title: t, url: `https://x.example/${t}` }));
+  const reply = (text: string, stop_reason: string | null = 'end_turn') => ({ content: [{ type: 'text', text }], stop_reason });
+  const titles = (xs: { title: string }[]) => xs.map((a) => a.title);
+
+  test('a clean list keeps exactly its numbers and rejects the rest', () => {
+    const v = gateVerdict(reply('0, 3'), five);
+    expect(v.answered).toBe(true);
+    expect(titles(v.kept)).toEqual(['a0', 'a3']);
+    expect(titles(v.rejected)).toEqual(['a1', 'a2', 'a4']);
+    // The tolerated wrappings still count as clean.
+    for (const text of ['"0, 3"', '0, 3.', '  0,3\n']) {
+      expect(titles(gateVerdict(reply(text), five).kept), text).toEqual(['a0', 'a3']);
+    }
+  });
+
+  test('"none" keeps nothing and rejects everything shown (so a stored copy may be cleared)', () => {
+    for (const text of ['none', 'None.', '"none"']) {
+      const v = gateVerdict(reply(text), five);
+      expect(v.answered, text).toBe(true);
+      expect(v.kept, text).toEqual([]);
+      expect(titles(v.rejected), text).toEqual(['a0', 'a1', 'a2', 'a3', 'a4']);
+    }
+  });
+
+  test('a PROSE reply that names every number keeps nothing and rejects nothing', () => {
+    for (const text of [
+      'Article 0 is about this bill, article 1 is not, 2 is about a different bill, 3 is general news and 4 is an opinion piece.',
+      '0: yes\n1: no\n2: no\n3: no\n4: no',
+      '0, 1, 2, 3, 4 — all of these mention the topic, but none is about this bill.',
+      'I cannot judge articles 0, 1, 2, 3 or 4 from headlines alone.',
+      '0 1 2 3 4',
+    ]) {
+      // Before 2026-11-17 every one of these kept all five articles.
+      expect(parseKeptIndexes(text, 5).size, text).toBe(5);
+      const v = gateVerdict(reply(text), five);
+      expect(v, text).toEqual({ kept: [], rejected: [], answered: false });
+    }
+  });
+
+  test('a reply cut off at max_tokens keeps nothing, however clean the surviving text', () => {
+    for (const stop of ['max_tokens', 'refusal', null]) {
+      expect(gateVerdict(reply('0, 3', stop), five), String(stop)).toEqual({ kept: [], rejected: [], answered: false });
+    }
+  });
+
+  test('a list with an out-of-range number is not a clean list: it keeps and rejects nothing', () => {
+    // gateAnswered has treated this as unclean since 2026-09-26, so it has
+    // never rejected anything. What changes on 2026-11-17 is the keep: before,
+    // "0, 7" with five shown kept article 0; now it keeps nothing.
+    expect(gateAnswered('0, 7', 5, { stopReason: 'end_turn' })).toBe(false);
+    expect(gateVerdict(reply('0, 7'), five)).toEqual({ kept: [], rejected: [], answered: false });
+    expect(gateVerdict(reply('7, 9'), five)).toEqual({ kept: [], rejected: [], answered: false });
+  });
+
+  test('anything but exactly one text block keeps nothing; nothing shown, nothing decided', () => {
+    const none = { kept: [], rejected: [], answered: false };
+    expect(gateVerdict({ content: [], stop_reason: 'end_turn' }, five)).toEqual(none);
+    expect(gateVerdict({ content: [{ type: 'text', text: '0' }, { type: 'text', text: '1' }], stop_reason: 'end_turn' }, five)).toEqual(none);
+    expect(gateVerdict({ content: [{ type: 'tool_use' }], stop_reason: 'end_turn' }, five)).toEqual(none);
+    expect(gateVerdict(null, five)).toEqual(none);
+    expect(gateVerdict(undefined, five)).toEqual(none);
+    expect(gateVerdict(reply('none'), [])).toEqual(none);
+  });
+
+  test('inputs are never mutated', () => {
+    const copy = JSON.parse(JSON.stringify(five));
+    gateVerdict(reply('0, 3'), five);
+    gateVerdict(reply('Article 0 and article 3'), five);
+    expect(five).toEqual(copy);
+  });
+
+  test('uncleanGateLine: the bill, the stop reason and the first 120 characters, on one line', () => {
+    const long = `Article 0 is about this bill.\r\nArticle 1 is not.\n\n${'x'.repeat(200)}`;
+    const line = uncleanGateLine('hr-102-119', reply(long, 'max_tokens'));
+    expect(line).not.toMatch(/[\r\n]/);
+    expect(line.startsWith('gate reply not a clean list: hr-102-119 (stop_reason: max_tokens): "Article 0 is about this bill. Article 1 is not. xxx')).toBe(true);
+    const quoted = line.match(/: "(.*)" — nothing kept, nothing dropped$/)![1];
+    expect(quoted).toHaveLength(120);
+    expect(uncleanGateLine('s-1-119', { content: [], stop_reason: null })).toBe(
+      'gate reply not a clean list: s-1-119 (stop_reason: missing, 0 content blocks): "" — nothing kept, nothing dropped',
+    );
   });
 });
 

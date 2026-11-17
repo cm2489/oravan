@@ -26,7 +26,8 @@ import { alarms, parseCoverageDone, parseCoverageLean, parseCoverageOutage } fro
  *     replacing it — an empty night erases nothing — EXCEPT a stored article
  *     tonight's gate was shown and rejected, which is dropped, and only when
  *     the reply was complete and well-formed (a truncated or off-script reply
- *     drops nothing);
+ *     drops nothing, and since 2026-11-17 keeps nothing new either: each one
+ *     is logged with its first 120 characters and counted on the GATE line);
  *   - a night whose gate drops half or more of what it re-judged raises the
  *     coverage-mass-drop ⛔, and a night TheNewsAPI answers not at all prints
  *     the COVERAGE OUTAGE line (raised as coverage-outage), leaving
@@ -319,15 +320,17 @@ test.describe('sync-coverage.mjs end to end (mocked network)', () => {
     const { output, coverage } = runSync(baseScenario);
     expect(coverage['hr-103-119'].map((a: Json) => a.title)).toEqual(['Stored 103 piece']);
     expect(output).toContain(
-      "hr-103-119: 1 candidates -> 0 kept (the gate's reply was not complete and well-formed: no stored article dropped) -> 1 stored",
+      "hr-103-119: 1 candidates -> 0 kept (the gate's reply was not a clean list: nothing kept from it, no stored article dropped) -> 1 stored",
     );
+    expect(output).toContain('gate reply not a clean list: hr-103-119 (stop_reason: end_turn): "" — nothing kept, nothing dropped');
   });
 
-  test('a TRUNCATED reply drops nothing, even when what survived of it looks like a clean list', () => {
+  test('a TRUNCATED reply keeps nothing and drops nothing, even when what survived of it looks like a clean list', () => {
     // hr-102's gate reply is "0" — exactly what a finished reply would say —
     // but the API reports the model was cut off at max_tokens, so "0" may
-    // have been the start of "0, 1" or of "10". The wrongly kept article
-    // it would otherwise drop stays stored.
+    // have been the start of "0, 1" or of "10". Since 2026-11-17 it adds
+    // nothing (before, it kept article 0), and the wrongly kept article it
+    // would otherwise drop stays stored.
     const truncated = { ...baseScenario, gateReplies: [{ match: 'HR 102 ', text: '{kept}', stop_reason: 'max_tokens' }] };
     const { run, output, coverage, requests } = runSync(truncated);
     expect(run.status, output).toBe(0);
@@ -335,20 +338,20 @@ test.describe('sync-coverage.mjs end to end (mocked network)', () => {
     expect(gate.text).toBe('0');
     expect(gate.stop_reason).toBe('max_tokens');
     expect(coverage['hr-102-119'].map((a: Json) => a.title)).toEqual([
-      'Ordinary 102 news KEEP', // 10 days old
-      'Wrongly kept 102 piece', // 40
+      'Wrongly kept 102 piece', // 40 days old
       'Kept 102 older', // 60
     ]);
     expect(output).toContain(
-      "hr-102-119: 2 candidates -> 1 kept (the gate's reply was not complete and well-formed: no stored article dropped) -> 3 stored",
+      "hr-102-119: 2 candidates -> 0 kept (the gate's reply was not a clean list: nothing kept from it, no stored article dropped) -> 2 stored",
     );
+    expect(output).toContain('gate reply not a clean list: hr-102-119 (stop_reason: max_tokens): "0" — nothing kept, nothing dropped');
     const done = parseCoverageDone(output)!;
     expect(done.droppedOnVerdict).toBe(0);
     expect(done.rejudged).toBe(0);
     expect(done.unansweredGates).toBe(2); // hr-102 and hr-103
   });
 
-  test('an OFF-SCRIPT reply drops nothing, even with valid indexes in it', () => {
+  test('an OFF-SCRIPT reply keeps nothing and drops nothing, even with valid indexes in it', () => {
     for (const text of [
       '{kept} — the other article is about a different bill.',
       'Article {kept} is about this bill.',
@@ -359,10 +362,51 @@ test.describe('sync-coverage.mjs end to end (mocked network)', () => {
     ]) {
       const offScript = { ...baseScenario, gateReplies: [{ match: 'HR 102 ', text, stop_reason: 'end_turn' }] };
       const { output, coverage } = runSync(offScript);
-      expect(coverage['hr-102-119'].map((a: Json) => a.title), text).toContain('Wrongly kept 102 piece');
-      expect(output, text).not.toContain("hr-102-119: 2 candidates -> 1 kept, 1 stored article(s) dropped");
+      expect(coverage['hr-102-119'].map((a: Json) => a.title), text).toEqual(['Wrongly kept 102 piece', 'Kept 102 older']);
+      expect(output, text).toContain("hr-102-119: 2 candidates -> 0 kept (the gate's reply was not a clean list");
+      expect(output, text).toContain('gate reply not a clean list: hr-102-119 (stop_reason: end_turn): "');
       expect(parseCoverageDone(output)!.droppedOnVerdict, text).toBe(0);
     }
+  });
+
+  test('a PROSE reply naming every article keeps none of them and leaves the stored articles exactly as they were', () => {
+    // The 2026-11-17 measurement's largest single cause: a reply that walks
+    // through the articles one by one names every index, and the old keep
+    // rule took every number it found. hr-102 has two stored articles; one of
+    // them (WRONGLY_KEPT) is shown again tonight beside a new candidate.
+    const prose = 'Article 0 is about a different bill. Article 1 is general news,\nnot about H.R. 102 either.';
+    const scenario = { ...baseScenario, gateReplies: [{ match: 'HR 102 ', text: prose, stop_reason: 'end_turn' }] };
+    const { run, output, coverage, requests } = runSync(scenario);
+    expect(run.status, output).toBe(0);
+
+    // The control: the same night, except hr-102's search returns nothing, so
+    // the gate never sees it. Whatever the script writes for hr-102 there is
+    // "left exactly as it was"; the prose night must write the same.
+    const control = { ...baseScenario, news: baseScenario.news.filter((n) => n.match !== 'Ordinary 102 Act') };
+    const untouched = runSync(control).coverage['hr-102-119'];
+    expect(coverage['hr-102-119']).toEqual(untouched);
+    expect(coverage['hr-102-119'].map((a: Json) => [a.title, a.url])).toEqual(
+      STORED['hr-102-119'].map((a) => [a.title, a.url]),
+    );
+
+    expect(output).toContain(
+      "hr-102-119: 2 candidates -> 0 kept (the gate's reply was not a clean list: nothing kept from it, no stored article dropped) -> 2 stored",
+    );
+    // One line, the stop reason, the reply's first 120 characters, newlines flattened.
+    const line = output.split('\n').find((l) => l.startsWith('gate reply not a clean list: hr-102-119'))!;
+    expect(line).toBe(
+      `gate reply not a clean list: hr-102-119 (stop_reason: end_turn): "${prose.replace(/\n/g, ' ').slice(0, 120)}" — nothing kept, nothing dropped`,
+    );
+    // Never the prompt, never a key.
+    expect(output).not.toContain(TOKEN);
+    expect(output).not.toContain('test-anthropic-key');
+    expect(output).not.toContain('Below are news articles');
+
+    // The GATE line counts every reply the mock gave, and the two that were not clean.
+    const gateCalls = requests.filter((r) => r.kind === 'gate').length;
+    expect(gateCalls).toBeGreaterThan(2);
+    expect(output).toContain(`GATE: ${gateCalls} replies, 2 not a clean list (kept nothing from them, dropped nothing)`);
+    expect(parseCoverageDone(output)!.unansweredGates).toBe(2);
   });
 
   test('a well-formed reply in quotes, or with a trailing period, still counts', () => {
@@ -375,9 +419,12 @@ test.describe('sync-coverage.mjs end to end (mocked network)', () => {
   });
 
   test('the DONE line says what TONIGHT found, and pipeline-health reads it off this real output', () => {
-    const { output } = runSync(baseScenario);
+    const { output, requests } = runSync(baseScenario);
+    // The GATE line beside it: every reply, and the one (hr-103's empty reply) that was not clean.
+    const gateCalls = requests.filter((r) => r.kind === 'gate').length;
+    expect(output).toContain(`GATE: ${gateCalls} replies, 1 not a clean list (kept nothing from them, dropped nothing)`);
     expect(output).toMatch(
-      /DONE: \d+\/11 bills with coverage, \d+ articles total.*; kept tonight: 11 article\(s\) on 6 bill\(s\); 1 of 1 re-judged stored article\(s\) dropped on tonight's gate verdict; 1 gate reply\(ies\) not complete and well-formed \(no stored article dropped on them\)/,
+      /DONE: \d+\/11 bills with coverage, \d+ articles total.*; kept tonight: 11 article\(s\) on 6 bill\(s\); 1 of 1 re-judged stored article\(s\) dropped on tonight's gate verdict; 1 gate reply\(ies\) not complete and well-formed \(nothing kept from them, no stored article dropped\)/,
     );
     const done = parseCoverageDone(output)!;
     expect(done).not.toBeNull();
@@ -396,6 +443,7 @@ test.describe('sync-coverage.mjs end to end (mocked network)', () => {
     expect(run.status, output).toBe(0);
     expect(output).toContain('; kept tonight: 0 article(s) on 0 bill(s); 0 of 0 re-judged stored article(s) dropped');
     expect(parseCoverageDone(output)!.keptTonight).toBe(0);
+    expect(output).toContain('GATE: 0 replies, 0 not a clean list (kept nothing from them, dropped nothing)');
     expect(coverage['hr-101-119']).toHaveLength(2);
     expect(coverage['hconres-89-119']).toHaveLength(1);
   });

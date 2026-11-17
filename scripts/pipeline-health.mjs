@@ -68,6 +68,7 @@ import {
   parseCoverageOutage,
   parseShortTitlesTrouble,
   parseShortTitlesSummary,
+  shortTitlesSummaryExpected,
   parseFailingTests,
   parsePregen,
   parseRedecodeDone,
@@ -87,6 +88,7 @@ import {
 } from '../lib/pipeline-health.mjs';
 import { RECHECK_DAYS as PORTRAIT_RECHECK_DAYS } from './mirror-portraits.mjs';
 import { QUESTION_PRESS_PATH, questionPressActivity, questionTerms } from '../lib/question-press.mjs';
+import { SHORT_TITLES_TREND_PATH } from '../lib/short-titles-summary.mjs';
 
 const REPO = process.env.HEALTH_REPO || 'cm2489/oravan';
 
@@ -330,6 +332,7 @@ export function buildReport({ now = Date.now() } = {}) {
   let shortTitlesTrouble = null;
   let shortTitlesSummary = null;
   let shortTitlesSummaryChecked = false;
+  let shortTitlesSummaryExpectedHere = false;
   let pregen = null;
   let portrait404s = null;
   let upstashCacheFailures = null;
@@ -375,6 +378,13 @@ export function buildReport({ now = Date.now() } = {}) {
     // in a finished nightly's log is itself an alarm (lib/short-titles-summary.mjs).
     shortTitlesSummary = parseShortTitlesSummary(log);
     shortTitlesSummaryChecked = true;
+    // Expected only when this log shows the step started, or the committed
+    // 14-night history already holds a night (a nightly from before the step
+    // existed proves nothing; round 6, 2026-11-17).
+    shortTitlesSummaryExpectedHere = shortTitlesSummaryExpected({
+      log,
+      trendText: existsSync(SHORT_TITLES_TREND_PATH) ? readFileSync(SHORT_TITLES_TREND_PATH, 'utf8') : null,
+    });
     pregen = parsePregen(log);
     portrait404s = countPortrait404s(log);
     upstashCacheFailures = countUpstashCacheFailures(log);
@@ -550,6 +560,7 @@ export function buildReport({ now = Date.now() } = {}) {
     shortTitlesTrouble,
     shortTitlesSummary,
     shortTitlesSummaryChecked,
+    shortTitlesSummaryExpected: shortTitlesSummaryExpectedHere,
     coverageLean,
     corpus: {
       bills: corpusBills,

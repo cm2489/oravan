@@ -1,20 +1,26 @@
-import { readFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
-import { alarms, parseShortTitlesTrouble } from '../lib/pipeline-health.mjs';
+import { alarms, parseShortTitlesTrouble, shortTitlesSummaryExpected } from '../lib/pipeline-health.mjs';
 import { readTitlesAnswer, serializeShortTitles } from '../lib/short-titles.mjs';
-import { Refused, runShortTitlesNight, settleNight, TransportFailure, verifyShortTitlesFiles } from '../lib/short-titles-night.mjs';
+import { Refused, runShortTitlesNight, settleNight, stopReason, TransportFailure, verifyShortTitlesFiles } from '../lib/short-titles-night.mjs';
 import {
   FALL_MIN,
   LOST_TONIGHT_ALARM,
   nextTrend,
   nightSummary,
   parseShortTitlesSummary,
+  serializeTrend,
   shortTitlesAlarms,
+  shortTitlesStepStarted,
   STALE_READ_DAYS,
   summaryLine,
   TREND_NIGHTS,
   trendAgo,
+  trendFileWarnings,
+  trendHasNights,
   verifyShortTitlesTrend,
 } from '../lib/short-titles-summary.mjs';
 
@@ -42,7 +48,7 @@ function answer(n: number, shortType = 'Short Title(s) as Introduced') {
   return { pagination: { count: titles.length }, request: { billNumber: String(n), billType: 'hr', congress: '119' }, titles };
 }
 
-type State = { file: Record<string, { titles: string[]; as_of: string | null; read_on: string }>; retry: Record<string, unknown>; trend: { nights: Array<{ day: string; titled: number; bills: number }> } };
+type State = { file: Record<string, { titles: string[]; as_of: string | null; read_on: string }>; retry: Record<string, unknown>; trend: { nights: Array<{ day: string; titled: number; bills: number; allow_drop?: true }> } };
 
 /** An established corpus: every bill read, reads spread over the last 56 days, a steady 14-night history. */
 function established(bills: Bill[], start: string, skip: Set<number> = new Set()): State {
@@ -58,15 +64,16 @@ function established(bills: Bill[], start: string, skip: Set<number> = new Set()
 }
 
 /** One night, exactly as the script runs it, with the summary read back the way the health report reads it. */
-async function oneNight(state: State, bills: Bill[], today: string, fetchPage: (b: { bill_number: number }, offset: number) => Promise<unknown>) {
+async function oneNight(state: State, bills: Bill[], today: string, fetchPage: (b: { bill_number: number }, offset: number) => Promise<unknown>, allowDrop = false) {
   const night = await runShortTitlesNight({ bills, file: state.file, retry: state.retry, today, fetchPage });
-  const settled = settleNight({ night, bills, before: Object.keys(state.file).length ? state.file : null });
+  const settled = settleNight({ night, bills, before: Object.keys(state.file).length ? state.file : null, allowDrop });
   const titlesAfter = settled.write?.titles ? JSON.parse(settled.write.text) : state.file;
   const retryAfter = settled.write ? JSON.parse(settled.write.retryText) : state.retry;
-  const fields = nightSummary({ day: today, bills, titles: titlesAfter, retry: retryAfter, trend: state.trend, read: night.read, lost: night.dropped });
+  const used = Boolean(settled.write && settled.overrideUsed);
+  const fields = nightSummary({ day: today, bills, titles: titlesAfter, retry: retryAfter, trend: state.trend, read: night.read, lost: night.dropped, allowDrop: used });
   state.file = titlesAfter;
   state.retry = retryAfter;
-  state.trend = nextTrend(state.trend, { day: today, titled: fields.titled, bills: bills.length });
+  state.trend = nextTrend(state.trend, { day: today, titled: fields.titled, bills: bills.length, allow_drop: used });
   const log = [
     ...settled.troubles.map((t) => `SHORT TITLES TROUBLE: ${t.reason}`),
     summaryLine({ ...fields, outcome: 'done' }),
@@ -83,11 +90,11 @@ const newAlarms = (summary: unknown, disable: string[] = []) => shortTitlesAlarm
 test('the summary line round-trips, unknowns included, through the parser the health report uses', () => {
   const line = summaryLine({ day: '2026-11-17', outcome: 'done', titled: 1333, titled_7_nights_ago: null, bills: 3322, newest_read_on: '2026-11-17', retry: 15, read_tonight: 82, lost_all_titles_tonight: 0 });
   expect(line).toBe(
-    'SHORT TITLES SUMMARY: day=2026-11-17 outcome=done titled=1333 titled_7_nights_ago=unknown bills_7_nights_ago=unknown bills=3322 newest_read_on=2026-11-17 retry=15 read_tonight=82 lost_all_titles_tonight=0',
+    'SHORT TITLES SUMMARY: day=2026-11-17 outcome=done titled=1333 titled_7_nights_ago=unknown bills_7_nights_ago=unknown day_7_nights_ago=unknown bills=3322 newest_read_on=2026-11-17 retry=15 read_tonight=82 lost_all_titles_tonight=0 drop_approved_on=unknown',
   );
   const actionsLog = `nightly\tRead the record's short titles\t2026-11-17T14:40:00.0Z ${line}`;
   expect(parseShortTitlesSummary(actionsLog)).toEqual({
-    day: '2026-11-17', outcome: 'done', titled: 1333, titled_7_nights_ago: null, bills_7_nights_ago: null, bills: 3322, newest_read_on: '2026-11-17', retry: 15, read_tonight: 82, lost_all_titles_tonight: 0,
+    day: '2026-11-17', outcome: 'done', titled: 1333, titled_7_nights_ago: null, bills_7_nights_ago: null, day_7_nights_ago: null, bills: 3322, newest_read_on: '2026-11-17', retry: 15, read_tonight: 82, lost_all_titles_tonight: 0, drop_approved_on: null,
   });
   expect(parseShortTitlesSummary('nothing here')).toBeNull();
 });
@@ -137,7 +144,8 @@ test('each check fires on its own input, in plain words, and none on an ordinary
 
 test('(2) the step skipped or killed: the health report alarms that morning; with no nightly log read, it claims nothing', () => {
   const log = 'nightly\tSync bills\t2026-11-17T14:20:00.0Z DONE: 340 refreshed\n(no short-titles step ran)';
-  const report = { nightly: { conclusion: 'success' }, shortTitlesSummaryChecked: true, shortTitlesSummary: parseShortTitlesSummary(log) };
+  // The step was expected (round 6: its run line was in the log, or the history held a night).
+  const report = { nightly: { conclusion: 'success' }, shortTitlesSummaryChecked: true, shortTitlesSummaryExpected: true, shortTitlesSummary: parseShortTitlesSummary(log) };
   expect(alarms(report).map((a) => a.code)).toContain('short-titles-summary-missing');
   expect(alarms({ nightly: { conclusion: 'success' }, shortTitlesSummaryChecked: false, shortTitlesSummary: null }).map((a) => a.code)).not.toContain('short-titles-summary-missing');
   // The report reads the line from the same nightly log as every other nightly counter.
@@ -145,6 +153,9 @@ test('(2) the step skipped or killed: the health report alarms that morning; wit
   const block = script.slice(script.indexOf('const nightlyLog = pickNightlyLog(nightlyReads);'), script.indexOf('pregen = parsePregen(log);'));
   expect(block).toContain('shortTitlesSummary = parseShortTitlesSummary(log);');
   expect(block).toContain('shortTitlesSummaryChecked = true;');
+  expect(block).toContain('shortTitlesSummaryExpectedHere = shortTitlesSummaryExpected({');
+  expect(block).toContain("trendText: existsSync(SHORT_TITLES_TREND_PATH) ? readFileSync(SHORT_TITLES_TREND_PATH, 'utf8') : null,");
+  expect(script).toContain('shortTitlesSummaryExpected: shortTitlesSummaryExpectedHere,');
 });
 
 test('F1: "the source has changed" from ANY trouble line, every distinct reason carried (bounded)', () => {
@@ -274,10 +285,10 @@ test('(5) 24 of 200 titled bills leave the corpus: no stall, no alarm; the scrip
   const settled = settleNight({ night, bills, before });
   expect(settled.failures).toEqual([]);
   expect(settled.troubles).toEqual([]);
-  const precommit = verifyShortTitlesFiles({ titles: JSON.parse(serializeShortTitles(night.file as State['file'], bills)), retry: JSON.parse(settled.write!.retryText), trend: state.trend, bills, before });
+  const precommit = verifyShortTitlesFiles({ titles: JSON.parse(serializeShortTitles(night.file as State['file'], bills)), retry: JSON.parse(settled.write!.retryText), trendText: serializeTrend(state.trend), bills, before });
   expect(precommit.failures).toEqual([]);
   // And a committed file still holding the 24 (a night that read nothing) passes both, as a note.
-  const stale = verifyShortTitlesFiles({ titles: before, retry: {}, trend: state.trend, bills, before });
+  const stale = verifyShortTitlesFiles({ titles: before, retry: {}, trendText: serializeTrend(state.trend), bills, before });
   expect(stale.failures).toEqual([]);
   expect(stale.notes.join('\n')).toContain('no longer holds');
   // The other way round: entries for bills no longer in the corpus do not hide a real drop among the bills it holds.
@@ -288,7 +299,7 @@ test('(5) 24 of 200 titled bills leave the corpus: no stall, no alarm; the scrip
     ...gone.map((n) => [slug(n), { titles: [`Fixture hr${n} Act`], as_of: '2026-10-01', read_on: START }]),
   ]);
   const heldBefore = Object.fromEntries(held.map((b) => [slug(b.bill_number), { titles: [`Fixture hr${b.bill_number} Act`], as_of: b.last_action_date, read_on: START }]));
-  expect(verifyShortTitlesFiles({ titles: masked, retry: null, trend: null, bills: held, before: heldBefore }).failures.join('\n')).toContain('bills with a short title fell 30 -> 0');
+  expect(verifyShortTitlesFiles({ titles: masked, retry: null, trendText: null, bills: held, before: heldBefore }).failures.join('\n')).toContain('bills with a short title fell 30 -> 0');
   // Eight nights on: no alarm.
   for (let i = 0; i < 8; i++) {
     const { summary, settled: s } = await oneNight(state, bills, day(START, i), async (b: { bill_number: number }) => answer(b.bill_number));
@@ -312,4 +323,224 @@ test('(6) a reshaped source for 5 nights: the alarm code stays "source changed" 
 
 test('the per-title check refuses what the gate would refuse (unchanged by this round)', () => {
   expect(readTitlesAnswer({ ...answer(1), titles: [...OFFICIAL, { title: 'Bad\tAct', titleType: 'Short Title(s) as Introduced' }], pagination: { count: OFFICIAL.length + 1 } }, bill(1)).ok).toBe(false);
+});
+
+// --- round 6 (the fifth independent check; the owner's card 195, Nov 17, 2026) ---------
+
+/*
+ * THE FALSE ALARM. A cut of the REAL log of nightly run 43978722399 (Nov 16,
+ * 2026), read with `gh run view --log`: every line begins
+ * "sync<TAB>UNKNOWN STEP<TAB><timestamp> ", a byte-order mark sits inside the
+ * first line just before its timestamp, and a step begins with its run line
+ * ("##[group]Run node scripts/…"). That nightly ran before the short-titles
+ * step existed, as the first nightly a report reads after the merge will.
+ */
+const REAL = readFileSync(join(process.cwd(), 'tests/fixtures/nightly-log-43978722399-cut.txt'), 'utf8');
+const RUN_LINE = 'sync\tUNKNOWN STEP\t2026-11-16T23:28:54.5300000Z ##[group]Run node scripts/sync-short-titles.mjs';
+const summaryAlarms = (log: string, trendText: string | null) =>
+  alarms({
+    nightly: { conclusion: 'success' },
+    shortTitlesSummaryChecked: true,
+    shortTitlesSummary: parseShortTitlesSummary(log),
+    shortTitlesSummaryExpected: shortTitlesSummaryExpected({ log, trendText }),
+  })
+    .map((a) => a.code)
+    .filter((c) => c.startsWith('short-titles-'));
+
+test('round 6, the real log shape: tab-prefixed lines, a byte-order mark before the first timestamp, step run lines', () => {
+  const lines = REAL.split('\n').filter(Boolean);
+  for (const l of lines) expect(l).toMatch(/^sync\tUNKNOWN STEP\t(?:﻿)?\d{4}-\d{2}-\d{2}T[\d:.]+Z /);
+  expect(lines[0]).toContain('\tUNKNOWN STEP\t﻿2026-11-16T23:22:33');
+  expect(lines.some((l) => l.endsWith('##[group]Run node scripts/sync-votes.mjs'))).toBe(true);
+  expect(REAL).not.toMatch(/SHORT TITLES|sync-short-titles/);
+  // Nothing secret travels in the fixture.
+  expect(REAL).not.toMatch(/_KEY|TOKEN|credentials|\*\*\*/i);
+});
+
+test('round 6 (1): the pre-change log raises nothing; with the step’s run line and no summary it raises; a history with one night raises; an ordinary night raises nothing', () => {
+  // The log of a nightly from before the step: no alarm (the fifth check's false ⛔).
+  expect(shortTitlesStepStarted(REAL)).toBe(false);
+  expect(summaryAlarms(REAL, null)).toEqual([]);
+  expect(summaryAlarms(REAL, '{\n "nights": []\n}\n')).toEqual([]);
+  // The same log with the step's run line in the real shape and no summary: the step started and printed nothing.
+  const started = REAL.replace('\n', `\n${RUN_LINE}\n`);
+  expect(shortTitlesStepStarted(started)).toBe(true);
+  expect(summaryAlarms(started, null)).toEqual(['short-titles-summary-missing']);
+  // The run line as the very first line, behind the byte-order mark, is still read.
+  expect(shortTitlesStepStarted(RUN_LINE.replace('\t2026', '\t﻿2026'))).toBe(true);
+  // A history holding one night and a log with no short-titles line at all (step removed, skipped, or crashed at import).
+  const oneNight = serializeTrend({ nights: [{ day: '2026-11-17', titled: 1200, bills: 3322 }] });
+  expect(trendHasNights(oneNight)).toBe(true);
+  expect(summaryAlarms(REAL, oneNight)).toEqual(['short-titles-summary-missing']);
+  // A damaged history proves nothing by itself (the step will restart it).
+  expect(trendHasNights('{"nights":"x"}')).toBe(false);
+  expect(trendHasNights('not json')).toBe(false);
+  // An ordinary night: the run line and a summary line in the real shape: nothing.
+  const summary = summaryLine({
+    day: '2026-11-18', outcome: 'done', titled: 1210, titled_7_nights_ago: 1190, bills_7_nights_ago: 3300, day_7_nights_ago: '2026-11-11',
+    bills: 3322, newest_read_on: '2026-11-18', retry: 12, read_tonight: 80, lost_all_titles_tonight: 0, drop_approved_on: null,
+  });
+  const ordinary = `${started}sync\tUNKNOWN STEP\t2026-11-16T23:29:10.0000000Z ${summary}\n`;
+  expect(summaryAlarms(ordinary, oneNight)).toEqual([]);
+});
+
+test('round 6 (2): no state of the history file fails the nightly’s pre-commit check; each is a warning, and a good one is silent', () => {
+  const corpus = range(3).map((n) => bill(n));
+  const states: Array<[string, string]> = [
+    ['not JSON', '{"nights": ['],
+    ['a list', '[]'],
+    ['nights not a list', '{"nights":"x"}'],
+    ['an extra key', '{"nights":[],"x":1}'],
+    ['an entry with a stray field', '{"nights":[{"day":"2026-11-17","titled":1,"bills":2,"note":"x"}]}'],
+    ['more titled than bills', '{"nights":[{"day":"2026-11-17","titled":3,"bills":2}]}'],
+    ['days out of order', '{"nights":[{"day":"2026-11-17","titled":1,"bills":2},{"day":"2026-11-16","titled":1,"bills":2}]}'],
+    ['too many nights', serializeTrend({ nights: range(20).map((i) => ({ day: day('2026-10-01', i), titled: 1, bills: 2 })) })],
+    ['empty bytes', ''],
+  ];
+  for (const [label, text] of states) {
+    const v = verifyShortTitlesFiles({ titles: null, retry: null, trendText: text, bills: corpus, before: null });
+    expect(v.failures, label).toEqual([]);
+    expect(v.warnings.length, label).toBeGreaterThan(0);
+    expect(v.warnings.join(' '), label).toContain('starts the 14-night history afresh on its next run');
+  }
+  const good = serializeTrend({ nights: [{ day: '2026-11-16', titled: 1, bills: 3 }, { day: '2026-11-17', titled: 1, bills: 3, allow_drop: true }] });
+  expect(verifyShortTitlesFiles({ titles: null, retry: null, trendText: good, bills: corpus, before: null })).toEqual({ failures: [], notes: [], warnings: [] });
+  expect(trendFileWarnings(null)).toEqual([]);
+  // verify-sync reads the raw bytes (never through `parse`, which fails the run) and only warns.
+  const verify = readFileSync(join(process.cwd(), 'scripts/verify-sync.mjs'), 'utf8');
+  const block = verify.slice(verify.indexOf('// --- short-titles:'), verify.indexOf('// --- question-press'));
+  expect(block).toContain("trendText: existsSync(SHORT_TITLES_TREND_PATH) ? readFileSync(SHORT_TITLES_TREND_PATH, 'utf8') : null,");
+  expect(block).toContain('for (const w of warnings) warn(w);');
+  expect(block).not.toMatch(/readIf\(SHORT_TITLES_TREND_PATH\)/);
+});
+
+test('round 6 (2): CI refuses a damaged history in a pull request, accepts a good one, and its gate reads no clock', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'check-short-titles-'));
+  try {
+    mkdirSync(join(dir, 'data'));
+    writeFileSync(join(dir, 'data/bills.json'), JSON.stringify([bill(1)]));
+    const run = (text: string) => {
+      writeFileSync(join(dir, 'data/short-titles-trend.json'), text);
+      return spawnSync(process.execPath, [join(process.cwd(), 'scripts/check-short-titles.mjs')], { cwd: dir, encoding: 'utf8', env: { NODE_ENV: 'test', PATH: process.env.PATH ?? '' } });
+    };
+    expect(run(serializeTrend({ nights: [{ day: '2026-11-17', titled: 1, bills: 1 }] })).status).toBe(0);
+    const bad = run('{"nights":[{"day":"2026-11-17","titled":2,"bills":1}]}');
+    expect(bad.status).toBe(1);
+    expect(bad.stderr).toContain('short-titles-trend.json');
+    expect(run('{"nights": [').status).toBe(1);
+    // A valid retry file beside the history (the nightly writes one whenever a bill fails, so it is the usual
+    // state): a damaged history is still refused, and a good one still passes.
+    writeFileSync(join(dir, 'data/short-titles-retry.json'), '{}');
+    for (const damaged of ['', '{"nights": [', '[]', '{"nights":[{"day":"2026-11-17","titled":2,"bills":1}]}', '{"nights":"x"}']) {
+      const r = run(damaged);
+      expect(r.status, `damaged history ${JSON.stringify(damaged)} beside a valid retry file`).toBe(1);
+      expect(r.stderr).toContain('short-titles-trend.json');
+    }
+    expect(run(serializeTrend({ nights: [{ day: '2026-11-17', titled: 1, bills: 1 }] })).status).toBe(0);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+  // No clock in the gate: a history it accepts today, it accepts on every later day.
+  const lib = readFileSync(join(process.cwd(), 'lib/short-titles-summary.mjs'), 'utf8');
+  const gate = lib.slice(lib.indexOf('export function verifyShortTitlesTrend'), lib.indexOf('const FIELDS'));
+  expect(gate).not.toMatch(/Date\.now|new Date\(|today/);
+  // And the self-test the gates job runs covers the history.
+  const selfTest = spawnSync(process.execPath, ['scripts/check-short-titles.mjs', '--self-test'], { encoding: 'utf8' });
+  expect(selfTest.status).toBe(0);
+});
+
+test('round 6 (2): every history the step writes passes CI’s gate, night after night, whatever it started from', async () => {
+  // The step's own trend handling (scripts/sync-short-titles.mjs): a history the gate refuses is started afresh,
+  // then tonight's night is added with nextTrend. Driven over 40 nights from each starting state, a clock skew included.
+  const starts: Array<[string, State['trend'] | null]> = [
+    ['empty', { nights: [] }],
+    ['full', { nights: range(14).map((i) => ({ day: day('2027-01-01', i), titled: 10, bills: 20 })) }],
+    ['dated ahead of the clock', { nights: [{ day: '2027-12-31', titled: 10, bills: 20 }] }],
+    ['an override night', { nights: [{ day: '2027-01-14', titled: 10, bills: 20, allow_drop: true }] }],
+    ['damaged', null],
+  ];
+  const bills = range(20).map((n) => bill(n));
+  for (const [label, start] of starts) {
+    let trend = start && verifyShortTitlesTrend({ data: start }).failures.length === 0 ? start : { nights: [] };
+    for (let i = 0; i < 40; i++) {
+      trend = nextTrend(trend, { day: day('2027-01-15', i), titled: i % 21, bills: 20, allow_drop: i === 3 });
+      const written = JSON.parse(serializeTrend(trend));
+      expect(verifyShortTitlesTrend({ data: written }).failures, `${label}, night ${i + 1}`).toEqual([]);
+    }
+    expect(bills).toHaveLength(20);
+  }
+});
+
+test('round 6 (3): a stop says what happened: the hourly limit, a refused key, or no usable answer', () => {
+  expect(stopReason(10, Array(10).fill('HTTP 429'))).toBe("stopped early: Congress.gov answered HTTP 429 to 10 requests in a row, so the key's hourly request limit was reached");
+  expect(stopReason(10, Array(10).fill('HTTP 403: access refused (check CONGRESS_API_KEY)'))).toBe('stopped early: Congress.gov refused the key 10 times in a row (HTTP 403): check CONGRESS_API_KEY');
+  expect(stopReason(10, [...Array(9).fill('HTTP 429'), 'HTTP 503'])).toMatch(/no usable answer from Congress\.gov \(no answer, an error page or a broken connection\)$/);
+  // The alarm carries those words and how many bills read before it are kept.
+  const line = `SHORT TITLES TROUBLE: ${stopReason(10, Array(10).fill('HTTP 429'))}; 42 bill(s) read before it are kept`;
+  const a = alarms({ nightly: { conclusion: 'success' }, shortTitlesTrouble: parseShortTitlesTrouble(line) }).find((x) => x.code === 'short-titles-stopped')!;
+  expect(a.text).toContain("the key's hourly request limit was reached; 42 bill(s) read before it are kept");
+  expect(a.text).not.toContain('the source is down');
+});
+
+test('round 6 (3): the stop reads only the unbroken run of failures that ended the night', async () => {
+  // 5 server errors, one good answer, then 10 rate-limit answers in a row: the night stopped on the hourly limit.
+  const bills = range(20).map((n) => bill(n, '2026-10-01', 1 - n / 100));
+  const night = await runShortTitlesNight({
+    bills,
+    file: {},
+    retry: {},
+    today: '2026-11-17',
+    fetchPage: async (b: { bill_number: number }) => {
+      if (b.bill_number <= 5) throw new TransportFailure('HTTP 503');
+      if (b.bill_number === 6) return answer(6);
+      throw new TransportFailure('HTTP 429');
+    },
+  });
+  expect(night.read).toBe(1);
+  expect(night.trouble).toBe(stopReason(10, Array(10).fill('HTTP 429')));
+});
+
+test('round 6 (3): the falling alarm prints the two dates it compares, after a gap in nightlies too', () => {
+  // Nightlies missed Nov 9 to 12: the newest night at least 7 days back is Nov 5, twelve days back.
+  let trend: State['trend'] = { nights: [] };
+  for (const d of ['2026-11-01', '2026-11-03', '2026-11-05', '2026-11-13', '2026-11-15']) trend = nextTrend(trend, { day: d, titled: 1300, bills: 3322 });
+  const fields = nightSummary({ day: '2026-11-17', bills: [], titles: {}, retry: {}, trend, read: 0, lost: 0 });
+  expect(fields).toMatchObject({ titled_7_nights_ago: 1300, day_7_nights_ago: '2026-11-05', drop_approved_on: null });
+  const [a] = shortTitlesAlarms({ ...fields, titled: 1200, bills: 3322, bills_7_nights_ago: 3322, newest_read_on: '2026-11-17' }).filter((x) => x.code === 'short-titles-falling');
+  expect(a.text).toContain('fell from 1300 on 2026-11-05 to 1200 on 2026-11-17');
+  expect(a.text).not.toContain('in a week');
+});
+
+test('round 6 (3): after a person’s one-run override the falling alarm says so for the week it repeats, then stops', async () => {
+  const START = '2027-08-01';
+  const all = range(300).map((n) => bill(n * 5)); // all titled
+  const state = established(all, START);
+  const ok = async (b: { bill_number: number }) => answer(b.bill_number);
+  // The record really drops every title from 60 bills; the scheduled night refuses, then a person dispatches the override.
+  const dropped = new Set(range(60).map((n) => n * 5));
+  for (const b of all) if (dropped.has(b.bill_number)) b.last_action_date = START;
+  const reshaped = async (b: { bill_number: number }) => (dropped.has(b.bill_number) ? { ...answer(b.bill_number), titles: OFFICIAL, pagination: { count: OFFICIAL.length } } : answer(b.bill_number));
+  const refused = await oneNight(state, all, START, reshaped);
+  expect(refused.settled.write).toBeNull();
+  const through = await oneNight(state, all, day(START, 1), reshaped, true);
+  expect(through.settled.overrideUsed).toBe(true);
+  expect(state.trend.nights.at(-1)).toMatchObject({ day: day(START, 1), allow_drop: true });
+  const said: string[] = [];
+  for (let i = 2; i < 12; i++) {
+    const { summary } = await oneNight(state, all, day(START, i), ok);
+    const falling = shortTitlesAlarms(summary).find((x) => x.code === 'short-titles-falling');
+    said.push(falling ? (falling.text.includes(`one-run override on ${day(START, 1)}`) ? 'override' : 'plain') : '-');
+  }
+  // It fires, in the override's own words, until the night compared with is the override night or later.
+  expect(said.slice(0, 6)).toEqual(Array(6).fill('override'));
+  expect(said.slice(7)).toEqual(['-', '-', '-']);
+  expect(said).not.toContain('plain');
+});
+
+test('round 6 (4): the name rule is the same exact sentence in the code, the runbook and the direction page', () => {
+  const SENTENCE =
+    'A name opens a bill when no other bill Oravan tracks in the same Congress has a short title that makes the same name and no Congress searched before that one (the tracked Congress first, then each ended Congress, most recently ended first) holds the name.';
+  const flat = (p: string) => readFileSync(join(process.cwd(), p), 'utf8').replace(/\n\s*\*\s?/g, ' ').replace(/\s+/g, ' ');
+  for (const p of ['lib/short-address.ts', 'docs/runbooks/new-congress-switch.md', 'docs/current-direction.md']) expect(flat(p), p).toContain(SENTENCE);
+  expect(flat('lib/short-address.ts')).not.toContain('A name opens a bill when no other bill Oravan tracks has a short title');
 });

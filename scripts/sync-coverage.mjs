@@ -50,17 +50,17 @@ import {
   coveragePriority,
   coverageSlug,
   formatLeanDrift,
-  gateAnswered,
+  gateVerdict,
   isCoverageEligible,
   isNewestFirst,
   leanDrift,
   mergeArticles,
-  parseKeptIndexes,
   planCoverageRun,
   queryWithAddedNames,
   readRateLimitRemaining,
   recentWindowStart,
   relevancePrompt,
+  uncleanGateLine,
   wholeLifeStart,
   withoutRejected,
 } from './coverage-query.mjs';
@@ -417,15 +417,18 @@ async function fetchArticles(query, { publishedAfter, sort }) {
    date, not by the order the search happened to return.
 
    It also returns what the gate REJECTED, and whether the reply was a
-   complete, well-formed answer (gateAnswered: the model finished, one text
-   block, and exactly "none" or a comma-separated list of in-range indexes).
-   processBill drops a stored article the gate was shown and rejected
-   tonight ONLY on such a reply. Any other reply rejects nothing, so it can
-   never delete stored coverage. What a reply KEEPS is read as it always has
-   been (parseKeptIndexes, any in-range number in the reply), so tightening
-   the drop rule did not change what a night adds. */
+   clean list (gateAnswered: the model finished, one text block, and exactly
+   "none" or a comma-separated list of in-range indexes). The decision is
+   gateVerdict in scripts/coverage-query.mjs. Only a clean reply keeps or
+   rejects anything: processBill drops a stored article the gate was shown
+   and rejected tonight only on such a reply. Since 2026-11-17 any other
+   reply also KEEPS nothing (before, any in-range number anywhere in it was
+   kept), and it is logged with its first 120 characters so the night's log
+   shows what the gate said. No retry: an unclean reply's bill is simply
+   asked again on a later night. `replied` is false only when no call was
+   made (no candidates). */
 async function filterRelevant(b, candidates) {
-  if (candidates.length === 0) return { kept: [], rejected: [], answered: false };
+  if (candidates.length === 0) return { kept: [], rejected: [], answered: false, replied: false };
   const msg = await anthropic.messages.create({
     model: MODEL,
     // Room for every index when a priority bill brings two passes' worth of
@@ -433,17 +436,9 @@ async function filterRelevant(b, candidates) {
     max_tokens: Math.max(80, 4 * candidates.length),
     messages: [{ role: 'user', content: relevancePrompt(b, candidates) }],
   });
-  const text = msg.content[0]?.type === 'text' ? msg.content[0].text : '';
-  const keep = parseKeptIndexes(text, candidates.length);
-  const answered =
-    Array.isArray(msg.content) &&
-    msg.content.length === 1 &&
-    gateAnswered(text, candidates.length, { stopReason: msg.stop_reason });
-  return {
-    kept: candidates.filter((_, i) => keep.has(i)),
-    rejected: answered ? candidates.filter((_, i) => !keep.has(i)) : [],
-    answered,
-  };
+  const verdict = gateVerdict(msg, candidates);
+  if (!verdict.answered) console.log(uncleanGateLine(slugOf(b), msg));
+  return { ...verdict, replied: true };
 }
 
 // ---- main ----
@@ -466,6 +461,9 @@ let droppedOnVerdict = 0;
    exceed it. */
 let rejudgedStored = 0;
 let unansweredGates = 0;
+/* Every gate reply tonight, clean or not: the denominator for unansweredGates
+   on the GATE line. */
+let gateReplies = 0;
 /* Bills whose news request or gate call threw (a FAIL line), and whether the
    daily quota stopped the run. Used only by the COVERAGE OUTAGE line. */
 let failedBills = 0;
@@ -633,7 +631,8 @@ async function fetchRecent(b, query) {
    an earlier night found instead of erasing it. The one exception is an
    article the gate was SHOWN tonight and rejected: that verdict replaces the
    earlier one (withoutRejected), and only when the reply was a complete,
-   well-formed answer (gateAnswered). */
+   well-formed answer (gateAnswered). A reply that is not keeps nothing new
+   either (gateVerdict). */
 async function processBill(b) {
   const slug = slugOf(b);
   const query = queryWithAddedNames(b, pressNames.bySlug.get(slug));
@@ -649,10 +648,11 @@ async function processBill(b) {
     if (whole === null) return 'quota';
     anyFetchOk = true;
     const candidates = dedupeArticles([...recent, ...whole]);
-    const { kept, rejected, answered } = await filterRelevant(b, candidates);
+    const { kept, rejected, answered, replied } = await filterRelevant(b, candidates);
     processedSlugs.add(slug);
     checkedAt[slug] = RUN_DAY; // looked at tonight, regardless of what we found
-    const noAnswer = candidates.length > 0 && !answered;
+    if (replied) gateReplies++;
+    const noAnswer = replied && !answered;
     if (noAnswer) unansweredGates++;
     keptTonight += kept.length;
     if (kept.length) billsKeptTonight++;
@@ -695,7 +695,7 @@ async function processBill(b) {
         ` -> ${kept.length} kept` +
         `${routedHere ? ` (${routedHere} of them reporting a roll call on another measure, routed there)` : ''}` +
         `${dropped ? `, ${dropped} stored article(s) dropped on tonight's gate verdict` : ''}` +
-        `${noAnswer ? " (the gate's reply was not complete and well-formed: no stored article dropped)" : ''}` +
+        `${noAnswer ? " (the gate's reply was not a clean list: nothing kept from it, no stored article dropped)" : ''}` +
         ` -> ${merged.length} stored`
     );
     return 'ok';
@@ -796,14 +796,24 @@ const staleShare = newestAges.length
    "kept tonight: 0 article(s) on 0 bill(s)" instead of passing for normal.
    "D of J re-judged" is how many stored articles tonight's gate dropped, out
    of how many it was shown again with a complete, well-formed reply. The pair
-   is what pipeline-health's coverage-mass-drop alarm reads. The wording is a
-   contract with parseCoverageDone. */
+   is what pipeline-health's coverage-mass-drop alarm reads. The wording up to
+   "not complete and well-formed" is a contract with parseCoverageDone; the
+   parenthesis after it is not read. */
 console.log(
   `DONE: ${withCoverage}/${topBills.length} bills with coverage, ${totalArticles} articles total` +
     `${carried ? ` (+${carried} unprocessed bills carried forward)` : ''}` +
     `; kept tonight: ${keptTonight} article(s) on ${billsKeptTonight} bill(s)` +
     `; ${droppedOnVerdict} of ${rejudgedStored} re-judged stored article(s) dropped on tonight's gate verdict` +
-    `; ${unansweredGates} gate reply(ies) not complete and well-formed (no stored article dropped on them)`
+    `; ${unansweredGates} gate reply(ies) not complete and well-formed (nothing kept from them, no stored article dropped)`
+);
+/* The GATE line (2026-11-17): every reply tonight, and how many were not a
+   clean list. Those kept nothing and dropped nothing; each one has its own
+   "gate reply not a clean list" line above, with its first 120 characters.
+   Its own line, so the DONE line's contract with parseCoverageDone is
+   untouched. */
+console.log(
+  `GATE: ${gateReplies} repl${gateReplies === 1 ? 'y' : 'ies'}, ${unansweredGates} not a clean list ` +
+    `(kept nothing from them, dropped nothing)`
 );
 /* The ROUTE line: what the record moved tonight. Its own line, so the DONE
    line's contract with parseCoverageDone is untouched. */

@@ -236,8 +236,14 @@ async function main() {
   // What will stand after tonight: tonight's files when they are written, else what was there.
   const titlesAfter = settled.write?.titles ? JSON.parse(settled.write.text) : before ?? {};
   const retryAfter = settled.write ? JSON.parse(settled.write.retryText) : retry;
-  Object.assign(summary, nightSummary({ day: TODAY, bills, titles: titlesAfter, retry: retryAfter, trend, read: night.read, lost: night.dropped }));
-  const trendText = serializeTrend(nextTrend(trend, { day: TODAY, titled: summary.titled, bills: bills.length }));
+  // A night a person let a mass drop through (the one-run override) is marked in the history, so the
+  // falling alarm can say so for the week it keeps comparing against the night before it.
+  const allowDropUsed = Boolean(settled.write && settled.overrideUsed);
+  Object.assign(
+    summary,
+    nightSummary({ day: TODAY, bills, titles: titlesAfter, retry: retryAfter, trend, read: night.read, lost: night.dropped, allowDrop: allowDropUsed }),
+  );
+  const trendText = serializeTrend(nextTrend(trend, { day: TODAY, titled: summary.titled, bills: bills.length, allow_drop: allowDropUsed }));
   const outcome = !settled.write
     ? /would fall/.test(ending?.reason ?? '') ? 'drop-floor' : 'refused-by-gate'
     : night.sourceChanged ? 'source-changed' : night.trouble ? 'stopped-early' : 'done';

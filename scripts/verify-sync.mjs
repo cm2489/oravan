@@ -426,10 +426,13 @@ if (!existsSync(CONVERSATION_PATH)) {
 // string of the record's, in code-point order; and, against HEAD, the bills
 // carrying a short title did not fall by more than 10% (one bill the record
 // stopped giving a short title is a note). data/short-titles-retry.json, the
-// bills whose last read failed, and data/short-titles-trend.json, the step's
-// 14-night history, are checked beside it. Each is skipped cleanly when it
-// doesn't exist. The judgement lives in lib/short-titles.mjs and
-// lib/short-titles-summary.mjs, reached through verifyShortTitlesFiles.
+// bills whose last read failed, is checked beside it. data/short-titles-trend
+// .json, the step's 14-night history, is a diagnostic, not corpus: it only
+// WARNS here, whatever its bytes, and never fails the night (round 6,
+// 2026-11-17; the step restarts a damaged one itself, and CI refuses a damaged
+// one in a pull request). Each is skipped cleanly when it doesn't exist. The
+// judgement lives in lib/short-titles.mjs and lib/short-titles-summary.mjs,
+// reached through verifyShortTitlesFiles.
 {
   // One function for all three files (lib/short-titles-night.mjs verifyShortTitlesFiles), the
   // same verifyShortTitles the nightly step runs before it writes, so the two cannot disagree.
@@ -447,15 +450,17 @@ if (!existsSync(CONVERSATION_PATH)) {
   // The one-run override for a real mass change (docs/runbooks/new-congress-switch.md): set by a person on a
   // manual dispatch, the same condition scripts/sync-short-titles.mjs reads; never honoured on a schedule.
   const allowDrop = process.env.SHORT_TITLES_ALLOW_DROP === '1' && process.env.GITHUB_EVENT_NAME !== 'schedule';
-  const { failures, notes } = verifyShortTitlesFiles({
+  const { failures, notes, warnings } = verifyShortTitlesFiles({
     titles,
     retry: readIf(SHORT_TITLES_RETRY_PATH),
-    trend: readIf(SHORT_TITLES_TREND_PATH),
+    // The raw bytes, never through `parse` (which fails the run on text that is not JSON).
+    trendText: existsSync(SHORT_TITLES_TREND_PATH) ? readFileSync(SHORT_TITLES_TREND_PATH, 'utf8') : null,
     bills: Array.isArray(bills) ? bills : [],
     before,
     allowDrop,
   });
   for (const n of notes) console.log(n);
+  for (const w of warnings) warn(w);
   for (const f of failures) fail(f);
 }
 

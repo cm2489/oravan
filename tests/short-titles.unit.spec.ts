@@ -134,7 +134,7 @@ test('the daily pipeline-health digest raises the TROUBLE line as an alarm', () 
   const changed = 'nightly\tRead the record\'s short titles\t2026-11-15T14:40:00.0Z SHORT TITLES TROUBLE: the source has changed: 20 of 20 answers tonight were refused for the same reason ("x"); stopped, and no bill is marked as failed for it; 0 bill(s) read before it are kept';
   expect(parseShortTitlesTrouble(changed)).toMatchObject({ sourceChanged: true });
   expect(alarms({ nightly: { conclusion: 'success' }, shortTitlesTrouble: parseShortTitlesTrouble(changed) }).map((a) => a.code)).toContain('short-titles-source-changed');
-  const down = 'SHORT TITLES TROUBLE: stopped early: 10 requests in a row got no usable answer from Congress.gov (the source is down); 3 bill(s) read before it are kept';
+  const down = 'SHORT TITLES TROUBLE: stopped early: 10 requests in a row got no usable answer from Congress.gov (no answer, an error page or a broken connection); 3 bill(s) read before it are kept';
   expect(parseShortTitlesTrouble(down)).toMatchObject({ sourceChanged: false });
   expect(alarms({ nightly: { conclusion: 'success' }, shortTitlesTrouble: parseShortTitlesTrouble(down) }).map((a) => a.code)).toContain('short-titles-stopped');
   expect(parseShortTitlesTrouble('short titles: 500 request(s), 500 bill(s) read')).toBeNull();
@@ -199,7 +199,7 @@ test('the nightly runs the gate before it writes, the step is bounded, and it ca
   expect(sync).not.toMatch(/console\.\w+\([^)]*\burl\b/);
   const verify = readFileSync(join(process.cwd(), 'scripts/verify-sync.mjs'), 'utf8');
   // verify-sync checks the three files through verifyShortTitlesFiles, which calls the same verifyShortTitles.
-  expect(verify).toContain('const { failures, notes } = verifyShortTitlesFiles({');
+  expect(verify).toContain('const { failures, notes, warnings } = verifyShortTitlesFiles({');
   const nightLib = readFileSync(join(process.cwd(), 'lib/short-titles-night.mjs'), 'utf8');
   expect(nightLib).toContain('const v = verifyShortTitles({ data: titles, bills, before, allowDrop });');
   const workflow = readFileSync(join(process.cwd(), '.github/workflows/sync-bills.yml'), 'utf8');
