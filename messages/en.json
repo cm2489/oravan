@@ -1865,7 +1865,8 @@
     "order": "House bills are listed first, then Senate bills, each by number.",
     "ownTitle": "Its short title:",
     "standing": "Above each bill: where it stands now in the official record.",
-    "standingFloor": "A dated tag marks a bill on a chamber’s floor schedule or calendar.",
+    "standingFloor": "A dated tag means one of two things: a chamber has named the bill on the floor schedule it published for these days; or, while that chamber is meeting, the record shows the bill was placed on its calendar or has a floor vote pending, in the last 14 days. The date is that fact’s own date, never the date of a vote.",
+    "titleOr": "or",
     "listLabel": "Bills with this short title",
     "metaTitle": "Bills titled “{title}”"
   }

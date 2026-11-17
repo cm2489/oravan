@@ -1,5 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { getAllBills } from '../lib/core';
+import en from '../messages/en.json';
+import es from '../messages/es.json';
 import { sharedNamePages, sharedNamePath } from '../lib/shared-names';
 
 /*
@@ -73,6 +75,28 @@ test.describe('shared-name page accessibility floor', () => {
       expect(ring.inList, `step ${i + 1} is a bill link`).toBe(true);
       expect(ring.focusVisible).toBe(true);
       expect(ring.outline).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  test('the outline is h1, an h2 per chamber, then the cards; no card prints a status label under its line; two spellings are heard with "or"', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'webkit-mobile', 'run once, at 390px');
+    for (const [path, statuses, or] of [
+      [PATH!, Object.values(en.bills.status), ` ${en.namesPage.titleOr} `],
+      [`/es${PATH}`, Object.values(es.bills.status), ` ${es.namesPage.titleOr} `],
+    ] as const) {
+      await page.goto(path);
+      const levels = await page.locator('main :is(h1, h2, h3, h4)').evaluateAll((hs) => hs.map((h) => Number(h.tagName[1])));
+      expect(levels[0], path).toBe(1);
+      for (let i = 1; i < levels.length; i++) expect(levels[i] - levels[i - 1], `${path}: heading ${i + 1} skips a level`).toBeLessThanOrEqual(1);
+      const chambers = new Set(first!.bills.map((b) => b.chamber));
+      await expect(page.locator('main ul[aria-label] h2')).toHaveCount(chambers.size);
+      // Every card sits under the record's own line, and its meta row carries no status label.
+      for (const meta of await page.locator('main ul[aria-label] > li a[href] > div:first-child').allTextContents()) {
+        for (const s of statuses) expect(meta.toUpperCase(), path).not.toContain(String(s).toUpperCase());
+      }
+      if (first!.bills.some((b) => b.titles.join() !== first!.bills[0].titles.join())) {
+        await expect(page.locator('main h1 .sr-only').first()).toHaveText(or);
+      }
     }
   });
 

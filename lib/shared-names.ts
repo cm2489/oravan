@@ -163,7 +163,20 @@ export function sharedNamePath(congress: number, name: string): string {
  *     date: no record here holds one.
  * Both are read at BUILD time, like every page; the clock and the session
  * reader are parameters so a test pins them.
+ *
+ * THE LINE MEETS THE SAME MEETING RULE AS THE TAG, ON THIS PAGE (2026-11-17,
+ * the independent check of #510). Two of the line's readings sound live and
+ * depend only on how recent the action is: `onFloor` ("Moving on the Senate
+ * floor, with a vote ahead.") and `clotureFiled` ("… that vote comes within
+ * days."). While the chamber they name is not meeting (the same
+ * `out_of_session` the tag's gate reads), this page prints the record's own
+ * latest action in its own words with its date instead (`recordStep`), which
+ * is exactly true. The Big Question surfaces call billStatusLine directly and
+ * are unchanged by this.
  */
+
+/** The line readings that claim something is happening on the floor now. */
+export const LIVE_SOUNDING_LINES: ReadonlySet<string> = new Set(['onFloor', 'clotureFiled']);
 
 /** The chip strings, exactly the bill page's and the homepage crown's (FLOOR_COPY / FLOOR_LABEL_KEYS). */
 export const SHARED_NAME_FLOOR_CHIP = {
@@ -185,8 +198,13 @@ export function sharedNameStanding(
   { now = Date.now(), sessionOf }: { now?: number; sessionOf?: (chamber: Chamber) => ChamberSession } = {},
 ): SharedNameStanding {
   const band = billFloorBand(bill, announcement, now, sessionOf);
+  let line: StatusLine = billStatusLine(bill, now);
+  if (sessionOf && LIVE_SOUNDING_LINES.has(line.key) && line.chamber && sessionOf(line.chamber) === 'out_of_session') {
+    // The record's own words and date, never a live-sounding line while that chamber is out.
+    line = { ...line, key: 'recordStep', chamber: null, passedBy: null };
+  }
   return {
-    line: billStatusLine(bill, now),
+    line,
     floor: band && !band.suspended ? { ...band, key: SHARED_NAME_FLOOR_CHIP[band.kind][band.chamber] } : null,
   };
 }

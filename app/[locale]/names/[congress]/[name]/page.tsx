@@ -39,7 +39,12 @@ import { sharedNamePages, sharedNamePath, sharedNameStanding, type SharedNamePag
  * chip with its date (lib/shared-names.ts sharedNameStanding). With no live
  * floor fact on any listed bill there is no tag and no sentence about one.
  * The page prints the data's age (hard rule 6). The ORDER stays mechanical:
- * the line and the tag say which bill is moving, so the order never has to. The AI label sits
+ * the line and the tag say which bill is moving, so the order never has to.
+ * Under the line the card prints no status label (BillCard `showStatus`),
+ * since the two could read as contradicting each other; while a chamber is
+ * out, a line that would sound live is the record's own words instead
+ * (lib/shared-names.ts). The outline is h1, an h2 for each chamber's group,
+ * then the cards' h3s; two spellings of the title are heard with "or". The AI label sits
  * above the list whenever a card shows a decoded headline, as on /bills. No
  * call button, no stance, no member lookup, no coverage, no relation between
  * the bills (data/related-bills.json is not on this branch, so the page says
@@ -135,7 +140,13 @@ export default async function SharedNamePage({
       <h1 className="mt-2 text-h1-bill font-extrabold break-words text-ink">
         {titles.map((title, i) => (
           <span key={title}>
-            {i > 0 && <span aria-hidden> / </span>}
+            {/* Seen as a slash; heard as "or", so a screen reader does not run the two spellings together. */}
+            {i > 0 && (
+              <>
+                <span aria-hidden> / </span>
+                <span className="sr-only">{` ${t('namesPage.titleOr')} `}</span>
+              </>
+            )}
             <span lang="en">{title}</span>
           </span>
         ))}
@@ -157,28 +168,36 @@ export default async function SharedNamePage({
         </p>
       )}
       <ul className="mt-6 grid gap-4 md:grid-cols-2" aria-label={t('namesPage.listLabel')}>
-        {rows.map(({ bill, teaser, standing }) => (
-          <li key={bill.slug}>
-            <p className="mb-1.5 text-sm text-ink-2">
-              {t(`votes.chamber.${bill.chamber}`)}
-              {titles.length > 1 && (
-                <>
-                  {' · '}
-                  {t('namesPage.ownTitle')} <q lang="en">{bill.titles.join(' / ')}</q>
-                </>
+        {rows.map(({ bill, teaser, standing }, i) => {
+          // THE OUTLINE: h1, then an h2 for each chamber's group (the first card of each
+          // chamber carries it, styled exactly as the plain label it replaces), then the
+          // cards' h3s. The order puts every House bill before every Senate bill.
+          const ChamberLabel = i === 0 || rows[i - 1].bill.chamber !== bill.chamber ? 'h2' : 'span';
+          return (
+            <li key={bill.slug}>
+              <div className="mb-1.5 text-sm text-ink-2">
+                <ChamberLabel className="inline">{t(`votes.chamber.${bill.chamber}`)}</ChamberLabel>
+                {titles.length > 1 && (
+                  <>
+                    {' · '}
+                    {t('namesPage.ownTitle')} <q lang="en">{bill.titles.join(' / ')}</q>
+                  </>
+                )}
+              </div>
+              {standing.floor && (
+                <p className="mb-2" data-testid="names-floor-tag">
+                  <Chip tone="floor" dateLabel={day(standing.floor.date)}>
+                    {t(standing.floor.key)}
+                  </Chip>
+                </p>
               )}
-            </p>
-            {standing.floor && (
-              <p className="mb-2" data-testid="names-floor-tag">
-                <Chip tone="floor" dateLabel={day(standing.floor.date)}>
-                  {t(standing.floor.key)}
-                </Chip>
-              </p>
-            )}
-            <MomentStatusLine line={standing.line} className="mb-3" />
-            <BillCard bill={teaser} />
-          </li>
-        ))}
+              <MomentStatusLine line={standing.line} className="mb-3" />
+              {/* The line above says where the bill stands, more precisely than the card's
+                  status label could, so the card prints none (the Big Question cards' rule). */}
+              <BillCard bill={teaser} showStatus={false} />
+            </li>
+          );
+        })}
       </ul>
     </div>
   );

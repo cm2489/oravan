@@ -1865,7 +1865,8 @@
     "order": "Primero aparecen los proyectos de la Cámara de Representantes y luego los del Senado, cada uno por número.",
     "ownTitle": "Su título corto:",
     "standing": "Encima de cada proyecto: dónde está ahora según el registro oficial.",
-    "standingFloor": "Una etiqueta con fecha señala un proyecto que está en el calendario o en la agenda del pleno de una cámara.",
+    "standingFloor": "Una etiqueta con fecha significa una de dos cosas: que una cámara incluyó el proyecto en la programación del pleno que publicó para estos días; o que, mientras esa cámara está en sesión, el registro muestra que el proyecto se puso en su calendario o tiene una votación pendiente en el pleno, en los últimos 14 días. La fecha es la de ese hecho, nunca la de una votación.",
+    "titleOr": "o",
     "listLabel": "Proyectos de ley con este título corto",
     "metaTitle": "Proyectos de ley titulados “{title}”"
   }

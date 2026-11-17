@@ -1,3 +1,4 @@
+import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
@@ -5,6 +6,9 @@ import en from '../messages/en.json';
 import es from '../messages/es.json';
 import { congressTerm } from '../lib/congress.mjs';
 import { getAllBills } from '../lib/core';
+import { statusKeyFor } from '../lib/journey';
+import { billStatusLine } from '../lib/moment-status.mjs';
+import { SIGNAL_WINDOW_DAYS } from '../lib/urgency.mjs';
 import { shareAddress, type ShareTables } from '../lib/share-address';
 import {
   inSharedNameOrder,
@@ -253,4 +257,85 @@ test('the committed state: no titles file, so no page; the page reads its string
   expect(page).toContain('if (!page) notFound();');
   expect(page).toContain('robots: { index: false');
   expect(page).not.toMatch(/ActionPanel|CallPrompt|call-button|RepsLookup|CoverageSection|ZipForm/);
+});
+
+/*
+ * THE INDEPENDENT CHECK OF #510 (2026-11-17), four fixes. Records copied from
+ * today's data or built in their shape; the clock and the sessions pinned.
+ */
+
+test('check 1: under the record’s line the card prints no status label; nowhere else changes', () => {
+  const page = readFileSync(join(process.cwd(), 'app/[locale]/names/[congress]/[name]/page.tsx'), 'utf8');
+  // The line is printed for every card, and every card on this page goes without its label.
+  expect(page).toContain('<MomentStatusLine line={standing.line} className="mb-3" />');
+  expect(page).toContain('<BillCard bill={teaser} showStatus={false} />');
+  expect(page.match(/<BillCard /g)).toHaveLength(1);
+  const card = readFileSync(join(process.cwd(), 'components/BillCard.tsx'), 'utf8');
+  // Absent, the prop keeps the label, and with it the identifier's separator: the card renders as before.
+  expect(card).toContain('  showStatus = true,\n');
+  expect(card).toContain('{(showStatus || annotation || coverageCount != null) && <span aria-hidden> ·</span>}');
+  expect(card).toMatch(/\{showStatus && \(\n\s*<span className="whitespace-nowrap max-\[22\.5rem\]:whitespace-normal">\n\s*\{t\(`bills\.status\.\$\{bill\.statusKey\}`\)\}/);
+  // No other caller passes it.
+  const callers = execSync("grep -rln 'showStatus' app components lib", { encoding: 'utf8' }).trim().split('\n').sort();
+  expect(callers).toEqual(['app/[locale]/names/[congress]/[name]/page.tsx', 'components/BillCard.tsx']);
+});
+
+test('check 1, the reviewer’s H.R. 2400 (today’s data): the line is true where the card’s label would read false', () => {
+  const hr2400 = rec('hr', 2400, 'passed_chamber', 'Message on Senate action sent to the House.', '2026-11-16', {
+    status_basis_text: 'Passed Senate with an amendment by Unanimous Consent. (consideration: CR S5297-5298)',
+  });
+  const s = sharedNameStanding(hr2400, { chamber: 'house', published: '2026-11-11' }, { now: NOW, sessionOf: MEETING });
+  expect(s.line.key).toBe('passedBack');
+  expect(en.moments.status.line.passedBack).toContain('back with the House to settle the changes');
+  // The label the card would have printed, which is why this page drops it.
+  expect(statusKeyFor(hr2400 as Parameters<typeof statusKeyFor>[0], NOW)).toBe('passed_chamber');
+  expect(en.bills.status.passed_chamber).toBe('Passed one chamber');
+});
+
+test('check 2: while the chamber is out, a live-sounding line becomes the record’s own words; in session it is unchanged; elsewhere unchanged', () => {
+  const onFloor = rec('s', 4784, 'floor_vote', 'Motion to proceed to consideration of measure made in Senate. (CR S4276)', '2026-11-13');
+  const cloture = rec('s', 4870, 'floor_vote', 'Cloture motion on the motion to proceed to the measure presented in Senate. (CR S5310)', '2026-11-13');
+  for (const [bill, key] of [[onFloor, 'onFloor'], [cloture, 'clotureFiled']] as const) {
+    const meeting = sharedNameStanding(bill, null, { now: NOW, sessionOf: MEETING });
+    expect(meeting.line).toMatchObject({ key, chamber: 'senate', date: '2026-11-13' });
+    const out = sharedNameStanding(bill, null, { now: NOW, sessionOf: OUT });
+    expect(out.line).toMatchObject({ key: 'recordStep', chamber: null, text: bill.last_action_text, date: '2026-11-13' });
+    expect(out.floor).toBeNull();
+    // An unknown session stands as the bill page's own gate stands (only `out_of_session` suspends).
+    expect(sharedNameStanding(bill, null, { now: NOW, sessionOf: () => 'unknown' }).line.key).toBe(key);
+    // Without a session reader (every other caller of billStatusLine): unchanged.
+    expect(sharedNameStanding(bill, null, { now: NOW }).line.key).toBe(key);
+    expect(billStatusLine(bill, NOW).key).toBe(key);
+  }
+  // A line that claims nothing live is left alone while the chamber is out.
+  const signed = rec('s', 5, 'signed', 'Became Public Law No: 119-1.', '2025-01-29');
+  expect(sharedNameStanding(signed, null, { now: NOW, sessionOf: OUT }).line.key).toBe('signed');
+});
+
+test('check 3: the tag sentence says exactly when a tag appears, in both languages, and only beside a tag', () => {
+  expect(SIGNAL_WINDOW_DAYS).toBe(14);
+  expect(en.namesPage.standingFloor).toBe(
+    'A dated tag means one of two things: a chamber has named the bill on the floor schedule it published for these days; or, while that chamber is meeting, the record shows the bill was placed on its calendar or has a floor vote pending, in the last 14 days. The date is that fact’s own date, never the date of a vote.',
+  );
+  expect(es.namesPage.standingFloor).toContain('en los últimos 14 días');
+  expect(es.namesPage.standingFloor).toContain('mientras esa cámara está en sesión');
+  expect(es.namesPage.standingFloor).toContain('nunca la de una votación');
+  const page = readFileSync(join(process.cwd(), 'app/[locale]/names/[congress]/[name]/page.tsx'), 'utf8');
+  expect(page).toContain("{anyFloor && <> {t('namesPage.standingFloor')}</>}");
+});
+
+test('check 4: an h2 for each chamber’s group and a spoken "or" between two spellings, in both languages', () => {
+  const page = readFileSync(join(process.cwd(), 'app/[locale]/names/[congress]/[name]/page.tsx'), 'utf8');
+  expect(page).toContain("const ChamberLabel = i === 0 || rows[i - 1].bill.chamber !== bill.chamber ? 'h2' : 'span';");
+  expect(page).toContain('<ChamberLabel className="inline">{t(`votes.chamber.${bill.chamber}`)}</ChamberLabel>');
+  expect(page).toContain("<span aria-hidden> / </span>\n                <span className=\"sr-only\">{` ${t('namesPage.titleOr')} `}</span>");
+  expect([en.namesPage.titleOr, es.namesPage.titleOr]).toEqual(['or', 'o']);
+  // The order the h2s rely on: every House bill before every Senate bill.
+  const ordered = inSharedNameOrder([
+    { type: 's', number: 1 },
+    { type: 'hr', number: 9 },
+    { type: 'sres', number: 2 },
+    { type: 'hjres', number: 3 },
+  ] as Parameters<typeof inSharedNameOrder>[0]);
+  expect(ordered.map((b) => b.type)).toEqual(['hr', 'hjres', 's', 'sres']);
 });
