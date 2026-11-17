@@ -1,0 +1,1495 @@
+{
+  "_meta": {
+    "schema": 1,
+    "generated_at": "2026-11-14T19:38:44.898Z"
+  },
+  "paying-college-athletes": {
+    "updates": [
+      {
+        "id": "u_9f7caf03",
+        "class": "floor_action",
+        "vehicle": "s-4668-119",
+        "day": "2026-10-05",
+        "occurred_at": "2026-10-05",
+        "occurred_precision": "day",
+        "recorded_at": "2026-10-06T15:05:58.309Z",
+        "text": {
+          "en": "S. 4668 was held at the desk on October 5, 2026.",
+          "es": "S. 4668 fue retenido en el escritorio el 5 de octubre de 2026."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "record": {
+          "action_text": "Held at the desk.",
+          "action_code": "H15000",
+          "action_type": "Floor",
+          "source_system": "House floor actions"
+        },
+        "ai": true
+      },
+      {
+        "id": "u_c46f6482",
+        "class": "floor_action",
+        "vehicle": "s-4668-119",
+        "day": "2026-10-05",
+        "occurred_at": "2026-10-05",
+        "occurred_precision": "day",
+        "recorded_at": "2026-10-06T15:05:58.309Z",
+        "text": {
+          "en": "S. 4668 was received in the House on October 5, 2026.",
+          "es": "S. 4668 fue recibido en la Cámara el 5 de octubre de 2026."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "record": {
+          "action_text": "Received in the House.",
+          "action_code": "H14000",
+          "action_type": "Floor",
+          "source_system": "House floor actions"
+        },
+        "ai": true
+      },
+      {
+        "id": "u_c9918aa9",
+        "class": "press_cluster",
+        "vehicle": "s-4668-119",
+        "day": "2026-09-29",
+        "occurred_at": "2026-09-29",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-29T19:50:53.562Z",
+        "text": {
+          "en": "ABC News, Oann, and Reason published coverage of S. 4668.",
+          "es": "ABC News, Oann y Reason publicaron cobertura sobre S. 4668."
+        },
+        "source": {
+          "kind": "press",
+          "refs": [
+            "https://abcnews.com/Politics/trump-celebrates-senate-passage-legislation-overhaul-college-sports/story?id=136851143",
+            "https://www.oann.com/newsroom/senate-overwhelmingly-passes-protect-college-sports-act-with-bipartisan-support/",
+            "https://reason.com/2026/09/29/the-protect-college-sports-act-passed-the-senate-it-faces-a-tougher-road-in-the-house-and-in-the-courts/"
+          ],
+          "outlets": [
+            "abcnews.go.com",
+            "oann.com",
+            "reason.com"
+          ],
+          "outlet_names": [
+            "ABC News",
+            "Oann",
+            "Reason"
+          ],
+          "lean_set": [
+            "left",
+            "right"
+          ]
+        },
+        "record": null,
+        "ai": true
+      },
+      {
+        "id": "u_eda56d8f",
+        "class": "vote",
+        "vehicle": "s-4668-119",
+        "day": "2026-09-28",
+        "occurred_at": "2026-09-28",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-29T01:53:07.841Z",
+        "text": {
+          "en": "The Senate agreed to S.Amdt. 6828 to S.Amdt. 6776 to S. 4668 on September 28, 2026, by roll call vote 245: 96 yeas, 1 nay, 3 not voting.",
+          "es": "El Senado aprobó la enmienda S.Amdt. 6828 a S.Amdt. 6776 a S. 4668 el 28 de septiembre de 2026, por votación 245: 96 a favor, 1 en contra, 3 sin votar."
+        },
+        "source": {
+          "kind": "roll_call",
+          "refs": [
+            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00245.xml",
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "record": {
+          "action_text": "On the Amendment S.Amdt. 6828 to S.Amdt. 6776 to S. 4668 (No short title on file): Amendment Agreed to. Yeas 96, Nays 1, Not Voting 3. Senate roll call vote 245.",
+          "action_code": null,
+          "action_type": "roll_call_vote",
+          "source_system": "senate.gov roll call vote record",
+          "roll_call": {
+            "chamber": "senate",
+            "number": 245
+          },
+          "question": "On the Amendment S.Amdt. 6828 to S.Amdt. 6776 to S. 4668 (No short title on file)",
+          "result": "Amendment Agreed to",
+          "totals": {
+            "yea": 96,
+            "nay": 1,
+            "present": 0,
+            "notVoting": 3
+          }
+        },
+        "ai": true
+      },
+      {
+        "id": "u_eea56f22",
+        "class": "vote",
+        "vehicle": "s-4668-119",
+        "day": "2026-09-28",
+        "occurred_at": "2026-09-28",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-29T01:53:07.841Z",
+        "text": {
+          "en": "The Senate rejected S.Amdt. 6758 to S.Amdt. 6776 to S. 4668 on September 28, 2026, by roll call vote 246: 1 yea, 94 nays, 5 not voting.",
+          "es": "El Senado rechazó la enmienda S.Amdt. 6758 a S.Amdt. 6776 a S. 4668 el 28 de septiembre de 2026, por votación 246: 1 a favor, 94 en contra, 5 sin votar."
+        },
+        "source": {
+          "kind": "roll_call",
+          "refs": [
+            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00246.xml",
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "record": {
+          "action_text": "On the Amendment S.Amdt. 6758 to S.Amdt. 6776 to S. 4668 (No short title on file): Amendment Rejected. Yeas 1, Nays 94, Not Voting 5. Senate roll call vote 246.",
+          "action_code": null,
+          "action_type": "roll_call_vote",
+          "source_system": "senate.gov roll call vote record",
+          "roll_call": {
+            "chamber": "senate",
+            "number": 246
+          },
+          "question": "On the Amendment S.Amdt. 6758 to S.Amdt. 6776 to S. 4668 (No short title on file)",
+          "result": "Amendment Rejected",
+          "totals": {
+            "yea": 1,
+            "nay": 94,
+            "present": 0,
+            "notVoting": 5
+          }
+        },
+        "ai": true
+      },
+      {
+        "id": "u_eea7adb9",
+        "class": "vote",
+        "vehicle": "s-4668-119",
+        "day": "2026-09-28",
+        "occurred_at": "2026-09-28",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-29T08:23:31.304Z",
+        "text": {
+          "en": "The Senate passed S. 4668 on September 28, 2026, by Senate roll call vote 250: Yeas 77, Nays 22, Not Voting 1.",
+          "es": "El Senado aprobó S. 4668 el 28 de septiembre de 2026, por votación 250: Síes 77, Noes 22, Sin votar 1."
+        },
+        "source": {
+          "kind": "roll_call",
+          "refs": [
+            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00250.xml",
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "record": {
+          "action_text": "On Passage of the Bill S. 4668: Bill Passed. Yeas 77, Nays 22, Not Voting 1. Senate roll call vote 250.",
+          "action_code": null,
+          "action_type": "roll_call_vote",
+          "source_system": "senate.gov roll call vote record",
+          "roll_call": {
+            "chamber": "senate",
+            "number": 250
+          },
+          "question": "On Passage of the Bill S. 4668",
+          "result": "Bill Passed",
+          "totals": {
+            "yea": 77,
+            "nay": 22,
+            "present": 0,
+            "notVoting": 1
+          }
+        },
+        "ai": true
+      },
+      {
+        "id": "u_efa570b5",
+        "class": "vote",
+        "vehicle": "s-4668-119",
+        "day": "2026-09-28",
+        "occurred_at": "2026-09-28",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-29T01:53:07.841Z",
+        "text": {
+          "en": "The Senate rejected S.Amdt. 6760 to S.Amdt. 6776 to S. 4668 on September 28, 2026, by roll call vote 247: 42 yeas, 54 nays, 4 not voting.",
+          "es": "El Senado rechazó la enmienda S.Amdt. 6760 a S.Amdt. 6776 a S. 4668 el 28 de septiembre de 2026, por votación 247: 42 a favor, 54 en contra, 4 sin votar."
+        },
+        "source": {
+          "kind": "roll_call",
+          "refs": [
+            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00247.xml",
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "record": {
+          "action_text": "On the Amendment S.Amdt. 6760 to S.Amdt. 6776 to S. 4668 (No short title on file): Amendment Rejected. Yeas 42, Nays 54, Not Voting 4. Senate roll call vote 247.",
+          "action_code": null,
+          "action_type": "roll_call_vote",
+          "source_system": "senate.gov roll call vote record",
+          "roll_call": {
+            "chamber": "senate",
+            "number": 247
+          },
+          "question": "On the Amendment S.Amdt. 6760 to S.Amdt. 6776 to S. 4668 (No short title on file)",
+          "result": "Amendment Rejected",
+          "totals": {
+            "yea": 42,
+            "nay": 54,
+            "present": 0,
+            "notVoting": 4
+          }
+        },
+        "ai": true
+      },
+      {
+        "id": "u_f0a57248",
+        "class": "vote",
+        "vehicle": "s-4668-119",
+        "day": "2026-09-28",
+        "occurred_at": "2026-09-28",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-29T01:53:07.841Z",
+        "text": {
+          "en": "The Senate rejected S.Amdt. 6805 to S.Amdt. 6776 to S. 4668 on September 28, 2026, by roll call vote 248: 49 yeas, 50 nays, 1 not voting.",
+          "es": "El Senado rechazó la enmienda S.Amdt. 6805 a S.Amdt. 6776 a S. 4668 el 28 de septiembre de 2026, por votación 248: 49 a favor, 50 en contra, 1 sin votar."
+        },
+        "source": {
+          "kind": "roll_call",
+          "refs": [
+            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00248.xml",
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "record": {
+          "action_text": "On the Amendment S.Amdt. 6805 to S.Amdt. 6776 to S. 4668 (No short title on file): Amendment Rejected. Yeas 49, Nays 50, Not Voting 1. Senate roll call vote 248.",
+          "action_code": null,
+          "action_type": "roll_call_vote",
+          "source_system": "senate.gov roll call vote record",
+          "roll_call": {
+            "chamber": "senate",
+            "number": 248
+          },
+          "question": "On the Amendment S.Amdt. 6805 to S.Amdt. 6776 to S. 4668 (No short title on file)",
+          "result": "Amendment Rejected",
+          "totals": {
+            "yea": 49,
+            "nay": 50,
+            "present": 0,
+            "notVoting": 1
+          }
+        },
+        "ai": true
+      },
+      {
+        "id": "u_f1a573db",
+        "class": "vote",
+        "vehicle": "s-4668-119",
+        "day": "2026-09-28",
+        "occurred_at": "2026-09-28",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-29T08:23:31.304Z",
+        "text": {
+          "en": "The Senate rejected S.Amdt. 6835 to S.Amdt. 6776 to S. 4668 on September 28, 2026, by Senate roll call vote 249: Yeas 47, Nays 52, Not Voting 1.",
+          "es": "El Senado rechazó S.Amdt. 6835 a S.Amdt. 6776 a S. 4668 el 28 de septiembre de 2026, por votación 249: Síes 47, Noes 52, Sin votar 1."
+        },
+        "source": {
+          "kind": "roll_call",
+          "refs": [
+            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00249.xml",
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "record": {
+          "action_text": "On the Amendment S.Amdt. 6835 to S.Amdt. 6776 to S. 4668 (No short title on file): Amendment Rejected. Yeas 47, Nays 52, Not Voting 1. Senate roll call vote 249.",
+          "action_code": null,
+          "action_type": "roll_call_vote",
+          "source_system": "senate.gov roll call vote record",
+          "roll_call": {
+            "chamber": "senate",
+            "number": 249
+          },
+          "question": "On the Amendment S.Amdt. 6835 to S.Amdt. 6776 to S. 4668 (No short title on file)",
+          "result": "Amendment Rejected",
+          "totals": {
+            "yea": 47,
+            "nay": 52,
+            "present": 0,
+            "notVoting": 1
+          }
+        },
+        "ai": true
+      },
+      {
+        "id": "u_5f348c7a",
+        "class": "press_cluster",
+        "vehicle": "s-4668-119",
+        "day": "2026-09-28",
+        "occurred_at": "2026-09-28",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-28T21:05:00.291Z",
+        "text": {
+          "en": "CNBC and PBS published coverage of S. 4668.",
+          "es": "CNBC y PBS publicaron reportajes sobre el S. 4668."
+        },
+        "source": {
+          "kind": "press",
+          "refs": [
+            "https://www.cnbc.com/2026/09/28/college-sports-bill-senate-nil.html",
+            "https://www.pbs.org/newshour/politics/watch-live-senate-expected-to-consider-the-protect-college-sports-act"
+          ],
+          "outlets": [
+            "cnbc.com",
+            "pbs.org"
+          ],
+          "outlet_names": [
+            "CNBC",
+            "PBS"
+          ],
+          "lean_set": [
+            "center"
+          ]
+        },
+        "record": null,
+        "ai": true
+      },
+      {
+        "id": "u_3385513a",
+        "class": "vote",
+        "vehicle": "s-4668-119",
+        "day": "2026-09-24",
+        "occurred_at": "2026-09-24",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-25T13:41:33.041Z",
+        "text": {
+          "en": "Senate roll call vote 242: “On the Amendment S.Amdt. 6776 to S. 4668 (No short title on file)” — “Amendment Agreed to”; Yeas 77, Nays 23.",
+          "es": "Votación nominal 242 del Senado, registro oficial en inglés: “On the Amendment S.Amdt. 6776 to S. 4668 (No short title on file)” — “Amendment Agreed to”; a favor 77, en contra 23."
+        },
+        "source": {
+          "kind": "roll_call",
+          "refs": [
+            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00242.xml",
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "record": {
+          "action_text": "On the Amendment S.Amdt. 6776 to S. 4668 (No short title on file): Amendment Agreed to. Yeas 77, Nays 23. Senate roll call vote 242.",
+          "action_code": null,
+          "action_type": "roll_call_vote",
+          "source_system": "senate.gov roll call vote record",
+          "roll_call": {
+            "chamber": "senate",
+            "number": 242
+          },
+          "question": "On the Amendment S.Amdt. 6776 to S. 4668 (No short title on file)",
+          "result": "Amendment Agreed to",
+          "totals": {
+            "yea": 77,
+            "nay": 23,
+            "present": 0,
+            "notVoting": 0
+          }
+        },
+        "ai": false
+      },
+      {
+        "id": "u_348552cd",
+        "class": "vote",
+        "vehicle": "s-4668-119",
+        "day": "2026-09-24",
+        "occurred_at": "2026-09-24",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-25T13:41:33.041Z",
+        "text": {
+          "en": "“Cloture on the measure, as amended, invoked in Senate by Yea-Nay Vote. 74 - 25. Record Vote Number: 243.”",
+          "es": "Registro oficial, en inglés: “Cloture on the measure, as amended, invoked in Senate by Yea-Nay Vote. 74 - 25. Record Vote Number: 243.”"
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668",
+            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00243.xml"
+          ]
+        },
+        "record": {
+          "action_text": "Cloture on the measure, as amended, invoked in Senate by Yea-Nay Vote. 74 - 25. Record Vote Number: 243.",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate",
+          "roll_call": {
+            "chamber": "senate",
+            "number": 243
+          }
+        },
+        "ai": false
+      },
+      {
+        "id": "u_d5eaf6d9",
+        "class": "status_change",
+        "vehicle": "s-4668-119",
+        "day": "2026-09-24",
+        "occurred_at": "2026-09-24",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-25T13:41:33.041Z",
+        "text": {
+          "en": "“The committee substitute withdrawn by Voice Vote.”",
+          "es": "Registro oficial, en inglés: “The committee substitute withdrawn by Voice Vote.”"
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "record": {
+          "action_text": "The committee substitute withdrawn by Voice Vote.",
+          "action_code": null,
+          "action_type": "latestAction",
+          "source_system": "Congress.gov bill detail",
+          "status_from": "floor_vote",
+          "status_to": "committee"
+        },
+        "ai": false
+      },
+      {
+        "id": "u_fcb078e5",
+        "class": "scheduled",
+        "vehicle": "s-4668-119",
+        "day": "2026-09-23",
+        "occurred_at": "2026-09-23",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-23T16:51:20.985Z",
+        "text": {
+          "en": "S. 4668, the Protect College Sports Act of 2026, was scheduled for September 23, 2026.",
+          "es": "S. 4668, la Ley de Protección de los Deportes Universitarios de 2026, estaba programada para el 23 de septiembre de 2026."
+        },
+        "source": {
+          "kind": "tier0_feed",
+          "refs": [
+            "https://www.congress.gov/rss/senate-floor-today.xml",
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "record": {
+          "action_text": "S.4668 — Protect College Sports Act of 2026 (09/23/2026)",
+          "action_code": null,
+          "action_type": "Senate Floor Today",
+          "source_system": "Congress.gov senate-floor-today RSS"
+        },
+        "ai": true
+      },
+      {
+        "id": "u_53ca06ca",
+        "class": "vote",
+        "vehicle": "s-4668-119",
+        "day": "2026-09-22",
+        "occurred_at": "2026-09-22",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-25T13:41:33.041Z",
+        "text": {
+          "en": "Senate roll call vote 240: “On the Cloture Motion S.Amdt. 6776 to S. 4668 (No short title on file)” — “Cloture Motion Agreed to”; Yeas 70, Nays 21, Not Voting 9.",
+          "es": "Votación nominal 240 del Senado, registro oficial en inglés: “On the Cloture Motion S.Amdt. 6776 to S. 4668 (No short title on f…” — “Cloture Motion Agreed to”; a favor 70, en contra 21, no votaron 9."
+        },
+        "source": {
+          "kind": "roll_call",
+          "refs": [
+            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00240.xml",
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "record": {
+          "action_text": "On the Cloture Motion S.Amdt. 6776 to S. 4668 (No short title on file): Cloture Motion Agreed to. Yeas 70, Nays 21, Not Voting 9. Senate roll call vote 240.",
+          "action_code": null,
+          "action_type": "roll_call_vote",
+          "source_system": "senate.gov roll call vote record",
+          "roll_call": {
+            "chamber": "senate",
+            "number": 240
+          },
+          "question": "On the Cloture Motion S.Amdt. 6776 to S. 4668 (No short title on file)",
+          "result": "Cloture Motion Agreed to",
+          "totals": {
+            "yea": 70,
+            "nay": 21,
+            "present": 0,
+            "notVoting": 9
+          }
+        },
+        "ai": false
+      },
+      {
+        "id": "u_c6a1ebcb",
+        "class": "status_change",
+        "vehicle": "s-4668-119",
+        "day": "2026-09-22",
+        "occurred_at": "2026-09-22",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-23T16:51:20.985Z",
+        "text": {
+          "en": "The Senate considered S. 4668 on September 22, 2026.",
+          "es": "El Senado consideró S. 4668 el 22 de septiembre de 2026."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "record": {
+          "action_text": "Considered by Senate. (consideration: CR S4851)",
+          "action_code": null,
+          "action_type": "latestAction",
+          "source_system": "Congress.gov bill detail",
+          "status_from": "floor_vote",
+          "status_to": "committee"
+        },
+        "ai": true
+      },
+      {
+        "id": "u_fa1d2a34",
+        "class": "floor_action",
+        "vehicle": "s-4668-119",
+        "day": "2026-09-22",
+        "occurred_at": "2026-09-22",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-25T13:41:33.041Z",
+        "text": {
+          "en": "“Motion by Senator Thune to recommit to Senate Committee on Commerce, Science, and Transportation with instructions to report back forthwith with the following amendment (SA 6781) fell when cloture…”",
+          "es": "Registro oficial, en inglés: “Motion by Senator Thune to recommit to Senate Committee on Commerce, Science, and Transportation with instructions to report back forthwith with the following amendment…”"
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "record": {
+          "action_text": "Motion by Senator Thune to recommit to Senate Committee on Commerce, Science, and Transportation with instructions to report back forthwith with the following amendment (SA 6781) fell when cloture was invoked on amendment SA 6776 in Senate.",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate"
+        },
+        "ai": false
+      },
+      {
+        "id": "u_a3cc6ca3",
+        "class": "vote",
+        "vehicle": "s-4668-119",
+        "day": "2026-09-17",
+        "occurred_at": "2026-09-17",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-18T14:29:25.757Z",
+        "text": {
+          "en": "On September 17, 2026, the Senate agreed to the motion to proceed to S. 4668 by a vote of 77-22, Record Vote Number 236.",
+          "es": "El 17 de septiembre de 2026, el Senado aprobó la moción de proceder a S. 4668 con una votación de 77-22, número de votación 236."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668",
+            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00236.xml"
+          ]
+        },
+        "record": {
+          "action_text": "Motion to proceed to consideration of measure agreed to in Senate by Yea-Nay Vote. 77 - 22. Record Vote Number: 236.",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate",
+          "roll_call": {
+            "chamber": "senate",
+            "number": 236
+          }
+        },
+        "ai": true
+      },
+      {
+        "id": "u_682cca41",
+        "class": "floor_action",
+        "vehicle": "s-4668-119",
+        "day": "2026-09-17",
+        "occurred_at": "2026-09-17",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-18T14:29:25.757Z",
+        "text": {
+          "en": "On September 17, 2026, the Senate presented a cloture motion on amendment SA 6776 to S. 4668.",
+          "es": "El 17 de septiembre de 2026, el Senado presentó una moción de cierre sobre la enmienda SA 6776 a S. 4668."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "record": {
+          "action_text": "Cloture motion on amendment SA 6776 presented in Senate.",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate"
+        },
+        "ai": true
+      },
+      {
+        "id": "u_86b9e54f",
+        "class": "floor_action",
+        "vehicle": "s-4668-119",
+        "day": "2026-09-17",
+        "occurred_at": "2026-09-17",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-18T14:29:25.757Z",
+        "text": {
+          "en": "On September 17, 2026, the Senate considered the motion to proceed to S. 4668.",
+          "es": "El 17 de septiembre de 2026, el Senado consideró la moción de proceder a S. 4668."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "record": {
+          "action_text": "Motion to proceed to measure considered in Senate.",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate"
+        },
+        "ai": true
+      },
+      {
+        "id": "u_f0db9993",
+        "class": "floor_action",
+        "vehicle": "s-4668-119",
+        "day": "2026-09-17",
+        "occurred_at": "2026-09-17",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-18T14:29:25.757Z",
+        "text": {
+          "en": "On September 17, 2026, the Senate presented a cloture motion on S. 4668.",
+          "es": "El 17 de septiembre de 2026, el Senado presentó una moción de cierre sobre S. 4668."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "record": {
+          "action_text": "Cloture motion on the measure presented in Senate.",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate"
+        },
+        "ai": true
+      },
+      {
+        "id": "u_732a58b6",
+        "class": "floor_action",
+        "vehicle": "s-4668-119",
+        "day": "2026-09-16",
+        "occurred_at": "2026-09-16",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-17T16:56:55.134Z",
+        "text": {
+          "en": "On September 16, 2026, the Senate considered a motion to proceed to S. 4668.",
+          "es": "El 16 de septiembre de 2026, el Senado consideró una moción para pasar a S. 4668."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "record": {
+          "action_text": "Motion to proceed to measure considered in Senate.",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate"
+        },
+        "ai": true
+      },
+      {
+        "id": "u_317b9dc8",
+        "class": "vote",
+        "vehicle": "s-4668-119",
+        "day": "2026-09-15",
+        "occurred_at": "2026-09-15",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-16T18:11:24.823Z",
+        "text": {
+          "en": "The Senate invoked cloture on the motion to proceed to S. 4668 on September 15, 2026, by a vote of 74-24 (Record Vote Number 235).",
+          "es": "El Senado invocó la clausura sobre la moción de proceder a S. 4668 el 15 de septiembre de 2026, por una votación de 74-24 (Voto de Registro Número 235)."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668",
+            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00235.xml"
+          ]
+        },
+        "record": {
+          "action_text": "Cloture on the motion to proceed to the measure invoked in Senate by Yea-Nay Vote. 74 - 24. Record Vote Number: 235.",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate",
+          "roll_call": {
+            "chamber": "senate",
+            "number": 235
+          }
+        },
+        "ai": true
+      },
+      {
+        "id": "u_04053945",
+        "class": "floor_action",
+        "vehicle": "s-4668-119",
+        "day": "2026-09-15",
+        "occurred_at": "2026-09-15",
+        "occurred_precision": "day",
+        "recorded_at": "2026-09-18T14:29:25.757Z",
+        "text": {
+          "en": "On September 15, 2026, the Senate considered the motion to proceed to S. 4668.",
+          "es": "El 15 de septiembre de 2026, el Senado consideró la moción de proceder a S. 4668."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "record": {
+          "action_text": "Motion to proceed to measure considered in Senate.",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate"
+        },
+        "ai": true
+      }
+    ],
+    "summary_revisions": [
+      {
+        "id": "s_5d3739fb",
+        "generated_at": "2026-08-09T08:19:04.007Z",
+        "as_of_day": "2026-08-09",
+        "text": {
+          "en": "S. 4668 sits on the Senate floor calendar. The most recent action came on August 5, 2026, when a cloture motion on the motion to proceed to the measure was presented in the Senate, as recorded in the Congressional Record (CR S4449). No other floor action on this measure has occurred in the past 14 days. The bill has not advanced beyond this point since that filing. No vote tally on the cloture motion has been recorded in this window. The measure remains where it was placed on the calendar, with the cloture motion as the latest entry in its record.",
+          "es": "El S. 4668 se encuentra en el calendario del pleno del Senado. La acción más reciente ocurrió el 5 de agosto de 2026, cuando se presentó en el Senado una moción de cierre de debate sobre la moción para proceder a la medida, según consta en el Registro del Congreso (CR S4449). No se ha registrado ninguna otra acción sobre esta medida en los últimos 14 días. El proyecto no ha avanzado más allá de este punto desde esa presentación. No se ha registrado ninguna votación sobre la moción de cierre en este período. La medida permanece donde fue colocada en el calendario, con la moción de cierre como el registro más reciente."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "s-4668-119": "floor_vote"
+          },
+          "update_ids": [],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "changed_because": [
+          "first-summary"
+        ],
+        "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_e98e0deb",
+        "generated_at": "2026-08-16T14:49:58.473Z",
+        "as_of_day": "2026-08-16",
+        "text": {
+          "en": "S. 4668 stands at floor activity in the Senate. On August 5, 2026, a cloture motion on the motion to proceed to the measure was presented in the Senate, as recorded in the Congressional Record at page S4449. No other floor action on this bill has been recorded in the past 14 days. The measure has not been brought to a final vote, and no roll-call tally has been taken on cloture or passage. The next step on the record would be action on that cloture motion, but no such action has yet occurred according to the Congressional Record.",
+          "es": "El proyecto S. 4668 se encuentra en actividad en el pleno del Senado. El 5 de agosto de 2026 se presentó en el Senado una moción de cierre de debate sobre la moción para proceder a la medida, según consta en el Congressional Record, página S4449. No se ha registrado ninguna otra acción en el pleno sobre este proyecto en los últimos 14 días. La medida no ha llegado a una votación final, y no se ha realizado votación nominal sobre el cierre de debate ni sobre su aprobación. El siguiente paso según el registro sería la acción sobre esa moción de cierre de debate, pero aún no consta que haya ocurrido."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "s-4668-119": "floor_vote"
+          },
+          "update_ids": [],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "changed_because": [
+          "reanchor:7d"
+        ],
+        "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_359d7848",
+        "generated_at": "2026-08-23T14:50:37.477Z",
+        "as_of_day": "2026-08-23",
+        "text": {
+          "en": "S. 4668 stands at floor activity. No new action was recorded on this bill in the last 14 days. Its status remains where it last stood, with no roll call, vote tally, or committee action logged in this window. Readers watching this measure will see no movement to report right now beyond its current placement on the floor. The bill's text and prior status remain unchanged from the last recorded update. No date, number, or procedural step has been added since then. This is where the record stands as of now, based solely on what has been logged for this bill.",
+          "es": "El proyecto S. 4668 se encuentra en actividad en el pleno. No se registró ninguna acción nueva sobre este proyecto en los últimos 14 días. Su estado sigue siendo el mismo que la última vez, sin votación nominal, conteo de votos ni acción de comité registrada en este período. Quienes siguen esta medida no encontrarán movimiento nuevo que informar, más allá de su ubicación actual en el pleno. El texto del proyecto y su estado previo no han cambiado desde la última actualización registrada. No se ha añadido ninguna fecha, número ni paso procesal desde entonces. Así se encuentra el registro por ahora, basado únicamente en lo documentado para este proyecto."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "s-4668-119": "floor_vote"
+          },
+          "update_ids": [],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "changed_because": [
+          "reanchor:7d"
+        ],
+        "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_5c550702",
+        "generated_at": "2026-08-30T18:17:10.152Z",
+        "as_of_day": "2026-08-30",
+        "text": {
+          "en": "S. 4668 stands at floor activity. No new action was recorded on this bill in the last fourteen days. That leaves the measure in the same place it has been, with the floor as the current point of business. No committee action, no roll-call vote, and no scheduling notice appear in the record for this period. Until the record shows a new step, the status remains floor activity, unchanged from before this window began. Readers watching this bill will see the next update reflected here once the record shows movement, whether that is a vote, a scheduling action, or another recorded step in the process.",
+          "es": "El proyecto S. 4668 se encuentra en actividad en el pleno. No se registró ninguna acción nueva sobre este proyecto en los últimos catorce días. Esto deja la medida en el mismo punto en que estaba, con el pleno como el asunto pendiente actual. No aparecen en el registro acciones de comité, votaciones nominales ni avisos de calendario para este período. Hasta que el registro muestre un nuevo paso, el estado sigue siendo actividad en el pleno, sin cambios respecto a antes de este período. Los lectores que sigan este proyecto verán la próxima actualización reflejada aquí una vez que el registro muestre movimiento, ya sea una votación, una acción de calendario u otro paso registrado en el proceso."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "s-4668-119": "floor_vote"
+          },
+          "update_ids": [],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "changed_because": [
+          "reanchor:7d"
+        ],
+        "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_74d095e8",
+        "generated_at": "2026-09-07T18:57:43.202Z",
+        "as_of_day": "2026-09-07",
+        "text": {
+          "en": "S. 4668 stands at floor activity. No new action has been recorded on this bill in the last 14 days. That means the last public step on the record remains the one already on file, with nothing further logged since. There is no committee action, no scheduled vote, and no new roll-call tally to report during this period. The bill's status has not changed from what was already known. Anyone tracking this measure will find the situation unchanged from the prior update, with the floor activity designation still the most current, sourced description of where things stand.",
+          "es": "El proyecto S. 4668 se encuentra en actividad en el pleno. No se ha registrado ninguna accion nueva sobre este proyecto en los ultimos 14 dias. Esto significa que el ultimo paso publico en el expediente sigue siendo el que ya constaba, sin nada adicional registrado desde entonces. No hay accion de comite, no hay votacion programada, ni un nuevo conteo de votacion nominal que informar durante este periodo. El estado del proyecto no ha cambiado respecto a lo que ya se conocia. Quien siga esta medida encontrara la situacion sin cambios respecto a la actualizacion anterior, con la actividad en el pleno como la descripcion mas actual y verificada de donde se encuentran las cosas."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "s-4668-119": "floor_vote"
+          },
+          "update_ids": [],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "changed_because": [
+          "reanchor:8d"
+        ],
+        "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_ea58c661",
+        "generated_at": "2026-09-15T18:27:37.474Z",
+        "as_of_day": "2026-09-15",
+        "text": {
+          "en": "S. 4668 stands at floor activity. Nothing new has been recorded on this bill in the last 14 days. The measure remains where it was, with no votes, amendments, or committee actions logged in this window. There is no additional record to report at this time. The status listed here reflects the most recent official record available, and no further movement has occurred since then. Readers following this bill should expect this page to update once new floor action, a vote, or another procedural step is entered into the record.",
+          "es": "El proyecto S. 4668 se encuentra en actividad en el pleno. No se ha registrado nada nuevo sobre este proyecto en los últimos 14 días. La medida permanece en el mismo punto, sin votaciones, enmiendas ni acciones de comité registradas en este período. No hay registro adicional que informar por el momento. El estado indicado aquí refleja el registro oficial más reciente disponible, y no se ha producido ningún avance adicional desde entonces. Los lectores que sigan este proyecto pueden esperar que esta página se actualice cuando se registre nueva actividad en el pleno, una votación u otro paso en el proceso."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "s-4668-119": "floor_vote"
+          },
+          "update_ids": [],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "changed_because": [
+          "reanchor:8d"
+        ],
+        "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_9ee03b1e",
+        "generated_at": "2026-09-17T18:31:31.375Z",
+        "as_of_day": "2026-09-17",
+        "text": {
+          "en": "S. 4668, the Protect College Sports Act of 2026, sits at floor activity in the Senate. On September 15, 2026, the Senate invoked cloture on the motion to proceed to the measure by a recorded vote of 74 to 24 (Roll no. 235). On September 16, 2026, the Senate considered the motion to proceed to the measure. The bill was scheduled for September 17, 2026. No further recorded action appears in the last 14 days beyond these steps.",
+          "es": "El proyecto S. 4668, la Ley de Protección de los Deportes Universitarios de 2026, se encuentra en actividad en el pleno del Senado. El 15 de septiembre de 2026, el Senado invocó la mocion de cierre sobre la mocion para proceder a la medida por votacion nominal de 74 a 24 (votacion num. 235). El 16 de septiembre de 2026, el Senado consideró la mocion para proceder a la medida. El proyecto quedó programado para el 17 de septiembre de 2026. No aparece ninguna otra acción registrada en los últimos 14 días además de estos pasos."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "s-4668-119": "floor_vote"
+          },
+          "update_ids": [
+            "u_732a58b6",
+            "u_317b9dc8"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "changed_because": [
+          "updates:+4"
+        ],
+        "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_7e143c92",
+        "generated_at": "2026-09-18T17:56:27.567Z",
+        "as_of_day": "2026-09-18",
+        "text": {
+          "en": "Where it stands: S. 4668 is in floor activity in the Senate. On September 15, 2026, the Senate voted to invoke cloture on the motion to proceed by a recorded vote of 74 to 24 (Roll no. 235). The Senate then considered the motion to proceed on September 16, 2026. On September 17, 2026, the Senate agreed to the motion to proceed by a recorded vote of 77 to 22 (Roll no. 236). That same day, a cloture motion was presented on the measure itself, and a cloture motion was also presented on amendment SA 6776. No further votes are recorded in the last 14 days.",
+          "es": "Donde se encuentra: el S. 4668 esta en actividad en el pleno del Senado. El 15 de septiembre de 2026, el Senado invoco la mocion de clausura sobre la mocion para proceder por votacion nominal de 74 a 24 (votacion num. 235). Luego, el Senado considero la mocion para proceder el 16 de septiembre de 2026. El 17 de septiembre de 2026, el Senado aprobo la mocion para proceder por votacion nominal de 77 a 22 (votacion num. 236). Ese mismo dia se presento una mocion de clausura sobre la medida misma, y tambien se presento una mocion de clausura sobre la enmienda SA 6776. No se registran mas votaciones en los ultimos 14 dias."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "s-4668-119": "floor_vote"
+          },
+          "update_ids": [
+            "u_a3cc6ca3",
+            "u_682cca41",
+            "u_86b9e54f",
+            "u_f0db9993",
+            "u_732a58b6",
+            "u_317b9dc8",
+            "u_04053945"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "changed_because": [
+          "updates:+5"
+        ],
+        "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_c0bcbd35",
+        "generated_at": "2026-09-23T19:17:36.831Z",
+        "as_of_day": "2026-09-23",
+        "text": {
+          "en": "S. 4668, the Protect College Sports Act of 2026, is in committee, though Senate floor activity over the past two weeks moved the bill further than that status alone shows. On September 15, cloture on the motion to proceed was invoked by a recorded vote of 74 to 24 (Roll no. 235). On September 17, a cloture motion on the measure and on amendment SA 6776 was presented, and the motion to proceed was agreed to by a recorded vote of 77 to 22 (Roll no. 236). The Senate then considered the measure on September 22, with further consideration scheduled for September 23, 2026.",
+          "es": "S. 4668, la Ley de Protección al Deporte Universitario de 2026, está en comité, aunque la actividad en el pleno del Senado durante las últimas dos semanas llevó el proyecto más allá de lo que ese estado por sí solo muestra. El 15 de septiembre se invocó la clausura sobre la moción para proceder por votación nominal de 74 a 24 (votación núm. 235). El 17 de septiembre se presentó una moción de clausura sobre la medida y sobre la enmienda SA 6776, y la moción para proceder fue aprobada por votación nominal de 77 a 22 (votación núm. 236). El Senado consideró luego la medida el 22 de septiembre, con otra sesión de consideración programada para el 23 de septiembre de 2026."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "s-4668-119": "committee"
+          },
+          "update_ids": [
+            "u_fcb078e5",
+            "u_c6a1ebcb",
+            "u_a3cc6ca3",
+            "u_682cca41",
+            "u_86b9e54f",
+            "u_f0db9993",
+            "u_732a58b6",
+            "u_317b9dc8",
+            "u_04053945"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "changed_because": [
+          "status:s-4668-119 floor_vote→committee",
+          "updates:+5"
+        ],
+        "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_e5e3446b",
+        "generated_at": "2026-09-24T18:57:12.069Z",
+        "as_of_day": "2026-09-24",
+        "text": {
+          "en": "Where it stands: S. 4668, the Protect College Sports Act of 2026, is in floor activity in the Senate. The chamber began consideration on September 15, 2026, when cloture on the motion to proceed was invoked by a Yea-Nay Vote of 74 to 24 (Record Vote Number: 235). Debate on the motion to proceed continued over the following days. On September 17, 2026, cloture motions were presented on the measure itself and on amendment SA 6776, and the Senate agreed to the motion to proceed by a Yea-Nay Vote of 77 to 22 (Record Vote Number: 236). On September 22, 2026, the Senate took up the bill for consideration. Floor action was scheduled for September 23 and September 24, 2026.",
+          "es": "Donde estan las cosas: el S. 4668, la Ley de Proteccion de los Deportes Universitarios de 2026, esta en actividad en el pleno del Senado. La camara inicio su consideracion el 15 de septiembre de 2026, cuando se invoco la mocion de cierre de debate sobre la mocion para proceder por votacion nominal de 74 a 24 (votacion num. 235). El debate sobre la mocion para proceder continuo en los dias siguientes. El 17 de septiembre de 2026 se presentaron mociones de cierre de debate sobre la medida misma y sobre la enmienda SA 6776, y el Senado aprobo la mocion para proceder por votacion nominal de 77 a 22 (votacion num. 236). El 22 de septiembre de 2026, el Senado tomo el proyecto de ley para su consideracion. Se programo actividad en el pleno para el 23 y el 24 de septiembre de 2026."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "s-4668-119": "floor_vote"
+          },
+          "update_ids": [
+            "u_fcb078e5",
+            "u_c6a1ebcb",
+            "u_a3cc6ca3",
+            "u_682cca41",
+            "u_86b9e54f",
+            "u_f0db9993",
+            "u_732a58b6",
+            "u_317b9dc8",
+            "u_04053945"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "changed_because": [
+          "status:s-4668-119 committee→floor_vote",
+          "updates:+1"
+        ],
+        "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_960aec36",
+        "generated_at": "2026-09-25T13:42:05.694Z",
+        "as_of_day": "2026-09-25",
+        "text": {
+          "en": "S. 4668, the Protect College Sports Act of 2026, is in committee, after a run of Senate floor action. On September 24, 2026, the Senate agreed to amendment S.Amdt. 6776 by a recorded vote of 77 to 23 (Roll no. 242), then agreed to cloture on the measure, as amended, by a recorded vote of 74 to 25 (Roll no. 243). The committee substitute was withdrawn by voice vote that same day. Earlier, the Senate invoked cloture on the amendment 70 to 21 (Roll no. 240) on September 22, agreed to a motion to proceed 77 to 22 (Roll no. 236) on September 17, and invoked cloture on the motion to proceed 74 to 24 (Roll no. 235) on September 15. A motion to recommit with instructions fell on September 22.",
+          "es": "El S. 4668, la Ley de Protección de los Deportes Universitarios de 2026 (Protect College Sports Act of 2026), está en comité, tras una serie de acciones en el pleno del Senado. El 24 de septiembre de 2026, el Senado aprobó la enmienda S.Amdt. 6776 por votación nominal de 77 a 23 (votación núm. 242), y luego aprobó la moción de clausura sobre la medida, ya enmendada, por votación nominal de 74 a 25 (votación núm. 243). El sustituto del comité fue retirado por votación de viva voz ese mismo día. Antes, el Senado invocó la clausura sobre la enmienda por 70 a 21 (votación núm. 240) el 22 de septiembre, aprobó una moción para proceder por 77 a 22 (votación núm. 236) el 17 de septiembre, e invocó la clausura sobre la moción para proceder por 74 a 24 (votación núm. 235) el 15 de septiembre. Una moción para reenviar con instrucciones no prosperó el 22 de septiembre."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "s-4668-119": "committee"
+          },
+          "update_ids": [
+            "u_3385513a",
+            "u_348552cd",
+            "u_d5eaf6d9",
+            "u_fcb078e5",
+            "u_53ca06ca",
+            "u_c6a1ebcb",
+            "u_fa1d2a34",
+            "u_a3cc6ca3",
+            "u_682cca41",
+            "u_86b9e54f",
+            "u_f0db9993",
+            "u_732a58b6",
+            "u_317b9dc8",
+            "u_04053945"
+          ],
+          "roll_calls": [
+            "s-119-2-243",
+            "s-119-2-242",
+            "s-119-2-240",
+            "s-119-2-236",
+            "s-119-2-235"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "changed_because": [
+          "status:s-4668-119 floor_vote→committee",
+          "updates:+5"
+        ],
+        "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_95f51aab",
+        "generated_at": "2026-09-26T18:10:04.667Z",
+        "as_of_day": "2026-09-26",
+        "text": {
+          "en": "S. 4668, the Protect College Sports Act of 2026, sits at floor activity in the Senate. On September 15, 2026, the Senate invoked cloture on the motion to proceed by a recorded vote of 74 to 24 (Roll no. 235), then agreed to the motion to proceed on September 17 by a recorded vote of 77 to 22 (Roll no. 236). On September 22, the Senate invoked cloture on amendment S.Amdt. 6776 by a recorded vote of 70 to 21, with 9 not voting (Roll no. 240); a recommittal motion from Senator Thune fell when that cloture was invoked. On September 24, the Senate agreed to S.Amdt. 6776 by a recorded vote of 77 to 23 (Roll no. 242), withdrew the committee substitute by voice vote, and invoked cloture on the measure as amended by a recorded vote of 74 to 25, with 1 not voting (Roll no. 243).",
+          "es": "El proyecto S. 4668, la Ley de Protección del Deporte Universitario de 2026, se encuentra en actividad en el pleno del Senado. El 15 de septiembre de 2026, el Senado invocó la clausura sobre la moción para proceder por votación nominal de 74 a 24 (votación núm. 235), y luego aprobó la moción para proceder el 17 de septiembre por votación nominal de 77 a 22 (votación núm. 236). El 22 de septiembre, el Senado invocó la clausura sobre la enmienda S.Amdt. 6776 por votación nominal de 70 a 21, con 9 sin votar (votación núm. 240); una moción de reenvío del senador Thune quedó sin efecto al invocarse esa clausura. El 24 de septiembre, el Senado aprobó la enmienda S.Amdt. 6776 por votación nominal de 77 a 23 (votación núm. 242), retiró el sustituto del comité por votación de voz, e invocó la clausura sobre la medida enmendada por votación nominal de 74 a 25, con 1 sin votar (votación núm. 243)."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "s-4668-119": "floor_vote"
+          },
+          "update_ids": [
+            "u_3385513a",
+            "u_348552cd",
+            "u_d5eaf6d9",
+            "u_fcb078e5",
+            "u_53ca06ca",
+            "u_c6a1ebcb",
+            "u_fa1d2a34",
+            "u_a3cc6ca3",
+            "u_682cca41",
+            "u_86b9e54f",
+            "u_f0db9993",
+            "u_732a58b6",
+            "u_317b9dc8",
+            "u_04053945"
+          ],
+          "roll_calls": [
+            "s-119-2-243",
+            "s-119-2-242",
+            "s-119-2-240",
+            "s-119-2-236",
+            "s-119-2-235"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "changed_because": [
+          "status:s-4668-119 committee→floor_vote"
+        ],
+        "model": "claude-sonnet-5"
+      },
+      {
+        "id": "s_b9b9bade",
+        "generated_at": "2026-09-28T21:05:08.358Z",
+        "as_of_day": "2026-09-28",
+        "text": {
+          "en": "The Senate moved the Protect College Sports Act of 2026 (S. 4668) through a series of votes. On September 24, 2026, it agreed to Amendment 6776 by a recorded vote of 77 to 23 (Roll no. 242). Later that day, it invoked cloture on the measure, as amended, by a recorded vote of 74 to 25 (Roll no. 243), and withdrew the committee substitute by voice vote. On September 22, 2026, it invoked cloture on the amendment by a recorded vote of 70 to 21 (Roll no. 240). That vote ended a motion by Senator Thune to recommit the bill to the Commerce, Science, and Transportation Committee. On September 17, 2026, the Senate agreed to the motion to proceed by a recorded vote of 77 to 22 (Roll no. 236). On September 15, 2026, it invoked cloture on that motion by a recorded vote of 74 to 24 (Roll no. 235).",
+          "es": "El Senado avanzó la Ley de Protección del Deporte Universitario de 2026 (S. 4668) con una serie de votaciones. El 24 de septiembre de 2026 aprobó la Enmienda 6776 por votación nominal de 77 a 23 (votación núm. 242). Ese mismo día invocó el cierre del debate sobre la medida, ya enmendada, por votación nominal de 74 a 25 (votación núm. 243), y retiró el sustituto del comité por votación oral. El 22 de septiembre de 2026 invocó el cierre del debate sobre la enmienda por votación nominal de 70 a 21 (votación núm. 240). Con esa votación cayó una moción del senador Thune para devolver el proyecto al Comité de Comercio, Ciencia y Transporte. El 17 de septiembre de 2026 el Senado aprobó la moción para proceder por votación nominal de 77 a 22 (votación núm. 236). El 15 de septiembre de 2026 invocó el cierre del debate sobre esa moción por votación nominal de 74 a 24 (votación núm. 235)."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "s-4668-119": "floor_vote"
+          },
+          "update_ids": [
+            "u_5f348c7a",
+            "u_3385513a",
+            "u_348552cd",
+            "u_d5eaf6d9",
+            "u_fcb078e5",
+            "u_53ca06ca",
+            "u_c6a1ebcb",
+            "u_fa1d2a34",
+            "u_a3cc6ca3",
+            "u_682cca41",
+            "u_86b9e54f",
+            "u_f0db9993",
+            "u_732a58b6",
+            "u_317b9dc8",
+            "u_04053945"
+          ],
+          "roll_calls": [
+            "s-119-2-243",
+            "s-119-2-242",
+            "s-119-2-240",
+            "s-119-2-236",
+            "s-119-2-235"
+          ],
+          "roll_calls_on_record": [
+            "s-119-2-235",
+            "s-119-2-236",
+            "s-119-2-240",
+            "s-119-2-242",
+            "s-119-2-243"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "changed_because": [
+          "updates:+2"
+        ],
+        "model": "claude-sonnet-5-5"
+      },
+      {
+        "id": "s_a14f52d7",
+        "generated_at": "2026-09-29T01:53:19.423Z",
+        "as_of_day": "2026-09-28",
+        "text": {
+          "en": "The Senate voted on the Protect College Sports Act of 2026 (S. 4668) on four days. On September 28, 2026, senators took up four amendments to S.Amdt. 6776. S.Amdt. 6828 was agreed to by a recorded vote of 96 to 1 (Roll no. 245). S.Amdt. 6758 was rejected, 1 to 94 (Roll no. 246). S.Amdt. 6760 was rejected, 42 to 54 (Roll no. 247). S.Amdt. 6805 was rejected, 49 to 50 (Roll no. 248). On September 24, 2026, the Senate agreed to S.Amdt. 6776, 77 to 23 (Roll no. 242), and invoked cloture on the bill, as amended, 74 to 25 (Roll no. 243). On September 22, 2026, cloture on S.Amdt. 6776 was agreed to, 70 to 21 (Roll no. 240). On September 17, 2026, the motion to proceed was agreed to, 77 to 22 (Roll no. 236), after cloture on it was invoked, 74 to 24, on September 15, 2026 (Roll no. 235).",
+          "es": "El Senado votó sobre la Ley de Protección del Deporte Universitario de 2026 (S. 4668) en cuatro días. El 28 de septiembre de 2026, los senadores consideraron cuatro enmiendas a la S.Amdt. 6776. La S.Amdt. 6828 fue aprobada por votación nominal de 96 a 1 (votación núm. 245). La S.Amdt. 6758 fue rechazada, 1 a 94 (votación núm. 246). La S.Amdt. 6760 fue rechazada, 42 a 54 (votación núm. 247). La S.Amdt. 6805 fue rechazada, 49 a 50 (votación núm. 248). El 24 de septiembre de 2026, el Senado aprobó la S.Amdt. 6776, 77 a 23 (votación núm. 242), e invocó el cierre del debate sobre el proyecto, en su versión enmendada, 74 a 25 (votación núm. 243). El 22 de septiembre de 2026, se aprobó el cierre del debate sobre la S.Amdt. 6776, 70 a 21 (votación núm. 240). El 17 de septiembre de 2026, se aprobó la moción para proceder, 77 a 22 (votación núm. 236), tras invocarse el cierre del debate sobre ella, 74 a 24, el 15 de septiembre de 2026 (votación núm. 235)."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "s-4668-119": "floor_vote"
+          },
+          "update_ids": [
+            "u_eda56d8f",
+            "u_eea56f22",
+            "u_efa570b5",
+            "u_f0a57248",
+            "u_5f348c7a",
+            "u_3385513a",
+            "u_348552cd",
+            "u_d5eaf6d9",
+            "u_fcb078e5",
+            "u_53ca06ca",
+            "u_c6a1ebcb",
+            "u_fa1d2a34",
+            "u_a3cc6ca3",
+            "u_682cca41",
+            "u_86b9e54f",
+            "u_f0db9993",
+            "u_732a58b6",
+            "u_317b9dc8",
+            "u_04053945"
+          ],
+          "roll_calls": [
+            "s-119-2-248",
+            "s-119-2-247",
+            "s-119-2-246",
+            "s-119-2-245",
+            "s-119-2-243",
+            "s-119-2-242",
+            "s-119-2-240",
+            "s-119-2-236",
+            "s-119-2-235"
+          ],
+          "roll_calls_on_record": [
+            "s-119-2-235",
+            "s-119-2-236",
+            "s-119-2-240",
+            "s-119-2-242",
+            "s-119-2-243",
+            "s-119-2-245",
+            "s-119-2-246",
+            "s-119-2-247",
+            "s-119-2-248"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "changed_because": [
+          "updates:+4"
+        ],
+        "model": "claude-sonnet-5-5"
+      },
+      {
+        "id": "s_e4b63aca",
+        "generated_at": "2026-09-29T08:23:42.133Z",
+        "as_of_day": "2026-09-29",
+        "text": {
+          "en": "On September 28, 2026, the Senate passed S. 4668, the Protect College Sports Act of 2026, by a recorded vote of 77 to 22 (Roll no. 250). The same day, the Senate voted on five amendments to S.Amdt. 6776. It agreed to S.Amdt. 6828, 96 to 1 (Roll no. 245). It rejected the other four: S.Amdt. 6758, 1 to 94 (Roll no. 246); S.Amdt. 6760, 42 to 54 (Roll no. 247); S.Amdt. 6805, 49 to 50 (Roll no. 248); and S.Amdt. 6835, 47 to 52 (Roll no. 249). On September 24, 2026, the Senate agreed to S.Amdt. 6776, 77 to 23 (Roll no. 242), and invoked cloture on the bill, 74 to 25 (Roll no. 243). Earlier, on September 22, cloture on S.Amdt. 6776 was agreed to, 70 to 21 (Roll no. 240). The Senate agreed to proceed to the bill on September 17, 77 to 22 (Roll no. 236), after cloture on that motion was invoked on September 15, 74 to 24 (Roll no. 235).",
+          "es": "El 28 de septiembre de 2026, el Senado aprobó el proyecto S. 4668, la Ley de Protección del Deporte Universitario de 2026 (Protect College Sports Act of 2026), por votación nominal de 77 a 22 (votación núm. 250). Ese mismo día, el Senado votó cinco enmiendas a la S.Amdt. 6776. Aprobó la S.Amdt. 6828, por 96 a 1 (votación núm. 245). Rechazó las otras cuatro: la S.Amdt. 6758, por 1 a 94 (votación núm. 246); la S.Amdt. 6760, por 42 a 54 (votación núm. 247); la S.Amdt. 6805, por 49 a 50 (votación núm. 248); y la S.Amdt. 6835, por 47 a 52 (votación núm. 249). El 24 de septiembre de 2026, el Senado aprobó la S.Amdt. 6776, por 77 a 23 (votación núm. 242), e invocó el cierre del debate sobre el proyecto, por 74 a 25 (votación núm. 243). Antes, el 22 de septiembre, se aprobó el cierre del debate sobre la S.Amdt. 6776, por 70 a 21 (votación núm. 240). El 17 de septiembre, el Senado aprobó pasar a considerar el proyecto, por 77 a 22 (votación núm. 236), tras invocar el cierre del debate sobre esa moción el 15 de septiembre, por 74 a 24 (votación núm. 235)."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "s-4668-119": "floor_vote"
+          },
+          "update_ids": [
+            "u_eda56d8f",
+            "u_eea56f22",
+            "u_eea7adb9",
+            "u_efa570b5",
+            "u_f0a57248",
+            "u_f1a573db",
+            "u_5f348c7a",
+            "u_3385513a",
+            "u_348552cd",
+            "u_d5eaf6d9",
+            "u_fcb078e5",
+            "u_53ca06ca",
+            "u_c6a1ebcb",
+            "u_fa1d2a34",
+            "u_a3cc6ca3",
+            "u_682cca41",
+            "u_86b9e54f",
+            "u_f0db9993",
+            "u_732a58b6",
+            "u_317b9dc8",
+            "u_04053945"
+          ],
+          "roll_calls": [
+            "s-119-2-250",
+            "s-119-2-249",
+            "s-119-2-248",
+            "s-119-2-247",
+            "s-119-2-246",
+            "s-119-2-245",
+            "s-119-2-243",
+            "s-119-2-242",
+            "s-119-2-240",
+            "s-119-2-236",
+            "s-119-2-235"
+          ],
+          "roll_calls_on_record": [
+            "s-119-2-235",
+            "s-119-2-236",
+            "s-119-2-240",
+            "s-119-2-242",
+            "s-119-2-243",
+            "s-119-2-245",
+            "s-119-2-246",
+            "s-119-2-247",
+            "s-119-2-248",
+            "s-119-2-249",
+            "s-119-2-250"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "changed_because": [
+          "updates:+2"
+        ],
+        "model": "claude-sonnet-5-5"
+      },
+      {
+        "id": "s_1c339dac",
+        "generated_at": "2026-09-29T19:51:06.837Z",
+        "as_of_day": "2026-09-29",
+        "text": {
+          "en": "The Senate passed S. 4668, the Protect College Sports Act of 2026, on September 28, 2026, by a recorded vote of 77 to 22 (Roll no. 250). On that vote, 50 Republicans and 26 Democrats voted yes. Earlier that day, senators rejected four amendments and agreed to one, by a recorded vote of 96 to 1 (Roll no. 245). Before that, the Senate agreed to amendment S.Amdt. 6776 on September 24, 2026, by a recorded vote of 77 to 23 (Roll no. 242), and invoked cloture on the bill the same day, 74 to 25 (Roll no. 243). The Senate voted 77 to 22 on September 17, 2026, to proceed to the bill (Roll no. 236). The bill is now listed as \"Passed one chamber.\"",
+          "es": "El Senado aprobó el proyecto S. 4668, la Ley para Proteger los Deportes Universitarios de 2026, el 28 de septiembre de 2026, por votación nominal de 77 a 22 (votación núm. 250). En esa votación, 50 republicanos y 26 demócratas votaron a favor. Ese mismo día, los senadores rechazaron cuatro enmiendas y aprobaron una, por votación nominal de 96 a 1 (votación núm. 245). Antes, el 24 de septiembre de 2026, el Senado aprobó la enmienda S.Amdt. 6776 por votación nominal de 77 a 23 (votación núm. 242) y ese mismo día invocó el cierre del debate sobre el proyecto, por 74 a 25 (votación núm. 243). El 17 de septiembre de 2026, el Senado votó 77 a 22 para proceder al proyecto (votación núm. 236). El proyecto figura ahora como \"Aprobado por una cámara\"."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "s-4668-119": "passed_chamber"
+          },
+          "vehicle_status_keys": {
+            "s-4668-119": "passed_chamber"
+          },
+          "update_ids": [
+            "u_c9918aa9",
+            "u_eda56d8f",
+            "u_eea56f22",
+            "u_eea7adb9",
+            "u_efa570b5",
+            "u_f0a57248",
+            "u_f1a573db",
+            "u_5f348c7a",
+            "u_3385513a",
+            "u_348552cd",
+            "u_d5eaf6d9",
+            "u_fcb078e5",
+            "u_53ca06ca",
+            "u_c6a1ebcb",
+            "u_fa1d2a34",
+            "u_a3cc6ca3",
+            "u_682cca41",
+            "u_86b9e54f",
+            "u_f0db9993",
+            "u_732a58b6",
+            "u_317b9dc8",
+            "u_04053945"
+          ],
+          "roll_calls": [
+            "s-119-2-250",
+            "s-119-2-249",
+            "s-119-2-248",
+            "s-119-2-247",
+            "s-119-2-246",
+            "s-119-2-245",
+            "s-119-2-243",
+            "s-119-2-242",
+            "s-119-2-240",
+            "s-119-2-236",
+            "s-119-2-235"
+          ],
+          "roll_calls_on_record": [
+            "s-119-2-235",
+            "s-119-2-236",
+            "s-119-2-240",
+            "s-119-2-242",
+            "s-119-2-243",
+            "s-119-2-245",
+            "s-119-2-246",
+            "s-119-2-247",
+            "s-119-2-248",
+            "s-119-2-249",
+            "s-119-2-250"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "changed_because": [
+          "status:s-4668-119 floor_vote→passed_chamber",
+          "updates:+1"
+        ],
+        "model": "claude-sonnet-5-5"
+      },
+      {
+        "id": "s_3ef35035",
+        "generated_at": "2026-10-06T19:55:36.655Z",
+        "as_of_day": "2026-10-06",
+        "text": {
+          "en": "The Senate passed S. 4668, the Protect College Sports Act of 2026, on September 28, 2026, by a recorded vote of 77 to 22 (Roll no. 250). In that vote, 50 Republicans and 26 Democrats voted yes. Earlier that day, the Senate agreed to one amendment, 96 to 1 (Roll no. 245), and rejected four others (Roll nos. 246, 247, 248 and 249). On September 24, 2026, the Senate agreed to amendment S.Amdt. 6776, 77 to 23 (Roll no. 242), and voted 74 to 25 to invoke cloture (Roll no. 243). Cloture on that amendment had passed 70 to 21 on September 22, 2026 (Roll no. 240). On October 5, 2026, the bill was received in the House and held at the desk.",
+          "es": "El Senado aprobó el proyecto S. 4668, la Ley para Proteger los Deportes Universitarios de 2026 (Protect College Sports Act of 2026), el 28 de septiembre de 2026, por votación nominal de 77 a 22 (votación núm. 250). En esa votación, 50 republicanos y 26 demócratas votaron a favor. Ese mismo día, el Senado aprobó una enmienda, por 96 a 1 (votación núm. 245), y rechazó otras cuatro (votaciones núm. 246, 247, 248 y 249). El 24 de septiembre de 2026, el Senado aprobó la enmienda S.Amdt. 6776, por 77 a 23 (votación núm. 242), y votó 74 a 25 para invocar el cierre del debate (votación núm. 243). El cierre del debate sobre esa enmienda se había aprobado por 70 a 21 el 22 de septiembre de 2026 (votación núm. 240). El 5 de octubre de 2026, la Cámara de Representantes recibió el proyecto y quedó en espera en la mesa."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "s-4668-119": "passed_chamber"
+          },
+          "vehicle_status_keys": {
+            "s-4668-119": "passed_chamber"
+          },
+          "update_ids": [
+            "u_9f7caf03",
+            "u_c46f6482",
+            "u_c9918aa9",
+            "u_eda56d8f",
+            "u_eea56f22",
+            "u_eea7adb9",
+            "u_efa570b5",
+            "u_f0a57248",
+            "u_f1a573db",
+            "u_5f348c7a",
+            "u_3385513a",
+            "u_348552cd",
+            "u_d5eaf6d9",
+            "u_fcb078e5",
+            "u_53ca06ca",
+            "u_c6a1ebcb",
+            "u_fa1d2a34"
+          ],
+          "roll_calls": [
+            "s-119-2-250",
+            "s-119-2-249",
+            "s-119-2-248",
+            "s-119-2-247",
+            "s-119-2-246",
+            "s-119-2-245",
+            "s-119-2-243",
+            "s-119-2-242",
+            "s-119-2-240"
+          ],
+          "roll_calls_on_record": [
+            "s-119-2-235",
+            "s-119-2-236",
+            "s-119-2-240",
+            "s-119-2-242",
+            "s-119-2-243",
+            "s-119-2-245",
+            "s-119-2-246",
+            "s-119-2-247",
+            "s-119-2-248",
+            "s-119-2-249",
+            "s-119-2-250"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "changed_because": [
+          "updates:+2"
+        ],
+        "model": "claude-sonnet-5-5"
+      },
+      {
+        "id": "s_ddf570d8",
+        "generated_at": "2026-10-13T20:38:32.166Z",
+        "as_of_day": "2026-10-13",
+        "text": {
+          "en": "The latest action in the official record on this measure is dated October 5, 2026.",
+          "es": "La última acción del registro oficial sobre esta medida es del 5 de octubre de 2026."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "s-4668-119": "passed_chamber"
+          },
+          "vehicle_status_keys": {
+            "s-4668-119": "passed_chamber"
+          },
+          "update_ids": [
+            "u_9f7caf03",
+            "u_c46f6482",
+            "u_c9918aa9"
+          ],
+          "roll_calls": [],
+          "roll_calls_on_record": [
+            "s-119-2-235",
+            "s-119-2-236",
+            "s-119-2-240",
+            "s-119-2-242",
+            "s-119-2-243",
+            "s-119-2-245",
+            "s-119-2-246",
+            "s-119-2-247",
+            "s-119-2-248",
+            "s-119-2-249",
+            "s-119-2-250"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
+          ]
+        },
+        "changed_because": [
+          "reanchor:7d"
+        ],
+        "model": "record-only"
+      }
+    ],
+    "summary_attempts": {
+      "day": "2026-10-06",
+      "count": 1
+    }
+  }
+}

@@ -11,6 +11,18 @@ import { expect, test } from '@playwright/test';
  * the owner's proof (S. 4668's list with the record's "tabled") and a night a
  * guard would refuse. Each must leave data/moment-updates.json byte-identical,
  * enter no write path, and report the rows it would have changed.
+ *
+ * FROZEN INPUTS (2026-11-17). The nights run on a frozen copy of the inputs
+ * as they stood on 2026-11-14 (main at e83feec), not on the live data/: the
+ * live file prunes moment-update rows after 60 days (RETENTION_DAYS), and the
+ * rows this proof names (u_682cca41, u_f0db9993: Sept 17) aged out on
+ * 2026-11-17, which turned CI red on every run. tests/fixtures/
+ * recheck-proof-night/ holds that night's moments.json and moment-updates.json
+ * (the paying-college-athletes entry only), S. 4668's row of bills.json, its
+ * roll calls and coverage, and that day's floor-signals.json and
+ * sync-state.json; they are copied over the temporary data/. The child's clock
+ * is pinned to NOW (the same ET day) so retention, the accept list's night and
+ * the held rows' dates all read that day, whatever day CI runs.
  */
 import { spawnSync } from 'node:child_process';
 import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync, existsSync } from 'node:fs';
@@ -20,11 +32,21 @@ import { RECHECK_MODE } from '../lib/moment-updates-recheck.mjs';
 import { etDay } from '../lib/moment-updates-gate.mjs';
 
 const REPO = process.cwd();
+const FROZEN = join(REPO, 'tests/fixtures/recheck-proof-night');
+/** The pinned instant: 3 PM ET on 2026-11-14, the day the frozen inputs were read. */
+const NOW = Date.parse('2026-11-14T20:00:00.000Z');
 const FIXTURE = JSON.parse(readFileSync(join(REPO, 'tests/fixtures/congress-actions-s4668.json'), 'utf8')).actions as Record<string, unknown>[];
 
 const STUB = `
 import { readFileSync, existsSync } from 'node:fs';
 const dir = process.env.STUB_ACTIONS_DIR;
+const FIXED = Number(process.env.STUB_NOW);
+const RealDate = Date;
+class PinnedDate extends RealDate {
+  constructor(...a) { if (a.length === 0) super(FIXED); else super(...a); }
+  static now() { return FIXED; }
+}
+globalThis.Date = PinnedDate;
 globalThis.fetch = async (input) => {
   const url = new URL(input instanceof URL ? input.href : typeof input === 'string' ? input : input.url);
   const m = url.pathname.match(/^\\/v3\\/bill\\/(\\d+)\\/([a-z]+)\\/(\\d+)\\/actions$/);
@@ -43,11 +65,12 @@ function night(actions: Record<string, unknown>[], prepare: (dir: string) => voi
   try {
     cpSync(join(REPO, 'data'), join(dir, 'data'), { recursive: true });
     cpSync(join(REPO, 'messages'), join(dir, 'messages'), { recursive: true });
+    cpSync(FROZEN, join(dir, 'data'), { recursive: true });
     rmSync(join(dir, 'data/record-recheck-report.json'), { force: true });
     // A valid one-night accept list for tonight: report-only must not even read it.
     writeFileSync(
       join(dir, 'data/record-recheck-accept.json'),
-      JSON.stringify({ accept: [{ night: etDay(Date.now()), ids: ['u_d5eaf6d9', 'u_682cca41'], why: 'A test accept list, which report-only must ignore.' }] }),
+      JSON.stringify({ accept: [{ night: etDay(NOW), ids: ['u_d5eaf6d9', 'u_682cca41'], why: 'A test accept list, which report-only must ignore.' }] }),
     );
     writeFileSync(join(dir, 'stub.mjs'), STUB);
     writeFileSync(
@@ -62,6 +85,7 @@ function night(actions: Record<string, unknown>[], prepare: (dir: string) => voi
       MOMENT_UPDATES_MODE: 'nightly',
       CONGRESS_API_KEY: 'offline-stub',
       STUB_ACTIONS_DIR: dir,
+      STUB_NOW: String(NOW),
       NODE_OPTIONS: `--import ${join(dir, 'stub.mjs')}`,
     });
     const run = spawnSync(process.execPath, [join(REPO, 'scripts/moment-updates.mjs')], { cwd: dir, env, encoding: 'utf8', timeout: 90_000 });
@@ -142,7 +166,7 @@ test('a night with a HELD row already in the file (from an earlier apply era): r
     const path = join(dir, 'data/moment-updates.json');
     const file = JSON.parse(readFileSync(path, 'utf8'));
     const row = file['paying-college-athletes'].updates.find((u: { id: string }) => u.id === 'u_682cca41');
-    const at = new Date().toISOString();
+    const at = new Date(NOW).toISOString();
     row.withdrawn_on = etDay(at);
     row.rechecks = [{ on: etDay(at), at, outcome: 'held', was: 'Earlier words.', was_id: 'u_00000000', now: row.record.action_text }];
     writeFileSync(path, `${JSON.stringify(file, null, 2)}\n`);
@@ -159,15 +183,15 @@ test('S1 · a hand-made stale model summary citing a held row: report mode write
     const file = JSON.parse(readFileSync(path, 'utf8'));
     const entry = file['paying-college-athletes'];
     const row = entry.updates.find((u: { id: string }) => u.id === 'u_682cca41');
-    const heldAt = new Date(Date.now() - 3_600_000).toISOString();
+    const heldAt = new Date(NOW - 3_600_000).toISOString();
     row.withdrawn_on = etDay(heldAt);
     row.rechecks = [{ on: etDay(heldAt), at: heldAt, outcome: 'held', was: 'Earlier words.', was_id: 'u_00000000', now: row.record.action_text }];
     const last = entry.summary_revisions.at(-1);
     entry.summary_revisions.push({
       ...last,
       id: 's_0000abcd',
-      generated_at: new Date(Date.now() - 7_200_000).toISOString(),
-      as_of_day: etDay(new Date(Date.now() - 7_200_000)),
+      generated_at: new Date(NOW - 7_200_000).toISOString(),
+      as_of_day: etDay(new Date(NOW - 7_200_000)),
       model: 'claude-sonnet-5-5',
       grounded_in: { ...last.grounded_in, update_ids: ['u_682cca41'] },
     });
