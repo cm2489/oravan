@@ -1,0 +1,21 @@
+sync	UNKNOWN STEP	﻿2026-11-16T23:22:33.1050069Z Current runner version: '2.338.2'
+sync	UNKNOWN STEP	2026-11-16T23:22:33.1072877Z ##[group]Runner Image Provisioner
+sync	UNKNOWN STEP	2026-11-16T23:22:33.1073667Z Hosted Compute Agent
+sync	UNKNOWN STEP	2026-11-16T23:22:33.1074320Z Version: 20261103.629
+sync	UNKNOWN STEP	2026-11-16T23:28:52.8888814Z ##[group]Run node scripts/sync-votes.mjs
+sync	UNKNOWN STEP	2026-11-16T23:28:52.8889141Z ^[[36;1mnode scripts/sync-votes.mjs^[[0m
+sync	UNKNOWN STEP	2026-11-16T23:28:52.8932054Z shell: /usr/bin/bash -e {0}
+sync	UNKNOWN STEP	2026-11-16T23:28:52.8932295Z env:
+sync	UNKNOWN STEP	2026-11-16T23:28:52.8932569Z   RUN_COUNTERS_FILE: /home/runner/work/_temp/oravan-run-counters.json
+sync	UNKNOWN STEP	2026-11-16T23:28:52.8933278Z ##[endgroup]
+sync	UNKNOWN STEP	2026-11-16T23:28:53.0042177Z sync-votes: 119th Congress, session(s) 1, 2, floor 2025-01-03, 3323 corpus bills, 612 roll call(s) already held
+sync	UNKNOWN STEP	2026-11-16T23:28:54.5019045Z data/votes.json: no change
+sync	UNKNOWN STEP	2026-11-16T23:28:54.5019746Z 612 roll call(s) (325 House, 287 Senate) across 300 bill(s); members resolve: 533 current, 4 in a vacant-seat state, 12 departed/replaced
+sync	UNKNOWN STEP	2026-11-16T23:28:54.5021611Z DONE: House 0 stored (0 of them re-read to add the count by party; 685 listed, 685 in window, 325 on corpus bills, 0 via Clerk fallback, 0 failed); Senate 0 stored (0 of them re-read to add the count by party; 921 listed, 921 in window, 287 on corpus bills, 0 failed); file 612 roll call(s) across 300 bill(s), 549 members; cursor house -> 119-2-323, senate -> 119-2-262; floor 2025-01-03
+sync	UNKNOWN STEP	2026-11-16T23:28:54.5184779Z ##[group]Run node scripts/backfill-search-inputs.mjs
+sync	UNKNOWN STEP	2026-11-16T23:28:54.5185170Z ^[[36;1mnode scripts/backfill-search-inputs.mjs^[[0m
+sync	UNKNOWN STEP	2026-11-16T23:28:54.5228704Z shell: /usr/bin/bash -e {0}
+sync	UNKNOWN STEP	2026-11-16T23:28:54.5228955Z env:
+sync	UNKNOWN STEP	2026-11-16T23:28:54.5229234Z   RUN_COUNTERS_FILE: /home/runner/work/_temp/oravan-run-counters.json
+sync	UNKNOWN STEP	2026-11-16T23:28:54.5230175Z   BACKFILL_LIMIT: 450
+sync	UNKNOWN STEP	2026-11-17T00:01:15.5163101Z Cleaning up orphan processes

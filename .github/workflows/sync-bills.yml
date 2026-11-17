@@ -121,6 +121,16 @@ on:
       coverage_tail_share:
         description: 'One-off COVERAGE_TAIL_SHARE override (blank = 0.5; set 0 for pure urgency order)'
         default: ''
+      short_titles_allow_drop:
+        # THE ONE-RUN OVERRIDE for the short-titles drop floor (hard rule 11's
+        # count-drop protection, lib/short-titles.mjs verifyShortTitles): tick it
+        # ONLY when the record really dropped short titles from more than a
+        # tenth of the titled bills in one night and the nightly said so with a
+        # "SHORT TITLES TROUBLE: bills with a short title would fall …" line.
+        # It applies to this one run; a scheduled run never sets it.
+        description: 'Let this one run through the short-titles drop floor (only after a SHORT TITLES TROUBLE line about a real mass change; see docs/runbooks/new-congress-switch.md)'
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -506,6 +516,41 @@ jobs:
         env:
           CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}
         run: node scripts/sync-votes.mjs
+      - name: Read the record's short titles (name addresses)
+        # data/short-titles.json (scripts/sync-short-titles.mjs): the short
+        # titles Congress.gov's own titles list labels as each bill's, which
+        # next.config.ts turns into name addresses (oravan.org/continuing-
+        # appropriations-act-2027; the owner's card 191, Nov 14, 2026). AFTER the bill sync, so
+        # tonight's new bills are read tonight.
+        #
+        # A SEPARATE script and step, continue-on-error, on the votes
+        # precedent: a titles-side outage must never cost the night's bill
+        # statuses. The script refuses to write a file its gate refuses, and
+        # scripts/verify-sync.mjs re-checks it before the commit.
+        #
+        # Cost: $0. At most 300 bills a night (SHORT_TITLES_MAX_PER_NIGHT):
+        # every bill never read first, then every bill whose last action
+        # moved, then every bill unread for 56 days, and last the bills whose
+        # previous read failed, after a wait that doubles each time (1 to 32
+        # days; data/short-titles-retry.json). About one free Congress.gov
+        # request per bill; never more than 400 a night (retries and extra
+        # pages included), against the key's 5,000 an hour (the arithmetic is
+        # in docs/runbooks/new-congress-switch.md). The first fill takes ~11
+        # nights. No Anthropic key.
+        #
+        # NEVER A SILENT STOP. Whatever ends the night early or refuses to
+        # write prints one "SHORT TITLES TROUBLE:" line, which the daily
+        # pipeline-health digest raises as an alarm. A bill's own bad answer
+        # only fails that bill. This step's ceiling is 25 minutes, and
+        # continue-on-error means its failure or timeout never holds or fails
+        # the steps after it, the gates or the commit.
+        continue-on-error: true
+        timeout-minutes: 25
+        env:
+          CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}
+          # Only a manual dispatch with the box ticked sets it; '' on every scheduled run.
+          SHORT_TITLES_ALLOW_DROP: ${{ github.event_name == 'workflow_dispatch' && inputs.short_titles_allow_drop && '1' || '' }}
+        run: node scripts/sync-short-titles.mjs
       - name: Backfill coverage search inputs
         # Drains press_names/news_query for bills decoded before search-input
         # generation existed (~1,090 at introduction; 835 left after night one,
@@ -602,6 +647,8 @@ jobs:
         # job instead — after the commit, still red, still loud.
         env:
           RUN_STARTED_AT: ${{ steps.runstart.outputs.ts }}
+          # The short-titles one-run override, the same expression as that step's.
+          SHORT_TITLES_ALLOW_DROP: ${{ github.event_name == 'workflow_dispatch' && inputs.short_titles_allow_drop && '1' || '' }}
         run: node scripts/verify-sync.mjs
       - name: Roll-call votes gate (every position resolves to a member, totals match, bills exist)
         # PRE-COMMIT, beside verify-sync.mjs: this is an integrity check, not a

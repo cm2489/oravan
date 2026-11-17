@@ -243,6 +243,15 @@ jobs:
         run: |
           node scripts/check-votes.mjs --self-test
           node scripts/check-votes.mjs
+      - name: Short-titles gate (the record's short titles that name addresses read)
+        # data/short-titles.json is written by the nightly (scripts/sync-short-
+        # titles.mjs), which runs the same judgement before it writes, and
+        # verify-sync.mjs runs it again before the commit. Here it reddens a
+        # pull request that damages the file. Exits 0 when the file doesn't
+        # exist yet.
+        run: |
+          node scripts/check-short-titles.mjs --self-test
+          node scripts/check-short-titles.mjs
       - name: Senate-nomination data gate (identity, status mapping, calendar numbers, civilian-only)
         # Structural checks are HARD here: they test our own code against the
         # data it produced (slug identity, stored status == what the mapper
