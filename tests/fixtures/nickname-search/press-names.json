@@ -1,0 +1,15 @@
+{
+ "_note": "Frozen 2026-11-17 from data/press-names.json: only the bills in bills.json beside it.",
+ "bills": {
+  "hr-3633-119": {
+   "add": [
+    "CLARITY Act"
+   ]
+  },
+  "hconres-89-119": {
+   "add": [
+    "Iran War Powers Resolution"
+   ]
+  }
+ }
+}

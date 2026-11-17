@@ -1479,3 +1479,318 @@ export function matchNickname(tokens, listIndex) {
   }
   return null;
 }
+
+// ---- act-name matcher (rebuilt nickname search; OFFLINE ONLY) ------------
+/*
+ * The rebuild the owner chose on 2026-11-15 (card 120): "Rebuild it to match
+ * only real act names and acronyms, test it offline on two weeks of headlines
+ * ($0), and show you the matches before it goes live." NOTHING CALLS THESE
+ * FUNCTIONS IN THE LIVE NEWSDESK. scripts/newsdesk.mjs still runs the nickname
+ * bridge above (extractNicknameTokens + buildListIndex + matchNickname),
+ * unchanged, until the owner has seen the matches.
+ *
+ * THE RULE, as a runbook would print it:
+ *   A headline is credited to a bill only when it prints, word for word, a
+ *   name the record or the bill's stored fields give that bill: its title
+ *   when the title reads as an act name ("Laken Riley Act", with or without
+ *   "of 2025"), or an acronym of that name that the bill's stored press names
+ *   list and whose letters are the initials of the name's words ("NDAA",
+ *   "SPEED Act"; a listed "BAAJ Act" also allows "BAAJA"). A bare acronym counts only when it has four or more
+ *   capital letters and stands for the whole name, "Act" included; an
+ *   acronym that is an ordinary word ("SAVE") counts only with "Act" after
+ *   it. A name two or more bills share is credited to none of them.
+ *
+ * What is NOT a name here: a single distinctive token, a topic word, a
+ * sponsor's name, a long title ("To amend title 10…", "A joint resolution
+ * providing for…"), a translated name ("la Ley Laken Riley"), and any stored
+ * press name that is neither the title's own name, an owner-merged addition
+ * from data/press-names.json, nor a well-formed acronym (a phrase cut from
+ * inside a title, "ALS Reauthorization Act", is not the bill's name). An
+ * acronym belongs to every bill that carries the name it abbreviates. Every word of a matched name must be capitalized in
+ * the headline (connectors like "of" and "for" excepted) and "Act" must read
+ * "Act", so "an act of Congress" and "save act" are never names.
+ *
+ * SHARED NAMES. When a name belongs to two or more bills (a House bill and its
+ * Senate twin usually share one: H.R. 29 and S. 5 are both "Laken Riley Act"),
+ * the headline is credited to NONE of them and reported as `shared`, listing
+ * every bill. Crediting all would count one story as coverage of each twin,
+ * and the ≥2-outlet rule and the news band's outlet count would then be
+ * counting a guess; crediting one would be the guess itself.
+ *
+ * THE RECORD'S SHORT TITLES. data/bills.json's `short_title` is null for every
+ * bill today, and `title` often holds the short title. When the record's
+ * short titles are available (a later data/short-titles.json), pass them as
+ * an item's `names`: each one that reads as an act name becomes a name of
+ * that bill exactly as a title does, and the same shared-name rule applies.
+ */
+
+/** Words that may be lower-case inside a name and may be skipped by an
+ *  acronym ("Safeguard American Voter Eligibility" -> SAVE; "ACT for ALS"). */
+export const ACT_NAME_CONNECTORS = new Set([
+  'of', 'for', 'and', 'the', 'to', 'in', 'on', 'a', 'an', 'with', 'from', 'by', 'at', 'or',
+]);
+
+/** First words of a long title. A title that starts with one of these is a
+ *  description of the bill, not its name. */
+const LONG_TITLE_OPENERS = new Set([
+  'to', 'a', 'an', 'providing', 'making', 'directing', 'expressing', 'disapproving', 'relating',
+  'requiring', 'amending', 'authorizing', 'establishing', 'recognizing', 'supporting', 'condemning',
+  'designating', 'reserved', 'removing', 'prohibiting',
+]);
+
+/** A name longer than this many words is a description, not a name. */
+export const ACT_NAME_MAX_WORDS = 16;
+/** A bare acronym (no "Act" after it in the headline) needs this many letters. */
+export const BARE_ACRONYM_MIN = 4;
+
+/** Year forms a name may carry: "of 2025", ", 2027", "for Fiscal Year 2027". */
+const YEAR_SUFFIX_RE = /(?:\s+of\s+\d{4}|,\s*\d{4}|\s+for\s+fiscal\s+years?\s+\d{4}(?:\s+(?:and|through)\s+\d{4})?|\s+\d{4})$/i;
+
+/** Split text into words, keeping each word's original spelling. Curly quotes
+ *  become straight, possessives and edge punctuation come off. */
+function actTokens(text) {
+  return String(text ?? '')
+    .replace(/[‘’]/g, "'")
+    .replace(/[“”]/g, '"')
+    .replace(/[–—]/g, ' ')
+    .split(/\s+/)
+    .map((raw) => {
+      const w0 = raw.replace(/^[^A-Za-z0-9]+/, '').replace(/'s$/i, '').replace(/[^A-Za-z0-9.]+$/, '');
+      // Keep the periods of an initialism ("U.S."), drop a sentence's full stop.
+      const w = /^([A-Za-z]\.){2,}$/.test(w0) ? w0 : w0.replace(/\.+$/, '');
+      // A word that ends in a colon, comma, closing quote or possessive ends
+      // any name before the next word ("BREAKING: Laken Riley Act", "USA's
+      // SAVE America Act").
+      const boundary = /(['’]s|[:;,|!?)\]"'”’]|[a-z0-9]\.)$/i.test(raw) && !/^([A-Za-z]\.){2,}$/.test(raw);
+      return { w, quoted: /^[^A-Za-z0-9]*["']/.test(raw), boundary };
+    })
+    .filter((t) => t.w.length > 0);
+}
+
+function actWords(text) {
+  return actTokens(text).map((t) => t.w);
+}
+
+/** The comparison form of one word: lower case, periods out ("U.S." -> "us"). */
+function actKey(word) {
+  return String(word).toLowerCase().replace(/\./g, '');
+}
+
+/** Does this (already year-stripped) text read as an act name? */
+function readsAsActName(text) {
+  const words = actWords(text);
+  if (words.length < 2 || words.length > ACT_NAME_MAX_WORDS) return false;
+  if (words[words.length - 1] !== 'Act' && words[words.length - 1] !== 'ACT') return false;
+  if (LONG_TITLE_OPENERS.has(words[0].toLowerCase())) return false;
+  if (/[;:]/.test(text)) return false;
+  // Every word that is not a connector is capitalized (or a number): a name,
+  // not a sentence.
+  return words.every((w) => ACT_NAME_CONNECTORS.has(w.toLowerCase()) || /^[A-Z0-9]/.test(w));
+}
+
+/** The name forms a title (or a record short title) gives a bill: the title
+ *  itself and the title without its year, when it reads as an act name.
+ *  Returns [] for a long title. */
+export function actNameForms(title) {
+  const t = String(title ?? '').replace(/\s+/g, ' ').trim();
+  if (!t) return [];
+  const forms = new Set();
+  let base = t;
+  // Strip at most two year forms ("… Act for Fiscal Year 2026" is one).
+  for (let i = 0; i < 2 && YEAR_SUFFIX_RE.test(base); i++) base = base.replace(YEAR_SUFFIX_RE, '').trim();
+  if (!readsAsActName(base)) return [];
+  forms.add(base);
+  if (base !== t) forms.add(t);
+  return [...forms];
+}
+
+/** Is `acronym` (capital letters only) the initials of a contiguous run of the
+ *  name's words? Connector words may give their initial or be skipped; every
+ *  other word in the run gives exactly one letter. Returns the run's
+ *  {start, end} (word indexes, end exclusive) or null. */
+export function acronymRun(acronym, name) {
+  const a = String(acronym ?? '');
+  if (!/^[A-Z]{2,}$/.test(a)) return null;
+  const words = actWords(name).map((w) => w.replace(/\./g, ''));
+  const n = words.length;
+  // match(i, j): letters a[j..] against words starting at i; returns end index or -1.
+  const memo = new Map();
+  const match = (i, j) => {
+    const key = `${i},${j}`;
+    if (memo.has(key)) return memo.get(key);
+    let out = -1;
+    if (j === a.length) out = i;
+    else if (i < n) {
+      const w = words[i];
+      const isConn = ACT_NAME_CONNECTORS.has(w.toLowerCase());
+      if (w[0] && w[0].toUpperCase() === a[j]) out = match(i + 1, j + 1);
+      if (out < 0 && isConn) out = match(i + 1, j);
+    }
+    memo.set(key, out);
+    return out;
+  };
+  for (let s = 0; s < n; s++) {
+    if (ACT_NAME_CONNECTORS.has(words[s].toLowerCase())) continue; // a run starts on a real word
+    const e = match(s, 0);
+    if (e > s) return { start: s, end: e };
+  }
+  return null;
+}
+
+/**
+ * Build the act-name index from bills. Each item: { slug, title,
+ * press_names?, names? } — `names` is for the record's short titles (or the
+ * owner-merged additions of data/press-names.json), read exactly like a title.
+ * Returns { byKey: Map<key, entry>, maxWords, refused } where an entry is
+ * { name, form: 'name'|'acronym', bare: boolean, slugs: Set<string> } and
+ * `refused` lists stored press names that are not names under the rule.
+ */
+export function buildActNameIndex(items) {
+  /** @type {Map<string, {name: string, form: 'name'|'acronym', bare: boolean, slugs: Set<string>, sources: Set<string>}>} */
+  const byKey = new Map();
+  const refused = [];
+  let maxWords = 1;
+  const keyOf = (text) => actWords(text).map(actKey).join(' ');
+  const put = (text, form, bare, slugs, source) => {
+    const words = actWords(text);
+    const key = words.map(actKey).join(' ');
+    if (!key) return;
+    maxWords = Math.max(maxWords, words.length);
+    const e = byKey.get(key) ?? { name: words.join(' '), form, bare, slugs: new Set(), sources: new Set() };
+    for (const s of slugs) e.slugs.add(s);
+    e.sources.add(source);
+    byKey.set(key, e);
+  };
+  // Pass 1: names (titles and record or owner-merged names), so pass 2 knows
+  // every bill that carries a name before it adds an acronym of it.
+  const namesBySlug = new Map();
+  for (const it of items ?? []) {
+    if (!it?.slug) continue;
+    const names = [];
+    for (const f of actNameForms(it.title)) names.push(f);
+    for (const extra of it.names ?? []) for (const f of actNameForms(extra)) names.push(f);
+    namesBySlug.set(it.slug, names);
+    for (const f of names) put(f, 'name', false, [it.slug], 'name');
+  }
+  // Pass 2: acronyms the stored press names list. An acronym belongs to EVERY
+  // bill that carries the name it abbreviates, not only to the bill whose
+  // press names happen to list it, so a twin's shared name stays shared.
+  for (const it of items ?? []) {
+    if (!it?.slug) continue;
+    const names = namesBySlug.get(it.slug) ?? [];
+    for (const p of it.press_names ?? []) {
+      const pn = String(p ?? '').trim();
+      if (!pn) continue;
+      if (names.some((f) => keyOf(f) === keyOf(pn))) continue; // the bill's own name, already in
+      const acr = pn.match(/^([A-Z]{2,})(\s+(?:Act|ACT))?$/);
+      if (!acr) {
+        refused.push({ slug: it.slug, press_name: pn, why: 'not the bill\u2019s name and not an acronym of it' });
+        continue;
+      }
+      const letters = acr[1];
+      const withAct = Boolean(acr[2]);
+      const owners = new Set();
+      let coversAct = false;
+      for (const nm of names) {
+        const run = acronymRun(letters, nm);
+        if (!run) continue;
+        for (const s of byKey.get(keyOf(nm))?.slugs ?? []) owners.add(s);
+        if (run.end === actWords(nm).length) coversAct = true;
+      }
+      if (owners.size === 0) {
+        refused.push({ slug: it.slug, press_name: pn, why: 'not the initials of the bill\u2019s name' });
+        continue;
+      }
+      put(`${letters} Act`, 'acronym', false, owners, 'press_names acronym');
+      // "BAAJ Act" listed: the same acronym standing for the whole name is
+      // "BAAJA" (the last A is "Act"), so the bare form is that one.
+      const actLetter = withAct && !coversAct ? `${letters}A` : null;
+      if (actLetter && actLetter.length >= BARE_ACRONYM_MIN && names.some((nm) => acronymRun(actLetter, nm)?.end === actWords(nm).length)) {
+        put(actLetter, 'acronym', true, owners, 'press_names acronym, with A for Act');
+      }
+      if (!withAct) {
+        if (coversAct && letters.length >= BARE_ACRONYM_MIN) put(letters, 'acronym', true, owners, 'press_names acronym');
+        else
+          refused.push({
+            slug: it.slug,
+            press_name: pn,
+            why: coversAct ? `bare acronym under ${BARE_ACRONYM_MIN} letters` : 'bare acronym that does not stand for "Act"; matched only as "' + letters + ' Act"',
+          });
+      }
+    }
+  }
+  return { byKey, maxWords, refused };
+}
+
+/**
+ * Every act name a headline prints, against the index. Longest name wins at
+ * each position, so "Presumptive CLARITY Act" is never read as "CLARITY Act".
+ * Returns { credited: [{slug, name, form}], shared: [{name, form, slugs}] }:
+ * `credited` holds names that belong to exactly one bill, `shared` holds names
+ * two or more bills carry (credited to none of them).
+ */
+export function matchActNames(headline, index) {
+  const tokens = actTokens(headline);
+  // An all-capitals headline: a capital before the name proves nothing.
+  const shouting = !/[a-z]/.test(String(headline ?? ''));
+  const words = tokens.map((t) => t.w);
+  const keys = words.map(actKey);
+  const credited = [];
+  const shared = [];
+  const seenSlugs = new Set();
+  let i = 0;
+  while (i < words.length) {
+    let hit = null;
+    for (let len = Math.min(index.maxWords, words.length - i); len >= 1 && !hit; len--) {
+      const key = keys.slice(i, i + len).join(' ');
+      const e = index.byKey.get(key);
+      if (!e) continue;
+      const span = words.slice(i, i + len);
+      // Used as a name: every non-connector word capitalized, "Act" spelled
+      // "Act"; an acronym in capitals.
+      const capsOk = span.every((w, k) => {
+        const lower = w.toLowerCase();
+        if (k === span.length - 1 && lower === 'act') return w === 'Act' || w === 'ACT';
+        if (ACT_NAME_CONNECTORS.has(lower) && k > 0) return true;
+        return /^[A-Z0-9]/.test(w);
+      });
+      if (!capsOk) continue;
+      if (e.form === 'acronym' && span[0] !== span[0].toUpperCase()) continue;
+      hit = { e, len };
+    }
+    if (hit && !usedAsWholeName(tokens, i, hit.len, shouting)) hit = null;
+    if (!hit) {
+      i++;
+      continue;
+    }
+    const slugs = [...hit.e.slugs].sort();
+    if (slugs.length === 1) {
+      if (!seenSlugs.has(slugs[0])) credited.push({ slug: slugs[0], name: words.slice(i, i + hit.len).join(' '), form: hit.e.form });
+      seenSlugs.add(slugs[0]);
+    } else {
+      shared.push({ name: words.slice(i, i + hit.len).join(' '), form: hit.e.form, slugs });
+    }
+    i += hit.len;
+  }
+  return { credited, shared };
+}
+
+/** Is the name at tokens[i .. i+len) the whole name the headline prints, and
+ *  not the tail of a longer one or a sentence that happens to end in "act"?
+ *  Two cases are refused:
+ *   - the word before it is an acronym of three or more capitals
+ *     ("PROTECT Kids Act" is not the "KIDS Act");
+ *   - a two-word name whose first word is not printed in capitals, right
+ *     after another capitalized word, unless the name is in quotes
+ *     ("Retired Judges Act to Protect…" is not the "JUDGES Act"; in a
+ *     title-case headline a capital proves nothing).
+ *  A quote mark that opens the name, or punctuation or a possessive after the
+ *  word before it, ends any longer name before it. */
+function usedAsWholeName(tokens, i, len, shouting = false) {
+  if (i === 0 || tokens[i].quoted || tokens[i - 1].boundary) return true;
+  const prev = tokens[i - 1].w;
+  if (!shouting && /^[A-Z]{3,}$/.test(prev)) return false;
+  const first = tokens[i].w;
+  if (len === 2 && first !== first.toUpperCase() && /^[A-Z]/.test(prev) && !/^(The|A|An)$/.test(prev)) return false;
+  return true;
+}
