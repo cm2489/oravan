@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-11-17T13:14:30.684Z"
+    "generated_at": "2026-11-17T22:59:21.253Z"
   },
   "government-funding-deadline": {
     "updates": [],
@@ -3083,13 +3083,13 @@
       }
     ],
     "summary_attempts": {
-      "day": "2026-11-16",
+      "day": "2026-11-17",
       "count": 1
     },
     "summary_refusals": {
-      "count": 4,
-      "day": "2026-11-16",
-      "reason": "en: absence claim \"the only action\" over a record that is not empty — the grounding holds a vote or action in this window, so \"nothing happened\" is false; es: absence claim \"no hay votación\" over a record that is not empty — the grounding holds a vote or action in this window, so \"nothing happened\"…"
+      "count": 5,
+      "day": "2026-11-17",
+      "reason": "en: absence claim \"no other votes\" over a record that is not empty — the grounding holds a vote or action in this window, so \"nothing happened\" is false; en: absence claim \"No roll call was recorded\" over a record that is not empty — the grounding holds a vote or action in this window, so \"nothing …"
     }
   }
 }

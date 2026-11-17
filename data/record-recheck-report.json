@@ -1,37 +1,6 @@
 {
   "schema": 1,
   "rows": {
-    "paying-college-athletes/u_682cca41": {
-      "first_seen": "2026-11-15",
-      "verdict": "left",
-      "vehicle": "s-4668-119",
-      "day": "2026-09-17",
-      "stored": "Cloture motion on amendment SA 6776 presented in Senate.",
-      "record": [
-        {
-          "day": "2026-09-17",
-          "text": "Cloture motion on the measure presented in Senate. (CR S4789)"
-        },
-        {
-          "day": "2026-09-17",
-          "text": "Motion by Senator Thune to recommit to Senate Committee on Commerce, Science, and Transportation with instructions to report back forthwith with the following amendment (SA 6781) made in Senate. (CR S4789)"
-        },
-        {
-          "day": "2026-09-17",
-          "text": "Measure laid before Senate by motion. (consideration: CR S4777-4790)"
-        },
-        {
-          "day": "2026-09-17",
-          "text": "Motion to proceed to consideration of measure agreed to in Senate by Yea-Nay Vote. 77 - 22. Record Vote Number: 236. (CR S4773-4774)"
-        },
-        {
-          "day": "2026-09-17",
-          "text": "Motion to proceed to measure considered in Senate. (CR S4773-4774)"
-        }
-      ],
-      "note": "that day the record lists",
-      "why": "it names amendment 119-samdt-6776, and the action may have moved to the amendment's own record; that list was not usable (1 of its 13 actions carry no words in \"text\" (a renamed or missing field))"
-    },
     "paying-college-athletes/u_d5eaf6d9": {
       "first_seen": "2026-11-15",
       "verdict": "would-correct",
