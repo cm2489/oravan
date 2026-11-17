@@ -11,106 +11,120 @@
  * (oravan.org/continuing-appropriations-act-2027, lib/short-address.ts);
  * nothing a page prints reads them.
  *
- * WHICH BILLS (planShortTitleReads). At most SHORT_TITLES_MAX_PER_NIGHT (500;
- * the SHORT_TITLES_MAX env var overrides it for a catch-up dispatch) a night:
- * every bill never read, most urgent first; then every bill whose last action
- * moved; then every bill not read for 56 days; and LAST the bills whose
- * previous read failed and whose wait is over. A bill that fails is written
- * to the retry file with its failure count and the day, and waits 1, 2, 4, 8,
- * 16, then 32 days before it is tried again, at the back of the queue. So no
- * set of bills that always fail can head the queue night after night.
+ * THE NIGHT ITSELF is lib/short-titles-night.mjs's runShortTitlesNight: which
+ * bills, what counts as a read, what stops the night, and how a failed bill
+ * backs off. This file is only the I/O around it: it reads the files, talks to
+ * Congress.gov, runs the gate and writes.
  *
- * WHAT A NIGHT CAN COST, from this file's own numbers. A bill's list comes in
- * pages of 250 titles, at most 4 pages (1,000 titles; a bill with more is that
- * bill's failure, with its own line). Each request is retried once, only on a
- * 429, a 5xx, a timeout or a network error, and has a 20-second ceiling. The
- * night stops at SHORT_TITLES_MAX_REQUESTS (1,200) requests, against the key's
- * 5,000 an hour; in practice one request a bill, about 500.
+ * WHAT A NIGHT CAN COST, from these files' own numbers: at most 300 bills
+ * (SHORT_TITLES_MAX_PER_NIGHT; SHORT_TITLES_MAX overrides it for a catch-up
+ * dispatch), at most 400 requests (SHORT_TITLES_MAX_REQUESTS), pages of 250
+ * titles up to 4 a bill, one retry a request (only on a 429, a 5xx, a timeout
+ * or a network error), 20 seconds a request, 20 minutes a night; the workflow
+ * step has `timeout-minutes: 25` and `continue-on-error`.
  *
- * WHEN IT STOPS EARLY, always with one line starting "SHORT TITLES TROUBLE:",
- * which lib/pipeline-health.mjs reads into the daily digest's alarms:
- *   - 10 TRANSPORT failures in a row (no answer, a network error, a 429 or a
- *     5xx): the source is down. An answer that arrived and was refused (empty,
- *     incomplete, about another bill, a 404, reshaped) is that bill's own
- *     failure and never counts toward this;
- *   - the source has changed: once 20 answers have arrived, more than half
- *     of them refused for one and the same reason. No bill is marked failed for
- *     that night's refusals, and the step exits 1 (it stays continue-on-error);
- *   - the 20-minute budget or the request cap ran out.
- * What was read before the stop is still written, and the next night resumes.
- * sync-bills.yml gives the step `timeout-minutes: 25` and `continue-on-error`,
- * so it can never hold or fail the night's bill sync, its gates or its commit.
+ * NO SILENT STOP, AND ONE SUMMARY A NIGHT. main() returns ONLY through
+ * `finish()`, which every way out of the script reaches, the crash handler
+ * included. finish() prints the run's TROUBLE line when it has a reason (a
+ * non-zero exit always has one) and, every time, exactly one
+ * "SHORT TITLES SUMMARY:" line (lib/short-titles-summary.mjs), the state-based
+ * backstop the daily health report checks (lib/pipeline-health.mjs).
+ * tests/short-titles-stalls.unit.spec.ts lists every outcome in a table and
+ * fails when a `return` in main() does not go through finish(), when an
+ * outcome has no row, or when the exit code is set anywhere else.
  *
- * WHAT A READ IS. lib/short-titles.mjs's readTitlesAnswer, on the assembled
- * pages: about THIS bill (`request` names the same congress, type and number,
- * on every page), no error, a non-empty list (every bill has an official
- * title), and exactly as many titles as `pagination.count` says. A failed read
- * changes nothing in data/short-titles.json. A whole answer with no title
- * labelled short is stored as [], also when the bill had short titles before:
- * the record has dropped them, and a name must be a short title the record
- * gives the bill now (hard rule 6).
+ * THE HISTORY. data/short-titles-trend.json keeps the last 14 nights'
+ * { day, titled, bills } so the summary can say how many bills had a name a
+ * week ago. A missing (while the titles file exists) or damaged history is
+ * started afresh with one TROUBLE line; it never stops the night.
  *
- * WHAT IT NEVER DOES: write a file its gate refuses (verifyShortTitles and
- * verifyShortTitleRetries, which scripts/verify-sync.mjs runs again before the
- * commit), print the key or a URL that carries it, or touch any other file.
+ * THE ONE-RUN OVERRIDE. When the record really drops short titles from more
+ * than a tenth of the titled bills in one night, the gate's floor refuses the
+ * file (hard rule 11's count-drop protection) and says so. A person lets one
+ * run through by dispatching the nightly by hand with the input
+ * `short_titles_allow_drop` ticked (the workflow then sets
+ * SHORT_TITLES_ALLOW_DROP=1 for this step and verify-sync only, on that run
+ * only). It is ignored on a scheduled run (GITHUB_EVENT_NAME=schedule), and
+ * nothing in the record can set it.
  *
- * Env, for a scratch fill or an offline test: SHORT_TITLES_FILE and
- * SHORT_TITLES_RETRY_FILE (write elsewhere), SHORT_TITLES_BILLS (read another
+ * Env, for a scratch fill or an offline test: SHORT_TITLES_FILE,
+ * SHORT_TITLES_RETRY_FILE and SHORT_TITLES_TREND_FILE (write elsewhere), SHORT_TITLES_BILLS (read another
  * corpus file), SHORT_TITLES_TODAY (the day, YYYY-MM-DD),
  * SHORT_TITLES_REQUEST_TIMEOUT_MS, SHORT_TITLES_BUDGET_MS,
  * SHORT_TITLES_RETRY_DELAY_MS.
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { billApiPath, slugOf } from './congress-fetch.mjs';
+import { billApiPath } from './congress-fetch.mjs';
 import {
-  planShortTitleReads,
-  readTitlesAnswer,
-  serializeRetries,
-  serializeShortTitles,
-  SHORT_TITLES_MAX_CONSECUTIVE_FAILURES,
-  SHORT_TITLES_MAX_PAGES,
   SHORT_TITLES_MAX_PER_NIGHT,
   SHORT_TITLES_MAX_REQUESTS,
   SHORT_TITLES_PAGE_SIZE,
   SHORT_TITLES_PATH,
   SHORT_TITLES_RETRY_PATH,
-  SOURCE_CHANGE_MIN_ANSWERS,
-  verifyShortTitleRetries,
-  verifyShortTitles,
 } from '../lib/short-titles.mjs';
+import { OutOfRequests, Refused, runShortTitlesNight, settleNight, TransportFailure } from '../lib/short-titles-night.mjs';
+import {
+  nextTrend,
+  nightSummary,
+  serializeTrend,
+  SHORT_TITLES_TREND_PATH,
+  summaryLine,
+  verifyShortTitlesTrend,
+} from '../lib/short-titles-summary.mjs';
 
 const DRY_RUN = process.argv.includes('--dry-run');
 const OUT = process.env.SHORT_TITLES_FILE || SHORT_TITLES_PATH;
 const RETRY_OUT = process.env.SHORT_TITLES_RETRY_FILE || SHORT_TITLES_RETRY_PATH;
+const TREND_OUT = process.env.SHORT_TITLES_TREND_FILE || SHORT_TITLES_TREND_PATH;
 const BILLS = process.env.SHORT_TITLES_BILLS || 'data/bills.json';
 const CAP = process.env.SHORT_TITLES_MAX ? Number(process.env.SHORT_TITLES_MAX) : SHORT_TITLES_MAX_PER_NIGHT;
 const REQUEST_TIMEOUT_MS = Number(process.env.SHORT_TITLES_REQUEST_TIMEOUT_MS) || 20_000;
 const BUDGET_MS = Number(process.env.SHORT_TITLES_BUDGET_MS) || 20 * 60_000;
 const RETRY_DELAY_MS = Number(process.env.SHORT_TITLES_RETRY_DELAY_MS) || 2000;
 const TODAY = /^\d{4}-\d{2}-\d{2}$/.test(process.env.SHORT_TITLES_TODAY ?? '') ? process.env.SHORT_TITLES_TODAY : new Date().toISOString().slice(0, 10);
+/** The one-run override: set by a person on a manual run, never honoured on a schedule. */
+const ALLOW_DROP = process.env.SHORT_TITLES_ALLOW_DROP === '1' && process.env.GITHUB_EVENT_NAME !== 'schedule';
 const API = 'https://api.congress.gov/v3';
+
+/** What the summary line will say, filled in as the run learns it (a crash prints what is known). */
+const summary = { day: TODAY };
+
+/** Print one TROUBLE line (and its annotation). Used for troubles that do not end the run; finish() prints the last one. */
+function trouble(reason, { error = false } = {}) {
+  console.log(`SHORT TITLES TROUBLE: ${reason}`);
+  console.log(`::${error ? 'error' : 'warning'}::short titles: ${reason}`);
+}
+
+/**
+ * THE ONLY WAY OUT. Prints the run's TROUBLE line when it has a reason (a
+ * non-zero code without one still gets a line, so no exit is ever silent),
+ * then exactly one SUMMARY line, then sets the exit code. Returns the code.
+ */
+function finish({ code, outcome, reason = null }) {
+  if (reason) trouble(reason, { error: code !== 0 });
+  else if (code !== 0) trouble(`the step ended with code ${code} and no reason (outcome ${outcome}); this is a bug in scripts/sync-short-titles.mjs`, { error: true });
+  console.log(summaryLine({ ...summary, outcome }));
+  process.exitCode = code;
+  return code;
+}
 
 let requests = 0;
 
-/** A failure of the source itself, not of the bill: it counts toward the breaker. */
-class TransportFailure extends Error {}
-/** An answer that arrived and is not usable for this bill: the bill's own failure. */
-class Refused extends Error {}
-/** Tonight's request cap is spent. */
-class OutOfRequests extends Error {}
-
 /**
  * One page: at most two requests, each with a ceiling. Messages never carry
- * the URL (the URL holds the key).
+ * the URL (the URL holds the key). A failure of the source or of access (no
+ * answer in time, while connecting or while reading the body; a network
+ * error; a 403; a 429; a 5xx; a 200 whose body is an HTML page) is a
+ * TransportFailure: it counts toward the 10-in-a-row stop and never toward
+ * "the source has changed". Any other answer is judged as this bill's.
  */
 async function fetchPage(bill, offset) {
-  const key = process.env.CONGRESS_API_KEY;
-  if (!key) throw new TransportFailure('CONGRESS_API_KEY missing');
   const url = new URL(`${API}${billApiPath(bill, '/titles')}`);
   url.searchParams.set('limit', String(SHORT_TITLES_PAGE_SIZE));
   url.searchParams.set('offset', String(offset));
   url.searchParams.set('format', 'json');
-  url.searchParams.set('api_key', key);
+  url.searchParams.set('api_key', process.env.CONGRESS_API_KEY ?? '');
+  const timedOut = (e) => e?.name === 'TimeoutError' || e?.name === 'AbortError';
   let last = 'no answer';
   for (let attempt = 0; attempt < 2; attempt++) {
     if (requests >= SHORT_TITLES_MAX_REQUESTS) throw new OutOfRequests(`the night's ${SHORT_TITLES_MAX_REQUESTS}-request cap is spent`);
@@ -120,154 +134,142 @@ async function fetchPage(bill, offset) {
     try {
       res = await fetch(url, { signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
     } catch (e) {
-      last = e?.name === 'TimeoutError' || e?.name === 'AbortError' ? `no answer within ${REQUEST_TIMEOUT_MS} ms` : 'network error';
+      last = timedOut(e) ? `no answer within ${REQUEST_TIMEOUT_MS} ms` : 'network error';
       continue;
     }
     if (res.status === 429 || res.status >= 500) {
       last = `HTTP ${res.status}`;
       continue;
     }
+    if (res.status === 401 || res.status === 403) throw new TransportFailure(`HTTP ${res.status}: access refused (check CONGRESS_API_KEY)`);
     if (!res.ok) throw new Refused(`HTTP ${res.status}`);
+    let text;
     try {
-      return await res.json();
+      text = await res.text();
+    } catch (e) {
+      last = timedOut(e) ? `the answer stopped arriving within ${REQUEST_TIMEOUT_MS} ms` : 'the connection broke while reading the answer';
+      continue;
+    }
+    try {
+      return JSON.parse(text);
     } catch {
+      if (/html/i.test(res.headers.get('content-type') ?? '') || /^\s*</.test(text)) {
+        throw new TransportFailure(`HTTP ${res.status} with an HTML page instead of an answer`);
+      }
       throw new Refused('the answer is not JSON');
     }
   }
   throw new TransportFailure(last);
 }
 
-/** Every page of one bill's list, assembled, then judged as one answer. */
-async function readBill(bill) {
-  const first = await fetchPage(bill, 0);
-  const judgedFirst = readTitlesAnswer(first, bill);
-  // A whole first page, or a refusal that more pages cannot fix: done.
-  if (judgedFirst.ok || !Array.isArray(first?.titles) || !/incomplete/.test(judgedFirst.reason)) return judgedFirst;
-  const raw = first.pagination?.count;
-  const count = typeof raw === 'number' ? raw : Number(String(raw ?? '').trim());
-  const pages = Math.ceil(count / SHORT_TITLES_PAGE_SIZE);
-  if (!(pages > 1)) return judgedFirst;
-  if (pages > SHORT_TITLES_MAX_PAGES) {
-    return { ok: false, reason: `the bill has ${count} titles, more than the ${SHORT_TITLES_MAX_PAGES * SHORT_TITLES_PAGE_SIZE} this step reads` };
-  }
-  const titles = [...first.titles];
-  for (let page = 1; page < pages; page++) {
-    const next = await fetchPage(bill, page * SHORT_TITLES_PAGE_SIZE);
-    const judged = readTitlesAnswer({ ...next, pagination: { count: Array.isArray(next?.titles) ? next.titles.length : -1 } }, bill);
-    if (!judged.ok) return { ok: false, reason: `page ${page + 1}: ${judged.reason}` };
-    titles.push(...next.titles);
-  }
-  return readTitlesAnswer({ ...first, titles }, bill);
+/** Read a JSON file, or null when it does not exist. Throws with the parse error's message. */
+function readJsonFile(path) {
+  if (!existsSync(path)) return null;
+  return JSON.parse(readFileSync(path, 'utf8'));
 }
 
-const started = Date.now();
-const readJson = (p) => (existsSync(p) ? JSON.parse(readFileSync(p, 'utf8')) : null);
-const bills = JSON.parse(readFileSync(BILLS, 'utf8'));
-const before = readJson(OUT);
-const file = before ? structuredClone(before) : {};
-const retry = readJson(RETRY_OUT) ?? {};
-const bySlug = new Map(bills.map((b) => [slugOf(b), b]));
-
-const plan = planShortTitleReads({ bills, file, retry, cap: CAP, today: TODAY });
-console.log(
-  `short titles: ${plan.neverRead} bill(s) never read, ${plan.stale} whose last action moved, ${plan.overdue} due for a refresh, ${plan.retrying} failed before and due again, ${plan.waiting} failed and still waiting; reading ${plan.run.length} tonight (cap ${CAP}), ${plan.deferred} left for later nights`
-);
-
-let read = 0, changed = 0, dropped = 0, failed = 0, consecutiveTransport = 0, withTitles = 0, answers = 0;
-const refusedByReason = new Map();
-/** Tonight's per-bill failures, written to the retry file unless the source changed. */
-const failedTonight = new Map();
-let trouble = null;
-let sourceChanged = false;
-for (const slug of plan.run) {
-  if (Date.now() - started > BUDGET_MS) {
-    trouble = `stopped early: the step's ${Math.round(BUDGET_MS / 60_000)}-minute budget ran out`;
-    break;
-  }
-  const bill = bySlug.get(slug);
-  let verdict;
+async function main() {
+  const started = Date.now();
+  let bills;
   try {
-    verdict = await readBill(bill);
-    answers++;
+    bills = JSON.parse(readFileSync(BILLS, 'utf8'));
+    if (!Array.isArray(bills)) throw new Error('not a list of bills');
   } catch (e) {
-    if (e instanceof OutOfRequests) {
-      trouble = `stopped early: ${e.message}`;
-      break;
-    }
-    if (e instanceof Refused) {
-      answers++;
-      verdict = { ok: false, reason: e.message };
-    } else {
-      failed++;
-      consecutiveTransport++;
-      failedTonight.set(slug, e?.message ?? 'no answer');
-      console.log(`  ${slug}: not read (${e?.message ?? 'no answer'}); what was stored is unchanged`);
-      if (consecutiveTransport >= SHORT_TITLES_MAX_CONSECUTIVE_FAILURES) {
-        trouble = `stopped early: ${consecutiveTransport} requests in a row got no usable answer from Congress.gov (the source is down)`;
-        break;
+    return finish({ code: 1, outcome: 'corpus-unreadable', reason: `the corpus (${BILLS}) could not be read (${e?.message ?? e}), so 0 bills were read; nothing was written` });
+  }
+  summary.bills = bills.length;
+  let before;
+  try {
+    before = readJsonFile(OUT);
+  } catch (e) {
+    return finish({ code: 1, outcome: 'titles-file-unreadable', reason: `${OUT} is not valid JSON (${e?.message ?? e}), so 0 bills were read; nothing was written. Restore it from git` });
+  }
+  let retry;
+  try {
+    retry = readJsonFile(RETRY_OUT) ?? {};
+  } catch (e) {
+    retry = {};
+    trouble(`${RETRY_OUT} is not valid JSON (${e?.message ?? e}); it was started afresh, so bills that were waiting may be tried again tonight`);
+  }
+  if (!retry || typeof retry !== 'object' || Array.isArray(retry)) {
+    retry = {};
+    trouble(`${RETRY_OUT} is not an object; it was started afresh, so bills that were waiting may be tried again tonight`);
+  }
+  let trend;
+  try {
+    trend = readJsonFile(TREND_OUT);
+    if (trend !== null && verifyShortTitlesTrend({ data: trend }).failures.length) throw new Error('not the expected shape');
+  } catch (e) {
+    trend = null;
+    trouble(`${TREND_OUT} could not be used (${e?.message ?? e}); the 14-night history was started afresh, so "a week ago" is unknown for a week`);
+  }
+  if (trend === null && before !== null && existsSync(TREND_OUT) === false) {
+    trouble(`${TREND_OUT} is missing while ${OUT} exists; the 14-night history was started afresh, so "a week ago" is unknown for a week`);
+  }
+  trend = trend ?? { nights: [] };
+  Object.assign(summary, nightSummary({ day: TODAY, bills, titles: before, retry, trend, read: 0, lost: 0 }));
+
+  if (!process.env.CONGRESS_API_KEY) {
+    return finish({ code: 1, outcome: 'no-key', reason: 'CONGRESS_API_KEY is not set, so 0 bills could be read; nothing was written' });
+  }
+
+  const night = await runShortTitlesNight({
+    bills,
+    file: before ?? {},
+    retry,
+    today: TODAY,
+    cap: CAP,
+    fetchPage,
+    budgetMs: BUDGET_MS,
+  });
+  for (const line of night.lines) console.log(line);
+  const settled = settleNight({ night, bills, before, allowDrop: ALLOW_DROP });
+  for (const n of settled.notes) console.log(n);
+  for (const f of settled.failures) console.error(`::error::${f}`);
+  console.log(
+    `short titles: ${requests} request(s), ${night.read} bill(s) read (${night.withTitles} with a short title, ${night.dropped} whose short titles the record dropped), ${night.changed} entr${night.changed === 1 ? 'y' : 'ies'} new or changed, ${night.failed} failed, ${Math.round((Date.now() - started) / 1000)} s`,
+  );
+  // The troubles that do not end the run print now; the one that sets a non-zero code is finish()'s reason.
+  const ending = settled.code !== 0 ? settled.troubles.find((t) => t.error) ?? settled.troubles[settled.troubles.length - 1] : null;
+  for (const t of settled.troubles) if (t !== ending) trouble(t.reason, { error: t.error });
+
+  // What will stand after tonight: tonight's files when they are written, else what was there.
+  const titlesAfter = settled.write?.titles ? JSON.parse(settled.write.text) : before ?? {};
+  const retryAfter = settled.write ? JSON.parse(settled.write.retryText) : retry;
+  Object.assign(summary, nightSummary({ day: TODAY, bills, titles: titlesAfter, retry: retryAfter, trend, read: night.read, lost: night.dropped }));
+  const trendText = serializeTrend(nextTrend(trend, { day: TODAY, titled: summary.titled, bills: bills.length }));
+  const outcome = !settled.write
+    ? /would fall/.test(ending?.reason ?? '') ? 'drop-floor' : 'refused-by-gate'
+    : night.sourceChanged ? 'source-changed' : night.trouble ? 'stopped-early' : 'done';
+
+  if (DRY_RUN) {
+    console.log('--dry-run: nothing written');
+    return finish({ code: settled.code, outcome: 'dry-run', reason: ending?.reason ?? null });
+  }
+  const written = [];
+  try {
+    if (settled.write?.titles) {
+      writeFileSync(OUT, settled.write.text);
+      written.push(OUT);
+    } else if (settled.write) console.log(`short titles: no bill read, so ${OUT} is left as it was`);
+    if (settled.write) {
+      const retryBefore = existsSync(RETRY_OUT) ? readFileSync(RETRY_OUT, 'utf8') : null;
+      if (settled.write.retryText !== (retryBefore ?? '{}\n')) {
+        writeFileSync(RETRY_OUT, settled.write.retryText);
+        written.push(RETRY_OUT);
       }
-      continue;
     }
+    writeFileSync(TREND_OUT, trendText);
+    written.push(TREND_OUT);
+  } catch (e) {
+    const notWritten = [OUT, RETRY_OUT, TREND_OUT].filter((p) => !written.includes(p));
+    return finish({
+      code: 1,
+      outcome: 'write-error',
+      reason: `could not write the files (${e?.message ?? e}); written: ${written.length ? written.join(', ') : 'none'}; not written: ${notWritten.join(', ')} (${night.read} bill(s) read tonight)`,
+    });
   }
-  consecutiveTransport = 0;
-  if (!verdict.ok) {
-    failed++;
-    failedTonight.set(slug, verdict.reason);
-    // One reason per kind: the counts that tell a reshaped API from a few odd bills.
-    const kind = verdict.reason.replace(/\(\d+ of \d+\)|\d+/g, '#');
-    refusedByReason.set(kind, (refusedByReason.get(kind) ?? 0) + 1);
-    console.log(`  ${slug}: not read (${verdict.reason}); what was stored is unchanged`);
-    const [topReason, topCount] = [...refusedByReason].sort((a, b) => b[1] - a[1])[0];
-    if (answers >= SOURCE_CHANGE_MIN_ANSWERS && topCount * 2 > answers) {
-      sourceChanged = true;
-      trouble = `the source has changed: ${topCount} of ${answers} answers tonight were refused for the same reason ("${topReason}"); stopped, and no bill is marked as failed for it`;
-      break;
-    }
-    continue;
-  }
-  read++;
-  delete retry[slug];
-  const titles = verdict.titles;
-  const old = file[slug];
-  if (old && Array.isArray(old.titles) && old.titles.length > 0 && titles.length === 0) {
-    dropped++;
-    console.log(`::warning::${slug}: the record's whole titles list no longer gives a short title (it had ${old.titles.length}); its name stops resolving`);
-  }
-  if (!old || JSON.stringify(old.titles) !== JSON.stringify(titles)) changed++;
-  if (titles.length) withTitles++;
-  file[slug] = { titles, as_of: bill.last_action_date ?? null, read_on: TODAY };
+  return finish({ code: settled.code, outcome, reason: ending?.reason ?? null });
 }
 
-if (!sourceChanged) {
-  for (const [slug, reason] of failedTonight) {
-    const prev = retry[slug];
-    retry[slug] = { failures: Math.min((prev?.failures ?? 0) + 1, 1000), last_tried: TODAY, reason: reason.slice(0, 200) };
-  }
-}
-if (trouble) {
-  console.log(`SHORT TITLES TROUBLE: ${trouble}; ${read} bill(s) read before it are kept`);
-  console.log(`::${sourceChanged ? 'error' : 'warning'}::short titles: ${trouble}`);
-}
-
-const text = serializeShortTitles(file, bills);
-const retryText = serializeRetries(retry, bills);
-const verdictTitles = verifyShortTitles({ data: JSON.parse(text), bills, before });
-const verdictRetry = verifyShortTitleRetries({ data: JSON.parse(retryText), bills });
-for (const n of [...verdictTitles.notes, ...verdictRetry.notes]) console.log(n);
-console.log(
-  `short titles: ${requests} request(s), ${read} bill(s) read (${withTitles} with a short title, ${dropped} whose short titles the record dropped), ${changed} entr${changed === 1 ? 'y' : 'ies'} new or changed, ${failed} failed, ${Math.round((Date.now() - started) / 1000)} s`
-);
-const failures = [...verdictTitles.failures, ...verdictRetry.failures];
-if (failures.length) {
-  for (const f of failures) console.error(`::error::${f}`);
-  console.error(`::error::${OUT} and ${RETRY_OUT} not written: the gate refused them`);
-  process.exit(1);
-}
-if (DRY_RUN) console.log('--dry-run: nothing written');
-else {
-  if (read > 0) writeFileSync(OUT, text);
-  else console.log(`short titles: no bill read, so ${OUT} is left as it was`);
-  const retryBefore = existsSync(RETRY_OUT) ? readFileSync(RETRY_OUT, 'utf8') : null;
-  if (retryText !== (retryBefore ?? '{}\n')) writeFileSync(RETRY_OUT, retryText);
-}
-if (sourceChanged) process.exit(1);
+main().catch((e) => finish({ code: 1, outcome: 'crashed', reason: `the step crashed (${e?.message ?? e}); nothing more was written` }));

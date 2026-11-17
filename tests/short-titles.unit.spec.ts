@@ -99,7 +99,7 @@ test('plan: never read, then last action moved, then not read for the refresh in
   // 55 days: not yet due.
   expect(planShortTitleReads({ bills, file, cap: 10, today: '2026-11-14' }).overdue).toBe(1);
   expect(planShortTitleReads({ bills, file, cap: Number.NaN, today: TODAY }).run).toHaveLength(5);
-  expect(SHORT_TITLES_MAX_PER_NIGHT).toBe(500);
+  expect(SHORT_TITLES_MAX_PER_NIGHT).toBe(300);
   expect(SHORT_TITLES_REFRESH_DAYS).toBe(56);
   expect(SHORT_TITLES_MAX_CONSECUTIVE_FAILURES).toBe(10);
 });
@@ -139,7 +139,7 @@ test('the daily pipeline-health digest raises the TROUBLE line as an alarm', () 
   expect(alarms({ nightly: { conclusion: 'success' }, shortTitlesTrouble: parseShortTitlesTrouble(down) }).map((a) => a.code)).toContain('short-titles-stopped');
   expect(parseShortTitlesTrouble('short titles: 500 request(s), 500 bill(s) read')).toBeNull();
   // The script prints exactly that line.
-  expect(readFileSync(join(process.cwd(), 'scripts/sync-short-titles.mjs'), 'utf8')).toContain('console.log(`SHORT TITLES TROUBLE: ${trouble}');
+  expect(readFileSync(join(process.cwd(), 'scripts/sync-short-titles.mjs'), 'utf8')).toContain('console.log(`SHORT TITLES TROUBLE: ${reason}`);');
 });
 
 test('the file: one line per bill, sorted, bills the corpus no longer holds dropped', () => {
@@ -188,12 +188,20 @@ test('the gate refuses every kind of damage it names, and passes a good file', (
 
 test('the nightly runs the gate before it writes, the step is bounded, and it can never hold the night', () => {
   const sync = readFileSync(join(process.cwd(), 'scripts/sync-short-titles.mjs'), 'utf8');
-  expect(sync.indexOf('verifyShortTitles(')).toBeGreaterThan(0);
-  expect(sync.indexOf('verifyShortTitles(')).toBeLessThan(sync.indexOf('writeFileSync(OUT'));
+  // The gate runs in settleNight (lib/short-titles-night.mjs), before anything is written.
+  expect(sync.indexOf('settleNight(')).toBeGreaterThan(0);
+  expect(sync.indexOf('settleNight(')).toBeLessThan(sync.indexOf('writeFileSync(OUT'));
+  // The titles file is written only when the gate gave a write (settled.write), never otherwise.
+  expect(sync).toContain('if (settled.write?.titles) {\n      writeFileSync(OUT, settled.write.text);');
+  const night = readFileSync(join(process.cwd(), 'lib/short-titles-night.mjs'), 'utf8');
+  expect(night).toContain('verifyShortTitles({ data: JSON.parse(text), bills, before, allowDrop })');
   // The URL carries the key: no line of the script prints it or a message built from it.
   expect(sync).not.toMatch(/console\.\w+\([^)]*\burl\b/);
   const verify = readFileSync(join(process.cwd(), 'scripts/verify-sync.mjs'), 'utf8');
-  expect(verify).toContain('verifyShortTitles({ data: shortTitles');
+  // verify-sync checks the three files through verifyShortTitlesFiles, which calls the same verifyShortTitles.
+  expect(verify).toContain('const { failures, notes } = verifyShortTitlesFiles({');
+  const nightLib = readFileSync(join(process.cwd(), 'lib/short-titles-night.mjs'), 'utf8');
+  expect(nightLib).toContain('const v = verifyShortTitles({ data: titles, bills, before, allowDrop });');
   const workflow = readFileSync(join(process.cwd(), '.github/workflows/sync-bills.yml'), 'utf8');
   const step = workflow.indexOf('run: node scripts/sync-short-titles.mjs');
   expect(step).toBeGreaterThan(workflow.indexOf('run: node scripts/sync-bills.mjs'));
@@ -217,6 +225,8 @@ function scratch() {
   const dir = mkdtempSync(join(tmpdir(), 'short-titles-'));
   const outFile = join(dir, 'short-titles.json');
   const retryFile = join(dir, 'short-titles-retry.json');
+  // Every file the script writes goes to the scratch folder, never into data/.
+  const trendFile = join(dir, 'short-titles-trend.json');
   const read = (f: string) => (existsSync(f) ? JSON.parse(readFileSync(f, 'utf8')) : null);
   return {
     seed(before: unknown) {
@@ -243,6 +253,7 @@ function scratch() {
           CONGRESS_API_KEY: 'offline-test-key',
           SHORT_TITLES_FILE: outFile,
           SHORT_TITLES_RETRY_FILE: retryFile,
+          SHORT_TITLES_TREND_FILE: trendFile,
           SHORT_TITLES_BILLS: corpusFile,
           SHORT_TITLES_REQUEST_TIMEOUT_MS: '300',
           SHORT_TITLES_RETRY_DELAY_MS: '10',
@@ -378,15 +389,17 @@ test('offline: ten TRANSPORT failures in a row stop the night with one TROUBLE l
   expect(Object.keys(r.retry)).toHaveLength(10);
 });
 
-test('offline: when most answers are refused for one reason, the source has changed: stop, say so once, mark no bill', () => {
+test('offline: when most answers are refused for one reason, the source has changed: said once, judged on the whole night, and the refused bills back off', () => {
   const reshaped = `${WHO} return new Response(JSON.stringify({ request: { billNumber: number, billType: type, congress }, data: { titles: [] } }), { status: 200 });`;
   const r = runOffline(reshaped, { corpus: forty, before: good });
   expect(r.status).toBe(1);
-  expect(r.calls).toBe(20);
+  // Judged at the end of the night (2026-11-15), so every planned bill is asked once.
+  expect(r.calls).toBe(40);
   expect(r.out.match(/SHORT TITLES TROUBLE: the source has changed/g)).toHaveLength(1);
   expect(r.out).toContain('::error::short titles: the source has changed');
   expect(r.after).toEqual(good);
-  expect(r.retry).toBeNull();
+  // Since 2026-11-15 every bill refused that night is recorded, so it backs off.
+  expect(Object.keys(r.retry)).toHaveLength(40);
 });
 
 test('offline: a hanging endpoint costs at most the per-request ceiling, twice, per bill, and the budget stops the night', () => {

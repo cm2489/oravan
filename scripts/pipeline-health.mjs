@@ -67,6 +67,7 @@ import {
   parseCoverageLean,
   parseCoverageOutage,
   parseShortTitlesTrouble,
+  parseShortTitlesSummary,
   parseFailingTests,
   parsePregen,
   parseRedecodeDone,
@@ -77,6 +78,11 @@ import {
   pressFeedHealth,
   producerStillRunning,
   refusedSummaries,
+  parseRecheckTrouble,
+  HEALTH_ISSUE_TITLE,
+  recheckMarkersFrom,
+  recheckFindings,
+  recheckHeldRows,
   runThatWroteCursor,
 } from '../lib/pipeline-health.mjs';
 import { RECHECK_DAYS as PORTRAIT_RECHECK_DAYS } from './mirror-portraits.mjs';
@@ -235,6 +241,32 @@ function previousBlob(path, back = 1) {
  * The report
  * ------------------------------------------------------------------ */
 
+/**
+ * The comparison's findings, told apart: an absent report file (null), one
+ * that cannot be parsed or fails its shape (`malformed`), or a good one.
+ * What was already named is read off the standing issue's marker
+ * `<!-- recheck-named-through: DAY -->` (namedThroughFromBody, the BODY only), which
+ * daily-metrics advances only once the morning's comment is posted: a skipped
+ * report, or a comment that failed to post, is caught up rather than lost.
+ */
+function readRecheckFindings(now) {
+  const path = 'data/record-recheck-report.json';
+  let file = null;
+  let unreadable = null;
+  if (existsSync(path)) {
+    try {
+      file = JSON.parse(readFileSync(path, 'utf8'));
+    } catch (e) {
+      unreadable = e.message;
+    }
+  }
+  // The marker from the standing issue's BODY only (recheckMarkersFrom: a
+  // failed read is yesterday, never "name everything").
+  const issues = ghJson(['issue', 'list', '--repo', REPO, '--state', 'open', '--search', `in:title "${HEALTH_ISSUE_TITLE}"`, '--json', 'number,title,body']);
+  const { lastReportDay, namedThrough, leftOutSince, unread } = recheckMarkersFrom(issues, now);
+  return { findings: recheckFindings(file, { now, lastReportDay, unreadable }), namedThrough, leftOutSince, unread };
+}
+
 export function buildReport({ now = Date.now() } = {}) {
   const dayMs = 24 * 3_600_000;
   const since24h = now - dayMs;
@@ -296,9 +328,12 @@ export function buildReport({ now = Date.now() } = {}) {
   let coverageLean = null;
   let coverageOutage = null;
   let shortTitlesTrouble = null;
+  let shortTitlesSummary = null;
+  let shortTitlesSummaryChecked = false;
   let pregen = null;
   let portrait404s = null;
   let upstashCacheFailures = null;
+  let recheckTrouble = null;
   /** Every nightly log read today, newest first, with its DONE line. */
   const nightlyReads = [];
   /** Every nightly DONE line read today, by run id — the cursor row needs the one that wrote the committed cursor. */
@@ -336,9 +371,14 @@ export function buildReport({ now = Date.now() } = {}) {
     coverageLean = parseCoverageLean(log);
     coverageOutage = parseCoverageOutage(log);
     shortTitlesTrouble = parseShortTitlesTrouble(log);
+    // The summary line the short-titles step prints on every run: its absence
+    // in a finished nightly's log is itself an alarm (lib/short-titles-summary.mjs).
+    shortTitlesSummary = parseShortTitlesSummary(log);
+    shortTitlesSummaryChecked = true;
     pregen = parsePregen(log);
     portrait404s = countPortrait404s(log);
     upstashCacheFailures = countUpstashCacheFailures(log);
+    recheckTrouble = parseRecheckTrouble(log);
   }
 
   /* -- side workflows --------------------------------------------- */
@@ -508,6 +548,8 @@ export function buildReport({ now = Date.now() } = {}) {
     coverageRun: coverageDone,
     coverageOutage,
     shortTitlesTrouble,
+    shortTitlesSummary,
+    shortTitlesSummaryChecked,
     coverageLean,
     corpus: {
       bills: corpusBills,
@@ -566,6 +608,17 @@ export function buildReport({ now = Date.now() } = {}) {
     // SUMMARY_REFUSAL_ALARM_RUNS or more runs in a row, read from the
     // committed counter (lib/pipeline-health.mjs refusedSummaries). Live
     // questions only, when data/moments.json was read.
+    // The nightly record re-check: a refusal or a throw from the night's log,
+    // and the rows it holds from the committed file.
+    recheck: {
+      ...(recheckTrouble ?? { refused: null, failed: false, acceptMalformed: false, zeroChecked: false, reported: 0 }),
+      held: recheckHeldRows(readJsonFile('data/moment-updates.json')),
+      // What the comparison still has unresolved, across nights (first-seen
+      // dates and streaks), from its own committed file.
+      // `namedThrough`: the marker as read, which daily-metrics carries
+      // forward until this morning's comment is posted.
+      ...readRecheckFindings(now),
+    },
     summaryRefusals: refusedSummaries(readJsonFile('data/moment-updates.json'), {
       liveIds: moments ? Object.entries(moments).filter(([, m]) => m?.status === 'live').map(([id]) => id) : null,
     }),

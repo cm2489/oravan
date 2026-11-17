@@ -104,8 +104,11 @@ import { execSync } from 'node:child_process';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { CONVERSATION_PATH, verifyConversation } from '../lib/conversation.mjs';
 import { MOMENT_UPDATES_PATH, verifyMomentUpdates } from '../lib/verify-moment-updates.mjs';
+import { RECHECK_REPORT_PATH, recheckReportProblems } from '../lib/moment-updates-recheck.mjs';
 import { QUESTION_PRESS_PATH, verifyQuestionPress } from '../lib/question-press.mjs';
-import { SHORT_TITLES_PATH, SHORT_TITLES_RETRY_PATH, verifyShortTitleRetries, verifyShortTitles } from '../lib/short-titles.mjs';
+import { SHORT_TITLES_PATH, SHORT_TITLES_RETRY_PATH } from '../lib/short-titles.mjs';
+import { verifyShortTitlesFiles } from '../lib/short-titles-night.mjs';
+import { SHORT_TITLES_TREND_PATH } from '../lib/short-titles-summary.mjs';
 // Import-clean by contract: congress-fetch.mjs reads CONGRESS_API_KEY per
 // fetch, never at import, so pulling CONGRESS in here needs no secrets and
 // makes no network call. One definition of "the Congress we track" — bumping
@@ -322,6 +325,20 @@ if (!existsSync(MOMENT_UPDATES_PATH)) {
   }
 }
 
+// --- the record re-check's report file (2026-11-14) -------------------------
+// Written by the nightly comparison (scripts/moment-updates.mjs) and read by
+// pipeline-health; a malformed one would silence its alarms, so it does not
+// commit. Absent is normal.
+if (existsSync(RECHECK_REPORT_PATH)) {
+  let report;
+  try {
+    report = JSON.parse(readFileSync(RECHECK_REPORT_PATH, 'utf8'));
+  } catch (e) {
+    fail(`${RECHECK_REPORT_PATH} is not valid JSON (${e.message})`);
+  }
+  if (report !== undefined) for (const p of recheckReportProblems(report)) fail(p);
+}
+
 // --- floor signals: every T0 claim carries its own evidence -----------------
 //
 // data/floor-signals.json is written hourly by scripts/floor-signals.mjs and
@@ -409,31 +426,37 @@ if (!existsSync(CONVERSATION_PATH)) {
 // string of the record's, in code-point order; and, against HEAD, the bills
 // carrying a short title did not fall by more than 10% (one bill the record
 // stopped giving a short title is a note). data/short-titles-retry.json, the
-// bills whose last read failed, is checked beside it. Each is skipped cleanly
-// when it doesn't exist. The judgement lives in lib/short-titles.mjs.
-if (!existsSync(SHORT_TITLES_PATH)) {
-  console.log(`${SHORT_TITLES_PATH} not present — skipping the short-titles checks`);
-} else {
-  const shortTitles = parse(SHORT_TITLES_PATH, readFileSync(SHORT_TITLES_PATH, 'utf8'));
-  if (shortTitles !== null) {
-    let before = null;
+// bills whose last read failed, and data/short-titles-trend.json, the step's
+// 14-night history, are checked beside it. Each is skipped cleanly when it
+// doesn't exist. The judgement lives in lib/short-titles.mjs and
+// lib/short-titles-summary.mjs, reached through verifyShortTitlesFiles.
+{
+  // One function for all three files (lib/short-titles-night.mjs verifyShortTitlesFiles), the
+  // same verifyShortTitles the nightly step runs before it writes, so the two cannot disagree.
+  const readIf = (p) => (existsSync(p) ? parse(p, readFileSync(p, 'utf8')) : null);
+  const titles = readIf(SHORT_TITLES_PATH);
+  if (titles === null) console.log(`${SHORT_TITLES_PATH} not present (or not JSON, failed above) — skipping its checks`);
+  let before = null;
+  if (titles !== null) {
     try {
       before = JSON.parse(execSync(`git show HEAD:${SHORT_TITLES_PATH}`, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'ignore'] }));
     } catch {
       console.log(`HEAD:${SHORT_TITLES_PATH} not readable (not committed yet?) — the overnight comparison is skipped`);
     }
-    const { failures, notes } = verifyShortTitles({ data: shortTitles, bills: Array.isArray(bills) ? bills : [], before });
-    for (const n of notes) console.log(n);
-    for (const f of failures) fail(f);
   }
-}
-if (existsSync(SHORT_TITLES_RETRY_PATH)) {
-  const retries = parse(SHORT_TITLES_RETRY_PATH, readFileSync(SHORT_TITLES_RETRY_PATH, 'utf8'));
-  if (retries !== null) {
-    const { failures, notes } = verifyShortTitleRetries({ data: retries, bills: Array.isArray(bills) ? bills : [] });
-    for (const n of notes) console.log(n);
-    for (const f of failures) fail(f);
-  }
+  // The one-run override for a real mass change (docs/runbooks/new-congress-switch.md): set by a person on a
+  // manual dispatch, the same condition scripts/sync-short-titles.mjs reads; never honoured on a schedule.
+  const allowDrop = process.env.SHORT_TITLES_ALLOW_DROP === '1' && process.env.GITHUB_EVENT_NAME !== 'schedule';
+  const { failures, notes } = verifyShortTitlesFiles({
+    titles,
+    retry: readIf(SHORT_TITLES_RETRY_PATH),
+    trend: readIf(SHORT_TITLES_TREND_PATH),
+    bills: Array.isArray(bills) ? bills : [],
+    before,
+    allowDrop,
+  });
+  for (const n of notes) console.log(n);
+  for (const f of failures) fail(f);
 }
 
 // --- question-press: OPTIONAL evidence — it WARNS here and never fails -------

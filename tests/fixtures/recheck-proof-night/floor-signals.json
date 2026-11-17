@@ -1,0 +1,363 @@
+{
+  "_meta": {
+    "schema": "floor-signals/v1",
+    "fetched_at": "2026-11-15T02:19:20.766Z",
+    "sources": {
+      "daily-digest": {
+        "status": "ok",
+        "detail": "1 announced measure(s)/nomination(s)",
+        "checked_at": "2026-11-15T02:19:20.766Z",
+        "url": "https://www.govinfo.gov/content/pkg/CREC-2026-11-13/html/CREC-2026-11-13-pt1-PgD1021-6.htm",
+        "published": "2026-11-13",
+        "covers": "2026-11-16",
+        "covers_label": "3 p.m., Monday, November 16",
+        "via": "govinfo"
+      },
+      "billsthisweek": {
+        "status": "ok",
+        "detail": "15 scheduled measure(s)",
+        "checked_at": "2026-11-15T02:19:20.766Z",
+        "url": "https://docs.house.gov/billsthisweek/20261109/20261109.xml",
+        "published": "2026-11-09",
+        "covers": "2026-11-09",
+        "covers_label": null,
+        "via": "docs.house.gov"
+      }
+    },
+    "in_session": {
+      "senate": "in_session",
+      "house": "in_session",
+      "basis": "Daily Digest \"Program for\" blocks"
+    },
+    "next_meeting": {
+      "senate": {
+        "date": "2026-11-16",
+        "label": "3 p.m., Monday, November 16"
+      },
+      "house": {
+        "date": "2026-11-17",
+        "label": "12 noon, Tuesday, November 17"
+      }
+    },
+    "dropped": [
+      {
+        "source": "daily-digest",
+        "reason": "nomination_unroutable",
+        "slug": null,
+        "text": "Senate will resume consideration of the nomination"
+      },
+      {
+        "source": "daily-digest",
+        "reason": "nomination_unroutable",
+        "slug": null,
+        "text": "Following disposition of the nomination of Daniel Desmond Domenico,"
+      }
+    ]
+  },
+  "signals": {
+    "hr-1013-119": {
+      "tier0": {
+        "source": "billsthisweek",
+        "chamber": "house",
+        "quote": "Retirement Fairness for Charities and Educational Institutions Act of 2025",
+        "quote_lang": "en",
+        "quote_kind": "floor_text",
+        "announcement": "Items that may be considered pursuant to a rule",
+        "url": "https://docs.house.gov/billsthisweek/20261109/20261109.xml",
+        "published": "2026-11-05",
+        "covers": "2026-11-09",
+        "covers_label": null,
+        "track": "rule",
+        "certainty": "consideration"
+      },
+      "fetched_at": "2026-11-15T02:19:20.766Z",
+      "first_seen": "2026-11-09T06:12:48.451Z",
+      "stale": false
+    },
+    "hr-10238-119": {
+      "tier0": {
+        "source": "billsthisweek",
+        "chamber": "house",
+        "quote": "Cybersecurity for Small Businesses Act of 2026, as amended",
+        "quote_lang": "en",
+        "quote_kind": "floor_text",
+        "announcement": "Items that may be considered under suspension of the rules",
+        "url": "https://docs.house.gov/billsthisweek/20261109/20261109.xml",
+        "published": "2026-11-03",
+        "covers": "2026-11-09",
+        "covers_label": null,
+        "track": "suspension",
+        "certainty": "consideration"
+      },
+      "fetched_at": "2026-11-15T02:19:20.766Z",
+      "first_seen": "2026-11-09T06:12:48.451Z",
+      "stale": false
+    },
+    "hr-10329-119": {
+      "tier0": {
+        "source": "billsthisweek",
+        "chamber": "house",
+        "quote": "Combating Foreign Threats to Main Street Act of 2026",
+        "quote_lang": "en",
+        "quote_kind": "floor_text",
+        "announcement": "Items that may be considered under suspension of the rules",
+        "url": "https://docs.house.gov/billsthisweek/20261109/20261109.xml",
+        "published": "2026-11-03",
+        "covers": "2026-11-09",
+        "covers_label": null,
+        "track": "suspension",
+        "certainty": "consideration"
+      },
+      "fetched_at": "2026-11-15T02:19:20.766Z",
+      "first_seen": "2026-11-09T06:12:48.451Z",
+      "stale": false
+    },
+    "hr-10353-119": {
+      "tier0": {
+        "source": "billsthisweek",
+        "chamber": "house",
+        "quote": "SBIC Reporting Modernization Act of 2026",
+        "quote_lang": "en",
+        "quote_kind": "floor_text",
+        "announcement": "Items that may be considered under suspension of the rules",
+        "url": "https://docs.house.gov/billsthisweek/20261109/20261109.xml",
+        "published": "2026-11-03",
+        "covers": "2026-11-09",
+        "covers_label": null,
+        "track": "suspension",
+        "certainty": "consideration"
+      },
+      "fetched_at": "2026-11-15T02:19:20.766Z",
+      "first_seen": "2026-11-09T06:12:48.451Z",
+      "stale": false
+    },
+    "hr-10355-119": {
+      "tier0": {
+        "source": "billsthisweek",
+        "chamber": "house",
+        "quote": "Disaster Loan Outreach Consistency Act",
+        "quote_lang": "en",
+        "quote_kind": "floor_text",
+        "announcement": "Items that may be considered under suspension of the rules",
+        "url": "https://docs.house.gov/billsthisweek/20261109/20261109.xml",
+        "published": "2026-11-03",
+        "covers": "2026-11-09",
+        "covers_label": null,
+        "track": "suspension",
+        "certainty": "consideration"
+      },
+      "fetched_at": "2026-11-15T02:19:20.766Z",
+      "first_seen": "2026-11-09T06:12:48.451Z",
+      "stale": false
+    },
+    "hr-10371-119": {
+      "tier0": {
+        "source": "billsthisweek",
+        "chamber": "house",
+        "quote": "Ensuring SBA Implementation of GAO Recommendations Act of 2026",
+        "quote_lang": "en",
+        "quote_kind": "floor_text",
+        "announcement": "Items that may be considered under suspension of the rules",
+        "url": "https://docs.house.gov/billsthisweek/20261109/20261109.xml",
+        "published": "2026-11-03",
+        "covers": "2026-11-09",
+        "covers_label": null,
+        "track": "suspension",
+        "certainty": "consideration"
+      },
+      "fetched_at": "2026-11-15T02:19:20.766Z",
+      "first_seen": "2026-11-09T06:12:48.451Z",
+      "stale": false
+    },
+    "hr-10375-119": {
+      "tier0": {
+        "source": "billsthisweek",
+        "chamber": "house",
+        "quote": "504 Modernization and Small Manufacturer Enhancement Act, as amended",
+        "quote_lang": "en",
+        "quote_kind": "floor_text",
+        "announcement": "Items that may be considered under suspension of the rules",
+        "url": "https://docs.house.gov/billsthisweek/20261109/20261109.xml",
+        "published": "2026-11-03",
+        "covers": "2026-11-09",
+        "covers_label": null,
+        "track": "suspension",
+        "certainty": "consideration"
+      },
+      "fetched_at": "2026-11-15T02:19:20.766Z",
+      "first_seen": "2026-11-09T06:12:48.451Z",
+      "stale": false
+    },
+    "hr-2347-119": {
+      "tier0": {
+        "source": "daily-digest",
+        "chamber": "senate",
+        "quote": "Amendment No. 6883 to H.R. 2347, Survivor Justice Tax Prevention Act",
+        "quote_lang": "en",
+        "quote_kind": "digest_program_sentence",
+        "url": "https://www.govinfo.gov/content/pkg/CREC-2026-11-13/html/CREC-2026-11-13-pt1-PgD1021-6.htm",
+        "published": "2026-11-13",
+        "covers": "2026-11-16",
+        "covers_label": "3 p.m., Monday, November 16",
+        "track": "unspecified",
+        "certainty": "consideration"
+      },
+      "fetched_at": "2026-11-15T02:19:20.766Z",
+      "first_seen": "2026-11-14T11:25:14.228Z",
+      "stale": false
+    },
+    "hr-3978-119": {
+      "tier0": {
+        "source": "billsthisweek",
+        "chamber": "house",
+        "quote": "Nuclear REFUEL (Recycling Efficient Fuels Utilizing Expedited Licensing) Act, as amended",
+        "quote_lang": "en",
+        "quote_kind": "floor_text",
+        "announcement": "Items that may be considered under suspension of the rules",
+        "url": "https://docs.house.gov/billsthisweek/20261109/20261109.xml",
+        "published": "2026-11-03",
+        "covers": "2026-11-09",
+        "covers_label": null,
+        "track": "suspension",
+        "certainty": "consideration"
+      },
+      "fetched_at": "2026-11-15T02:19:20.766Z",
+      "first_seen": "2026-11-09T06:12:48.451Z",
+      "stale": false
+    },
+    "hr-5549-119": {
+      "tier0": {
+        "source": "billsthisweek",
+        "chamber": "house",
+        "quote": "Efficient Nuclear Licensing Hearings Act",
+        "quote_lang": "en",
+        "quote_kind": "floor_text",
+        "announcement": "Items that may be considered under suspension of the rules",
+        "url": "https://docs.house.gov/billsthisweek/20261109/20261109.xml",
+        "published": "2026-11-03",
+        "covers": "2026-11-09",
+        "covers_label": null,
+        "track": "suspension",
+        "certainty": "consideration"
+      },
+      "fetched_at": "2026-11-15T02:19:20.766Z",
+      "first_seen": "2026-11-09T06:12:48.451Z",
+      "stale": false
+    },
+    "hr-8552-119": {
+      "tier0": {
+        "source": "billsthisweek",
+        "chamber": "house",
+        "quote": "Veterans’ Compensation Cost-of-Living Adjustment Act of 2026",
+        "quote_lang": "en",
+        "quote_kind": "floor_text",
+        "announcement": "Items that may be considered under suspension of the rules",
+        "url": "https://docs.house.gov/billsthisweek/20261109/20261109.xml",
+        "published": "2026-11-04",
+        "covers": "2026-11-09",
+        "covers_label": null,
+        "track": "suspension",
+        "certainty": "consideration"
+      },
+      "fetched_at": "2026-11-15T02:19:20.766Z",
+      "first_seen": "2026-11-09T06:12:48.451Z",
+      "stale": false
+    },
+    "hr-9084-119": {
+      "tier0": {
+        "source": "billsthisweek",
+        "chamber": "house",
+        "quote": "Department of Energy Nuclear Transparency Act, as amended",
+        "quote_lang": "en",
+        "quote_kind": "floor_text",
+        "announcement": "Items that may be considered under suspension of the rules",
+        "url": "https://docs.house.gov/billsthisweek/20261109/20261109.xml",
+        "published": "2026-11-03",
+        "covers": "2026-11-09",
+        "covers_label": null,
+        "track": "suspension",
+        "certainty": "consideration"
+      },
+      "fetched_at": "2026-11-15T02:19:20.766Z",
+      "first_seen": "2026-11-09T06:12:48.451Z",
+      "stale": false
+    },
+    "hr-9612-119": {
+      "tier0": {
+        "source": "billsthisweek",
+        "chamber": "house",
+        "quote": "American Enrichment Deployment Act, as amended",
+        "quote_lang": "en",
+        "quote_kind": "floor_text",
+        "announcement": "Items that may be considered under suspension of the rules",
+        "url": "https://docs.house.gov/billsthisweek/20261109/20261109.xml",
+        "published": "2026-11-03",
+        "covers": "2026-11-09",
+        "covers_label": null,
+        "track": "suspension",
+        "certainty": "consideration"
+      },
+      "fetched_at": "2026-11-15T02:19:20.766Z",
+      "first_seen": "2026-11-09T06:12:48.451Z",
+      "stale": false
+    },
+    "hr-9613-119": {
+      "tier0": {
+        "source": "billsthisweek",
+        "chamber": "house",
+        "quote": "Nuclear Advisory Committee Reform Act, as amended",
+        "quote_lang": "en",
+        "quote_kind": "floor_text",
+        "announcement": "Items that may be considered under suspension of the rules",
+        "url": "https://docs.house.gov/billsthisweek/20261109/20261109.xml",
+        "published": "2026-11-03",
+        "covers": "2026-11-09",
+        "covers_label": null,
+        "track": "suspension",
+        "certainty": "consideration"
+      },
+      "fetched_at": "2026-11-15T02:19:20.766Z",
+      "first_seen": "2026-11-09T06:12:48.451Z",
+      "stale": false
+    },
+    "hr-9614-119": {
+      "tier0": {
+        "source": "billsthisweek",
+        "chamber": "house",
+        "quote": "NRC Staff Pay Alignment Act",
+        "quote_lang": "en",
+        "quote_kind": "floor_text",
+        "announcement": "Items that may be considered under suspension of the rules",
+        "url": "https://docs.house.gov/billsthisweek/20261109/20261109.xml",
+        "published": "2026-11-03",
+        "covers": "2026-11-09",
+        "covers_label": null,
+        "track": "suspension",
+        "certainty": "consideration"
+      },
+      "fetched_at": "2026-11-15T02:19:20.766Z",
+      "first_seen": "2026-11-09T06:12:48.451Z",
+      "stale": false
+    },
+    "hr-9718-119": {
+      "tier0": {
+        "source": "billsthisweek",
+        "chamber": "house",
+        "quote": "Reshoring American Manufacturing Act of 2026, as amended",
+        "quote_lang": "en",
+        "quote_kind": "floor_text",
+        "announcement": "Items that may be considered under suspension of the rules",
+        "url": "https://docs.house.gov/billsthisweek/20261109/20261109.xml",
+        "published": "2026-11-03",
+        "covers": "2026-11-09",
+        "covers_label": null,
+        "track": "suspension",
+        "certainty": "consideration"
+      },
+      "fetched_at": "2026-11-15T02:19:20.766Z",
+      "first_seen": "2026-11-09T06:12:48.451Z",
+      "stale": false
+    }
+  },
+  "nominations": {}
+}
