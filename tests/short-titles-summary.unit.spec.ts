@@ -428,6 +428,15 @@ test('round 6 (2): CI refuses a damaged history in a pull request, accepts a goo
     expect(bad.status).toBe(1);
     expect(bad.stderr).toContain('short-titles-trend.json');
     expect(run('{"nights": [').status).toBe(1);
+    // A valid retry file beside the history (the nightly writes one whenever a bill fails, so it is the usual
+    // state): a damaged history is still refused, and a good one still passes.
+    writeFileSync(join(dir, 'data/short-titles-retry.json'), '{}');
+    for (const damaged of ['', '{"nights": [', '[]', '{"nights":[{"day":"2026-11-17","titled":2,"bills":1}]}', '{"nights":"x"}']) {
+      const r = run(damaged);
+      expect(r.status, `damaged history ${JSON.stringify(damaged)} beside a valid retry file`).toBe(1);
+      expect(r.stderr).toContain('short-titles-trend.json');
+    }
+    expect(run(serializeTrend({ nights: [{ day: '2026-11-17', titled: 1, bills: 1 }] })).status).toBe(0);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

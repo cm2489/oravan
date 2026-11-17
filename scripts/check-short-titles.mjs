@@ -105,7 +105,8 @@ if (existsSync(SHORT_TITLES_RETRY_PATH)) {
     const { failures, notes } = verifyShortTitleRetries({ data: JSON.parse(readFileSync(SHORT_TITLES_RETRY_PATH, 'utf8')), bills });
     for (const n of notes) console.log(n);
     for (const f of failures) console.error(`::error::${f}`);
-    sideFilesFailed = failures.length > 0;
+    // `||=`, never `=`: a clean retry file must not erase a failure the history check above already recorded.
+    sideFilesFailed ||= failures.length > 0;
   } catch (e) {
     console.error(`::error::${SHORT_TITLES_RETRY_PATH} does not parse as JSON: ${e.message}`);
     sideFilesFailed = true;
