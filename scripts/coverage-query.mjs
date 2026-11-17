@@ -239,7 +239,8 @@ export function readRateLimitRemaining(headers) {
  *      only when the reply is a COMPLETE, WELL-FORMED answer (gateAnswered:
  *      the API says the model finished, and the text is exactly "none" or a
  *      comma-separated list of in-range indexes). A truncated, off-script or
- *      empty reply erases nothing.
+ *      empty reply erases nothing — and, since 2026-11-17, adds nothing
+ *      either (gateVerdict).
  *   9. The date-sorted pass is measured by lean against the whole-life pass on
  *      the same bills every night, and a shift past LEAN_DRIFT raises a
  *      ::warning:: that lib/pipeline-health.mjs turns into a ⛔ (leanDrift).
@@ -610,12 +611,13 @@ export function withoutRejected(stored, rejected) {
  * Is this gate reply a COMPLETE, WELL-FORMED answer? Only such a reply may
  * DELETE stored coverage (withoutRejected).
  *
- * This is deliberately stricter than parseKeptIndexes. That parser reads any
- * in-range number out of any reply, and it still decides what tonight KEEPS,
- * unchanged, so what a night adds is exactly what it added before. Dropping a
- * stored article is different: nothing on a later night brings it back unless
- * a later search happens to return it again. So a drop needs the exact reply
- * relevancePrompt asks for, and nothing else:
+ * Since 2026-11-17 it also decides whether a reply may ADD anything
+ * (gateVerdict). Until then what a night kept was read by parseKeptIndexes
+ * alone, which takes any in-range number out of any reply, so prose such as
+ * "Article 1 is about the bill, article 2 is not" kept both. Dropping a
+ * stored article needs the same care: nothing on a later night brings it
+ * back unless a later search happens to return it again. So a keep and a
+ * drop both need the exact reply relevancePrompt asks for, and nothing else:
  *   - `stopReason` must be "end_turn", meaning the model finished. A reply cut
  *     off at max_tokens is not an answer ("0, 3, 1" may have been going to be
  *     "0, 3, 12"), and neither is a refusal. A missing stop reason is
@@ -626,8 +628,8 @@ export function withoutRejected(stored, rejected) {
  *     These all fail: "0, 3 — the rest are about other bills",
  *     "Articles 2 and 4", "none of 0-24", "7, 9" when 5 were shown, "0, 3,",
  *     and "none" followed by an explanation.
- * Any other reply keeps every stored article. The DONE line counts it as a
- * reply that was not complete and well-formed.
+ * Any other reply adds nothing and keeps every stored article. The DONE and
+ * GATE lines count it as a reply that was not a clean list.
  *
  * @param {string|null|undefined} text
  * @param {number} n candidates shown
@@ -689,7 +691,9 @@ Below are news articles, each with its publication date in brackets. Return ONLY
 ${list}`;
 }
 
-/** The article indexes a gate reply keeps — in range, deduped. */
+/** The in-range indexes in a gate reply, deduped. It reads numbers out of
+ *  ANY text, so on its own it must never decide what a night keeps: call it
+ *  only on a reply gateAnswered has accepted (gateVerdict does). */
 export function parseKeptIndexes(text, n) {
   return new Set(
     String(text ?? '')
@@ -698,6 +702,67 @@ export function parseKeptIndexes(text, n) {
       .filter(Boolean)
       .map(Number)
       .filter((i) => i >= 0 && i < n),
+  );
+}
+
+/** The text of a gate response's first content block ('' when it is not text). */
+function gateText(msg) {
+  const block = Array.isArray(msg?.content) ? msg.content[0] : null;
+  return block?.type === 'text' && typeof block.text === 'string' ? block.text : '';
+}
+
+/**
+ * WHAT ONE GATE REPLY DECIDES — the pure half of sync-coverage.mjs's
+ * filterRelevant, so it can be tested without running the nightly.
+ *
+ * A clean reply (one text block, the model finished, and gateAnswered accepts
+ * the text: exactly "none" or a comma-separated list of in-range indexes)
+ * keeps exactly the articles it names and rejects every other article it was
+ * shown; the caller drops a stored article only when it is among `rejected`.
+ *
+ * ANY OTHER REPLY KEEPS NOTHING AND REJECTS NOTHING (2026-11-17). Before
+ * that, an unclean reply still kept every in-range number found anywhere in
+ * it, so a prose reply naming each article in turn ("Article 0 is about…,
+ * article 1 is not…") kept them all. A night that cannot read the gate's
+ * answer now adds nothing for that bill and leaves what is stored exactly as
+ * it was; the bill is asked again on a later night.
+ *
+ * @template A
+ * @param {{ content?: unknown, stop_reason?: string|null }|null|undefined} msg the API response
+ * @param {A[]} candidates the articles the prompt showed, in its order
+ * @returns {{ kept: A[], rejected: A[], answered: boolean }}
+ */
+export function gateVerdict(msg, candidates) {
+  const n = Array.isArray(candidates) ? candidates.length : 0;
+  const answered =
+    n > 0 &&
+    Array.isArray(msg?.content) &&
+    msg.content.length === 1 &&
+    gateAnswered(gateText(msg), n, { stopReason: msg?.stop_reason });
+  if (!answered) return { kept: [], rejected: [], answered: false };
+  const keep = parseKeptIndexes(gateText(msg), n);
+  return {
+    kept: candidates.filter((_, i) => keep.has(i)),
+    rejected: candidates.filter((_, i) => !keep.has(i)),
+    answered: true,
+  };
+}
+
+/**
+ * The log line for a gate reply that was not a clean list: the bill, the
+ * stop reason, how many content blocks came back, and the first 120
+ * characters of the reply's text on one line. The reply is model output
+ * about public news headlines; the prompt and any key are never in it.
+ *
+ * @param {string} slug
+ * @param {{ content?: unknown, stop_reason?: string|null }|null|undefined} msg
+ */
+export function uncleanGateLine(slug, msg) {
+  const blocks = Array.isArray(msg?.content) ? msg.content.length : 0;
+  const text = gateText(msg).replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 120);
+  return (
+    `gate reply not a clean list: ${slug} (stop_reason: ${msg?.stop_reason ?? 'missing'}` +
+    `${blocks === 1 ? '' : `, ${blocks} content blocks`}): "${text}" — nothing kept, nothing dropped`
   );
 }
 
