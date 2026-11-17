@@ -20,9 +20,11 @@ import {
   KEPT_RELATION_TYPES,
   emptyRelatedBills,
   identicalFromRecord,
+  recordAnswerProblem,
   twinsOf,
   verifyRelatedBills,
 } from '../lib/related-bills.mjs';
+import realAnswers from './fixtures/congress-gov-relatedbills-2026-11-17.json';
 
 import type { CoverageArticle, Lean } from '../lib/types';
 
@@ -85,6 +87,21 @@ test.describe('which bills are twins: the record, "Identical bill" only', () => 
     );
     expect(rows).toEqual([{ slug: 's-20-119', type: 'Identical bill', identifiedBy: ['CRS', 'House'] }]);
     expect(KEPT_RELATION_TYPES).toEqual(['Identical bill']);
+  });
+
+  test('REAL Congress.gov answers (2026-11-17): "none" is relatedBills: [], and every answer passes the shape rule', () => {
+    // A bill with no related bills: the list is present and empty, so it is a
+    // real "no twin", not a failed lookup.
+    expect(realAnswers['hr-10817-119'].relatedBills).toEqual([]);
+    expect(realAnswers['hr-10817-119'].pagination).toEqual({ count: 0 });
+    for (const slug of ['hr-5408-119', 'hr-10780-119', 'hr-10817-119'] as const) {
+      expect(recordAnswerProblem(realAnswers[slug]), slug).toBeNull();
+    }
+    expect(identicalFromRecord(realAnswers['hr-10817-119'], 'hr-10817-119')).toEqual([]);
+    // Only "Related bill" entries: no twin.
+    expect(identicalFromRecord(realAnswers['hr-10780-119'], 'hr-10780-119')).toEqual([]);
+    // An "Identical bill" beside a procedural "Related bill" (the House rule): only the twin.
+    expect(identicalFromRecord(realAnswers['hr-5408-119'], 'hr-5408-119')).toEqual([{ slug: 's-844-119', type: 'Identical bill', identifiedBy: ['CRS'] }]);
   });
 
   test("a bill that is its own twin's twin does not loop, and a twin's twin is not followed", () => {

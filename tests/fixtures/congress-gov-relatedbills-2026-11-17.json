@@ -1,0 +1,125 @@
+{
+ "_note": "Real Congress.gov answers to GET /v3/bill/119/hr/{n}/relatedbills?limit=250&format=json, read on 2026-11-17 through scripts/sync-related.mjs's own request (3 requests, no cost). Trimmed only by removing each entry's latestAction, which the reader does not use and which changes over time. H.R. 10817 has no related bills: relatedBills is present and is []. H.R. 10780 has only \"Related bill\" entries. H.R. 5408 has an \"Identical bill\" (S. 844).",
+ "hr-5408-119": {
+  "pagination": {
+   "count": 2
+  },
+  "relatedBills": [
+   {
+    "congress": 119,
+    "number": 844,
+    "relationshipDetails": [
+     {
+      "identifiedBy": "CRS",
+      "type": "Identical bill"
+     }
+    ],
+    "title": "Faster Labor Contracts Act",
+    "type": "S",
+    "url": "https://api.congress.gov/v3/bill/119/s/844?format=json"
+   },
+   {
+    "congress": 119,
+    "number": 1140,
+    "relationshipDetails": [
+     {
+      "identifiedBy": "House",
+      "type": "Related bill"
+     }
+    ],
+    "title": "Providing for consideration of the bill (H.R. 5408) to accelerate workplace time-to-contract under the National Labor Relations Act.",
+    "type": "HRES",
+    "url": "https://api.congress.gov/v3/bill/119/hres/1140?format=json"
+   }
+  ],
+  "request": {
+   "billNumber": "5408",
+   "billType": "hr",
+   "billUrl": "https://api.congress.gov/v3/bill/119/hr/5408?format=json",
+   "congress": "119",
+   "contentType": "application/json",
+   "format": "json"
+  }
+ },
+ "hr-10780-119": {
+  "pagination": {
+   "count": 4
+  },
+  "relatedBills": [
+   {
+    "congress": 119,
+    "number": 4642,
+    "relationshipDetails": [
+     {
+      "identifiedBy": "CRS",
+      "type": "Related bill"
+     }
+    ],
+    "title": "Fiscal Contingency Preparedness Act",
+    "type": "HR",
+    "url": "https://api.congress.gov/v3/bill/119/hr/4642?format=json"
+   },
+   {
+    "congress": 119,
+    "number": 2492,
+    "relationshipDetails": [
+     {
+      "identifiedBy": "CRS",
+      "type": "Related bill"
+     }
+    ],
+    "title": "Fiscal Contingency Preparedness Act",
+    "type": "S",
+    "url": "https://api.congress.gov/v3/bill/119/s/2492?format=json"
+   },
+   {
+    "congress": 119,
+    "number": 5870,
+    "relationshipDetails": [
+     {
+      "identifiedBy": "CRS",
+      "type": "Related bill"
+     }
+    ],
+    "title": "Prevent Government Shutdowns Act",
+    "type": "HR",
+    "url": "https://api.congress.gov/v3/bill/119/hr/5870?format=json"
+   },
+   {
+    "congress": 119,
+    "number": 4632,
+    "relationshipDetails": [
+     {
+      "identifiedBy": "CRS",
+      "type": "Related bill"
+     }
+    ],
+    "title": "Prevent Government Shutdowns Act of 2026",
+    "type": "S",
+    "url": "https://api.congress.gov/v3/bill/119/s/4632?format=json"
+   }
+  ],
+  "request": {
+   "billNumber": "10780",
+   "billType": "hr",
+   "billUrl": "https://api.congress.gov/v3/bill/119/hr/10780?format=json",
+   "congress": "119",
+   "contentType": "application/json",
+   "format": "json"
+  }
+ },
+ "hr-10817-119": {
+  "pagination": {
+   "count": 0
+  },
+  "relatedBills": [],
+  "request": {
+   "billNumber": "10817",
+   "billType": "hr",
+   "billUrl": "https://api.congress.gov/v3/bill/119/hr/10817?format=json",
+   "congress": "119",
+   "contentType": "application/json",
+   "format": "json"
+  }
+ }
+}
