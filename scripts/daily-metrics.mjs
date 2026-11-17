@@ -157,13 +157,7 @@ import {
   spikeIssueContent,
   sumWindows,
 } from '../lib/traffic-metrics.mjs';
-import {
-  HEALTH_ISSUE_LABEL,
-  HEALTH_ISSUE_TITLE,
-  formatHealthAlarmComment,
-  formatHealthIssueBody,
-  formatHealthSection,
-} from '../lib/pipeline-health.mjs';
+import { formatHealthSection, lastWorkflowComment, workflowCommentWith, maintainHealthIssue as maintainHealthIssueWith } from '../lib/pipeline-health.mjs';
 import { buildReport } from './pipeline-health.mjs';
 
 const REPO = 'cm2489/oravan';
@@ -254,7 +248,10 @@ function findOpenDeclineIssue(series) {
 function hasCommentWithMarker(issueNumber, marker) {
   const raw = gh(['issue', 'view', String(issueNumber), '--repo', REPO, '--json', 'comments']).trim();
   const comments = JSON.parse(raw).comments ?? [];
-  return comments.some((c) => typeof c.body === 'string' && c.body.includes(marker));
+  // Only this workflow's own comments count (byWorkflow): on a public
+  // repository anyone can comment, and a marker in their comment must not
+  // silence the day's comment.
+  return workflowCommentWith(comments, marker) !== null;
 }
 
 /**
@@ -437,77 +434,9 @@ function collectPipelineHealth() {
  * never be able to cost the job.
  */
 function maintainHealthIssue(report) {
-  try {
-    const raw = gh([
-      'issue',
-      'list',
-      '--repo',
-      REPO,
-      '--state',
-      'open',
-      '--search',
-      `in:title "${HEALTH_ISSUE_TITLE}"`,
-      '--json',
-      'number,title,url',
-    ]).trim();
-    const matches = raw ? JSON.parse(raw) : [];
-    const existing = matches.find((m) => m.title === HEALTH_ISSUE_TITLE) ?? null;
-    const bodyFile = writeTempFile(formatHealthIssueBody(report));
-
-    let issueNumber;
-    let issueUrl;
-    if (existing) {
-      gh(['issue', 'edit', String(existing.number), '--repo', REPO, '--body-file', bodyFile]);
-      issueNumber = existing.number;
-      issueUrl = existing.url;
-      console.log(`pipeline health: standing issue #${issueNumber} body rewritten`);
-    } else {
-      issueUrl = gh([
-        'issue',
-        'create',
-        '--repo',
-        REPO,
-        '--title',
-        HEALTH_ISSUE_TITLE,
-        '--label',
-        HEALTH_ISSUE_LABEL,
-        '--body-file',
-        bodyFile,
-      ]).trim();
-      issueNumber = Number.parseInt(issueUrl.split('/').pop() ?? '', 10);
-      console.log(`pipeline health: opened the standing issue ${issueUrl}`);
-      // Pinning is best-effort: GitHub allows at most three pinned issues per
-      // repo, so a full board must not turn a healthy run red.
-      try {
-        gh(['issue', 'pin', '--repo', REPO, String(issueNumber)]);
-      } catch (e) {
-        console.log(`::warning::pipeline health: could not pin the standing issue (${e.message}) — body is still current.`);
-      }
-    }
-
-    const list = report.alarms ?? [];
-    if (!list.length) {
-      console.log('pipeline health: no ⛔ conditions — body refreshed, no comment posted');
-      return issueUrl;
-    }
-    const date = (report.generatedAt ?? new Date().toISOString()).slice(0, 10);
-    const marker = `<!-- pipeline-health:${date} -->`;
-    if (Number.isFinite(issueNumber) && hasCommentWithMarker(issueNumber, marker)) {
-      console.log(`pipeline health: today's (${date}) ⛔ comment already posted — body refreshed only`);
-      return issueUrl;
-    }
-    const commentFile = writeTempFile(
-      formatHealthAlarmComment({ date, alarms: list, runUrl: process.env.HEALTH_RUN_URL })
-    );
-    gh(['issue', 'comment', String(issueNumber), '--repo', REPO, '--body-file', commentFile]);
-    console.log(`pipeline health: ${list.length} ⛔ condition(s) — dated comment appended to ${issueUrl}`);
-    return issueUrl;
-  } catch (e) {
-    console.log(
-      `::warning::pipeline health: the standing issue could not be maintained (${e.message}) — the digest comment still carries the section.`
-    );
-    return null;
-  }
+  // The sequence lives in lib/pipeline-health.mjs (maintainHealthIssue), with
+  // gh passed in, so it is tested as it runs here.
+  return maintainHealthIssueWith(report, { gh, repo: REPO, writeTempFile, runUrl: process.env.HEALTH_RUN_URL ?? null });
 }
 
 /**
@@ -523,8 +452,10 @@ function maintainHealthIssue(report) {
 function postOrEditTodaysComment(issueNumber, date, body) {
   const marker = `<!-- daily-metrics:${date} -->`;
   const commentsRaw = gh(['issue', 'view', issueNumber, '--repo', REPO, '--json', 'comments']).trim();
-  const comments = JSON.parse(commentsRaw).comments ?? [];
-  const last = comments[comments.length - 1];
+  // This workflow's own last comment (byWorkflow): `--edit-last` edits the
+  // last comment by the account it runs as, and someone else's comment
+  // carrying today's marker must not stand in for it.
+  const last = lastWorkflowComment(JSON.parse(commentsRaw).comments);
   const bodyFile = writeTempFile(body);
   if (last && typeof last.body === 'string' && last.body.includes(marker)) {
     gh(['issue', 'comment', issueNumber, '--repo', REPO, '--edit-last', '--body-file', bodyFile]);

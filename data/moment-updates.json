@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-11-14T11:25:20.953Z"
+    "generated_at": "2026-11-17T13:14:30.684Z"
   },
   "government-funding-deadline": {
     "updates": [],
@@ -362,63 +362,6 @@
           "action_code": null,
           "action_type": "Discharge",
           "source_system": "Senate"
-        },
-        "ai": false
-      },
-      {
-        "id": "u_470e18ff",
-        "class": "floor_action",
-        "vehicle": "hconres-93-119",
-        "day": "2026-09-16",
-        "occurred_at": "2026-09-16",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-25T13:41:33.041Z",
-        "text": {
-          "en": "“Received in the Senate and referred to the Committee on Foreign Relations.”",
-          "es": "Registro oficial, en inglés: “Received in the Senate and referred to the Committee on Foreign Relations.”"
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/93"
-          ]
-        },
-        "record": {
-          "action_text": "Received in the Senate and referred to the Committee on Foreign Relations.",
-          "action_code": null,
-          "action_type": "IntroReferral",
-          "source_system": "Senate"
-        },
-        "ai": false
-      },
-      {
-        "id": "u_06fa2260",
-        "class": "vote",
-        "vehicle": "hconres-93-119",
-        "day": "2026-09-15",
-        "occurred_at": "2026-09-15",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-25T13:41:33.041Z",
-        "text": {
-          "en": "“On agreeing to the resolution Agreed to by the Yeas and Nays: 220 - 204 (Roll no. 307). (text: CR H5609)”",
-          "es": "Registro oficial, en inglés: “On agreeing to the resolution Agreed to by the Yeas and Nays: 220 - 204 (Roll no. 307). (text: CR H5609)”"
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/93",
-            "https://clerk.house.gov/evs/2026/roll307.xml"
-          ]
-        },
-        "record": {
-          "action_text": "On agreeing to the resolution Agreed to by the Yeas and Nays: 220 - 204 (Roll no. 307). (text: CR H5609)",
-          "action_code": "H37100",
-          "action_type": "Floor",
-          "source_system": "House floor actions",
-          "roll_call": {
-            "chamber": "house",
-            "number": 307
-          }
         },
         "ai": false
       }
@@ -795,9 +738,7 @@
           },
           "update_ids": [
             "u_40aa8bf1",
-            "u_fe66be12",
-            "u_470e18ff",
-            "u_06fa2260"
+            "u_fe66be12"
           ],
           "roll_calls": [
             "s-119-2-244",
@@ -851,9 +792,7 @@
           },
           "update_ids": [
             "u_40aa8bf1",
-            "u_fe66be12",
-            "u_470e18ff",
-            "u_06fa2260"
+            "u_fe66be12"
           ],
           "roll_calls": [
             "s-119-2-244",
@@ -913,9 +852,7 @@
           },
           "update_ids": [
             "u_40aa8bf1",
-            "u_fe66be12",
-            "u_470e18ff",
-            "u_06fa2260"
+            "u_fe66be12"
           ],
           "roll_calls": [
             "s-119-2-244",
@@ -1859,198 +1796,6 @@
           "source_system": "Senate"
         },
         "ai": false
-      },
-      {
-        "id": "u_a3cc6ca3",
-        "class": "vote",
-        "vehicle": "s-4668-119",
-        "day": "2026-09-17",
-        "occurred_at": "2026-09-17",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-18T14:29:25.757Z",
-        "text": {
-          "en": "On September 17, 2026, the Senate agreed to the motion to proceed to S. 4668 by a vote of 77-22, Record Vote Number 236.",
-          "es": "El 17 de septiembre de 2026, el Senado aprobó la moción de proceder a S. 4668 con una votación de 77-22, número de votación 236."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/senate-bill/4668",
-            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00236.xml"
-          ]
-        },
-        "record": {
-          "action_text": "Motion to proceed to consideration of measure agreed to in Senate by Yea-Nay Vote. 77 - 22. Record Vote Number: 236.",
-          "action_code": null,
-          "action_type": "Floor",
-          "source_system": "Senate",
-          "roll_call": {
-            "chamber": "senate",
-            "number": 236
-          }
-        },
-        "ai": true
-      },
-      {
-        "id": "u_682cca41",
-        "class": "floor_action",
-        "vehicle": "s-4668-119",
-        "day": "2026-09-17",
-        "occurred_at": "2026-09-17",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-18T14:29:25.757Z",
-        "text": {
-          "en": "On September 17, 2026, the Senate presented a cloture motion on amendment SA 6776 to S. 4668.",
-          "es": "El 17 de septiembre de 2026, el Senado presentó una moción de cierre sobre la enmienda SA 6776 a S. 4668."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
-          ]
-        },
-        "record": {
-          "action_text": "Cloture motion on amendment SA 6776 presented in Senate.",
-          "action_code": null,
-          "action_type": "Floor",
-          "source_system": "Senate"
-        },
-        "ai": true
-      },
-      {
-        "id": "u_86b9e54f",
-        "class": "floor_action",
-        "vehicle": "s-4668-119",
-        "day": "2026-09-17",
-        "occurred_at": "2026-09-17",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-18T14:29:25.757Z",
-        "text": {
-          "en": "On September 17, 2026, the Senate considered the motion to proceed to S. 4668.",
-          "es": "El 17 de septiembre de 2026, el Senado consideró la moción de proceder a S. 4668."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
-          ]
-        },
-        "record": {
-          "action_text": "Motion to proceed to measure considered in Senate.",
-          "action_code": null,
-          "action_type": "Floor",
-          "source_system": "Senate"
-        },
-        "ai": true
-      },
-      {
-        "id": "u_f0db9993",
-        "class": "floor_action",
-        "vehicle": "s-4668-119",
-        "day": "2026-09-17",
-        "occurred_at": "2026-09-17",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-18T14:29:25.757Z",
-        "text": {
-          "en": "On September 17, 2026, the Senate presented a cloture motion on S. 4668.",
-          "es": "El 17 de septiembre de 2026, el Senado presentó una moción de cierre sobre S. 4668."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
-          ]
-        },
-        "record": {
-          "action_text": "Cloture motion on the measure presented in Senate.",
-          "action_code": null,
-          "action_type": "Floor",
-          "source_system": "Senate"
-        },
-        "ai": true
-      },
-      {
-        "id": "u_732a58b6",
-        "class": "floor_action",
-        "vehicle": "s-4668-119",
-        "day": "2026-09-16",
-        "occurred_at": "2026-09-16",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-17T16:56:55.134Z",
-        "text": {
-          "en": "On September 16, 2026, the Senate considered a motion to proceed to S. 4668.",
-          "es": "El 16 de septiembre de 2026, el Senado consideró una moción para pasar a S. 4668."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
-          ]
-        },
-        "record": {
-          "action_text": "Motion to proceed to measure considered in Senate.",
-          "action_code": null,
-          "action_type": "Floor",
-          "source_system": "Senate"
-        },
-        "ai": true
-      },
-      {
-        "id": "u_317b9dc8",
-        "class": "vote",
-        "vehicle": "s-4668-119",
-        "day": "2026-09-15",
-        "occurred_at": "2026-09-15",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-16T18:11:24.823Z",
-        "text": {
-          "en": "The Senate invoked cloture on the motion to proceed to S. 4668 on September 15, 2026, by a vote of 74-24 (Record Vote Number 235).",
-          "es": "El Senado invocó la clausura sobre la moción de proceder a S. 4668 el 15 de septiembre de 2026, por una votación de 74-24 (Voto de Registro Número 235)."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/senate-bill/4668",
-            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00235.xml"
-          ]
-        },
-        "record": {
-          "action_text": "Cloture on the motion to proceed to the measure invoked in Senate by Yea-Nay Vote. 74 - 24. Record Vote Number: 235.",
-          "action_code": null,
-          "action_type": "Floor",
-          "source_system": "Senate",
-          "roll_call": {
-            "chamber": "senate",
-            "number": 235
-          }
-        },
-        "ai": true
-      },
-      {
-        "id": "u_04053945",
-        "class": "floor_action",
-        "vehicle": "s-4668-119",
-        "day": "2026-09-15",
-        "occurred_at": "2026-09-15",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-18T14:29:25.757Z",
-        "text": {
-          "en": "On September 15, 2026, the Senate considered the motion to proceed to S. 4668.",
-          "es": "El 15 de septiembre de 2026, el Senado consideró la moción de proceder a S. 4668."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
-          ]
-        },
-        "record": {
-          "action_text": "Motion to proceed to measure considered in Senate.",
-          "action_code": null,
-          "action_type": "Floor",
-          "source_system": "Senate"
-        },
-        "ai": true
       }
     ],
     "summary_revisions": [
@@ -2198,10 +1943,7 @@
           "vehicle_statuses": {
             "s-4668-119": "floor_vote"
           },
-          "update_ids": [
-            "u_732a58b6",
-            "u_317b9dc8"
-          ],
+          "update_ids": [],
           "refs": [
             "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
           ]
@@ -2223,15 +1965,7 @@
           "vehicle_statuses": {
             "s-4668-119": "floor_vote"
           },
-          "update_ids": [
-            "u_a3cc6ca3",
-            "u_682cca41",
-            "u_86b9e54f",
-            "u_f0db9993",
-            "u_732a58b6",
-            "u_317b9dc8",
-            "u_04053945"
-          ],
+          "update_ids": [],
           "refs": [
             "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
           ]
@@ -2255,14 +1989,7 @@
           },
           "update_ids": [
             "u_fcb078e5",
-            "u_c6a1ebcb",
-            "u_a3cc6ca3",
-            "u_682cca41",
-            "u_86b9e54f",
-            "u_f0db9993",
-            "u_732a58b6",
-            "u_317b9dc8",
-            "u_04053945"
+            "u_c6a1ebcb"
           ],
           "refs": [
             "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
@@ -2288,14 +2015,7 @@
           },
           "update_ids": [
             "u_fcb078e5",
-            "u_c6a1ebcb",
-            "u_a3cc6ca3",
-            "u_682cca41",
-            "u_86b9e54f",
-            "u_f0db9993",
-            "u_732a58b6",
-            "u_317b9dc8",
-            "u_04053945"
+            "u_c6a1ebcb"
           ],
           "refs": [
             "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
@@ -2326,14 +2046,7 @@
             "u_fcb078e5",
             "u_53ca06ca",
             "u_c6a1ebcb",
-            "u_fa1d2a34",
-            "u_a3cc6ca3",
-            "u_682cca41",
-            "u_86b9e54f",
-            "u_f0db9993",
-            "u_732a58b6",
-            "u_317b9dc8",
-            "u_04053945"
+            "u_fa1d2a34"
           ],
           "roll_calls": [
             "s-119-2-243",
@@ -2371,14 +2084,7 @@
             "u_fcb078e5",
             "u_53ca06ca",
             "u_c6a1ebcb",
-            "u_fa1d2a34",
-            "u_a3cc6ca3",
-            "u_682cca41",
-            "u_86b9e54f",
-            "u_f0db9993",
-            "u_732a58b6",
-            "u_317b9dc8",
-            "u_04053945"
+            "u_fa1d2a34"
           ],
           "roll_calls": [
             "s-119-2-243",
@@ -2416,14 +2122,7 @@
             "u_fcb078e5",
             "u_53ca06ca",
             "u_c6a1ebcb",
-            "u_fa1d2a34",
-            "u_a3cc6ca3",
-            "u_682cca41",
-            "u_86b9e54f",
-            "u_f0db9993",
-            "u_732a58b6",
-            "u_317b9dc8",
-            "u_04053945"
+            "u_fa1d2a34"
           ],
           "roll_calls": [
             "s-119-2-243",
@@ -2472,14 +2171,7 @@
             "u_fcb078e5",
             "u_53ca06ca",
             "u_c6a1ebcb",
-            "u_fa1d2a34",
-            "u_a3cc6ca3",
-            "u_682cca41",
-            "u_86b9e54f",
-            "u_f0db9993",
-            "u_732a58b6",
-            "u_317b9dc8",
-            "u_04053945"
+            "u_fa1d2a34"
           ],
           "roll_calls": [
             "s-119-2-248",
@@ -2538,14 +2230,7 @@
             "u_fcb078e5",
             "u_53ca06ca",
             "u_c6a1ebcb",
-            "u_fa1d2a34",
-            "u_a3cc6ca3",
-            "u_682cca41",
-            "u_86b9e54f",
-            "u_f0db9993",
-            "u_732a58b6",
-            "u_317b9dc8",
-            "u_04053945"
+            "u_fa1d2a34"
           ],
           "roll_calls": [
             "s-119-2-250",
@@ -2612,14 +2297,7 @@
             "u_fcb078e5",
             "u_53ca06ca",
             "u_c6a1ebcb",
-            "u_fa1d2a34",
-            "u_a3cc6ca3",
-            "u_682cca41",
-            "u_86b9e54f",
-            "u_f0db9993",
-            "u_732a58b6",
-            "u_317b9dc8",
-            "u_04053945"
+            "u_fa1d2a34"
           ],
           "roll_calls": [
             "s-119-2-250",
@@ -3028,65 +2706,7 @@
     }
   },
   "crypto-oversight-split-between-sec-and-cftc": {
-    "updates": [
-      {
-        "id": "u_0f663f8a",
-        "class": "vote",
-        "vehicle": "hr-3633-119",
-        "day": "2026-09-15",
-        "occurred_at": "2026-09-15",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-16T18:11:24.823Z",
-        "text": {
-          "en": "The Senate did not invoke cloture on the motion to proceed to H.R. 3633 on September 15, 2026, by a vote of 49-50 (Record Vote Number 234).",
-          "es": "El Senado no invocó la clausura sobre la moción de proceder a H.R. 3633 el 15 de septiembre de 2026, por una votación de 49-50 (Voto de Registro Número 234)."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/house-bill/3633",
-            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00234.xml"
-          ]
-        },
-        "record": {
-          "action_text": "Cloture on the motion to proceed to the measure not invoked in Senate by Yea-Nay Vote. 49 - 50. Record Vote Number: 234.",
-          "action_code": null,
-          "action_type": "Floor",
-          "source_system": "Senate",
-          "roll_call": {
-            "chamber": "senate",
-            "number": 234
-          }
-        },
-        "ai": true
-      },
-      {
-        "id": "u_ee8fd160",
-        "class": "floor_action",
-        "vehicle": "hr-3633-119",
-        "day": "2026-09-15",
-        "occurred_at": "2026-09-15",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-16T18:11:24.823Z",
-        "text": {
-          "en": "Senator Tillis entered a motion to reconsider the vote on cloture for H.R. 3633 (Record Vote Number 234) on September 15, 2026.",
-          "es": "El senador Tillis presentó una moción para reconsiderar la votación sobre clausura para H.R. 3633 (Voto de Registro Número 234) el 15 de septiembre de 2026."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/house-bill/3633"
-          ]
-        },
-        "record": {
-          "action_text": "Motion by Senator Tillis to reconsider the vote by which cloture on the motion to proceed to the measure was not invoked (Record Vote No. 234) entered in Senate.",
-          "action_code": null,
-          "action_type": "Floor",
-          "source_system": "Senate"
-        },
-        "ai": true
-      }
-    ],
+    "updates": [],
     "summary_revisions": [
       {
         "id": "s_5acd8314",
@@ -3210,10 +2830,7 @@
           "vehicle_statuses": {
             "hr-3633-119": "floor_vote"
           },
-          "update_ids": [
-            "u_0f663f8a",
-            "u_ee8fd160"
-          ],
+          "update_ids": [],
           "refs": [
             "https://www.congress.gov/bill/119th-congress/house-bill/3633"
           ]
@@ -3235,10 +2852,7 @@
           "vehicle_statuses": {
             "hr-3633-119": "floor_vote"
           },
-          "update_ids": [
-            "u_0f663f8a",
-            "u_ee8fd160"
-          ],
+          "update_ids": [],
           "refs": [
             "https://www.congress.gov/bill/119th-congress/house-bill/3633"
           ]
@@ -3359,32 +2973,6 @@
           "source_system": "Senate"
         },
         "ai": true
-      },
-      {
-        "id": "u_dc66e9a4",
-        "class": "floor_action",
-        "vehicle": "hr-10167-119",
-        "day": "2026-09-15",
-        "occurred_at": "2026-09-15",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-26T01:03:33.669Z",
-        "text": {
-          "en": "H.R. 10167 was received in the Senate on September 15, 2026, read twice, and referred to the Committee on Banking, Housing, and Urban Affairs.",
-          "es": "H.R. 10167 fue recibido en el Senado el 15 de septiembre de 2026, leído dos veces, y remitido al Comité de Banca, Vivienda y Asuntos Urbanos."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/house-bill/10167"
-          ]
-        },
-        "record": {
-          "action_text": "Received in the Senate and Read twice and referred to the Committee on Banking, Housing, and Urban Affairs.",
-          "action_code": null,
-          "action_type": "IntroReferral",
-          "source_system": "Senate"
-        },
-        "ai": true
       }
     ],
     "summary_revisions": [
@@ -3495,13 +3083,13 @@
       }
     ],
     "summary_attempts": {
-      "day": "2026-11-13",
+      "day": "2026-11-16",
       "count": 1
     },
     "summary_refusals": {
-      "count": 1,
-      "day": "2026-11-13",
-      "reason": "en: absence claim \"No roll call vote\" over a record that is not empty — the grounding holds a vote or action in this window, so \"nothing happened\" is false"
+      "count": 4,
+      "day": "2026-11-16",
+      "reason": "en: absence claim \"the only action\" over a record that is not empty — the grounding holds a vote or action in this window, so \"nothing happened\" is false; es: absence claim \"no hay votación\" over a record that is not empty — the grounding holds a vote or action in this window, so \"nothing happened\"…"
     }
   }
 }

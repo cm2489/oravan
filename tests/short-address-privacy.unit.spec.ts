@@ -4,12 +4,17 @@ import { expect, test } from '@playwright/test';
 import { NextRequest } from 'next/server';
 import billsJson from '../data/bills.json';
 import {
+  decodeShortAddressFallback,
   decodeShortAddressIndex,
+  encodeShortAddressFallback,
   encodeShortAddressIndex,
   SHORT_ADDRESS_CONGRESS,
   shortAddressTarget,
   type ShortAddressBill,
+  type ShortAddressFallback,
+  type ShortAddressIndex,
 } from '../lib/short-address';
+import { congressTerm } from '../lib/congress.mjs';
 import {
   isCountablePageviewRequest,
   notePageview,
@@ -41,7 +46,13 @@ import { COUNTERS_URL, MockUpstash, installUpstashFetch, setUpstashEnv } from '.
 const LOCALES = ['en', 'es'];
 const bills = billsJson as unknown as ShortAddressBill[];
 const INDEX = decodeShortAddressIndex(encodeShortAddressIndex(bills, SHORT_ADDRESS_CONGRESS));
-const current = bills.filter((b) => b.congress_number === SHORT_ADDRESS_CONGRESS);
+const FALLBACK = decodeShortAddressFallback(encodeShortAddressFallback(bills));
+/** One bill of a type whose short address the site answers today (tracked table, else a fallback), or undefined. */
+const answered = (type: string) =>
+  bills.find((b) => b.bill_type === type && shortAddressTarget(`/${type}${b.bill_number}`, LOCALES, 'en', INDEX, FALLBACK) !== null);
+
+/** Collapse whitespace, so a call reads the same however it is wrapped. */
+const flat = (source: string) => source.replace(/\s+/g, ' ').replace(/\( /g, '(').replace(/,? \)/g, ')');
 
 /** Code only: comments may name anything in prose. */
 const codeOf = (source: string) => source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
@@ -70,10 +81,16 @@ test('source: proxy.ts counts a short address as the literal label and builds th
   // The label is a literal chosen by a boolean; nothing from the request
   // reaches it.
   expect(proxyBody).toContain("shortTarget ? 'short' : pageviewSurfaceForPath(req.nextUrl.pathname, routing.locales)");
-  // The lookup sees the pathname only (NextRequest keeps the query apart).
-  expect(proxyBody).toContain(
-    'shortAddressTarget(req.nextUrl.pathname, routing.locales, routing.defaultLocale, SHORT_ADDRESS_INDEX)',
+  // The lookup sees the pathname only (NextRequest keeps the query apart),
+  // and the two build-time tables: the tracked Congress's and, once a
+  // Congress has ended, the fallback (the owner's ruling of Nov 14, 2026).
+  expect(flat(proxyBody)).toContain(
+    'shortAddressTarget(req.nextUrl.pathname, routing.locales, routing.defaultLocale, SHORT_ADDRESS_INDEX, SHORT_ADDRESS_FALLBACK)',
   );
+  // Both tables come from build-time constants, decoded once at module load.
+  const tables = codeOf(proxySource.slice(0, proxySource.indexOf('function shortAddressRedirect')));
+  expect(tables).toContain('decodeShortAddressIndex(process.env.SHORT_ADDRESS_INDEX)');
+  expect(tables).toContain('decodeShortAddressFallback(process.env.SHORT_ADDRESS_FALLBACK)');
   // The redirect is the target path on this site's own origin. The query,
   // search params and headers of the request are never read for it.
   const redirect = codeOf(proxySource.slice(proxySource.indexOf('function shortAddressRedirect'), proxySource.indexOf('/*\n * The two things')));
@@ -84,13 +101,23 @@ test('source: proxy.ts counts a short address as the literal label and builds th
   expect(codeOf(proxySource)).not.toMatch(/console\./);
 });
 
-test('driven: a burst of short-address requests leaves one daily "short" count on the wire, and nothing about path, bill, query, language or visitor', async () => {
+/**
+ * Drive a burst through exactly proxy.ts's call shape against the counters
+ * mock, with the given tables, and check the wire. Each `redirected` path
+ * must resolve (through either table) and each `notRedirected` one must not.
+ */
+async function drivenBurst(
+  index: ShortAddressIndex,
+  fallback: ShortAddressFallback,
+  congress: number,
+  redirected: string[],
+  notRedirected: string[],
+  markers: string[],
+): Promise<string[]> {
   const restoreEnv = setUpstashEnv();
   const counters = new MockUpstash();
   const restoreFetch = installUpstashFetch({ [COUNTERS_URL]: counters });
   try {
-    const hr = current.find((b) => b.bill_type === 'hr')!;
-    const s = current.find((b) => b.bill_type === 's')!;
     const visitor = { ip: '203.0.113.77', agent: 'Mozilla/5.0 (Probe-Agent-7731)' };
     const req = (path: string, method = 'GET') =>
       new NextRequest(`https://oravan.org${path}`, {
@@ -103,14 +130,6 @@ test('driven: a burst of short-address requests leaves one daily "short" count o
           referer: 'https://social.example/post/123',
         },
       });
-    const redirected = [
-      `/hr${hr.bill_number}`,
-      `/HR-${hr.bill_number}`,
-      `/es/hr${hr.bill_number}`,
-      `/hr${hr.bill_number}?stance=support`,
-      `/es/s${s.bill_number}?stance=oppose&utm_source=probe`,
-    ];
-    const notRedirected = ['/hr99999', '/hres10'];
 
     const targets: string[] = [];
     for (const path of [...redirected, ...notRedirected]) {
@@ -118,7 +137,7 @@ test('driven: a burst of short-address requests leaves one daily "short" count o
       // Exactly proxy.ts's call shape.
       const shortTarget =
         r.method === 'GET' || r.method === 'HEAD'
-          ? shortAddressTarget(r.nextUrl.pathname, LOCALES, 'en', INDEX)
+          ? shortAddressTarget(r.nextUrl.pathname, LOCALES, 'en', index, fallback, congress)
           : null;
       if (shortTarget) targets.push(shortTarget);
       const surface: PageviewSurface = shortTarget ? 'short' : pageviewSurfaceForPath(r.nextUrl.pathname, LOCALES);
@@ -150,9 +169,7 @@ test('driven: a burst of short-address requests leaves one daily "short" count o
     // And, belt and braces, none of what the requests carried.
     const wire = counters.commands.map((c) => c.join(' ')).join('\n');
     for (const marker of [
-      `hr${hr.bill_number}`,
-      `-${hr.bill_number}-`,
-      `s${s.bill_number}`,
+      ...markers,
       'hr',
       'HR',
       '/es',
@@ -170,8 +187,82 @@ test('driven: a burst of short-address requests leaves one daily "short" count o
     ]) {
       expect(wire, `the counters wire must not carry "${marker}"`).not.toContain(marker);
     }
+    return targets;
   } finally {
     restoreFetch();
     restoreEnv();
   }
+}
+
+test('driven: a burst of short-address requests leaves one daily "short" count on the wire, and nothing about path, bill, query, language or visitor', async () => {
+  // Drawn from every bill a short address answers (the tracked Congress, else
+  // an ended one), so this holds on switch day with no new bill yet.
+  const hr = answered('hr');
+  const s = answered('s');
+  test.skip(!hr || !s, 'the corpus holds no House bill or no Senate bill a short address can open');
+  if (!hr || !s) return;
+  await drivenBurst(
+    INDEX,
+    FALLBACK,
+    SHORT_ADDRESS_CONGRESS,
+    [
+      `/hr${hr.bill_number}`,
+      `/HR-${hr.bill_number}`,
+      `/es/hr${hr.bill_number}`,
+      `/hr${hr.bill_number}?stance=support`,
+      `/es/s${s.bill_number}?stance=oppose&utm_source=probe`,
+    ],
+    ['/hr99999', '/hres10'],
+    [`hr${hr.bill_number}`, `-${hr.bill_number}-`, `s${s.bill_number}`],
+  );
+});
+
+test('driven, after the switch: a fallback to the ended Congress counts the same one word, and nothing about which Congress', async () => {
+  // The switch as #486 models it: 119 ended, 120 tracked. The corpus's bill
+  // numbers, labelled as the 119th's, are the ended table; a small 120th
+  // corpus is the tracked one, with one number the 119th also used and one
+  // it did not. Built exactly the way next.config.ts builds them, and from
+  // fixtures only, so this holds before and after the real switch.
+  const seen = new Set<string>();
+  const old: ShortAddressBill[] = [];
+  for (const b of bills) {
+    const key = `${b.bill_type}${b.bill_number}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    old.push({ bill_type: b.bill_type, bill_number: b.bill_number, congress_number: 119 });
+  }
+  const hr = old.find((b) => b.bill_type === 'hr')!;
+  const s = old.find((b) => b.bill_type === 's')!;
+  const heldHr = new Set(old.filter((b) => b.bill_type === 'hr').map((b) => b.bill_number));
+  let fresh = 1;
+  while (heldHr.has(fresh)) fresh++;
+  const corpus: ShortAddressBill[] = [
+    ...old,
+    { bill_type: 'hr', bill_number: hr.bill_number, congress_number: 120 },
+    { bill_type: 'hr', bill_number: fresh, congress_number: 120 },
+  ];
+  const policy = { tracked: 120, ended: [{ number: 119, ended: congressTerm(119).end }] };
+  const index = decodeShortAddressIndex(encodeShortAddressIndex(corpus, 120));
+  const fallback = decodeShortAddressFallback(encodeShortAddressFallback(corpus, policy));
+  expect(fallback.map((t) => t.congress)).toEqual([119]);
+
+  const targets = await drivenBurst(
+    index,
+    fallback,
+    120,
+    [
+      `/hr${hr.bill_number}`, // both hold it: the 120th
+      `/hr${fresh}`, // only the 120th
+      `/s${s.bill_number}?stance=support`, // only the 119th: the fallback
+      `/es/S-${s.bill_number}?stance=oppose&utm_source=probe`,
+    ],
+    ['/hr99999', '/hres10'],
+    [`hr${hr.bill_number}`, `-${hr.bill_number}-`, `s${s.bill_number}`, `hr${fresh}`, '119', '120'],
+  );
+  expect(targets).toEqual([
+    `/bills/hr-${hr.bill_number}-120`,
+    `/bills/hr-${fresh}-120`,
+    `/bills/s-${s.bill_number}-119`,
+    `/es/bills/s-${s.bill_number}-119`,
+  ]);
 });

@@ -1,0 +1,45 @@
+[
+  {
+    "full_identifier": "s-4668-119",
+    "congress_number": 119,
+    "bill_type": "s",
+    "bill_number": 4668,
+    "title": "Protect College Sports Act of 2026",
+    "short_title": null,
+    "ai_summary": "This bill sets national rules for college sports. It says schools, conferences, and groups like the NCAA cannot stop athletes from earning money from their name, image, and likeness, such as through endorsements, and cannot take away an athlete's scholarship for doing so. Athletes at top-level (Division I) schools would have to report deals worth more than $600 within a few days, and the NCAA would keep an anonymized public database so athletes can see what deals are worth. The bill also adds rules for sports agents: they must register with a state, cannot charge more than 5 percent on an endorsement deal, and cannot sign contracts that run past an athlete's eligibility. Athletes would be able to sue over violations, and forced arbitration clauses could not be used against them.\n\nThe bill adds many protections for athletes. Schools could not cancel a scholarship because of injury, poor play, or roster decisions, and former athletes could return to finish their degrees. Top-level schools would have to cover out-of-pocket medical costs for sports injuries, including for five years after an athlete's last season, and the NCAA would have to keep a fund of at least $60 million for long-term injury costs. Schools must follow health and safety standards for concussions, heat illness, and other risks, name an independent health and safety officer, and let medical staff, not coaches, decide when an athlete can play. The NCAA would set up an Office of the Student Athlete Ombudsman to give athletes free, confidential advice. Other sections limit head football coaches from switching schools in the middle of a season, set rules on recruiting and \"tampering,\" require men's and women's programs to get comparable treatment, and require reporting on foreign money in college athletics. The bill also asks Congress to approve continuing a cap on how much schools can share with athletes, which comes from a recent court settlement.\n\nThe bill also covers TV and media. It addresses how college sports rights are sold, aims to keep local games available to viewers in their home markets, and limits certain conference mergers. A third part creates a grant program to help Historically Black Colleges and Universities improve internet, technology, and broadcast equipment for their sports programs. The bill affects college athletes and their families, athletic departments, coaches, agents, conferences, the NCAA, media companies, and fans, with many of the rules applying mainly to Division I schools.",
+    "ai_headline": "College athletes could earn endorsement money without losing scholarships under S 4668",
+    "sponsor_bioguide_id": "C001098",
+    "introduced_date": "2026-06-02",
+    "last_action_date": "2026-10-05",
+    "last_action_text": "Held at the desk.",
+    "status": "passed_chamber",
+    "issue_tags": [
+      "education"
+    ],
+    "policy_area": "Sports and Recreation",
+    "urgency_score": 0.75,
+    "congress_gov_url": "https://www.congress.gov/bill/119th-congress/senate-bill/4668",
+    "ai_sections": {
+      "tldr": "S 4668 would bar schools and the NCAA from blocking athlete endorsement deals or pulling scholarships over them, and would add injury and agent rules.",
+      "what": "S 4668 sets national rules for college sports. Schools, conferences, and groups like the NCAA could not stop athletes from earning money from their name, image, and likeness, or take away a scholarship for doing so. The bill also adds agent rules, athlete health and safety protections, limits on coach moves and tampering, TV and media provisions, and a grant program for Historically Black Colleges and Universities.",
+      "who": "College athletes and their families, athletic departments, coaches, agents, conferences, the NCAA, media companies, and fans. Many of the rules apply mainly to Division I schools.",
+      "why": "Schools and the NCAA would lose the ability to restrict athlete endorsement deals, and top-level schools would take on new duties for injury costs and health standards. Agents would face registration and fee limits, and athletes could sue over violations.",
+      "cost": "Top-level schools would have to cover athletes' out-of-pocket medical costs for sports injuries, including for five years after an athlete's last season. The NCAA would have to keep a fund of at least $60 million for long-term injury costs.",
+      "costChips": [
+        "Schools cover injury costs for 5 years",
+        "NCAA fund of at least $60 million",
+        "Agent fees capped at 5 percent"
+      ]
+    },
+    "press_names": [
+      "Protect College Sports Act"
+    ],
+    "news_query": "college athletes \"NIL deals\"",
+    "decoded_at": "2026-09-29T19:34:55.175Z",
+    "decode_text_sha": "e374d73cb8bb62fa",
+    "decode_text_verified_at": "2026-09-29T19:34:55.175Z",
+    "text_version_date": "2026-09-28T04:00:00Z",
+    "text_version_type": "Engrossed in Senate",
+    "text_version_count": 3
+  }
+]

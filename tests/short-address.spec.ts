@@ -1,6 +1,13 @@
 import { expect, test } from '@playwright/test';
 import billsJson from '../data/bills.json';
-import { SHORT_ADDRESS_CONGRESS } from '../lib/short-address';
+import {
+  decodeShortAddressFallback,
+  decodeShortAddressIndex,
+  encodeShortAddressFallback,
+  encodeShortAddressIndex,
+  SHORT_ADDRESS_CONGRESS,
+  shortAddressTarget,
+} from '../lib/short-address';
 
 /*
  * Short addresses for bills, against the production build: /hr9340 answers
@@ -8,37 +15,64 @@ import { SHORT_ADDRESS_CONGRESS } from '../lib/short-address';
  * request's query string dropped; an unknown number is the site's normal 404.
  * The parser, the index and the no-collision proof are pure-Node unit specs
  * in tests/short-address.unit.spec.ts.
+ *
+ * Every expectation is computed from the corpus with the same two tables
+ * next.config.ts builds (the tracked Congress's, then the most recently ended
+ * Congress's, under the owner's ruling of Nov 14, 2026), so this spec holds
+ * before the change of Congress and after it, with no edit at the switch.
  */
 
 type CorpusBill = { bill_type: string; bill_number: number; congress_number: number };
-const bills = (billsJson as unknown as CorpusBill[]).filter((b) => b.congress_number === SHORT_ADDRESS_CONGRESS);
+const corpus = billsJson as unknown as CorpusBill[];
+const bills = corpus.filter((b) => b.congress_number === SHORT_ADDRESS_CONGRESS);
+const INDEX = decodeShortAddressIndex(encodeShortAddressIndex(corpus, SHORT_ADDRESS_CONGRESS));
+const FALLBACK = decodeShortAddressFallback(encodeShortAddressFallback(corpus));
+/** Where the built site must send a path: the target path, or null for the 404. */
+const expectedTarget = (path: string) => shortAddressTarget(path, ['en', 'es'], 'en', INDEX, FALLBACK);
 
-/** Three real bills of different types, in the data file's own order. */
-function samples(): CorpusBill[] {
-  const out: CorpusBill[] = [];
+/** A short address the built site answers, and the bill it must open. */
+type Sample = { bill_type: string; bill_number: number; slug: string };
+
+/**
+ * Up to three real addresses of different types, drawn from EVERY bill a
+ * short address answers (the tracked Congress's, else an ended Congress's),
+ * in the data file's own order. So this holds today, on switch day before the
+ * new Congress has a bill, and after. Never throws: a file that throws while
+ * it loads aborts the whole browser run.
+ */
+function samples(): Sample[] {
+  const out: Sample[] = [];
   for (const type of ['hr', 's', 'hjres', 'sjres', 'hconres', 'sconres']) {
-    const bill = bills.find((b) => b.bill_type === type);
-    if (bill) out.push(bill);
+    for (const b of corpus) {
+      if (b.bill_type !== type) continue;
+      const target = expectedTarget(`/${b.bill_type}${b.bill_number}`);
+      if (!target) continue;
+      out.push({ bill_type: b.bill_type, bill_number: b.bill_number, slug: target.replace(/^\/bills\//, '') });
+      break;
+    }
     if (out.length === 3) break;
   }
-  if (out.length < 3) throw new Error('the corpus holds fewer than three bill types of the current Congress');
   return out;
 }
+const SAMPLES = samples();
 
 const slugOf = (b: CorpusBill) => `${b.bill_type}-${b.bill_number}-${b.congress_number}`;
 
-/** A House bill number the corpus does not hold. */
+/** A House bill number no short address resolves (neither the tracked nor the ended Congress holds it). */
 function unheldHouseNumber(): number {
-  const held = new Set(bills.filter((b) => b.bill_type === 'hr').map((b) => b.bill_number));
   let n = 1;
-  while (held.has(n)) n++;
+  while (expectedTarget(`/hr${n}`) !== null) n++;
   return n;
 }
 
 test.describe('short addresses', () => {
-  for (const bill of samples()) {
+  test('the corpus gives at least one short address to check', () => {
+    expect(SAMPLES.length, 'no bill in data/bills.json has a short address the site answers').toBeGreaterThan(0);
+  });
+
+  for (const bill of SAMPLES) {
     const short = `${bill.bill_type}${bill.bill_number}`;
-    const slug = slugOf(bill);
+    const slug = bill.slug;
 
     test(`/${short} and its spellings redirect (307) to /bills/${slug}, in both languages`, async ({ request }) => {
       const cases: Array<[string, string]> = [
@@ -77,7 +111,8 @@ test.describe('short addresses', () => {
   }
 
   test('a query string on a short address is dropped, never forwarded', async ({ request }) => {
-    const bill = samples()[0];
+    const bill = SAMPLES[0];
+    test.skip(!bill, 'no short address to check');
     for (const from of [
       `/${bill.bill_type}${bill.bill_number}?stance=support`,
       `/es/${bill.bill_type}${bill.bill_number}?stance=oppose&utm_source=x`,
@@ -122,44 +157,68 @@ test.describe('short addresses', () => {
   /*
    * The addresses named in the brief of 2026-11-13, each decided from the
    * corpus itself (a held bill redirects, an unheld one is the 404), so a
-   * nightly sync can never make this test lie. S. 123, H.Res. 5 and S. 1
-   * are not in the corpus today; H.R. 9340, H.J.Res. 1 and S.Con.Res. 29 are.
+   * nightly sync can never make this test lie, and the change of Congress
+   * cannot either: the expectation is the tracked Congress's bill, else the
+   * ended Congress's, else the 404. S. 123, H.Res. 5 and S. 1 were not in
+   * the corpus on 2026-11-13; H.R. 9340, H.J.Res. 1 and S.Con.Res. 29 were.
    */
   test('named addresses: each type and spelling, held or not', async ({ request }) => {
-    const held = new Set(bills.map(slugOf));
-    const cases: Array<[string, string, string]> = [
-      ['/hr9340', '', 'hr-9340'],
-      ['/HR9340', '', 'hr-9340'],
-      ['/hr-9340', '', 'hr-9340'],
-      ['/es/hr9340', '/es', 'hr-9340'],
-      ['/en/hr9340', '', 'hr-9340'],
-      ['/s123', '', 's-123'],
-      ['/s1', '', 's-1'],
-      ['/hjres1', '', 'hjres-1'],
-      ['/HJRES1', '', 'hjres-1'],
-      ['/sconres29', '', 'sconres-29'],
-      ['/es/sconres29', '/es', 'sconres-29'],
-      ['/hres5', '', 'hres-5'],
-      ['/sres5', '', 'sres-5'],
-    ];
-    for (const [from, prefix, stem] of cases) {
-      const slug = `${stem}-${SHORT_ADDRESS_CONGRESS}`;
+    for (const from of [
+      '/hr9340', '/HR9340', '/hr-9340', '/es/hr9340', '/en/hr9340', '/s123', '/s1', '/hjres1', '/HJRES1',
+      '/sconres29', '/es/sconres29', '/hres5', '/sres5', '/hr1', '/es/HR-1',
+    ]) {
+      const expected = expectedTarget(from);
       const res = await request.get(from, { maxRedirects: 0, headers: { accept: 'text/html' } });
-      if (held.has(slug)) {
+      if (expected) {
         expect(res.status(), from).toBe(307);
-        expect(new URL(res.headers()['location'] ?? '', 'http://x').pathname, from).toBe(`${prefix}/bills/${slug}`);
+        expect(new URL(res.headers()['location'] ?? '', 'http://x').pathname, from).toBe(expected);
+        expect(res.headers()['cache-control'], from).toContain('no-store');
+        expect(res.headers()['x-robots-tag'], from).toBe('noindex');
       } else {
         expect(res.status(), `${from} (not in the corpus)`).toBe(404);
       }
     }
   });
 
+  test('after the change of Congress, a number only an ended Congress holds opens its page, with no call to make', async ({
+    request,
+  }) => {
+    // Runs only once lib/congress.mjs lists an ended Congress and the corpus
+    // holds its bills (from the January 2027 switch on); until then there is
+    // no fallback table and nothing to check.
+    test.skip(FALLBACK.length === 0, 'no ended Congress in the corpus yet');
+    const ended = corpus.find(
+      (b) =>
+        b.congress_number === FALLBACK[0].congress &&
+        !bills.some((t) => t.bill_type === b.bill_type && t.bill_number === b.bill_number),
+    );
+    test.skip(!ended, 'every ended bill number is already held by the tracked Congress');
+    const slug = slugOf(ended!);
+    for (const [from, to] of [
+      [`/${ended!.bill_type}${ended!.bill_number}`, `/bills/${slug}`],
+      [`/es/${ended!.bill_type.toUpperCase()}-${ended!.bill_number}?stance=support`, `/es/bills/${slug}`],
+    ] as const) {
+      const res = await request.get(from, { maxRedirects: 0, headers: { accept: 'text/html' } });
+      expect(res.status(), from).toBe(307);
+      const location = new URL(res.headers()['location'] ?? '', 'http://x');
+      expect(location.pathname, from).toBe(to);
+      expect(location.search, from).toBe('');
+      const page = await request.get(to, { headers: { accept: 'text/html' } });
+      expect(page.status(), to).toBe(200);
+      // An unfinished bill shows the ended note (EndedPanel); one that became
+      // law or was otherwise decided shows its outcome (SettledPanel). Either
+      // way the call panel's place holds no call.
+      expect(await page.text(), `${to} shows the ended note or its outcome`).toMatch(/data-ended-panel|data-settled-panel/);
+    }
+  });
+
   test('a trailing slash still reaches the bill, with no query carried', async ({ request }) => {
-    const bill = samples()[0];
+    const bill = SAMPLES[0];
+    test.skip(!bill, 'no short address to check');
     const short = `${bill.bill_type}${bill.bill_number}`;
     for (const [from, to] of [
-      [`/${short}/`, `/bills/${slugOf(bill)}`],
-      [`/es/${short}/?stance=support`, `/es/bills/${slugOf(bill)}`],
+      [`/${short}/`, `/bills/${bill.slug}`],
+      [`/es/${short}/?stance=support`, `/es/bills/${bill.slug}`],
     ] as const) {
       const res = await request.get(from, { headers: { accept: 'text/html' } });
       expect(res.status(), from).toBe(200);
@@ -170,10 +229,11 @@ test.describe('short addresses', () => {
   });
 
   test('a fragment survives the redirect in the browser, and a query does not', async ({ page }) => {
-    const bill = samples()[0];
+    const bill = SAMPLES[0];
+    test.skip(!bill, 'no short address to check');
     await page.goto(`/${bill.bill_type}${bill.bill_number}?stance=support#top`);
     const landed = new URL(page.url());
-    expect(landed.pathname).toBe(`/bills/${slugOf(bill)}`);
+    expect(landed.pathname).toBe(`/bills/${bill.slug}`);
     expect(landed.search).toBe('');
     expect(landed.hash).toBe('#top');
   });

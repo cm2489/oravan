@@ -87,8 +87,9 @@ test.describe('every former copy reads the one source', () => {
 
   test('short addresses for bills (lib/short-address.ts, #404) mean the tracked Congress', () => {
     // A new use, declared here the way the former copies are. What a short
-    // address means after the change of Congress is the owner's open
-    // decision; tests/short-address.unit.spec.ts guards it.
+    // address opens after the change of Congress is the owner's ruling of
+    // Nov 14, 2026 (the tracked Congress, then the ended one);
+    // tests/short-address.unit.spec.ts pins it.
     expect(SHORT_ADDRESS_CONGRESS).toBe(CURRENT_CONGRESS.number);
   });
 
