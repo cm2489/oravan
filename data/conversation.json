@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-17T22:16:53.270Z",
+    "fetched_at": "2026-11-17T23:12:01.665Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-17T22:16:53.270Z"
+        "checked_at": "2026-11-17T23:12:01.665Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-15",
         "week_label": "Most-Viewed Bills - Week of November 15, 2026",
         "entries": 7,
-        "checked_at": "2026-11-17T22:16:53.270Z"
+        "checked_at": "2026-11-17T23:12:01.665Z"
       },
       "leans": {
         "center": {
@@ -421,6 +421,18 @@
           "firstSeen": "2026-11-05",
           "lastSeen": "2026-11-12",
           "url": "https://news.google.com/rss/articles/CBMiyAFBVV95cUxNbV9vVExFTmxoV3JaVGZORGhwa080MHVUQmh4NjlPOWp1VnpXV3ptSnFfLWdhYXF2WEU0U0R0bDhybkdfYzJSRm5QV05zMERvSWJiY2ctamE1bGZ6NzRGdEhpMHc4ZS1lTm82Y2cxT2lZTXdqRHpBV20yb0VRSkZBajM0TEFVU3RlVmkwUk1xbk5tM3V5UDRrRFAtbjJKa3JKUkVfVnBVaGVLSHlHUGl5TjJpM0QzZHBjVUQ1YWNUa1Q0M3pFQWx0eQ?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-3724-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "numbersusa.org",
+          "firstSeen": "2026-11-17",
+          "lastSeen": "2026-11-17",
+          "url": "https://news.google.com/rss/articles/CBMigwFBVV95cUxQYWpqMlFlY05OYlRoZkJVbGl0UXpwelJYTHpWdWJSSDl5aHZxTFE2WEU3ZGxoMnIxSGo0Y1dSemFjUkpXeUs0RlpuUV9OenhuVUhKaDZzZHhKcEhDWHhLTGtPNHpyczlTRWtUN09VaUJuMGZaeXR1T1J5Y0xvSEVBWGVXbw?oc=5"
         }
       ],
       "mostViewed": null
@@ -1343,6 +1355,12 @@
     "s-4315-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "cannabisbusinesstimes.com",
+          "firstSeen": "2026-11-17",
+          "lastSeen": "2026-11-17",
+          "url": "https://news.google.com/rss/articles/CBMivAFBVV95cUxPTEwwT2d5THpSRTBtX3hjSnRtMV9zSXBOOWh1cXZlalN6SFB1dkhDTVo5V2prMUFTamJpbXdvdkVmbG1KQWNIU29CYUNBNWZUNEtTR096Z0JvcDVIQThuaFR0TEZhR05wZzJsWmd5emJja3VHLWUzN3pOdWVtNUVodEgyYmNLODZCMnN2RjdnSGlLR0plYXRjX3ZnRVZoU3FYYTI3ZXl4Q1gzcDRMSjdkczUyODYxb3NnVnE1dQ?oc=5"
+        },
         {
           "domain": "themarijuanaherald.com",
           "firstSeen": "2026-11-15",
