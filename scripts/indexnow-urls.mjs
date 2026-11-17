@@ -33,7 +33,12 @@
  *                                         PAGE_INVISIBLE_BILL_FIELDS)
  *                                         -> /bills/<slug>
  *   data/bills.json urgency_score alone   -> /today (the one page it orders)
- *   data/coverage.json                    an entry changed -> /bills/<slug>
+ *   data/coverage.json                    an entry changed -> /bills/<slug>,
+ *                                         and the pages of the bills the
+ *                                         record lists as identical to it
+ *                                         (their coverage boxes list it too)
+ *   data/related-bills.json               an entry changed -> /bills/<slug>
+ *                                         and each bill it names
  *   data/floor-signals.json (.signals)    an announcement changed
  *                                         -> /bills/<slug>
  *   data/floor-signals.json (.nominations), data/nominations.json
@@ -75,6 +80,9 @@
  * Stdlib only: hot-bills.yml runs on a bare runner with no `npm ci`.
  */
 
+// Import-free, like this file (hot-bills.yml runs it with no `npm ci`).
+import { twinsOf } from '../lib/related-bills.mjs';
+
 /** Public by design — see the header. Must equal public/<key>.txt's content. */
 export const INDEXNOW_KEY = '588709dea6fbc8e59899e2a48969d0b6';
 
@@ -104,6 +112,9 @@ export const DATA_FILES = [
   'moment-updates.json',
   'nominations.json',
   'conversation.json',
+  // The record's identical bills: a bill page's coverage box lists its twins'
+  // articles too (lib/coverage.ts, getCoverageWithTwins; owner, 2026-11-13).
+  'related-bills.json',
   // Read at the new commit only, as the list of sitting members whose pages
   // exist. A roster change is refresh-legislators.yml's, which does not ping.
   'legislators.json',
@@ -252,7 +263,22 @@ export function deriveChangedPaths(before, after) {
   addAll(billRecords, changedKeys(keyedObject(b('bills-es.json')), keyedObject(a('bills-es.json'))));
   addAll(bills, billRecords);
   // What the bill page renders beside the record.
-  addAll(bills, changedKeys(keyedObject(b('coverage.json')), keyedObject(a('coverage.json'))));
+  const coverageMoved = changedKeys(keyedObject(b('coverage.json')), keyedObject(a('coverage.json')));
+  addAll(bills, coverageMoved);
+  // A twin's box lists these articles too, on either side of the diff.
+  for (const k of coverageMoved) {
+    addAll(bills, twinsOf(b('related-bills.json'), k));
+    addAll(bills, twinsOf(a('related-bills.json'), k));
+  }
+  // A relation added or removed changes both bills' boxes.
+  const relatedBefore = keyedObject(b('related-bills.json'));
+  const relatedAfter = keyedObject(a('related-bills.json'));
+  for (const k of changedKeys(relatedBefore, relatedAfter)) {
+    bills.add(k);
+    for (const rows of [relatedBefore.get(k), relatedAfter.get(k)]) {
+      for (const r of Array.isArray(rows) ? rows : []) if (typeof r?.slug === 'string') bills.add(r.slug);
+    }
+  }
   addAll(bills, changedKeys(keyedObject(b('floor-signals.json')?.signals), keyedObject(a('floor-signals.json')?.signals)));
   addAll(
     nominations,

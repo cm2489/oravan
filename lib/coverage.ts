@@ -10,6 +10,15 @@
  */
 import coverageData from '../data/coverage.json';
 import mediaBias from '../data/media-bias.json';
+import relatedBillsData from '../data/related-bills.json';
+// The record's "Identical bill" relation, read one hop in both directions
+// (lib/related-bills.mjs, import-free; its header says what is left out).
+import { twinsOf } from './related-bills.mjs';
+// Whether a bill is part of a Big Question, the same reader the bill page uses
+// for its coverage rule (getCoverageWithTwins below). lib/moments reaches this
+// module back through lib/core/bills; every use on both sides is at call
+// time, never while the modules load, so the cycle is harmless.
+import { getMomentsForBill } from './moments';
 // THE CLOCK, from the ONE copy, by the import door lib/ is allowed to use
 // directly (components go through lib/signal-window.ts — see its header). The
 // "In the news" band is a present-tense claim, so it reads the same
@@ -22,6 +31,10 @@ const LEAN_BY_DOMAIN = mediaBias.outlets as unknown as Record<string, Lean>;
 
 /** Bill slug -> stored articles. '_'-prefixed keys are metadata, never slugs. */
 const COVERAGE = coverageData as unknown as Record<string, CoverageArticleRaw[]>;
+
+/** data/related-bills.json: the record's "Identical bill" relations
+ *  (scripts/sync-related.mjs). Read only through twinsOf. */
+const RELATED = relatedBillsData as unknown as Record<string, unknown>;
 
 /** Bill slug -> the day the nightly sweep last LOOKED (scripts/sync-coverage.mjs's
  *  `_checkedAt` rotation, #158). A '_'-prefixed metadata key, so getCoverage()
@@ -73,6 +86,154 @@ export function getCoverage(slug: string): CoverageArticle[] {
   if (!Array.isArray(raw)) return [];
   const articles = raw.map((a) => ({ ...a, lean: leanFor(a.source) }));
   return coverageTier(articles) === 'none' ? [] : articles;
+}
+
+/**
+ * The most articles a bill's TWINS may add to its box: the nightly's
+ * COVERAGE_PER_BILL (scripts/sync-coverage.mjs), the same number a bill may
+ * store of its own. A bill's own articles are never pushed out by a twin's,
+ * the same "two caps, not one" rule mergeArticles applies to routed rows.
+ */
+export const TWIN_ARTICLES_MAX = 5;
+
+/** "The same article": the identity the nightly sync dedupes by
+ *  (scripts/coverage-query.mjs, articleMatcher): the URL, or the title. */
+const urlKey = (a: { url?: string | null }) => (typeof a.url === 'string' ? a.url.trim() : '');
+const titleKey = (a: { title?: string | null }) => String(a.title ?? '').toLowerCase().replace(/\s+/g, ' ').trim();
+const dayOf = (a: { publishedAt?: string | null }) => {
+  const d = String(a.publishedAt ?? '').slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : '';
+};
+
+/**
+ * A bill's own articles plus the ones stored under its twins, as one list.
+ * Pure, so the rule is pinned on fixtures (tests/twin-coverage.unit.spec.ts).
+ *
+ * THE RULE (owner, 2026-11-13, his card: "Show news about a bill's twin under
+ * the bill? … " — he chose "Yes, show it under the bill as it is."):
+ *   - Every own article stays, in its place in the newest-first order.
+ *   - A twin's article is added AS IT IS (headline, outlet, date, lean), unless
+ *     it is already listed (same URL or same title, the sync's own identity),
+ *     so an article stored under both bills is listed once.
+ *   - At most TWIN_ARTICLES_MAX twin articles, newest first, undated last.
+ *   - The result is newest first; on the same day a bill's own article comes
+ *     before a twin's. Undated articles sort after every dated one.
+ * `twins` names the twin bills that actually contributed an article, in the
+ * order their first article appears, so the box can say whose coverage it is.
+ */
+export function mergeTwinCoverage<A extends CoverageArticleRaw>(
+  own: A[],
+  twins: { slug: string; articles: A[] }[],
+  cap: number = TWIN_ARTICLES_MAX
+): { articles: A[]; twins: string[] } {
+  const urls = new Set<string>();
+  const titles = new Set<string>();
+  const seen = (a: A) => {
+    const u = urlKey(a);
+    const t = titleKey(a);
+    return Boolean((u && urls.has(u)) || (t && titles.has(t)));
+  };
+  const mark = (a: A) => {
+    const u = urlKey(a);
+    const t = titleKey(a);
+    if (u) urls.add(u);
+    if (t) titles.add(t);
+  };
+  const ownList = (own ?? []).filter((a) => a && typeof a === 'object');
+  for (const a of ownList) mark(a);
+
+  const pool: { a: A; from: string; i: number }[] = [];
+  let i = 0;
+  for (const tw of twins ?? []) {
+    for (const a of tw.articles ?? []) {
+      if (!a || typeof a !== 'object') continue;
+      if (seen(a)) continue;
+      mark(a);
+      pool.push({ a, from: tw.slug, i: i++ });
+    }
+  }
+  const picked = pool
+    .sort((x, y) => dayOf(y.a).localeCompare(dayOf(x.a)) || x.i - y.i)
+    .slice(0, Math.max(0, cap));
+
+  const rows = [
+    ...ownList.map((a, k) => ({ a, own: 0, k, from: '' })),
+    ...picked.map((p, k) => ({ a: p.a, own: 1, k, from: p.from })),
+  ].sort((x, y) => dayOf(y.a).localeCompare(dayOf(x.a)) || x.own - y.own || x.k - y.k);
+
+  const from: string[] = [];
+  for (const r of rows) if (r.from && !from.includes(r.from)) from.push(r.from);
+  return { articles: rows.map((r) => r.a), twins: from };
+}
+
+/**
+ * Which list a bill page's box gets: the combined list (own + twins), or the
+ * bill's own list alone. Pure, so the rule is pinned on fixtures.
+ *
+ * A TWIN NEVER HIDES A BOX (2026-11-17, after the independent check of #503).
+ * Every rule runs on the combined list, and a twin may ADD a box (the bill's
+ * own articles were too thin, or one-sided outside the Big Questions) or turn
+ * a one-sided list into both sides. But when the bill's OWN articles would
+ * show a box and the combined list would not (own: two center outlets; twin:
+ * left only; outside the Big Questions the combined list is one-sided and
+ * hidden), the box shows the own list exactly as it did before twins existed,
+ * and names no twin. So: whenever coverageForBillPage(own) would show
+ * something, coverageForBillPage(result) shows something too.
+ */
+export function boxCoverage(
+  own: CoverageArticle[],
+  merged: { articles: CoverageArticle[]; twins: string[] },
+  partOfBigQuestion: boolean
+): { articles: CoverageArticle[]; twins: string[] } {
+  const ownList = coverageTier(own) === 'none' ? [] : own;
+  const combined = coverageTier(merged.articles) === 'none' ? { articles: [], twins: [] } : merged;
+  if (combined.twins.length === 0) return { articles: ownList, twins: [] };
+  const combinedShows = coverageForBillPage(combined.articles, partOfBigQuestion).length > 0;
+  const ownShows = coverageForBillPage(ownList, partOfBigQuestion).length > 0;
+  if (!combinedShows && ownShows) return { articles: ownList, twins: [] };
+  return combined;
+}
+
+/**
+ * What the bill page's box reads before the Big Question rule: the bill's own
+ * stored articles plus its twins' (mergeTwinCoverage), each with its outlet's
+ * lean, empty when the whole set is too thin (tier 'none', as getCoverage),
+ * and never a list that would hide a box the bill's own articles show
+ * (boxCoverage). `twins` lists only bills whose articles are in `articles`.
+ * `partOfBigQuestion` defaults to the reader the bill page itself uses.
+ *
+ * getCoverage is left as it was on purpose: the homepage news band, MCP and
+ * the Big Question timeline keep reading a bill's own stored coverage only.
+ * His decision is about what is shown UNDER THE BILL.
+ */
+export function getCoverageWithTwins(
+  slug: string,
+  partOfBigQuestion: boolean = getMomentsForBill(slug).length > 0
+): { articles: CoverageArticle[]; twins: string[] } {
+  const enrich = (rows: CoverageArticleRaw[] | undefined): CoverageArticle[] =>
+    Array.isArray(rows) ? rows.map((a) => ({ ...a, lean: leanFor(a.source) })) : [];
+  const own = enrich(COVERAGE[slug]);
+  const twins = twinsOf(RELATED, slug)
+    .filter((s) => Array.isArray(COVERAGE[s]))
+    .map((s) => ({ slug: s, articles: enrich(COVERAGE[s]) }));
+  return boxCoverage(own, mergeTwinCoverage(own, twins), partOfBigQuestion);
+}
+
+/**
+ * The "Checked" day for a box that may hold twins' articles: the EARLIEST of
+ * the bill's own check day and each contributing twin's, so the line never
+ * dates a look more recently than every part of the list was looked for.
+ * Null (no line) when any of them has no check day. With no twins it is
+ * exactly coverageCheckedAt(slug).
+ */
+export function coverageCheckedAtWithTwins(slug: string, twins: string[]): string | null {
+  let earliest: string | null = null;
+  for (const s of [slug, ...twins]) {
+    const day = coverageCheckedAt(s);
+    if (day === null) return null;
+    if (earliest === null || day < earliest) earliest = day;
+  }
+  return earliest;
 }
 
 /**

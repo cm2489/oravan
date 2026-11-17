@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
 import coverageData from '../data/coverage.json';
-import { coverageTier, getCoverage } from '../lib/coverage';
+import { coverageForBillPage, coverageTier, getCoverageWithTwins } from '../lib/coverage';
 import { getMomentsForBill } from '../lib/moments';
 
 /*
@@ -16,10 +16,14 @@ import { getMomentsForBill } from '../lib/moments';
  */
 const slugs = Object.keys(coverageData).filter((k) => !k.startsWith('_'));
 const isVehicle = (s: string) => getMomentsForBill(s).length > 0;
+// The set the page decides on: own articles plus the record twins' (owner,
+// 2026-11-13; lib/coverage.ts, getCoverageWithTwins).
 const tierOf = (s: string) => {
-  const a = getCoverage(s);
+  const a = getCoverageWithTwins(s).articles;
   return a.length ? coverageTier(a) : 'none';
 };
+const hasTwins = (s: string) =>
+  coverageForBillPage(getCoverageWithTwins(s).articles, isVehicle(s)).length > 0 && getCoverageWithTwins(s).twins.length > 0;
 
 const hiddenSlug = slugs.find((s) => tierOf(s) === 'one_sided' && !isVehicle(s));
 const vehicleOneSidedSlug = slugs.find((s) => tierOf(s) === 'one_sided' && isVehicle(s));
@@ -42,6 +46,7 @@ for (const { prefix, messages } of [
     // No leftover heading, note or anchor that pointed at the box.
     await expect(page.getByRole('heading', { name: messages.coverage.heading })).toHaveCount(0);
     await expect(page.getByText(messages.coverage.oneSidedNote)).toHaveCount(0);
+    await expect(page.getByText(messages.coverage.oneSidedNoteTwins)).toHaveCount(0);
     await expect(page.locator('#coverage-heading, [href="#coverage-heading"]')).toHaveCount(0);
     // And not in the prerendered HTML either (what a crawler or a no-JS reader gets).
     const html = await (await page.request.get(`${prefix}/bills/${hiddenSlug}`)).text();
@@ -53,7 +58,8 @@ test('a Big Question bill with one-sided coverage still shows the box, with its 
   test.skip(!vehicleOneSidedSlug, 'no one-sided Big Question bill in the current data');
   await page.goto(`/bills/${vehicleOneSidedSlug}`);
   await expect(box(page).getByRole('heading', { name: en.coverage.heading })).toBeVisible();
-  await expect(box(page).getByText(en.coverage.oneSidedNote)).toBeVisible();
+  const note = hasTwins(vehicleOneSidedSlug!) ? en.coverage.oneSidedNoteTwins : en.coverage.oneSidedNote;
+  await expect(box(page).getByText(note)).toBeVisible();
 });
 
 test('a non-Big-Question bill with coverage from both sides still shows the box, with no one-side note', async ({
@@ -64,4 +70,5 @@ test('a non-Big-Question bill with coverage from both sides still shows the box,
   await expect(box(page).getByRole('heading', { name: en.coverage.heading })).toBeVisible();
   await expect(box(page).getByRole('listitem').first()).toBeVisible();
   await expect(box(page).getByText(en.coverage.oneSidedNote)).toHaveCount(0);
+  await expect(box(page).getByText(en.coverage.oneSidedNoteTwins)).toHaveCount(0);
 });

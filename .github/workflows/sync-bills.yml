@@ -580,6 +580,31 @@ jobs:
             export COVERAGE_TAIL_SHARE="${{ inputs.coverage_tail_share }}"
           fi
           node scripts/sync-coverage.mjs
+      - name: Read identical bills from the record (for the coverage box)
+        # The owner's 2026-11-13 card on a bill's twin ("Yes, show it under the
+        # bill as it is."): a bill page's coverage box also lists the articles
+        # stored under a bill Congress.gov's related-bills list calls an
+        # "Identical bill". This step reads that list for bills with stored
+        # coverage and bills already in the file — never-checked first, then
+        # the oldest, each at most once a week — into data/related-bills.json.
+        # lib/related-bills.mjs keeps the "Identical bill" relation only. AFTER
+        # the coverage sync, so tonight's new coverage bills are in the pool;
+        # BEFORE verify-sync.mjs, which gates the file before the commit.
+        # Cost: $0. At most 200 free Congress.gov requests (RELATED_PER_NIGHT).
+        # continue-on-error: the relation is additive; a failed read leaves the
+        # file as it was and must never cost the night its corpus work.
+        # TIME: an ordinary night takes about a minute (200 lookups at the
+        # 0.23 s each measured on 2026-11-14). The script stops itself within
+        # about 5.6 minutes whatever Congress.gov does (see its header).
+        # `timeout 8m` turns anything longer into an ordinary failed exit,
+        # which continue-on-error covers (a kill leaves a START line with no
+        # DONE, which the daily health report raises), and timeout-minutes is
+        # the last backstop. Worst case this step adds to a night: 10 minutes.
+        continue-on-error: true
+        timeout-minutes: 10
+        env:
+          CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}
+        run: timeout --signal=TERM --kill-after=30s 8m node scripts/sync-related.mjs
       - name: Collect Moment updates (Moments v2 live layer, nightly)
         # Nightly mode = the incremental pass PLUS press clusters, retention
         # pruning, and the "Where it stands" state summaries. Runs AFTER the

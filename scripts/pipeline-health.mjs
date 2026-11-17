@@ -88,6 +88,7 @@ import {
 } from '../lib/pipeline-health.mjs';
 import { RECHECK_DAYS as PORTRAIT_RECHECK_DAYS } from './mirror-portraits.mjs';
 import { QUESTION_PRESS_PATH, questionPressActivity, questionTerms } from '../lib/question-press.mjs';
+import { RELATED_BILLS_PATH, parseRelatedTrouble, relatedStaleness } from '../lib/related-bills.mjs';
 import { SHORT_TITLES_TREND_PATH } from '../lib/short-titles-summary.mjs';
 
 const REPO = process.env.HEALTH_REPO || 'cm2489/oravan';
@@ -629,6 +630,13 @@ export function buildReport({ now = Date.now() } = {}) {
       // `namedThrough`: the marker as read, which daily-metrics carries
       // forward until this morning's comment is posted.
       ...readRecheckFindings(now),
+    },
+    // The nightly identical-bills step: its lines in the night's log (none in
+    // a log from before the step existed, which raises nothing), and the
+    // committed file's own last-filled day, read whatever the log says.
+    related: {
+      trouble: nightlyLog ? parseRelatedTrouble(nightlyLog.log) : null,
+      staleness: relatedStaleness(readJsonFile(RELATED_BILLS_PATH), now),
     },
     summaryRefusals: refusedSummaries(readJsonFile('data/moment-updates.json'), {
       liveIds: moments ? Object.entries(moments).filter(([, m]) => m?.status === 'live').map(([id]) => id) : null,

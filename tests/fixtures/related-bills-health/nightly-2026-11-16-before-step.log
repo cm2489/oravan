@@ -1,0 +1,8 @@
+sync	UNKNOWN STEP	﻿2026-11-16T23:22:33.1050069Z Current runner version: '2.338.2'
+sync	UNKNOWN STEP	2026-11-16T23:22:33.1072877Z ##[group]Runner Image Provisioner
+sync	UNKNOWN STEP	2026-11-16T23:22:33.1073667Z Hosted Compute Agent
+sync	UNKNOWN STEP	2026-11-16T23:28:36.2695432Z DONE: 17 refreshed, 1 added+decoded, 52 gated (no real legislative motion), 0 queued for next run, 0 waiting on a slow batch (0 parked tonight, 0 held behind an earlier parked batch; collected next run, never re-bought), 0 completed from a parked batch, 0 parked bill(s) re-fetched directly (0 with an error), 0 skipped: partial payload (left untouched), 0 skipped: no bill text published yet (not decoded), 0 skipped: force slug naming another Congress (never fetched), 0 failed in the ascending pass (0 new), 0 in the recent-first pass, 0 force-slug; cursor -> 2026-11-16T23:23:30Z (clean); new bills seen this run: 53; corpus 3323
+sync	UNKNOWN STEP	2026-11-16T23:28:47.6391072Z ##[error]journey-corpus: unclassified floor text on sjres-124-119 — extend floorActionChamber (lib/floor-text.mjs); this bill renders the neutral no-chamber copy meanwhile: The motion to discharge fell when the point of order was well taken.
+sync	UNKNOWN STEP	2026-11-16T23:28:47.6433176Z ##[error]Process completed with exit code 1.
+sync	UNKNOWN STEP	2026-11-16T23:51:18.2970143Z DONE: 123/547 bills with coverage, 291 articles total (+399 unprocessed bills carried forward); kept tonight: 391 article(s) on 114 bill(s); 46 of 217 re-judged stored article(s) dropped on tonight's gate verdict; 30 gate reply(ies) not complete and well-formed (no stored article dropped on them)
+sync	UNKNOWN STEP	2026-11-17T00:01:15.5163101Z Cleaning up orphan processes

@@ -209,6 +209,14 @@ jobs:
         run: |
           node scripts/check-conversation.mjs --self-test
           node scripts/check-conversation.mjs
+      - name: Related-bills gate (only the record's "Identical bill" puts one bill's press under another)
+        # data/related-bills.json decides whose articles a bill page's coverage
+        # box lists (owner, 2026-11-13). Same judgement as the nightly's
+        # verify-sync.mjs, here so a PR that changes the file, its writer or
+        # the rule is checked before main. Self-test first.
+        run: |
+          node scripts/check-related-bills.mjs --self-test
+          node scripts/check-related-bills.mjs
       - name: Question-press gate (per-question GDELT evidence — rated outlets only, every count a stored link, never tone or text)
         # data/question-press.json is written by scripts/gdelt-intake.mjs in
         # its own twice-daily workflow (question-press.yml), which commits to
