@@ -150,7 +150,8 @@ const EXIT_PATHS: Array<{
   { path: 'history damaged', stub: GOOD, files: { corpus: [bill(1)], trendText: '{"nights":"x"}' }, code: 0, outcome: 'done', line: /short-titles-trend\.json could not be used .*started afresh/ },
   { path: 'history missing beside a titles file', stub: GOOD, files: { corpus: [bill(1)], before: titled([1]) }, code: 0, outcome: 'done', line: /short-titles-trend\.json is missing while .* exists; the 14-night history was started afresh/ },
   { path: 'breaker: 10 transport failures in a row', stub: `return new Response('down', { status: 503 });`, files: { corpus: range(30).map((n) => bill(n)) }, code: 0, outcome: 'stopped-early', line: /stopped early: 10 requests in a row got no usable answer/ },
-  { path: 'a 403 is access, not the source changing', stub: `return new Response('no', { status: 403 });`, files: { corpus: range(30).map((n) => bill(n)) }, code: 0, outcome: 'stopped-early', line: /stopped early: 10 requests in a row/ },
+  { path: 'a 403 is access, not the source changing', stub: `return new Response('no', { status: 403 });`, files: { corpus: range(30).map((n) => bill(n)) }, code: 0, outcome: 'stopped-early', line: /stopped early: Congress\.gov refused the key 10 times in a row \(HTTP 403\): check CONGRESS_API_KEY; 0 bill\(s\) read before it are kept/ },
+  { path: 'the hourly limit: 429s say so', stub: `return new Response('slow down', { status: 429 });`, files: { corpus: range(30).map((n) => bill(n)) }, code: 0, outcome: 'stopped-early', line: /stopped early: Congress\.gov answered HTTP 429 to 10 requests in a row, so the key's hourly request limit was reached; 0 bill\(s\) read before it are kept/ },
   { path: 'a 200 with an HTML page is transport, not the source changing', stub: `return new Response('<html><body>maintenance</body></html>', { status: 200, headers: { 'content-type': 'text/html' } });`, files: { corpus: range(30).map((n) => bill(n)) }, code: 0, outcome: 'stopped-early', line: /stopped early: 10 requests in a row/ },
   {
     path: 'an answer body that stops arriving is transport',
@@ -301,6 +302,10 @@ test('(ii) 11% of titled bills lose their short title: refused loudly, nothing w
   const after = JSON.parse(through.after!);
   expect(after[slug(3)].titles).toEqual([]);
   expect(after[slug(50)].titles).toEqual(['Fixture hr50 Act']);
+  // Round 6: the history marks the override night, and the summary names it, so the falling alarm can say so.
+  expect(JSON.parse(String(through.trend)).nights.at(-1)).toEqual({ day: TODAY, titled: 89, bills: 100, allow_drop: true });
+  expect(through.out).toMatch(new RegExp(`SHORT TITLES SUMMARY: .* drop_approved_on=${TODAY}$`, 'm'));
+  expect(JSON.parse(String(refused.trend)).nights.at(-1)).not.toHaveProperty('allow_drop');
 });
 
 /** One night in-process: the same two functions the script runs, with the files carried over. */
