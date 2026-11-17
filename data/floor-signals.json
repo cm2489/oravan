@@ -1,22 +1,22 @@
 {
   "_meta": {
     "schema": "floor-signals/v1",
-    "fetched_at": "2026-11-17T03:46:33.470Z",
+    "fetched_at": "2026-11-17T13:14:05.055Z",
     "sources": {
       "daily-digest": {
         "status": "ok",
-        "detail": "2 announced measure(s)/nomination(s)",
-        "checked_at": "2026-11-17T03:46:33.470Z",
-        "url": "https://www.congress.gov/119/crec/2026/11/13/d13no6-1.htm",
-        "published": "2026-11-13",
-        "covers": "2026-11-16",
-        "covers_label": "3 p.m., Monday, November 16",
-        "via": "congress.gov"
+        "detail": "1 announced measure(s)/nomination(s)",
+        "checked_at": "2026-11-17T13:14:05.055Z",
+        "url": "https://www.govinfo.gov/content/pkg/CREC-2026-11-16/html/CREC-2026-11-16-pt1-PgD1029.htm",
+        "published": "2026-11-16",
+        "covers": "2026-11-17",
+        "covers_label": "10 a.m., Tuesday, November 17",
+        "via": "govinfo"
       },
       "billsthisweek": {
         "status": "ok",
         "detail": "15 scheduled measure(s)",
-        "checked_at": "2026-11-17T03:46:33.470Z",
+        "checked_at": "2026-11-17T13:14:05.055Z",
         "url": "https://docs.house.gov/billsthisweek/20261116/20261116.xml",
         "published": "2026-11-16",
         "covers": "2026-11-16",
@@ -31,15 +31,22 @@
     },
     "next_meeting": {
       "senate": {
-        "date": "2026-11-16",
-        "label": "3 p.m., Monday, November 16"
+        "date": "2026-11-17",
+        "label": "10 a.m., Tuesday, November 17"
       },
       "house": {
         "date": "2026-11-17",
         "label": "12 noon, Tuesday, November 17"
       }
     },
-    "dropped": []
+    "dropped": [
+      {
+        "source": "daily-digest",
+        "reason": "nomination_unroutable",
+        "slug": null,
+        "text": "At 2:15 p.m., Senate will vote on confirmation of the nomination of"
+      }
+    ]
   },
   "signals": {
     "hr-10136-119": {
@@ -57,7 +64,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-11-17T03:46:33.470Z",
+      "fetched_at": "2026-11-17T13:14:05.055Z",
       "first_seen": "2026-11-16T11:02:12.090Z",
       "stale": false
     },
@@ -65,17 +72,17 @@
       "tier0": {
         "source": "daily-digest",
         "chamber": "senate",
-        "quote": "Following disposition of the nomination of Daniel Desmond Domenico, Senate will vote on the motion to invoke cloture on Thune (for Capito) Amendment No. 6883 to H.R. 2347, Survivor Justice Tax Prevention Act (legislative vehicle for the Bipartisan American Affordability and Jobs Act).",
+        "quote": "Senate will continue consideration of H.R. 2347,",
         "quote_lang": "en",
         "quote_kind": "digest_program_sentence",
-        "url": "https://www.congress.gov/119/crec/2026/11/13/d13no6-1.htm",
-        "published": "2026-11-13",
-        "covers": "2026-11-16",
-        "covers_label": "3 p.m., Monday, November 16",
+        "url": "https://www.govinfo.gov/content/pkg/CREC-2026-11-16/html/CREC-2026-11-16-pt1-PgD1029.htm",
+        "published": "2026-11-16",
+        "covers": "2026-11-17",
+        "covers_label": "10 a.m., Tuesday, November 17",
         "track": "unspecified",
-        "certainty": "scheduled_vote"
+        "certainty": "consideration"
       },
-      "fetched_at": "2026-11-17T03:46:33.470Z",
+      "fetched_at": "2026-11-17T13:14:05.055Z",
       "first_seen": "2026-11-14T11:25:14.228Z",
       "stale": false
     },
@@ -94,7 +101,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-11-17T03:46:33.470Z",
+      "fetched_at": "2026-11-17T13:14:05.055Z",
       "first_seen": "2026-11-16T11:02:12.090Z",
       "stale": false
     },
@@ -113,7 +120,7 @@
         "track": "rule",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-11-17T03:46:33.470Z",
+      "fetched_at": "2026-11-17T13:14:05.055Z",
       "first_seen": "2026-11-16T11:02:12.090Z",
       "stale": false
     },
@@ -132,7 +139,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-11-17T03:46:33.470Z",
+      "fetched_at": "2026-11-17T13:14:05.055Z",
       "first_seen": "2026-11-16T11:02:12.090Z",
       "stale": false
     },
@@ -151,7 +158,7 @@
         "track": "rule",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-11-17T03:46:33.470Z",
+      "fetched_at": "2026-11-17T13:14:05.055Z",
       "first_seen": "2026-11-16T11:02:12.090Z",
       "stale": false
     },
@@ -170,7 +177,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-11-17T03:46:33.470Z",
+      "fetched_at": "2026-11-17T13:14:05.055Z",
       "first_seen": "2026-11-16T11:02:12.090Z",
       "stale": false
     },
@@ -189,7 +196,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-11-17T03:46:33.470Z",
+      "fetched_at": "2026-11-17T13:14:05.055Z",
       "first_seen": "2026-11-16T11:02:12.090Z",
       "stale": false
     },
@@ -208,7 +215,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-11-17T03:46:33.470Z",
+      "fetched_at": "2026-11-17T13:14:05.055Z",
       "first_seen": "2026-11-16T11:02:12.090Z",
       "stale": false
     },
@@ -227,7 +234,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-11-17T03:46:33.470Z",
+      "fetched_at": "2026-11-17T13:14:05.055Z",
       "first_seen": "2026-11-16T11:02:12.090Z",
       "stale": false
     },
@@ -246,7 +253,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-11-17T03:46:33.470Z",
+      "fetched_at": "2026-11-17T13:14:05.055Z",
       "first_seen": "2026-11-16T11:02:12.090Z",
       "stale": false
     },
@@ -265,7 +272,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-11-17T03:46:33.470Z",
+      "fetched_at": "2026-11-17T13:14:05.055Z",
       "first_seen": "2026-11-16T11:02:12.090Z",
       "stale": false
     },
@@ -284,7 +291,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-11-17T03:46:33.470Z",
+      "fetched_at": "2026-11-17T13:14:05.055Z",
       "first_seen": "2026-11-16T11:02:12.090Z",
       "stale": false
     },
@@ -303,7 +310,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-11-17T03:46:33.470Z",
+      "fetched_at": "2026-11-17T13:14:05.055Z",
       "first_seen": "2026-11-16T11:02:12.090Z",
       "stale": false
     },
@@ -322,7 +329,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-11-17T03:46:33.470Z",
+      "fetched_at": "2026-11-17T13:14:05.055Z",
       "first_seen": "2026-11-16T11:02:12.090Z",
       "stale": false
     },
@@ -341,29 +348,10 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-11-17T03:46:33.470Z",
+      "fetched_at": "2026-11-17T13:14:05.055Z",
       "first_seen": "2026-11-16T11:02:12.090Z",
       "stale": false
     }
   },
-  "nominations": {
-    "PN999-2": {
-      "tier0": {
-        "source": "daily-digest",
-        "chamber": "senate",
-        "quote": "Senate will resume consideration of the nomination of Daniel Desmond Domenico, of Colorado, to be United States Circuit Judge for the Tenth Circuit, and vote on confirmation thereon at 5:30 p.m.",
-        "quote_lang": "en",
-        "quote_kind": "digest_program_sentence",
-        "url": "https://www.congress.gov/119/crec/2026/11/13/d13no6-1.htm",
-        "published": "2026-11-13",
-        "covers": "2026-11-16",
-        "covers_label": "3 p.m., Monday, November 16",
-        "track": "unspecified",
-        "certainty": "consideration"
-      },
-      "fetched_at": "2026-11-17T03:46:33.470Z",
-      "first_seen": "2026-11-16T20:58:27.125Z",
-      "stale": false
-    }
-  }
+  "nominations": {}
 }

@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-17T03:46:38.366Z",
+    "fetched_at": "2026-11-17T13:14:11.577Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-17T03:46:38.366Z"
+        "checked_at": "2026-11-17T13:14:11.577Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-15",
         "week_label": "Most-Viewed Bills - Week of November 15, 2026",
         "entries": 7,
-        "checked_at": "2026-11-17T03:46:38.366Z"
+        "checked_at": "2026-11-17T13:14:11.577Z"
       },
       "leans": {
         "center": {
@@ -315,6 +315,18 @@
           "firstSeen": "2026-11-12",
           "lastSeen": "2026-11-12",
           "url": "https://news.google.com/rss/articles/CBMiuwFBVV95cUxQR1dCTHhGYU0zMXk0b1kyS1JlVDBfakVndVV1bzJETUc3aU1hRVJfUm5oNVBIaUJBRzlYSlhDYWx4QjNPX0F2VTRMLTJxTHVKQmdOVHZteEFNSEpaZElkcUd1UHh1c2Y2UHVLVmFEY2o5TmhJUWY5Z21MWXZDbVRhYkl6NTRNcVVjb0ZraTJUWWdKX0JYYTNQSUwyb3JjXzRsa1hYRVZTZE42WWxPS0lQSXJIclVLS0tib2Nn?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-2072-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "grist.org",
+          "firstSeen": "2026-11-17",
+          "lastSeen": "2026-11-17",
+          "url": "https://news.google.com/rss/articles/CBMinAFBVV95cUxPRG1hSjc0SVQyc3R1VnBQNmdlRjBNUFllY0J1R3hPOXFjODkxdzlLd01LY1Q2YU5JYXJkbmVJX3d4QWYycGVOdE9HUk9Ub2Rwc2lpd29YUWg0NTh2eDBuXzNFMzBWZlFILXVrMkIwOWIwdWlZaHA4bTI0dHU2TnRSRlVCYnNaTWNXRjBRdUVQZVVrWTk2M1MwZ3RLeXM?oc=5"
         }
       ],
       "mostViewed": null
@@ -730,6 +742,12 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "therealdeal.com",
+          "firstSeen": "2026-11-17",
+          "lastSeen": "2026-11-17",
+          "url": "https://news.google.com/rss/articles/CBMimwFBVV95cUxQeUZEY0gzWWFzRC11eDZfa2dtQVA3NXY5TVVnY3UwY3phM3p5ZlRsVjQxbVRlOTltSko3bXIxRG5GTzdOX0prZkNLSFItNjJyU3c1dktuZENERDF0NkdQZ0k1MDh1Nk9JSnRDTi1iMzVnbFg4WVNsWU5ZbGxhVVFpMnltY3NIeW54ZmRhZTNoRzZTNG50LUN1dk9Odw?oc=5"
+        },
         {
           "domain": "baltimoresun.com",
           "firstSeen": "2026-11-14",
@@ -1499,6 +1517,12 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "grantspasstribune.com",
+          "firstSeen": "2026-11-17",
+          "lastSeen": "2026-11-17",
+          "url": "https://news.google.com/rss/articles/CBMi1wFBVV95cUxQcUtXVmo4NzJpRXJzUE5JQnU5V0M3TEdxNHNnYm9GaXZNXzUwTFVTNm9XaXlSZTlEUjY3Wm1Xa0lXM1E3aXBsS0doRHlQbHVvU1RVV2l1WkhaQ0hvSEhyeVhXWlRVUmFrd0pOR1RDSUtYNkhOQmdlQXBlOEwtZC1pcWI3ZEt1SmZKT09iV2RxV0MyS1k3RWEtajJKSkFBazBtSWZXWHoySEo5amRXWTFlMzFsZjg1a0c2STc0czR3dkg2ZVBDTEZCc3dTRzJnVHJPVTdPYklhRQ?oc=5"
+        },
         {
           "domain": "cair.com",
           "firstSeen": "2026-11-12",
