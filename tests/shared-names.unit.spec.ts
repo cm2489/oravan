@@ -6,7 +6,15 @@ import es from '../messages/es.json';
 import { congressTerm } from '../lib/congress.mjs';
 import { getAllBills } from '../lib/core';
 import { shareAddress, type ShareTables } from '../lib/share-address';
-import { inSharedNameOrder, sharedNamePages, sharedNamePagesFrom, sharedNamePath, SHARED_NAME_TYPE_ORDER } from '../lib/shared-names';
+import {
+  inSharedNameOrder,
+  SHARED_NAME_FLOOR_CHIP,
+  SHARED_NAME_TYPE_ORDER,
+  sharedNamePages,
+  sharedNamePagesFrom,
+  sharedNamePath,
+  sharedNameStanding,
+} from '../lib/shared-names';
 import {
   decodeNameTables,
   decodeShortAddressFallback,
@@ -128,7 +136,7 @@ test('when names change: unique becomes shared lands on the page; shared becomes
   expect(gone.target('/laken-riley-act')).toBeNull();
 });
 
-test('Share: its own name; no short title, the number; a SHARED name, the number (the session’s reading)', () => {
+test('Share: its own name; no short title, the number; a SHARED name, the name (the owner’s share = b, Nov 15)', () => {
   const corpus = [b('hr', 9770), b('sjres', 99), b('s', 5), b('hr', 29)];
   const titles: ShortTitleFile = {
     'hr-9770-119': { titles: ['Continuing Appropriations Act, 2027'] },
@@ -139,9 +147,91 @@ test('Share: its own name; no short title, the number; a SHARED name, the number
   const { tables } = world(corpus, titles);
   expect(shareAddress(corpus[0], 'en', tables)).toBe('https://oravan.org/continuing-appropriations-act-2027');
   expect(shareAddress(corpus[1], 'en', tables)).toBe('https://oravan.org/sjres99');
-  // The name would land on the list page, where the reader might pick the other bill:
-  expect(shareAddress(corpus[2], 'en', tables)).toBe('https://oravan.org/s5');
-  expect(shareAddress(corpus[3], 'es', tables)).toBe('https://oravan.org/es/hr29');
+  // The name lands on the list page, and the friend picks:
+  expect(shareAddress(corpus[2], 'en', tables)).toBe('https://oravan.org/laken-riley-act');
+  expect(shareAddress(corpus[3], 'es', tables)).toBe('https://oravan.org/es/laken-riley-act');
+});
+
+/*
+ * WHERE EACH LISTED BILL STANDS NOW (the owner's note of Nov 15, 2026). The
+ * records below are copied from data/bills.json and data/floor-signals.json as
+ * committed on 2026-11-17 (marked "today's data") or built in their shape
+ * (marked "constructed"); the clock and the chamber sessions are pinned here,
+ * so nothing ages out.
+ */
+const NOW = Date.parse('2026-11-17T15:00:00Z');
+const MEETING = () => 'in_session' as const;
+const OUT = () => 'out_of_session' as const;
+const rec = (bill_type: string, bill_number: number, status: string, last_action_text: string, last_action_date: string, extra: object = {}) =>
+  ({ bill_type, bill_number, congress_number: 119, status, last_action_text, last_action_date, ...extra }) as Parameters<typeof sharedNameStanding>[0];
+
+test('standing, case 1 (today’s data): on this week’s House floor schedule; the tag carries the schedule’s own date', () => {
+  const hr2400 = rec('hr', 2400, 'passed_chamber', 'Message on Senate action sent to the House.', '2026-11-16', {
+    status_basis_text: 'Passed Senate with an amendment by Unanimous Consent. (consideration: CR S5297-5298)',
+  });
+  const s2871 = rec('s', 2871, 'committee', 'Committee on Indian Affairs. Hearings held.', '2026-06-03');
+  const live = sharedNameStanding(hr2400, { chamber: 'house', published: '2026-11-11' }, { now: NOW, sessionOf: MEETING });
+  expect(live.floor).toEqual({ kind: 'announced', chamber: 'house', date: '2026-11-11', suspended: false, key: 'bill.floor.announcedHouse' });
+  expect(live.line).toMatchObject({ key: 'passedBack', chamber: 'house', date: '2026-11-16' });
+  const twin = sharedNameStanding(s2871, null, { now: NOW, sessionOf: MEETING });
+  expect(twin.floor).toBeNull();
+  expect(twin.line).toMatchObject({ key: 'inCommittee', date: '2026-06-03' });
+});
+
+test('standing, the owner’s example (constructed): the Senate passed it and the House has it on its schedule', () => {
+  const s5 = rec('s', 5, 'passed_chamber', 'Received in the House.', '2026-11-14');
+  const atHouse = sharedNameStanding(s5, { chamber: 'house', published: '2026-11-16' }, { now: NOW, sessionOf: MEETING });
+  expect(atHouse.line).toMatchObject({ key: 'passedWaiting', chamber: 'house', passedBy: 'senate', date: '2026-11-14' });
+  expect(atHouse.floor?.key).toBe('bill.floor.announcedHouse');
+  // The same bill before the House names it: where it stands, and no tag.
+  expect(sharedNameStanding(s5, null, { now: NOW, sessionOf: MEETING }).floor).toBeNull();
+});
+
+test('standing, a fresh calendar placement (today’s data, S. 4870): tagged while the Senate meets, not while it is out', () => {
+  const s4870 = rec('s', 4870, 'floor_vote', 'Placed on Senate Legislative Calendar under General Orders. Calendar No. 709.', '2026-11-12');
+  expect(sharedNameStanding(s4870, null, { now: NOW, sessionOf: MEETING }).floor).toMatchObject({ kind: 'calendar', chamber: 'senate', date: '2026-11-12', key: 'bill.floor.calendarSenate' });
+  expect(sharedNameStanding(s4870, null, { now: NOW, sessionOf: OUT }).floor).toBeNull();
+  // The line stays the record's, whatever the session.
+  expect(sharedNameStanding(s4870, null, { now: NOW, sessionOf: OUT }).line).toMatchObject({ key: 'onCalendar', chamber: 'senate' });
+  // Weeks later the placement is no longer a fresh floor fact: no tag (the line still says where it stands).
+  expect(sharedNameStanding(s4870, null, { now: Date.parse('2027-01-20T15:00:00Z'), sessionOf: MEETING }).floor).toBeNull();
+});
+
+test('standing, cases 2 to 4 (today’s data): passed one chamber; a law beside its twin on a calendar; twins in committee: no tag on any', () => {
+  const cases = [
+    [rec('hr', 8800, 'passed_chamber', 'Received in the Senate.', '2026-09-14'), { key: 'passedWaiting', chamber: 'senate', passedBy: 'house' }],
+    [rec('s', 5, 'signed', 'Became Public Law No: 119-1.', '2025-01-29'), { key: 'signed', law: '119-1', terminal: true }],
+    [rec('hr', 29, 'floor_vote', 'Read the second time. Placed on Senate Legislative Calendar under General Orders. Calendar No. 10.', '2025-02-10'), { key: 'onCalendar', chamber: 'senate' }],
+    [rec('hr', 2709, 'committee', 'Committee on Energy and Natural Resources. Hearings held.', '2026-09-16'), { key: 'inCommittee' }],
+    [rec('s', 4103, 'committee', 'Committee on Energy and Natural Resources. Hearings held.', '2026-09-16'), { key: 'inCommittee' }],
+  ] as const;
+  for (const [bill, line] of cases) {
+    const s = sharedNameStanding(bill, null, { now: NOW, sessionOf: MEETING });
+    expect(s.floor, `${bill.bill_type} ${bill.last_action_text}`).toBeNull();
+    expect(s.line).toMatchObject({ ...line, date: bill.last_action_date });
+  }
+});
+
+test('standing: the chip strings are the bill page’s and the crown’s own, in both languages; the page prints the data’s age', () => {
+  const billPage = readFileSync(join(process.cwd(), 'app/[locale]/bills/[id]/page.tsx'), 'utf8');
+  const home = readFileSync(join(process.cwd(), 'app/[locale]/page.tsx'), 'utf8');
+  const floorEn = en.bill.floor as Record<string, string>;
+  const floorEs = es.bill.floor as Record<string, string>;
+  for (const byChamber of Object.values(SHARED_NAME_FLOOR_CHIP)) {
+    for (const key of Object.values(byChamber)) {
+      expect(billPage).toContain(`chip: '${key}'`);
+      expect(home).toContain(`'${key}'`);
+      const leaf = key.replace('bill.floor.', '');
+      expect(floorEn[leaf]).toBeTruthy();
+      expect(floorEs[leaf]).toBeTruthy();
+    }
+  }
+  const page = readFileSync(join(process.cwd(), 'app/[locale]/names/[congress]/[name]/page.tsx'), 'utf8');
+  expect(page).toContain('<MomentStatusLine line={standing.line}');
+  expect(page).toMatch(/<Chip tone="floor" dateLabel=\{day\(standing\.floor\.date\)\}>/);
+  expect(page).toContain('{dataAsOf}');
+  // The tag sentence only when a listed bill carries a tag.
+  expect(page).toContain("{anyFloor && <> {t('namesPage.standingFloor')}</>}");
 });
 
 test('the committed state: no titles file, so no page; the page reads its strings on the server only', () => {

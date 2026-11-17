@@ -39,6 +39,9 @@ import {
   type ShortTitleFile,
 } from './short-address';
 import { nameTablesForBuild, readShortTitles, reservedNames } from './short-address-build';
+import type { ChamberSession } from './docket';
+import { billFloorBand, type Chamber, type FloorBandKind } from './journey';
+import { billStatusLine, type StatusLine } from './moment-status.mjs';
 
 /** The order a page lists bills in: House types, then Senate types, as Congress numbers them. */
 export const SHARED_NAME_TYPE_ORDER: readonly ShortAddressType[] = Object.freeze([
@@ -136,4 +139,54 @@ export function sharedNamePages(bills: readonly ShortAddressBill[], root: string
 /** The address of a shared name's page, locale-relative (no /es). */
 export function sharedNamePath(congress: number, name: string): string {
   return `/names/${congress}/${name}`;
+}
+
+/*
+ * WHERE EACH LISTED BILL STANDS NOW (2026-11-17; the owner's note of Nov 15,
+ * 2026 on this page: "Make sure there is a tag on the bill if it is up for a
+ * vote or is about to be. Example, someone clicks the S.5 link but its a
+ * couple of days old when they click it and the senate has already voted on
+ * it and now it is at the house for a vote.").
+ *
+ * Two readings the site already makes, and nothing new (hard rule 6):
+ *   - THE LINE: lib/moment-status.mjs billStatusLine, the record-only "where it
+ *     stands" line a Big Question's vehicle cards print for the same purpose
+ *     (twin bills side by side): "Passed the House; waiting on the Senate.",
+ *     "Signed into law as Public Law 119-1.", "In committee.", else the
+ *     record's own latest action quoted. It carries the record's date.
+ *   - THE TAG: lib/journey.ts billFloorBand, the bill page's own floor gate:
+ *     the chamber's own published floor schedule naming the bill (its
+ *     publication date), or a fresh calendar placement or pending floor vote
+ *     in the record (the record's date). It is dropped when that chamber is
+ *     not meeting (`suspended`), exactly as the bill page drops its panel, so
+ *     no floor claim is live while nothing can happen. It never prints a vote
+ *     date: no record here holds one.
+ * Both are read at BUILD time, like every page; the clock and the session
+ * reader are parameters so a test pins them.
+ */
+
+/** The chip strings, exactly the bill page's and the homepage crown's (FLOOR_COPY / FLOOR_LABEL_KEYS). */
+export const SHARED_NAME_FLOOR_CHIP = {
+  announced: { house: 'bill.floor.announcedHouse', senate: 'bill.floor.announcedSenate' },
+  calendar: { house: 'bill.floor.calendarHouse', senate: 'bill.floor.calendarSenate' },
+  pending: { house: 'bill.floor.pendingHouse', senate: 'bill.floor.pendingSenate' },
+} as const;
+
+export interface SharedNameStanding {
+  line: StatusLine;
+  /** The live floor tag, or null: no floor fact, or its chamber is not meeting. */
+  floor: { kind: FloorBandKind; chamber: Chamber; date: string; key: string } | null;
+}
+
+/** One listed bill's standing. Pure: the record, the bill's live announcement (or null), the clock, the sessions. */
+export function sharedNameStanding(
+  bill: Parameters<typeof billFloorBand>[0] & { bill_type: string; last_action_text?: string | null },
+  announcement: { chamber: Chamber; published: string } | null,
+  { now = Date.now(), sessionOf }: { now?: number; sessionOf?: (chamber: Chamber) => ChamberSession } = {},
+): SharedNameStanding {
+  const band = billFloorBand(bill, announcement, now, sessionOf);
+  return {
+    line: billStatusLine(bill, now),
+    floor: band && !band.suspended ? { ...band, key: SHARED_NAME_FLOOR_CHIP[band.kind][band.chamber] } : null,
+  };
 }

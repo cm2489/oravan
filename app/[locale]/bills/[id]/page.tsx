@@ -330,8 +330,10 @@ export default async function BillPage({
   const recordLabels = { en: recordLabelFor('en'), es: recordLabelFor('es') };
   const recordLabel = recordLabelFor(locale);
   // The link the share panel hands out (DRAFT, waits for the owner): the
-  // bill's short address, a record short title's name when this bill alone
-  // carries it, else its number, else the full address (lib/share-address.ts).
+  // bill's short address: a record short title's name when this bill alone
+  // carries it, else a name it shares (it opens the page listing the bills;
+  // the owner's share = b, Nov 15, 2026), else its number, else the full
+  // address (lib/share-address.ts).
   // Built at build time; never a query, a stance or a locale-tracking param.
   // The origin lives in lib/site.ts.
   const shareUrl = shareAddress(raw, locale, shareTablesFor(getAllBills()));

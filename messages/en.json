@@ -1864,6 +1864,8 @@
     "intro": "{count} bills Oravan tracks in the {congress, selectordinal, one {#st} two {#nd} few {#rd} other {#th}} Congress have a short title that makes this name, so this address lists them all instead of picking one.",
     "order": "House bills are listed first, then Senate bills, each by number.",
     "ownTitle": "Its short title:",
+    "standing": "Above each bill: where it stands now in the official record.",
+    "standingFloor": "A dated tag marks a bill on a chamber’s floor schedule or calendar.",
     "listLabel": "Bills with this short title",
     "metaTitle": "Bills titled “{title}”"
   }

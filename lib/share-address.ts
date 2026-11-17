@@ -6,22 +6,25 @@
  * bill's own official short title in the record, never chosen by Oravan."
  *
  * His choice on card 193 (Nov 14, 2026, 9:13 PM ET): "Then Share copies the
- * name, or the number when a bill has no short title."
+ * name, or the number when a bill has no short title." His answer `share` = b
+ * (Nov 15, 2026): on a bill whose name is SHARED, Share copies THE NAME too,
+ * so the friend lands on the page listing the bills and picks.
  *
  * So the link a reader copies or shares from a bill page is the bill's
  * SHORT address, worked out at BUILD time from the same tables proxy.ts
  * answers from (lib/short-address.ts), and only when that address really
- * opens THIS bill today, so whoever receives the link lands on the bill the
- * sharer was looking at:
+ * reaches THIS bill today:
  *   1. its name, when one of its record short titles makes a name no other
- *      bill Oravan tracks makes (several: the shortest, then code-point order);
- *   2. otherwise its number (oravan.org/hr9770), when the number opens it
- *      (always, for a bill of the tracked Congress). This covers a bill with
- *      no short title, AND a bill whose name is SHARED: that name opens the
- *      page listing every bill that makes it, where the reader might pick the
- *      other bill. The shared case is the orchestrating session's reading of
- *      his words (2026-11-15), not his own; he can overrule it;
- *   3. otherwise the full address (/bills/<slug>), as before.
+ *      bill Oravan tracks makes: the name opens this bill (several: the
+ *      shortest, then code-point order);
+ *   2. otherwise a SHARED name of its own, when that name opens the page
+ *      listing this bill among the others of its Congress
+ *      (/names/<its congress>/<name>; same order). A name the new Congress
+ *      took after a switch opens another Congress's bill or page and is never
+ *      handed out for this one;
+ *   3. otherwise its number (oravan.org/hr9770), when the number opens it
+ *      (always, for a bill of the tracked Congress): a bill with no short title;
+ *   4. otherwise the full address (/bills/<slug>), as before.
  * English at oravan.org/<address>, Spanish at oravan.org/es/<address>.
  *
  * WHAT IT NEVER DOES: carry a query, a stance or anything about the reader
@@ -61,13 +64,17 @@ const LOCALES = ['en', 'es'];
 /** The path part of the short address for one bill: '/<name>', '/<type><number>', or null. Pure. */
 export function shortSharePath(bill: ShortAddressBill, tables: ShareTables): string | null {
   const slug = `${bill.bill_type}-${bill.bill_number}-${bill.congress_number}`;
-  const opens = (path: string) =>
-    (shortAddressTarget(path, LOCALES, 'en', tables.index, tables.fallback, tables.congress) ??
-      nameAddressTarget(path, LOCALES, 'en', tables.names)) === `/bills/${slug}`;
-  const names = [...new Set((tables.titles[slug]?.titles ?? []).map((t) => nameSlug(t)).filter((n): n is string => !!n))]
-    .sort((a, b) => a.length - b.length || (a < b ? -1 : a > b ? 1 : 0))
-    .filter((name) => opens(`/${name}`));
-  if (names.length > 0) return `/${names[0]}`;
+  const target = (path: string) =>
+    shortAddressTarget(path, LOCALES, 'en', tables.index, tables.fallback, tables.congress) ??
+    nameAddressTarget(path, LOCALES, 'en', tables.names);
+  const opens = (path: string) => target(path) === `/bills/${slug}`;
+  const all = [...new Set((tables.titles[slug]?.titles ?? []).map((t) => nameSlug(t)).filter((n): n is string => !!n))].sort(
+    (a, b) => a.length - b.length || (a < b ? -1 : a > b ? 1 : 0),
+  );
+  const own = all.find((name) => opens(`/${name}`));
+  if (own) return `/${own}`;
+  const shared = all.find((name) => target(`/${name}`) === `/names/${bill.congress_number}/${name}`);
+  if (shared) return `/${shared}`;
   const number = `/${bill.bill_type}${bill.bill_number}`;
   return opens(number) ? number : null;
 }

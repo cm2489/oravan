@@ -7,7 +7,7 @@ import { useTranslations } from 'next-intl';
 /*
  * Share a bill page. The URL is the bill's short address (DRAFT, waits for
  * the owner; built server-side by lib/share-address.ts: a record short
- * title's name, else the number, else the full page URL): no query params,
+ * title's name, shared or not, else the number, else the full page URL): no query params,
  * no stance, no locale-tracking params — a shared link must say nothing
  * about the person who shared it. Native share sheet when the browser has one; otherwise a
  * copy-link button plus a plain WhatsApp anchor (user-initiated navigation).

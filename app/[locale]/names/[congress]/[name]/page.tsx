@@ -1,12 +1,15 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { getFormatter, getTranslations, setRequestLocale } from 'next-intl/server';
 import { BillCard } from '@/components/BillCard';
+import { MomentStatusLine } from '@/components/MomentStatusLine';
 import { Chip } from '@/components/system';
 import { routing } from '@/i18n/routing';
 import { getAllBills, getBill, teaserFor } from '@/lib/core';
+import { chamberSession, rungFor } from '@/lib/docket';
+import { dataAsOfString } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
-import { sharedNamePages, sharedNamePath, type SharedNamePage } from '@/lib/shared-names';
+import { sharedNamePages, sharedNamePath, sharedNameStanding, type SharedNamePage } from '@/lib/shared-names';
 
 /*
  * THE PAGE FOR A SHARED NAME (DRAFT, 2026-11-15; waits for the owner to see
@@ -26,7 +29,17 @@ import { sharedNamePages, sharedNamePath, type SharedNamePage } from '@/lib/shar
  * making this name; the order rule; then each bill as the site's own bill card
  * (components/BillCard: its number, its status in the site's wording, the
  * decoded headline, else the record's title) with its chamber and, when its
- * spelling differs from the others, its own short title. The AI label sits
+ * spelling differs from the others, its own short title.
+ *
+ * WHERE EACH BILL STANDS NOW (the owner's note of Nov 15, 2026: a link opened
+ * days later, after the Senate voted and the bill went to the House). Above
+ * each card: the record's own "where it stands" line with its date (the line
+ * a Big Question's vehicle cards print for twin bills), and, only while the
+ * bill page's own floor gate holds a live floor fact for it, that fact's
+ * chip with its date (lib/shared-names.ts sharedNameStanding). With no live
+ * floor fact on any listed bill there is no tag and no sentence about one.
+ * The page prints the data's age (hard rule 6). The ORDER stays mechanical:
+ * the line and the tag say which bill is moving, so the order never has to. The AI label sits
  * above the list whenever a card shows a decoded headline, as on /bills. No
  * call button, no stance, no member lookup, no coverage, no relation between
  * the bills (data/related-bills.json is not on this branch, so the page says
@@ -95,14 +108,26 @@ export default async function SharedNamePage({
   const page = pageFor(congress, name);
   if (!page) notFound();
   const t = await getTranslations({ locale });
+  const format = await getFormatter({ locale });
+  const dataAsOf = await dataAsOfString(locale);
   const titles = spellings(page);
   const rows = page.bills
     .map((b) => {
       const raw = getBill(b.slug);
-      return raw ? { bill: b, teaser: teaserFor(raw, locale) } : null;
+      if (!raw) return null;
+      // The bill page's own reading: the chamber's announcement only while it is live (rungFor), then billFloorBand.
+      const rung = rungFor(raw, b.slug);
+      const announced = rung.tier === 't0' ? rung.announced : null;
+      const standing = sharedNameStanding(raw, announced ? { chamber: announced.chamber, published: announced.published } : null, {
+        sessionOf: (c) => chamberSession(c),
+      });
+      return { bill: b, teaser: teaserFor(raw, locale, rung), standing };
     })
     .filter((r): r is NonNullable<typeof r> => r !== null);
   const anyHeadline = rows.some((r) => r.teaser.headline);
+  const anyFloor = rows.some((r) => r.standing.floor);
+  // A date-only string: format in UTC or it reads a day early.
+  const day = (d: string) => format.dateTime(new Date(d), { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' });
 
   return (
     <div className="mx-auto max-w-5xl px-4 pt-12 pb-16">
@@ -120,6 +145,10 @@ export default async function SharedNamePage({
         {t('namesPage.intro', { count: rows.length, congress: page.congress })}
       </p>
       <p className="mt-3 max-w-read text-sm text-ink-2">{t('namesPage.order')}</p>
+      <p className="mt-3 max-w-read text-sm text-ink-2" data-testid="names-standing-note">
+        {t('namesPage.standing')}
+        {anyFloor && <> {t('namesPage.standingFloor')}</>} {dataAsOf}.
+      </p>
       {anyHeadline && (
         <p className="mt-5">
           <Chip tone="ai" marker={t('common.aiMarker')} className="max-w-read">
@@ -128,7 +157,7 @@ export default async function SharedNamePage({
         </p>
       )}
       <ul className="mt-6 grid gap-4 md:grid-cols-2" aria-label={t('namesPage.listLabel')}>
-        {rows.map(({ bill, teaser }) => (
+        {rows.map(({ bill, teaser, standing }) => (
           <li key={bill.slug}>
             <p className="mb-1.5 text-sm text-ink-2">
               {t(`votes.chamber.${bill.chamber}`)}
@@ -139,6 +168,14 @@ export default async function SharedNamePage({
                 </>
               )}
             </p>
+            {standing.floor && (
+              <p className="mb-2" data-testid="names-floor-tag">
+                <Chip tone="floor" dateLabel={day(standing.floor.date)}>
+                  {t(standing.floor.key)}
+                </Chip>
+              </p>
+            )}
+            <MomentStatusLine line={standing.line} className="mb-3" />
             <BillCard bill={teaser} />
           </li>
         ))}

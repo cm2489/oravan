@@ -1864,6 +1864,8 @@
     "intro": "{count} proyectos de ley que Oravan sigue en el Congreso {congress} tienen un título corto que forma este nombre, así que esta dirección los muestra todos en lugar de elegir uno.",
     "order": "Primero aparecen los proyectos de la Cámara de Representantes y luego los del Senado, cada uno por número.",
     "ownTitle": "Su título corto:",
+    "standing": "Encima de cada proyecto: dónde está ahora según el registro oficial.",
+    "standingFloor": "Una etiqueta con fecha señala un proyecto que está en el calendario o en la agenda del pleno de una cámara.",
     "listLabel": "Proyectos de ley con este título corto",
     "metaTitle": "Proyectos de ley titulados “{title}”"
   }
