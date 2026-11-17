@@ -168,7 +168,9 @@ test.describe('(d) the number of bills with a twin falling (state, not the log)'
   const at = (carrying: number, previous: number | undefined) =>
     codes(relatedAlarms({ trouble: null, staleness: relatedStaleness(filled(carrying, previous), NOW) }));
 
-  test('at 125 (today\'s real count), a fall of 14 fires and a fall of 13 does not', () => {
+  test('at 125, a fall of 14 fires and a fall of 13 does not; at 107 (a full read of today\'s record), 12 fires and 11 does not', () => {
+    expect(at(95, 107)).toEqual(['related-bills-twins-fell']);
+    expect(at(96, 107)).toEqual([]);
     expect(at(111, 125)).toEqual(['related-bills-twins-fell']);
     expect(at(112, 125)).toEqual([]);
     const a = relatedAlarms({ trouble: null, staleness: relatedStaleness(filled(111, 125), NOW) });
