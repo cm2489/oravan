@@ -31,7 +31,9 @@
  *   - a hang or a network error is NOT retried; a 5xx or 429 is retried once
  *     after PAUSE_MS (3 s): at most 15 + 3 + 15 = 33 s for one bill;
  *   - MAX_FAILS_IN_A_ROW (5) failed lookups in a row stop the run;
- *   - no new lookup starts after BUDGET_MS (5 min) from the start;
+ *   - no new lookup starts after BUDGET_MS (5 min) from the start; what was
+ *     read by then is written like any night's (2026-11-18), and the bills
+ *     not read keep their old check day, so they go first the next night;
  *   - so the run ends within about 5 min + 33 s + a few seconds of reading
  *     and writing. The workflow step also runs it under `timeout 8m` and has
  *     `timeout-minutes: 10` as backstops.
@@ -41,17 +43,20 @@
  *   - `RELATED START: …` first, before anything can fail. A log with this
  *     line and neither of the two below is a crash (or a kill by the step's
  *     timeout) the report alarms on.
- *   - `RELATED DONE: looked up N of M planned (F failed; …` when it wrote,
- *     with `_meta.filled_at` set to today and `_meta.previous_carrying` set
- *     to the number of bills that carried a twin before tonight. A lookup
- *     that fails (no answer, an error status, or an answer not in the
- *     documented shape) leaves that bill as it was, so it stays first in line
- *     the next night; the report alarms when half or more failed.
+ *   - `RELATED DONE: looked up N of M planned (F failed: a no answer, b an
+ *     error status, c an unreadable answer, d a misshapen answer; …` when it
+ *     wrote, with
+ *     `_meta.filled_at` set to today and `_meta.previous_carrying` set to the
+ *     number of bills that carried a twin before tonight. A night the time
+ *     budget cut short adds `; stopped early after K of M lookups …`. A
+ *     lookup that fails leaves that bill as it was, so it stays first in line
+ *     the next night; the report alarms when the bills that failed or were
+ *     not read are half or more of the plan.
  *   - `RELATED STOPPED: <why>. data/related-bills.json was left as it was.`
- *     on every other ending: no key, five failures in a row, the time
- *     budget, every lookup failed, the new file failed its own gate, or
- *     anything thrown. Printed as an ::error:: annotation. Whatever tonight
- *     read is not written: the file stays exactly as the night began.
+ *     on every other ending: no key, five failures in a row, every lookup
+ *     failed, the new file failed its own gate, or anything thrown. Printed
+ *     as an ::error:: annotation. Whatever tonight read is not written: the
+ *     file stays exactly as the night began.
  * The file is written to a temporary name and renamed, so it is never
  * half-written; a kill (SIGTERM) removes the temporary file, and
  * .gitignore keeps a leftover one out of the nightly commit.
@@ -129,7 +134,14 @@ try {
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   let requests = 0;
 
-  /** One bill's related-bills answer, or a thrown Error saying why not. */
+  /** An Error that says which kind of failure it was: 'no-answer' (a hang or
+   *  a dropped connection), 'status' (an error status), 'unreadable' (an
+   *  answer arrived but its body could not be read as JSON, such as an HTML
+   *  page), or 'shape' (an answer not in the documented shape). The DONE line
+   *  and the health report's lookups alarm count them by kind. */
+  const failure = (kind, message) => Object.assign(new Error(message), { kind });
+
+  /** One bill's related-bills answer, or a thrown failure() saying why not. */
   const lookup = async (path) => {
     for (let attempt = 1; ; attempt++) {
       const url = new URL(`${API}${path}`);
@@ -145,14 +157,16 @@ try {
       } catch (e) {
         // A hang or a dropped connection is not waited out twice.
         const hung = e?.name === 'TimeoutError' || e?.name === 'AbortError';
-        throw new Error(hung ? `no answer within ${ATTEMPT_MS / 1000} s for ${path}` : `could not read the answer for ${path} (${e?.name ?? 'error'})`);
+        if (hung) throw failure('no-answer', `no answer within ${ATTEMPT_MS / 1000} s for ${path}`);
+        // Headers arrived, so Congress.gov did answer; the body did not read.
+        throw failure(res ? 'unreadable' : 'no-answer', `could not read the answer for ${path} (${e?.name ?? 'error'})`);
       }
       if (res.ok) return body;
       if ((res.status >= 500 || res.status === 429) && attempt < 2) {
         await sleep(PAUSE_MS);
         continue;
       }
-      throw new Error(`Congress.gov ${res.status} for ${path}`);
+      throw failure('status', `Congress.gov ${res.status} for ${path}`);
     }
   };
 
@@ -182,25 +196,35 @@ try {
     let firstError = null;
     let lastError = null;
     let stopReason = null;
+    let stoppedEarly = null;
+    const kinds = { 'no-answer': 0, status: 0, unreadable: 0, shape: 0 };
     let gained = 0;
     let lost = 0;
     for (const slug of plan) {
       if (Date.now() - began > BUDGET_MS) {
-        stopReason = `it reached its ${BUDGET_MS / 1000}-second time budget after ${ok + failed} of ${plan.length} lookups, so Congress.gov is answering very slowly`;
+        // A clean early stop (2026-11-18): what was read is written below
+        // like any night's, and the bills not read keep their old check day,
+        // so they are first in line the next night.
+        stoppedEarly = { after: ok + failed, of: plan.length };
         break;
       }
       let rows;
       try {
         const payload = await lookup(billApiPath(bySlug.get(slug), '/relatedbills'));
         const problem = recordAnswerProblem(payload);
-        if (problem) throw new Error(`the answer for ${slug} is not in the documented shape: ${problem}`);
-        rows = identicalFromRecord(payload, slug);
+        if (problem) throw failure('shape', `the answer for ${slug} is not in the documented shape: ${problem}`);
+        // Only twins that are corpus bills (2026-11-18). A twin the corpus
+        // does not hold has no page and no coverage, so storing it changed
+        // nothing a reader sees, and pruneToCorpus took it out again the next
+        // night: the file changed on alternate nights for nothing.
+        rows = identicalFromRecord(payload, slug).filter((r) => corpus.has(r.slug));
         if ((payload?.pagination?.count ?? 0) > 250) {
           console.log(`::warning::${slug} has ${payload.pagination.count} related bills; only the first 250 were read`);
         }
       } catch (e) {
         failed++;
         inARow++;
+        kinds[e?.kind in kinds ? e.kind : 'no-answer']++;
         lastError = redact(e?.message ?? e);
         firstError ??= lastError;
         console.log(`FAIL ${slug}: ${lastError}`);
@@ -231,8 +255,8 @@ try {
 
     if (stopReason) {
       stop(stopReason);
-    } else if (ok === 0 && plan.length > 0) {
-      stop(`all ${plan.length} lookups failed (the first: ${firstError})`);
+    } else if (ok === 0 && (stoppedEarly ? stoppedEarly.after : plan.length) > 0) {
+      stop(`all ${stoppedEarly ? stoppedEarly.after : plan.length} lookups failed (the first: ${firstError})`);
     } else {
       // The day this run finished (the stale alarm's clock) and the count of
       // bills with a twin before tonight (the twin-count alarm's baseline).
@@ -245,8 +269,14 @@ try {
         stop(`the new file failed its own gate (${failures.length} finding(s); the first: ${failures[0]})`);
       } else {
         writeAtomic(text);
+        const failedText = failed
+          ? `${failed} failed: ${kinds['no-answer']} no answer, ${kinds.status} an error status, ${kinds.unreadable} an unreadable answer, ${kinds.shape} a misshapen answer`
+          : '0 failed';
+        const early = stoppedEarly
+          ? `; stopped early after ${stoppedEarly.after} of ${stoppedEarly.of} lookups at the ${BUDGET_MS / 1000}-second time budget, so Congress.gov is answering very slowly, and the ${stoppedEarly.of - stoppedEarly.after} not read go first next night`
+          : '';
         console.log(
-          `RELATED DONE: looked up ${ok} of ${plan.length} planned (${failed} failed; ${candidates.length} candidate bills, ${withCoverage.length} with coverage); ${gained} relation(s) added, ${lost} removed; ${carryingCount(file)} bills carry an identical bill (${previousCarrying} before tonight); pruned ${pruned.keys} bill(s) and ${pruned.rows} twin row(s) no longer in data/bills.json${pruned.future ? `, and treated ${pruned.future} future check day(s) as never checked` : ''}. Congress.gov requests: ${requests}. Cost: $0.`
+          `RELATED DONE: looked up ${ok} of ${plan.length} planned (${failedText}; ${candidates.length} candidate bills, ${withCoverage.length} with coverage)${early}; ${gained} relation(s) added, ${lost} removed; ${carryingCount(file)} bills carry an identical bill (${previousCarrying} before tonight); pruned ${pruned.keys} bill(s) and ${pruned.rows} twin row(s) no longer in data/bills.json${pruned.future ? `, and treated ${pruned.future} future check day(s) as never checked` : ''}. Congress.gov requests: ${requests}. Cost: $0.`
         );
       }
     }
