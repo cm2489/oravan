@@ -44,7 +44,8 @@
  *     line and neither of the two below is a crash (or a kill by the step's
  *     timeout) the report alarms on.
  *   - `RELATED DONE: looked up N of M planned (F failed: a no answer, b an
- *     error status, c a misshapen answer; …` when it wrote, with
+ *     error status, c an unreadable answer, d a misshapen answer; …` when it
+ *     wrote, with
  *     `_meta.filled_at` set to today and `_meta.previous_carrying` set to the
  *     number of bills that carried a twin before tonight. A night the time
  *     budget cut short adds `; stopped early after K of M lookups …`. A
@@ -134,9 +135,10 @@ try {
   let requests = 0;
 
   /** An Error that says which kind of failure it was: 'no-answer' (a hang or
-   *  a dropped connection), 'status' (an error status), or 'shape' (an answer
-   *  not in the documented shape). The DONE line and the health report's
-   *  lookups alarm count them by kind. */
+   *  a dropped connection), 'status' (an error status), 'unreadable' (an
+   *  answer arrived but its body could not be read as JSON, such as an HTML
+   *  page), or 'shape' (an answer not in the documented shape). The DONE line
+   *  and the health report's lookups alarm count them by kind. */
   const failure = (kind, message) => Object.assign(new Error(message), { kind });
 
   /** One bill's related-bills answer, or a thrown failure() saying why not. */
@@ -155,7 +157,9 @@ try {
       } catch (e) {
         // A hang or a dropped connection is not waited out twice.
         const hung = e?.name === 'TimeoutError' || e?.name === 'AbortError';
-        throw failure('no-answer', hung ? `no answer within ${ATTEMPT_MS / 1000} s for ${path}` : `could not read the answer for ${path} (${e?.name ?? 'error'})`);
+        if (hung) throw failure('no-answer', `no answer within ${ATTEMPT_MS / 1000} s for ${path}`);
+        // Headers arrived, so Congress.gov did answer; the body did not read.
+        throw failure(res ? 'unreadable' : 'no-answer', `could not read the answer for ${path} (${e?.name ?? 'error'})`);
       }
       if (res.ok) return body;
       if ((res.status >= 500 || res.status === 429) && attempt < 2) {
@@ -193,7 +197,7 @@ try {
     let lastError = null;
     let stopReason = null;
     let stoppedEarly = null;
-    const kinds = { 'no-answer': 0, status: 0, shape: 0 };
+    const kinds = { 'no-answer': 0, status: 0, unreadable: 0, shape: 0 };
     let gained = 0;
     let lost = 0;
     for (const slug of plan) {
@@ -266,7 +270,7 @@ try {
       } else {
         writeAtomic(text);
         const failedText = failed
-          ? `${failed} failed: ${kinds['no-answer']} no answer, ${kinds.status} an error status, ${kinds.shape} a misshapen answer`
+          ? `${failed} failed: ${kinds['no-answer']} no answer, ${kinds.status} an error status, ${kinds.unreadable} an unreadable answer, ${kinds.shape} a misshapen answer`
           : '0 failed';
         const early = stoppedEarly
           ? `; stopped early after ${stoppedEarly.after} of ${stoppedEarly.of} lookups at the ${BUDGET_MS / 1000}-second time budget, so Congress.gov is answering very slowly, and the ${stoppedEarly.of - stoppedEarly.after} not read go first next night`

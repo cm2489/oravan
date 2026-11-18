@@ -6,6 +6,7 @@
  *   - an object: a 200 answer with that JSON body;
  *   - a number: that HTTP status, empty body;
  *   - "fail": a 500;
+ *   - "html": a 200 whose body is an HTML page, not JSON;
  *   - "hang": never answers, until the request's abort signal fires;
  *   - an array: one answer per attempt, in order (the last one repeats);
  *   - `{ "delay": ms, "then": <answer> }`: that answer after `ms` (a slow but
@@ -62,6 +63,7 @@ globalThis.fetch = async (input, init = {}) => {
     });
   }
   if (answer === undefined || answer === 'fail') return new Response('{"error":"mock"}', { status: 500 });
+  if (answer === 'html') return new Response('<!doctype html><html><body>Service notice</body></html>', { status: 200, headers: { 'content-type': 'text/html' } });
   if (typeof answer === 'number') return new Response('', { status: answer });
   return new Response(JSON.stringify(answer), { status: 200, headers: { 'content-type': 'application/json' } });
 };

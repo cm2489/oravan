@@ -354,11 +354,26 @@ test.describe('the DONE line, old and new (2026-11-18)', () => {
         ].join('\n')
       );
     expect(line(100, 0, 100).done!.early).toEqual({ after: 100, of: 200 });
+    // A DONE line listing three kinds (the code of 2026-11-18 morning) still parses; its unreadable count is 0.
+    expect(line(91, 10, 101).done!.kinds).toEqual({ noAnswer: 0, status: 10, unreadable: 0, shape: 0 });
     expect(codes(relatedAlarms({ ...fresh, trouble: line(100, 0, 100) }))).toEqual(['related-bills-lookups-failed']); // 100 unread
     expect(relatedAlarms({ ...fresh, trouble: line(101, 0, 101) })).toEqual([]); // 99 unread
     expect(codes(relatedAlarms({ ...fresh, trouble: line(91, 10, 101) }))).toEqual(['related-bills-lookups-failed']); // 10 failed + 99 unread
     const both = relatedAlarms({ ...fresh, trouble: line(40, 10, 50) })[0].text;
-    expect(both).toContain('stopped early after 50 of 200 lookups because Congress.gov answered very slowly (it saved what it read, and the 150 bills not read go first tomorrow)');
+    // "the next nightly", not "tomorrow": the report runs in the morning and
+    // the next nightly runs later the same day.
+    expect(both).toContain('stopped early after 50 of 200 lookups because Congress.gov answered very slowly (it saved what it read, and the 150 bills not read go first in the next nightly)');
+    expect(both).not.toContain('tomorrow');
     expect(both).toContain('and it could not get a usable answer from Congress.gov for 10 of 200 bills (10 with an error status)');
   });
+});
+
+test('a DONE line listing four kinds parses each of them', () => {
+  const t = parseRelatedTrouble(
+    [
+      START,
+      'sync\tUNKNOWN STEP\t2026-11-19T22:59:21.0000000Z RELATED DONE: looked up 194 of 200 planned (6 failed: 1 no answer, 1 an error status, 3 an unreadable answer, 1 a misshapen answer; 522 candidate bills, 522 with coverage); 0 relation(s) added, 0 removed; 16 bills carry an identical bill (16 before tonight); pruned 0 bill(s) and 0 twin row(s) no longer in data/bills.json. Congress.gov requests: 201. Cost: $0.',
+    ].join('\n')
+  );
+  expect(t.done!.kinds).toEqual({ noAnswer: 1, status: 1, unreadable: 3, shape: 1 });
 });

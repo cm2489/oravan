@@ -14,6 +14,8 @@ If this step goes wrong, nothing breaks on the site: the boxes keep showing what
 | `related-bills-stale` | `data/related-bills.json` says it was last filled more than 3 days ago, has no date, or has a date in the future (only a hand edit can write that). This covers a step that was skipped, removed or silently did nothing. | Whether the step still exists in `.github/workflows/sync-bills.yml`, and whether recent nightly runs reached it. |
 | `related-bills-twins-fell` | The number of bills with an identical twin fell by more than 5 bills, or more than 10%, between the last two fills, or fell to 0. A normal night changes it by one or two. | The `no longer listed as identical` lines in that step's log. If they are many, Congress.gov's answers have probably changed. |
 
+What the twin-count alarm cannot see: at today's size (16 bills with a tracked twin on 2026-11-18), a silent loss of fewer than 6 twins in one fill raises no alarm. And if the step runs twice in one day (a re-run nightly), the second run's "before tonight" count replaces the first's, so a fall in the first run can be hidden from the next morning's report.
+
 ## How long things take, at most
 
 - An ordinary night: about a minute (200 lookups).

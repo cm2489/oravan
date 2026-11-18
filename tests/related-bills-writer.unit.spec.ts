@@ -615,22 +615,27 @@ test.describe('2026-11-18: twins outside the corpus, slow nights, and saying wha
     }
   });
 
-  test('the DONE line and the alarm say which kind of failure it was', () => {
-    const bills4 = [bill('hr', 1), bill('hr', 2), bill('hr', 3), bill('hr', 4), bill('s', 4)];
-    const dir = world({ bills: bills4, coverage: ['hr-1-119', 'hr-2-119', 'hr-3-119', 'hr-4-119'], file: base() });
+  test('the DONE line and the alarm say which kind of failure it was: no answer, an error status, an unreadable answer, a wrong shape', () => {
+    const bills5 = [bill('hr', 1), bill('hr', 2), bill('hr', 3), bill('hr', 4), bill('hr', 5), bill('s', 5)];
+    const dir = world({ bills: bills5, coverage: ['hr-1-119', 'hr-2-119', 'hr-3-119', 'hr-4-119', 'hr-5-119'], file: base() });
     try {
       const r = night(dir, '2026-11-10', {
         'hr/1': 'hang',
         'hr/2': 503,
-        'hr/3': { related_bills: [] },
-        'hr/4': answer(identical('S', 4)),
+        'hr/3': 'html', // Congress.gov answered 200, with an HTML page
+        'hr/4': { related_bills: [] },
+        'hr/5': answer(identical('S', 5)),
       });
       expect(r.status, r.out).toBe(0);
-      expect(r.out).toContain('RELATED DONE: looked up 1 of 4 planned (3 failed: 1 no answer, 1 an error status, 1 a misshapen answer;');
+      expect(r.out).toContain('could not read the answer for /bill/119/hr/3/relatedbills (SyntaxError)');
+      expect(r.out).toContain('RELATED DONE: looked up 1 of 5 planned (4 failed: 1 no answer, 1 an error status, 1 an unreadable answer, 1 a misshapen answer;');
       const a = relatedAlarms({ trouble: parseRelatedTrouble(r.out), staleness: null });
       expect(a.map((x) => x.code)).toEqual(['related-bills-lookups-failed']);
-      expect(a[0].text).toContain('could not get a usable answer from Congress.gov for 3 of 4 bills (1 with no answer, 1 with an error status, 1 with an answer in the wrong shape)');
+      expect(a[0].text).toContain(
+        'could not get a usable answer from Congress.gov for 4 of 5 bills (1 with no answer, 1 with an error status, 1 with an unreadable answer, 1 with an answer in the wrong shape); those bills kept what they had and go first in the next nightly'
+      );
       expect(a[0].text).not.toContain('could not reach');
+      expect(a[0].text).not.toContain('tomorrow');
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
