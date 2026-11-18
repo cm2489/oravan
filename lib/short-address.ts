@@ -329,11 +329,13 @@ export function shortAddressTarget(
  * NEVER CHOOSING BETWEEN BILLS. Many bills share a short title (a House bill
  * and its Senate twin usually do). A name resolves only when exactly ONE bill
  * of the Congress being searched carries it, among the bills Oravan tracks:
- * A name opens a bill when no other bill Oravan tracks in the same Congress
- * has a short title that makes the same name and no Congress searched before
- * that one (the tracked Congress first, then each ended Congress, most
- * recently ended first) holds the name. ("SAFE Act" and "Safe Act" make one
- * name, and so do "Twin Spelling Act" and "Twin-Spelling Act".) A twin Oravan does not track (most bills of a Congress are never in
+ * A name opens a bill only when every bill Oravan tracks in that Congress
+ * has been read or tried, no other of those bills has a short title that
+ * makes the same name and no unread one has a stored title that makes it,
+ * and every Congress searched before that one (the tracked Congress first,
+ * then each ended Congress, most recently ended first) has been read or
+ * tried in full and does not hold the name. ("SAFE Act" and "Safe Act" make
+ * one name, and so do "Twin Spelling Act" and "Twin-Spelling Act".) A twin Oravan does not track (most bills of a Congress are never in
  * the corpus) is not counted, so which bill a name opens depends on which
  * bills Oravan tracks, and a name can stop opening its bill the day a twin
  * enters the corpus. The Congresses are searched in
@@ -341,7 +343,12 @@ export function shortAddressTarget(
  * recently ended first), and the first Congress that holds the name at all
  * answers: with its one bill, or, when it holds two or more, with the normal
  * not-found. A name shared in the tracked Congress never falls through to an
- * older Congress's bill of the same name.
+ * older Congress's bill of the same name. "Read or tried" is the fill gate in
+ * lib/short-address-build.ts (gateNameTables, hotfix of 2026-11-17): a bill is
+ * read when data/short-titles.json has its entry, tried when only
+ * data/short-titles-retry.json does; until a Congress is read or tried in full
+ * it holds no names and the search stops there, and a bill tried but never
+ * read holds back every name its stored title in data/bills.json makes.
  *
  * THE TABLE (encodeNameTables / decodeNameTables). Built at BUILD time by
  * next.config.ts and inlined into the proxy bundle as SHORT_ADDRESS_NAMES:

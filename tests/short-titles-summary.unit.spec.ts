@@ -90,11 +90,11 @@ const newAlarms = (summary: unknown, disable: string[] = []) => shortTitlesAlarm
 test('the summary line round-trips, unknowns included, through the parser the health report uses', () => {
   const line = summaryLine({ day: '2026-11-17', outcome: 'done', titled: 1333, titled_7_nights_ago: null, bills: 3322, newest_read_on: '2026-11-17', retry: 15, read_tonight: 82, lost_all_titles_tonight: 0 });
   expect(line).toBe(
-    'SHORT TITLES SUMMARY: day=2026-11-17 outcome=done titled=1333 titled_7_nights_ago=unknown bills_7_nights_ago=unknown day_7_nights_ago=unknown bills=3322 newest_read_on=2026-11-17 retry=15 read_tonight=82 lost_all_titles_tonight=0 drop_approved_on=unknown',
+    'SHORT TITLES SUMMARY: day=2026-11-17 outcome=done titled=1333 titled_7_nights_ago=unknown bills_7_nights_ago=unknown day_7_nights_ago=unknown bills=3322 newest_read_on=2026-11-17 retry=15 read_tonight=82 lost_all_titles_tonight=0 drop_approved_on=unknown unread=unknown',
   );
   const actionsLog = `nightly\tRead the record's short titles\t2026-11-17T14:40:00.0Z ${line}`;
   expect(parseShortTitlesSummary(actionsLog)).toEqual({
-    day: '2026-11-17', outcome: 'done', titled: 1333, titled_7_nights_ago: null, bills_7_nights_ago: null, day_7_nights_ago: null, bills: 3322, newest_read_on: '2026-11-17', retry: 15, read_tonight: 82, lost_all_titles_tonight: 0, drop_approved_on: null,
+    day: '2026-11-17', outcome: 'done', titled: 1333, titled_7_nights_ago: null, bills_7_nights_ago: null, day_7_nights_ago: null, bills: 3322, newest_read_on: '2026-11-17', retry: 15, read_tonight: 82, lost_all_titles_tonight: 0, drop_approved_on: null, unread: null,
   });
   expect(parseShortTitlesSummary('nothing here')).toBeNull();
 });
@@ -539,8 +539,27 @@ test('round 6 (3): after a person’s one-run override the falling alarm says so
 
 test('round 6 (4): the name rule is the same exact sentence in the code, the runbook and the direction page', () => {
   const SENTENCE =
-    'A name opens a bill when no other bill Oravan tracks in the same Congress has a short title that makes the same name and no Congress searched before that one (the tracked Congress first, then each ended Congress, most recently ended first) holds the name.';
+    'A name opens a bill only when every bill Oravan tracks in that Congress has been read or tried, no other of those bills has a short title that makes the same name and no unread one has a stored title that makes it, and every Congress searched before that one (the tracked Congress first, then each ended Congress, most recently ended first) has been read or tried in full and does not hold the name.';
   const flat = (p: string) => readFileSync(join(process.cwd(), p), 'utf8').replace(/\n\s*\*\s?/g, ' ').replace(/\s+/g, ' ');
   for (const p of ['lib/short-address.ts', 'docs/runbooks/new-congress-switch.md', 'docs/current-direction.md']) expect(flat(p), p).toContain(SENTENCE);
   expect(flat('lib/short-address.ts')).not.toContain('A name opens a bill when no other bill Oravan tracks has a short title');
+});
+
+// --- the fill's progress on the summary line (hotfix, 2026-11-17) --------------------------
+
+test('unread: the corpus bills with no entry in the titles file; a line without the field still parses, and no alarm reads it', () => {
+  const bills = range(5).map((n) => bill(n));
+  const file = { [slug(1)]: { titles: [], as_of: null, read_on: '2026-11-17' }, [slug(2)]: { titles: ['Fixture hr2 Act'], as_of: null, read_on: '2026-11-17' }, 'hr-999-119': { titles: [], as_of: null, read_on: '2026-11-17' } };
+  const fields = nightSummary({ day: '2026-11-17', bills, titles: file, retry: {}, trend: { nights: [] }, read: 2, lost: 0 });
+  expect(fields.unread).toBe(3); // hr-999 is not in the corpus, so it is not counted as read
+  expect(summaryLine({ ...fields, outcome: 'done' })).toMatch(/ unread=3$/);
+  // The same night's numbers without the field (a line printed before the hotfix): parsed, and the alarms are the same.
+  const withField = parseShortTitlesSummary(summaryLine({ ...fields, outcome: 'done' }))!;
+  const oldLine = summaryLine({ ...fields, outcome: 'done' }).replace(/ unread=\d+$/, '');
+  const without = parseShortTitlesSummary(oldLine)!;
+  expect(without.unread).toBeUndefined();
+  expect(shortTitlesAlarms(without)).toEqual(shortTitlesAlarms(withField));
+  const lib = readFileSync(join(process.cwd(), 'lib/short-titles-summary.mjs'), 'utf8');
+  const alarmsBody = lib.slice(lib.indexOf('export function shortTitlesAlarms'), lib.indexOf('export function nightSummary'));
+  expect(alarmsBody).not.toContain('unread');
 });
