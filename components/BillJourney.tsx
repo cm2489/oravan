@@ -124,6 +124,9 @@ interface Props {
 
 export function BillJourney({ journey, introducedLabel, currentLabel, endedLine }: Props) {
   const t = useTranslations('bill.journey');
+  // The presented sentence is the Big Questions status line's own string
+  // (lib/journey.ts JourneyState.presented): one wording for one record.
+  const tLine = useTranslations('moments.status.line');
   const lang = glossaryLocale(useLocale());
   const { ending } = journey;
   // Display strings for the ICU selects: origin chamber and its opposite.
@@ -252,11 +255,13 @@ export function BillJourney({ journey, introducedLabel, currentLabel, endedLine 
             <span data-journey-ended="">{endedLine}</span>
           ) : (
             <>
-              {glossifyRich(
-                t.rich(journey.nowKey, { chamber: nowChamber, other, floorCalendar, ...tally, ...when }),
-                lang,
-                nowSeen
-              )}
+              {journey.presented
+                ? glossifyRich(tLine('presented'), lang, nowSeen)
+                : glossifyRich(
+                    t.rich(journey.nowKey, { chamber: nowChamber, other, floorCalendar, ...tally, ...when }),
+                    lang,
+                    nowSeen
+                  )}
               {journey.showTrailer && <> {glossifyRich(t(TRAILER_KEY[ending], { chamber, other }), lang, nowSeen)}</>}
             </>
           )}

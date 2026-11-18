@@ -8,8 +8,8 @@ import {
   settledDecision,
   statusKeyFor,
 } from '../lib/journey';
-import { agreedToOtherChamberAmendment, recordStatus } from '../lib/floor-text.mjs';
-import { decisionState } from '../lib/docket.mjs';
+import { agreedToOtherChamberAmendment, amendmentExchangeContinues, recordStatus } from '../lib/floor-text.mjs';
+import { announcementAnswered, decisionState, floorAnsweredChamber } from '../lib/docket.mjs';
 import { passedBothReading } from '../lib/scriptprompt';
 import { isStatusReading } from '../lib/moment-updates-gate.mjs';
 import { mapStatus } from '../scripts/congress-fetch.mjs';
@@ -110,6 +110,27 @@ test.describe('the six bills the audit found', () => {
     // The summary-refresh gate accepts the reading the page prints.
     expect(isStatusReading('committee', 'passed_both')).toBe(true);
   });
+
+  test('H.R. 2400: the House’s Nov 16 week-list no longer counts as live once the House agreed', () => {
+    // The House weekly schedule that named it (published Nov 11, for Nov 16).
+    const signal = { tier0: { chamber: 'house', published: '2026-11-11', covers: '2026-11-16' } };
+    expect(floorAnsweredChamber(SIX['hr-2400-119'].status_basis_text)).toBe('both');
+    expect(announcementAnswered(SIX['hr-2400-119'], signal)).toBe(true);
+    // A House sentence that sent it back with an amendment answers the House's
+    // announcement too, but only the House's: not a Senate one.
+    const back = { ...SIX['hr-2400-119'], status_basis_text: 'On motion that the House agree to the Senate amendment with an amendment Agreed to without objection.' };
+    expect(announcementAnswered(back, signal)).toBe(true);
+    expect(announcementAnswered(back, { tier0: { ...signal.tier0, chamber: 'senate' } })).toBe(false);
+  });
+
+  test('presented: the stepper flags presentment, and only there', () => {
+    expect(deriveJourney(SIX['hr-10167-119']).presented).toBe(true);
+    expect(deriveJourney(SIX['hr-2400-119']).presented).toBe(false);
+    expect(deriveJourney(bill({ bill_type: 'hr', status: 'passed_chamber', last_action_text: 'Passed Senate without amendment by Unanimous Consent.' })).presented).toBe(false);
+    // The sentence it prints is the Big Questions status line's existing one.
+    expect(EN.moments.status.line.presented).toBe('Both chambers passed it, and it has been sent to the president.');
+    expect(ES.moments.status.line.presented).toBe('Ambas cámaras lo aprobaron y se envió al presidente.');
+  });
 });
 
 test.describe('the nightly mapping reads agreement to the other chamber’s amendment', () => {
@@ -118,31 +139,67 @@ test.describe('the nightly mapping reads agreement to the other chamber’s amen
       mapStatus('On motion that the House suspend the rules and agree to the Senate amendment Agreed to by voice vote.')
     ).toBe('passed_chamber');
   });
-  for (const text of [
-    'On motion that the House agree to the Senate amendment Agreed to without objection.',
-    'On motion that the House suspend the rules and concur in the Senate amendment Agreed to by the Yeas and Nays: 400 - 10 (Roll no. 300).',
-    'Resolving differences -- Senate actions: Senate agreed to the House amendment by Unanimous Consent.',
-    'Senate concurred in the House amendment by Voice Vote.',
-  ]) {
-    test(`reads as agreement: ${text}`, () => {
-      expect(agreedToOtherChamberAmendment(text)).not.toBeNull();
-      expect(mapStatus(text)).toBe('passed_chamber');
+  /*
+   * EVERY SHAPE OF THE AMENDMENT EXCHANGE, AND ITS NEAR MISSES (re-check of
+   * #523, 2026-11-18). For each sentence, stored the way the nightly now
+   * stores it (mapStatus) on a bill of the chamber that did NOT act: what it
+   * maps to, which chamber the floor-schedule gate reads as having answered
+   * (floorAnsweredChamber), the passage stage, the status word, the stepper's
+   * sentence, and why that is true. On origin/main every one of the first 12
+   * and the 'disagree' one mapped to `committee` ("In committee").
+   */
+  const EXCHANGE: {
+    text: string;
+    type: 'hr' | 's';
+    map: string;
+    answered: string | null;
+    stage: string;
+    key: string;
+    /** A RegExp where the stepper's sentence is clocked (fresh vs stale). */
+    nowKey: string | RegExp;
+    why: string;
+  }[] = [
+    { text: 'On motion that the House suspend the rules and agree to the Senate amendment Agreed to by voice vote.', type: 'hr', map: 'passed_chamber', answered: 'both', stage: 'both', key: 'passed_both', nowKey: 'nowPassedBoth', why: 'H.R. 2400’s sentence: the House accepted the Senate’s text, so both hold one text and the President is next' },
+    { text: 'On motion that the House agree to the Senate amendment Agreed to without objection.', type: 'hr', map: 'passed_chamber', answered: 'both', stage: 'both', key: 'passed_both', nowKey: 'nowPassedBoth', why: 'same agreement, without the suspension track' },
+    { text: 'On motion that the House suspend the rules and concur in the Senate amendment Agreed to by the Yeas and Nays: 400 - 10 (Roll no. 300).', type: 'hr', map: 'passed_chamber', answered: 'both', stage: 'both', key: 'passed_both', nowKey: 'nowPassedBoth', why: '"concur in" is the same agreement' },
+    { text: 'On motion that the House recede and concur in the Senate amendment Agreed to without objection.', type: 'hr', map: 'passed_chamber', answered: 'both', stage: 'both', key: 'passed_both', nowKey: 'nowPassedBoth', why: 'receding from its disagreement and concurring, with no amendment, ends the exchange' },
+    { text: 'On motion that the House agree to the Senate amendment to H.R. 2400 Agreed to by voice vote.', type: 'hr', map: 'passed_chamber', answered: 'both', stage: 'both', key: 'passed_both', nowKey: 'nowPassedBoth', why: 'read deliberately: the periods in a bill number do not end the action' },
+    { text: 'Resolving differences -- Senate actions: Senate agreed to the House amendment by Unanimous Consent.', type: 's', map: 'passed_chamber', answered: 'both', stage: 'both', key: 'passed_both', nowKey: 'nowPassedBoth', why: 'the Senate’s own sentence for accepting the House’s text' },
+    { text: 'Senate concurred in the House amendment to S. 1234 by Unanimous Consent.', type: 's', map: 'passed_chamber', answered: 'both', stage: 'both', key: 'passed_both', nowKey: 'nowPassedBoth', why: 'the same, naming the bill (its period does not stop the reading)' },
+    { text: 'On motion that the House concur in the Senate amendments with amendments Agreed to by voice vote.', type: 'hr', map: 'floor_vote', answered: 'house', stage: 'first', key: 'floor_activity', nowKey: 'nowFloorActivityNeutral', why: 'the House sent it back with changes: only the House answered, the Senate still acts, so no "both" and no President' },
+    { text: 'On motion that the House concur in the Senate amendment to the House amendment with an amendment Agreed to without objection.', type: 'hr', map: 'floor_vote', answered: 'house', stage: 'first', key: 'floor_activity', nowKey: 'nowFloorActivityNeutral', why: 'a further amendment: the exchange goes on' },
+    { text: 'Senate concurred in the House amendment to S. 1234 with an amendment (SA 2587) by Unanimous Consent.', type: 's', map: 'floor_vote', answered: 'senate', stage: 'first', key: 'floor_activity', nowKey: 'nowFloorActivityNeutral', why: 'the "with an amendment" comes after the bill number: the whole sentence is read' },
+    { text: 'Senate concurred in the House amendment to the Senate amendment with an amendment (SA 3001) by Yea-Nay Vote. 51 - 47. Record Vote Number: 300.', type: 's', map: 'floor_vote', answered: 'senate', stage: 'first', key: 'floor_activity', nowKey: 'nowFloorActivityNeutral', why: 'a recorded vote, still sending it back' },
+    { text: 'On motion that the House agree to the Senate amendment with an amendment Agreed to without objection.', type: 'hr', map: 'floor_vote', answered: 'house', stage: 'first', key: 'floor_activity', nowKey: 'nowFloorActivityNeutral', why: 'the guard’s first shape' },
+    { text: 'On motion that the House disagree to the Senate amendment Agreed to without objection.', type: 'hr', map: 'floor_vote', answered: 'house', stage: 'first', key: 'floor_activity', nowKey: 'nowFloorActivityNeutral', why: 'disagreeing is a floor act that keeps the exchange going; nothing is in committee' },
+    { text: 'Motion to concur in the House amendment to S. 1234 failed of passage in Senate by Yea-Nay Vote. 45 - 53.', type: 's', map: 'floor_vote', answered: 'senate', stage: 'first', key: 'floor_activity', nowKey: 'nowFloorMotionFailed', why: 'a failed motion is never agreement; the Senate answered no' },
+    { text: 'On motion that the House suspend the rules and agree to the Senate amendment Failed by the Yeas and Nays: (2/3 required): 250 - 170 (Roll no. 301).', type: 'hr', map: 'floor_vote', answered: 'house', stage: 'first', key: 'floor_activity', nowKey: 'nowFloorMotionFailed', why: 'the same, on the House’s suspension track' },
+    { text: 'Conference report agreed to in Senate by Yea-Nay Vote. 70 - 28.', type: 's', map: 'conference', answered: 'senate', stage: 'first', key: 'conference', nowKey: 'nowConference', why: 'conference-report language is the conference stage, not this reader' },
+    { text: 'On agreeing to the conference report Agreed to by the Yeas and Nays: 300 - 120 (Roll no. 310).', type: 'hr', map: 'conference', answered: null, stage: 'first', key: 'conference', nowKey: 'nowConference', why: 'the same; it names no chamber, so no chamber is read as having answered' },
+    { text: 'Motion to reconsider laid on the table Agreed to without objection.', type: 'hr', map: 'passed_chamber', answered: 'unknown', stage: 'first', key: 'passed_chamber', nowKey: /^nowPassed(Stale)?$/, why: 'unchanged: the post-vote motion is only a default, and every write path reads the action before it (resolveAmbiguousStatus)' },
+  ];
+  for (const x of EXCHANGE) {
+    test(`exchange: ${x.text}`, () => {
+      const b = bill({ bill_type: x.type, status: mapStatus(x.text) as BillStatus, last_action_text: x.text });
+      expect(b.status, x.why).toBe(x.map);
+      expect(floorAnsweredChamber(x.text), x.why).toBe(x.answered);
+      expect(passageState(b).stage, x.why).toBe(x.stage);
+      expect(statusKeyFor(b, NOW), x.why).toBe(x.key);
+      expect(keyMjs(b), x.why).toBe(x.key);
+      if (x.nowKey instanceof RegExp) expect(deriveJourney(b).nowKey, x.why).toMatch(x.nowKey);
+      else expect(deriveJourney(b).nowKey, x.why).toBe(x.nowKey);
+      // A final agreement and a continuing exchange are never both read.
+      expect(agreedToOtherChamberAmendment(x.text) !== null && amendmentExchangeContinues(x.text) !== null).toBe(false);
+      // Open or settled: every one of them is still open.
+      expect(decisionState(b).state, x.why).toBe('pending');
     });
   }
-  for (const text of [
-    // Sends it back again: not the end of the exchange.
-    'On motion that the House agree to the Senate amendment with an amendment Agreed to without objection.',
-    'Senate concurred in the House amendment with an amendment by Unanimous Consent.',
-    // A failed motion is never agreement.
-    'On motion that the House suspend the rules and agree to the Senate amendment Failed by the Yeas and Nays: (2/3 required): 250 - 170 (Roll no. 301).',
-    // Ordinary passage and referral sentences are not this shape.
-    'Passed Senate with an amendment by Unanimous Consent.',
-    'Referred to the House Committee on Natural Resources.',
-  ]) {
-    test(`does not read as agreement: ${text}`, () => {
-      expect(agreedToOtherChamberAmendment(text)).toBeNull();
-    });
-  }
+  test('a record stored at committee over a continuing exchange reads floor activity, as the mapping now stores it', () => {
+    const basis = 'On motion that the House agree to the Senate amendment with an amendment Agreed to without objection.';
+    expect(recordStatus({ status: 'committee', last_action_text: 'x', status_basis_text: basis })).toBe('floor_vote');
+    expect(recordStatus({ status: 'markup', last_action_text: 'x', status_basis_text: basis })).toBe('floor_vote');
+    expect(isStatusReading('committee', 'floor_activity')).toBe(true);
+  });
   test('the failed motion stays a floor vote', () => {
     expect(
       mapStatus('On motion that the House suspend the rules and agree to the Senate amendment Failed by the Yeas and Nays: (2/3 required): 250 - 170 (Roll no. 301).')

@@ -75,6 +75,7 @@ import {
   floorReconsiderPendingChamber,
   floorSettledChamber,
   passageState as passageStateMjs,
+  presentedToPresident,
   recordStatus,
   // Read together, and only by pointOfOrderUpheldChamber below.
   floorActionChamber,
@@ -1222,6 +1223,14 @@ export interface JourneyState {
   floorCalendar: FloorCalendar | null;
   isLaw: boolean;
   isVetoed: boolean;
+  /** True only on `nowPassedBoth` when the record's own sentence says the
+   *  enrolled bill went to the desk ("Presented to President.", 2026-11-18).
+   *  "It goes to the president next" is the wrong tense there: it has been
+   *  sent. components/BillJourney.tsx then prints the sentence the Big
+   *  Questions status line already prints for the same record
+   *  (`moments.status.line.presented`, lib/moment-status.mjs rule 2), so the
+   *  two surfaces say it the same way. Optional: absent means false. */
+  presented?: boolean;
   /** True only when a chamber voted the measure down on passage or adoption
    *  and no motion to reconsider is entered — exactly settledDecision's
    *  `rejected` (2026-09-29). The stepper then marks `step` as where the
@@ -1749,6 +1758,7 @@ export function deriveJourney(
           nowChamber: passedBy ?? other,
           nowKey: 'nowPassedBoth',
           showTrailer: false,
+          presented: presentedToPresident(bill),
         };
       }
       // 'second' — both chambers have passed it and the record does not say
