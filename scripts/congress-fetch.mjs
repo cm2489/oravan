@@ -14,7 +14,7 @@ import { STATUS_BASE } from '../lib/urgency.mjs';
 // The one copy of the committee-text-on-the-floor vocabulary (2026-09-25):
 // lib/floor-text.mjs is import-free, so this module reading it adds no data
 // and no secret to anything that imports mapStatus.
-import { COMMITTEE_TEXT_ON_FLOOR, agreedToOtherChamberAmendment, amendmentExchangeContinues } from '../lib/floor-text.mjs';
+import { COMMITTEE_TEXT_ON_FLOOR, agreedToOtherChamberAmendment, amendmentExchangeContinues, amendmentExchangeFailed } from '../lib/floor-text.mjs';
 
 // The tracked Congress is written once, in lib/congress.mjs (2026-11-12), and
 // re-exported here under the name every sync script already imports.
@@ -322,6 +322,9 @@ export function mapStatus(actionText) {
   // it fell to the `committee` default. `floor_vote` is the stage it is in;
   // only a FINAL agreement (below) is a passage. Reader: lib/floor-text.mjs.
   if (amendmentExchangeContinues(text)) return 'floor_vote';
+  // A motion on the other chamber's amendment that was voted down is a floor
+  // vote that failed ("… agree to the Senate amendment Not agreed to …").
+  if (amendmentExchangeFailed(text)) return 'floor_vote';
   if (
     text.includes('passed house') || text.includes('passed senate') ||
     text.includes('passed/agreed to') || text.includes('agreed to in') ||

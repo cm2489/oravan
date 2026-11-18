@@ -8,7 +8,7 @@ import {
   settledDecision,
   statusKeyFor,
 } from '../lib/journey';
-import { agreedToOtherChamberAmendment, amendmentExchangeContinues, recordStatus } from '../lib/floor-text.mjs';
+import { agreedToOtherChamberAmendment, amendmentExchangeContinues, amendmentExchangeFailed, recordStatus } from '../lib/floor-text.mjs';
 import { announcementAnswered, decisionState, floorAnsweredChamber } from '../lib/docket.mjs';
 import { passedBothReading } from '../lib/scriptprompt';
 import { isStatusReading } from '../lib/moment-updates-gate.mjs';
@@ -174,6 +174,9 @@ test.describe('the nightly mapping reads agreement to the other chamber’s amen
     { text: 'On motion that the House disagree to the Senate amendment Agreed to without objection.', type: 'hr', map: 'floor_vote', answered: 'house', stage: 'first', key: 'floor_activity', nowKey: 'nowFloorActivityNeutral', why: 'disagreeing is a floor act that keeps the exchange going; nothing is in committee' },
     { text: 'Motion to concur in the House amendment to S. 1234 failed of passage in Senate by Yea-Nay Vote. 45 - 53.', type: 's', map: 'floor_vote', answered: 'senate', stage: 'first', key: 'floor_activity', nowKey: 'nowFloorMotionFailed', why: 'a failed motion is never agreement; the Senate answered no' },
     { text: 'On motion that the House suspend the rules and agree to the Senate amendment Failed by the Yeas and Nays: (2/3 required): 250 - 170 (Roll no. 301).', type: 'hr', map: 'floor_vote', answered: 'house', stage: 'first', key: 'floor_activity', nowKey: 'nowFloorMotionFailed', why: 'the same, on the House’s suspension track' },
+    { text: 'On motion that the House agree to the Senate amendment Not agreed to by voice vote.', type: 'hr', map: 'floor_vote', answered: 'house', stage: 'first', key: 'floor_activity', nowKey: 'nowFloorActivityNeutral', why: '"Not agreed to" contains "agreed to": a defeat is never read as agreement; the House answered no' },
+    { text: 'On motion that the House disagree to the Senate amendment Not agreed to by voice vote.', type: 'hr', map: 'floor_vote', answered: 'house', stage: 'first', key: 'floor_activity', nowKey: 'nowFloorActivityNeutral', why: 'a failed motion to disagree is still the House answering on its floor' },
+    { text: 'POSTPONED PROCEEDINGS - At the conclusion of debate on the motion that the House suspend the rules and agree to the Senate amendment to H.R. 2400, the Chair put the question on the motion and by voice vote, announced that the ayes had prevailed. Mr. Westerman demanded the yeas and nays and the Chair postponed further proceedings on the motion until a time designated by the Speaker.', type: 'hr', map: 'floor_vote', answered: null, stage: 'first', key: 'floor_activity', nowKey: /^nowFloorActivity(Stale)?$/, why: 'the vote is postponed: no "Agreed to", so no agreement and no answer yet' },
     { text: 'Conference report agreed to in Senate by Yea-Nay Vote. 70 - 28.', type: 's', map: 'conference', answered: 'senate', stage: 'first', key: 'conference', nowKey: 'nowConference', why: 'conference-report language is the conference stage, not this reader' },
     { text: 'On agreeing to the conference report Agreed to by the Yeas and Nays: 300 - 120 (Roll no. 310).', type: 'hr', map: 'conference', answered: null, stage: 'first', key: 'conference', nowKey: 'nowConference', why: 'the same; it names no chamber, so no chamber is read as having answered' },
     { text: 'Motion to reconsider laid on the table Agreed to without objection.', type: 'hr', map: 'passed_chamber', answered: 'unknown', stage: 'first', key: 'passed_chamber', nowKey: /^nowPassed(Stale)?$/, why: 'unchanged: the post-vote motion is only a default, and every write path reads the action before it (resolveAmbiguousStatus)' },
@@ -194,6 +197,17 @@ test.describe('the nightly mapping reads agreement to the other chamber’s amen
       expect(decisionState(b).state, x.why).toBe('pending');
     });
   }
+  test('a defeated motion is a failed exchange vote, never agreement and never a continuing exchange', () => {
+    for (const text of [
+      'On motion that the House agree to the Senate amendment Not agreed to by voice vote.',
+      'On motion that the House disagree to the Senate amendment Not agreed to by voice vote.',
+    ]) {
+      expect(agreedToOtherChamberAmendment(text), text).toBeNull();
+      expect(amendmentExchangeContinues(text), text).toBeNull();
+      expect(amendmentExchangeFailed(text), text).toBe('house');
+    }
+    expect(amendmentExchangeFailed('On motion that the House agree to the Senate amendment Agreed to by voice vote.')).toBeNull();
+  });
   test('a record stored at committee over a continuing exchange reads floor activity, as the mapping now stores it', () => {
     const basis = 'On motion that the House agree to the Senate amendment with an amendment Agreed to without objection.';
     expect(recordStatus({ status: 'committee', last_action_text: 'x', status_basis_text: basis })).toBe('floor_vote');
