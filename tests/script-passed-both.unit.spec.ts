@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 // Relative imports (not '@/'): plain lib modules resolve under the test
 // runner - same pattern as the other unit specs.
 import bills from '../data/bills.json';
-import { deriveJourney, journeyEnding, statusKeyFor } from '../lib/journey';
+import { deriveJourney, journeyEnding, passageState, statusKeyFor } from '../lib/journey';
 import { lintForbidden } from '../lib/moments-gate.mjs';
 import { contentVersion } from '../lib/scriptcache';
 import {
@@ -250,8 +250,11 @@ test.describe('every other stage is unchanged', () => {
     for (const raw of bills as unknown as Array<Fixture & Pick<Bill, 'congress_number'>>) {
       const id = `${raw.bill_type}-${raw.bill_number}-${raw.congress_number}`;
       const reading = passedBothReading(raw);
-      // Only the passed_both label changes the ask.
-      expect(reading !== null, id).toBe(statusKeyFor(raw) === 'passed_both');
+      // Only the passed_both label changes the ask — and not on a bill both
+      // chambers passed in different versions (2026-11-18): the chamber it
+      // went back to still votes, so it keeps the vote ask (the null branch
+      // below checks it word for word).
+      expect(reading !== null, id).toBe(statusKeyFor(raw) === 'passed_both' && passageState(raw).stage !== 'back');
       if (reading === null) {
         for (const stance of STANCE_ORDER) expect(stanceLine(raw, stance), id).toBe(UNCHANGED[stance]);
       } else {

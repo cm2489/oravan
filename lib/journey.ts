@@ -75,6 +75,7 @@ import {
   floorReconsiderPendingChamber,
   floorSettledChamber,
   passageState as passageStateMjs,
+  recordStatus,
   // Read together, and only by pointOfOrderUpheldChamber below.
   floorActionChamber,
   procedureEndedConsideration,
@@ -549,11 +550,23 @@ export function statusKeyFor(bill: StatusKeyBill, now: number = Date.now()): Sta
 
 /** The status key the record alone answers, before the ended reading. */
 function recordStatusKey(bill: StatusKeyBill, now: number): StatusLabelKey {
-  const { status } = bill;
+  // recordStatus (lib/floor-text.mjs): the stored status, except a
+  // pre-passage status stored over a sentence that says both chambers agreed
+  // (H.R. 2400, 2026-11-18). deriveJourney reads the same, so the word and
+  // the stepper cannot disagree.
+  const status = recordStatus(bill) as Bill['status'];
   if (status === 'passed_chamber') {
     if (concurrentAdoptedBy(bill)) return 'adopted';
+    // EVERY STAGE PAST THE SECOND CHAMBER'S VOTE (2026-11-18). 'back' — both
+    // chambers passed it, in different versions — read `passed_chamber`,
+    // "Passed one chamber", which is false: both did (H.R. 5349). 'both' now
+    // also covers presentment and agreement to the other chamber's amendment
+    // (passageState). All three print the existing "Passed both chambers",
+    // which is true of each; the record's finer stage is the stepper's
+    // "Right now:" sentence. This changes no decision: decisionState and
+    // settledDecision read neither the key nor the stage.
     const { stage } = passageState(bill);
-    return stage === 'both' || stage === 'second' ? 'passed_both' : 'passed_chamber';
+    return stage === 'first' ? 'passed_chamber' : 'passed_both';
   }
   if (status !== 'floor_vote') return status;
   if (settledDecision(bill)?.kind === 'rejected') return 'rejected';
@@ -1338,7 +1351,9 @@ export function deriveJourney(
     date: null,
     ending: journeyEnding(bill.bill_type, bill.title),
   };
-  switch (bill.status) {
+  // recordStatus, as statusKeyFor reads it (2026-11-18): the chip and the
+  // stepper read one status.
+  switch (recordStatus(bill)) {
     case 'introduced':
       return { ...base, step: 0, nowKey: 'nowIntroduced' };
     case 'committee':

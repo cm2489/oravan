@@ -14,7 +14,7 @@ import { STATUS_BASE } from '../lib/urgency.mjs';
 // The one copy of the committee-text-on-the-floor vocabulary (2026-09-25):
 // lib/floor-text.mjs is import-free, so this module reading it adds no data
 // and no secret to anything that imports mapStatus.
-import { COMMITTEE_TEXT_ON_FLOOR } from '../lib/floor-text.mjs';
+import { COMMITTEE_TEXT_ON_FLOOR, agreedToOtherChamberAmendment } from '../lib/floor-text.mjs';
 
 // The tracked Congress is written once, in lib/congress.mjs (2026-11-12), and
 // re-exported here under the name every sync script already imports.
@@ -321,6 +321,16 @@ export function mapStatus(actionText) {
     text.includes('passed/agreed to') || text.includes('agreed to in') ||
     text.includes('received in the senate') || text.includes('received in the house') ||
     text.includes('held at the desk') ||
+    // AGREEMENT TO THE OTHER CHAMBER'S AMENDMENT (2026-11-18, H.R. 2400). "On
+    // motion that the House suspend the rules and agree to the Senate
+    // amendment Agreed to by voice vote." is the chamber that started the bill
+    // accepting the other chamber's changes, which leaves both holding one
+    // text. It contains no "passed house" or "agreed to in", so it fell
+    // through to the `committee` default and H.R. 2400's page said
+    // "In committee" the day the House cleared it. The reader, and the
+    // "with an amendment" shapes it refuses, live in lib/floor-text.mjs
+    // (agreedToOtherChamberAmendment), which passageState reads as 'both'.
+    agreedToOtherChamberAmendment(text) !== null ||
     // THE POST-PASSAGE MOTION (2026-09-18). "Motion to reconsider laid on the
     // table Agreed to without objection." is what a chamber does immediately
     // AFTER passing a measure, and it is the sentence Congress leaves as the

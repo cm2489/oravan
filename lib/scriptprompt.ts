@@ -155,7 +155,13 @@ export type StanceLineBill = StatusKeyBill & Pick<Bill, 'title'>;
 
 export function passedBothReading(bill: StanceLineBill): PassedBothReading | null {
   if (statusKeyFor(bill) !== 'passed_both') return null;
-  const toPresident = passageState(bill).stage === 'both' && journeyEnding(bill.bill_type, bill.title) === 'president';
+  const { stage } = passageState(bill);
+  // 'back' (2026-11-18): both chambers passed it in different versions, so it
+  // prints "Passed both chambers" now, but the chamber it went back to still
+  // votes on the changes. Its stance lines stay the ordinary ones, exactly as
+  // they were when it printed "Passed one chamber": a vote is still ahead.
+  if (stage === 'back') return null;
+  const toPresident = stage === 'both' && journeyEnding(bill.bill_type, bill.title) === 'president';
   return toPresident ? 'to_president' : 'next_unstated';
 }
 
