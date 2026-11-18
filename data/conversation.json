@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-18T04:14:21.010Z",
+    "fetched_at": "2026-11-18T13:53:44.109Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-18T04:14:21.010Z"
+        "checked_at": "2026-11-18T13:53:44.109Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-15",
         "week_label": "Most-Viewed Bills - Week of November 15, 2026",
         "entries": 7,
-        "checked_at": "2026-11-18T04:14:21.010Z"
+        "checked_at": "2026-11-18T13:53:44.109Z"
       },
       "leans": {
         "center": {
@@ -550,6 +550,24 @@
       ],
       "mostViewed": null
     },
+    "hr-5631-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "tradingview.com",
+          "firstSeen": "2026-11-18",
+          "lastSeen": "2026-11-18",
+          "url": "https://news.google.com/rss/articles/CBMi2wFBVV95cUxOaTAxeVNwZ1JFRG9OcWRfM1YxN0FtemZpczlKQWxzQXJuUzdUTjh3Nlk4WVdrMlRzbDVCbDk1Ylc0N2VXUzRTTWh0U0dJM1gxTlBPZXJGT2NHOTJCZGJOLUdoLWZldUxoUGRxT0dBNlQtMW1qOFFyVjdkMF9RWU1UaG9WSmdoTEd2dEFMMnZBSEtXTWM3Y1gwVll0SlR0dTFiNV9uRmJwel83NzlhcjloZ0c1c0doOXdkU016MS1HTkloUDJtcFZtRkV6ZkZ0aURQSzlLT3loOU55ZEk?oc=5"
+        },
+        {
+          "domain": "whtc.com",
+          "firstSeen": "2026-11-18",
+          "lastSeen": "2026-11-18",
+          "url": "https://news.google.com/rss/articles/CBMisgFBVV95cUxQRXg2YlZXY0x0N3NXR01aNmw2OWhsVXpMalVPeXRFQjJNZDBzSkdQTGZPckEyaXZMeVpycGY3clBrcGlucF9QMEFSQ2VXLVQxSWJDWHVkTTFWU3RHN29uTjhYMVdVOTVsSVVreDYtT3pJRHBkVE9rakRrbGtiODVTM3FBOV9vcFdtUlNlVlpJTTNjQjV6MlJWaW5sa0I2VnI3cm1oclRrZU03dzhBY09UTXh3?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-5860-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -748,6 +766,13 @@
     "hr-6825-119": {
       "outlets7d": [
         {
+          "domain": "cnbc.com",
+          "lean": "center",
+          "firstSeen": "2026-11-18",
+          "lastSeen": "2026-11-18",
+          "url": "https://www.cnbc.com/2026/11/18/jensen-huang-nvidia-tim-scott-congress.html"
+        },
+        {
           "domain": "thehill.com",
           "lean": "center",
           "firstSeen": "2026-11-18",
@@ -763,6 +788,18 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-7006-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "dominicantoday.com",
+          "firstSeen": "2026-11-18",
+          "lastSeen": "2026-11-18",
+          "url": "https://news.google.com/rss/articles/CBMinAFBVV95cUxPdEhhRUVoeUJFb2lQV2tRVTlSaDhQVktNejBZZTk2VnJwMHQyVDRmYWMtUXNDcF9DT3VFektmak5UTmh5amxSSEd1anJjdWREcXlWRWtYeW9fTWx5M29Kc1E5VGZpbmwtWF9QbldUTUZrX0FVeFVkblNIZGVnU2VSRFNJWk9HdTNrZEN6bWdsb1hnaWpxTFgwdk56R3k?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "hr-7212-119": {
@@ -785,6 +822,12 @@
           "firstSeen": "2026-11-18",
           "lastSeen": "2026-11-18",
           "url": "https://news.google.com/rss/articles/CBMihgFBVV95cUxPVkhoVHh0ZVItb3E3U2dNbVhnMWdNUGNuYTl4MW9ZWE9Nb1BpR180bXBCdThFalhZVVBvRk1OUW1yRThUUGtLZnRqQWt5T2d3ek9zTHp0OFJJYl9tUkI3WElGMnM4SkJsQ2paTE9rRkEtMUFKNDZlaUxGT0N4c3p3Zm0tOE9UQQ?oc=5"
+        },
+        {
+          "domain": "orlandosentinel.com",
+          "firstSeen": "2026-11-18",
+          "lastSeen": "2026-11-18",
+          "url": "https://news.google.com/rss/articles/CBMiigFBVV95cUxPMzNpNGlCaWg0Qy1JNHRObGJGV1ZpcGRMX0Q1YUJwTzVRbHM0YnM3NjFyQ21SZXdzV2p5V2ktOFJWVEcteXh1LTZqNmQzOXVFX3VVeVFLMjBtN1JpRHp0cUxaMzlFN1JRUktwVFpubm5RSmRHU1pWVlVCZzVocXEtSTdpTHRoNldJUFE?oc=5"
         }
       ],
       "mostViewed": null
@@ -956,6 +999,12 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "farmpolicynews.illinois.edu",
+          "firstSeen": "2026-11-18",
+          "lastSeen": "2026-11-18",
+          "url": "https://news.google.com/rss/articles/CBMi0gFBVV95cUxPMlVncWtjem1DNDhScWxHa2xneThDNTY0LUV6SUstQWdjX2Fxbnh5SDVFeHN4VDVsUnFHSWx2b3FsUHBMeXRoWEZHbG0xQTFUVlkxajdTRWRVdU15TUFxamd3TktxU0lVTTNCOUdqajNrY1JZZ0QtUk5YQ3V1UDZfcFpGS0JvNG1yd3JlQjF4d05yQmZROHFhd2ZXMXVHdDRZRTlfVDNnRkhybVo5WlRUbDBLNmFSZGVnU2xpUk43N180dzIwdFc4WFNCcEczbHhFRVE?oc=5"
+        },
+        {
           "domain": "civileats.com",
           "firstSeen": "2026-11-13",
           "lastSeen": "2026-11-13",
@@ -1112,6 +1161,18 @@
           "firstSeen": "2026-11-16",
           "lastSeen": "2026-11-16",
           "url": "https://news.google.com/rss/articles/CBMizgFBVV95cUxPLTVMS1N4cTgyUXBVeXRrSFk2enN2aWdhNm5PZlR3eVNEcHkwN1hfNERQV1NkajFkbVJnZ1JBcUlEdGZVaVV5WmF4aFM2X3RvS042NmV0VGpmaU12R2E0Z05xQnhDX2EtU2xpU2ZvVkhaa2d6aWpEV004V1NmaTRlamFDakhDWnExdnJlRkpFdmlNMksxQjJQdDQ1cllfYmo3YzFBQkZTTE5BLU54TktRMkZER05kNHdRUktVb0xaOG83WWdvbXYycFBaQ3NaZw?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "s-1020-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "grist.org",
+          "firstSeen": "2026-11-18",
+          "lastSeen": "2026-11-18",
+          "url": "https://news.google.com/rss/articles/CBMitgFBVV95cUxOZjJLWEFrVG9WUGFWV01iaXB3aGVKTDFlQWZ2bFBLbjVXd05ueE8wQVJSUzlwcHNLVWM5cTNGNmpiTDZaelJhcFItRmpkSGYtWFdfM3czVUtoZERjRFJnYm1tRU9MZVBaZU9GNnZNczdKRS1aRVRPTzJBTzFiNVM4TVpiUUEzc1RJTWxrU0Y3djMya1FFblZWdmF1UzBKTVlHMkIyLVFwUVVqM3prNDUxMlJTTzR3QQ?oc=5"
         }
       ],
       "mostViewed": null
@@ -1411,7 +1472,15 @@
       "mostViewed": null
     },
     "s-4591-119": {
-      "outlets7d": [],
+      "outlets7d": [
+        {
+          "domain": "apnews.com",
+          "lean": "center",
+          "firstSeen": "2026-11-18",
+          "lastSeen": "2026-11-18",
+          "url": "https://news.google.com/rss/articles/CBMi6gFBVV95cUxNQlJiemxuZkpGZ1lMQjFqT2lEdE93dDMwVVVmNXBWRGFpbUJNdWZ5RGtYaF83ZmVHbmhjdFU2VDA1ME80OXNRV3VjRDU2cU4yWm5qcEQtcGlsN2VkeTdNUkM1MXNDRjF1cTNZWlJrTC1ONG4wbjNvYkdvLTZWT1AwTDRyYmZWU1hwWUdBTElMV0hCZUNRcXZMTUFZUkZhVHJFbUFsWk84NkVDemdsbFRxRmx1LU13UnNvUnNyRDlNQ192VFdaUXRReEZEUW5jcXA4ZFNucVBVVm9MY3hYaHZmaFZhWnN0ZjJvNFE?oc=5"
+        }
+      ],
       "unratedOutlets7d": [
         {
           "domain": "ca.news.yahoo.com",
@@ -1592,6 +1661,13 @@
     },
     "sjres-185-119": {
       "outlets7d": [
+        {
+          "domain": "cnbc.com",
+          "lean": "center",
+          "firstSeen": "2026-11-18",
+          "lastSeen": "2026-11-18",
+          "url": "https://www.cnbc.com/2026/11/18/us-iran-navy-hormuz-war-cao.html"
+        },
         {
           "domain": "thehill.com",
           "lean": "center",
