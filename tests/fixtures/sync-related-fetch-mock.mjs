@@ -7,7 +7,9 @@
  *   - a number: that HTTP status, empty body;
  *   - "fail": a 500;
  *   - "hang": never answers, until the request's abort signal fires;
- *   - an array: one answer per attempt, in order (the last one repeats).
+ *   - an array: one answer per attempt, in order (the last one repeats);
+ *   - `{ "delay": ms, "then": <answer> }`: that answer after `ms` (a slow but
+ *     working Congress.gov), unless the request's abort signal fires first.
  * A path not in the scenario answers 500. Every request path is appended to
  * RELATED_MOCK_LOG, without its query string (so the key never lands there).
  */
@@ -35,6 +37,16 @@ globalThis.fetch = async (input, init = {}) => {
     const n = attempts.get(key) ?? 0;
     attempts.set(key, n + 1);
     answer = answer[Math.min(n, answer.length - 1)];
+  }
+  if (answer && typeof answer === 'object' && !Array.isArray(answer) && 'delay' in answer) {
+    await new Promise((resolve, reject) => {
+      const t = setTimeout(resolve, answer.delay);
+      init.signal?.addEventListener('abort', () => {
+        clearTimeout(t);
+        reject(init.signal.reason ?? Object.assign(new Error('aborted'), { name: 'AbortError' }));
+      });
+    });
+    answer = answer.then;
   }
   if (answer === 'hang') {
     return new Promise((_, reject) => {

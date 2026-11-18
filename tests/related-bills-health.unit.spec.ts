@@ -210,7 +210,7 @@ test.describe('partial failures', () => {
     expect(t(1, 3)).toEqual([]);
     expect(t(100, 200)).toEqual(['related-bills-lookups-failed']);
     const text = relatedAlarms({ ...fresh, trouble: parseRelatedTrouble([START, DONE(100, 200)].join('\n')) })[0].text;
-    expect(text).toContain('could not reach Congress.gov for 100 of 200 bills');
+    expect(text).toContain('could not get a usable answer from Congress.gov for 100 of 200 bills');
     expect(text).toContain('docs/runbooks/related-bills.md');
     expect(t(0, 0)).toEqual([]);
   });
@@ -331,5 +331,34 @@ test.describe('the gate and the readers, at their edges', () => {
     const st = relatedStaleness({ _meta: { previous_carrying: 5 } }, NOW);
     expect(st).toEqual({ readable: false, filledAt: null, ageDays: null, carrying: 0, previousCarrying: 5 });
     expect(codes(relatedAlarms({ trouble: null, staleness: st }))).toEqual(['related-bills-stale', 'related-bills-twins-fell']);
+  });
+});
+
+test.describe('the DONE line, old and new (2026-11-18)', () => {
+  // The first real night's line, from nightly run 44188792590 (2026-11-17), in the downloaded log's shape.
+  const REAL_NIGHT_1 =
+    "sync\tUNKNOWN STEP\t2026-11-17T22:59:21.1642862Z RELATED DONE: looked up 200 of 200 planned (0 failed; 522 candidate bills, 522 with coverage); 65 relation(s) added, 0 removed; 41 bills carry an identical bill (0 before tonight); pruned 0 bill(s) and 0 twin row(s) no longer in data/bills.json. Congress.gov requests: 200. Cost: $0.";
+
+  test('the first real night reads as a clean night: no kinds listed, not stopped early, no alarm', () => {
+    const t = parseRelatedTrouble([START, REAL_NIGHT_1].join('\n'));
+    expect(t.done).toEqual({ looked: 200, planned: 200, failed: 0, kinds: null, early: null });
+    expect(relatedAlarms({ ...fresh, trouble: t })).toEqual([]);
+  });
+
+  test('a night stopped early: the unread bills count with the failures toward the half-or-more alarm', () => {
+    const line = (looked: number, failed: number, after: number) =>
+      parseRelatedTrouble(
+        [
+          START,
+          `sync\tUNKNOWN STEP\t2026-11-18T22:59:21.0000000Z RELATED DONE: looked up ${looked} of 200 planned (${failed ? `${failed} failed: 0 no answer, ${failed} an error status, 0 a misshapen answer` : '0 failed'}; 522 candidate bills, 522 with coverage); stopped early after ${after} of 200 lookups at the 300-second time budget, so Congress.gov is answering very slowly, and the ${200 - after} not read go first next night; 0 relation(s) added, 0 removed; 41 bills carry an identical bill (41 before tonight); pruned 0 bill(s) and 0 twin row(s) no longer in data/bills.json. Congress.gov requests: ${after}. Cost: $0.`,
+        ].join('\n')
+      );
+    expect(line(100, 0, 100).done!.early).toEqual({ after: 100, of: 200 });
+    expect(codes(relatedAlarms({ ...fresh, trouble: line(100, 0, 100) }))).toEqual(['related-bills-lookups-failed']); // 100 unread
+    expect(relatedAlarms({ ...fresh, trouble: line(101, 0, 101) })).toEqual([]); // 99 unread
+    expect(codes(relatedAlarms({ ...fresh, trouble: line(91, 10, 101) }))).toEqual(['related-bills-lookups-failed']); // 10 failed + 99 unread
+    const both = relatedAlarms({ ...fresh, trouble: line(40, 10, 50) })[0].text;
+    expect(both).toContain('stopped early after 50 of 200 lookups because Congress.gov answered very slowly (it saved what it read, and the 150 bills not read go first tomorrow)');
+    expect(both).toContain('and it could not get a usable answer from Congress.gov for 10 of 200 bills (10 with an error status)');
   });
 });

@@ -194,7 +194,7 @@ test.describe('a slow or broken Congress.gov never costs the night', () => {
   const tenSlugs = tenBills.map((b) => `hr-${b.bill_number}-119`);
   const before = base({ _checkedAt: { 'hr-1-119': '2026-10-01' }, 'hr-1-119': [row('hr-2-119')] });
 
-  test('a hang: one attempt per bill, never retried, and the time budget stops the run; the file is byte-identical', () => {
+  test('a hang: one attempt per bill, never retried; the time budget ends the night, and with nothing read it STOPS with the file byte-identical', () => {
     const dir = world({ bills: tenBills, coverage: tenSlugs, file: before });
     try {
       const was = fileText(dir);
@@ -204,7 +204,8 @@ test.describe('a slow or broken Congress.gov never costs the night', () => {
         RELATED_MAX_FAILS_IN_A_ROW: '100', // so the budget, not the streak, is what stops it
       });
       expect(r.status, r.out).toBe(1);
-      const m = r.out.match(/RELATED STOPPED: it reached its 0\.25-second time budget after (\d+) of 10 lookups/);
+      // Every lookup the budget allowed hung, so there is nothing to save.
+      const m = r.out.match(/RELATED STOPPED: all (\d+) lookups failed \(the first: no answer within 0\.1 s/);
       expect(m, r.out).not.toBeNull();
       const looked = Number(m![1]);
       expect(looked).toBeGreaterThanOrEqual(2);
@@ -510,6 +511,126 @@ test.describe('small things the writer must also do', () => {
     try {
       const r = night(dir, '2026-11-10', { 'hr/1': { relatedBills: [], pagination: { count: 300 } } });
       expect(r.out).toContain('::warning::hr-1-119 has 300 related bills; only the first 250 were read');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+test.describe('2026-11-18: twins outside the corpus, slow nights, and saying what went wrong', () => {
+  test('a twin that is not a corpus bill is never stored, so the next night prunes nothing', () => {
+    const dir = world({ bills: [bill('hr', 1), bill('s', 1)], coverage: ['hr-1-119'], file: base() });
+    try {
+      // S. 99 is the record's identical bill too, but the corpus does not hold it.
+      let r = night(dir, '2026-11-01', { 'hr/1': answer(identical('S', 1), identical('S', 99)) });
+      expect(r.status, r.out).toBe(0);
+      expect(fileOf(dir)['hr-1-119']).toEqual([row('s-1-119')]);
+      r = night(dir, '2026-11-08', { 'hr/1': answer(identical('S', 1), identical('S', 99)) });
+      expect(r.out).toContain('pruned 0 bill(s) and 0 twin row(s)');
+      expect(fileOf(dir)['hr-1-119']).toEqual([row('s-1-119')]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test("a file in the old shape (twins outside the corpus, as written on 2026-11-17) through one night of the new code: no fall alarm, the count compared on the same basis", () => {
+    // Today's committed file had 41 bills, 25 of them with only twins outside
+    // the corpus. Here: hr-1 has a corpus twin and an outside one; hr-2 and
+    // hr-3 have only outside twins. Two of the three are due tonight.
+    const old = base({
+      _meta: { ...emptyRelatedBills('2026-11-01')._meta, previous_carrying: 0 },
+      _checkedAt: { 'hr-1-119': '2026-11-01', 'hr-2-119': '2026-11-01', 'hr-3-119': '2026-11-09' },
+      'hr-1-119': [row('s-1-119'), row('s-99-119')],
+      'hr-2-119': [row('s-98-119')],
+      'hr-3-119': [row('s-97-119')],
+    });
+    const dir = world({ bills: [bill('hr', 1), bill('s', 1), bill('hr', 2), bill('hr', 3)], coverage: ['hr-1-119', 'hr-2-119', 'hr-3-119'], file: old });
+    try {
+      const r = night(dir, '2026-11-10', { 'hr/1': answer(identical('S', 1), identical('S', 99)), 'hr/2': answer(identical('S', 98)) });
+      expect(r.status, r.out).toBe(0);
+      // Pruning runs before the "before tonight" count: both sides count corpus twins only.
+      expect(r.out).toContain('1 bills carry an identical bill (1 before tonight); pruned 0 bill(s) and 3 twin row(s)');
+      const f = fileOf(dir);
+      expect(f._meta.previous_carrying).toBe(1);
+      expect(Object.keys(f).filter((k) => !k.startsWith('_'))).toEqual(['hr-1-119']);
+      expect(morning(dir, r.out, '2026-11-11')).toEqual([]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test('a slow but working Congress.gov: the budget stops the night early, what was read is SAVED, and the unread bills go first next night', () => {
+    const tenBills = Array.from({ length: 10 }, (_, i) => bill('hr', i + 1));
+    const all = [...tenBills, ...tenBills.map((b) => bill('s', b.bill_number))];
+    const slow = Object.fromEntries(tenBills.map((b) => [`hr/${b.bill_number}`, { delay: 80, then: answer(identical('S', b.bill_number)) }]));
+    const dir = world({ bills: all, coverage: tenBills.map((b) => `hr-${b.bill_number}-119`), file: base() });
+    try {
+      const r = night(dir, '2026-11-10', slow, { RELATED_BUDGET_MS: '250' });
+      expect(r.status, r.out).toBe(0);
+      const m = r.out.match(/RELATED DONE: looked up (\d+) of 10 planned \(0 failed;.*stopped early after (\d+) of 10 lookups at the 0\.25-second time budget, so Congress\.gov is answering very slowly, and the (\d+) not read go first next night/);
+      expect(m, r.out).not.toBeNull();
+      const read = Number(m![1]);
+      expect(Number(m![2])).toBe(read);
+      expect(Number(m![3])).toBe(10 - read);
+      expect(r.out).not.toContain('RELATED STOPPED');
+      const f = fileOf(dir);
+      const readTonight = Object.keys(f._checkedAt);
+      expect(readTonight).toHaveLength(read);
+      for (const k of readTonight) expect(f[k]).toHaveLength(1); // saved through the gate
+      expect(verifyRelatedBills({ data: f, today: '2026-11-10' }).failures).toEqual([]);
+      expect(f._meta.filled_at).toBe('2026-11-10');
+      // The next night reads the bills tonight did not, first.
+      const r2 = night(dir, '2026-11-11', slow, { RELATED_BUDGET_MS: '250' });
+      expect(r2.status, r2.out).toBe(0);
+      const second = r2.requests.map((p) => p.match(/hr\/(\d+)\//)![1]).map((n) => `hr-${n}-119`);
+      for (const k of second) expect(readTonight).not.toContain(k);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test('ten slow nights in a row: every morning the lookups alarm says it stopped early; the file keeps refreshing; no stale or fall alarm', () => {
+    const bills60 = Array.from({ length: 60 }, (_, i) => bill('hr', i + 1));
+    const all = [...bills60, ...bills60.map((b) => bill('s', b.bill_number))];
+    const slow = Object.fromEntries(bills60.map((b) => [`hr/${b.bill_number}`, { delay: 80, then: answer(identical('S', b.bill_number)) }]));
+    const dir = world({ bills: all, coverage: bills60.map((b) => `hr-${b.bill_number}-119`), file: emptyRelatedBills('2026-10-01') });
+    try {
+      let checked = 0;
+      for (let d = 1; d <= 10; d++) {
+        const day = `2026-10-${String(d).padStart(2, '0')}`;
+        const next = `2026-10-${String(d + 1).padStart(2, '0')}`;
+        const r = night(dir, day, slow, { RELATED_BUDGET_MS: '250' });
+        expect(r.status, `${day}\n${r.out}`).toBe(0);
+        const alarms = relatedAlarms({ trouble: parseRelatedTrouble(r.out), staleness: relatedStaleness(fileOf(dir), Date.parse(`${next}T13:00:00Z`)) });
+        expect(alarms.map((a) => a.code), day).toEqual(['related-bills-lookups-failed']);
+        expect(alarms[0].text).toContain('stopped early after');
+        expect(alarms[0].text).toContain('it saved what it read');
+        const now = Object.keys(fileOf(dir)._checkedAt).length;
+        expect(now, day).toBeGreaterThan(checked); // progress every night
+        checked = now;
+        expect(fileOf(dir)._meta.filled_at).toBe(day);
+      }
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test('the DONE line and the alarm say which kind of failure it was', () => {
+    const bills4 = [bill('hr', 1), bill('hr', 2), bill('hr', 3), bill('hr', 4), bill('s', 4)];
+    const dir = world({ bills: bills4, coverage: ['hr-1-119', 'hr-2-119', 'hr-3-119', 'hr-4-119'], file: base() });
+    try {
+      const r = night(dir, '2026-11-10', {
+        'hr/1': 'hang',
+        'hr/2': 503,
+        'hr/3': { related_bills: [] },
+        'hr/4': answer(identical('S', 4)),
+      });
+      expect(r.status, r.out).toBe(0);
+      expect(r.out).toContain('RELATED DONE: looked up 1 of 4 planned (3 failed: 1 no answer, 1 an error status, 1 a misshapen answer;');
+      const a = relatedAlarms({ trouble: parseRelatedTrouble(r.out), staleness: null });
+      expect(a.map((x) => x.code)).toEqual(['related-bills-lookups-failed']);
+      expect(a[0].text).toContain('could not get a usable answer from Congress.gov for 3 of 4 bills (1 with no answer, 1 with an error status, 1 with an answer in the wrong shape)');
+      expect(a[0].text).not.toContain('could not reach');
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
