@@ -154,6 +154,10 @@ test.describe('the nightly mapping reads agreement to the other chamber’s amen
       expect(recordStatus({ status, last_action_text: 'x', status_basis_text: basis })).toBe(status);
     }
     expect(recordStatus({ status: 'committee', last_action_text: 'Referred to the House Committee on Rules.' })).toBe('committee');
+    // Both pre-passage statuses the nightly could have stored over it read the same.
+    expect(recordStatus({ status: 'committee', last_action_text: 'x', status_basis_text: basis })).toBe('passed_chamber');
+    expect(recordStatus({ status: 'markup', last_action_text: 'x', status_basis_text: basis })).toBe('passed_chamber');
+    expect(statusKeyFor(bill({ bill_type: 'hr', status: 'markup', last_action_text: 'x', status_basis_text: basis }), NOW)).toBe('passed_both');
   });
   test('a concurrent resolution is never read as presented, and agreement leaves it at "second"', () => {
     const c = bill({ bill_type: 'hconres', status: 'passed_chamber', last_action_text: 'Presented to President.' });
