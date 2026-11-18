@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-18T03:55:54.042Z",
+    "fetched_at": "2026-11-18T04:14:21.010Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-18T03:55:54.042Z"
+        "checked_at": "2026-11-18T04:14:21.010Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-15",
         "week_label": "Most-Viewed Bills - Week of November 15, 2026",
         "entries": 7,
-        "checked_at": "2026-11-18T03:55:54.042Z"
+        "checked_at": "2026-11-18T04:14:21.010Z"
       },
       "leans": {
         "center": {
@@ -1175,7 +1175,14 @@
           "url": "https://news.google.com/rss/articles/CBMiwwFBVV95cUxPLTVxWWpnanNuMFZpam1GVThDd1RKNEpLQ3c1VWYzNjB0LTlkQUZidmFMVDhoQXVOZ0NVVzdPZ3h5SUlKRUJEOXNkd0xaalVHdHRESHNHTEJkaV93WWRGYjNYWUNGcVBMZDB1YWdHT1Z0V2hLc3o2LWtQRVJldkJaY0g5N0REaWtZdWotOXNRa1h6blBYTHhHNnoxN2NqcWh5V2VMNFgtWGlwQzJCUS1KbkJvVm0zd2dtb3F5cWpMR2VqazQ?oc=5"
         }
       ],
-      "unratedOutlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "edition.cnn.com",
+          "firstSeen": "2026-11-18",
+          "lastSeen": "2026-11-18",
+          "url": "https://news.google.com/rss/articles/CBMiyAFBVV95cUxQZU03YTdOdTZQYjZ1YU1mOUlQbEhZd3g5OTZYdktwaS0xS3gyN3lnbmpicDFfb2xDZ3dMMHllTE9OYkYtdEp0aHAxV2ttQmFzNnRzR2h0WkR6aXVTMnJ1am5XZ0hpMjFwN1d1ejNYMEh0eXE3QzhQTlNiMDVXQmR2d0Y3eXF6WXF6RlpXaEtwYXJUM0E2T3lYWlIzVkdjTk96eTVMSEp2andiQ3JEblBXVUFQSGdBWExRVWNNQlNTcEdCMU51WFNqWg?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "s-1547-119": {

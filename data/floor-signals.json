@@ -1,22 +1,22 @@
 {
   "_meta": {
     "schema": "floor-signals/v1",
-    "fetched_at": "2026-11-18T03:55:45.620Z",
+    "fetched_at": "2026-11-18T04:14:17.003Z",
     "sources": {
       "daily-digest": {
-        "status": "error",
-        "detail": "no Formatted Text URL in the Daily Digest section of 2026-11-16; fallback: HTTP 502 for https://api.govinfo.gov/packages/CREC-2026-11-13/granules?offset=0&pageSize=100&api_key=REDACTED",
-        "checked_at": "2026-11-18T03:55:45.620Z",
-        "url": null,
-        "published": null,
-        "covers": null,
-        "covers_label": null,
-        "via": null
+        "status": "ok",
+        "detail": "1 announced measure(s)/nomination(s)",
+        "checked_at": "2026-11-18T04:14:17.003Z",
+        "url": "https://www.govinfo.gov/content/pkg/CREC-2026-11-16/html/CREC-2026-11-16-pt1-PgD1029.htm",
+        "published": "2026-11-16",
+        "covers": "2026-11-17",
+        "covers_label": "10 a.m., Tuesday, November 17",
+        "via": "govinfo"
       },
       "billsthisweek": {
         "status": "ok",
         "detail": "15 scheduled measure(s)",
-        "checked_at": "2026-11-18T03:55:45.620Z",
+        "checked_at": "2026-11-18T04:14:17.003Z",
         "url": "https://docs.house.gov/billsthisweek/20261116/20261116.xml",
         "published": "2026-11-16",
         "covers": "2026-11-16",
@@ -25,15 +25,28 @@
       }
     },
     "in_session": {
-      "senate": "unknown",
-      "house": "unknown",
+      "senate": "in_session",
+      "house": "in_session",
       "basis": "Daily Digest \"Program for\" blocks"
     },
     "next_meeting": {
-      "senate": null,
-      "house": null
+      "senate": {
+        "date": "2026-11-17",
+        "label": "10 a.m., Tuesday, November 17"
+      },
+      "house": {
+        "date": "2026-11-17",
+        "label": "12 noon, Tuesday, November 17"
+      }
     },
-    "dropped": []
+    "dropped": [
+      {
+        "source": "daily-digest",
+        "reason": "nomination_unroutable",
+        "slug": null,
+        "text": "At 2:15 p.m., Senate will vote on confirmation of the nomination of"
+      }
+    ]
   },
   "signals": {
     "hr-10136-119": {
@@ -51,7 +64,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-11-18T03:55:45.620Z",
+      "fetched_at": "2026-11-18T04:14:17.003Z",
       "first_seen": "2026-11-16T11:02:12.090Z",
       "stale": false
     },
@@ -69,9 +82,9 @@
         "track": "unspecified",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-11-17T22:06:37.882Z",
+      "fetched_at": "2026-11-18T04:14:17.003Z",
       "first_seen": "2026-11-14T11:25:14.228Z",
-      "stale": true
+      "stale": false
     },
     "hr-2400-119": {
       "tier0": {
@@ -88,7 +101,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-11-18T03:55:45.620Z",
+      "fetched_at": "2026-11-18T04:14:17.003Z",
       "first_seen": "2026-11-16T11:02:12.090Z",
       "stale": false
     },
@@ -107,7 +120,7 @@
         "track": "rule",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-11-18T03:55:45.620Z",
+      "fetched_at": "2026-11-18T04:14:17.003Z",
       "first_seen": "2026-11-16T11:02:12.090Z",
       "stale": false
     },
@@ -126,7 +139,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-11-18T03:55:45.620Z",
+      "fetched_at": "2026-11-18T04:14:17.003Z",
       "first_seen": "2026-11-16T11:02:12.090Z",
       "stale": false
     },
@@ -145,7 +158,7 @@
         "track": "rule",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-11-18T03:55:45.620Z",
+      "fetched_at": "2026-11-18T04:14:17.003Z",
       "first_seen": "2026-11-16T11:02:12.090Z",
       "stale": false
     },
@@ -164,7 +177,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-11-18T03:55:45.620Z",
+      "fetched_at": "2026-11-18T04:14:17.003Z",
       "first_seen": "2026-11-16T11:02:12.090Z",
       "stale": false
     },
@@ -183,7 +196,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-11-18T03:55:45.620Z",
+      "fetched_at": "2026-11-18T04:14:17.003Z",
       "first_seen": "2026-11-16T11:02:12.090Z",
       "stale": false
     },
@@ -202,7 +215,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-11-18T03:55:45.620Z",
+      "fetched_at": "2026-11-18T04:14:17.003Z",
       "first_seen": "2026-11-16T11:02:12.090Z",
       "stale": false
     },
@@ -221,7 +234,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-11-18T03:55:45.620Z",
+      "fetched_at": "2026-11-18T04:14:17.003Z",
       "first_seen": "2026-11-16T11:02:12.090Z",
       "stale": false
     },
@@ -240,7 +253,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-11-18T03:55:45.620Z",
+      "fetched_at": "2026-11-18T04:14:17.003Z",
       "first_seen": "2026-11-16T11:02:12.090Z",
       "stale": false
     },
@@ -259,7 +272,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-11-18T03:55:45.620Z",
+      "fetched_at": "2026-11-18T04:14:17.003Z",
       "first_seen": "2026-11-16T11:02:12.090Z",
       "stale": false
     },
@@ -278,7 +291,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-11-18T03:55:45.620Z",
+      "fetched_at": "2026-11-18T04:14:17.003Z",
       "first_seen": "2026-11-16T11:02:12.090Z",
       "stale": false
     },
@@ -297,7 +310,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-11-18T03:55:45.620Z",
+      "fetched_at": "2026-11-18T04:14:17.003Z",
       "first_seen": "2026-11-16T11:02:12.090Z",
       "stale": false
     },
@@ -316,7 +329,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-11-18T03:55:45.620Z",
+      "fetched_at": "2026-11-18T04:14:17.003Z",
       "first_seen": "2026-11-16T11:02:12.090Z",
       "stale": false
     },
@@ -335,7 +348,7 @@
         "track": "suspension",
         "certainty": "consideration"
       },
-      "fetched_at": "2026-11-18T03:55:45.620Z",
+      "fetched_at": "2026-11-18T04:14:17.003Z",
       "first_seen": "2026-11-16T11:02:12.090Z",
       "stale": false
     }
