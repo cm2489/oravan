@@ -6,8 +6,11 @@
  *   - an object: a 200 answer with that JSON body;
  *   - a number: that HTTP status, empty body;
  *   - "fail": a 500;
+ *   - "html": a 200 whose body is an HTML page, not JSON;
  *   - "hang": never answers, until the request's abort signal fires;
- *   - an array: one answer per attempt, in order (the last one repeats).
+ *   - an array: one answer per attempt, in order (the last one repeats);
+ *   - `{ "delay": ms, "then": <answer> }`: that answer after `ms` (a slow but
+ *     working Congress.gov), unless the request's abort signal fires first.
  * A path not in the scenario answers 500. Every request path is appended to
  * RELATED_MOCK_LOG, without its query string (so the key never lands there).
  */
@@ -36,6 +39,16 @@ globalThis.fetch = async (input, init = {}) => {
     attempts.set(key, n + 1);
     answer = answer[Math.min(n, answer.length - 1)];
   }
+  if (answer && typeof answer === 'object' && !Array.isArray(answer) && 'delay' in answer) {
+    await new Promise((resolve, reject) => {
+      const t = setTimeout(resolve, answer.delay);
+      init.signal?.addEventListener('abort', () => {
+        clearTimeout(t);
+        reject(init.signal.reason ?? Object.assign(new Error('aborted'), { name: 'AbortError' }));
+      });
+    });
+    answer = answer.then;
+  }
   if (answer === 'hang') {
     return new Promise((_, reject) => {
       // A real hung request keeps its socket, and so the process, alive; this
@@ -50,6 +63,7 @@ globalThis.fetch = async (input, init = {}) => {
     });
   }
   if (answer === undefined || answer === 'fail') return new Response('{"error":"mock"}', { status: 500 });
+  if (answer === 'html') return new Response('<!doctype html><html><body>Service notice</body></html>', { status: 200, headers: { 'content-type': 'text/html' } });
   if (typeof answer === 'number') return new Response('', { status: answer });
   return new Response(JSON.stringify(answer), { status: 200, headers: { 'content-type': 'application/json' } });
 };

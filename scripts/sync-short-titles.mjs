@@ -189,11 +189,11 @@ async function main() {
     retry = readJsonFile(RETRY_OUT) ?? {};
   } catch (e) {
     retry = {};
-    trouble(`${RETRY_OUT} is not valid JSON (${e?.message ?? e}); it was started afresh, so bills that were waiting may be tried again tonight`);
+    trouble(`${RETRY_OUT} is not valid JSON (${e?.message ?? e}); the step starts it afresh the next time it writes it, so bills that were waiting may be tried again sooner`);
   }
   if (!retry || typeof retry !== 'object' || Array.isArray(retry)) {
     retry = {};
-    trouble(`${RETRY_OUT} is not an object; it was started afresh, so bills that were waiting may be tried again tonight`);
+    trouble(`${RETRY_OUT} is not an object; the step starts it afresh the next time it writes it, so bills that were waiting may be tried again sooner`);
   }
   let trend;
   try {
@@ -201,10 +201,10 @@ async function main() {
     if (trend !== null && verifyShortTitlesTrend({ data: trend }).failures.length) throw new Error('not the expected shape');
   } catch (e) {
     trend = null;
-    trouble(`${TREND_OUT} could not be used (${e?.message ?? e}); the 14-night history was started afresh, so "a week ago" is unknown for a week`);
+    trouble(`${TREND_OUT} could not be used (${e?.message ?? e}); the step starts the 14-night history afresh the next time it writes it, so "a week ago" is unknown for a week`);
   }
   if (trend === null && before !== null && existsSync(TREND_OUT) === false) {
-    trouble(`${TREND_OUT} is missing while ${OUT} exists; the 14-night history was started afresh, so "a week ago" is unknown for a week`);
+    trouble(`${TREND_OUT} is missing while ${OUT} exists; the step starts the 14-night history afresh the next time it writes it, so "a week ago" is unknown for a week`);
   }
   trend = trend ?? { nights: [] };
   Object.assign(summary, nightSummary({ day: TODAY, bills, titles: before, retry, trend, read: 0, lost: 0 }));
@@ -243,7 +243,13 @@ async function main() {
     summary,
     nightSummary({ day: TODAY, bills, titles: titlesAfter, retry: retryAfter, trend, read: night.read, lost: night.dropped, allowDrop: allowDropUsed }),
   );
-  const trendText = serializeTrend(nextTrend(trend, { day: TODAY, titled: summary.titled, bills: bills.length, allow_drop: allowDropUsed }));
+  // `filled`: the first fill has completed (tonight no bill is left neither read nor tried, or an earlier
+  // night said so). Carried forward on every night, so it outlives the 14-night window; a history started
+  // afresh loses it until the next night with nothing left unread, which keeps the names-off alarm quiet.
+  // Any existing mark is kept, the same day's included: a second run on the night the fill completed
+  // rewrites that night's entry, and must not drop the mark (found by the check of #520).
+  const filled = summary.untried === 0 || (trend?.nights ?? []).some((n) => n.filled === true);
+  const trendText = serializeTrend(nextTrend(trend, { day: TODAY, titled: summary.titled, bills: bills.length, allow_drop: allowDropUsed, filled }));
   const outcome = !settled.write
     ? /would fall/.test(ending?.reason ?? '') ? 'drop-floor' : 'refused-by-gate'
     : night.sourceChanged ? 'source-changed' : night.trouble ? 'stopped-early' : 'done';
