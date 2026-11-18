@@ -370,8 +370,9 @@ jobs:
     # A shard finishes in about 5 minutes. With no limit a stuck step holds the
     # runner for GitHub's default 6 hours: on 2026-11-11 the runner could not
     # resolve the Ubuntu package mirror, and all six shards sat in the browser
-    # install for 20 minutes until the run was cancelled by hand.
-    timeout-minutes: 20
+    # install for 20 minutes until the run was cancelled by hand. 25 leaves
+    # room for the install step's three 4-minute attempts plus the shard.
+    timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:
@@ -396,7 +397,35 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
       - name: Install Playwright WebKit
-        run: npx playwright install --with-deps webkit
+        # The browser binary comes from the cache above. The system libraries
+        # come from the Ubuntu mirror, and that mirror sometimes crawls: from
+        # 2026-11-17 to 11-18 this step sat at 20 minutes on five of six shards
+        # (a few kB/s per package) while a sixth finished in 46 seconds, and
+        # every such run went red with no test run. So the libraries install
+        # in attempts of at most 4 minutes; packages an attempt finished stay
+        # in apt's cache, so a retry picks up where the last stopped, and
+        # from the second attempt on the runner's regional mirror is swapped
+        # for archive.ubuntu.com (a no-op if the runner names another).
+        run: |
+          npx playwright install webkit
+          for attempt in 1 2 3; do
+            if [ "$attempt" -gt 1 ]; then
+              sudo pkill -x apt-get || true
+              sleep 2
+              sudo dpkg --configure -a || true
+              for f in /etc/apt/sources.list /etc/apt/sources.list.d/* /etc/apt/apt-mirrors.txt; do
+                if [ -f "$f" ]; then
+                  sudo sed -i -E 's#https?://[a-z0-9.-]+\.ec2\.archive\.ubuntu\.com#http://archive.ubuntu.com#g' "$f"
+                fi
+              done
+            fi
+            if timeout 240 npx playwright install-deps webkit; then
+              exit 0
+            fi
+            echo "::warning::WebKit system libraries: attempt $attempt did not finish in 4 minutes or failed"
+          done
+          echo "::error::WebKit system libraries did not install in 3 attempts"
+          exit 1
       - name: Download the build
         uses: actions/download-artifact@v8
         with:
