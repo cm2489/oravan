@@ -218,6 +218,32 @@ jobs:
           CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: node scripts/moment-updates.mjs
+      - name: Read the short titles of bills added since the nightly (name addresses)
+        # After the first fill, one tracked bill neither read nor tried turns
+        # every name address off until it is read (the fill gate,
+        # lib/short-address-build.ts), and this workflow adds a bill between
+        # nightlies about twice a week. scripts/sync-short-titles.mjs
+        # --new-only reads ONLY bills never read or tried, in this run, so the
+        # names stay on: no request and no write on an hour that added no
+        # bill; nothing at all until the first fill has completed (the
+        # history's `filled` mark), so the nightly keeps its pace of 300 a
+        # night; at most SHORT_TITLES_MAX bills; the same gate before it
+        # writes; never the drop-floor override; never the 14-night history;
+        # and one "SHORT TITLES NEWS DESK:" line, never the nightly's summary
+        # line (the health report reads that from the nightly's log only). A
+        # failed read puts the bill in the retry file, as on a nightly.
+        # Cost: one free Congress.gov request per added bill (two on a retry).
+        # continue-on-error and its own ceiling, so it can never redden, block
+        # or slow this run by more than three minutes; and the commit step
+        # below drops this step's two files rather than merge them if its
+        # push has to rebase (2026-11-18).
+        continue-on-error: true
+        timeout-minutes: 3
+        env:
+          CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}
+          SHORT_TITLES_MAX: '10'
+          SHORT_TITLES_BUDGET_MS: '60000'
+        run: node scripts/sync-short-titles.mjs --new-only
       - name: Save seen-headlines cache
         # Always saves under this run's own unique key (see the restore
         # step's comment) - if: always() so a mid-run failure still persists
@@ -245,7 +271,6 @@ jobs:
             echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          echo "changed=true" >> "$GITHUB_OUTPUT"
           git commit -m "chore(data): newsdesk trigger $(date -u +%FT%HZ)"
           # This job touches data/bills.json/data/bills-es.json and
           # data/conversation.json (the conversation lamp's committed
@@ -262,10 +287,34 @@ jobs:
           # and retry, same pattern as those workflows.
           for i in 1 2 3 4 5; do
             if git push; then
+              echo "changed=true" >> "$GITHUB_OUTPUT"
               echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
               exit 0
             fi
             echo "push rejected, rebasing onto latest main (attempt $i)"
+            # NEVER MERGE THE SHORT-TITLES FILES (2026-11-18). They are one line
+            # per bill, so a rebase could merge them line by line into a file no
+            # gate has checked. If this run changed them and its push was
+            # rejected, it drops its own copies first: the bill it read stays
+            # unread and is read again next hour or by the nightly, and nothing
+            # the other push wrote is touched. Nothing left: no push at all.
+            if [ "$i" = 1 ]; then
+              dropped=false
+              for f in data/short-titles.json data/short-titles-retry.json; do
+                if git diff --quiet HEAD~1 HEAD -- "$f"; then continue; fi
+                dropped=true
+                if git cat-file -e "HEAD~1:$f" 2>/dev/null; then git checkout HEAD~1 -- "$f"; else git rm -q -f -- "$f"; fi
+              done
+              if [ "$dropped" = true ]; then
+                if git diff --cached --quiet HEAD~1; then
+                  echo "only this run's short titles had changed; dropped rather than merged, so nothing is left to push"
+                  echo "changed=false" >> "$GITHUB_OUTPUT"
+                  exit 0
+                fi
+                git commit -q --amend --no-edit
+                echo "this run's short titles were dropped rather than merged; the bill is read again next hour or by the nightly"
+              fi
+            fi
             # Guarded: a bare `git fetch` under `bash -e` kills the step on the
             # spot, which would make these five attempts as decorative as
             # sync-bills.yml's were on 2026-08-07.
