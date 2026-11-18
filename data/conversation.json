@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-18T21:45:55.612Z",
+    "fetched_at": "2026-11-18T21:55:02.023Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-18T21:45:55.612Z"
+        "checked_at": "2026-11-18T21:55:02.023Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-15",
         "week_label": "Most-Viewed Bills - Week of November 15, 2026",
         "entries": 7,
-        "checked_at": "2026-11-18T21:45:55.612Z"
+        "checked_at": "2026-11-18T21:55:02.023Z"
       },
       "leans": {
         "center": {
@@ -1032,6 +1032,18 @@
         "lastWeek": "2026-11-15"
       }
     },
+    "hr-8586-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "indiatribune.com",
+          "firstSeen": "2026-11-18",
+          "lastSeen": "2026-11-18",
+          "url": "https://news.google.com/rss/articles/CBMixgFBVV95cUxPVFJNbElFb2N2U2ZfckdDckd0dldLUko5amp1b2N6ZDBSYURoSUhfT0NRNGlERnViSkdOd0xDUmtRSWdtOHBvRlhPdU11WWlwZk5pNlNEMi1MOXdRVDIzR0NSY1VkZWtmNXdJRUJiZE12cFE3OS04ZVZucmVVSlIxYThXMThUeFBES2MxN0pLNkFzVElydGcxY3I5Mmx6ZGRoUWlvQTZCX3EwVHM3WTNqSGg1LWVlTDY3a3BrWEdGMm9aTjB1MGc?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-8646-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1162,6 +1174,12 @@
     "hr-9372-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "quiverquant.com",
+          "firstSeen": "2026-11-18",
+          "lastSeen": "2026-11-18",
+          "url": "https://news.google.com/rss/articles/CBMiyAFBVV95cUxNSGVtc1BSSlhaWGhka2NiOW9ya2hTeHl2U1NTY21nVGpyNnJ1OWFuaXJnQk93WlpGWURud2xuajBwRHRUYl9BWUFKZVlQYWFZTjB3OUNiTUtoeS05VVNhTnBiOThiR1oxUEMyNmlBbjU2R3ZkTk10ZUZPRkcxUldIQnVlVl9HYm05Tlk3aGRSNVJBSTlqSmJXem95NmVIR19heEs0SnU5VHhDbXpnTXpYX2VXczZSd1NFUkpJcXZ0dnJJdlp2N3V5YQ?oc=5"
+        },
         {
           "domain": "earthjustice.org",
           "firstSeen": "2026-11-16",
@@ -1339,7 +1357,15 @@
       "mostViewed": null
     },
     "s-1837-119": {
-      "outlets7d": [],
+      "outlets7d": [
+        {
+          "domain": "cnbc.com",
+          "lean": "center",
+          "firstSeen": "2026-11-18",
+          "lastSeen": "2026-11-18",
+          "url": "https://news.google.com/rss/articles/CBMimAFBVV95cUxQLU40dTk3ZFZjVzVkYmQ2QjdCY2FhZjFMRmVDb0syRV9DclQ0UHMxVzc1SkVZVzRndFFVSFFyVVpNUmdQX3hHWUJaWTJOOFRVVUI3MVVZUUhZRDRQbzNHY1p1bVRzWWNUOXFqS2RrdHBaZ29NdXBxODhneV9qei1hT0J1aER5MXVqUWNTWHhGWmFvdGMyaFl6VtIBngFBVV95cUxNdjJkU0play1CUTdzVG5ZVHVnVTdtUlIzc0xhZmtTMlZJNFgyWENNU1FEUEZWcW96LTk0cHhaaG9CN0xaM1RLaXpNQnExSTFyMEM0Q1dUU0piTU9fNEhSekdoY0N2ZF85V0F3RVpPYWk0NWg2MVJrWm1SeGM4ZkhkNElaVHh1aFlkZzlITmRYbzlGWDQ4ZFprRmtfVXE0dw?oc=5"
+        }
+      ],
       "unratedOutlets7d": [
         {
           "domain": "rollcall.com",
