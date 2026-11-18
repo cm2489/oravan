@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-18T13:53:44.109Z",
+    "fetched_at": "2026-11-18T21:45:55.612Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-18T13:53:44.109Z"
+        "checked_at": "2026-11-18T21:45:55.612Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-15",
         "week_label": "Most-Viewed Bills - Week of November 15, 2026",
         "entries": 7,
-        "checked_at": "2026-11-18T13:53:44.109Z"
+        "checked_at": "2026-11-18T21:45:55.612Z"
       },
       "leans": {
         "center": {
@@ -405,6 +405,19 @@
         "lastWeek": "2026-11-01"
       }
     },
+    "hr-3501-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-11-18",
+          "lastSeen": "2026-11-18",
+          "url": "https://thehill.com/policy/healthcare/6228435-lawmakers-push-asap-act/"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hr-3633-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -464,6 +477,18 @@
           "firstSeen": "2026-11-12",
           "lastSeen": "2026-11-12",
           "url": "https://news.google.com/rss/articles/CBMi_gFBVV95cUxOeVRybWU4c3I3dnNDX2FWQUJLaW1WbzBJVl9LZW02SnBJZUFISy16YUpFMXJKMUh0TE1nR2RSTk9DMjRTam54RXdSSTdCenU0UkxjSVVRNFBlM0MzMFJsTjJjMndwaDBCYWlnMk1xNjNqV055d3NaS0VKbHNjWEZoRTFSckhiWmFGRHpHaUI3QTV6eUZGbG9VZWhoVjJaaW9mS2NNNUxKam8tVVlWUUpfSXZUaGlSOVJ6cDVacGpqT21RZW8wdHdUMHhrVG83ZXZKY0l1MDFDdlc1eVN3cmIyOWt2MEg4dS13MnhsaDY1clhGb2Q5XzFua2tzRDVMd9IBgwJBVV95cUxNakFMS2daNEVRUFVvaS1jSzNONk9mSzNoTzVyLXJNQXhtdTlKNW5sbDhyZ3RFMmRydnMwb2hNZzJsdWdnVy1fdnVoTXpYSGZTNHhrVG16YVVHZExRZlJja1gzMzJuUG5LUG5ISnlJSXhyR2ZUZXZJRkE0dXd5RXkzbHNlNVdNQ3M1bkRVVURmVFNSZWxmWEk2bjVBSzhybGpRaF9Vbnlja3g4N2xSQlpMQTJ0MFJLOXh1ZGktWl9OYllpYkJEV0RweXRkSy1ENTJFeW9wdE9halhWSmd1MmRweXpBSVQxdUcwcGRrUUkzbzFXZVF5alNFTmlHMjh2SXdDWm5j?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-4464-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "legis1.com",
+          "firstSeen": "2026-11-18",
+          "lastSeen": "2026-11-18",
+          "url": "https://news.google.com/rss/articles/CBMifEFVX3lxTFB5RVV3aEk2Z21nX3E4M2pXNUVPZWVQelhSM2ZaRXpsOW5vUzVzNHBsOFBhNnM1ZkdkWVFGN0VaNldqQVFBNlVpTzJWdGNFVXVsbGpETk5BVk9fRzVpV2dvUWozTV9YcUZWVGlXdkpVcjhzZC12b1RTOHNhR0w?oc=5"
         }
       ],
       "mostViewed": null
@@ -802,6 +827,18 @@
       ],
       "mostViewed": null
     },
+    "hr-7206-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "nfu.org",
+          "firstSeen": "2026-11-18",
+          "lastSeen": "2026-11-18",
+          "url": "https://news.google.com/rss/articles/CBMilAFBVV95cUxON2hFd2lRQlM2bk13cmotUXNtRUFrSUwxUldTdXRnRTZzREhpQklaa3RCakJ6V09NN0xCMV8yR3drLTEtaldhek5OYWpVWUpzaGlrMFJ1VjZ5ekxLRXFQMlZlc3NQV3hRNTBqc3NZckU2UWxObVVaZ0hZd3JvMk9aRHJRMzNNWjdnUnZIa0x6d3hNNklB?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-7212-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -999,6 +1036,12 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "agriculture.com",
+          "firstSeen": "2026-11-18",
+          "lastSeen": "2026-11-18",
+          "url": "https://news.google.com/rss/articles/CBMi0wFBVV95cUxNeTJsaWNOSFNxX2llbHNKNFFTbUdES2pQMnV0bWRFUUduZkpIaW1yYnlwOVlpaFI5X2dpSjF0ZkJmeTM0a1lQYUxnVjBreWxhWXVBNTR4UUcwLWp0WFl6VkdJQWpNREtjQnZXb1E4R3dTRDltc0ZGQ0JzOEM3S19uRmFLVGtVaGtyVUpHVVV5MllXLUxJRmNxOWJYSzY0NjNWT3JmaEtvZlhuNUVuRDUydnNCX1AtTVZPYnhpbE5qaUgzLVhiWm4zd1B2RzR0N1hObG9J?oc=5"
+        },
+        {
           "domain": "farmpolicynews.illinois.edu",
           "firstSeen": "2026-11-18",
           "lastSeen": "2026-11-18",
@@ -1149,6 +1192,18 @@
           "firstSeen": "2026-11-18",
           "lastSeen": "2026-11-18",
           "url": "https://news.google.com/rss/articles/CBMisgFBVV95cUxQaHl6MTJqQjl5VnNZUm1DRkMydnRKM1h3UjU4d3RRam5xZGlkVnl3MkhBdWM0cm1HcjFYUWdfUm83bTI5M1VXdGI5ZDVwU1I2cFBkVUVFaUxnMVg4N201YjJlM1NxWU9QYlVyUGgtU1BoZEgzYkoxWUQ5cm1uSWxYRWJNRXlWSU1CdWdWZENtZHJTdFNwY2txY0FtVi01bUdWUGZUMFBRbzlmR1B3WF90anp3?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-9640-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "quiverquant.com",
+          "firstSeen": "2026-11-18",
+          "lastSeen": "2026-11-18",
+          "url": "https://news.google.com/rss/articles/CBMivgFBVV95cUxQLWk5OThhT3BENHVzV1ZIUV80M3JfZnJVQ2k0M2tlOGRaSl9YMXYwUGg5T0c0Q1NidUxrQ3RSeUZfelZnUjRFaVR0NlhyRzZlRWtkdjl2NEVFTHdxNE5KRzhDVEQtSUh6RGxvNDY4NHNBUjRiTmRIeFNwdXN1V29rQzNRZFZRNTY5LTBEN2hPWnRMQUZLWHA2R18zMzlST1Vya1hkWlFJcE05cnRyeUVJLUItTjVaZnJlTlVMdUx3?oc=5"
         }
       ],
       "mostViewed": null
@@ -1330,6 +1385,18 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "s-3524-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "legis1.com",
+          "firstSeen": "2026-11-18",
+          "lastSeen": "2026-11-18",
+          "url": "https://news.google.com/rss/articles/CBMie0FVX3lxTE9lakY0aW5rSnJtaG5PLV9TR0RlM3lsaHhxeVVENHQwZlR2SjQzM2kyakhNSnNGellmZnpVMTlSemdVN2FYQnFUS1otbTB0LV96ODJFM3R2bmJOel84ZlA5WW1DYm5acWo0NmRpZkpCQjlPclllTG5xNm15Yw?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "s-3682-119": {
@@ -1531,6 +1598,12 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "wate.com",
+          "firstSeen": "2026-11-18",
+          "lastSeen": "2026-11-18",
+          "url": "https://news.google.com/rss/articles/CBMid0FVX3lxTE4zOHd2MGtueXJQNFlhSmJ1MG55V0hBVUI0MlB0MHJrU3R5MmtxaGFEeF9Zdkt1LU93MDM1SnE1ZkY1TVRaQ2ZfdkZjZFNVU0hWY3ZHZVRkYmViemUwS0l6al9ZSFFGQkdCcWlSOHJCd21MSGY4c0FN0gF8QVVfeXFMTUtEbEpFMjdBanViVE5JbG5KMWIyWFBvNmUtRllkWnBzY1ZrNUFBM1dDU0xTMmdqdmhBLURFUE1MYm1Eb1NVVWZISmtWVzJaYjBOaVVLdnJGSEdlcnBtQzQ3OUdfOGdhVk93dVo3N2syeXc1NWhBaU1rYWYzRw?oc=5"
+        },
+        {
           "domain": "news.bgov.com",
           "firstSeen": "2026-11-16",
           "lastSeen": "2026-11-16",
@@ -1642,6 +1715,18 @@
           "firstSeen": "2026-11-13",
           "lastSeen": "2026-11-13",
           "url": "https://news.google.com/rss/articles/CBMingFBVV95cUxPb3Fmb2N0cG1wV0JWcFB1VVpZeHgyLVNzanltSEJ6R2FNaUJVd2hfbl9XVHdIZEgydE9YV09hOEhMRDdBU3FYNDZMcVBuc3FtMzNvYjNYcjI2cTJ5dmppWHpoQkxzYkczMkxwMVU3Qmdjcm94N3FsMkxfaXBxT0d2akhzZXozWEhpRExVam1rUF9IR25yajZFSENOS3dfdw?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "s-789-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "legis1.com",
+          "firstSeen": "2026-11-18",
+          "lastSeen": "2026-11-18",
+          "url": "https://news.google.com/rss/articles/CBMieEFVX3lxTFBsQ3ZnOUU3UGxPakY3cERnaWtpLTNiMTY2QU1iZWJuMHNlbm5YOE1UVEdlYmhPVFFMU0lDbXRucGFaMllNSm44XzF0WjBzQW0tb09KVVRoRVNXcTk0NU9YOE9TUUNSN0M2N1I4d1hnai1BOG9oRFlCMQ?oc=5"
         }
       ],
       "mostViewed": null
