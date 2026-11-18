@@ -40,6 +40,24 @@ export function readShortTitleRetries(root: string = process.cwd()): Record<stri
   return existsSync(file) ? (JSON.parse(readFileSync(file, 'utf8')) as Record<string, unknown>) : {};
 }
 
+/**
+ * A names file read for the BUILD, which must never fail because of it (2026-11-18): a missing file
+ * is {}, and a file that is empty, not JSON, or not a plain object is {} with the problem named, so
+ * the build turns names off and says why instead of throwing and taking the whole deploy with it.
+ * verify-sync and CI refuse such files, so this is the last line of defence, not the usual path.
+ */
+export function readNamesFile(root: string, path: string): { data: Record<string, unknown>; problem: string | null } {
+  const file = join(root, path);
+  if (!existsSync(file)) return { data: {}, problem: null };
+  try {
+    const data: unknown = JSON.parse(readFileSync(file, 'utf8'));
+    if (!data || typeof data !== 'object' || Array.isArray(data)) return { data: {}, problem: `${path} is not an object` };
+    return { data: data as Record<string, unknown>, problem: null };
+  } catch (e) {
+    return { data: {}, problem: `${path} could not be read (${e instanceof Error ? e.message : String(e)})` };
+  }
+}
+
 /** A corpus bill as this gate reads it: its address, and the title data/bills.json stores for it. */
 export type GateBill = ShortAddressBill & { title?: string | null; short_title?: string | null };
 
@@ -76,13 +94,15 @@ export function gateNameTables(
   retry: Readonly<Record<string, unknown>>,
   order: readonly number[],
   reserved: ReadonlySet<string>,
-): { encoded: string; line: string; blocked: string[] } {
+): { encoded: string; line: string; blocked: string[]; off: number[] } {
   const built = new Map(decodeNameTables(encoded).map((t) => [t.congress, t.names]));
+  const searched = order.filter((c, i, all) => all.indexOf(c) === i);
+  const off: number[] = [];
   const slugOf = (b: GateBill) => `${b.bill_type}-${b.bill_number}-${b.congress_number}`;
   const parts: string[] = [];
   const said: string[] = [];
   const blocked: string[] = [];
-  for (const congress of order.filter((c, i, all) => all.indexOf(c) === i)) {
+  for (const [at, congress] of searched.entries()) {
     const tracked = bills.filter((b) => b.congress_number === congress);
     const read = tracked.filter((b) => Object.prototype.hasOwnProperty.call(titles, slugOf(b)));
     const neverTried = tracked.filter((b) => !Object.prototype.hasOwnProperty.call(titles, slugOf(b)) && !Object.prototype.hasOwnProperty.call(retry, slugOf(b)));
@@ -90,6 +110,7 @@ export function gateNameTables(
       said.push(
         `OFF from the ${ordinal(congress)} Congress on: ${read.length} of its ${tracked.length} bills read, ${neverTried.length} never read or tried, so no name opens a bill there or in any Congress searched after it until every one has been read or tried`,
       );
+      off.push(...searched.slice(at));
       break;
     }
     const names = new Map(built.get(congress) ?? []);
@@ -100,6 +121,12 @@ export function gateNameTables(
         if (typeof stored !== 'string') continue;
         const name = nameSlug(stored);
         if (!name || !nameAddressAllowed(name, reserved)) continue;
+        // Only a name some other bill holds needs holding back: here (it would open that bill) or in a
+        // Congress searched after this one (the search would go on to an older bill). A stored title that
+        // is a long description nobody else makes adds nothing and is not counted (2026-11-18).
+        const here = names.has(name);
+        const later = searched.slice(at + 1).some((c) => built.get(c)?.has(name));
+        if (!here && !later) continue;
         if (names.get(name) !== null) {
           blocked.push(`${name} (${slugOf(b)} not read yet)`);
           blockedHere++;
@@ -115,7 +142,7 @@ export function gateNameTables(
     });
     parts.push(`${congress}@${entries.join(',')}`);
   }
-  return { encoded: parts.join('|'), line: said.join('; '), blocked };
+  return { encoded: parts.join('|'), line: said.join('; '), blocked, off };
 }
 
 /**
@@ -130,11 +157,30 @@ export function nameTablesForBuild(
   root: string = process.cwd(),
   onRefused?: (refusal: NameRefusal) => void,
 ): string {
-  const titles = readShortTitles(root);
+  const titlesFile = readNamesFile(root, SHORT_TITLES_PATH);
+  const retryFile = readNamesFile(root, SHORT_TITLES_RETRY_PATH);
+  const problems = [titlesFile.problem, retryFile.problem].filter((p): p is string => p !== null);
+  if (problems.length > 0) {
+    onRefused?.({
+      slug: '',
+      title: '',
+      name: null,
+      reason: `OFF: ${problems.join('; ')}, so no name opens a bill until it is fixed (number addresses are unaffected; verify-sync and CI refuse such a file)`,
+    });
+    return '';
+  }
+  const titles = titlesFile.data as ShortTitleFile;
   const order = [SHORT_ADDRESS_CONGRESS, ...shortAddressFallbackCongresses(bills)];
   const reserved = reservedNames(root);
-  const encoded = encodeNameTables(bills, titles, order, reserved, onRefused);
-  const gate = gateNameTables(encoded, bills, titles, readShortTitleRetries(root), order, reserved);
+  // The encoder's lines wait for the gate, so a "shared by" line can say when it is not in effect.
+  const pending: NameRefusal[] = [];
+  const encoded = encodeNameTables(bills, titles, order, reserved, (r) => pending.push(r));
+  const gate = gateNameTables(encoded, bills, titles, retryFile.data, order, reserved);
+  for (const r of pending) {
+    const congress = Number(/-(\d+)(?: |$)/.exec(r.slug)?.[1]);
+    const sharedLine = !r.title && r.slug !== '';
+    onRefused?.(sharedLine && gate.off.includes(congress) ? { ...r, reason: `${r.reason} (not in effect: names are off for the ${ordinal(congress)} Congress)` } : r);
+  }
   onRefused?.({ slug: '', title: '', name: null, reason: gate.line });
   return gate.encoded;
 }

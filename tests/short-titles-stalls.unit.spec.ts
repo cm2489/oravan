@@ -145,10 +145,10 @@ const EXIT_PATHS: Array<{
   { path: 'corpus missing', stub: GOOD, files: {}, code: 1, outcome: 'corpus-unreadable', line: /the corpus \(.*\) could not be read/ },
   { path: 'corpus not a list', stub: GOOD, files: { corpusText: '{}' }, code: 1, outcome: 'corpus-unreadable', line: /could not be read \(not a list of bills\)/ },
   { path: 'titles file not JSON', stub: GOOD, files: { corpus: [bill(1)], beforeText: 'not json' }, code: 1, outcome: 'titles-file-unreadable', line: /short-titles\.json is not valid JSON .*Restore it from git/ },
-  { path: 'retry file not JSON', stub: GOOD, files: { corpus: [bill(1)], retryText: 'oops' }, code: 0, outcome: 'done', line: /short-titles-retry\.json is not valid JSON .*started afresh/ },
-  { path: 'retry file not an object', stub: GOOD, files: { corpus: [bill(1)], retryText: '[]' }, code: 0, outcome: 'done', line: /short-titles-retry\.json is not an object; it was started afresh/ },
-  { path: 'history damaged', stub: GOOD, files: { corpus: [bill(1)], trendText: '{"nights":"x"}' }, code: 0, outcome: 'done', line: /short-titles-trend\.json could not be used .*started afresh/ },
-  { path: 'history missing beside a titles file', stub: GOOD, files: { corpus: [bill(1)], before: titled([1]) }, code: 0, outcome: 'done', line: /short-titles-trend\.json is missing while .* exists; the 14-night history was started afresh/ },
+  { path: 'retry file not JSON', stub: GOOD, files: { corpus: [bill(1)], retryText: 'oops' }, code: 0, outcome: 'done', line: /short-titles-retry\.json is not valid JSON .*the step starts it afresh the next time it writes it/ },
+  { path: 'retry file not an object', stub: GOOD, files: { corpus: [bill(1)], retryText: '[]' }, code: 0, outcome: 'done', line: /short-titles-retry\.json is not an object; the step starts it afresh the next time it writes it/ },
+  { path: 'history damaged', stub: GOOD, files: { corpus: [bill(1)], trendText: '{"nights":"x"}' }, code: 0, outcome: 'done', line: /short-titles-trend\.json could not be used .*the step starts the 14-night history afresh the next time it writes it/ },
+  { path: 'history missing beside a titles file', stub: GOOD, files: { corpus: [bill(1)], before: titled([1]) }, code: 0, outcome: 'done', line: /short-titles-trend\.json is missing while .* exists; the step starts the 14-night history afresh the next time it writes it/ },
   { path: 'breaker: 10 transport failures in a row', stub: `return new Response('down', { status: 503 });`, files: { corpus: range(30).map((n) => bill(n)) }, code: 0, outcome: 'stopped-early', line: /stopped early: 10 requests in a row got no usable answer/ },
   { path: 'a 403 is access, not the source changing', stub: `return new Response('no', { status: 403 });`, files: { corpus: range(30).map((n) => bill(n)) }, code: 0, outcome: 'stopped-early', line: /stopped early: Congress\.gov refused the key 10 times in a row \(HTTP 403\): check CONGRESS_API_KEY; 0 bill\(s\) read before it are kept/ },
   { path: 'the hourly limit: 429s say so', stub: `return new Response('slow down', { status: 429 });`, files: { corpus: range(30).map((n) => bill(n)) }, code: 0, outcome: 'stopped-early', line: /stopped early: Congress\.gov answered HTTP 429 to 10 requests in a row, so the key's hourly request limit was reached; 0 bill\(s\) read before it are kept/ },
@@ -305,8 +305,8 @@ test('(ii) 11% of titled bills lose their short title: refused loudly, nothing w
   expect(after[slug(3)].titles).toEqual([]);
   expect(after[slug(50)].titles).toEqual(['Fixture hr50 Act']);
   // Round 6: the history marks the override night, and the summary names it, so the falling alarm can say so.
-  expect(JSON.parse(String(through.trend)).nights.at(-1)).toEqual({ day: TODAY, titled: 89, bills: 100, allow_drop: true });
-  expect(through.out).toMatch(new RegExp(`SHORT TITLES SUMMARY: .* drop_approved_on=${TODAY} unread=0$`, 'm'));
+  expect(JSON.parse(String(through.trend)).nights.at(-1)).toEqual({ day: TODAY, titled: 89, bills: 100, allow_drop: true, filled: true });
+  expect(through.out).toMatch(new RegExp(`SHORT TITLES SUMMARY: .* drop_approved_on=${TODAY} unread=0 untried=0 filled_before=no$`, 'm'));
   expect(JSON.parse(String(refused.trend)).nights.at(-1)).not.toHaveProperty('allow_drop');
 });
 
@@ -441,4 +441,23 @@ test('a bill answer the reader accepts always passes the file gate, and one the 
   // Both call the same function.
   const lib = readFileSync(join(process.cwd(), 'lib/short-titles.mjs'), 'utf8');
   expect(lib.match(/shortTitleProblem\(t\)/g)!.length).toBeGreaterThanOrEqual(2);
+});
+
+test('follow-up 3: a night with no key and a damaged history writes nothing, and its TROUBLE line says the history will be started afresh, not that it was', () => {
+  const r = runScript(GOOD, { corpus: [bill(1)], trendText: '{"nights":"x"}' }, { CONGRESS_API_KEY: '' });
+  expect(r.code).toBe(1);
+  expect(r.out).toMatch(/SHORT TITLES TROUBLE: .*short-titles-trend\.json could not be used .*; the step starts the 14-night history afresh the next time it writes it/);
+  expect(r.out).not.toContain('was started afresh');
+  expect(r.trend).toBe('{"nights":"x"}');
+});
+
+test('follow-up 5: the script carries the history’s `filled` mark forward on a night that leaves bills unread', () => {
+  const yesterday = day(TODAY, -1);
+  const r = runScript(GOOD, { corpus: range(5).map((n) => bill(n)), trend: { nights: [{ day: yesterday, titled: 0, bills: 5, filled: true }] } }, { SHORT_TITLES_MAX: '2' });
+  expect(r.code).toBe(0);
+  expect(r.out).toMatch(/SHORT TITLES SUMMARY: .* unread=3 untried=3 filled_before=yes$/m);
+  expect(JSON.parse(String(r.trend)).nights.at(-1)).toMatchObject({ day: TODAY, filled: true });
+  // Without the mark, such a night does not set it.
+  const before = runScript(GOOD, { corpus: range(5).map((n) => bill(n)), trend: { nights: [] } }, { SHORT_TITLES_MAX: '2' });
+  expect(JSON.parse(String(before.trend)).nights.at(-1)).not.toHaveProperty('filled');
 });

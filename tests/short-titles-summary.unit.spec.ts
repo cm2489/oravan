@@ -48,7 +48,7 @@ function answer(n: number, shortType = 'Short Title(s) as Introduced') {
   return { pagination: { count: titles.length }, request: { billNumber: String(n), billType: 'hr', congress: '119' }, titles };
 }
 
-type State = { file: Record<string, { titles: string[]; as_of: string | null; read_on: string }>; retry: Record<string, unknown>; trend: { nights: Array<{ day: string; titled: number; bills: number; allow_drop?: true }> } };
+type State = { file: Record<string, { titles: string[]; as_of: string | null; read_on: string }>; retry: Record<string, unknown>; trend: { nights: Array<{ day: string; titled: number; bills: number; allow_drop?: true; filled?: true }> } };
 
 /** An established corpus: every bill read, reads spread over the last 56 days, a steady 14-night history. */
 function established(bills: Bill[], start: string, skip: Set<number> = new Set()): State {
@@ -73,7 +73,9 @@ async function oneNight(state: State, bills: Bill[], today: string, fetchPage: (
   const fields = nightSummary({ day: today, bills, titles: titlesAfter, retry: retryAfter, trend: state.trend, read: night.read, lost: night.dropped, allowDrop: used });
   state.file = titlesAfter;
   state.retry = retryAfter;
-  state.trend = nextTrend(state.trend, { day: today, titled: fields.titled, bills: bills.length, allow_drop: used });
+  // The same `filled` mark the script writes (scripts/sync-short-titles.mjs).
+  const filled = fields.untried === 0 || fields.filled_before === 'yes';
+  state.trend = nextTrend(state.trend, { day: today, titled: fields.titled, bills: bills.length, allow_drop: used, filled });
   const log = [
     ...settled.troubles.map((t) => `SHORT TITLES TROUBLE: ${t.reason}`),
     summaryLine({ ...fields, outcome: 'done' }),
@@ -90,11 +92,11 @@ const newAlarms = (summary: unknown, disable: string[] = []) => shortTitlesAlarm
 test('the summary line round-trips, unknowns included, through the parser the health report uses', () => {
   const line = summaryLine({ day: '2026-11-17', outcome: 'done', titled: 1333, titled_7_nights_ago: null, bills: 3322, newest_read_on: '2026-11-17', retry: 15, read_tonight: 82, lost_all_titles_tonight: 0 });
   expect(line).toBe(
-    'SHORT TITLES SUMMARY: day=2026-11-17 outcome=done titled=1333 titled_7_nights_ago=unknown bills_7_nights_ago=unknown day_7_nights_ago=unknown bills=3322 newest_read_on=2026-11-17 retry=15 read_tonight=82 lost_all_titles_tonight=0 drop_approved_on=unknown unread=unknown',
+    'SHORT TITLES SUMMARY: day=2026-11-17 outcome=done titled=1333 titled_7_nights_ago=unknown bills_7_nights_ago=unknown day_7_nights_ago=unknown bills=3322 newest_read_on=2026-11-17 retry=15 read_tonight=82 lost_all_titles_tonight=0 drop_approved_on=unknown unread=unknown untried=unknown filled_before=unknown',
   );
   const actionsLog = `nightly\tRead the record's short titles\t2026-11-17T14:40:00.0Z ${line}`;
   expect(parseShortTitlesSummary(actionsLog)).toEqual({
-    day: '2026-11-17', outcome: 'done', titled: 1333, titled_7_nights_ago: null, bills_7_nights_ago: null, day_7_nights_ago: null, bills: 3322, newest_read_on: '2026-11-17', retry: 15, read_tonight: 82, lost_all_titles_tonight: 0, drop_approved_on: null, unread: null,
+    day: '2026-11-17', outcome: 'done', titled: 1333, titled_7_nights_ago: null, bills_7_nights_ago: null, day_7_nights_ago: null, bills: 3322, newest_read_on: '2026-11-17', retry: 15, read_tonight: 82, lost_all_titles_tonight: 0, drop_approved_on: null, unread: null, untried: null, filled_before: null,
   });
   expect(parseShortTitlesSummary('nothing here')).toBeNull();
 });
@@ -552,14 +554,135 @@ test('unread: the corpus bills with no entry in the titles file; a line without 
   const file = { [slug(1)]: { titles: [], as_of: null, read_on: '2026-11-17' }, [slug(2)]: { titles: ['Fixture hr2 Act'], as_of: null, read_on: '2026-11-17' }, 'hr-999-119': { titles: [], as_of: null, read_on: '2026-11-17' } };
   const fields = nightSummary({ day: '2026-11-17', bills, titles: file, retry: {}, trend: { nights: [] }, read: 2, lost: 0 });
   expect(fields.unread).toBe(3); // hr-999 is not in the corpus, so it is not counted as read
-  expect(summaryLine({ ...fields, outcome: 'done' })).toMatch(/ unread=3$/);
+  expect(summaryLine({ ...fields, outcome: 'done' })).toMatch(/ unread=3 untried=3 filled_before=no$/);
   // The same night's numbers without the field (a line printed before the hotfix): parsed, and the alarms are the same.
   const withField = parseShortTitlesSummary(summaryLine({ ...fields, outcome: 'done' }))!;
-  const oldLine = summaryLine({ ...fields, outcome: 'done' }).replace(/ unread=\d+$/, '');
+  const oldLine = summaryLine({ ...fields, outcome: 'done' }).replace(/ unread=\d+ untried=\d+ filled_before=\w+$/, '');
   const without = parseShortTitlesSummary(oldLine)!;
   expect(without.unread).toBeUndefined();
   expect(shortTitlesAlarms(without)).toEqual(shortTitlesAlarms(withField));
   const lib = readFileSync(join(process.cwd(), 'lib/short-titles-summary.mjs'), 'utf8');
   const alarmsBody = lib.slice(lib.indexOf('export function shortTitlesAlarms'), lib.indexOf('export function nightSummary'));
   expect(alarmsBody).not.toContain('unread');
+});
+
+// --- follow-ups of #509 and #517 (2026-11-18) ------------------------------------------------
+
+/* Tonight's REAL nightly log (run 44188792590, Nov 17, 2026), cut: the step's run line and its summary
+ * line, printed before `unread` existed. Every line begins "sync<TAB>UNKNOWN STEP<TAB><timestamp> ". */
+const TONIGHT = readFileSync(join(process.cwd(), 'tests/fixtures/nightly-log-44188792590-cut.txt'), 'utf8');
+/* data/short-titles-trend.json as committed on main the morning after (one night, no `filled`). */
+const TREND_ON_MAIN = '{\n "nights": [\n  {\n   "day": "2026-11-17",\n   "titled": 237,\n   "bills": 3335\n  }\n ]\n}\n';
+const reportOf = (log: string, trendText: string | null) =>
+  alarms({
+    nightly: { conclusion: 'success' },
+    shortTitlesSummaryChecked: true,
+    shortTitlesSummary: parseShortTitlesSummary(log),
+    shortTitlesSummaryExpected: shortTitlesSummaryExpected({ log, trendText }),
+  })
+    .map((a) => a.code)
+    .filter((c) => c.startsWith('short-titles-'));
+
+test('follow-up 1: a garbled summary line after the step’s run line counts as missing; `unknown` does not', () => {
+  const runLine = TONIGHT.split('\n').find((l) => l.includes('##[group]Run node scripts/sync-short-titles.mjs'))!;
+  const garbled = `${runLine}\nsync\tUNKNOWN STEP\t2026-11-17T22:35:51.6337977Z SHORT TITLES SUMMARY: garbage\n`;
+  expect(reportOf(garbled, null)).toEqual(['short-titles-summary-missing']);
+  const a = shortTitlesAlarms(parseShortTitlesSummary(garbled));
+  expect(a[0].text).toContain('could not be read');
+  // A line from a code change that prints words where numbers go: also missing, and the other checks never run on it.
+  expect(shortTitlesAlarms(parseShortTitlesSummary('SHORT TITLES SUMMARY: day=2026-11-17 outcome=done titled=lots lost_all_titles_tonight=99')).map((x) => x.code)).toEqual(['short-titles-summary-missing']);
+  // A crash or an early exit prints `titled=unknown`: a real line, with its own TROUBLE alarm, not "missing".
+  expect(shortTitlesAlarms(parseShortTitlesSummary(summaryLine({ day: '2026-11-17', outcome: 'crashed' })))).toEqual([]);
+  // Tonight's real line reads as a summary.
+  expect(reportOf(TONIGHT, TREND_ON_MAIN)).toEqual([]);
+});
+
+test('follow-up 2: a 10,000-entry history prints at most 5 warnings, then "and N more"', () => {
+  const big = serializeTrend({ nights: range(10000).map((i) => ({ day: day('2000-01-01', i), titled: 2, bills: 1 })) });
+  const w = verifyShortTitlesFiles({ titles: null, retry: null, trendText: big, bills: [], before: null });
+  expect(w.failures).toEqual([]);
+  expect(w.warnings).toHaveLength(6);
+  expect(w.warnings[5]).toMatch(/^data\/short-titles-trend\.json: and 9996 more problem\(s\) like these; /);
+  expect(trendFileWarnings('{"nights":"x"}')).toHaveLength(1);
+});
+
+test('follow-up 3: the override note says "on or after"; a night that writes nothing says the history will be started afresh, not that it was', () => {
+  const [a] = shortTitlesAlarms({ day: '2026-11-17', titled: 1200, titled_7_nights_ago: 1300, day_7_nights_ago: '2026-11-10', bills: 3322, bills_7_nights_ago: 3322, newest_read_on: '2026-11-17', drop_approved_on: '2026-11-12' });
+  expect(a.text).toContain('until the night it compares with is on or after that date');
+  const runbook = readFileSync(join(process.cwd(), 'docs/runbooks/new-congress-switch.md'), 'utf8');
+  expect(runbook).toContain('repeats until the night it compares with is on or after that date');
+  expect(runbook).not.toContain('is after that date');
+  const script = readFileSync(join(process.cwd(), 'scripts/sync-short-titles.mjs'), 'utf8');
+  expect(script).not.toMatch(/was started afresh/);
+  expect(script.match(/the step starts (?:it|the 14-night history) afresh the next time it writes it/g)).toHaveLength(4);
+});
+
+test('follow-up 5: the names-off alarm fires only after the fill, on a finished night, with bills neither read nor tried, and says how many', () => {
+  const after = { day: '2026-12-01', outcome: 'done', titled: 1400, bills: 3400, newest_read_on: '2026-12-01', unread: 2, untried: 2, filled_before: 'yes' };
+  const fired = shortTitlesAlarms(after).filter((x) => x.code === 'short-titles-names-off');
+  expect(fired).toHaveLength(1);
+  expect(fired[0].text).toContain('2 bill(s) Oravan tracks have never had their short titles read or tried');
+  expect(fired[0].text).toContain('section "Names switched off after the fill"');
+  const quiet = (s: Record<string, unknown>) => expect(shortTitlesAlarms(s).map((x) => x.code)).not.toContain('short-titles-names-off');
+  quiet({ ...after, filled_before: 'no', unread: 3035, untried: 3035 }); // the first fill (tonight's numbers)
+  quiet({ ...after, untried: 0, unread: 0 }); // an ordinary night after it
+  quiet({ ...after, untried: 0, unread: 4 }); // bills that failed and wait in the retry file: names are not off
+  quiet({ ...after, outcome: 'stopped-early' }); // its own TROUBLE alarm says so
+  const old = { ...after };
+  delete (old as Record<string, unknown>).untried;
+  delete (old as Record<string, unknown>).filled_before;
+  quiet(old); // a line printed before these fields existed
+  // The morning after this merges: tonight's real log and the history as committed on main.
+  expect(reportOf(TONIGHT, TREND_ON_MAIN)).toEqual([]);
+  // The runbook names the section the alarm points to.
+  expect(readFileSync(join(process.cwd(), 'docs/runbooks/new-congress-switch.md'), 'utf8')).toContain('### Names switched off after the fill');
+});
+
+test('follow-up 5, night by night: quiet through the first fill and after it; fires on a night that leaves bills untried; quiet again once read', async () => {
+  const START = '2027-03-01';
+  const bills = range(700).map((n) => bill(n, '2027-01-10', (n % 97) / 97));
+  const state: State = { file: {}, retry: {}, trend: { nights: [] } };
+  const ok = async (b: { bill_number: number }) => answer(b.bill_number);
+  const seen: string[] = [];
+  const night = async (i: number) => {
+    const { summary } = await oneNight(state, bills, day(START, i), ok);
+    seen.push(`${i}:${summary!.untried}:${summary!.filled_before}:${shortTitlesAlarms(summary).some((x) => x.code === 'short-titles-names-off') ? 'ALARM' : '-'}`);
+  };
+  for (let i = 0; i < 3; i++) await night(i); // 300 + 300 + 100: the fill completes on night 3
+  expect(seen).toEqual(['0:400:no:-', '1:100:no:-', '2:0:no:-']);
+  expect(state.trend.nights.at(-1)).toMatchObject({ filled: true });
+  await night(3); // an ordinary night after the fill
+  for (let k = 0; k < 350; k++) bills.push(bill(5000 + k, day(START, 4))); // 350 new bills in one day: more than the 300 cap
+  await night(4);
+  await night(5);
+  expect(seen.slice(3)).toEqual(['3:0:yes:-', '4:50:yes:ALARM', '5:0:yes:-']);
+  // The mark is carried on every night, so it outlives the 14-night window.
+  for (let i = 6; i < 25; i++) await night(i);
+  expect(state.trend.nights).toHaveLength(14);
+  expect(state.trend.nights.every((n) => n.filled === true)).toBe(true);
+});
+
+test('follow-up 5: the history stays self-healing: `filled` must be true when present, and a history started afresh keeps the alarm quiet', () => {
+  expect(verifyShortTitlesTrend({ data: { nights: [{ day: '2026-12-01', titled: 1, bills: 2, filled: true }] } }).failures).toEqual([]);
+  expect(verifyShortTitlesTrend({ data: { nights: [{ day: '2026-12-01', titled: 1, bills: 2, filled: false }] } }).failures).toHaveLength(1);
+  expect(verifyShortTitlesTrend({ data: { nights: [{ day: '2026-12-01', titled: 1, bills: 2, allow_drop: true, filled: true }] } }).failures).toEqual([]);
+  const fresh = nightSummary({ day: '2026-12-02', bills: [bill(1), bill(2)], titles: {}, retry: {}, trend: { nights: [] }, read: 0, lost: 0 });
+  expect(fresh).toMatchObject({ untried: 2, filled_before: 'no' });
+  expect(shortTitlesAlarms({ ...fresh, outcome: 'done' }).map((x) => x.code)).not.toContain('short-titles-names-off');
+  // A `filled` mark dated today (tonight's own entry, written earlier the same day) does not count as "before".
+  expect(nightSummary({ day: '2026-12-02', bills: [], titles: {}, retry: {}, trend: { nights: [{ day: '2026-12-02', titled: 0, bills: 0, filled: true }] }, read: 0, lost: 0 }).filled_before).toBe('no');
+});
+
+test('follow-up 5: `untried` leaves out the bills that were tried (in the retry file); `unread` counts them', () => {
+  const bills = [bill(1), bill(2), bill(3)];
+  const fields = nightSummary({
+    day: '2026-12-02',
+    bills,
+    titles: { [slug(1)]: { titles: [], as_of: null, read_on: '2026-12-02' } },
+    retry: { [slug(2)]: { failures: 1, last_tried: '2026-12-02', reason: 'HTTP 503' } },
+    trend: { nights: [] },
+    read: 1,
+    lost: 0,
+  });
+  expect(fields).toMatchObject({ unread: 2, untried: 1 });
 });

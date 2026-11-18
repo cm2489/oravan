@@ -176,3 +176,72 @@ test('a stored short_title holds back its name too, when data/bills.json has one
   expect(g.open('laken-riley-act')).toBeNull();
   expect(REAL_BILLS.filter((b) => b.short_title)).toHaveLength(0);
 });
+
+// --- follow-ups of #517 (2026-11-18) -----------------------------------------------------------
+
+test('follow-up 4: an unreadable titles or retry file never fails the build: names OFF, one line saying why', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fill-gate-bad-'));
+  try {
+    fs.mkdirSync(path.join(root, 'data'));
+    const corpus = [S5, HR29];
+    const good = JSON.stringify({ 'hr-29-119': entry('Laken Riley Act'), 's-5-119': entry('Laken Riley Act') });
+    const cases: Array<[string, string | null, string | null, RegExp]> = [
+      ['an empty titles file', '', null, /^short-address names: OFF: data\/short-titles\.json could not be read \(.+\), so no name opens a bill until it is fixed/],
+      ['titles that are not JSON', '{"hr-29-119":', null, /^short-address names: OFF: data\/short-titles\.json could not be read/],
+      ['titles that are null', 'null', null, /^short-address names: OFF: data\/short-titles\.json is not an object/],
+      ['titles that are a list', '[]', null, /^short-address names: OFF: data\/short-titles\.json is not an object/],
+      ['a retry file of null', good, 'null', /^short-address names: OFF: data\/short-titles-retry\.json is not an object/],
+      ['an empty retry file', good, '', /^short-address names: OFF: data\/short-titles-retry\.json could not be read/],
+      ['a retry file that is not JSON', good, '{', /^short-address names: OFF: data\/short-titles-retry\.json could not be read/],
+    ];
+    for (const [label, titles, retry, line] of cases) {
+      for (const [f, v] of [['short-titles.json', titles], ['short-titles-retry.json', retry]] as const) {
+        const p = path.join(root, 'data', f);
+        if (v === null) fs.rmSync(p, { force: true });
+        else fs.writeFileSync(p, v);
+      }
+      const lines: string[] = [];
+      let encoded = 'not run';
+      expect(() => {
+        encoded = nameTablesForBuild(corpus, root, (r) => lines.push(refusalLine(r)));
+      }, label).not.toThrow();
+      expect(encoded, label).toBe('');
+      expect(lines, label).toHaveLength(1);
+      expect(lines[0], label).toMatch(line);
+    }
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('follow-up 6: while names are off, a "shared by" line says it is not in effect; once on, it reads as before', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fill-gate-lines-'));
+  try {
+    fs.mkdirSync(path.join(root, 'data'));
+    const both = { 'hr-29-119': entry('Laken Riley Act'), 's-5-119': entry('Laken Riley Act') };
+    const run = (corpus: GateBill[]) => {
+      fs.writeFileSync(path.join(root, 'data', 'short-titles.json'), JSON.stringify(both));
+      const lines: string[] = [];
+      nameTablesForBuild(corpus, root, (r) => lines.push(refusalLine(r)));
+      return lines.filter((l) => l.includes('shared by'));
+    };
+    // H.R. 10136 never read: names off for the 119th.
+    expect(run([S5, HR29, HR10136])).toEqual([
+      'short-address names: "laken-riley-act" opens nothing: shared by 2 bills, so it opens none of them (not in effect: names are off for the 119th Congress) (hr-29-119 s-5-119)',
+    ]);
+    expect(run([S5, HR29])).toEqual(['short-address names: "laken-riley-act" opens nothing: shared by 2 bills, so it opens none of them (hr-29-119 s-5-119)']);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('follow-up 6: a tried-but-unread bill whose stored title is a description nobody else makes adds no entry and holds nothing back', () => {
+  const described = bill('hr', 812, 'To amend title 38, United States Code, to improve the processing of veterans claims, and for other purposes.');
+  const g = table([HR29, HR10136, described], { 'hr-29-119': entry('Laken Riley Act'), 'hr-10136-119': entry('Crossett Experimental Forest Act of 2026') }, { 'hr-812-119': failed });
+  expect(g.blocked).toEqual([]);
+  expect(g.line).toContain('0 name(s) held back by a bill not read yet');
+  expect([...g.tables[0].names.keys()].sort()).toEqual(['crossett-experimental-forest-act-of-2026', 'laken-riley-act']);
+  // A stored title that another bill DOES make is still held back, here or in an older Congress searched after.
+  const twin = table([HR29, { ...S5 }], { 'hr-29-119': entry('Laken Riley Act') }, { 's-5-119': failed });
+  expect(twin.blocked).toEqual(['laken-riley-act (s-5-119 not read yet)']);
+});
