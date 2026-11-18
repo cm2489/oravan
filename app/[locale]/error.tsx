@@ -122,7 +122,23 @@ export default function LocaleError({
               ref={(el) => el?.focus()}
               onClick={() => {
                 eraseAll();
-                reset();
+                // A FRESH PAGE, NOT reset() (2026-11-18). This boundary
+                // rendered because the running app crashed, and re-rendering
+                // that same app is not a way out: on /reps, after reset() the
+                // next members lookup (a server action; the page fires one by
+                // itself) took the whole document down to the framework's
+                // "This page couldn't load" (React #310 in the router's root),
+                // in 12 of 12 runs that waited 1.5 s for it. Reloading starts
+                // from nothing but the now-empty storage.
+                //
+                // The tab's history entry is emptied first. The members page
+                // keeps the ZIP it last showed there (lib/members-entry.ts),
+                // a reload keeps the entry, and the page would look the erased
+                // ZIP up again from it. With no address, Next's own
+                // replaceState only carries its router keys over; it does not
+                // touch the router.
+                window.history.replaceState(null, '');
+                window.location.reload();
               }}
               className="ring-gap inline-flex min-h-12 items-center gap-2 rounded-control border-2 border-ink bg-ink-deep px-4 py-2.5 font-bold text-paper"
             >
