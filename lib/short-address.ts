@@ -497,7 +497,8 @@ export function namesOfCongress(
     const address = parseShortAddress(`${bill.bill_type}${bill.bill_number}`);
     if (!address) continue;
     const entry = titles[`${bill.bill_type}-${bill.bill_number}-${bill.congress_number}`];
-    for (const title of entry?.titles ?? []) {
+    // A malformed entry (`titles` not a list) makes no name; it must never throw and fail the build.
+    for (const title of Array.isArray(entry?.titles) ? entry.titles : []) {
       if (typeof title !== 'string') continue;
       const slug = `${bill.bill_type}-${bill.bill_number}-${bill.congress_number}`;
       const slugged = slugTitle(title);

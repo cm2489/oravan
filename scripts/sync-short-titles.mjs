@@ -246,7 +246,9 @@ async function main() {
   // `filled`: the first fill has completed (tonight no bill is left neither read nor tried, or an earlier
   // night said so). Carried forward on every night, so it outlives the 14-night window; a history started
   // afresh loses it until the next night with nothing left unread, which keeps the names-off alarm quiet.
-  const filled = summary.untried === 0 || summary.filled_before === 'yes';
+  // Any existing mark is kept, the same day's included: a second run on the night the fill completed
+  // rewrites that night's entry, and must not drop the mark (found by the check of #520).
+  const filled = summary.untried === 0 || (trend?.nights ?? []).some((n) => n.filled === true);
   const trendText = serializeTrend(nextTrend(trend, { day: TODAY, titled: summary.titled, bills: bills.length, allow_drop: allowDropUsed, filled }));
   const outcome = !settled.write
     ? /would fall/.test(ending?.reason ?? '') ? 'drop-floor' : 'refused-by-gate'

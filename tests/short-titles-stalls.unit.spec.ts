@@ -12,6 +12,7 @@ import {
   verifyShortTitles,
 } from '../lib/short-titles.mjs';
 import { Refused, RETRY_PILE_MIN, runShortTitlesNight, settleNight } from '../lib/short-titles-night.mjs';
+import { shortTitlesAlarms } from '../lib/short-titles-summary.mjs';
 
 /*
  * NO STALL, NO SILENT STOP (2026-11-15, after three independent checks found
@@ -460,4 +461,27 @@ test('follow-up 5: the script carries the history’s `filled` mark forward on a
   // Without the mark, such a night does not set it.
   const before = runScript(GOOD, { corpus: range(5).map((n) => bill(n)), trend: { nights: [] } }, { SHORT_TITLES_MAX: '2' });
   expect(JSON.parse(String(before.trend)).nights.at(-1)).not.toHaveProperty('filled');
+});
+
+test('check of #520: a second run on the night the fill completes keeps the mark, and the next night that ends with bills untried raises the alarm', () => {
+  const carry = (r: { after: string | null; retry: string | null; trend: string | null }) => ({
+    beforeText: r.after ?? undefined,
+    retryText: r.retry ?? undefined,
+    trendText: r.trend ?? undefined,
+  });
+  // Run 1: the fill completes and the night is marked.
+  const five = range(5).map((n) => bill(n));
+  const r1 = runScript(GOOD, { corpus: five });
+  expect(JSON.parse(String(r1.trend)).nights.at(-1)).toMatchObject({ day: TODAY, filled: true });
+  // Run 2, the same day: 3 new bills and a cap of 0, so they stay untried. The mark must survive.
+  const eight = [...five, ...range(3, 100).map((n) => bill(n))];
+  const r2 = runScript(GOOD, { corpus: eight, ...carry(r1) }, { SHORT_TITLES_MAX: '0' });
+  expect(r2.out).toMatch(/SHORT TITLES SUMMARY: .* untried=3 filled_before=no$/m);
+  expect(JSON.parse(String(r2.trend)).nights.at(-1)).toMatchObject({ day: TODAY, filled: true });
+  // The next night: more bills, a cap too small, the night ends `done` with bills untried: the alarm fires.
+  const eleven = [...eight, ...range(3, 200).map((n) => bill(n))];
+  const r3 = runScript(GOOD, { corpus: eleven, ...carry(r2) }, { SHORT_TITLES_MAX: '2', SHORT_TITLES_TODAY: day(TODAY, 1) });
+  const summary = parseShortTitlesSummary(r3.out)!;
+  expect(summary).toMatchObject({ outcome: 'done', filled_before: 'yes', untried: 4 });
+  expect(shortTitlesAlarms(summary).map((a) => a.code)).toContain('short-titles-names-off');
 });

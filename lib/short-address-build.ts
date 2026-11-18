@@ -99,13 +99,19 @@ export function gateNameTables(
   const searched = order.filter((c, i, all) => all.indexOf(c) === i);
   const off: number[] = [];
   const slugOf = (b: GateBill) => `${b.bill_type}-${b.bill_number}-${b.congress_number}`;
+  // READ means an entry whose `titles` is a list. A malformed entry (`{"titles": 5}`) is NOT read: its
+  // record short titles are unknown, so it must not count as a bill read with none (2026-11-18).
+  const isRead = (b: GateBill) => {
+    const e = (titles as Record<string, unknown>)[slugOf(b)];
+    return !!e && typeof e === 'object' && Array.isArray((e as { titles?: unknown }).titles);
+  };
   const parts: string[] = [];
   const said: string[] = [];
   const blocked: string[] = [];
   for (const [at, congress] of searched.entries()) {
     const tracked = bills.filter((b) => b.congress_number === congress);
-    const read = tracked.filter((b) => Object.prototype.hasOwnProperty.call(titles, slugOf(b)));
-    const neverTried = tracked.filter((b) => !Object.prototype.hasOwnProperty.call(titles, slugOf(b)) && !Object.prototype.hasOwnProperty.call(retry, slugOf(b)));
+    const read = tracked.filter(isRead);
+    const neverTried = tracked.filter((b) => !isRead(b) && !Object.prototype.hasOwnProperty.call(retry, slugOf(b)));
     if (neverTried.length > 0) {
       said.push(
         `OFF from the ${ordinal(congress)} Congress on: ${read.length} of its ${tracked.length} bills read, ${neverTried.length} never read or tried, so no name opens a bill there or in any Congress searched after it until every one has been read or tried`,
@@ -116,7 +122,7 @@ export function gateNameTables(
     const names = new Map(built.get(congress) ?? []);
     let blockedHere = 0;
     for (const b of tracked) {
-      if (Object.prototype.hasOwnProperty.call(titles, slugOf(b))) continue; // read: its record short titles are in the table already
+      if (isRead(b)) continue; // read: its record short titles are in the table already
       for (const stored of [b.title, b.short_title]) {
         if (typeof stored !== 'string') continue;
         const name = nameSlug(stored);

@@ -74,7 +74,7 @@ async function oneNight(state: State, bills: Bill[], today: string, fetchPage: (
   state.file = titlesAfter;
   state.retry = retryAfter;
   // The same `filled` mark the script writes (scripts/sync-short-titles.mjs).
-  const filled = fields.untried === 0 || fields.filled_before === 'yes';
+  const filled = fields.untried === 0 || state.trend.nights.some((n) => n.filled === true);
   state.trend = nextTrend(state.trend, { day: today, titled: fields.titled, bills: bills.length, allow_drop: used, filled });
   const log = [
     ...settled.troubles.map((t) => `SHORT TITLES TROUBLE: ${t.reason}`),
@@ -685,4 +685,11 @@ test('follow-up 5: `untried` leaves out the bills that were tried (in the retry 
     lost: 0,
   });
   expect(fields).toMatchObject({ unread: 2, untried: 1 });
+});
+
+test('check of #520: the runbook says how to revert the alarm and where its count can overstate', () => {
+  const runbook = readFileSync(join(process.cwd(), 'docs/runbooks/new-congress-switch.md'), 'utf8');
+  expect(runbook).toContain('a revert after any nightly has written `filled: true` must also drop that field from `data/short-titles-trend.json`');
+  expect(runbook).toContain("CI's `check-short-titles` stays red until the next nightly restarts the history");
+  expect(runbook).toContain('so after the change of Congress the alarm\'s words may overstate the case when only an older Congress still has untried bills');
 });

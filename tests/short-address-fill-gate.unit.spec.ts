@@ -245,3 +245,42 @@ test('follow-up 6: a tried-but-unread bill whose stored title is a description n
   const twin = table([HR29, { ...S5 }], { 'hr-29-119': entry('Laken Riley Act') }, { 's-5-119': failed });
   expect(twin.blocked).toEqual(['laken-riley-act (s-5-119 not read yet)']);
 });
+
+// --- the check of #520 (2026-11-18) ---------------------------------------------------------------
+
+test('check of #520: an entry whose `titles` is not a list never fails the build, makes no name, and is NOT read', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fill-gate-entry-'));
+  try {
+    fs.mkdirSync(path.join(root, 'data'));
+    const corpus = [S5, HR29, HR10136];
+    for (const malformed of [{ titles: 5 }, { titles: {} }]) {
+      const titles = { 's-5-119': entry('Laken Riley Act'), 'hr-29-119': malformed, 'hr-10136-119': entry('Crossett Experimental Forest Act of 2026') };
+      const run = (retry: Record<string, unknown> | null) => {
+        fs.writeFileSync(path.join(root, 'data', 'short-titles.json'), JSON.stringify(titles));
+        const p = path.join(root, 'data', 'short-titles-retry.json');
+        if (retry === null) fs.rmSync(p, { force: true });
+        else fs.writeFileSync(p, JSON.stringify(retry));
+        const lines: string[] = [];
+        let encoded = 'not run';
+        expect(() => {
+          encoded = nameTablesForBuild(corpus, root, (r) => lines.push(refusalLine(r)));
+        }, JSON.stringify(malformed)).not.toThrow();
+        return { t: decodeNameTables(encoded), encoded, gate: lines.find((l) => /^short-address names: (ON|OFF)/.test(l))! };
+      };
+      // Not read and not tried: the Congress is not read in full, so no name opens (S. 5 does not get laken-riley-act).
+      const off = run(null);
+      expect(off.encoded).toBe('');
+      expect(off.gate).toContain('OFF from the 119th Congress on: 2 of its 3 bills read, 1 never read or tried');
+      // Not read but tried: its stored title holds laken-riley-act back; other names open as before.
+      const on = run({ 'hr-29-119': failed });
+      expect(nameAddressTarget('/laken-riley-act', LOCALES, 'en', on.t)).toBeNull();
+      expect(nameAddressTarget('/crossett-experimental-forest-act-of-2026', LOCALES, 'en', on.t)).toBe('/bills/hr-10136-119');
+      expect(on.gate).toContain('ON for the 119th Congress: 3 bills, 2 read, 1 tried and waiting; 1 name(s) held back');
+    }
+    // The encoder alone, given the malformed entry, makes no name for it and leaves the others alone.
+    const names = decodeNameTables(encodeNameTables([HR29, HR10136], { 'hr-29-119': { titles: 5 } as never, 'hr-10136-119': entry('Crossett Experimental Forest Act of 2026') }, [C], new Set(NAME_ADDRESS_RESERVED)));
+    expect([...names[0].names.keys()]).toEqual(['crossett-experimental-forest-act-of-2026']);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
