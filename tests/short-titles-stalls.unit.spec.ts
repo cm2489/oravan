@@ -227,6 +227,8 @@ for (const row of EXIT_PATHS) {
     const summary = parseShortTitlesSummary(r.out);
     expect(summary?.outcome).toBe(row.outcome);
     expect(summary?.day).toBe(TODAY);
+    // The fill's progress (hotfix 2026-11-17): an ordinary night of 3 bills, all read, leaves none unread.
+    if (row.path === 'an ordinary night') expect(summary?.unread).toBe(0);
     const troubles = r.out.split('\n').filter((l) => l.startsWith('SHORT TITLES TROUBLE: '));
     if (row.line === null) {
       expect(troubles, r.out.slice(-800)).toEqual([]);
@@ -304,7 +306,7 @@ test('(ii) 11% of titled bills lose their short title: refused loudly, nothing w
   expect(after[slug(50)].titles).toEqual(['Fixture hr50 Act']);
   // Round 6: the history marks the override night, and the summary names it, so the falling alarm can say so.
   expect(JSON.parse(String(through.trend)).nights.at(-1)).toEqual({ day: TODAY, titled: 89, bills: 100, allow_drop: true });
-  expect(through.out).toMatch(new RegExp(`SHORT TITLES SUMMARY: .* drop_approved_on=${TODAY}$`, 'm'));
+  expect(through.out).toMatch(new RegExp(`SHORT TITLES SUMMARY: .* drop_approved_on=${TODAY} unread=0$`, 'm'));
   expect(JSON.parse(String(refused.trend)).nights.at(-1)).not.toHaveProperty('allow_drop');
 });
 
