@@ -28,6 +28,7 @@ import {
   bandForRung,
   chamberNextMeetingFrom,
   chamberSessionFrom,
+  floorSessionSourceFrom,
   compareDocket,
   docketKey,
   docketRung,
@@ -128,6 +129,12 @@ export interface FloorSignalsFile {
      *  all rather than one read out of a document that has stopped describing
      *  the present. */
     next_meeting?: Record<string, FloorNextMeeting | null> | null;
+    /** The newest Digest's "away until" per chamber, carried across runs
+     *  that read no Digest (lib/docket.mjs `sessionHoldFrom`). */
+    session_hold?: Record<
+      string,
+      { digest: string; url: string | null; date: string; label: string | null } | null
+    > | null;
   };
   signals: Record<string, FloorSignalEntry>;
   nominations: Record<string, FloorSignalEntry>;
@@ -229,14 +236,18 @@ export function chamberNextMeeting(
  * WHERE THE SESSION VERDICT CAME FROM — the Daily Digest's own URL and its own
  * publication date, so anything that prints `chamberSession` or
  * `chamberNextMeeting` can attribute it to the document instead of to us. Null
- * when the file carries no daily-digest source at all.
+ * when the file carries no daily-digest source at all. While a chamber is held
+ * "away" by an earlier Digest (lib/docket.mjs `sessionHoldFrom`), that Digest
+ * is the one named; pass `chamber` to ask about one chamber's note.
  */
-export function floorSessionSource(): { url: string | null; published: string | null } | null {
-  const src = FILE._meta?.sources?.['daily-digest'];
-  if (!src) return null;
-  const url = typeof src.url === 'string' && src.url ? src.url : null;
-  const published = typeof src.published === 'string' && src.published ? src.published : null;
-  return url || published ? { url, published } : null;
+export function floorSessionSource(
+  now: number = Date.now(),
+  chamber: 'house' | 'senate' | null = null
+): { url: string | null; published: string | null } | null {
+  return floorSessionSourceFrom(FILE._meta, now, chamber) as {
+    url: string | null;
+    published: string | null;
+  } | null;
 }
 
 /** The rung for one bill, with its signal looked up here so callers never

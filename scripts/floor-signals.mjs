@@ -79,6 +79,7 @@ import {
   selectDigestGranule,
   shouldWrite,
   shouldWriteChecked,
+  nextSessionHold,
 } from './floor-signals-parse.mjs';
 import { mondayOfWeekET } from './newsdesk-match.mjs';
 
@@ -369,6 +370,17 @@ const next = {
     // where a document that has stopped describing the present may not name a
     // next meeting either.
     next_meeting: floorMeta.next_meeting,
+    // "Away until the meeting it named" (owner, 2026-11-19): the newest
+    // Digest's out-of-session verdict and the meeting it named, carried
+    // across runs that read no Digest and dropped once that meeting begins.
+    // lib/docket.mjs `sessionHoldFrom` reads it; `nextSessionHold` says how.
+    session_hold: nextSessionHold({
+      previous: previous?._meta?.session_hold ?? null,
+      floorMeta,
+      issueDate: digest.issueDate,
+      url: digest.url,
+      now,
+    }),
     // Capped and truncated: enough to audit why a measure the digest named is
     // not on the page, small enough that it can never dominate the file.
     dropped: dropped.slice(0, 20).map((d) => ({ source: d.source, reason: d.reason, slug: d.slug ?? null, text: (d.text ?? '').slice(0, 160) })),

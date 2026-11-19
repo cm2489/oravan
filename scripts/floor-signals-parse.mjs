@@ -818,6 +818,47 @@ export function deriveFloorMeta({ blocks, issueDate, todayISO, maxAgeDays } = {}
   };
 }
 
+/**
+ * "AWAY UNTIL THE MEETING IT NAMED" — what this run stores in
+ * `_meta.session_hold` (owner, 2026-11-19; the reader is lib/docket.mjs
+ * `sessionHoldFrom`, which says why).
+ *
+ * Per chamber:
+ *   - this run read a Digest verdict for it (`floorMeta` not stale, and the
+ *     verdict is `in_session` or `out_of_session`): the hold is that Digest's
+ *     `{ digest, url, date, label }` when the verdict is out of session and it
+ *     named a meeting date, and null otherwise. A newer Digest always replaces
+ *     an older hold, in either direction.
+ *   - this run read none (a fetch error, an issue past the age ceiling, no
+ *     block for this chamber): the previous file's hold is carried forward.
+ *     A run that could not read the record is not a newer summary.
+ *   - either way, a hold that is no longer active at `now`
+ *     (`sessionHoldActive`: the named meeting has begun, or the date is
+ *     missing, malformed or too far out) is dropped to null here, so the flip
+ *     changes the file's fingerprint and the hourly run commits it.
+ *
+ * @param {{ previous?: any, floorMeta: any, issueDate?: string | null, url?: string | null, now: number }} input
+ * @returns {{ senate: any, house: any }}
+ */
+export function nextSessionHold({ previous, floorMeta, issueDate = null, url = null, now }) {
+  const out = /** @type {{ senate: any, house: any }} */ ({ senate: null, house: null });
+  for (const chamber of /** @type {const} */ (['senate', 'house'])) {
+    const verdict = floorMeta?.stale ? null : floorMeta?.in_session?.[chamber];
+    let hold;
+    if (verdict === 'in_session' || verdict === 'out_of_session') {
+      const meeting = floorMeta?.next_meeting?.[chamber];
+      hold =
+        verdict === 'out_of_session' && meeting?.date
+          ? { digest: issueDate ?? null, url: url ?? null, date: meeting.date, label: meeting.label ?? null }
+          : null;
+    } else {
+      hold = previous?.[chamber] ?? null;
+    }
+    out[chamber] = sessionHoldActive(hold, now) ? hold : null;
+  }
+  return out;
+}
+
 // ---- merge / write policy ------------------------------------------------
 
 const ymd = (ms) => new Date(ms).toISOString().slice(0, 10);
@@ -917,6 +958,10 @@ export function materialFingerprint(doc) {
     // fingerprint would hold that change out of the file until something
     // else happened to move.
     next_meeting: doc?._meta?.next_meeting ?? null,
+    // A hold starting, ending or lapsing changes what every page says about
+    // the chamber, so it must reach a commit (and a rebuild) on the run that
+    // sees it — including the run where the named meeting simply arrives.
+    session_hold: doc?._meta?.session_hold ?? null,
     dropped: doc?._meta?.dropped ?? [],
   });
 }
@@ -1055,7 +1100,7 @@ export function redecodeVerdict({ decodedAt, lastActionDate, corpusTitle, fetche
  * can drift apart only in the safe direction.
  */
 export { entersFloorWatch } from '../lib/docket.mjs';
-import { entersFloorWatch } from '../lib/docket.mjs';
+import { entersFloorWatch, sessionHoldActive } from '../lib/docket.mjs';
 // The sentence the ladder's T1 rung reads (lib/docket.mjs's docketRung passes
 // statusBasisText, not last_action_text). Read here too, 2026-09-25, so "the
 // same thing by 'close enough to the floor'" stays true behind an ambiguous
@@ -1171,6 +1216,21 @@ export function verifyFloorSignals({ data, fileBytes, now = Date.now(), knownSlu
     if (backwards.length > 0) {
       warnings.push(
         `${FLOOR_SIGNALS_PATH} _meta.next_meeting is earlier than the Daily Digest that announced it (published ${digestPublished}; ${backwards.join(', ')}) — the derived meeting date and the source's own date disagree`
+      );
+    }
+  }
+  // A hold the reader would refuse is harmless (it reads as unknown, which is
+  // the fail-safe), so a WARNING: say it, never redden the nightly over it.
+  for (const [chamber, hold] of Object.entries(meta.session_hold ?? {})) {
+    if (hold === null) continue;
+    const ok =
+      hold && typeof hold === 'object' &&
+      typeof hold.digest === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(hold.digest) &&
+      typeof hold.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(hold.date) &&
+      hold.date >= hold.digest;
+    if (!ok) {
+      warnings.push(
+        `${FLOOR_SIGNALS_PATH} _meta.session_hold.${chamber} is not a usable hold (${JSON.stringify(hold).slice(0, 160)}) — the site reads it as unknown, which counts as meeting`
       );
     }
   }

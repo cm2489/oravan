@@ -64,7 +64,9 @@ export async function FloorRecessNote({ chamber }: { chamber: Chamber }) {
   // to print but an assertion, so print nothing (see the header).
   if (!label && !iso) return null;
 
-  const source = floorSessionSource();
+  // The Digest that named THIS chamber's meeting (an earlier one while a hold
+  // stands; lib/docket.mjs `floorSessionSourceFrom`).
+  const source = floorSessionSource(undefined, chamber);
   const checkedAt = floorSignalsCheckedAt();
 
   /* UTC, for the reason every bare `YYYY-MM-DD` on this site is formatted in
