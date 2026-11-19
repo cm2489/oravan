@@ -820,7 +820,10 @@ export function renderStatusDigest({ changes, past, newlyPast, now, firstRun = f
   const lines = [
     `## Big Questions — the record moved (${day})`,
     '',
-    '> Derived nightly from the official record by `lib/moment-status.mjs` — the same status lines the question pages render. No prose was written or changed; whether a summary needs a PR is the owner\'s call.',
+    // The pages pass a chamber-session check (lib/floor-session.ts, #525);
+    // this digest does not, on purpose — its snapshot must not flip at the
+    // start and end of every recess — so the sentence says where they differ.
+    '> Derived nightly from the official record by `lib/moment-status.mjs` — the status lines the question pages render while the chamber is meeting (while it is out, the pages show the record\'s own words in place of a floor or cloture line). No prose was written or changed; whether a summary needs a PR is the owner\'s call.',
     '',
   ];
   if (firstRun) {
