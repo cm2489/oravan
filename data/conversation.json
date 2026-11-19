@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-19T21:27:24.317Z",
+    "fetched_at": "2026-11-19T21:59:12.537Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-19T21:27:24.317Z"
+        "checked_at": "2026-11-19T21:59:12.537Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-15",
         "week_label": "Most-Viewed Bills - Week of November 15, 2026",
         "entries": 7,
-        "checked_at": "2026-11-19T21:27:24.317Z"
+        "checked_at": "2026-11-19T21:59:12.537Z"
       },
       "leans": {
         "center": {
@@ -159,6 +159,26 @@
           "firstSeen": "2026-11-17",
           "lastSeen": "2026-11-17",
           "url": "https://www.foxnews.com/politics/conservatives-launch-10m-anti-socialism-blitz-after-democrats-dominate-youth-vote"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hconres-93-119": {
+      "outlets7d": [
+        {
+          "domain": "reuters.com",
+          "lean": "center",
+          "firstSeen": "2026-11-19",
+          "lastSeen": "2026-11-19",
+          "url": "https://news.google.com/rss/articles/CBMiowFBVV95cUxOcmstcFNFWmdlWE9OT3pCd2JxN1RvaDZMZ2dlZC01YU9hUVFDdFdETmRJLWYtRWI5bkpNVHgyQUFTRVNncW9kUUZkdGhFRkl1RUx6MGs2eVhNNXhZbzROalJGQnRSSUdqdVBhQ1NuLTRONXEyQWpYemhwenhCd2VlNlY4VUZJT3NRdjBmdzBTZGxreUlHNmgyX0p4TzVxX1FvaXZR?oc=5"
+        },
+        {
+          "domain": "washingtonpost.com",
+          "lean": "left",
+          "firstSeen": "2026-11-19",
+          "lastSeen": "2026-11-19",
+          "url": "https://news.google.com/rss/articles/CBMipgFBVV95cUxOYUhPc1MzUmliSzFkVG16b3R4WmdnM2tTQlhHX19ONGU1Ui15MWZZcmJ0NDA4a0lkenNvRXdvUFRaMDdvcjZoOHd3YW5KNVNEelUxVEx0VU83WlJMTkFLYVV0WEtwNGVGQ2RjRmwxTlNhZ2xseHkxbGxjNTBsWU5XclJnZkRCVHJBVURwOHVoR1JjZEVSSzFuRjRRdVh3NHRpd3VTVnF3?oc=5"
         }
       ],
       "unratedOutlets7d": [],
@@ -386,6 +406,18 @@
           "firstSeen": "2026-11-12",
           "lastSeen": "2026-11-12",
           "url": "https://news.google.com/rss/articles/CBMizwFBVV95cUxQNWg1OW9HMWxzdklDd09hcmNqSTZIUGY2bkprTzVpMnNsZ0hHMUhTY0NnV1pXUWd2bU9sN2lmbVEyMm8zRER1bXBjbVg4Nld5bERXQnpoNVRDZG80REZZdEdJVnJfMG4tVjhqbFBnU2FiWXdUdjREU2p6RnpVQ1B2RFllLTFOWjhoWFo2TFAwZkF5LXFwSmxjLS1idlJSMmh3bzdXNUJLYjZTUG52cU8zeEx5ZmhNTVVUdGdWaFVQY0p5cnh6VU5CTnVLWmFNWFE?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-3100-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "legis1.com",
+          "firstSeen": "2026-11-19",
+          "lastSeen": "2026-11-19",
+          "url": "https://news.google.com/rss/articles/CBMifkFVX3lxTE9tVXBFWndIUlNuZ2hzY0dnTldtazdDaW8wVDlYelFGbDh6bHp5bmZRa2V4MWdscGhwOGxBTGlPWjVGdnRWdG9YLWRmaUZESDlCV29oMW00SkhIWDNUbmNOZzVfcnRXekFCRFF0ZzBQZlJ3Wm94SjRXR2VjaE93UQ?oc=5"
         }
       ],
       "mostViewed": null
@@ -936,6 +968,18 @@
       ],
       "mostViewed": null
     },
+    "hr-7254-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "legis1.com",
+          "firstSeen": "2026-11-19",
+          "lastSeen": "2026-11-19",
+          "url": "https://news.google.com/rss/articles/CBMid0FVX3lxTE5HdHNackYxUjBqYzFVLTdjSUhicmQ3Sm8wcFdFaEpXNFh2bTlRUm9YaEdwNllUWWQwYkY4U1BSalA4TnpEdTZjQ3FRTFVHczFIejA0QlNZc0pfaDVfUThMWDNEVVN4WWppWlBlbkJ3T2VySFJBeENF?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-7501-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1269,6 +1313,18 @@
           "firstSeen": "2026-11-18",
           "lastSeen": "2026-11-18",
           "url": "https://news.google.com/rss/articles/CBMisgFBVV95cUxQaHl6MTJqQjl5VnNZUm1DRkMydnRKM1h3UjU4d3RRam5xZGlkVnl3MkhBdWM0cm1HcjFYUWdfUm83bTI5M1VXdGI5ZDVwU1I2cFBkVUVFaUxnMVg4N201YjJlM1NxWU9QYlVyUGgtU1BoZEgzYkoxWUQ5cm1uSWxYRWJNRXlWSU1CdWdWZENtZHJTdFNwY2txY0FtVi01bUdWUGZUMFBRbzlmR1B3WF90anp3?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-9624-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "legis1.com",
+          "firstSeen": "2026-11-19",
+          "lastSeen": "2026-11-19",
+          "url": "https://news.google.com/rss/articles/CBMifkFVX3lxTFB0aDVkY2JZVHpucUlYOXpHRjNZOEhFTmRpUFRCeU45Mm1JaEVEUHBJNlR1Zkw1YWVZb0tJVGRKTjQ2X0loNFZ5NDN1X0RqQmoySHRKU1lyb2lJNFlTTzVPZUVkZ1gtNEpKQkZFSnotUHU4M3hTU0x3d0xuVkxRUQ?oc=5"
         }
       ],
       "mostViewed": null
@@ -1615,6 +1671,12 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "facebook.com",
+          "firstSeen": "2026-11-19",
+          "lastSeen": "2026-11-19",
+          "url": "https://news.google.com/rss/articles/CBMi4gFBVV95cUxOU2dNLXJ0d2xJck1LeHh2VkRBYkx4cGVHZ2gzbHkyM0QwbEcxeGxUYkZQVUlsSGhZb2REUkhOWlF4Qi03NDQxWjlxc1RFMkZxYmhXbkVMUWRZek1PTnVOeXBDUkdfMHNLaGlEel8yYy16TFg0SDdVTkIybVNjbXVQSGIwcjc4WFhvTXNCcXZubHJ1SGJZMmQycjNBYzlyNC1vcW9RZ0dQVjdDN3dwRjFvNEVaNUNhbG8wR3k5SHpDU2ZLVjFjY2dZSTV5b3o1RkNHTWlSOEZLLXpJNzIxUFFLOWtR?oc=5"
+        },
+        {
           "domain": "energynow.ca",
           "firstSeen": "2026-11-15",
           "lastSeen": "2026-11-15",
@@ -1766,6 +1828,18 @@
           "firstSeen": "2026-11-18",
           "lastSeen": "2026-11-18",
           "url": "https://rollcall.com/2026/11/17/senators-still-see-ndaa-as-chance-for-online-safety-legislation"
+        }
+      ],
+      "mostViewed": null
+    },
+    "s-5526-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "freshplaza.com",
+          "firstSeen": "2026-11-19",
+          "lastSeen": "2026-11-19",
+          "url": "https://news.google.com/rss/articles/CBMiwAFBVV95cUxQQmVwV2piV1QySll4azlXWDNCZGNaaVo3QWRzbnUtenVsSnkzQkY3ODhvTGFoQTZwV2pRMzhsME8xSUlJZkJqSFVCdGhDNmJKRUdNaEZjLXgxc3UxaDh6S0JEY3ZTNU5ZcmtGbXFMc0RxVGxPdGQ2amFubzNrb1FibklhblNtandYcnR0V2Y1azhqRHJBWGg3SVVZX0NYb2VuYlR3ZWw3V0l4NGdBdlp0a3ZTdE9hUUIzSjV4eExlRGQ?oc=5"
         }
       ],
       "mostViewed": null
