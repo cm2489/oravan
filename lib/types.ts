@@ -21,7 +21,7 @@ export type BillStatus = (typeof BILL_STATUSES)[number];
 
 /**
  * The key a status LABEL is printed under (lib/journey.ts `statusKeyFor`),
- * which is a stored status or one of five readings of it:
+ * which is a stored status or one of its readings:
  *
  *   `floor_activity`    a `floor_vote` record whose sentence is no placement
  *                       (Wave B #1, 2026-08-04);
@@ -30,6 +30,11 @@ export type BillStatus = (typeof BILL_STATUSES)[number];
  *   `passed_both`       a `passed_chamber` record the SECOND chamber passed
  *                       without amendment, so it goes to the president next
  *                       (2026-09-29);
+ *   `passed_back_house` / `passed_back_senate`
+ *                       both chambers passed it in different versions and it
+ *                       is back with that chamber to settle the changes
+ *                       (lib/floor-text.mjs passageState 'back', 2026-11-18;
+ *                       the same words as the home rows' `homeLine.passedBack`);
  *   `adopted`           a concurrent resolution both chambers agreed to in
  *                       one form, the end of its path (2026-09-29);
  *   `rejected`          a `floor_vote` record whose own sentence says a
@@ -48,6 +53,8 @@ export type StatusLabelKey =
   | 'floor_activity'
   | 'floor_vote_stale'
   | 'passed_both'
+  | 'passed_back_house'
+  | 'passed_back_senate'
   | 'adopted'
   | 'rejected'
   | 'ended';

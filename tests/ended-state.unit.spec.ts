@@ -34,7 +34,7 @@ import {
   withSitePolicyForTest,
 } from '../lib/ended-state.mjs';
 import { billFloorBand, endedDecision, liveCallTarget, passageState, settledDecision, statusKeyFor } from '../lib/journey';
-import { concurrentEnrolledBy } from '../lib/floor-text.mjs';
+import { concurrentEnrolledBy, recordStatus } from '../lib/floor-text.mjs';
 import { statusWord } from '../lib/status-word';
 import type { Bill, StatusLabelKey } from '../lib/types';
 import { BASE, ENDED_119, ENROLLED_CONCURRENT_FIXTURE, PRESENTED_FIXTURE } from './fixtures/ended-bills';
@@ -262,7 +262,9 @@ test('item 1: every 119th bill gets one ended kind, read off the record', () => 
           ? 'law'
           : settled
             ? 'decided'
-            : b.status === 'passed_chamber' && passageState(b).stage === 'both'
+            : // recordStatus, as endedDecision reads it since 2026-11-18 (#523): a
+              // record stored at committee over a final agreement (H.R. 2400).
+              recordStatus(b) === 'passed_chamber' && passageState(b).stage === 'both'
               ? 'presented'
               : 'ended';
       expect(ended!.kind, billSlug(b)).toBe(expected);

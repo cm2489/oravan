@@ -543,9 +543,10 @@ test.describe('no internal enum reaches the model as a fact', () => {
   test('no listed token is dead — every one of them is a value something really stores', () => {
     // The other direction: a token that no vocabulary contains any more is a
     // guard firing on nothing, and it makes the list read as broader than it
-    // is. `floor_activity`, `floor_vote_stale` and `passed_both` are the
-    // deliberate exceptions — derived message keys, not stored values.
-    const derivedKeys = ['floor_activity', 'floor_vote_stale', 'passed_both'];
+    // is. `floor_activity`, `floor_vote_stale`, `passed_both` and the two
+    // `passed_back_*` keys (2026-11-18, #523) are the deliberate exceptions —
+    // derived message keys, not stored values.
+    const derivedKeys = ['floor_activity', 'floor_vote_stale', 'passed_both', 'passed_back_house', 'passed_back_senate'];
     const real = new Set<string>([
       ...BILL_STATUSES,
       ...COVERAGE_TIERS,

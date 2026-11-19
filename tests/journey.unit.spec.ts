@@ -2373,9 +2373,16 @@ test.describe('scripts/moment-candidates.mjs copy is pinned to lib/journey.ts', 
         expect(j.step, slugOf(b)).toBe(4);
         expect(j.ending, slugOf(b)).toBe('bothChambers');
       } else {
-        // Both chambers passed it: either the president's step, or the
-        // versions-unknown sentence when the record gives no amendment clause.
-        expect(['nowPassedBoth', 'nowPassedSecond'], slugOf(b)).toContain(j.nowKey);
+        // Both chambers passed it: the president's step, the versions-unknown
+        // sentence when the record gives no amendment clause, or (since
+        // 2026-11-18) the passed-in-different-versions sentence, which names
+        // the chamber it went back to — and only on a record whose passage
+        // reading is 'back'.
+        expect(['nowPassedBoth', 'nowPassedSecond', 'nowPassedBack', 'nowPassedBackStale'], slugOf(b)).toContain(j.nowKey);
+        if (j.nowKey === 'nowPassedBack' || j.nowKey === 'nowPassedBackStale') {
+          expect(passageState(recordOf(b)).stage, slugOf(b)).toBe('back');
+          expect(j.step, slugOf(b)).toBe(3);
+        }
         if (j.nowKey === 'nowPassedBoth') {
           expect(j.step, slugOf(b)).toBe(4);
           expect(j.ending, slugOf(b)).not.toBe('bothChambers');

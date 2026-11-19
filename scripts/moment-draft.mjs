@@ -419,7 +419,7 @@ export const INTERNAL_ENUM_TOKENS = [
   // blank every draft about H.Con.Res. 86 for stating the record correctly.
   // `rejected` (2026-09-29) is not listed for the same reason: it is its own
   // published label ("Rejected").
-  'passed_both',
+  'passed_both', 'passed_back_house', 'passed_back_senate',
   // coverage tier (lib/types.ts COVERAGE_TIERS; lib/coverage.ts and
   // scripts/moment-candidates.mjs both return exactly these)
   'cross', 'neutral', 'one_sided', 'none',
