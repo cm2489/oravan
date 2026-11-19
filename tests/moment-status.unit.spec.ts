@@ -498,6 +498,41 @@ test.describe('copy: every key renders in both languages', () => {
   }
 });
 
+/*
+ * NO STATUS LINE SAYS WHEN A VOTE HAPPENS (2026-11-18; docs/record-truth.md
+ * §1: a vote's timing is never synthesized or implied, and §2/§4: "still no
+ * claim about when a vote happens"). Until this date `clotureFiled` ended
+ * "Under Senate rules, that vote comes within days." / "Según sus reglas, esa
+ * votación llega en pocos días." A cloture motion can be withdrawn or set
+ * aside, and the Senate can stop meeting, so the record never holds that
+ * claim. Both forms of every key, in both languages: the full line
+ * (moments.status.line.*) and the home page's short form (homeLine.*).
+ */
+test.describe('copy: no status line says when a vote will happen', () => {
+  const TIMING =
+    /within (?:a few )?days|this week|next week|\bsoon\b|\bexpected\b|en pocos días|esta semana|la próxima semana|\bpronto\b|se espera/i;
+  for (const [lang, messages] of [['en', en], ['es', es]] as const) {
+    test(lang, () => {
+      const full = createTranslator({ locale: lang, messages, namespace: 'moments.status' });
+      const short = createTranslator({ locale: lang, messages, namespace: 'homeLine' });
+      for (const key of STATUS_LINE_KEYS) {
+        for (const chamber of ['house', 'senate']) {
+          const values = { chamber, law: 'none', tally: 'none', yeas: 0, nays: 0 } as never;
+          if (key !== 'recordStep') {
+            expect(full(`line.${key}` as never, values) as string, `${lang} line.${key}`).not.toMatch(TIMING);
+          }
+          expect(short(key as never, values) as string, `${lang} homeLine.${key}`).not.toMatch(TIMING);
+        }
+      }
+      expect(full('line.clotureFiled' as never, { chamber: 'senate', law: 'none' } as never)).toBe(
+        lang === 'en'
+          ? 'Cloture was filed in the Senate.'
+          : 'Se presentó una solicitud de cierre del debate (cloture) en el Senado.',
+      );
+    });
+  }
+});
+
 test.describe('the nightly refresh (scripts/moment-watch.mjs --mode=status)', () => {
   const moments = {
     q: {
