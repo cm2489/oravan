@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-19T03:19:27.745Z",
+    "fetched_at": "2026-11-19T03:53:42.990Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-19T03:19:27.745Z"
+        "checked_at": "2026-11-19T03:53:42.990Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-15",
         "week_label": "Most-Viewed Bills - Week of November 15, 2026",
         "entries": 7,
-        "checked_at": "2026-11-19T03:19:27.745Z"
+        "checked_at": "2026-11-19T03:53:42.990Z"
       },
       "leans": {
         "center": {
@@ -1341,6 +1341,18 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "wabi.tv",
+          "firstSeen": "2026-11-19",
+          "lastSeen": "2026-11-19",
+          "url": "https://news.google.com/rss/articles/CBMihAFBVV95cUxNeG9oTGdrRzE4V09uaG5Zb3lnZ0FRbFlad3lZOElLQ21BY3ZFcjBtM3FMOUNyTUl4bGtJa0t6ckdJN1IzUTRVRWV2NnlnYktoVzAzRXRyR0VXZmd6SFRlOGQ2M0JaTlpfRldrdDl2VmhuM1ZOeVR3Q1VheVhuZTZKV1MySUbSAZgBQVVfeXFMUG4tQVg4QkRvZmtvZUE3NmxPdU1pQ1l6VjhNWXhhckNWMnlWaE01cnhsZ0VYTHMxUG9yWHNEOXdhZWVtY0NvLWY4b2dFUmhocFJDU2FsMHJJZTd0Qi1wSWU0eUo0U1QwLUdhRUZUc005RWs3bkdLX04xNHBJaFNsdndXUjR4WlZGR25KVk1RRXYxY2k1eG8tNmo?oc=5"
+        },
+        {
+          "domain": "wwnytv.com",
+          "firstSeen": "2026-11-19",
+          "lastSeen": "2026-11-19",
+          "url": "https://news.google.com/rss/articles/CBMijwFBVV95cUxNYjF6UjQ5WUhLSXBiNFFBSTZUUklxcDB4WFdyY1VSME5vZWZSQTRPU2xoRVpseW9FS2JNWTRGb3lxcGxBaGZMMDZqVzRPOGgxVWVJbGw0cFdUamZobXBMOGJQX0JuY2hZdFRtc0FZaHJPNkQ3NVFyV3BMeGpzNEpnYV9pUno4anRtd1lKUU16b9IBowFBVV95cUxPWEJBUzFGTUZZSzhCNGV5S2ZQSmpMUV91Nl9TdldxWXlTWDdMXzFoR0ZUaGpCUW96OVJpeURFWFZlY2t4MmczSEpYSm5CSjFTY1RSeXpoRkNodDJ4akMySzBXNTJENU1HRFZTQnVsY3FxQ0JkT0RGSlo4U2s0dDlKRUpVYkhfdkVvZEZwVTlkMnRlUEdLaEZ4cHRlRENDSTRiVzkw?oc=5"
+        },
+        {
           "domain": "rollcall.com",
           "firstSeen": "2026-11-18",
           "lastSeen": "2026-11-18",
@@ -1418,6 +1430,19 @@
           "firstSeen": "2026-11-13",
           "lastSeen": "2026-11-13",
           "url": "https://thehill.com/homenews/house/6217576-gop-lawmaker-says-party-is-focusing-on-political-power-rather-than-people/"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "s-4140-119": {
+      "outlets7d": [
+        {
+          "domain": "newsweek.com",
+          "lean": "left",
+          "firstSeen": "2026-11-19",
+          "lastSeen": "2026-11-19",
+          "url": "https://news.google.com/rss/articles/CBMiogFBVV95cUxQRkxQUDF2MHlUV1NjVkt4MHNHNVlGSVltdmJ4UzNacFcwZVZaV2Y5bERwbGFlbV9rOWQtRlUwQkZxMkJ5bjk4a01rTEtCN3hHZjZkaFc5alh1V0tjOHVsSnRqOGl2U2NEbG1STlRTbG9DTExVaFVZdmRXbTBta0FRTjVqeURpNVFzcW5ET0Y5b2pSeG1ISml0ckRVNVJqYjJoOHc?oc=5"
         }
       ],
       "unratedOutlets7d": [],
