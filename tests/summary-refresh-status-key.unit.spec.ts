@@ -424,13 +424,14 @@ test.describe('STATUS_KEY_READINGS covers every key both statusKeyFor copies ret
   test('the table lists only the statuses that are read more than one way', () => {
     // committee and markup since 2026-11-18: a record stored at one of them
     // over a sentence that says both chambers agreed (lib/floor-text.mjs
-    // recordStatus, H.R. 2400) reads `passed_both`; over one where the exchange
-    // between the chambers goes on, `floor_activity`. Nothing else new.
+    // recordStatus, H.R. 2400) reads `passed_both`. Nothing else new: since
+    // round 6 of the re-check no other exchange sentence moves a stored
+    // status, so `floor_activity` is not a reading of either.
     expect(Object.keys(STATUS_KEY_READINGS).sort()).toEqual(['committee', 'floor_vote', 'markup', 'passed_chamber']);
-    expect(STATUS_KEY_READINGS.committee).toEqual(['committee', 'passed_both', 'floor_activity']);
-    expect(STATUS_KEY_READINGS.markup).toEqual(['markup', 'passed_both', 'floor_activity']);
+    expect(STATUS_KEY_READINGS.committee).toEqual(['committee', 'passed_both']);
+    expect(STATUS_KEY_READINGS.markup).toEqual(['markup', 'passed_both']);
     expect(isStatusReading('committee', 'committee')).toBe(true);
-    expect(isStatusReading('committee', 'floor_activity')).toBe(true);
+    expect(isStatusReading('committee', 'floor_activity')).toBe(false);
     expect(isStatusReading('committee', 'floor_vote')).toBe(false);
     expect(isStatusReading('committee', 'rejected')).toBe(false);
     expect(isStatusReading('committee', 'passed_chamber')).toBe(false);

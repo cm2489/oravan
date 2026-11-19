@@ -204,7 +204,7 @@ function passedBothStanceLine(stance: Stance, reading: PassedBothReading): strin
  * #523, round 3; H.R. 5349). The site prints "Back in the House to settle the
  * changes" (statusKeyFor's `passed_back_house`). The one script is read to the
  * caller's Representative's office AND both Senators' offices, and one of those
- * chambers has already voted on the bill, so the script may not ask the member
+ * chambers has already passed the bill, so the script may not ask the member
  * to "vote for it": a senator asked to vote on H.R. 5349 would be asked to do
  * what the Senate already did. It asks every office for a PUBLIC STAND while
  * the chamber named in the record settles the changes, and says where the bill
@@ -241,7 +241,7 @@ function passedBackStanceLine(stance: Stance, chamber: PassedBackChamber): strin
     undecided: concernedLine(`asks the member to state a public position on the bill${settling}`),
   };
   const where = `Where the bill stands: ${passedBackWhere(chamber)} The script must say so plainly, naming the ${CHAMBER_NAME[chamber]} in that one sentence; never address or describe the recipient by chamber or title.`;
-  const never = `NEVER ask the member to vote for or against this bill: the same script is read to offices in both chambers, and the ${CHAMBER_NAME[OTHER_CHAMBER[chamber]]} has already voted on it. NEVER say or imply how the member voted, or whether the member voted at all.`;
+  const never = `NEVER ask the member to vote for or against this bill: the same script is read to offices in both chambers, and the ${CHAMBER_NAME[OTHER_CHAMBER[chamber]]} has already passed it. NEVER say or imply how the member voted, or whether the member voted at all.`;
   return `${ask[stance]} ${where} ${never}`;
 }
 
