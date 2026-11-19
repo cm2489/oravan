@@ -357,6 +357,26 @@ test.describe('an ended Congress (lib/journey.ts endedDecision reads recordStatu
   });
 });
 
+test.describe('deriveJourney reads the clock it is handed, not today (round 7)', () => {
+  // Two instants far from any day this test could run on: the same record is
+  // fresh at the first and stale at the second, so a reading that ignored
+  // `now` and read today could not give both.
+  const NEAR = Date.parse('2026-11-18T18:00:00Z');
+  const FAR = Date.parse('2031-06-01T12:00:00Z');
+  test('a floor action: "is deciding" while fresh, the dated stale sentence after', () => {
+    const b = bill({ bill_type: 'sjres', status: 'floor_vote', last_action_date: '2026-11-17', last_action_text: 'Motion to proceed to consideration of measure made in Senate.' });
+    const near = deriveJourney(b, NEAR).nowKey;
+    const far = deriveJourney(b, FAR).nowKey;
+    expect(near).not.toBe(far);
+    expect(far).toMatch(/Stale$/);
+  });
+  test('a first passage: "now goes to the other chamber" while fresh, the stale sentence after', () => {
+    const b = bill({ bill_type: 'hr', status: 'passed_chamber', last_action_date: '2026-11-17', last_action_text: 'Received in the Senate.' });
+    expect(deriveJourney(b, NEAR).nowKey).toBe('nowPassed');
+    expect(deriveJourney(b, FAR).nowKey).toBe('nowPassedStale');
+  });
+});
+
 test.describe('the readers’ anchors (mutants the re-check found)', () => {
   test('the Senate’s own sentence form is read only as the whole action', () => {
     const t = 'Motion to reconsider the vote by which the Senate agreed to the House amendment to S. 240 by Unanimous Consent.';

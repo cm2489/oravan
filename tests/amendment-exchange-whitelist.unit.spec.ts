@@ -8,7 +8,7 @@ import {
   recordStatus,
   stripActionFrame,
 } from '../lib/floor-text.mjs';
-import { decisionState, floorAnsweredChamber } from '../lib/docket.mjs';
+import { announcementAnswered, decisionState, floorAnsweredChamber } from '../lib/docket.mjs';
 import { mapStatus } from '../scripts/congress-fetch.mjs';
 import type { BillStatus } from '../lib/types';
 import { SENTENCES, type Reading, type Sentence } from './amendment-exchange-sentences';
@@ -190,6 +190,13 @@ test.describe('(a) the whitelist: every shape has a real example, and it reads f
     }
     // The House sentence names no bill, so it needs none.
     expect(agreedToOtherChamberAmendment(REAL[0].text)).toBe('house');
+  });
+  test('the floor-schedule gate reads the sentence against its own bill', () => {
+    // A House week-list naming S. 240 is answered once the Senate agreed to
+    // the House's amendment (both chambers done), but only on S. 240 itself.
+    const signal = { tier0: { chamber: 'house', published: '2026-09-21', covers: '2026-09-22' } };
+    expect(announcementAnswered(asBill('s', REAL[2].text, 240), signal)).toBe(true);
+    expect(announcementAnswered(asBill('s', REAL[2].text, 241), signal)).toBe(false);
   });
 });
 
