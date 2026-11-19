@@ -538,3 +538,158 @@ test.describe('round 4 of the re-check of #523', () => {
   });
 });
 
+/*
+ * THE SENTENCE TABLE (re-check of #523, round 5). One row per record
+ * sentence: the reading the amendment-exchange readers give it.
+ *   "final"          both chambers hold one text (agreedToOtherChamberAmendment)
+ *   "step:<chamber>" that chamber answered and the exchange goes on, or its
+ *                    motion failed (amendmentExchange not final,
+ *                    amendmentExchangeContinues, amendmentExchangeFailed)
+ *   "none"           no reading: not an exchange this reader knows, and so
+ *                    NEVER final.
+ * The first 59 rows are the re-check's own sentences (recheck4-523,
+ * sentences.txt), read one by one; the rest are this round's forms. To add a
+ * shape, add a row; a doubtful shape belongs on "step" or "none", never on
+ * "final".
+ */
+const READING_TABLE: [string, string][] = [
+  ["final", "On motion that the House concur in the Senate amendment Agreed to by the Yeas and Nays: 310 - 105 (Roll no. 412)."],
+  ["final", "On motion that the House agree to the Senate amendments Agreed to by voice vote."],
+  ["final", "On motion that the House suspend the rules and concur in the Senate amendments Agreed to by the Yeas and Nays: (2/3 required): 380 - 30 (Roll no. 420)."],
+  ["step:house", "On motion that the House concur in the Senate amendment with an amendment Agreed to by voice vote."],
+  ["step:house", "On motion that the House concur in the Senate amendment with amendment numbered 1 Agreed to without objection."],
+  ["step:house", "On motion that the House concur in Senate amendments numbered 1, 2 and 3 Agreed to by voice vote."],
+  ["final", "On motion that the House concur in the Senate amendment in the nature of a substitute Agreed to by voice vote."],
+  ["step:house", "On motion that the House concur in the Senate amendment in the nature of a substitute with an amendment Agreed to by voice vote."],
+  ["step:house", "On motion that the House disagree to the Senate amendment and request a conference Agreed to without objection."],
+  ["step:house", "On motion that the House insist on its disagreement to the Senate amendment Agreed to without objection."],
+  ["final", "On motion that the House recede from its disagreement and concur in the Senate amendment Agreed to by voice vote."],
+  ["none", "On motion that the House recede from its amendment Agreed to without objection."],
+  ["step:house", "On motion that the House concur in the Senate amendment Not agreed to by the Yeas and Nays: 200 - 215 (Roll no. 430)."],
+  ["step:house", "On motion that the House concur in the Senate amendment Failed by voice vote."],
+  ["none", "Motion to table the motion to concur in the Senate amendment Agreed to by the Yeas and Nays: 216 - 210 (Roll no. 431)."],
+  ["none", "On motion to table the motion to concur in the Senate amendment Agreed to by voice vote."],
+  ["none", "Ms. Smith moved that the House concur in the Senate amendment."],
+  ["none", "Considered as unfinished business. (consideration: CR H5000)"],
+  ["none", "POSTPONED PROCEEDINGS - At the conclusion of debate on the motion to concur in the Senate amendment, the Chair put the question on the motion and by voice vote, announced that the ayes had prevailed. Mr. Jones demanded the yeas and nays and the Chair postponed further proceedings on the question until a time to be announced."],
+  ["none", "Further proceedings on the motion to concur in the Senate amendment were postponed."],
+  ["final", "On motion that the House concur in the Senate amendment Agreed to by voice vote. Motion to reconsider the vote laid on the table."],
+  ["none", "Mr. Jones moved to reconsider the vote on the motion to concur in the Senate amendment."],
+  ["none", "The vote on the motion to concur in the Senate amendment was vacated by unanimous consent."],
+  ["none", "Motion to concur in the Senate amendment withdrawn."],
+  ["none", "Senate agreed to conference report by Yea-Nay Vote. 68 - 31. Record Vote Number: 250."],
+  ["none", "Conference report H. Rept. 119-500 filed."],
+  ["none", "On agreeing to the conference report Agreed to by recorded vote: 230 - 190 (Roll no. 440)."],
+  ["none", "Conferees agreed to file conference report."],
+  ["none", "Senate insists on its amendment, asks for a conference, appoints conferees Crapo; Wyden."],
+  ["none", "Senate receded from its amendment by Unanimous Consent."],
+  ["none", "Presented to President."],
+  ["none", "Became Public Law No: 119-250."],
+  ["none", "Signed by President."],
+  ["none", "Vetoed by President."],
+  ["none", "Veto message received in House."],
+  ["none", "On passage, the objections of the President to the contrary notwithstanding Agreed to by the Yeas and Nays: (2/3 required): 300 - 120 (Roll no. 450)."],
+  ["none", "Passed House over veto by the Yeas and Nays: (2/3 required): 300 - 120 (Roll no. 450)."],
+  ["none", "Became Public Law without Signature No: 119-251."],
+  ["none", "Pocket vetoed by President."],
+  ["none", "Enrolled bill signed by the Speaker and the President pro tempore. Presented to President."],
+  ["none", "Cleared for White House."],
+  ["final", "Senate concurred in the House amendment by Unanimous Consent."],
+  ["step:senate", "Senate concurred in the House amendment with an amendment (SA 4000) by Unanimous Consent."],
+  ["step:senate", "Senate concurred in House amendment No. 1 by Voice Vote."],
+  ["none", "Motion by Senator Cortez Masto to concur in the House amendment made in Senate."],
+  ["final", "Motion by Senator Van Hollen to concur in the House amendment agreed to in Senate by Yea-Nay Vote. 55 - 44. Record Vote Number: 300."],
+  ["none", "Motion by Senator Thune to table the motion to concur in the House amendment agreed to in Senate by Voice Vote."],
+  ["none", "Motion to concur in the House amendment withdrawn in Senate."],
+  ["none", "Cloture motion on the motion to concur in the House amendment presented in Senate."],
+  ["none", "Cloture on the motion to concur in the House amendment invoked in Senate by Yea-Nay Vote. 61 - 38."],
+  ["none", "Cloture on the motion to concur in the House amendment not invoked in Senate by Yea-Nay Vote. 52 - 47."],
+  ["none", "Motion to concur in the House amendment with an amendment No. 3000 made in Senate."],
+  ["step:senate", "Senate disagreed to the House amendment by Unanimous Consent."],
+  ["step:senate", "Resolving differences -- Senate actions: Senate agreed to the House amendment with an amendment by Unanimous Consent."],
+  ["final", "Resolving differences -- House actions: On motion that the House agree to the Senate amendment Agreed to without objection."],
+  ["final", "Senate concurred in the House amendment by Unanimous Consent."],
+  ["final", "On motion that the House agree to the Senate amendment Agreed to by voice vote."],
+  ["step:house", "On motion that the House concur in the Senate amendment to the title Agreed to without objection."],
+  ["none", "Senate amendment to the House amendment to the Senate amendment agreed to by the House."],
+  // Round 5: every form of "with … amendment" after concur / agree / recede and concur, and the title.
+  ["step:house", "On motion that the House concur in the Senate amendment with the amendment printed in House Report 119-600 Agreed to by voice vote."],
+  ["step:house", "On motion that the House agree to the Senate amendment with a further amendment Agreed to without objection."],
+  ["step:house", "On motion that the House concur in the Senate amendment with House amendment No. 2 Agreed to without objection."],
+  ["step:house", "On motion that the House concur in the Senate amendment with an amendment in the nature of a substitute Agreed to by voice vote."],
+  ["step:house", "On motion that the House agree to the Senate amendment with amendments Agreed to without objection."],
+  ["step:house", "On motion that the House recede and concur in the Senate amendment with an amendment Agreed to without objection."],
+  ["step:house", "On motion that the House recede from its disagreement to the amendment of the Senate and concur therein with the amendment printed in the Congressional Record Agreed to by voice vote."],
+  ["step:senate", "Senate concurred in the House amendment with a further amendment (SA 4100) by Unanimous Consent."],
+  ["step:senate", "Motion by Senator Thune to concur in the House amendment with a further amendment (SA 4200) agreed to in Senate by Voice Vote."],
+  ["step:senate", "Senate concurred in the House amendment to the title by Unanimous Consent."],
+  ["final", "On motion that the House concur in the Senate amendments to the text and title Agreed to by voice vote."],
+];
+
+function reading(text: string): string {
+  if (agreedToOtherChamberAmendment(text)) return 'final';
+  const ex = amendmentExchange(text);
+  const chamber = ex?.chamber ?? amendmentExchangeContinues(text) ?? amendmentExchangeFailed(text);
+  return chamber ? `step:${chamber}` : 'none';
+}
+
+test.describe('the sentence table', () => {
+  test(`has at least 40 rows (${READING_TABLE.length})`, () => {
+    expect(READING_TABLE.length).toBeGreaterThanOrEqual(40);
+  });
+  for (const [i, [expected, text]] of READING_TABLE.entries()) {
+    test(`#${i + 1} ${expected}: ${text}`, () => {
+      expect(reading(text)).toBe(expected);
+    });
+  }
+});
+
+/*
+ * THE PROPERTY: final only when a known-final shape carries no not-final
+ * marker. Every "final" row of the table, with any marker put into it, is no
+ * longer final; every row the table reads "none" stays never final; and a
+ * failed or rejected outcome is never final.
+ */
+test.describe('the property: no not-final marker is ever read as final', () => {
+  const MARKERS = [
+    'with an amendment',
+    'with amendments',
+    'with amendment numbered 1',
+    'with the amendment printed in House Report 119-600',
+    'with a further amendment',
+    'with further amendments',
+    'with House amendment No. 2',
+    'with an amendment in the nature of a substitute',
+    'numbered 2',
+    'No. 3',
+    'to the title',
+  ];
+  // Unique by text: two table rows may share a sentence across bill types.
+  const finals = [...new Set(READING_TABLE.filter(([e]) => e === 'final').map(([, t]) => t))];
+  test(`there are final rows to test (${finals.length})`, () => expect(finals.length).toBeGreaterThan(5));
+  for (const text of finals) {
+    // "to the title" marks an amendment to the title ALONE; a sentence that
+    // already names the text and the title is not title-only by definition.
+    for (const marker of MARKERS.filter((m) => !(m === 'to the title' && /\btext and title\b/i.test(text)))) {
+      test(`"${marker}" in: ${text.slice(0, 70)}`, () => {
+        const marked = text.replace(/\b(amendments?)\b/i, `$1 ${marker}`);
+        expect(marked).not.toBe(text);
+        expect(agreedToOtherChamberAmendment(marked), marked).toBeNull();
+      });
+    }
+    for (const outcome of ['Failed by voice vote.', 'Not agreed to by voice vote.', 'failed of passage in Senate by Yea-Nay Vote. 45 - 53.']) {
+      test(`"${outcome}" in: ${text.slice(0, 70)}`, () => {
+        const failed = text.replace(/\b(?:Agreed to|agreed to in (?:House|Senate)|by (?:Unanimous Consent|Voice Vote)).*$/i, outcome);
+        expect(failed).not.toBe(text);
+        expect(agreedToOtherChamberAmendment(failed), failed).toBeNull();
+      });
+    }
+  }
+  test('every row read "none" is never final, and neither is any unrecognised sentence', () => {
+    for (const [e, t] of READING_TABLE) if (e === 'none') expect(agreedToOtherChamberAmendment(t), t).toBeNull();
+    for (const t of ['', 'Agreed to.', 'Senate amendment agreed to.', 'House agreed.', 'The amendment was agreed to by voice vote.', 'Senate amendment to the House amendment to the Senate amendment agreed to by the House.']) {
+      expect(agreedToOtherChamberAmendment(t), t).toBeNull();
+    }
+  });
+});
+

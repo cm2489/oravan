@@ -75,8 +75,9 @@ export function BillCard({
           mid-identifier with orphaned middots leading lines (2026-07 critique,
           verified on live /es). Separators ride at the END of the preceding
           chunk so a wrapped line can never start with a floating "·".
-          Below 22.5rem the status and footnote chunks may wrap inside
-          themselves: at 320px a card's text column is about 246px, and
+          Below 22.5rem the footnote chunk may wrap inside itself (the status
+          chunk may at every width, see below): at 320px a card's text column
+          is about 246px, and
           "ACABA DE APROBARSE EN UNA CÁMARA" on one line is wider, which
           pushed /es/today 35px past the screen (measured 2026-09-29). */}
       <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs leading-tight font-bold tracking-[0.06em] text-ink-2 uppercase">
@@ -86,7 +87,13 @@ export function BillCard({
           {bill.identifier}
           <span aria-hidden> ·</span>
         </span>
-        <span className="whitespace-nowrap max-[22.5rem]:whitespace-normal">
+        {/* The STATUS chunk may wrap inside itself at every width (re-check of
+            #523, round 5): "De vuelta en la Cámara para resolver los cambios"
+            is wider than a card's text column at every phone width from 320
+            to 430px. A flex item wraps inside only when it alone is wider than
+            the line, so every status word that fits renders exactly as
+            before; the other chunks keep their own rule above. */}
+        <span className="whitespace-normal">
           {t(`bills.status.${bill.statusKey}`)}
           {(annotation || coverageCount != null) && <span aria-hidden> ·</span>}
         </span>
