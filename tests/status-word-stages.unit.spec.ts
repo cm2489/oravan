@@ -128,7 +128,12 @@ test.describe('the six bills the audit found', () => {
     // It used to route to the Senate "after the House voted", which the record
     // does not say: both chambers are done.
     expect(liveCallTarget(b)).toBeNull();
-    expect(passedBothReading({ ...b, title: b.title ?? 'A bill.' })).toBe('to_president');
+    // Round 4: the script is told the stepper's tense, not "goes to the president next".
+    expect(passedBothReading({ ...b, title: b.title ?? 'A bill.' })).toBe('presented');
+    const line = stanceLine({ ...b, title: 'A bill.' }, 'support');
+    expect(line).toContain('Where the bill stands: Both chambers passed it, and it has been sent to the president.');
+    expect(line).not.toContain('goes to the president next');
+    expect(line).toContain('before the president acts on it');
   });
 
   test('passed in different versions: the stepper and the call routing are unchanged', () => {
@@ -272,6 +277,10 @@ test.describe('the nightly mapping reads agreement to the other chamber’s amen
     { text: 'Motion by Senator Thune to concur in the House amendment to S. 1234 agreed to in Senate by Yea-Nay Vote. 60 - 38. Record Vote Number: 310.', type: 's', map: 'passed_chamber', answered: 'both', stage: 'both', key: 'passed_both', nowKey: 'nowPassedBoth', why: 'the Senate’s motion to concur, agreed to with no amendment: final (main: "Passed one chamber")' },
     { text: 'Motion by Senator Thune to concur in the House amendment to S. 1234 with an amendment (SA 2600) agreed to in Senate by Voice Vote.', type: 's', map: 'floor_vote', answered: 'senate', stage: 'first', key: 'floor_activity', nowKey: 'nowFloorActivityNeutral', why: 'agreed WITH an amendment: back to the House' },
     { text: 'Motion by Senator Thune to concur in the House amendment to S. 1234 not agreed to in Senate by Yea-Nay Vote. 45 - 53.', type: 's', map: 'floor_vote', answered: 'senate', stage: 'first', key: 'floor_activity', nowKey: 'nowFloorActivityNeutral', why: 'voted down: never an agreement' },
+    { text: 'On motion that the House agree to Senate amendment No. 2 Agreed to without objection.', type: 'hr', map: 'floor_vote', answered: 'house', stage: 'first', key: 'floor_activity', nowKey: 'nowFloorActivityNeutral', why: 'one numbered amendment of several: an exchange step, not a final agreement (round 4)' },
+    { text: 'On motion that the House concur in Senate amendment numbered 3 Agreed to by voice vote.', type: 'hr', map: 'floor_vote', answered: 'house', stage: 'first', key: 'floor_activity', nowKey: 'nowFloorActivityNeutral', why: 'the same with "numbered"' },
+    { text: 'Senate agreed to House amendment No. 2 by Unanimous Consent.', type: 's', map: 'floor_vote', answered: 'senate', stage: 'first', key: 'floor_activity', nowKey: 'nowFloorActivityNeutral', why: 'the Senate’s own sentence for one numbered amendment' },
+    { text: 'Senate concurred in the House amendments numbered 1 and 2 by Voice Vote.', type: 's', map: 'floor_vote', answered: 'senate', stage: 'first', key: 'floor_activity', nowKey: 'nowFloorActivityNeutral', why: 'a list of numbers does not say every amendment is resolved' },
     { text: 'Conference report agreed to in Senate by Yea-Nay Vote. 70 - 28.', type: 's', map: 'conference', answered: 'senate', stage: 'first', key: 'conference', nowKey: 'nowConference', why: 'conference-report language is the conference stage, not this reader' },
     { text: 'On agreeing to the conference report Agreed to by the Yeas and Nays: 300 - 120 (Roll no. 310).', type: 'hr', map: 'conference', answered: null, stage: 'first', key: 'conference', nowKey: 'nowConference', why: 'the same; it names no chamber, so no chamber is read as having answered' },
     { text: 'Motion to reconsider laid on the table Agreed to without objection.', type: 'hr', map: 'passed_chamber', answered: 'unknown', stage: 'first', key: 'passed_chamber', nowKey: /^nowPassed(Stale)?$/, why: 'unchanged: the post-vote motion is only a default, and every write path reads the action before it (resolveAmbiguousStatus)' },
@@ -408,9 +417,21 @@ test.describe('lowercaseLead (the stepper’s reused sentence after "Right now:"
     expect(lowercaseLead(ES.moments.status.line.presented, 'es')).toBe('ambas cámaras lo aprobaron y se envió al presidente.');
   });
   test('leaves proper nouns, bill numbers and acronyms alone', () => {
-    for (const s of ['Senate passed it.', 'House passed it.', 'Congress acted.', 'H.R. 2400 passed.', 'HHS must report.', 'Cámara aprobó.', 'Senado aprobó.', 'November 12.', 'S. 1234 passed.', 'Él lo firmó.']) {
-      expect(lowercaseLead(s, 'en'), s).toBe(s === 'Él lo firmó.' ? 'él lo firmó.' : s);
+    // Round 4: only words on the allow-list are lowercased; names, titles,
+    // places, programmes, groups, chambers, bill numbers and acronyms never are.
+    for (const s of ['Senate passed it.', 'House passed it.', 'Congress acted.', 'H.R. 2400 passed.', 'HHS must report.', 'November 12.', 'S. 1234 passed.',
+      'Thune moved to proceed.', 'Texas would gain land.', 'Medicare would pay.', 'Republicans and Democrats agreed.', 'Mr. Smith moved.', 'Él lo firmó.']) {
+      expect(lowercaseLead(s, 'en'), s).toBe(s);
     }
+    for (const s of ['Cámara aprobó.', 'Senado aprobó.', 'Thune presentó la moción.', 'Texas recibiría tierras.', 'Medicare pagaría.', 'Republicanos y demócratas acordaron.', 'Sr. Smith presentó.', 'Los republicanos votaron.', 'Él lo firmó.']) {
+      expect(lowercaseLead(s, 'es'), s).toBe(s);
+    }
+    // The allowed words, one per language, and nothing past the first letter.
+    expect(lowercaseLead('Both chambers passed it.', 'en')).toBe('both chambers passed it.');
+    expect(lowercaseLead('Ambas cámaras lo aprobaron.', 'es')).toBe('ambas cámaras lo aprobaron.');
+    // A word allowed in one language is not lowercased in the other.
+    expect(lowercaseLead('Both chambers passed it.', 'es')).toBe('Both chambers passed it.');
+    expect(lowercaseLead('Ambas cámaras lo aprobaron.', 'en')).toBe('Ambas cámaras lo aprobaron.');
     expect(lowercaseLead('', 'en')).toBe('');
   });
 });
@@ -470,6 +491,50 @@ test.describe('the readers’ anchors (mutants the re-check found)', () => {
     expect(presentedToPresident(b)).toBe(false);
     expect(passageState(b).stage).toBe('first');
     expect(presentedToPresident(SIX['hr-10167-119'])).toBe(true);
+  });
+});
+
+test.describe('round 4 of the re-check of #523', () => {
+  test('the listing rung reads recordStatus: a record stored at committee over a final agreement is a passage, not "Already decided on the floor"', () => {
+    const FRESH = new Date(NOW - 2 * 86_400_000).toISOString().slice(0, 10);
+    const b = { ...SIX['hr-2400-119'], last_action_date: FRESH };
+    const r = docketRung(b, null, { now: NOW });
+    expect(r.tier).toBe('t3');
+    expect(r.annotation).toBeNull();
+    // A House week-list naming it is answered by the House's agreement.
+    const signal = { tier0: { chamber: 'house', published: FRESH, covers: FRESH, source: 'billsthisweek', quote: 'x', url: 'https://example.invalid' } };
+    expect(announcementAnswered(b, signal)).toBe(true);
+  });
+
+  test('the "failed" refusal, on its own', () => {
+    const t = 'On motion that the House suspend the rules and concur in the Senate amendment failed. Motion to reconsider laid on the table Agreed to without objection.';
+    expect(amendmentExchange(t)).toBeNull();
+    expect(amendmentExchangeContinues(t)).toBeNull();
+    expect(amendmentExchangeFailed(t)).toBe('house');
+  });
+
+  test('senators’ names of more than one word', () => {
+    expect(amendmentExchange('Motion by Senator Van Hollen to concur in the House amendment to S. 1234 agreed to in Senate by Voice Vote.')).toEqual({ chamber: 'senate', final: true });
+    expect(amendmentExchangeMotionMade('Motion by Senator Cortez Masto to concur in the House amendment to S. 1234 made in Senate.')).toBe(true);
+    expect(amendmentExchange('Motion by Senator Cortez Masto to concur in the House amendment to S. 1234 with an amendment (SA 2601) agreed to in Senate by Voice Vote.')).toEqual({ chamber: 'senate', final: false });
+  });
+
+  test('the script for a bill passed in different versions: the opening, the stance line and the rule agree', () => {
+    const back = { ...SIX['hr-5349-119'], title: 'A bill.', bill_number: 5349, short_title: null, ai_summary: 'A summary.' };
+    const p = buildScriptPrompt({ bill: back, stance: 'support', lang: 'en' });
+    expect(p).toContain('so it must never assume, name, or imply a single chamber, except in the one sentence that says where the bill stands, which names the House exactly as the stance line below gives it.');
+    expect(p).toContain('naming a chamber or title is not, except the one sentence that says where the bill stands, which names the House as the stance line above gives it.');
+    expect(p).toContain('The script must say so plainly, naming the House in that one sentence; never address or describe the recipient by chamber or title.');
+    expect(p).not.toContain('one exception to the chamber-neutral rule');
+    // What the script asks is unchanged from round 3.
+    expect(p).toContain('urges the member to publicly back it while the House settles the changes.');
+    expect(p).toContain('NEVER ask the member to vote for or against this bill');
+    // Every other bill's prompt keeps its sentences exactly.
+    const other = { ...bill({ bill_type: 'hr', status: 'committee', last_action_text: 'Referred to the House Committee on Rules.' }), title: 'A bill.', bill_number: 1, short_title: null, ai_summary: 'A summary.' };
+    const q = buildScriptPrompt({ bill: other, stance: 'support', lang: 'en' });
+    expect(q).toContain('so it must never assume, name, or imply a single chamber.\n');
+    expect(q).toContain('naming a chamber or title is not.\n');
+    expect(q).not.toContain('except in the one sentence');
   });
 });
 

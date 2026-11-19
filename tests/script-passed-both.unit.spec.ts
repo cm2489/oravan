@@ -150,6 +150,17 @@ const TO_PRESIDENT: Record<Stance, string> = {
   undecided: `${concerned('asks the member to state a public position on the bill before the president acts on it')} ${TO_PRESIDENT_WHERE} ${NEVER}`,
 };
 
+// Presented to the President (2026-11-18, #523): the stepper's tense, the Big
+// Questions line's own sentence.
+const PRESENTED_WHERE =
+  'Where the bill stands: Both chambers passed it, and it has been sent to the president. The script must say so plainly.';
+
+const PRESENTED: Record<Stance, string> = {
+  support: `The caller SUPPORTS this bill and urges the member to publicly back it before the president acts on it. ${PRESENTED_WHERE} ${NEVER}`,
+  oppose: `The caller OPPOSES this bill and urges the member to publicly oppose it before the president acts on it. ${PRESENTED_WHERE} ${NEVER}`,
+  undecided: `${concerned('asks the member to state a public position on the bill before the president acts on it')} ${PRESENTED_WHERE} ${NEVER}`,
+};
+
 const NEXT_UNSTATED_WHERE =
   'Where the bill stands: both chambers of Congress have passed this bill. The script must say so plainly, and must not say what happens to the bill next (for example, never say that it goes to the president).';
 
@@ -247,7 +258,7 @@ test.describe('every other stage is unchanged', () => {
 
   test('corpus sweep: only passed_both changes, and the president is named only where the page names it', () => {
     let swept = 0;
-    const readings = { to_president: 0, next_unstated: 0 };
+    const readings = { to_president: 0, presented: 0, next_unstated: 0 };
     for (const raw of bills as unknown as Array<Fixture & Pick<Bill, 'congress_number'>>) {
       const id = `${raw.bill_type}-${raw.bill_number}-${raw.congress_number}`;
       const reading = passedBothReading(raw);
@@ -271,12 +282,14 @@ test.describe('every other stage is unchanged', () => {
         readings[reading]++;
         const nowKey = deriveJourney(raw).nowKey;
         const presidentNext = nowKey === 'nowPassedBoth' && journeyEnding(raw.bill_type, raw.title) === 'president';
-        // The script says "goes to the president next" exactly when the
-        // stepper beside it does, for a vehicle that really ends there.
-        expect(reading === 'to_president', `${id}: ${nowKey}`).toBe(presidentNext);
+        // The script names the president exactly when the stepper beside it
+        // does, for a vehicle that really ends there; and it says "has been
+        // sent to the president" exactly when the stepper does (presented).
+        expect(reading === 'to_president' || reading === 'presented', `${id}: ${nowKey}`).toBe(presidentNext);
+        expect(reading === 'presented', `${id}: presented`).toBe(deriveJourney(raw).presented === true);
         for (const stance of STANCE_ORDER) {
           const line = stanceLine(raw, stance);
-          expect(line, id).toBe((reading === 'to_president' ? TO_PRESIDENT : NEXT_UNSTATED)[stance]);
+          expect(line, id).toBe((reading === 'to_president' ? TO_PRESIDENT : reading === 'presented' ? PRESENTED : NEXT_UNSTATED)[stance]);
           expect(line, id).not.toContain('urges the member to vote');
         }
       }
@@ -291,7 +304,7 @@ test.describe('every other stage is unchanged', () => {
 
 test.describe('the wording', () => {
   test('support and oppose are one sentence with the verb swapped, in both readings', () => {
-    for (const lines of [TO_PRESIDENT, NEXT_UNSTATED]) {
+    for (const lines of [TO_PRESIDENT, PRESENTED, NEXT_UNSTATED]) {
       expect(lines.support.replace('SUPPORTS', 'OPPOSES').replace('publicly back it', 'publicly oppose it')).toBe(
         lines.oppose
       );
