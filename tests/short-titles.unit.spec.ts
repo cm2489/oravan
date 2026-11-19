@@ -190,9 +190,9 @@ test('the nightly runs the gate before it writes, the step is bounded, and it ca
   const sync = readFileSync(join(process.cwd(), 'scripts/sync-short-titles.mjs'), 'utf8');
   // The gate runs in settleNight (lib/short-titles-night.mjs), before anything is written.
   expect(sync.indexOf('settleNight(')).toBeGreaterThan(0);
-  expect(sync.indexOf('settleNight(')).toBeLessThan(sync.indexOf('writeFileSync(OUT'));
+  expect(sync.indexOf('settleNight(')).toBeLessThan(sync.indexOf('writeWhole(OUT'));
   // The titles file is written only when the gate gave a write (settled.write), never otherwise.
-  expect(sync).toContain('if (settled.write?.titles) {\n      writeFileSync(OUT, settled.write.text);');
+  expect(sync).toContain('if (settled.write?.titles) {\n      writeWhole(OUT, settled.write.text);');
   const night = readFileSync(join(process.cwd(), 'lib/short-titles-night.mjs'), 'utf8');
   expect(night).toContain('verifyShortTitles({ data: JSON.parse(text), bills, before, allowDrop })');
   // The URL carries the key: no line of the script prints it or a message built from it.
