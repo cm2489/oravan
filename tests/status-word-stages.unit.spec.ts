@@ -671,8 +671,9 @@ test.describe('the property: no not-final marker is ever read as final', () => {
   test(`there are final rows to test (${finals.length})`, () => expect(finals.length).toBeGreaterThan(5));
   for (const text of finals) {
     // "to the title" marks an amendment to the title ALONE; a sentence that
-    // already names the text and the title is not title-only by definition.
-    for (const marker of MARKERS.filter((m) => !(m === 'to the title' && /\btext and title\b/i.test(text)))) {
+    // already names the text ("to the text", "text and title") is not
+    // title-only by definition, so that marker is not put into it.
+    for (const marker of MARKERS.filter((m) => !(m === 'to the title' && /\b(?:to the text|text and title)\b/i.test(text)))) {
       test(`"${marker}" in: ${text.slice(0, 70)}`, () => {
         const marked = text.replace(/\b(amendments?)\b/i, `$1 ${marker}`);
         expect(marked).not.toBe(text);
