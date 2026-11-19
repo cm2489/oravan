@@ -102,6 +102,25 @@ export function rememberMembers(entry: MembersEntry | null, mode: 'push' | 'repl
   else window.history.replaceState(state, '', address);
 }
 
+/**
+ * AN ERASED ENTRY IS EMPTIED WHEN THE PAGE STANDS ON IT AGAIN (2026-11-18). A
+ * page can rewrite only the history entry it stands on, so the ZIP an erase
+ * made unreadable stays in an earlier entry until the visitor comes back to
+ * it: then it is taken out, here. No address, so Next.js's own replaceState
+ * only carries its router keys over. Browser only.
+ */
+export function forgetStaleEntry() {
+  const state = window.history.state as Record<string, unknown> | null;
+  if (!state || !(ENTRY_KEY in state) || readEntry(state, entryTag())) return;
+  const { [ENTRY_KEY]: _stale, ...rest } = state;
+  void _stale;
+  try {
+    window.history.replaceState(rest, '');
+  } catch {
+    /* unreadable all the same: its tag is gone */
+  }
+}
+
 /** The entry the current history entry holds. Browser only. */
 export function currentEntry(): MembersEntry | null {
   return readEntry(window.history.state, entryTag());

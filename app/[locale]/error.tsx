@@ -5,6 +5,7 @@ import { Trash2 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { getPathname } from '@/i18n/navigation';
 import { eraseAll } from '@/lib/local';
+import { ERASED_MARK } from '@/components/ErasedNotice';
 
 /*
  * Segment-level error boundary. Scoped to [locale] on purpose: a throw here is
@@ -73,6 +74,10 @@ import { eraseAll } from '@/lib/local';
  */
 const reload = () => window.location.reload();
 
+/** The same document: only the part after `#` may differ. */
+const isSamePage = (to: URL) =>
+  to.origin === window.location.origin && to.pathname === window.location.pathname && to.search === window.location.search && to.hash !== '';
+
 export default function LocaleError({ error }: { error: Error & { digest?: string }; reset: () => void }) {
   const t = useTranslations('errorBoundary');
   const locale = useLocale();
@@ -97,22 +102,36 @@ export default function LocaleError({ error }: { error: Error & { digest?: strin
       if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
       const link = e.target instanceof Element ? e.target.closest('a[href]') : null;
       if (!(link instanceof HTMLAnchorElement) || (link.target && link.target !== '_self') || link.hasAttribute('download')) return;
+      // A jump within this page ("Skip to content", any #link here) loads
+      // nothing and asks nothing of the router: the browser's own.
+      if (isSamePage(new URL(link.href))) return;
       // Loading the link's address is what the browser does for any link the
-      // router does not take (another site's, the skip link's #main), so this
-      // asks nothing of them that their default would not.
+      // router does not take (another site's), so this asks nothing of them
+      // that their default would not.
       e.preventDefault();
       e.stopPropagation();
       window.location.assign(link.href);
     }
+    let here = window.location.href;
     function onPopState(e: PopStateEvent) {
       e.stopImmediatePropagation();
+      const was = new URL(here);
+      here = window.location.href;
+      // Back or Forward over an in-page jump moves within this page: the
+      // browser has already scrolled, and there is nothing to load.
+      if (was.pathname === window.location.pathname && was.search === window.location.search) return;
       reload(); // the address is already the entry Back or Forward chose
+    }
+    function onHashChange() {
+      here = window.location.href;
     }
     window.addEventListener('click', onClick, true);
     window.addEventListener('popstate', onPopState, true);
+    window.addEventListener('hashchange', onHashChange);
     return () => {
       window.removeEventListener('click', onClick, true);
       window.removeEventListener('popstate', onPopState, true);
+      window.removeEventListener('hashchange', onHashChange);
     };
   }, []);
 
@@ -169,16 +188,19 @@ export default function LocaleError({ error }: { error: Error & { digest?: strin
               ref={(el) => el?.focus()}
               onClick={() => {
                 eraseAll();
-                // The current history entry is emptied as well: it may hold
+                // The current history entry is replaced as well: it may hold
                 // the ZIP the members page last showed (lib/members-entry.ts).
                 // The erase already made every entry's copy unreadable (its
                 // tag is gone); this removes the copy itself from the one
-                // entry a page can rewrite. With no address, Next's own
-                // replaceState only carries its router keys over and does not
-                // touch the router. A refusal (Safari limits how often it may
-                // be called) must never stop the reload.
+                // entry a page can rewrite, and leaves in its place only the
+                // fact that an erase just happened, which the reloaded page
+                // reads once, says, and removes (components/ErasedNotice.tsx).
+                // With no address, Next's own replaceState only carries its
+                // router keys over and does not touch the router. A refusal
+                // (Safari limits how often it may be called) must never stop
+                // the reload.
                 try {
-                  window.history.replaceState(null, '');
+                  window.history.replaceState({ [ERASED_MARK]: true }, '');
                 } catch {
                   /* the tag already covers this entry */
                 }

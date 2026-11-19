@@ -86,6 +86,12 @@ const CALLS_KEY = 'oravan.calls';
 const READS_KEY = 'oravan.reads';
 /** The members page's history-entry tag (see `ensureEntryTag` below). */
 const ENTRY_TAG_KEY = 'oravan.entry';
+/**
+ * Every key an erase removes (`eraseAll` below). tests/storage-keys.unit.spec.ts
+ * pins this list against every key the site's code can write, so a new key
+ * fails that test until it is erased here or named, with its reason, as kept.
+ */
+export const ERASED_KEYS: readonly string[] = [PREFS_KEY, CALLS_KEY, READS_KEY, ENTRY_TAG_KEY];
 
 /** The reading history is capped: past this many bills the oldest row falls
  *  off. A visitor who reads for a year should not carry an unbounded list in
@@ -120,13 +126,77 @@ if (typeof window !== 'undefined') {
 
 const listeners = new Set<() => void>();
 
-function subscribe(cb: () => void) {
+/** Exported for tests/local-blocked.unit.spec.ts; the hooks below are its users. */
+export function subscribe(cb: () => void) {
+  const onStorage = (e: StorageEvent) => {
+    noteStorageEvent(e);
+    cb();
+  };
   listeners.add(cb);
-  window.addEventListener('storage', cb);
+  watchPageShow();
+  window.addEventListener('storage', onStorage);
   return () => {
     listeners.delete(cb);
-    window.removeEventListener('storage', cb);
+    window.removeEventListener('storage', onStorage);
   };
+}
+
+/*
+ * AN ERASE IN ANOTHER TAB, OR WHILE THIS PAGE SLEPT (2026-11-18).
+ *
+ * The erase count below lived only in the tab that erased, so another open
+ * tab kept the members on its screen, a lookup it had on its way was shown
+ * and remembered, and what it did next (a street address, "Show all
+ * districts") sent the erased ZIP again. The browser tells every other tab of
+ * this site when storage changes (the `storage` event): an erase key removed
+ * (only `eraseAll` ever removes one) or the whole store cleared counts as an
+ * erase here too. Every subscriber hears the same event object, so it is
+ * counted once.
+ *
+ * A page kept in the browser's back/forward cache hears nothing while it
+ * sleeps. When it is shown again (`pageshow`, persisted), any erase key this
+ * page had read with a value and that is now gone counts as an erase, and
+ * every reader redraws.
+ *
+ * With storage blocked there is no shared store and no event: what another
+ * tab keeps is only in that tab's own memory, out of an erase's reach by
+ * construction, and it is gone when that tab reloads or closes.
+ */
+let lastStorageEvent: Event | null = null;
+
+function noteStorageEvent(e: StorageEvent) {
+  if (e === lastStorageEvent) return;
+  lastStorageEvent = e;
+  if (e.key === null || (ERASED_KEYS.includes(e.key) && e.newValue === null)) noteErase();
+}
+
+/*
+ * The other tab's erase arrives here as one event per key, and the first may
+ * come while the tag it removes is still visible to this tab: a page that
+ * redraws on that first event would read the old entry and send the erased
+ * ZIP. So every tag visible at an erase is revoked in this tab from then on,
+ * whatever order the events come in.
+ */
+const revokedTags = new Set<string>();
+
+function noteErase() {
+  const visible = read(ENTRY_TAG_KEY);
+  if (visible !== null) revokedTags.add(visible);
+  erasures += 1;
+}
+
+/** Erase keys this page has read with a value since its last erase. */
+const seenWithValue = new Set<string>();
+let watchingPageShow = false;
+
+function watchPageShow() {
+  if (watchingPageShow) return;
+  watchingPageShow = true;
+  window.addEventListener('pageshow', (e) => {
+    if (!(e as PageTransitionEvent).persisted) return;
+    if ([...seenWithValue].some((k) => read(k) === null)) noteErase();
+    notify();
+  });
 }
 
 function notify() {
@@ -169,12 +239,16 @@ function write(key: string, value: unknown) {
 /** What is stored under `key`: this visit's refused write first, then storage. */
 function read(key: string): string | null {
   const kept = memory.get(key);
-  if (kept !== undefined) return kept;
-  try {
-    return window.localStorage.getItem(key);
-  } catch {
-    return null; // blocked
+  let value: string | null = kept ?? null;
+  if (kept === undefined) {
+    try {
+      value = window.localStorage.getItem(key);
+    } catch {
+      value = null; // blocked
+    }
   }
+  if (value !== null && ERASED_KEYS.includes(key)) seenWithValue.add(key);
+  return value;
 }
 
 /**
@@ -409,7 +483,7 @@ const TAG_RE = /^[0-9a-f]{32}$/;
 
 export function entryTag(): string | null {
   const raw = read(ENTRY_TAG_KEY);
-  return raw !== null && TAG_RE.test(raw) ? raw : null;
+  return raw !== null && TAG_RE.test(raw) && !revokedTags.has(raw) ? raw : null;
 }
 
 export function ensureEntryTag(): string {
@@ -428,10 +502,12 @@ export function ensureEntryTag(): string {
 }
 
 /**
- * How many times this page's JavaScript has erased. The members page compares
- * it with the count at the time it found its members: an erase after that
- * drops them from the screen, and a lookup still on its way when the erase
- * came is discarded rather than shown and remembered.
+ * How many erases this page has seen: its own, another tab's (the `storage`
+ * event) and one made while it slept in the back/forward cache (see "AN ERASE
+ * IN ANOTHER TAB" above). Every reader of the ZIP compares it with the count
+ * at the moment the visitor acted: members found before a later erase are
+ * not shown, and an answer that arrives after one is discarded rather than
+ * shown and remembered.
  */
 let erasures = 0;
 
@@ -453,6 +529,7 @@ export function useErasures(): number {
  */
 export function eraseAll() {
   memory.clear();
+  seenWithValue.clear();
   try {
     window.localStorage.removeItem(PREFS_KEY);
     window.localStorage.removeItem(CALLS_KEY);

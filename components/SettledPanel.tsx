@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type Re
 import { RotateCcw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
-import { usePrefs } from '@/lib/local';
+import { erasureCount, usePrefs } from '@/lib/local';
 import { houseFinderRows, type FinderMember } from '@/lib/house-finder';
 import { crossesStateLine } from '@/lib/state-line';
 import type { SettledVoteGroup } from '@/lib/settled-votes';
@@ -131,9 +131,12 @@ export function SettledPanel({
       return;
     }
     setLookup({ status: 'loading' });
+    const asked = erasureCount();
     lookupReps(zip)
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((d: { reps: Legislator[]; vacancies?: District[]; multiDistrict?: boolean }) => {
+        // Erased while the answer was on its way (lib/local.ts): not shown.
+        if (erasureCount() !== asked) return;
         setLookup({
           status: 'ready',
           members: d.reps.map(({ bioguide, name, state, type, district }) => ({ bioguide, name, state, type, district })),

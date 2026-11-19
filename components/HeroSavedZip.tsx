@@ -3,7 +3,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useFormatter, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
-import { savedZip } from '@/lib/local';
+import { erasureCount, savedZip, useErasures } from '@/lib/local';
 import {
   memberRole,
   namedMembers,
@@ -64,17 +64,23 @@ import { lookupReps } from '@/lib/reps-lookup';
 export function HeroSavedZip({ children }: { children: ReactNode }) {
   const t = useTranslations();
   const format = useFormatter();
-  const [saved, setSaved] = useState<{ zip: string; answer: LookupAnswer } | null>(null);
+  // With the erase count it was found under (lib/local.ts): an erase here or
+  // in another tab takes the members back off the hero.
+  const [saved, setSaved] = useState<{ zip: string; answer: LookupAnswer; erasures: number } | null>(null);
+  const erasures = useErasures();
 
   useEffect(() => {
     const zip = savedZip();
     if (!zip) return;
+    const asked = erasureCount();
     let live = true;
     lookupReps(zip)
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((body: unknown) => {
         const answer = readLookup(body);
-        if (live && answer && namedMembers(answer).length > 0) setSaved({ zip, answer });
+        if (live && erasureCount() === asked && answer && namedMembers(answer).length > 0) {
+          setSaved({ zip, answer, erasures: asked });
+        }
       })
       .catch(() => {
         /* the form stays: a lookup that did not go through names nobody */
@@ -84,7 +90,7 @@ export function HeroSavedZip({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  if (!saved) return <>{children}</>;
+  if (!saved || saved.erasures !== erasures) return <>{children}</>;
 
   const { zip, answer } = saved;
   const members = namedMembers(answer);

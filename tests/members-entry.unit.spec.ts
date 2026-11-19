@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { ENTRY_KEY, entryFor, readEntry, rememberMembers, sameEntry } from '../lib/members-entry';
+import { ENTRY_KEY, entryFor, forgetStaleEntry, readEntry, rememberMembers, sameEntry } from '../lib/members-entry';
 import { membersFor } from '../lib/members';
 import { eraseAll } from '../lib/local';
 
@@ -106,4 +106,44 @@ test('rememberMembers: only its own key goes in, the address loses the lookup, p
   // Never Next.js's own marker: an object holding __NA would skip the
   // router's copy of its state (app-router.js, 16.2.12).
   for (const c of calls) expect(c.state).not.toHaveProperty('__NA');
+});
+
+test('forgetStaleEntry: an entry the erase made unreadable is emptied; a current one is kept', () => {
+  const calls: unknown[] = [];
+  const stored = new Map<string, string>();
+  const history = {
+    state: null as unknown,
+    replaceState: (state: unknown) => {
+      calls.push(state);
+      history.state = state;
+    },
+  };
+  (globalThis as unknown as { window: unknown }).window = {
+    history,
+    localStorage: {
+      getItem: (k: string) => stored.get(k) ?? null,
+      setItem: (k: string, v: string) => void stored.set(k, v),
+      removeItem: (k: string) => void stored.delete(k),
+    },
+  };
+  try {
+    eraseAll();
+    stored.set('oravan.entry', TAG);
+    // Current: kept, untouched.
+    history.state = { __NA: true, [ENTRY_KEY]: { zip: '10001', tag: TAG } };
+    forgetStaleEntry();
+    expect(calls).toEqual([]);
+    // Erased since (no tag): the ZIP goes, the router's own keys stay.
+    eraseAll();
+    forgetStaleEntry();
+    expect(calls).toEqual([{ __NA: true }]);
+    // Nothing of ours in the entry: nothing to do.
+    calls.length = 0;
+    forgetStaleEntry();
+    history.state = null;
+    forgetStaleEntry();
+    expect(calls).toEqual([]);
+  } finally {
+    delete (globalThis as { window?: unknown }).window;
+  }
 });

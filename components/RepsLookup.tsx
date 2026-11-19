@@ -11,7 +11,7 @@ import { RepCard } from '@/components/RepCard';
 import { VacantSeatCard } from '@/components/VacantSeatCard';
 import { lookupMembers } from '@/lib/members-action';
 import type { MembersResult } from '@/lib/members';
-import { currentEntry, entryFor, readEntry, rememberMembers, sameEntry, type MembersEntry } from '@/lib/members-entry';
+import { currentEntry, entryFor, forgetStaleEntry, readEntry, rememberMembers, sameEntry, type MembersEntry } from '@/lib/members-entry';
 import { entryTag, erasureCount, useErasures } from '@/lib/local';
 
 /*
@@ -88,13 +88,17 @@ export function RepsLookup({ initial, legacy, preview, switchboard, continuation
   const [live, setLive] = useState<{ members: MembersResult | null; erasures: number } | undefined>(undefined);
   // AN ERASE TAKES THE MEMBERS OFF THE SCREEN (2026-11-18). "Erase my data"
   // on this page (components/YourRecord.tsx) used to leave the members and
-  // the ZIP standing above it. Members found before the latest erase are not
-  // shown; the prompt comes back, with its field empty.
+  // the ZIP standing above it. Members found before the latest erase (here,
+  // in another tab, or while the page slept: lib/local.ts) are not shown; the
+  // prompt comes back, with its field empty. The members an old /reps?zip=
+  // link drew on the server (`formState`) show only while this page has seen
+  // no erase at all: on Back the router draws them again from its own
+  // memory, long after an erase, with no request to tell it otherwise.
   const erasures = useErasures();
   const [erasuresAtOpen] = useState(erasures);
   const result =
     live === undefined
-      ? erasures === erasuresAtOpen
+      ? erasures === 0
         ? formState
         : null
       : live.erasures === erasures
@@ -110,6 +114,7 @@ export function RepsLookup({ initial, legacy, preview, switchboard, continuation
   // that up; otherwise, for an old link, keep its lookup in the entry and
   // drop it from the address, one tick later (see above).
   useEffect(() => {
+    forgetStaleEntry();
     if (!initial) return; // the prompt's arrival (SavedZipLookup) reads the entry
     const entry = currentEntry();
     if (entry && !sameEntry(entry, entryFor(initial))) {
@@ -117,7 +122,11 @@ export function RepsLookup({ initial, legacy, preview, switchboard, continuation
       return;
     }
     if (!legacy) return;
-    const id = setTimeout(() => rememberMembers(entryFor(initial), 'replace'), 0);
+    // Never after an erase (see `result` above): that would write the
+    // erased ZIP into this tab's history again, under a new tag.
+    const id = setTimeout(() => {
+      if (erasureCount() === 0) rememberMembers(entryFor(initial), 'replace');
+    }, 0);
     return () => clearTimeout(id);
     // Once, when the page opens: `lookup` is a new function on every render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -130,10 +139,17 @@ export function RepsLookup({ initial, legacy, preview, switchboard, continuation
     function onPopState(e: PopStateEvent) {
       const entry = readEntry(e.state, entryTag());
       if (entry) void lookup(entry, 'none');
+      else forgetStaleEntry();
     }
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
+
+  // An erase (here, in another tab, or while the page slept) also takes the
+  // ZIP out of the history entry this page stands on.
+  useEffect(() => {
+    if (erasures !== erasuresAtOpen) forgetStaleEntry();
+  }, [erasures, erasuresAtOpen]);
 
   // A saved-ZIP arrival at /reps#your-calls: the router scrolled to the hash
   // before the members were in, so scroll again once they are.
@@ -154,10 +170,14 @@ export function RepsLookup({ initial, legacy, preview, switchboard, continuation
   async function lookup(
     { zip, district }: MembersEntry,
     history: 'push' | 'replace' | 'none',
-    fromArrival = false
+    fromArrival = false,
+    // The erase count when the visitor acted. A caller that waited for
+    // something first (the street-address check) passes the count from
+    // before its wait, so an erase during it still counts.
+    erasuresAtStart = erasureCount()
   ): Promise<boolean> {
+    if (erasureCount() !== erasuresAtStart) return true;
     const ticket = ++latest.current;
-    const erasuresAtStart = erasureCount();
     // A POST body, built field by field: the ZIP is never in an address.
     const body = new FormData();
     for (const [name, value] of Object.entries({ zip, district })) if (value) body.append(name, value);
@@ -274,7 +294,7 @@ export function RepsLookup({ initial, legacy, preview, switchboard, continuation
           <p data-multi-district className={`mt-6 max-w-read ${NOTE}`}>
             {t('multiDistrict', { count: districts.length })}
           </p>
-          <AddressForm zip={zip} onRefined={(district) => lookup({ zip, district }, 'push')} />
+          <AddressForm zip={zip} onRefined={(district, asked) => lookup({ zip, district }, 'push', false, asked)} />
         </>
       )}
 

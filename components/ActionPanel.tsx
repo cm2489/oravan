@@ -18,7 +18,7 @@ import type { VehicleKind } from '@/lib/moments';
 // string literal restated here — the route rejects an unrecognized audience
 // with a 400 rather than defaulting it, so a typo would be a dead control.
 import type { NominationAudience } from '@/lib/nomination-script';
-import { upsertCall, useCalls, usePrefs } from '@/lib/local';
+import { erasureCount, upsertCall, useCalls, usePrefs } from '@/lib/local';
 import { shareRepLookup } from '@/lib/rep-lookup-share';
 import { crossesStateLine, nameWithState } from '@/lib/state-line';
 import type { CallOutcome, Legislator, Stance } from '@/lib/types';
@@ -641,9 +641,14 @@ export function ActionPanel({
       return;
     }
     setLookup({ status: 'loading' });
+    const asked = erasureCount();
     lookupReps(zip)
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((d) => {
+        // Erased (here, in another tab: lib/local.ts) while the answer was on
+        // its way: the members of a ZIP that no longer exists here are
+        // neither shown nor shared.
+        if (erasureCount() !== asked) return;
         setLookup({
           status: 'ready',
           reps: d.reps,
