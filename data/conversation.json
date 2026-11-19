@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-19T12:55:53.851Z",
+    "fetched_at": "2026-11-19T21:27:24.317Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-19T12:55:53.851Z"
+        "checked_at": "2026-11-19T21:27:24.317Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-15",
         "week_label": "Most-Viewed Bills - Week of November 15, 2026",
         "entries": 7,
-        "checked_at": "2026-11-19T12:55:53.851Z"
+        "checked_at": "2026-11-19T21:27:24.317Z"
       },
       "leans": {
         "center": {
@@ -248,6 +248,18 @@
       ],
       "mostViewed": null
     },
+    "hr-10306-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "legis1.com",
+          "firstSeen": "2026-11-19",
+          "lastSeen": "2026-11-19",
+          "url": "https://news.google.com/rss/articles/CBMifEFVX3lxTE1mU00yZGdqMDRfblRiOXpvNXcxV0lEbm9BZTNRUWNUdFR2RkVmVktlSXhqR0VVQzdmeFZQU2VTTHB2aGpCaU9HR2FRUWJWaFFTX2ZybHV3d1piQjNidkQ3LWh3bVVCZnhhOEt1Q3VORXpBbXNhaVBlM3hmazE?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-139-119": {
       "outlets7d": [],
       "unratedOutlets7d": [],
@@ -257,6 +269,19 @@
         "lastSeen": "2026-11-16",
         "lastWeek": "2026-11-08"
       }
+    },
+    "hr-1483-119": {
+      "outlets7d": [
+        {
+          "domain": "cnbc.com",
+          "lean": "center",
+          "firstSeen": "2026-11-19",
+          "lastSeen": "2026-11-19",
+          "url": "https://news.google.com/rss/articles/CBMinAFBVV95cUxPMVctUXhRS0hBU193czF4c2hVSTcwQ1l6MUk4RDFtc2Z5Q1dEY2VnRjVGMDVFQkhfVElFOVJlWVBDNDZmWlhPeXBsdGhvM2gyaEswNF9YYXZwWnNfcGpGR2ZiVENMd2dnZV9hblJSaFVmY2t3UHdFaUZpR01oNS1YeEY2a3czOVdPamRJcGszNDZ0WFVwMmNEMUpFbTHSAaIBQVVfeXFMT0dOdnk1T2xPM2Q2OUtWcXlHN04xQVNiX1ZDN01qclJlb0VsNWlCVDMtYk00Smc3WnY0VXNrUmtuY2ZDdGZtSkNJMnBnSGhKQjdyOG1CMzBrSTlIVDdhTk10NmNpaHZtcmJGeTJDNUs0bHZ5RFI3ZnlpTVFpX2NPNW1BdmtHVW54NXkyU0ZhMUNrNW50ZjJXN3MxNGNwREFrWnJB?oc=5"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
     },
     "hr-1700-119": {
       "outlets7d": [],
@@ -472,6 +497,12 @@
     "hr-4464-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "quiverquant.com",
+          "firstSeen": "2026-11-19",
+          "lastSeen": "2026-11-19",
+          "url": "https://news.google.com/rss/articles/CBMiswFBVV95cUxOTWJlWXRMaV9vWmxPREhmOVdVdFY3VHpzQ1d3U3M4M2lGbFZ3VWhZZ2NOMlhjd1FnQjVxeElTYnp3VkxGX0VodHJNcmoyYmNwQ3k3aXZONWs4T3FNbjd0b1hYZ0ZkNVBvYnAyZ3BHbkFrRVJjclNOWmhkOVBiSzREbGQ3bzM2cXR5M1NaV09nZkh5S3luQkRvMU9WNTlQcWl0UVVqeGd3R2FKOWQ0V0xKT0hjcw?oc=5"
+        },
         {
           "domain": "legis1.com",
           "firstSeen": "2026-11-18",
@@ -845,6 +876,18 @@
       ],
       "mostViewed": null
     },
+    "hr-7008-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "rollcall.com",
+          "firstSeen": "2026-11-19",
+          "lastSeen": "2026-11-19",
+          "url": "https://rollcall.com/2026/11/19/house-democrats-eye-stock-trading-ban-early-priority"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-7206-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -916,6 +959,18 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-7632-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "rferl.org",
+          "firstSeen": "2026-11-19",
+          "lastSeen": "2026-11-19",
+          "url": "https://news.google.com/rss/articles/CBMihgFBVV95cUxQQnZuLXdJY25zTm5XMVJoa3o5X0JVYWlVWG9BT2tOZ2o3cHF4T1pMakl6eEg5UU83eGdyWDZCWE1Sa1cwQS1raDNlb2Q1b08wdmkxekpQdzlYcEZRQmNqWHd6VDUtTDJSSTlOTl8xOXROTVRfMGd0a1daTDF5dE1VbnpNdW5Od9IBhgFBVV95cUxQQnZuLXdJY25zTm5XMVJoa3o5X0JVYWlVWG9BT2tOZ2o3cHF4T1pMakl6eEg5UU83eGdyWDZCWE1Sa1cwQS1raDNlb2Q1b08wdmkxekpQdzlYcEZRQmNqWHd6VDUtTDJSSTlOTl8xOXROTVRfMGd0a1daTDF5dE1VbnpNdW5Odw?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "hr-7721-119": {
@@ -1138,6 +1193,19 @@
           "url": "https://news.google.com/rss/articles/CBMioAFBVV95cUxQVEZxdXR3dmtYYWhlWlg0NkdFdU51TERpNHVVWURIbWd6aXZlc2VWSkNoall1a3U3RXNhZHZGQXlENzZza0hRRlpmYnI0VFdoWXVaVXpzRkdPQW5jeXdIb1lmNkdqY0hnbDVIM0dPalhndWx0Sk5YVGpNT1F6WWVydnQyN2stS053RGFwZHAtQWxQQmtzQzNrQ0xDQUREN01S?oc=5"
         }
       ],
+      "mostViewed": null
+    },
+    "hr-9113-119": {
+      "outlets7d": [
+        {
+          "domain": "time.com",
+          "lean": "left",
+          "firstSeen": "2026-11-19",
+          "lastSeen": "2026-11-19",
+          "url": "https://news.google.com/rss/articles/CBMie0FVX3lxTE9jT3hlS1V2WGdVemUxbUROZF9fWmUxaVJQbkVKWTZMcTdoUFl3TUhjUjZGT3hUQTVmdngzT3NkR1hDUVBjSjc1bG1OV29CdXNOMU96YnNMbWlTNUJZQXkwWnFLNkNFNUZwY1I1NGk5cnRORlJPTVVmUEN3MA?oc=5"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "hr-9237-119": {
@@ -1802,25 +1870,39 @@
     "sjres-185-119": {
       "outlets7d": [
         {
-          "domain": "cnbc.com",
-          "lean": "center",
-          "firstSeen": "2026-11-18",
-          "lastSeen": "2026-11-18",
-          "url": "https://www.cnbc.com/2026/11/18/us-iran-navy-hormuz-war-cao.html"
-        },
-        {
-          "domain": "thehill.com",
-          "lean": "center",
-          "firstSeen": "2026-11-13",
-          "lastSeen": "2026-11-17",
-          "url": "https://thehill.com/policy/defense/6226459-navy-secretary-confirmation-clash/"
+          "domain": "cbsnews.com",
+          "lean": "left",
+          "firstSeen": "2026-11-19",
+          "lastSeen": "2026-11-19",
+          "url": "https://www.cbsnews.com/news/iran-war-powers-vote-senate-republicans/"
         },
         {
           "domain": "foxnews.com",
           "lean": "right",
           "firstSeen": "2026-11-14",
-          "lastSeen": "2026-11-14",
-          "url": "https://www.foxnews.com/politics/anti-trump-republican-courts-other-defectors-house-weighs-another-vote-against-iran-war"
+          "lastSeen": "2026-11-19",
+          "url": "https://www.foxnews.com/politics/dems-gop-rebels-fail-rein-trumps-iran-war-senate-bigger-battle-looms"
+        },
+        {
+          "domain": "reuters.com",
+          "lean": "center",
+          "firstSeen": "2026-11-19",
+          "lastSeen": "2026-11-19",
+          "url": "https://news.google.com/rss/articles/CBMiowFBVV95cUxOcmstcFNFWmdlWE9OT3pCd2JxN1RvaDZMZ2dlZC01YU9hUVFDdFdETmRJLWYtRWI5bkpNVHgyQUFTRVNncW9kUUZkdGhFRkl1RUx6MGs2eVhNNXhZbzROalJGQnRSSUdqdVBhQ1NuLTRONXEyQWpYemhwenhCd2VlNlY4VUZJT3NRdjBmdzBTZGxreUlHNmgyX0p4TzVxX1FvaXZR?oc=5"
+        },
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-11-13",
+          "lastSeen": "2026-11-19",
+          "url": "https://thehill.com/homenews/administration/6229360-live-updates-trump-xi-putin-china-summit-crypto-alaska-tech-outages/"
+        },
+        {
+          "domain": "cnbc.com",
+          "lean": "center",
+          "firstSeen": "2026-11-18",
+          "lastSeen": "2026-11-18",
+          "url": "https://www.cnbc.com/2026/11/18/us-iran-navy-hormuz-war-cao.html"
         }
       ],
       "unratedOutlets7d": [
