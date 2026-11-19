@@ -71,7 +71,7 @@
  * SHORT_TITLES_REQUEST_TIMEOUT_MS, SHORT_TITLES_BUDGET_MS,
  * SHORT_TITLES_RETRY_DELAY_MS.
  */
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { billApiPath } from './congress-fetch.mjs';
 import {
   SHORT_TITLES_MAX_PER_NIGHT,
@@ -105,6 +105,19 @@ const TODAY = /^\d{4}-\d{2}-\d{2}$/.test(process.env.SHORT_TITLES_TODAY ?? '') ?
 /** The one-run override: set by a person on a manual run, never honoured on a schedule. */
 const ALLOW_DROP = process.env.SHORT_TITLES_ALLOW_DROP === '1' && process.env.GITHUB_EVENT_NAME !== 'schedule' && !NEW_ONLY;
 const API = 'https://api.congress.gov/v3';
+
+/**
+ * EVERY FILE WHOLE OR NOT AT ALL (2026-11-18). Each file is written to `<file>.tmp` and renamed over the
+ * real one, as the identical-bills step writes data/related-bills.json: a rename is atomic, so a kill (the
+ * news desk step is killed at 3 minutes, the nightly's at 25) leaves either the old file or the complete new
+ * one. A kill can leave a half-written `<file>.tmp` behind; those names are in .gitignore, so no commit can
+ * carry one, and the next write replaces it.
+ */
+function writeWhole(path, text) {
+  const tmp = `${path}.tmp`;
+  writeFileSync(tmp, text);
+  renameSync(tmp, path);
+}
 
 /** What the summary line will say, filled in as the run learns it (a crash prints what is known). */
 const summary = { day: TODAY };
@@ -298,19 +311,19 @@ async function main() {
   const written = [];
   try {
     if (settled.write?.titles) {
-      writeFileSync(OUT, settled.write.text);
+      writeWhole(OUT, settled.write.text);
       written.push(OUT);
     } else if (settled.write) console.log(`short titles: no bill read, so ${OUT} is left as it was`);
     if (settled.write) {
       const retryBefore = existsSync(RETRY_OUT) ? readFileSync(RETRY_OUT, 'utf8') : null;
       if (settled.write.retryText !== (retryBefore ?? '{}\n')) {
-        writeFileSync(RETRY_OUT, settled.write.retryText);
+        writeWhole(RETRY_OUT, settled.write.retryText);
         written.push(RETRY_OUT);
       }
     }
     // The history is the nightly's alone: one entry per nightly, never the news desk's.
     if (!NEW_ONLY) {
-      writeFileSync(TREND_OUT, trendText);
+      writeWhole(TREND_OUT, trendText);
       written.push(TREND_OUT);
     }
   } catch (e) {

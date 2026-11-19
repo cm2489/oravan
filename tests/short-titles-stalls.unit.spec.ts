@@ -7,13 +7,14 @@ import { alarms, parseShortTitlesSummary, parseShortTitlesTrouble } from '../lib
 import {
   readTitlesAnswer,
   serializeShortTitles,
+  verifyShortTitleRetries,
   SHORT_TITLE_MAX_LENGTH,
   SHORT_TITLES_MAX_REQUESTS,
   shortTitleProblem,
   verifyShortTitles,
 } from '../lib/short-titles.mjs';
 import { Refused, RETRY_PILE_MIN, runShortTitlesNight, settleNight } from '../lib/short-titles-night.mjs';
-import { nightSummary, shortTitlesAlarms } from '../lib/short-titles-summary.mjs';
+import { nightSummary, serializeTrend, shortTitlesAlarms, verifyShortTitlesTrend } from '../lib/short-titles-summary.mjs';
 import { decodeNameTables, nameAddressTarget } from '../lib/short-address';
 import { nameTablesForBuild, refusalLine, type GateBill } from '../lib/short-address-build';
 
@@ -678,14 +679,25 @@ function gitWorld() {
     git(dir, 'push', '-q', 'origin', 'HEAD:main');
   };
   /** The commit step, run as the workflow runs it, in a news desk clone. */
-  const commitStep = (dir: string) => {
+  const commitStep = (dir: string, script: string = commitScript()) => {
     const out = join(dir, '..', `${dir.split('/').pop()}-output`);
     writeFileSync(out, '');
-    const r = spawnSync('bash', ['-e', '-c', commitScript()], { cwd: dir, encoding: 'utf8', env: { ...process.env, GITHUB_OUTPUT: out } });
+    const r = spawnSync('bash', ['-e', '-c', script], { cwd: dir, encoding: 'utf8', env: { ...process.env, GITHUB_OUTPUT: out } });
     return { code: r.status, log: `${r.stdout}\n${r.stderr}`, output: readFileSync(out, 'utf8') };
   };
+  /** Another push landing first: any files (paths under the repository), from a fresh clone. */
+  const otherPush = (name: string, files: Record<string, string>) => {
+    const dir = clone(name);
+    for (const [path, text] of Object.entries(files)) {
+      mkdirSync(join(dir, path, '..'), { recursive: true });
+      writeFileSync(join(dir, path), text);
+    }
+    git(dir, 'add', '-A');
+    git(dir, 'commit', '-q', '-m', name);
+    git(dir, 'push', '-q', 'origin', 'HEAD:main');
+  };
   const onRemote = (file: string) => git(root, `--git-dir=${remote}`, 'show', `main:data/${file}`);
-  return { root, git, write, clone, nightly, commitStep, onRemote, done: () => rmSync(root, { recursive: true, force: true }) };
+  return { root, remote, git, write, clone, nightly, commitStep, otherPush, onRemote, done: () => rmSync(root, { recursive: true, force: true }) };
 }
 
 test('news desk queued behind the nightly: it starts from the nightly’s commit, adds its bill, and nothing the nightly wrote is lost', () => {
@@ -766,4 +778,291 @@ test('news desk: the runbook says what it does and how names can still go off be
   expect(runbook).toContain('the step "Read the short titles of bills added since the nightly"');
   expect(runbook).toContain('on an hour that added no bill it makes no request and writes nothing, and before the first fill has completed it reads nothing at all');
   expect(runbook).toContain("the commit step drops this run's two short-titles files rather than merge them");
+});
+
+// --- follow-ups of #522 (2026-11-18) ----------------------------------------------------------
+
+const deskEdit = (w: ReturnType<typeof gitWorld>, desk: string, conversation = '{"v":2}\n') => {
+  const titles = JSON.parse(readFileSync(join(desk, 'data', 'short-titles.json'), 'utf8'));
+  const text = serializeShortTitles({ ...titles, [slug(500)]: readTitles(500) }, [...Object.keys(titles).map((k) => Number(k.split('-')[1])), 500].map((n) => bill(n)));
+  w.write(desk, 'short-titles.json', text);
+  if (conversation !== null) w.write(desk, 'conversation.json', conversation);
+  return text;
+};
+
+test('follow-up 1: rejected by a push that did not touch the titles files: the titles are kept and pushed', () => {
+  const w = gitWorld();
+  try {
+    const desk = w.clone('desk-code');
+    w.otherPush('code-only', { 'app.txt': 'code\n' });
+    const mine = deskEdit(w, desk);
+    const r = w.commitStep(desk);
+    expect(r.code, r.log).toBe(0);
+    expect(r.log).not.toContain('dropped');
+    expect(w.onRemote('short-titles.json')).toBe(mine.trim());
+    expect(w.onRemote('conversation.json')).toBe('{"v":2}');
+    expect(w.git(w.root, `--git-dir=${w.remote}`, 'show', 'main:app.txt')).toBe('code');
+  } finally {
+    w.done();
+  }
+});
+
+test('follow-up 1: rejected by a push that changed only the retry file: this run’s titles are dropped, the other push’s file is intact', () => {
+  const w = gitWorld();
+  try {
+    const desk = w.clone('desk-retry');
+    const theirs = '{\n"hr-2-119":{"failures":1,"last_tried":"2026-11-15","reason":"HTTP 503"}\n}\n';
+    w.otherPush('retry-only', { 'data/short-titles-retry.json': theirs });
+    const titlesBefore = w.onRemote('short-titles.json');
+    deskEdit(w, desk);
+    const r = w.commitStep(desk);
+    expect(r.code, r.log).toBe(0);
+    expect(r.log).toContain("this run's short titles were dropped rather than merged");
+    expect(w.onRemote('short-titles-retry.json')).toBe(theirs.trim());
+    expect(w.onRemote('short-titles.json')).toBe(titlesBefore);
+    expect(w.onRemote('conversation.json')).toBe('{"v":2}');
+  } finally {
+    w.done();
+  }
+});
+
+test('follow-up 1: rejected twice, first by a code push (titles kept), then by a titles push (dropped): the base is re-read each time', () => {
+  const w = gitWorld();
+  try {
+    const desk = w.clone('desk-twice');
+    const a = w.clone('other-a');
+    const b = w.clone('other-b');
+    const theirs = serializeShortTitles(allRead([...range(3), 900]), [...range(3), 900].map((n) => bill(n)));
+    writeFileSync(join(w.root, 'theirs.json'), theirs);
+    // A pre-push hook in the news desk's clone lands another push just before each of its first two pushes.
+    const hook = join(desk, '.git', 'hooks', 'pre-push');
+    writeFileSync(
+      hook,
+      `#!/bin/bash
+unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_PREFIX
+n=$(cat "${w.root}/count" 2>/dev/null || echo 0); n=$((n+1)); echo $n > "${w.root}/count"
+g() { git -c user.name=t -c user.email=t@t "$@"; }
+if [ "$n" = 1 ]; then cd "${a}" && g pull -q --rebase origin main && echo code > app.txt && g add -A && g commit -qm code && g push -q origin HEAD:main; fi
+if [ "$n" = 2 ]; then cd "${b}" && g pull -q --rebase origin main && cp "${w.root}/theirs.json" data/short-titles.json && g add -A && g commit -qm titles && g push -q origin HEAD:main; fi
+exit 0
+`,
+    );
+    spawnSync('chmod', ['+x', hook]);
+    deskEdit(w, desk);
+    const r = w.commitStep(desk);
+    expect(r.code, r.log).toBe(0);
+    expect(r.log).toContain('push rejected, rebasing onto latest main (attempt 1)');
+    expect(r.log).toContain('push rejected, rebasing onto latest main (attempt 2)');
+    expect(r.log.match(/dropped rather than merged/g)).toHaveLength(1);
+    expect(w.onRemote('short-titles.json')).toBe(theirs.trim());
+    expect(w.onRemote('conversation.json')).toBe('{"v":2}');
+    expect(w.git(w.root, `--git-dir=${w.remote}`, 'show', 'main:app.txt')).toBe('code');
+    expect(r.output).toMatch(/^changed=true\nsha=[0-9a-f]{40}\n$/);
+  } finally {
+    w.done();
+  }
+});
+
+test('follow-up 1: rejected twice, both times by titles pushes: dropped once, and neither other push’s titles are undone', () => {
+  const w = gitWorld();
+  try {
+    const desk = w.clone('desk-titles-twice');
+    const a = w.clone('other-a');
+    const t1 = serializeShortTitles(allRead([...range(3), 901]), [...range(3), 901].map((n) => bill(n)));
+    const t2 = serializeShortTitles(allRead([...range(3), 901, 902]), [...range(3), 901, 902].map((n) => bill(n)));
+    writeFileSync(join(w.root, 't1.json'), t1);
+    writeFileSync(join(w.root, 't2.json'), t2);
+    const hook = join(desk, '.git', 'hooks', 'pre-push');
+    writeFileSync(
+      hook,
+      `#!/bin/bash
+unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_PREFIX
+n=$(cat "${w.root}/count" 2>/dev/null || echo 0); n=$((n+1)); echo $n > "${w.root}/count"
+g() { git -c user.name=t -c user.email=t@t "$@"; }
+if [ "$n" -le 2 ]; then cd "${a}" && g pull -q --rebase origin main && cp "${w.root}/t$n.json" data/short-titles.json && g add -A && g commit -qm "titles $n" && g push -q origin HEAD:main; fi
+exit 0
+`,
+    );
+    spawnSync('chmod', ['+x', hook]);
+    deskEdit(w, desk);
+    const r = w.commitStep(desk);
+    expect(r.code, r.log).toBe(0);
+    expect(r.log.match(/dropped rather than merged/g)).toHaveLength(1);
+    expect(w.onRemote('short-titles.json')).toBe(t2.trim());
+    expect(w.onRemote('conversation.json')).toBe('{"v":2}');
+  } finally {
+    w.done();
+  }
+});
+
+test('follow-up 1: a run that does not touch the titles behaves exactly as main’s commit step, in every case', () => {
+  const OLD = readFileSync(join(process.cwd(), 'tests/fixtures/newsdesk-commit-step-5bfd2b9d.sh'), 'utf8');
+  type Case = (w: ReturnType<typeof gitWorld>, desk: string) => void;
+  const cases: Array<[string, Case]> = [
+    ['the push lands first time', (w, desk) => w.write(desk, 'conversation.json', '{"v":2}\n')],
+    ['rejected by a code push, rebased', (w, desk) => {
+      w.otherPush('code', { 'app.txt': 'code\n' });
+      w.write(desk, 'conversation.json', '{"v":2}\n');
+    }],
+    ['rejected by a push to the same data file: a conflict, nothing committed', (w, desk) => {
+      w.otherPush('conflict', { 'data/conversation.json': '{"v":9}\n' });
+      w.write(desk, 'conversation.json', '{"v":2}\n');
+    }],
+    ['rejected by a titles push while this run changed no titles', (w, desk) => {
+      w.otherPush('titles', { 'data/short-titles.json': serializeShortTitles(allRead([...range(3), 900]), [...range(3), 900].map((n) => bill(n))) });
+      w.write(desk, 'conversation.json', '{"v":2}\n');
+    }],
+    ['no change at all', () => {}],
+  ];
+  for (const [label, setup] of cases) {
+    const outcome = (script: string) => {
+      const w = gitWorld();
+      try {
+        const desk = w.clone('desk');
+        setup(w, desk);
+        const r = w.commitStep(desk, script);
+        const show = (f: string) => {
+          try {
+            return w.onRemote(f);
+          } catch {
+            return null;
+          }
+        };
+        return {
+          code: r.code,
+          output: r.output.replace(/sha=[0-9a-f]{40}/, 'sha=X'),
+          errors: r.log.split('\n').filter((l) => l.startsWith('::error::')),
+          dropped: r.log.includes('dropped'),
+          files: ['conversation.json', 'short-titles.json'].map(show),
+        };
+      } finally {
+        w.done();
+      }
+    };
+    expect(outcome(commitScript()), label).toEqual(outcome(OLD));
+  }
+});
+
+test('follow-up 2: the budget is checked between the pages of one bill', async () => {
+  // A bill with 1,000 titles (4 pages); each page takes 42 s of the fake clock; the budget is 60 s.
+  let clock = 0;
+  const fetched: number[] = [];
+  const full = (offset: number) => {
+    clock += 42_000;
+    fetched.push(offset);
+    const titles = Array.from({ length: 250 }, (_, i) => ({ title: `Official title ${offset + i}`, titleType: 'Official Title as Introduced' }));
+    return { pagination: { count: 1000 }, request: { billNumber: '1', billType: 'hr', congress: '119' }, titles };
+  };
+  const night = await runShortTitlesNight({ bills: [bill(1)], file: {}, retry: {}, today: TODAY, budgetMs: 60_000, now: () => clock, fetchPage: async (_b: unknown, offset: number) => full(offset) });
+  expect(fetched).toEqual([0, 250]); // page 3 is never started: 84 s is past the 60 s budget
+  expect(night.trouble).toBe("stopped early: the step's 1-minute budget ran out (between two pages of one bill)");
+  expect(night.read).toBe(0);
+  expect(night.retry).toEqual({});
+});
+
+test('follow-up 2: a bill whose later pages answer slowly stops at the budget between its pages, within budget + one page', () => {
+  // Page 1 answers at once; pages 2 to 4 each take 1.2 s to answer (under the 3 s request ceiling). Budget: 1 s.
+  // With the check between pages: page 2 runs (it starts at ~0 s), page 3 is never started. Without it: all four.
+  const PAGE = `const titles = Array.from({ length: 250 }, (_, i) => ({ title: 'Official ' + i, titleType: 'Official Title as Introduced' }));
+  return new Response(JSON.stringify({ pagination: { count: 1000 }, request: { billNumber: number, billType: type, congress }, titles }), { status: 200 });`;
+  const stub = `if (url.searchParams.get('offset') !== '0') await new Promise((r) => setTimeout(r, 1200)); ${PAGE}`;
+  const T = 3000;
+  const B = 1000;
+  const D = 5;
+  const t0 = Date.now();
+  const r = runScript(stub, { corpus: [deskBill(1)], trend: FILLED }, { SHORT_TITLES_REQUEST_TIMEOUT_MS: String(T), SHORT_TITLES_BUDGET_MS: String(B), SHORT_TITLES_RETRY_DELAY_MS: String(D) });
+  const ms = Date.now() - t0;
+  expect(r.out).toContain("stopped early: the step's 0-minute budget ran out (between two pages of one bill)");
+  expect(calls(r.out)).toBe(2);
+  // The bound: the budget plus one page (at most two request ceilings and the pause), plus the process's start.
+  expect(ms).toBeLessThan(B + 2 * T + D + 1500);
+});
+
+test('follow-up 2: the news desk step has its short request ceiling; the nightly keeps its default', () => {
+  const step = stepBlock('Read the short titles of bills added since the nightly (name addresses)');
+  expect(step).toContain("          SHORT_TITLES_REQUEST_TIMEOUT_MS: '10000'\n");
+  const src = readFileSync(join(process.cwd(), 'scripts/sync-short-titles.mjs'), 'utf8');
+  expect(src).toContain('const REQUEST_TIMEOUT_MS = Number(process.env.SHORT_TITLES_REQUEST_TIMEOUT_MS) || 20_000;');
+  expect(readFileSync(join(process.cwd(), '.github/workflows/sync-bills.yml'), 'utf8')).not.toContain('SHORT_TITLES_REQUEST_TIMEOUT_MS');
+});
+
+test('follow-up 2: a kill at a random moment, 60 times, leaves each file the old one or a complete valid new one', async () => {
+  test.setTimeout(240_000);
+  const { spawn } = await import('node:child_process');
+  // Writes are slowed in the child (half, a pause, the rest), so a kill can land inside one.
+  const SLOW = `import fs from 'node:fs'; import { syncBuiltinESMExports } from 'node:module';
+const real = fs.writeFileSync;
+fs.writeFileSync = (p, d, ...rest) => { const s = String(d); real(p, s.slice(0, s.length >> 1), ...rest); Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 40); const fd = fs.openSync(p, 'a'); fs.writeSync(fd, s.slice(s.length >> 1)); fs.closeSync(fd); };
+syncBuiltinESMExports();
+`;
+  const corpus = range(120).map((n) => bill(n));
+  const before = titled(range(20));
+  const stub = `if (Number(number) % 7 === 0) return new Response('no', { status: 404 }); ${GOOD}`;
+  let seed = 11;
+  const rand = () => ((seed = (seed * 1103515245 + 12345) % 2 ** 31) / 2 ** 31);
+  const once = (killAt: number | null) =>
+    new Promise<{ titles: string | null; retry: string | null; trend: string | null; old: { titles: string; trend: string }; dir: string }>((resolve) => {
+      const dir = mkdtempSync(join(tmpdir(), 'short-titles-kill-'));
+      const files = { titles: join(dir, 'short-titles.json'), retry: join(dir, 'short-titles-retry.json'), trend: join(dir, 'short-titles-trend.json'), bills: join(dir, 'bills.json') };
+      const old = { titles: JSON.stringify(before), trend: serializeTrend(FILLED) };
+      writeFileSync(files.titles, old.titles);
+      writeFileSync(files.trend, old.trend);
+      writeFileSync(files.bills, JSON.stringify(corpus));
+      const preload = join(dir, 'stub.mjs');
+      writeFileSync(preload, `${SLOW}globalThis.fetch = async (input, init) => { const url = new URL(String(input)); const [, congress, type, number] = /\\/bill\\/(\\d+)\\/([a-z]+)\\/(\\d+)\\/titles/.exec(url.pathname) ?? []; ${stub} };\n`);
+      const child = spawn(process.execPath, ['--import', preload, 'scripts/sync-short-titles.mjs'], {
+        cwd: process.cwd(),
+        env: { NODE_ENV: 'test', PATH: process.env.PATH ?? '', CONGRESS_API_KEY: 'offline-test-key', SHORT_TITLES_FILE: files.titles, SHORT_TITLES_RETRY_FILE: files.retry, SHORT_TITLES_TREND_FILE: files.trend, SHORT_TITLES_BILLS: files.bills, SHORT_TITLES_TODAY: TODAY, SHORT_TITLES_RETRY_DELAY_MS: '1' },
+        stdio: 'ignore',
+      });
+      const timer = killAt === null ? null : setTimeout(() => child.kill('SIGKILL'), killAt);
+      child.on('exit', () => {
+        if (timer) clearTimeout(timer);
+        const read = (f: string) => (existsSync(f) ? readFileSync(f, 'utf8') : null);
+        resolve({ titles: read(files.titles), retry: read(files.retry), trend: read(files.trend), old, dir });
+      });
+    });
+  const t0 = Date.now();
+  const full = await once(null);
+  const span = Date.now() - t0;
+  rmSync(full.dir, { recursive: true, force: true });
+  expect(full.titles).not.toBe(full.old.titles); // a whole run does write all three
+  let cut = 0;
+  const bad: string[] = [];
+  for (let i = 0; i < 60; i++) {
+    const r = await once(Math.floor(rand() * span));
+    const ok = (name: string, text: string | null, oldText: string | null, valid: (d: unknown) => boolean) => {
+      if (text === oldText) return;
+      let data: unknown;
+      try {
+        data = JSON.parse(String(text));
+      } catch {
+        bad.push(`run ${i}: ${name} is cut off`);
+        return;
+      }
+      if (!valid(data)) bad.push(`run ${i}: ${name} is not valid`);
+    };
+    ok('titles', r.titles, r.old.titles, (d) => verifyShortTitles({ data: d, bills: corpus }).failures.length === 0);
+    ok('retry', r.retry, null, (d) => verifyShortTitleRetries({ data: d, bills: corpus }).failures.length === 0);
+    ok('trend', r.trend, r.old.trend, (d) => verifyShortTitlesTrend({ data: d }).failures.length === 0);
+    if (existsSync(join(r.dir, 'short-titles.json.tmp')) || existsSync(join(r.dir, 'short-titles-trend.json.tmp'))) cut++;
+    rmSync(r.dir, { recursive: true, force: true });
+  }
+  expect(bad).toEqual([]);
+  test.info().annotations.push({ type: 'kills that left a temporary file behind', description: String(cut) });
+});
+
+test('follow-up 2: a leftover temporary file can never be committed', () => {
+  for (const f of ['data/short-titles.json.tmp', 'data/short-titles-retry.json.tmp', 'data/short-titles-trend.json.tmp']) {
+    expect(spawnSync('git', ['check-ignore', '-q', f], { cwd: process.cwd() }).status, f).toBe(0);
+  }
+});
+
+test('follow-up 3: the runbook says a failed news desk read keeps names on, and that the health report does not read news desk runs', () => {
+  const runbook = readFileSync(join(process.cwd(), 'docs/runbooks/new-congress-switch.md'), 'utf8');
+  expect(runbook).toContain("If the news desk's read of the new bill fails, the bill goes to the retry file, so names stay ON and only the names that bill's stored title makes are held back; before this step existed they stayed off until the nightly.");
+  expect(runbook).toContain('The health report does not read news desk runs');
+  expect(runbook).toContain('a bill with more than 250 titles takes up to 4 pages, each retried once on a failure, so at most 8');
+  expect(runbook).toContain('about 0.2 to 0.5 s for the whole process');
+  expect(runbook).not.toContain('(two on a retry)');
 });
