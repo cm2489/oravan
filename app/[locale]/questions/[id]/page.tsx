@@ -4,6 +4,7 @@ import { ExternalLink } from 'lucide-react';
 import { setRequestLocale, getTranslations, getFormatter } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { settledDecision, statusKeyFor } from '@/lib/journey';
+import { calendarMarkSuspended } from '@/lib/floor-session';
 import { routing } from '@/i18n/routing';
 import { ActionPanel } from '@/components/ActionPanel';
 import { CallTabTarget } from '@/components/CallTabTarget';
@@ -26,7 +27,7 @@ import { getBill, localizeBill } from '@/lib/core';
 // forbids the barrel so no bundle pays for data/nominations.json (~520 KB) by
 // accident. This page renders one, so it pays for it deliberately.
 import { getNomination } from '@/lib/core/nominations';
-import { coverageForBillPage, getCoverage, normalizeSource } from '@/lib/coverage';
+import { coverageForBillPage, getCoverageWithTwins, normalizeSource } from '@/lib/coverage';
 import { formatCitation } from '@/lib/format';
 import { adoptedConcurrentReading } from '@/lib/concurrent-explainer';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
@@ -408,9 +409,11 @@ export default async function MomentPage({
     // 2026-11-13): a card never counts outlets for a one-sided set the bill's
     // own page does not show. On a live or stale question every vehicle is a
     // Big Question bill, so this changes nothing there; it matters on a
-    // settled question, whose bills are no longer part of one.
+    // settled question, whose bills are no longer part of one. It counts the
+    // same list the bill page shows, twins' articles included (owner,
+    // 2026-11-13), so the card and the page never disagree.
     const coverageCount = new Set(
-      coverageForBillPage(getCoverage(v.slug), getMomentsForBill(v.slug).length > 0).map((a) =>
+      coverageForBillPage(getCoverageWithTwins(v.slug).articles, getMomentsForBill(v.slug).length > 0).map((a) =>
         normalizeSource(a.source)
       )
     ).size;
@@ -428,6 +431,7 @@ export default async function MomentPage({
         statusKey={statusKeyFor(bill)}
         tags={bill.issue_tags ?? []}
         lastActionDate={bill.last_action_date}
+        floorSuspended={calendarMarkSuspended(raw)}
         coverageCount={coverageCount}
         role={localeText(v.role, locale)}
         ctaLabel={t(ctaKey)}

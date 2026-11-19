@@ -292,6 +292,8 @@
       "floor_activity": "Actividad en el pleno",
       "passed_chamber": "Aprobado por una cámara",
       "passed_both": "Aprobado por ambas cámaras",
+      "passed_back_house": "De vuelta en la Cámara para resolver los cambios",
+      "passed_back_senate": "De vuelta en el Senado para resolver los cambios",
       "adopted": "Adoptado por ambas cámaras",
       "rejected": "Rechazado",
       "conference": "En comisión mixta",
@@ -605,6 +607,7 @@
   "coverage": {
     "heading": "Cómo lo están cubriendo",
     "subhead": "Cobertura de este proyecto de ley en la prensa. La inclinación política de cada medio aparece donde AllSides la ha calificado, y se marca como \"Sin calificar\" donde no.",
+    "subheadTwins": "Cobertura de este proyecto de ley y de {citations}, {count, plural, one {un proyecto que el registro oficial señala como idéntico a este} other {proyectos que el registro oficial señala como idénticos a este}}, en la prensa. La inclinación política de cada medio aparece donde AllSides la ha calificado, y se marca como \"Sin calificar\" donde no.",
     "newestLabel": "El más reciente de estos artículos",
     "checkedLabel": "Comprobado",
     "ageNote": "puede existir cobertura más reciente que no hemos recopilado",
@@ -620,6 +623,7 @@
     "snippetQuote": "«{text}»",
     "snippetAttribution": "— {source}",
     "oneSidedNote": "La cobertura de este proyecto hasta ahora proviene de un solo lado del espectro. Tenlo en cuenta al leerla.",
+    "oneSidedNoteTwins": "La cobertura de estos proyectos hasta ahora proviene de un solo lado del espectro. Tenlo en cuenta al leerla.",
     "foreignLanguageNote": "Algunos artículos enlazados están en inglés."
   },
   "news": {
@@ -1157,7 +1161,7 @@
         "passedOnCalendar": "{chamber, select, house {Aprobado por el Senado; incluido en el calendario de la Cámara, donde puede llevarse al pleno cualquier día en que la Cámara sesione.} other {Aprobado por la Cámara; incluido en el calendario del Senado, donde puede llevarse al pleno cualquier día en que el Senado sesione.}}",
         "heldAtDesk": "{chamber, select, house {Aprobado por el Senado; retenido en la mesa de la Cámara.} other {Aprobado por la Cámara; retenido en la mesa del Senado.}}",
         "passedWaiting": "{chamber, select, house {Aprobado por el Senado; a la espera de la Cámara.} other {Aprobado por la Cámara; a la espera del Senado.}}",
-        "clotureFiled": "Se presentó una solicitud de cierre del debate (cloture) en el Senado. Según sus reglas, esa votación llega en pocos días.",
+        "clotureFiled": "Se presentó una solicitud de cierre del debate (cloture) en el Senado.",
         "onFloor": "{chamber, select, house {En trámite en el pleno de la Cámara, con una votación por delante.} other {En trámite en el pleno del Senado, con una votación por delante.}}",
         "failedReconsider": "Una votación en el Senado sobre este proyecto fracasó y hay una moción de reconsideración pendiente, así que es posible otra votación.",
         "onCalendar": "{chamber, select, house {Incluido en el calendario de la Cámara. Puede llevarse al pleno cualquier día en que la Cámara sesione.} other {Incluido en el calendario del Senado. Puede llevarse al pleno cualquier día en que el Senado sesione.}}",

@@ -7,7 +7,7 @@ import { Chip } from '@/components/system';
 import { HeadlineOrTitle } from '@/components/HeadlineOrTitle';
 import { isInPageTarget } from '@/lib/call-tab';
 import type { BillStatus, StatusLabelKey } from '@/lib/types';
-import { isSignalFresh } from '@/lib/signal-window';
+import { calendarMarkShows } from '@/lib/calendar-mark';
 import type { StatusLine } from '@/lib/moment-status.mjs';
 import { MomentStatusLine } from '@/components/MomentStatusLine';
 
@@ -67,6 +67,7 @@ export function MomentVehicleCard({
   explainer,
   tag,
   ctaContext,
+  floorSuspended,
 }: {
   slug: string;
   identifier: string;
@@ -82,6 +83,11 @@ export function MomentVehicleCard({
   statusKey: StatusLabelKey;
   tags: string[];
   lastActionDate: string | null;
+  /** The chamber this placement names is not meeting (lib/floor-session.ts
+   *  `calendarMarkSuspended`, the bill page's own reading), so the amber
+   *  mark stands down. REQUIRED, with no default: a caller that forgot it
+   *  would show the mark in a recess, so the typechecker refuses the call. */
+  floorSuspended: boolean;
   coverageCount?: number;
   /** The both-directions yes/no framing, already localized. */
   role: string;
@@ -134,7 +140,12 @@ export function MomentVehicleCard({
   // future caller may hand a key to, and DESIGN.md's law on the new key —
   // stale is INK, never amber — must hold on this surface by construction and
   // not by the caller having remembered.
-  const onCalendar = statusKey === 'floor_vote' && isSignalFresh(lastActionDate);
+  //
+  // AND THE CHAMBER MUST BE MEETING (2026-11-18, docs/record-truth.md §5): a
+  // placement is a record floor fact, and the bill page stands its band down
+  // while the chamber is out. The caller passes that same reading
+  // (lib/floor-session.ts `calendarMarkSuspended`), as a required prop.
+  const onCalendar = calendarMarkShows({ statusKey, lastActionDate, floorSuspended });
 
   // Separators ride at the END of the preceding chunk, so a wrapped line can
   // never start with a floating "·" (the /es long-status failure shape).
@@ -169,7 +180,9 @@ export function MomentVehicleCard({
       )}
       <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs leading-tight font-bold tracking-[0.06em] text-ink-2 uppercase">
         {meta.map((part, i) => (
-          <span key={part.key} className="whitespace-nowrap">
+          // The status part may wrap inside itself (re-check of #523, round 5):
+          // a long status word must never push the card past the screen.
+          <span key={part.key} className={part.key === 'status' ? 'whitespace-normal' : 'whitespace-nowrap'}>
             {part.node}
             {i < meta.length - 1 && <span aria-hidden> ·</span>}
           </span>

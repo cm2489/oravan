@@ -29,7 +29,7 @@ import {
   type ShortAddressPolicy,
   type ShortTitleFile,
 } from '../lib/short-address';
-import { nameTablesForBuild, readShortTitles, refusalLine, reservedNames } from '../lib/short-address-build';
+import { nameTablesForBuild, readShortTitleRetries, readShortTitles, refusalLine, reservedNames } from '../lib/short-address-build';
 import { topRouteSegments } from '../lib/route-segments.mjs';
 import { isRecordShortTitleType, shortTitlesFromRecord } from '../lib/short-titles.mjs';
 import { congressTerm } from '../lib/congress.mjs';
@@ -568,6 +568,19 @@ test('the committed state: the table is built from data/short-titles.json alone,
     expect(encoded).toBe('');
     return;
   }
+  // The fill gate (hotfix 2026-11-17, tests/short-address-fill-gate.unit.spec.ts): until every bill of
+  // the tracked Congress has been read or tried, no name opens anything.
+  const retry = readShortTitleRetries();
+  const slugOf = (b: ShortAddressBill) => `${b.bill_type}-${b.bill_number}-${b.congress_number}`;
+  if (!bills.filter((b) => b.congress_number === SHORT_ADDRESS_CONGRESS).every((b) => slugOf(b) in titles || slugOf(b) in retry)) {
+    expect(encoded).toBe('');
+    return;
+  }
+  const unreadNames = new Set(
+    (bills as Array<ShortAddressBill & { title?: string }>)
+      .filter((b) => !(slugOf(b) in titles) && typeof b.title === 'string')
+      .map((b) => nameSlug(b.title!)),
+  );
   const tables = decodeNameTables(encoded);
   expect(tables.length).toBeGreaterThan(0);
   const reserved = reservedNames();
@@ -581,7 +594,8 @@ test('the committed state: the table is built from data/short-titles.json alone,
           b.congress_number === table.congress &&
           (titles[`${b.bill_type}-${b.bill_number}-${b.congress_number}`]?.titles ?? []).some((t) => nameSlug(t) === name),
       );
-      if (address === null) expect(carriers.length, name).toBeGreaterThan(1);
+      if (address === null) expect(carriers.length > 1, name).toBe(true);
+      else if (address === false) expect(unreadNames.has(name), name).toBe(true); // held back by a bill not read yet
       else {
         expect(carriers.map((b) => `${b.bill_type}${b.bill_number}`), name).toEqual([`${address.type}${address.number}`]);
         checked++;

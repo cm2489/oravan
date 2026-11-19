@@ -329,11 +329,13 @@ export function shortAddressTarget(
  * NEVER CHOOSING BETWEEN BILLS. Many bills share a short title (a House bill
  * and its Senate twin usually do). A name resolves only when exactly ONE bill
  * of the Congress being searched carries it, among the bills Oravan tracks:
- * A name opens a bill when no other bill Oravan tracks in the same Congress
- * has a short title that makes the same name and no Congress searched before
- * that one (the tracked Congress first, then each ended Congress, most
- * recently ended first) holds the name. ("SAFE Act" and "Safe Act" make one
- * name, and so do "Twin Spelling Act" and "Twin-Spelling Act".) A twin Oravan does not track (most bills of a Congress are never in
+ * A name opens a bill only when every bill Oravan tracks in that Congress
+ * has been read or tried, no other of those bills has a short title that
+ * makes the same name and no unread one has a stored title that makes it,
+ * and every Congress searched before that one (the tracked Congress first,
+ * then each ended Congress, most recently ended first) has been read or
+ * tried in full and does not hold the name. ("SAFE Act" and "Safe Act" make
+ * one name, and so do "Twin Spelling Act" and "Twin-Spelling Act".) A twin Oravan does not track (most bills of a Congress are never in
  * the corpus) is not counted, so which bill a name opens depends on which
  * bills Oravan tracks, and a name can stop opening its bill the day a twin
  * enters the corpus. The Congresses are searched in
@@ -341,10 +343,15 @@ export function shortAddressTarget(
  * recently ended first), and the first Congress that holds the name at all
  * answers: with its one bill, or, when it holds two or more, with the normal
  * not-found. A name shared in the tracked Congress never falls through to an
- * older Congress's bill of the same name. (Since the owner's card 193, Nov 14,
- * 2026, 9:13 PM ET, on the draft #510: the shared case opens
- * /names/<congress>/<name>, a prerendered page listing the bills, instead of
- * the not-found.)
+ * older Congress's bill of the same name. "Read or tried" is the fill gate in
+ * lib/short-address-build.ts (gateNameTables, hotfix of 2026-11-17): a bill is
+ * read when data/short-titles.json has its entry, tried when only
+ * data/short-titles-retry.json does; until a Congress is read or tried in full
+ * it holds no names and the search stops there, and a bill tried but never
+ * read holds back every name its stored title in data/bills.json makes.
+ * (Since the owner's card 193, Nov 14, 2026, 9:13 PM ET, on the draft #510: the
+ * shared case opens /names/<congress>/<name>, a prerendered page listing the
+ * bills, instead of the not-found.)
  *
  * THE TABLE (encodeNameTables / decodeNameTables). Built at BUILD time by
  * next.config.ts and inlined into the proxy bundle as SHORT_ADDRESS_NAMES:
@@ -464,7 +471,16 @@ export function nameAddressAllowed(name: string, reserved: ReadonlySet<string>):
 export type ShortTitleFile = Readonly<Record<string, { readonly titles: readonly string[] }>>;
 
 /** One Congress's names: name -> its one bill, or null when two or more bills share it. */
-export type NameTable = ReadonlyMap<string, ShortAddress | null>;
+/**
+ * A name HELD BACK by the fill gate (lib/short-address-build.ts gateNameTables): a bill not yet read
+ * could make it. It opens nothing and stops the search, like the normal not-found. Distinct from a
+ * SHARED name (`null`), which since the owner's card 193 opens the page that lists its bills: a held-back
+ * name has no such page, so it must never redirect to one (found merging main into #510, 2026-11-19).
+ * Encoded as `name=-`.
+ */
+export const NAME_HELD_BACK = false as const;
+
+export type NameTable = ReadonlyMap<string, ShortAddress | null | typeof NAME_HELD_BACK>;
 
 export type NameTables = ReadonlyArray<{ congress: number; names: NameTable }>;
 
@@ -494,7 +510,8 @@ export function namesOfCongress(
     const address = parseShortAddress(`${bill.bill_type}${bill.bill_number}`);
     if (!address) continue;
     const entry = titles[`${bill.bill_type}-${bill.bill_number}-${bill.congress_number}`];
-    for (const title of entry?.titles ?? []) {
+    // A malformed entry (`titles` not a list) makes no name; it must never throw and fail the build.
+    for (const title of Array.isArray(entry?.titles) ? entry.titles : []) {
       if (typeof title !== 'string') continue;
       const slug = `${bill.bill_type}-${bill.bill_number}-${bill.congress_number}`;
       const slugged = slugTitle(title);
@@ -557,7 +574,7 @@ export function decodeNameTables(encoded: string | undefined): NameTables {
   for (const part of (encoded ?? '').split('|')) {
     const match = /^([1-9]\d{0,3})@(.+)$/.exec(part);
     if (!match) continue;
-    const names = new Map<string, ShortAddress | null>();
+    const names = new Map<string, ShortAddress | null | typeof NAME_HELD_BACK>();
     for (const entry of match[2].split(',')) {
       const eq = entry.indexOf('=');
       if (eq <= 0) continue;
@@ -566,6 +583,10 @@ export function decodeNameTables(encoded: string | undefined): NameTables {
       const bill = entry.slice(eq + 1);
       if (bill === '') {
         names.set(name, null);
+        continue;
+      }
+      if (bill === '-') {
+        names.set(name, NAME_HELD_BACK);
         continue;
       }
       const address = parseShortAddress(bill);
@@ -599,6 +620,8 @@ export function nameAddressTarget(
   for (const table of tables) {
     if (!table.names.has(name)) continue;
     const address = table.names.get(name);
+    // Held back by the fill gate: the normal not-found, and the search stops here.
+    if (address === NAME_HELD_BACK) return null;
     const prefix = locale && locale !== defaultLocale ? `/${locale}` : '';
     // Two or more bills of this Congress make the name: never choose. Since the
     // owner's card 193 (Nov 14, 2026), the name opens the page that lists them

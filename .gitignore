@@ -74,3 +74,11 @@ scaffold-corpus-report.md
 # workflow's commit step stages data/question-press.json only, and this keeps
 # a local run from ever staging it either.
 .gdelt-state/
+
+# The identical-bills step writes its file under a temporary name, then
+# renames it; a kill in between must not put the temporary file in a commit.
+/data/related-bills.json.tmp
+# The short-titles step writes its three files the same way (scripts/sync-short-titles.mjs writeWhole).
+/data/short-titles.json.tmp
+/data/short-titles-retry.json.tmp
+/data/short-titles-trend.json.tmp

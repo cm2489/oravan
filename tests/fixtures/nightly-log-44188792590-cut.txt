@@ -1,0 +1,13 @@
+sync	UNKNOWN STEP	﻿2026-11-17T22:24:23.1410620Z Current runner version: '2.338.2'
+sync	UNKNOWN STEP	2026-11-17T22:34:31.2097255Z ##[group]Run node scripts/sync-short-titles.mjs
+sync	UNKNOWN STEP	2026-11-17T22:34:31.2097537Z ^[[36;1mnode scripts/sync-short-titles.mjs^[[0m
+sync	UNKNOWN STEP	2026-11-17T22:34:31.2139396Z shell: /usr/bin/bash -e {0}
+sync	UNKNOWN STEP	2026-11-17T22:34:31.2139564Z env:
+sync	UNKNOWN STEP	2026-11-17T22:34:31.2140523Z   SHORT_TITLES_ALLOW_DROP: 
+sync	UNKNOWN STEP	2026-11-17T22:34:31.2140685Z ##[endgroup]
+sync	UNKNOWN STEP	2026-11-17T22:35:51.6128749Z short titles: 3335 bill(s) never read, 0 whose last action moved, 0 due for a refresh, 0 failed before and due again, 0 failed and still waiting; reading 300 tonight (cap 300), 3035 left for later nights
+sync	UNKNOWN STEP	2026-11-17T22:35:51.6272573Z data/short-titles.json: 300 bill(s) read, 237 with at least one short title
+sync	UNKNOWN STEP	2026-11-17T22:35:51.6274055Z data/short-titles-retry.json: 0 bill(s) waiting to be tried again
+sync	UNKNOWN STEP	2026-11-17T22:35:51.6283470Z short titles: 300 request(s), 300 bill(s) read (237 with a short title, 0 whose short titles the record dropped), 300 entries new or changed, 0 failed, 80 s
+sync	UNKNOWN STEP	2026-11-17T22:35:51.6337977Z SHORT TITLES SUMMARY: day=2026-11-17 outcome=done titled=237 titled_7_nights_ago=unknown bills_7_nights_ago=unknown day_7_nights_ago=unknown bills=3335 newest_read_on=2026-11-17 retry=0 read_tonight=300 lost_all_titles_tonight=0 drop_approved_on=unknown
+sync	UNKNOWN STEP	2026-11-17T22:35:51.6636820Z ##[group]Run node scripts/backfill-search-inputs.mjs

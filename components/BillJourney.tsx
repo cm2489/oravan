@@ -6,6 +6,7 @@ import { glossaryLocale } from '@/lib/glossary-match';
 import { Chip } from '@/components/system';
 import type { GlossaryTermId } from '@/lib/glossary';
 import type { FloorCalendar, JourneyEnding, JourneyState } from '@/lib/journey';
+import { lowercaseLead } from '@/lib/lead-lowercase';
 
 /*
  * The path-to-law stepper — PRESENTATIONAL ONLY. All position/chamber
@@ -124,7 +125,11 @@ interface Props {
 
 export function BillJourney({ journey, introducedLabel, currentLabel, endedLine }: Props) {
   const t = useTranslations('bill.journey');
-  const lang = glossaryLocale(useLocale());
+  // The presented sentence is the Big Questions status line's own string
+  // (lib/journey.ts JourneyState.presented): one wording for one record.
+  const tLine = useTranslations('moments.status.line');
+  const locale = useLocale();
+  const lang = glossaryLocale(locale);
   const { ending } = journey;
   // Display strings for the ICU selects: origin chamber and its opposite.
   const chamber = journey.origin === 'house' ? 'House' : 'Senate';
@@ -252,11 +257,13 @@ export function BillJourney({ journey, introducedLabel, currentLabel, endedLine 
             <span data-journey-ended="">{endedLine}</span>
           ) : (
             <>
-              {glossifyRich(
-                t.rich(journey.nowKey, { chamber: nowChamber, other, floorCalendar, ...tally, ...when }),
-                lang,
-                nowSeen
-              )}
+              {journey.presented
+                ? glossifyRich(lowercaseLead(tLine('presented'), locale), lang, nowSeen)
+                : glossifyRich(
+                    t.rich(journey.nowKey, { chamber: nowChamber, other, floorCalendar, ...tally, ...when }),
+                    lang,
+                    nowSeen
+                  )}
               {journey.showTrailer && <> {glossifyRich(t(TRAILER_KEY[ending], { chamber, other }), lang, nowSeen)}</>}
             </>
           )}

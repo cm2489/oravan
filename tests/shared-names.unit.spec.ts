@@ -274,22 +274,24 @@ test('check 1: under the record’s line the card prints no status label; nowher
   // Absent, the prop keeps the label, and with it the identifier's separator: the card renders as before.
   expect(card).toContain('  showStatus = true,\n');
   expect(card).toContain('{(showStatus || annotation || coverageCount != null) && <span aria-hidden> ·</span>}');
-  expect(card).toMatch(/\{showStatus && \(\n\s*<span className="whitespace-nowrap max-\[22\.5rem\]:whitespace-normal">\n\s*\{t\(`bills\.status\.\$\{bill\.statusKey\}`\)\}/);
+  // Main's status span (#523: it wraps at every width) inside this page's wrapper.
+  expect(card).toMatch(/\{showStatus && \(\n\s*<span className="whitespace-normal">\n\s*\{t\(`bills\.status\.\$\{bill\.statusKey\}`\)\}/);
   // No other caller passes it.
   const callers = execSync("grep -rln 'showStatus' app components lib", { encoding: 'utf8' }).trim().split('\n').sort();
   expect(callers).toEqual(['app/[locale]/names/[congress]/[name]/page.tsx', 'components/BillCard.tsx']);
 });
 
-test('check 1, the reviewer’s H.R. 2400 (today’s data): the line is true where the card’s label would read false', () => {
+test('check 1, the reviewer’s H.R. 2400: the line says where it stands; the card’s label (true since #523) would only repeat it', () => {
   const hr2400 = rec('hr', 2400, 'passed_chamber', 'Message on Senate action sent to the House.', '2026-11-16', {
     status_basis_text: 'Passed Senate with an amendment by Unanimous Consent. (consideration: CR S5297-5298)',
   });
   const s = sharedNameStanding(hr2400, { chamber: 'house', published: '2026-11-11' }, { now: NOW, sessionOf: MEETING });
   expect(s.line.key).toBe('passedBack');
   expect(en.moments.status.line.passedBack).toContain('back with the House to settle the changes');
-  // The label the card would have printed, which is why this page drops it.
-  expect(statusKeyFor(hr2400 as Parameters<typeof statusKeyFor>[0], NOW)).toBe('passed_chamber');
-  expect(en.bills.status.passed_chamber).toBe('Passed one chamber');
+  // The label the card would print. Before #523 (merged Nov 19) it was the false "Passed one chamber";
+  // it is now true, and on this page it would repeat the line just above it, so the page still drops it.
+  expect(statusKeyFor(hr2400 as Parameters<typeof statusKeyFor>[0], NOW)).toBe('passed_back_house');
+  expect(en.bills.status.passed_back_house).toBe('Back in the House to settle the changes');
 });
 
 test('check 2: while the chamber is out, a live-sounding line becomes the record’s own words; in session it is unchanged; elsewhere unchanged', () => {

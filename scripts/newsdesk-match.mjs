@@ -728,6 +728,8 @@ const STATUS_WORDS = {
   floor_activity: 'floor action on record',
   passed_chamber: 'passed one chamber',
   passed_both: 'passed both chambers',
+  passed_back_house: 'back in the House to settle the changes',
+  passed_back_senate: 'back in the Senate to settle the changes',
   adopted: 'adopted by both chambers',
   rejected: 'rejected on a passage vote',
   signed: 'signed into law',

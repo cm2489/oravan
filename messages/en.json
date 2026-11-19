@@ -292,6 +292,8 @@
       "floor_activity": "Floor activity",
       "passed_chamber": "Passed one chamber",
       "passed_both": "Passed both chambers",
+      "passed_back_house": "Back in the House to settle the changes",
+      "passed_back_senate": "Back in the Senate to settle the changes",
       "adopted": "Adopted by both chambers",
       "rejected": "Rejected",
       "conference": "In conference",
@@ -605,6 +607,7 @@
   "coverage": {
     "heading": "How it's being covered",
     "subhead": "Coverage of this bill from across the press. Each outlet's political lean is labeled where AllSides has rated it, and marked \"Not rated\" where it has not.",
+    "subheadTwins": "Coverage of this bill and of {citations}, {count, plural, one {a bill} other {bills}} the official record lists as identical to it, from across the press. Each outlet's political lean is labeled where AllSides has rated it, and marked \"Not rated\" where it has not.",
     "newestLabel": "Newest of these articles",
     "checkedLabel": "Checked",
     "ageNote": "newer coverage may exist that we haven't collected",
@@ -620,6 +623,7 @@
     "snippetQuote": "“{text}”",
     "snippetAttribution": "— {source}",
     "oneSidedNote": "Coverage of this bill so far comes from one side of the spectrum. Read it with that in mind.",
+    "oneSidedNoteTwins": "Coverage of these bills so far comes from one side of the spectrum. Read it with that in mind.",
     "foreignLanguageNote": "Some linked articles may be in another language."
   },
   "news": {
@@ -1157,7 +1161,7 @@
         "passedOnCalendar": "{chamber, select, house {Passed the Senate; placed on the House calendar, where it can be called up any day the House is in session.} other {Passed the House; placed on the Senate calendar, where it can be called up any day the Senate is in session.}}",
         "heldAtDesk": "{chamber, select, house {Passed the Senate; held at the House desk.} other {Passed the House; held at the Senate desk.}}",
         "passedWaiting": "{chamber, select, house {Passed the Senate; waiting on the House.} other {Passed the House; waiting on the Senate.}}",
-        "clotureFiled": "Cloture was filed in the Senate. Under Senate rules, that vote comes within days.",
+        "clotureFiled": "Cloture was filed in the Senate.",
         "onFloor": "{chamber, select, house {Moving on the House floor, with a vote ahead.} other {Moving on the Senate floor, with a vote ahead.}}",
         "failedReconsider": "A Senate vote on it failed, and a motion to reconsider is pending, so another vote is possible.",
         "onCalendar": "{chamber, select, house {Placed on the House calendar. It can be called up any day the House is in session.} other {Placed on the Senate calendar. It can be called up any day the Senate is in session.}}",

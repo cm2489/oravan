@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
 import coverageData from '../data/coverage.json';
-import { coverageCheckedAt, coverageForBillPage, coverageTier, getCoverage } from '../lib/coverage';
+import { coverageCheckedAtWithTwins, coverageForBillPage, coverageTier, getCoverageWithTwins } from '../lib/coverage';
 import { getMomentsForBill } from '../lib/moments';
 import { COVERAGE_AGE_NOTE_DAYS, freshnessAgeDays } from '../lib/freshness-state';
 
@@ -18,11 +18,14 @@ const slugs = Object.keys(coverageData).filter((k) => !k.startsWith('_'));
 // tests/coverage-box-hidden.spec.ts pins that), so every fixture below that
 // needs "a page with the box" reads the articles through the same rule the
 // page does, not the raw stored set.
-const shown = (s: string) => coverageForBillPage(getCoverage(s), getMomentsForBill(s).length > 0);
+// What the page shows: the bill's own articles plus its record twins' (owner,
+// 2026-11-13; lib/coverage.ts, getCoverageWithTwins), under the Big Question rule.
+const shown = (s: string) => coverageForBillPage(getCoverageWithTwins(s).articles, getMomentsForBill(s).length > 0);
+const checkedOf = (s: string) => coverageCheckedAtWithTwins(s, getCoverageWithTwins(s).twins);
 const shownSlug = slugs.find((s) => shown(s).length > 0);
 // One-sided AND visible: only a Big Question bill can be.
 const oneSidedSlug = slugs.find((s) => coverageTier(shown(s)) === 'one_sided');
-const thinSlug = slugs.find((s) => getCoverage(s).length === 0); // stored but < 2 outlets
+const thinSlug = slugs.find((s) => getCoverageWithTwins(s).articles.length === 0); // stored but < 2 outlets
 
 /* Age fixtures for the "state the age of what you're showing" pair. The bill
  * page prints a "Data as of" stamp that tracks the Congress.gov BILL sync
@@ -150,14 +153,14 @@ test('the section states the age of what it is showing, in both languages', asyn
    only when the corpus has nothing else, which the note-scoped locator below
    tolerates. */
 const checkedCandidates = slugs.filter(
-  (s) => shown(s).length > 0 && newestPublishedAt(s) !== null && coverageCheckedAt(s) !== null
+  (s) => shown(s).length > 0 && newestPublishedAt(s) !== null && checkedOf(s) !== null
 );
 const checkedSlug =
-  checkedCandidates.find((s) => coverageCheckedAt(s) !== newestPublishedAt(s)) ?? checkedCandidates[0];
+  checkedCandidates.find((s) => checkedOf(s) !== newestPublishedAt(s)) ?? checkedCandidates[0];
 
 test('the section says when the sweep last looked, in both languages', async ({ page }) => {
   test.skip(!checkedSlug, 'no checked, rendering coverage in current data');
-  const checked = coverageCheckedAt(checkedSlug!)!;
+  const checked = checkedOf(checkedSlug!)!;
   for (const { prefix, messages } of [
     { prefix: '', messages: en },
     { prefix: '/es', messages: es },
@@ -178,7 +181,7 @@ test('the section says when the sweep last looked, in both languages', async ({ 
 
 test('the check date is absent from the prerendered HTML (the KTD-2 gate)', async ({ page }) => {
   test.skip(!checkedSlug, 'no checked, rendering coverage in current data');
-  const checked = coverageCheckedAt(checkedSlug!)!;
+  const checked = checkedOf(checkedSlug!)!;
   // The raw response, never rendered: this is the static HTML a CDN can serve
   // for as long as it likes. A dated as-of stamp baked into it would be
   // presented as server-current on a page built weeks earlier — the freeze

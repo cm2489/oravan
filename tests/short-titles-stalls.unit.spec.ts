@@ -1,17 +1,22 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
 import { alarms, parseShortTitlesSummary, parseShortTitlesTrouble } from '../lib/pipeline-health.mjs';
 import {
   readTitlesAnswer,
+  serializeShortTitles,
+  verifyShortTitleRetries,
   SHORT_TITLE_MAX_LENGTH,
   SHORT_TITLES_MAX_REQUESTS,
   shortTitleProblem,
   verifyShortTitles,
 } from '../lib/short-titles.mjs';
 import { Refused, RETRY_PILE_MIN, runShortTitlesNight, settleNight } from '../lib/short-titles-night.mjs';
+import { nightSummary, serializeTrend, shortTitlesAlarms, verifyShortTitlesTrend } from '../lib/short-titles-summary.mjs';
+import { decodeNameTables, nameAddressTarget } from '../lib/short-address';
+import { nameTablesForBuild, refusalLine, type GateBill } from '../lib/short-address-build';
 
 /*
  * NO STALL, NO SILENT STOP (2026-11-15, after three independent checks found
@@ -121,6 +126,8 @@ const HANG = `return new Promise((_, reject) => { const socket = setInterval(() 
 
 const range = (n: number, from = 1) => Array.from({ length: n }, (_, i) => from + i);
 const titled = (ns: number[]) => Object.fromEntries(ns.map((n) => [slug(n), { titles: [`Old ${n} Act`], as_of: '2026-01-01', read_on: '2026-11-01' }]));
+/** A history whose first fill has completed (the `filled` mark), as the news desk needs before it reads anything. */
+const FILLED = { nights: [{ day: '2026-11-14', titled: 3, bills: 3, filled: true }] };
 
 /**
  * EVERY OUTCOME AND TROUBLE PATH, its setup, and what it must print and
@@ -140,15 +147,17 @@ const EXIT_PATHS: Array<{
   sourceChanged?: boolean;
 }> = [
   { path: 'an ordinary night', stub: GOOD, files: { corpus: range(3).map((n) => bill(n)) }, code: 0, outcome: 'done', line: null },
+  { path: 'news desk: an hour that added no bill', stub: GOOD, files: { corpus: range(3).map((n) => bill(n)), before: titled(range(3)), trend: FILLED }, args: ['--new-only'], code: 0, outcome: 'nothing-new', line: null },
+  { path: 'news desk: before the first fill has completed', stub: GOOD, files: { corpus: range(3).map((n) => bill(n)), before: titled([1]), trend: { nights: [] } }, args: ['--new-only'], code: 0, outcome: 'not-filled-yet', line: null },
   { path: 'a dry run', stub: GOOD, files: { corpus: range(3).map((n) => bill(n)) }, args: ['--dry-run'], code: 0, outcome: 'dry-run', line: null },
   { path: 'no API key', stub: GOOD, files: { corpus: [bill(1)] }, env: { CONGRESS_API_KEY: '' }, code: 1, outcome: 'no-key', line: /CONGRESS_API_KEY is not set, so 0 bills could be read/ },
   { path: 'corpus missing', stub: GOOD, files: {}, code: 1, outcome: 'corpus-unreadable', line: /the corpus \(.*\) could not be read/ },
   { path: 'corpus not a list', stub: GOOD, files: { corpusText: '{}' }, code: 1, outcome: 'corpus-unreadable', line: /could not be read \(not a list of bills\)/ },
   { path: 'titles file not JSON', stub: GOOD, files: { corpus: [bill(1)], beforeText: 'not json' }, code: 1, outcome: 'titles-file-unreadable', line: /short-titles\.json is not valid JSON .*Restore it from git/ },
-  { path: 'retry file not JSON', stub: GOOD, files: { corpus: [bill(1)], retryText: 'oops' }, code: 0, outcome: 'done', line: /short-titles-retry\.json is not valid JSON .*started afresh/ },
-  { path: 'retry file not an object', stub: GOOD, files: { corpus: [bill(1)], retryText: '[]' }, code: 0, outcome: 'done', line: /short-titles-retry\.json is not an object; it was started afresh/ },
-  { path: 'history damaged', stub: GOOD, files: { corpus: [bill(1)], trendText: '{"nights":"x"}' }, code: 0, outcome: 'done', line: /short-titles-trend\.json could not be used .*started afresh/ },
-  { path: 'history missing beside a titles file', stub: GOOD, files: { corpus: [bill(1)], before: titled([1]) }, code: 0, outcome: 'done', line: /short-titles-trend\.json is missing while .* exists; the 14-night history was started afresh/ },
+  { path: 'retry file not JSON', stub: GOOD, files: { corpus: [bill(1)], retryText: 'oops' }, code: 0, outcome: 'done', line: /short-titles-retry\.json is not valid JSON .*the step starts it afresh the next time it writes it/ },
+  { path: 'retry file not an object', stub: GOOD, files: { corpus: [bill(1)], retryText: '[]' }, code: 0, outcome: 'done', line: /short-titles-retry\.json is not an object; the step starts it afresh the next time it writes it/ },
+  { path: 'history damaged', stub: GOOD, files: { corpus: [bill(1)], trendText: '{"nights":"x"}' }, code: 0, outcome: 'done', line: /short-titles-trend\.json could not be used .*the step starts the 14-night history afresh the next time it writes it/ },
+  { path: 'history missing beside a titles file', stub: GOOD, files: { corpus: [bill(1)], before: titled([1]) }, code: 0, outcome: 'done', line: /short-titles-trend\.json is missing while .* exists; the step starts the 14-night history afresh the next time it writes it/ },
   { path: 'breaker: 10 transport failures in a row', stub: `return new Response('down', { status: 503 });`, files: { corpus: range(30).map((n) => bill(n)) }, code: 0, outcome: 'stopped-early', line: /stopped early: 10 requests in a row got no usable answer/ },
   { path: 'a 403 is access, not the source changing', stub: `return new Response('no', { status: 403 });`, files: { corpus: range(30).map((n) => bill(n)) }, code: 0, outcome: 'stopped-early', line: /stopped early: Congress\.gov refused the key 10 times in a row \(HTTP 403\): check CONGRESS_API_KEY; 0 bill\(s\) read before it are kept/ },
   { path: 'the hourly limit: 429s say so', stub: `return new Response('slow down', { status: 429 });`, files: { corpus: range(30).map((n) => bill(n)) }, code: 0, outcome: 'stopped-early', line: /stopped early: Congress\.gov answered HTTP 429 to 10 requests in a row, so the key's hourly request limit was reached; 0 bill\(s\) read before it are kept/ },
@@ -221,12 +230,23 @@ for (const row of EXIT_PATHS) {
     const r = runScript(row.stub, row.files, row.env, row.args);
     expect(r.code, r.out.slice(-800)).toBe(row.code);
     expect(r.out).not.toContain('offline-test-key');
-    // S1: one summary line on every path, with this path's outcome and the day.
-    const summaries = r.out.split('\n').filter((l) => l.startsWith('SHORT TITLES SUMMARY: '));
-    expect(summaries, r.out.slice(-800)).toHaveLength(1);
+    // S1: one summary line on every path, with this path's outcome and the day. The news desk
+    // (--new-only) prints its own line instead, and never the nightly's summary line.
+    if ((row.args ?? []).includes('--new-only')) {
+      expect(r.out).not.toContain('SHORT TITLES SUMMARY:');
+      const desk = r.out.split('\n').filter((l) => l.startsWith('SHORT TITLES NEWS DESK: '));
+      expect(desk, r.out.slice(-800)).toHaveLength(1);
+      expect(desk[0]).toContain(`day=${TODAY} outcome=${row.outcome} `);
+    } else {
+      const summaries = r.out.split('\n').filter((l) => l.startsWith('SHORT TITLES SUMMARY: '));
+      expect(summaries, r.out.slice(-800)).toHaveLength(1);
+      const summary = parseShortTitlesSummary(r.out);
+      expect(summary?.outcome).toBe(row.outcome);
+      expect(summary?.day).toBe(TODAY);
+    }
     const summary = parseShortTitlesSummary(r.out);
-    expect(summary?.outcome).toBe(row.outcome);
-    expect(summary?.day).toBe(TODAY);
+    // The fill's progress (hotfix 2026-11-17): an ordinary night of 3 bills, all read, leaves none unread.
+    if (row.path === 'an ordinary night') expect(summary?.unread).toBe(0);
     const troubles = r.out.split('\n').filter((l) => l.startsWith('SHORT TITLES TROUBLE: '));
     if (row.line === null) {
       expect(troubles, r.out.slice(-800)).toEqual([]);
@@ -263,7 +283,7 @@ test('main() leaves only through finish(), every outcome has a row, and the exit
   const fin = src.slice(src.indexOf('function finish('), src.indexOf('\n}\n', src.indexOf('function finish(')));
   expect(fin).toMatch(/if \(reason\) trouble\(reason/);
   expect(fin).toMatch(/else if \(code !== 0\) trouble\(/);
-  expect(fin).toMatch(/console\.log\(summaryLine\(/);
+  expect(fin).toMatch(/console\.log\(NEW_ONLY \? newsDeskLine\(\{ \.\.\.summary, outcome \}\) : summaryLine\(/);
 });
 
 // --- (i) to (v), night by night ---------------------------------------------------------
@@ -303,8 +323,8 @@ test('(ii) 11% of titled bills lose their short title: refused loudly, nothing w
   expect(after[slug(3)].titles).toEqual([]);
   expect(after[slug(50)].titles).toEqual(['Fixture hr50 Act']);
   // Round 6: the history marks the override night, and the summary names it, so the falling alarm can say so.
-  expect(JSON.parse(String(through.trend)).nights.at(-1)).toEqual({ day: TODAY, titled: 89, bills: 100, allow_drop: true });
-  expect(through.out).toMatch(new RegExp(`SHORT TITLES SUMMARY: .* drop_approved_on=${TODAY}$`, 'm'));
+  expect(JSON.parse(String(through.trend)).nights.at(-1)).toEqual({ day: TODAY, titled: 89, bills: 100, allow_drop: true, filled: true });
+  expect(through.out).toMatch(new RegExp(`SHORT TITLES SUMMARY: .* drop_approved_on=${TODAY} unread=0 untried=0 filled_before=no$`, 'm'));
   expect(JSON.parse(String(refused.trend)).nights.at(-1)).not.toHaveProperty('allow_drop');
 });
 
@@ -439,4 +459,610 @@ test('a bill answer the reader accepts always passes the file gate, and one the 
   // Both call the same function.
   const lib = readFileSync(join(process.cwd(), 'lib/short-titles.mjs'), 'utf8');
   expect(lib.match(/shortTitleProblem\(t\)/g)!.length).toBeGreaterThanOrEqual(2);
+});
+
+test('follow-up 3: a night with no key and a damaged history writes nothing, and its TROUBLE line says the history will be started afresh, not that it was', () => {
+  const r = runScript(GOOD, { corpus: [bill(1)], trendText: '{"nights":"x"}' }, { CONGRESS_API_KEY: '' });
+  expect(r.code).toBe(1);
+  expect(r.out).toMatch(/SHORT TITLES TROUBLE: .*short-titles-trend\.json could not be used .*; the step starts the 14-night history afresh the next time it writes it/);
+  expect(r.out).not.toContain('was started afresh');
+  expect(r.trend).toBe('{"nights":"x"}');
+});
+
+test('follow-up 5: the script carries the history’s `filled` mark forward on a night that leaves bills unread', () => {
+  const yesterday = day(TODAY, -1);
+  const r = runScript(GOOD, { corpus: range(5).map((n) => bill(n)), trend: { nights: [{ day: yesterday, titled: 0, bills: 5, filled: true }] } }, { SHORT_TITLES_MAX: '2' });
+  expect(r.code).toBe(0);
+  expect(r.out).toMatch(/SHORT TITLES SUMMARY: .* unread=3 untried=3 filled_before=yes$/m);
+  expect(JSON.parse(String(r.trend)).nights.at(-1)).toMatchObject({ day: TODAY, filled: true });
+  // Without the mark, such a night does not set it.
+  const before = runScript(GOOD, { corpus: range(5).map((n) => bill(n)), trend: { nights: [] } }, { SHORT_TITLES_MAX: '2' });
+  expect(JSON.parse(String(before.trend)).nights.at(-1)).not.toHaveProperty('filled');
+});
+
+test('check of #520: a second run on the night the fill completes keeps the mark, and the next night that ends with bills untried raises the alarm', () => {
+  const carry = (r: { after: string | null; retry: string | null; trend: string | null }) => ({
+    beforeText: r.after ?? undefined,
+    retryText: r.retry ?? undefined,
+    trendText: r.trend ?? undefined,
+  });
+  // Run 1: the fill completes and the night is marked.
+  const five = range(5).map((n) => bill(n));
+  const r1 = runScript(GOOD, { corpus: five });
+  expect(JSON.parse(String(r1.trend)).nights.at(-1)).toMatchObject({ day: TODAY, filled: true });
+  // Run 2, the same day: 3 new bills and a cap of 0, so they stay untried. The mark must survive.
+  const eight = [...five, ...range(3, 100).map((n) => bill(n))];
+  const r2 = runScript(GOOD, { corpus: eight, ...carry(r1) }, { SHORT_TITLES_MAX: '0' });
+  expect(r2.out).toMatch(/SHORT TITLES SUMMARY: .* untried=3 filled_before=no$/m);
+  expect(JSON.parse(String(r2.trend)).nights.at(-1)).toMatchObject({ day: TODAY, filled: true });
+  // The next night: more bills, a cap too small, the night ends `done` with bills untried: the alarm fires.
+  const eleven = [...eight, ...range(3, 200).map((n) => bill(n))];
+  const r3 = runScript(GOOD, { corpus: eleven, ...carry(r2) }, { SHORT_TITLES_MAX: '2', SHORT_TITLES_TODAY: day(TODAY, 1) });
+  const summary = parseShortTitlesSummary(r3.out)!;
+  expect(summary).toMatchObject({ outcome: 'done', filled_before: 'yes', untried: 4 });
+  expect(shortTitlesAlarms(summary).map((a) => a.code)).toContain('short-titles-names-off');
+});
+
+// --- the news desk reads the bills it adds (--new-only, 2026-11-18) ---------------------------
+
+/* The news desk's run, through the real script. Bills carry a stored `title` so the build's gate can be shown too. */
+const deskBill = (n: number, title = `Fixture hr${n} Act`) => ({ ...bill(n), title });
+const deskLines = (out: string) => out.split('\n').filter((l) => l.trim() !== '' && !l.startsWith('STUB-CALLS'));
+const calls = (out: string) => Number(/STUB-CALLS (\d+)/.exec(out)?.[1] ?? -1);
+const readTitles = (n: number) => ({ titles: [`Fixture hr${n} Act`], as_of: '2026-01-01', read_on: '2026-11-14' });
+const allRead = (ns: number[]) => Object.fromEntries(ns.map((n) => [slug(n), readTitles(n)]));
+
+/** The build's real name table for a corpus and the two files, in a scratch root. */
+function namesFor(corpus: unknown[], titlesText: string | null, retryText: string | null) {
+  const root = mkdtempSync(join(tmpdir(), 'desk-build-'));
+  try {
+    mkdirSync(join(root, 'data'));
+    if (titlesText !== null) writeFileSync(join(root, 'data', 'short-titles.json'), titlesText);
+    if (retryText !== null) writeFileSync(join(root, 'data', 'short-titles-retry.json'), retryText);
+    const lines: string[] = [];
+    const tables = decodeNameTables(nameTablesForBuild(corpus as GateBill[], root, (r) => lines.push(refusalLine(r))));
+    return { open: (name: string) => nameAddressTarget(`/${name}`, ['en', 'es'], 'en', tables), gate: lines.find((l) => /^short-address names: (ON|OFF)/.test(l)) };
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+}
+
+test('news desk: an hour that added no bill makes no request, writes nothing and prints one line', () => {
+  const corpus = range(3).map((n) => deskBill(n));
+  const before = allRead(range(3));
+  const r = runScript(GOOD, { corpus, before, trend: FILLED }, {}, ['--new-only']);
+  expect(r.code).toBe(0);
+  expect(calls(r.out)).toBe(0);
+  expect(JSON.parse(r.after!)).toEqual(before);
+  expect(r.retry).toBeNull();
+  expect(JSON.parse(r.trend!)).toEqual(FILLED);
+  expect(deskLines(r.out)).toEqual([`SHORT TITLES NEWS DESK: day=${TODAY} outcome=nothing-new never_read_or_tried=0 read=0 failed=0`]);
+});
+
+test('news desk: before the first fill has completed it reads nothing, however many bills are unread', () => {
+  const corpus = range(40).map((n) => deskBill(n));
+  const r = runScript(GOOD, { corpus, before: allRead(range(5)), trend: { nights: [{ day: '2026-11-14', titled: 5, bills: 40 }] } }, {}, ['--new-only']);
+  expect(calls(r.out)).toBe(0);
+  expect(Object.keys(JSON.parse(r.after!))).toHaveLength(5);
+  expect(deskLines(r.out)).toEqual([`SHORT TITLES NEWS DESK: day=${TODAY} outcome=not-filled-yet never_read_or_tried=35 read=0 failed=0`]);
+});
+
+test('news desk: an hour that added one bill reads it with one request, writes its entry, leaves the history alone, and names stay on', () => {
+  const corpus = [...range(3).map((n) => deskBill(n)), deskBill(500, 'Fixture hr500 Act')];
+  const before = allRead(range(3));
+  const r = runScript(GOOD, { corpus, before, trend: FILLED }, {}, ['--new-only']);
+  expect(r.code).toBe(0);
+  expect(calls(r.out)).toBe(1);
+  const after = JSON.parse(r.after!);
+  expect(after[slug(500)]).toEqual({ titles: ['Fixture hr500 Act'], as_of: '2026-01-01', read_on: TODAY });
+  for (const n of range(3)) expect(after[slug(n)]).toEqual(before[slug(n)]);
+  expect(JSON.parse(r.trend!)).toEqual(FILLED);
+  expect(r.out).not.toContain('SHORT TITLES SUMMARY:');
+  expect(r.out).toContain(`SHORT TITLES NEWS DESK: day=${TODAY} outcome=done never_read_or_tried=1 read=1 failed=0`);
+  // Through the real build: every bill read, so names are on, the new bill's name included.
+  const names = namesFor(corpus, r.after, r.retry);
+  expect(names.gate).toMatch(/^short-address names: ON for the 119th Congress: 4 bills, 4 read/);
+  expect(names.open('fixture-hr500-act')).toBe('/bills/hr-500-119');
+  expect(names.open('fixture-hr1-act')).toBe('/bills/hr-1-119');
+  // And the nightly's own count agrees: nothing untried, so the names-off alarm stays quiet.
+  const s = nightSummary({ day: TODAY, bills: corpus, titles: after, retry: {}, trend: FILLED, read: 0, lost: 0 });
+  expect(s).toMatchObject({ untried: 0, filled_before: 'yes' });
+  expect(shortTitlesAlarms({ ...s, outcome: 'done' }).map((a) => a.code)).not.toContain('short-titles-names-off');
+});
+
+test('news desk: a failed read puts the bill in the retry file; names stay on except the ones its stored title makes', () => {
+  // H.R. 500 is new and its read fails; its stored title makes the same name H.R. 2 holds.
+  const corpus = [...range(3).map((n) => deskBill(n)), deskBill(500, 'Fixture hr2 Act')];
+  const r = runScript(`if (number === '500') return new Response('no', { status: 404 }); ${GOOD}`, { corpus, before: allRead(range(3)), trend: FILLED }, {}, ['--new-only']);
+  expect(r.code).toBe(0);
+  expect(calls(r.out)).toBe(1);
+  expect(JSON.parse(r.retry!)[slug(500)]).toMatchObject({ failures: 1, last_tried: TODAY, reason: 'HTTP 404' });
+  expect(r.out).toContain(`SHORT TITLES NEWS DESK: day=${TODAY} outcome=done never_read_or_tried=1 read=0 failed=1`);
+  expect(JSON.parse(r.after!)[slug(500)]).toBeUndefined();
+  const names = namesFor(corpus, r.after, r.retry);
+  expect(names.gate).toMatch(/^short-address names: ON for the 119th Congress: 4 bills, 3 read, 1 tried and waiting; 1 name\(s\) held back/);
+  expect(names.open('fixture-hr2-act')).toBeNull();
+  expect(names.open('fixture-hr1-act')).toBe('/bills/hr-1-119');
+});
+
+test('news desk: it never refreshes, re-reads or retries another bill, and reads at most its cap', () => {
+  const corpus = [
+    { ...deskBill(1), last_action_date: '2026-11-10' }, // moved since its read: the nightly re-reads it, not the desk
+    deskBill(2), // read 200 days ago: due for the nightly's refresh, not the desk's
+    deskBill(3), // failed before and due again: the nightly's
+    ...range(15, 600).map((n) => deskBill(n)), // fifteen new bills
+  ];
+  const before = { ...allRead([1]), [slug(2)]: { ...readTitles(2), read_on: '2026-04-01' } };
+  const retry = { [slug(3)]: { failures: 1, last_tried: '2026-10-01', reason: 'HTTP 503' } };
+  const r = runScript(GOOD, { corpus, before, retry, trend: FILLED }, { SHORT_TITLES_MAX: '10' }, ['--new-only']);
+  expect(calls(r.out)).toBe(10);
+  const after = JSON.parse(r.after!);
+  expect(after[slug(1)]).toEqual(before[slug(1)]);
+  expect(after[slug(2)]).toEqual(before[slug(2)]);
+  expect(JSON.parse(r.retry ?? JSON.stringify(retry))[slug(3)]).toEqual(retry[slug(3)]);
+  expect(range(15, 600).filter((n) => after[slug(n)])).toHaveLength(10);
+});
+
+test('news desk: it never passes the drop floor (the one-run override is ignored) and a crash still prints its one line', () => {
+  const src = readFileSync(join(process.cwd(), 'scripts/sync-short-titles.mjs'), 'utf8');
+  expect(src).toContain("const ALLOW_DROP = process.env.SHORT_TITLES_ALLOW_DROP === '1' && process.env.GITHUB_EVENT_NAME !== 'schedule' && !NEW_ONLY;");
+  const r = runScript(GOOD, { corpusText: 'not json', trend: FILLED }, {}, ['--new-only']);
+  expect(r.code).toBe(1);
+  expect(r.out).toMatch(/SHORT TITLES NEWS DESK: .* outcome=corpus-unreadable /);
+  expect(r.out).not.toContain('SHORT TITLES SUMMARY:');
+});
+
+/* THE WORKFLOW (.github/workflows/newsdesk.yml): the step and the commit step's guard. */
+const DESK_YML = readFileSync(join(process.cwd(), '.github/workflows/newsdesk.yml'), 'utf8');
+/** One step's block, from its `- name:` line to the next step. */
+const stepBlock = (name: string) => {
+  const start = DESK_YML.indexOf(`      - name: ${name}`);
+  const next = DESK_YML.indexOf('\n      - ', start + 10);
+  return DESK_YML.slice(start, next === -1 ? undefined : next);
+};
+/** The commit step's shell, exactly as the workflow runs it. */
+const commitScript = () => {
+  const block = stepBlock('Commit data');
+  const lines = block.slice(block.indexOf('        run: |\n') + '        run: |\n'.length).split('\n');
+  return lines.filter((l) => l.startsWith('          ') || l === '').map((l) => l.slice(10)).join('\n');
+};
+
+test('news desk workflow: the step runs after the bills are added, before the commit, cannot redden or block the run, and shares the nightly’s queue', () => {
+  const step = stepBlock('Read the short titles of bills added since the nightly (name addresses)');
+  expect(step).toContain('        continue-on-error: true\n');
+  expect(step).toContain('        timeout-minutes: 3\n');
+  expect(step).toContain("          SHORT_TITLES_MAX: '10'\n");
+  expect(step).toContain("          SHORT_TITLES_BUDGET_MS: '60000'\n");
+  expect(step).toMatch(/\n        run: node scripts\/sync-short-titles\.mjs --new-only$/);
+  expect(step).not.toContain('SHORT_TITLES_ALLOW_DROP');
+  const order = ['Run newsdesk', 'Read the short titles of bills added since the nightly (name addresses)', 'Commit data'].map((n) => DESK_YML.indexOf(`      - name: ${n}`));
+  expect(order.every((i) => i > 0)).toBe(true);
+  expect(order).toEqual([...order].sort((a, b) => a - b));
+  // One queue with the nightly: never at the same time, a waiting run never replaced.
+  for (const f of ['newsdesk.yml', 'sync-bills.yml']) {
+    const y = readFileSync(join(process.cwd(), '.github/workflows', f), 'utf8');
+    expect(y, f).toMatch(/\nconcurrency:\n(?:\s*#.*\n)*\s*group: data-sync\n\s*cancel-in-progress: false\n\s*queue: max\n/);
+  }
+  // It checks out the branch tip when the job starts, after a nightly ahead of it in the queue has pushed.
+  expect(DESK_YML).toContain('          ref: ${{ github.ref_name }}\n');
+});
+
+/** A scratch remote with a `main` holding the data files, and helpers to clone and write. */
+function gitWorld() {
+  const root = mkdtempSync(join(tmpdir(), 'desk-git-'));
+  const git = (cwd: string, ...a: string[]) => {
+    const r = spawnSync('git', a, { cwd, encoding: 'utf8', env: { ...process.env, GIT_AUTHOR_NAME: 't', GIT_AUTHOR_EMAIL: 't@t', GIT_COMMITTER_NAME: 't', GIT_COMMITTER_EMAIL: 't@t' } });
+    if (r.status !== 0) throw new Error(`git ${a.join(' ')}: ${r.stderr}`);
+    return r.stdout.trim();
+  };
+  const remote = join(root, 'remote.git');
+  git(root, 'init', '-q', '--bare', '-b', 'main', remote);
+  const seed = join(root, 'seed');
+  git(root, 'clone', '-q', remote, seed);
+  mkdirSync(join(seed, 'data'));
+  const write = (dir: string, file: string, text: string) => writeFileSync(join(dir, 'data', file), text);
+  write(seed, 'short-titles.json', serializeShortTitles(allRead(range(3)), range(3).map((n) => bill(n))));
+  write(seed, 'conversation.json', '{"v":1}\n');
+  git(seed, 'add', '-A');
+  git(seed, 'commit', '-q', '-m', 'seed');
+  git(seed, 'push', '-q', 'origin', 'HEAD:main');
+  const clone = (name: string) => {
+    const dir = join(root, name);
+    git(root, 'clone', '-q', '-b', 'main', remote, dir);
+    return dir;
+  };
+  /** The nightly: titles for more bills, pushed. */
+  const nightly = (more: number[]) => {
+    const dir = clone(`nightly-${more[0]}`);
+    write(dir, 'short-titles.json', serializeShortTitles(allRead([...range(3), ...more]), [...range(3), ...more].map((n) => bill(n))));
+    git(dir, 'commit', '-q', '-am', 'nightly');
+    git(dir, 'push', '-q', 'origin', 'HEAD:main');
+  };
+  /** The commit step, run as the workflow runs it, in a news desk clone. */
+  const commitStep = (dir: string, script: string = commitScript()) => {
+    const out = join(dir, '..', `${dir.split('/').pop()}-output`);
+    writeFileSync(out, '');
+    const r = spawnSync('bash', ['-e', '-c', script], { cwd: dir, encoding: 'utf8', env: { ...process.env, GITHUB_OUTPUT: out } });
+    return { code: r.status, log: `${r.stdout}\n${r.stderr}`, output: readFileSync(out, 'utf8') };
+  };
+  /** Another push landing first: any files (paths under the repository), from a fresh clone. */
+  const otherPush = (name: string, files: Record<string, string>) => {
+    const dir = clone(name);
+    for (const [path, text] of Object.entries(files)) {
+      mkdirSync(join(dir, path, '..'), { recursive: true });
+      writeFileSync(join(dir, path), text);
+    }
+    git(dir, 'add', '-A');
+    git(dir, 'commit', '-q', '-m', name);
+    git(dir, 'push', '-q', 'origin', 'HEAD:main');
+  };
+  const onRemote = (file: string) => git(root, `--git-dir=${remote}`, 'show', `main:data/${file}`);
+  return { root, remote, git, write, clone, nightly, commitStep, otherPush, onRemote, done: () => rmSync(root, { recursive: true, force: true }) };
+}
+
+test('news desk queued behind the nightly: it starts from the nightly’s commit, adds its bill, and nothing the nightly wrote is lost', () => {
+  const w = gitWorld();
+  try {
+    w.nightly(range(5, 100)); // the nightly reads titles for more bills and pushes
+    const desk = w.clone('desk'); // the queued news desk starts after it: the branch tip
+    const titles = JSON.parse(readFileSync(join(desk, 'data', 'short-titles.json'), 'utf8'));
+    w.write(desk, 'short-titles.json', serializeShortTitles({ ...titles, [slug(500)]: readTitles(500) }, [...range(3), ...range(5, 100), 500].map((n) => bill(n))));
+    w.write(desk, 'conversation.json', '{"v":2}\n');
+    const r = w.commitStep(desk);
+    expect(r.code, r.log).toBe(0);
+    expect(r.output).toMatch(/changed=true\nsha=/);
+    const landed = JSON.parse(w.onRemote('short-titles.json'));
+    expect(Object.keys(landed)).toHaveLength(9);
+    for (const n of [...range(3), ...range(5, 100), 500]) expect(landed[slug(n)], String(n)).toBeDefined();
+  } finally {
+    w.done();
+  }
+});
+
+test('news desk that started from an older commit: its push is rejected, it drops its own titles rather than merge them, its other data still lands, and the nightly’s titles are intact', () => {
+  const w = gitWorld();
+  try {
+    const desk = w.clone('desk-stale'); // checked out BEFORE the nightly pushed
+    w.nightly(range(5, 100));
+    const nightlyText = w.onRemote('short-titles.json');
+    w.write(desk, 'short-titles.json', serializeShortTitles({ ...allRead(range(3)), [slug(500)]: readTitles(500) }, [...range(3), 500].map((n) => bill(n))));
+    w.write(desk, 'conversation.json', '{"v":2}\n');
+    const r = w.commitStep(desk);
+    expect(r.code, r.log).toBe(0);
+    expect(r.log).toContain("this run's short titles were dropped rather than merged");
+    expect(w.onRemote('short-titles.json')).toBe(nightlyText);
+    expect(w.onRemote('conversation.json')).toBe('{"v":2}');
+    expect(r.output).toMatch(/changed=true\nsha=/);
+  } finally {
+    w.done();
+  }
+});
+
+test('news desk that started from an older commit and changed only titles: nothing is pushed, the run stays green', () => {
+  const w = gitWorld();
+  try {
+    const desk = w.clone('desk-only-titles');
+    w.nightly(range(5, 100));
+    const nightlyText = w.onRemote('short-titles.json');
+    w.write(desk, 'short-titles.json', serializeShortTitles({ ...allRead(range(3)), [slug(500)]: readTitles(500) }, [...range(3), 500].map((n) => bill(n))));
+    const r = w.commitStep(desk);
+    expect(r.code, r.log).toBe(0);
+    expect(r.log).toContain('nothing is left to push');
+    expect(r.output).toBe('changed=false\n');
+    expect(w.onRemote('short-titles.json')).toBe(nightlyText);
+  } finally {
+    w.done();
+  }
+});
+
+test('news desk: with room under its cap it still reads only the new bill, never a moved, overdue or retry-due one', () => {
+  const corpus = [{ ...deskBill(1), last_action_date: '2026-11-10' }, deskBill(2), deskBill(3), deskBill(600)];
+  const before = { ...allRead([1]), [slug(2)]: { ...readTitles(2), read_on: '2026-04-01' } };
+  const retry = { [slug(3)]: { failures: 1, last_tried: '2026-10-01', reason: 'HTTP 503' } };
+  const r = runScript(GOOD, { corpus, before, retry, trend: FILLED }, { SHORT_TITLES_MAX: '10' }, ['--new-only']);
+  expect(calls(r.out)).toBe(1);
+  expect(Object.keys(JSON.parse(r.after!)).sort()).toEqual([slug(1), slug(2), slug(600)].sort());
+  expect(r.out).toContain('never_read_or_tried=1 read=1 failed=0');
+});
+
+test('news desk: a write error names only the files it would have written, never the history', () => {
+  const corpus = [...range(3).map((n) => deskBill(n)), deskBill(500)];
+  const r = runScript(GOOD, { corpus, before: allRead(range(3)), trend: FILLED }, { SHORT_TITLES_FILE: '/nonexistent-dir-for-test/x/short-titles.json' }, ['--new-only']);
+  expect(r.code).toBe(1);
+  expect(r.out).toMatch(/could not write the files .*written: none; not written: .*short-titles\.json, .*short-titles-retry\.json \(/);
+  expect(r.out).not.toMatch(/not written: .*short-titles-trend\.json/);
+});
+
+test('news desk: the runbook says what it does and how names can still go off between nightlies', () => {
+  const runbook = readFileSync(join(process.cwd(), 'docs/runbooks/new-congress-switch.md'), 'utf8');
+  expect(runbook).toContain('the step "Read the short titles of bills added since the nightly"');
+  expect(runbook).toContain('on an hour that added no bill it makes no request and writes nothing, and before the first fill has completed it reads nothing at all');
+  expect(runbook).toContain("the commit step drops this run's two short-titles files rather than merge them");
+});
+
+// --- follow-ups of #522 (2026-11-18) ----------------------------------------------------------
+
+const deskEdit = (w: ReturnType<typeof gitWorld>, desk: string, conversation = '{"v":2}\n') => {
+  const titles = JSON.parse(readFileSync(join(desk, 'data', 'short-titles.json'), 'utf8'));
+  const text = serializeShortTitles({ ...titles, [slug(500)]: readTitles(500) }, [...Object.keys(titles).map((k) => Number(k.split('-')[1])), 500].map((n) => bill(n)));
+  w.write(desk, 'short-titles.json', text);
+  if (conversation !== null) w.write(desk, 'conversation.json', conversation);
+  return text;
+};
+
+test('follow-up 1: rejected by a push that did not touch the titles files: the titles are kept and pushed', () => {
+  const w = gitWorld();
+  try {
+    const desk = w.clone('desk-code');
+    w.otherPush('code-only', { 'app.txt': 'code\n' });
+    const mine = deskEdit(w, desk);
+    const r = w.commitStep(desk);
+    expect(r.code, r.log).toBe(0);
+    expect(r.log).not.toContain('dropped');
+    expect(w.onRemote('short-titles.json')).toBe(mine.trim());
+    expect(w.onRemote('conversation.json')).toBe('{"v":2}');
+    expect(w.git(w.root, `--git-dir=${w.remote}`, 'show', 'main:app.txt')).toBe('code');
+  } finally {
+    w.done();
+  }
+});
+
+test('follow-up 1: rejected by a push that changed only the retry file: this run’s titles are dropped, the other push’s file is intact', () => {
+  const w = gitWorld();
+  try {
+    const desk = w.clone('desk-retry');
+    const theirs = '{\n"hr-2-119":{"failures":1,"last_tried":"2026-11-15","reason":"HTTP 503"}\n}\n';
+    w.otherPush('retry-only', { 'data/short-titles-retry.json': theirs });
+    const titlesBefore = w.onRemote('short-titles.json');
+    deskEdit(w, desk);
+    const r = w.commitStep(desk);
+    expect(r.code, r.log).toBe(0);
+    expect(r.log).toContain("this run's short titles were dropped rather than merged");
+    expect(w.onRemote('short-titles-retry.json')).toBe(theirs.trim());
+    expect(w.onRemote('short-titles.json')).toBe(titlesBefore);
+    expect(w.onRemote('conversation.json')).toBe('{"v":2}');
+  } finally {
+    w.done();
+  }
+});
+
+test('follow-up 1: rejected twice, first by a code push (titles kept), then by a titles push (dropped): the base is re-read each time', () => {
+  const w = gitWorld();
+  try {
+    const desk = w.clone('desk-twice');
+    const a = w.clone('other-a');
+    const b = w.clone('other-b');
+    const theirs = serializeShortTitles(allRead([...range(3), 900]), [...range(3), 900].map((n) => bill(n)));
+    writeFileSync(join(w.root, 'theirs.json'), theirs);
+    // A pre-push hook in the news desk's clone lands another push just before each of its first two pushes.
+    const hook = join(desk, '.git', 'hooks', 'pre-push');
+    writeFileSync(
+      hook,
+      `#!/bin/bash
+unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_PREFIX
+n=$(cat "${w.root}/count" 2>/dev/null || echo 0); n=$((n+1)); echo $n > "${w.root}/count"
+g() { git -c user.name=t -c user.email=t@t "$@"; }
+if [ "$n" = 1 ]; then cd "${a}" && g pull -q --rebase origin main && echo code > app.txt && g add -A && g commit -qm code && g push -q origin HEAD:main; fi
+if [ "$n" = 2 ]; then cd "${b}" && g pull -q --rebase origin main && cp "${w.root}/theirs.json" data/short-titles.json && g add -A && g commit -qm titles && g push -q origin HEAD:main; fi
+exit 0
+`,
+    );
+    spawnSync('chmod', ['+x', hook]);
+    deskEdit(w, desk);
+    const r = w.commitStep(desk);
+    expect(r.code, r.log).toBe(0);
+    expect(r.log).toContain('push rejected, rebasing onto latest main (attempt 1)');
+    expect(r.log).toContain('push rejected, rebasing onto latest main (attempt 2)');
+    expect(r.log.match(/dropped rather than merged/g)).toHaveLength(1);
+    expect(w.onRemote('short-titles.json')).toBe(theirs.trim());
+    expect(w.onRemote('conversation.json')).toBe('{"v":2}');
+    expect(w.git(w.root, `--git-dir=${w.remote}`, 'show', 'main:app.txt')).toBe('code');
+    expect(r.output).toMatch(/^changed=true\nsha=[0-9a-f]{40}\n$/);
+  } finally {
+    w.done();
+  }
+});
+
+test('follow-up 1: rejected twice, both times by titles pushes: dropped once, and neither other push’s titles are undone', () => {
+  const w = gitWorld();
+  try {
+    const desk = w.clone('desk-titles-twice');
+    const a = w.clone('other-a');
+    const t1 = serializeShortTitles(allRead([...range(3), 901]), [...range(3), 901].map((n) => bill(n)));
+    const t2 = serializeShortTitles(allRead([...range(3), 901, 902]), [...range(3), 901, 902].map((n) => bill(n)));
+    writeFileSync(join(w.root, 't1.json'), t1);
+    writeFileSync(join(w.root, 't2.json'), t2);
+    const hook = join(desk, '.git', 'hooks', 'pre-push');
+    writeFileSync(
+      hook,
+      `#!/bin/bash
+unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_PREFIX
+n=$(cat "${w.root}/count" 2>/dev/null || echo 0); n=$((n+1)); echo $n > "${w.root}/count"
+g() { git -c user.name=t -c user.email=t@t "$@"; }
+if [ "$n" -le 2 ]; then cd "${a}" && g pull -q --rebase origin main && cp "${w.root}/t$n.json" data/short-titles.json && g add -A && g commit -qm "titles $n" && g push -q origin HEAD:main; fi
+exit 0
+`,
+    );
+    spawnSync('chmod', ['+x', hook]);
+    deskEdit(w, desk);
+    const r = w.commitStep(desk);
+    expect(r.code, r.log).toBe(0);
+    expect(r.log.match(/dropped rather than merged/g)).toHaveLength(1);
+    expect(w.onRemote('short-titles.json')).toBe(t2.trim());
+    expect(w.onRemote('conversation.json')).toBe('{"v":2}');
+  } finally {
+    w.done();
+  }
+});
+
+test('follow-up 1: a run that does not touch the titles behaves exactly as main’s commit step, in every case', () => {
+  const OLD = readFileSync(join(process.cwd(), 'tests/fixtures/newsdesk-commit-step-5bfd2b9d.sh'), 'utf8');
+  type Case = (w: ReturnType<typeof gitWorld>, desk: string) => void;
+  const cases: Array<[string, Case]> = [
+    ['the push lands first time', (w, desk) => w.write(desk, 'conversation.json', '{"v":2}\n')],
+    ['rejected by a code push, rebased', (w, desk) => {
+      w.otherPush('code', { 'app.txt': 'code\n' });
+      w.write(desk, 'conversation.json', '{"v":2}\n');
+    }],
+    ['rejected by a push to the same data file: a conflict, nothing committed', (w, desk) => {
+      w.otherPush('conflict', { 'data/conversation.json': '{"v":9}\n' });
+      w.write(desk, 'conversation.json', '{"v":2}\n');
+    }],
+    ['rejected by a titles push while this run changed no titles', (w, desk) => {
+      w.otherPush('titles', { 'data/short-titles.json': serializeShortTitles(allRead([...range(3), 900]), [...range(3), 900].map((n) => bill(n))) });
+      w.write(desk, 'conversation.json', '{"v":2}\n');
+    }],
+    ['no change at all', () => {}],
+  ];
+  for (const [label, setup] of cases) {
+    const outcome = (script: string) => {
+      const w = gitWorld();
+      try {
+        const desk = w.clone('desk');
+        setup(w, desk);
+        const r = w.commitStep(desk, script);
+        const show = (f: string) => {
+          try {
+            return w.onRemote(f);
+          } catch {
+            return null;
+          }
+        };
+        return {
+          code: r.code,
+          output: r.output.replace(/sha=[0-9a-f]{40}/, 'sha=X'),
+          errors: r.log.split('\n').filter((l) => l.startsWith('::error::')),
+          dropped: r.log.includes('dropped'),
+          files: ['conversation.json', 'short-titles.json'].map(show),
+        };
+      } finally {
+        w.done();
+      }
+    };
+    expect(outcome(commitScript()), label).toEqual(outcome(OLD));
+  }
+});
+
+test('follow-up 2: the budget is checked between the pages of one bill', async () => {
+  // A bill with 1,000 titles (4 pages); each page takes 42 s of the fake clock; the budget is 60 s.
+  let clock = 0;
+  const fetched: number[] = [];
+  const full = (offset: number) => {
+    clock += 42_000;
+    fetched.push(offset);
+    const titles = Array.from({ length: 250 }, (_, i) => ({ title: `Official title ${offset + i}`, titleType: 'Official Title as Introduced' }));
+    return { pagination: { count: 1000 }, request: { billNumber: '1', billType: 'hr', congress: '119' }, titles };
+  };
+  const night = await runShortTitlesNight({ bills: [bill(1)], file: {}, retry: {}, today: TODAY, budgetMs: 60_000, now: () => clock, fetchPage: async (_b: unknown, offset: number) => full(offset) });
+  expect(fetched).toEqual([0, 250]); // page 3 is never started: 84 s is past the 60 s budget
+  expect(night.trouble).toBe("stopped early: the step's 1-minute budget ran out (between two pages of one bill)");
+  expect(night.read).toBe(0);
+  expect(night.retry).toEqual({});
+});
+
+test('follow-up 2: a bill whose later pages answer slowly stops at the budget between its pages, within budget + one page', () => {
+  // Page 1 answers at once; pages 2 to 4 each take 1.2 s to answer (under the 3 s request ceiling). Budget: 1 s.
+  // With the check between pages: page 2 runs (it starts at ~0 s), page 3 is never started. Without it: all four.
+  const PAGE = `const titles = Array.from({ length: 250 }, (_, i) => ({ title: 'Official ' + i, titleType: 'Official Title as Introduced' }));
+  return new Response(JSON.stringify({ pagination: { count: 1000 }, request: { billNumber: number, billType: type, congress }, titles }), { status: 200 });`;
+  const stub = `if (url.searchParams.get('offset') !== '0') await new Promise((r) => setTimeout(r, 1200)); ${PAGE}`;
+  const T = 3000;
+  const B = 1000;
+  const D = 5;
+  const t0 = Date.now();
+  const r = runScript(stub, { corpus: [deskBill(1)], trend: FILLED }, { SHORT_TITLES_REQUEST_TIMEOUT_MS: String(T), SHORT_TITLES_BUDGET_MS: String(B), SHORT_TITLES_RETRY_DELAY_MS: String(D) });
+  const ms = Date.now() - t0;
+  expect(r.out).toContain("stopped early: the step's 0-minute budget ran out (between two pages of one bill)");
+  expect(calls(r.out)).toBe(2);
+  // The bound: the budget plus one page (at most two request ceilings and the pause), plus the process's start.
+  expect(ms).toBeLessThan(B + 2 * T + D + 1500);
+});
+
+test('follow-up 2: the news desk step has its short request ceiling; the nightly keeps its default', () => {
+  const step = stepBlock('Read the short titles of bills added since the nightly (name addresses)');
+  expect(step).toContain("          SHORT_TITLES_REQUEST_TIMEOUT_MS: '10000'\n");
+  const src = readFileSync(join(process.cwd(), 'scripts/sync-short-titles.mjs'), 'utf8');
+  expect(src).toContain('const REQUEST_TIMEOUT_MS = Number(process.env.SHORT_TITLES_REQUEST_TIMEOUT_MS) || 20_000;');
+  expect(readFileSync(join(process.cwd(), '.github/workflows/sync-bills.yml'), 'utf8')).not.toContain('SHORT_TITLES_REQUEST_TIMEOUT_MS');
+});
+
+test('follow-up 2: a kill at a random moment, 60 times, leaves each file the old one or a complete valid new one', async () => {
+  test.setTimeout(240_000);
+  const { spawn } = await import('node:child_process');
+  // Writes are slowed in the child (half, a pause, the rest), so a kill can land inside one.
+  const SLOW = `import fs from 'node:fs'; import { syncBuiltinESMExports } from 'node:module';
+const real = fs.writeFileSync;
+fs.writeFileSync = (p, d, ...rest) => { const s = String(d); real(p, s.slice(0, s.length >> 1), ...rest); Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 40); const fd = fs.openSync(p, 'a'); fs.writeSync(fd, s.slice(s.length >> 1)); fs.closeSync(fd); };
+syncBuiltinESMExports();
+`;
+  const corpus = range(120).map((n) => bill(n));
+  const before = titled(range(20));
+  const stub = `if (Number(number) % 7 === 0) return new Response('no', { status: 404 }); ${GOOD}`;
+  let seed = 11;
+  const rand = () => ((seed = (seed * 1103515245 + 12345) % 2 ** 31) / 2 ** 31);
+  const once = (killAt: number | null) =>
+    new Promise<{ titles: string | null; retry: string | null; trend: string | null; old: { titles: string; trend: string }; dir: string }>((resolve) => {
+      const dir = mkdtempSync(join(tmpdir(), 'short-titles-kill-'));
+      const files = { titles: join(dir, 'short-titles.json'), retry: join(dir, 'short-titles-retry.json'), trend: join(dir, 'short-titles-trend.json'), bills: join(dir, 'bills.json') };
+      const old = { titles: JSON.stringify(before), trend: serializeTrend(FILLED) };
+      writeFileSync(files.titles, old.titles);
+      writeFileSync(files.trend, old.trend);
+      writeFileSync(files.bills, JSON.stringify(corpus));
+      const preload = join(dir, 'stub.mjs');
+      writeFileSync(preload, `${SLOW}globalThis.fetch = async (input, init) => { const url = new URL(String(input)); const [, congress, type, number] = /\\/bill\\/(\\d+)\\/([a-z]+)\\/(\\d+)\\/titles/.exec(url.pathname) ?? []; ${stub} };\n`);
+      const child = spawn(process.execPath, ['--import', preload, 'scripts/sync-short-titles.mjs'], {
+        cwd: process.cwd(),
+        env: { NODE_ENV: 'test', PATH: process.env.PATH ?? '', CONGRESS_API_KEY: 'offline-test-key', SHORT_TITLES_FILE: files.titles, SHORT_TITLES_RETRY_FILE: files.retry, SHORT_TITLES_TREND_FILE: files.trend, SHORT_TITLES_BILLS: files.bills, SHORT_TITLES_TODAY: TODAY, SHORT_TITLES_RETRY_DELAY_MS: '1' },
+        stdio: 'ignore',
+      });
+      const timer = killAt === null ? null : setTimeout(() => child.kill('SIGKILL'), killAt);
+      child.on('exit', () => {
+        if (timer) clearTimeout(timer);
+        const read = (f: string) => (existsSync(f) ? readFileSync(f, 'utf8') : null);
+        resolve({ titles: read(files.titles), retry: read(files.retry), trend: read(files.trend), old, dir });
+      });
+    });
+  const t0 = Date.now();
+  const full = await once(null);
+  const span = Date.now() - t0;
+  rmSync(full.dir, { recursive: true, force: true });
+  expect(full.titles).not.toBe(full.old.titles); // a whole run does write all three
+  let cut = 0;
+  const bad: string[] = [];
+  for (let i = 0; i < 60; i++) {
+    const r = await once(Math.floor(rand() * span));
+    const ok = (name: string, text: string | null, oldText: string | null, valid: (d: unknown) => boolean) => {
+      if (text === oldText) return;
+      let data: unknown;
+      try {
+        data = JSON.parse(String(text));
+      } catch {
+        bad.push(`run ${i}: ${name} is cut off`);
+        return;
+      }
+      if (!valid(data)) bad.push(`run ${i}: ${name} is not valid`);
+    };
+    ok('titles', r.titles, r.old.titles, (d) => verifyShortTitles({ data: d, bills: corpus }).failures.length === 0);
+    ok('retry', r.retry, null, (d) => verifyShortTitleRetries({ data: d, bills: corpus }).failures.length === 0);
+    ok('trend', r.trend, r.old.trend, (d) => verifyShortTitlesTrend({ data: d }).failures.length === 0);
+    if (existsSync(join(r.dir, 'short-titles.json.tmp')) || existsSync(join(r.dir, 'short-titles-trend.json.tmp'))) cut++;
+    rmSync(r.dir, { recursive: true, force: true });
+  }
+  expect(bad).toEqual([]);
+  test.info().annotations.push({ type: 'kills that left a temporary file behind', description: String(cut) });
+});
+
+test('follow-up 2: a leftover temporary file can never be committed', () => {
+  for (const f of ['data/short-titles.json.tmp', 'data/short-titles-retry.json.tmp', 'data/short-titles-trend.json.tmp']) {
+    expect(spawnSync('git', ['check-ignore', '-q', f], { cwd: process.cwd() }).status, f).toBe(0);
+  }
+});
+
+test('follow-up 3: the runbook says a failed news desk read keeps names on, and that the health report does not read news desk runs', () => {
+  const runbook = readFileSync(join(process.cwd(), 'docs/runbooks/new-congress-switch.md'), 'utf8');
+  expect(runbook).toContain("If the news desk's read of the new bill fails, the bill goes to the retry file, so names stay ON and only the names that bill's stored title makes are held back; before this step existed they stayed off until the nightly.");
+  expect(runbook).toContain('The health report does not read news desk runs');
+  expect(runbook).toContain('a bill with more than 250 titles takes up to 4 pages, each retried once on a failure, so at most 8');
+  expect(runbook).toContain('about 0.2 to 0.5 s for the whole process');
+  expect(runbook).not.toContain('(two on a retry)');
 });

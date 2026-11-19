@@ -23,7 +23,7 @@ import { EndedPanel } from '@/components/EndedPanel';
 import { ConcurrentExplainer } from '@/components/ConcurrentExplainer';
 import { GlossaryTerm } from '@/components/GlossaryTerm';
 import { Chip, FloorVotePanel, Stamp } from '@/components/system';
-import { coverageCheckedAt, coverageForBillPage, coverageTier, getCoverage } from '@/lib/coverage';
+import { coverageCheckedAtWithTwins, coverageForBillPage, coverageTier, getCoverageWithTwins } from '@/lib/coverage';
 import { StalenessNote } from '@/components/StalenessNote';
 import { repRoleKey } from '@/components/RepCard';
 import {
@@ -254,7 +254,10 @@ export default async function BillPage({
   if (!raw) notFound();
   const bill = localizeBill(raw, locale);
   // Coverage is the same articles regardless of locale (chrome is localized).
-  const coverage = getCoverage(id);
+  // It includes, as they are, the articles stored under any bill the record
+  // lists as identical to this one (owner, 2026-11-13: "Yes, show it under
+  // the bill as it is."; lib/coverage.ts, getCoverageWithTwins).
+  const { articles: coverage, twins: coverageTwins } = getCoverageWithTwins(id);
 
   const t = await getTranslations();
   const format = await getFormatter();
@@ -581,6 +584,16 @@ export default async function BillPage({
   // when it would show only one side (owner, 2026-11-13); lib/coverage.ts's
   // coverageForBillPage owns the rule. Big Question bills are unchanged.
   const shownCoverage = coverageForBillPage(coverage, parentMoments.length > 0);
+  // The twins whose articles the box actually lists, as citations, so its
+  // intro can say whose coverage it is (hard rule 4: "Coverage of this bill"
+  // alone stops being true once a twin's article is listed).
+  const shownTwins = shownCoverage.length > 0 ? coverageTwins : [];
+  const twinCitations = shownTwins.map((s) => {
+    const tw = getBill(s);
+    if (tw) return formatCitation(tw.bill_type, tw.bill_number);
+    const m = s.match(/^([a-z]+)-(\d+)-\d+$/);
+    return m ? formatCitation(m[1], Number(m[2])) : s;
+  });
 
   return (
     <>
@@ -1045,7 +1058,8 @@ export default async function BillPage({
         <CoverageSection
           articles={shownCoverage}
           tier={coverageTier(shownCoverage)}
-          checkedAt={coverageCheckedAt(id)}
+          checkedAt={coverageCheckedAtWithTwins(id, shownTwins)}
+          twinCitations={twinCitations}
         />
       </div>
 

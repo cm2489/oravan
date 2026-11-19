@@ -2,7 +2,25 @@
  * Nightly READ OF THE RECORD'S SHORT TITLES: data/short-titles.json, with the
  * bills whose last read failed in data/short-titles-retry.json.
  *
- *   node --env-file=.env.local scripts/sync-short-titles.mjs [--dry-run]
+ *   node --env-file=.env.local scripts/sync-short-titles.mjs [--dry-run] [--new-only]
+ *
+ * --new-only (THE NEWS DESK, 2026-11-18; .github/workflows/newsdesk.yml). After
+ * the first fill, one bill neither read nor tried turns every name address off
+ * (the fill gate, lib/short-address-build.ts), and the news desk adds a bill
+ * between nightlies about twice a week. With this flag the step reads ONLY the
+ * bills that have never been read or tried (the ones added since), never
+ * refreshes or retries another, and:
+ *   - does nothing at all (no request, no write) until the 14-night history
+ *     carries the `filled` mark, so it never fills the corpus hour by hour:
+ *     until the first fill completes every name is off anyway, and the nightly
+ *     keeps its pace of 300 a night;
+ *   - does nothing at all on an hour that added no bill;
+ *   - writes the titles and retry files through the same gate, never passes
+ *     the drop floor (the one-run override is ignored), and never touches the
+ *     history;
+ *   - prints one `SHORT TITLES NEWS DESK:` line instead of the nightly's
+ *     `SHORT TITLES SUMMARY:` line, so the health report, which reads the
+ *     summary from the nightly's own log only, can never take it for a night.
  *
  * Needs CONGRESS_API_KEY. No Anthropic key, no AI, no spend: Congress.gov's
  * free titles list for each bill, /bill/{congress}/{type}/{number}/titles, and
@@ -53,7 +71,7 @@
  * SHORT_TITLES_REQUEST_TIMEOUT_MS, SHORT_TITLES_BUDGET_MS,
  * SHORT_TITLES_RETRY_DELAY_MS.
  */
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { billApiPath } from './congress-fetch.mjs';
 import {
   SHORT_TITLES_MAX_PER_NIGHT,
@@ -73,6 +91,8 @@ import {
 } from '../lib/short-titles-summary.mjs';
 
 const DRY_RUN = process.argv.includes('--dry-run');
+/** The news desk's run: only bills never read or tried, no history, no summary line (see the header). */
+const NEW_ONLY = process.argv.includes('--new-only');
 const OUT = process.env.SHORT_TITLES_FILE || SHORT_TITLES_PATH;
 const RETRY_OUT = process.env.SHORT_TITLES_RETRY_FILE || SHORT_TITLES_RETRY_PATH;
 const TREND_OUT = process.env.SHORT_TITLES_TREND_FILE || SHORT_TITLES_TREND_PATH;
@@ -83,8 +103,21 @@ const BUDGET_MS = Number(process.env.SHORT_TITLES_BUDGET_MS) || 20 * 60_000;
 const RETRY_DELAY_MS = Number(process.env.SHORT_TITLES_RETRY_DELAY_MS) || 2000;
 const TODAY = /^\d{4}-\d{2}-\d{2}$/.test(process.env.SHORT_TITLES_TODAY ?? '') ? process.env.SHORT_TITLES_TODAY : new Date().toISOString().slice(0, 10);
 /** The one-run override: set by a person on a manual run, never honoured on a schedule. */
-const ALLOW_DROP = process.env.SHORT_TITLES_ALLOW_DROP === '1' && process.env.GITHUB_EVENT_NAME !== 'schedule';
+const ALLOW_DROP = process.env.SHORT_TITLES_ALLOW_DROP === '1' && process.env.GITHUB_EVENT_NAME !== 'schedule' && !NEW_ONLY;
 const API = 'https://api.congress.gov/v3';
+
+/**
+ * EVERY FILE WHOLE OR NOT AT ALL (2026-11-18). Each file is written to `<file>.tmp` and renamed over the
+ * real one, as the identical-bills step writes data/related-bills.json: a rename is atomic, so a kill (the
+ * news desk step is killed at 3 minutes, the nightly's at 25) leaves either the old file or the complete new
+ * one. A kill can leave a half-written `<file>.tmp` behind; those names are in .gitignore, so no commit can
+ * carry one, and the next write replaces it.
+ */
+function writeWhole(path, text) {
+  const tmp = `${path}.tmp`;
+  writeFileSync(tmp, text);
+  renameSync(tmp, path);
+}
 
 /** What the summary line will say, filled in as the run learns it (a crash prints what is known). */
 const summary = { day: TODAY };
@@ -103,7 +136,7 @@ function trouble(reason, { error = false } = {}) {
 function finish({ code, outcome, reason = null }) {
   if (reason) trouble(reason, { error: code !== 0 });
   else if (code !== 0) trouble(`the step ended with code ${code} and no reason (outcome ${outcome}); this is a bug in scripts/sync-short-titles.mjs`, { error: true });
-  console.log(summaryLine({ ...summary, outcome }));
+  console.log(NEW_ONLY ? newsDeskLine({ ...summary, outcome }) : summaryLine({ ...summary, outcome }));
   process.exitCode = code;
   return code;
 }
@@ -168,6 +201,11 @@ function readJsonFile(path) {
   return JSON.parse(readFileSync(path, 'utf8'));
 }
 
+/** The news desk's one line (never the nightly's summary line): what it found and did. */
+function newsDeskLine(s) {
+  return `SHORT TITLES NEWS DESK: day=${s.day} outcome=${s.outcome} never_read_or_tried=${s.fresh ?? 'unknown'} read=${s.read_tonight ?? 0} failed=${s.failed ?? 0}`;
+}
+
 async function main() {
   const started = Date.now();
   let bills;
@@ -189,11 +227,11 @@ async function main() {
     retry = readJsonFile(RETRY_OUT) ?? {};
   } catch (e) {
     retry = {};
-    trouble(`${RETRY_OUT} is not valid JSON (${e?.message ?? e}); it was started afresh, so bills that were waiting may be tried again tonight`);
+    trouble(`${RETRY_OUT} is not valid JSON (${e?.message ?? e}); the step starts it afresh the next time it writes it, so bills that were waiting may be tried again sooner`);
   }
   if (!retry || typeof retry !== 'object' || Array.isArray(retry)) {
     retry = {};
-    trouble(`${RETRY_OUT} is not an object; it was started afresh, so bills that were waiting may be tried again tonight`);
+    trouble(`${RETRY_OUT} is not an object; the step starts it afresh the next time it writes it, so bills that were waiting may be tried again sooner`);
   }
   let trend;
   try {
@@ -201,20 +239,31 @@ async function main() {
     if (trend !== null && verifyShortTitlesTrend({ data: trend }).failures.length) throw new Error('not the expected shape');
   } catch (e) {
     trend = null;
-    trouble(`${TREND_OUT} could not be used (${e?.message ?? e}); the 14-night history was started afresh, so "a week ago" is unknown for a week`);
+    trouble(`${TREND_OUT} could not be used (${e?.message ?? e}); the step starts the 14-night history afresh the next time it writes it, so "a week ago" is unknown for a week`);
   }
   if (trend === null && before !== null && existsSync(TREND_OUT) === false) {
-    trouble(`${TREND_OUT} is missing while ${OUT} exists; the 14-night history was started afresh, so "a week ago" is unknown for a week`);
+    trouble(`${TREND_OUT} is missing while ${OUT} exists; the step starts the 14-night history afresh the next time it writes it, so "a week ago" is unknown for a week`);
   }
   trend = trend ?? { nights: [] };
   Object.assign(summary, nightSummary({ day: TODAY, bills, titles: before, retry, trend, read: 0, lost: 0 }));
+
+  // The news desk reads only bills never read or tried, and nothing before the first fill has completed.
+  let toRead = bills;
+  if (NEW_ONLY) {
+    const slug = (b) => `${b.bill_type}-${b.bill_number}-${b.congress_number}`.toLowerCase();
+    const has = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
+    toRead = bills.filter((b) => !has(before, slug(b)) && !has(retry, slug(b)));
+    summary.fresh = toRead.length;
+    if (!trend.nights.some((n) => n.filled === true)) return finish({ code: 0, outcome: 'not-filled-yet' });
+    if (toRead.length === 0) return finish({ code: 0, outcome: 'nothing-new' });
+  }
 
   if (!process.env.CONGRESS_API_KEY) {
     return finish({ code: 1, outcome: 'no-key', reason: 'CONGRESS_API_KEY is not set, so 0 bills could be read; nothing was written' });
   }
 
   const night = await runShortTitlesNight({
-    bills,
+    bills: toRead,
     file: before ?? {},
     retry,
     today: TODAY,
@@ -223,6 +272,7 @@ async function main() {
     budgetMs: BUDGET_MS,
   });
   for (const line of night.lines) console.log(line);
+  summary.failed = night.failed;
   const settled = settleNight({ night, bills, before, allowDrop: ALLOW_DROP });
   for (const n of settled.notes) console.log(n);
   for (const f of settled.failures) console.error(`::error::${f}`);
@@ -243,7 +293,13 @@ async function main() {
     summary,
     nightSummary({ day: TODAY, bills, titles: titlesAfter, retry: retryAfter, trend, read: night.read, lost: night.dropped, allowDrop: allowDropUsed }),
   );
-  const trendText = serializeTrend(nextTrend(trend, { day: TODAY, titled: summary.titled, bills: bills.length, allow_drop: allowDropUsed }));
+  // `filled`: the first fill has completed (tonight no bill is left neither read nor tried, or an earlier
+  // night said so). Carried forward on every night, so it outlives the 14-night window; a history started
+  // afresh loses it until the next night with nothing left unread, which keeps the names-off alarm quiet.
+  // Any existing mark is kept, the same day's included: a second run on the night the fill completed
+  // rewrites that night's entry, and must not drop the mark (found by the check of #520).
+  const filled = summary.untried === 0 || (trend?.nights ?? []).some((n) => n.filled === true);
+  const trendText = serializeTrend(nextTrend(trend, { day: TODAY, titled: summary.titled, bills: bills.length, allow_drop: allowDropUsed, filled }));
   const outcome = !settled.write
     ? /would fall/.test(ending?.reason ?? '') ? 'drop-floor' : 'refused-by-gate'
     : night.sourceChanged ? 'source-changed' : night.trouble ? 'stopped-early' : 'done';
@@ -255,20 +311,23 @@ async function main() {
   const written = [];
   try {
     if (settled.write?.titles) {
-      writeFileSync(OUT, settled.write.text);
+      writeWhole(OUT, settled.write.text);
       written.push(OUT);
     } else if (settled.write) console.log(`short titles: no bill read, so ${OUT} is left as it was`);
     if (settled.write) {
       const retryBefore = existsSync(RETRY_OUT) ? readFileSync(RETRY_OUT, 'utf8') : null;
       if (settled.write.retryText !== (retryBefore ?? '{}\n')) {
-        writeFileSync(RETRY_OUT, settled.write.retryText);
+        writeWhole(RETRY_OUT, settled.write.retryText);
         written.push(RETRY_OUT);
       }
     }
-    writeFileSync(TREND_OUT, trendText);
-    written.push(TREND_OUT);
+    // The history is the nightly's alone: one entry per nightly, never the news desk's.
+    if (!NEW_ONLY) {
+      writeWhole(TREND_OUT, trendText);
+      written.push(TREND_OUT);
+    }
   } catch (e) {
-    const notWritten = [OUT, RETRY_OUT, TREND_OUT].filter((p) => !written.includes(p));
+    const notWritten = [OUT, RETRY_OUT, ...(NEW_ONLY ? [] : [TREND_OUT])].filter((p) => !written.includes(p));
     return finish({
       code: 1,
       outcome: 'write-error',

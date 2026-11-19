@@ -265,10 +265,11 @@ test.describe('short addresses', () => {
  * that reason.
  */
 const NAMES = decodeNameTables(nameTablesForBuild(corpus));
-const NO_NAMES = 'data/short-titles.json holds no short title yet (the nightly fills it), so no name resolves';
+const NO_NAMES = 'no name resolves yet: data/short-titles.json is absent, or its first fill is not complete (lib/short-address-build.ts gateNameTables)';
 const nameOf = (shared: boolean): { name: string; target: string | null } | undefined => {
   for (const table of NAMES) {
     for (const [name, address] of table.names) {
+      if (address === false) continue; // held back by the fill gate: the normal not-found, neither kind
       if ((address === null) !== shared) continue;
       // The expectation through the same order the proxy uses: a number first, then a name.
       return { name, target: expectedTarget(`/${name}`) ?? nameAddressTarget(`/${name}`, ['en', 'es'], 'en', NAMES) };
