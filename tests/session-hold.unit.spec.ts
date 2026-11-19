@@ -204,6 +204,9 @@ test.describe('the reading, with an injected clock', () => {
       { ...TUESDAY, date: '2026-11-2' },
       { ...TUESDAY, date: '2026-11-21', label: '10 a.m., Saturday, November 21' }, // past
       { ...TUESDAY, date: '2026-11-19' }, // before its own Digest
+      { ...TUESDAY, digest: '2026-11-25' }, // its Digest dated after the meeting it names, the meeting still ahead
+      { ...TUESDAY, date: 20261124 },
+      { ...TUESDAY, digest: '2026-11-20T05:00' },
       { ...TUESDAY, date: '2026-11-28' }, // 8 days out: past SESSION_HOLD_MAX_DAYS
       { ...TUESDAY, date: '2027-06-08' }, // a year fill-in gone wrong
       { ...TUESDAY, digest: null },
@@ -308,6 +311,22 @@ test.describe('the writer', () => {
       '2026-11-28T13:00:00Z'
     ); // the return
     expect(hold).toEqual({ senate: null, house: null });
+  });
+
+  test('a Digest past the age ceiling never replaces a hold, whatever verdict it carries', () => {
+    const staleOut = { stale: true, in_session: { senate: 'out_of_session', house: 'in_session' }, next_meeting: { senate: { date: '2026-11-27', label: '9 a.m.' }, house: null } };
+    const next = nextSessionHold({ previous: { senate: TUESDAY, house: TUESDAY }, floorMeta: staleOut, issueDate: '2026-11-13', url: URL, now: at('2026-11-22T13:00:00Z') });
+    expect(next).toEqual({ senate: TUESDAY, house: TUESDAY });
+  });
+
+  test('the hourly script hands the previous file’s hold to the writer, and the note asks for its own chamber', () => {
+    const ROOT = path.join(__dirname, '..');
+    const script = readFileSync(path.join(ROOT, 'scripts', 'floor-signals.mjs'), 'utf8');
+    expect(script).toMatch(/session_hold:\s*nextSessionHold\(\{\s*previous:\s*previous\?\._meta\?\.session_hold \?\? null,/);
+    const door = readFileSync(path.join(ROOT, 'lib', 'docket.ts'), 'utf8');
+    expect(door).toMatch(/floorSessionSourceFrom\(FILE\._meta, now, chamber\)/);
+    const note = readFileSync(path.join(ROOT, 'components', 'FloorRecessNote.tsx'), 'utf8');
+    expect(note).toMatch(/floorSessionSource\(undefined, chamber\)/);
   });
 
   test('an out verdict with no named date, or a date already past, stores no hold', () => {
