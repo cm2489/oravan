@@ -37,7 +37,8 @@ import {
 import { statusKeyFor } from '@/lib/journey';
 import { buildSiteJsonLd } from '@/lib/jsonld';
 import { homeQuestionRows, leadTally } from '@/lib/home';
-import { billStatusLine, type StatusLine } from '@/lib/moment-status.mjs';
+import type { StatusLine } from '@/lib/moment-status.mjs';
+import { siteBillStatusLine } from '@/lib/floor-session';
 import { getMomentsForBill } from '@/lib/moments';
 import { LIVE_CAP } from '@/lib/moments-gate.mjs';
 import { momentDek } from '@/lib/moments-ui';
@@ -552,7 +553,12 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           {listed.length > 0 && (
             <ul className="mt-6 list-none border-t-[1.5px] border-line-strong md:grid md:grid-cols-3 md:gap-x-10">
               {listed.map((b) => {
-                const line = billStatusLine(b);
+                // The session gate (lib/floor-session.ts): while the
+                // chamber a live floor line names is not meeting, the row
+                // prints the record's own status instead, which is what the
+                // recess note promises ("Bills below show their last status
+                // in the record").
+                const line = siteBillStatusLine(b);
                 return (
                   <li
                     key={billSlug(b)}
