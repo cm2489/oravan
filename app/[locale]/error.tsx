@@ -182,20 +182,22 @@ export default function LocaleError({ error }: { error: Error & { digest?: strin
               type="button"
               ref={(el) => el?.focus()}
               onClick={() => {
-                eraseAll();
+                const complete = eraseAll();
                 // The current history entry is replaced as well: it may hold
                 // the ZIP the members page last showed (lib/members-entry.ts).
                 // The erase already made every entry's copy unreadable (its
                 // tag is gone); this removes the copy itself from the one
-                // entry a page can rewrite, and leaves in its place only the
-                // fact that an erase just happened, which the reloaded page
-                // reads once, says, and removes (components/ErasedNotice.tsx).
-                // With no address, Next's own replaceState only carries its
-                // router keys over and does not touch the router. A refusal
-                // (Safari limits how often it may be called) must never stop
-                // the reload.
+                // entry a page can rewrite. When every key went, it leaves in
+                // its place only the fact that an erase just happened, which
+                // the reloaded page reads once, says, and removes
+                // (components/ErasedNotice.tsx). When one would not go, the
+                // reloaded page says nothing, and the record's own erase
+                // control is there to press again. With no address, Next's
+                // own replaceState only carries its router keys over and does
+                // not touch the router. A refusal (Safari limits how often it
+                // may be called) must never stop the reload.
                 try {
-                  window.history.replaceState({ [ERASED_MARK]: true }, '');
+                  window.history.replaceState(complete ? { [ERASED_MARK]: true } : null, '');
                 } catch {
                   /* the tag already covers this entry */
                 }

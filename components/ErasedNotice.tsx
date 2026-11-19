@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { useTranslations } from 'next-intl';
+import { useEffect, useRef, useSyncExternalStore } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
 import { usePathname } from '@/i18n/navigation';
 
 /*
@@ -24,27 +24,61 @@ import { usePathname } from '@/i18n/navigation';
 
 export const ERASED_MARK = 'oravanErased';
 
-/** Read once per page load, before anything else touches the entry. */
-let markedOnLoad: boolean | null = null;
-function readMark(): boolean {
-  if (markedOnLoad === null) {
+/*
+ * ONCE, ON ONE PAGE (2026-11-19). The line used to be kept for the whole
+ * visit and hidden only when the address differed from the first page's: a
+ * move away and Back showed it again, and a language switch (which mounts
+ * the layout afresh, at the same path under /es) showed it and took focus
+ * again. Now it belongs to the page it was shown on, path and language (as
+ * the router has them, so it is gone in the same render that draws the next
+ * page; the part after `#` does not make another page): it is focused once,
+ * and the first time the page is anything else it is gone for the rest of
+ * the visit, whatever comes back.
+ */
+type Phase = 'unread' | 'showing' | 'gone';
+let phase: Phase = 'unread';
+let shownAt = '';
+const listeners = new Set<() => void>();
+
+function visibleOn(page: string): boolean {
+  if (phase === 'unread') {
     const state = window.history.state as Record<string, unknown> | null;
-    markedOnLoad = state?.[ERASED_MARK] === true;
+    phase = state?.[ERASED_MARK] === true ? 'showing' : 'gone';
+    shownAt = page;
   }
-  return markedOnLoad;
+  return phase === 'showing' && shownAt === page;
 }
 
-const subscribeNever = () => () => {};
+function subscribe(cb: () => void) {
+  listeners.add(cb);
+  return () => {
+    listeners.delete(cb);
+  };
+}
+
+function done() {
+  phase = 'gone';
+  for (const cb of listeners) cb();
+}
 
 export function ErasedNotice() {
   const t = useTranslations('impact');
+  // Read so this redraws on every move to another page or language.
   const pathname = usePathname();
-  const marked = useSyncExternalStore(subscribeNever, readMark, () => false);
-  const [shownOn] = useState(pathname);
+  const locale = useLocale();
+  const page = `${locale}:${pathname}`;
+  const show = useSyncExternalStore(subscribe, () => visibleOn(page), () => false);
   const ref = useRef<HTMLParagraphElement>(null);
 
   useEffect(() => {
-    if (!marked) return;
+    if (phase !== 'showing') return;
+    if (shownAt !== page) {
+      done();
+      return;
+    }
+    if (!show) return;
+    // Once: this runs again only when the page changes, and then the line is
+    // already gone for good (above).
     try {
       const { [ERASED_MARK]: _mark, ...rest } = (window.history.state ?? {}) as Record<string, unknown>;
       void _mark;
@@ -53,9 +87,9 @@ export function ErasedNotice() {
       /* the mark stays in this one entry; it says nothing about the visitor */
     }
     ref.current?.focus();
-  }, [marked]);
+  }, [show, page]);
 
-  if (!marked || pathname !== shownOn) return null;
+  if (!show) return null;
   return (
     <div className="mx-auto max-w-5xl px-4 pt-6">
       <p ref={ref} role="status" tabIndex={-1} data-erased-notice="" className="text-sm font-medium">

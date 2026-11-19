@@ -5,7 +5,7 @@ import { ArrowRight } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useRouter, getPathname } from '@/i18n/navigation';
 import type { routing } from '@/i18n/routing';
-import { setPrefs, usePrefs } from '@/lib/local';
+import { setPrefs, useErasures, usePrefs } from '@/lib/local';
 import { lookupMembers } from '@/lib/members-action';
 
 /*
@@ -116,7 +116,12 @@ function ZipFormBody({
   const helpId = `zip-help-${uid}`;
   const router = useRouter();
   const prefs = usePrefs();
-  const [typed, setTyped] = useState<string | null>(null);
+  // What was typed, with the erase count it was typed under (lib/local.ts):
+  // an erase, here or in another tab, empties the field (2026-11-19).
+  const erasures = useErasures();
+  const [typedAt, setTypedAt] = useState<{ value: string; erasures: number } | null>(null);
+  const typed = typedAt && typedAt.erasures === erasures ? typedAt.value : null;
+  const setTyped = (value: string) => setTypedAt({ value, erasures });
   const [error, setError] = useState<string | null>(null);
   const zip = typed ?? prefs.zip ?? '';
   const fieldRef = useRef<HTMLInputElement>(null);

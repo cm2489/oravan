@@ -69,13 +69,17 @@ export function YourRecord({ standalone = false }: { standalone?: boolean }) {
   const prefs = usePrefs();
   const [confirming, setConfirming] = useState(false);
   const [erased, setErased] = useState(false);
+  // An erase that could not remove every key (lib/local.ts eraseAll): it does
+  // not say "erased", and the button stays, focused, to be pressed again.
+  const [incomplete, setIncomplete] = useState(false);
   const interests = prefs.interests ?? [];
   const hasAnything = calls.length > 0 || reads.length > 0 || !!prefs.zip || interests.length > 0;
 
   function onErase() {
-    eraseAll();
+    const complete = eraseAll();
     setConfirming(false);
-    setErased(true);
+    setErased(complete);
+    setIncomplete(!complete);
   }
 
   const contacts = calls.filter((c) => c.outcome === 'contact').length;
@@ -269,7 +273,7 @@ export function YourRecord({ standalone = false }: { standalone?: boolean }) {
           line. The status <p role=status> is ALWAYS mounted and filled on
           erase — a live region that mounts with its text is the classic
           pattern screen readers fail to announce. */}
-      {(hasAnything || erased) && (
+      {(hasAnything || erased || incomplete) && (
         <section className="mt-8 rounded-control bg-wash p-6" aria-labelledby="erase" data-record-erase="">
           <h2 id="erase" className="text-h3 font-extrabold">
             {t('eraseTitle')}
@@ -279,6 +283,11 @@ export function YourRecord({ standalone = false }: { standalone?: boolean }) {
             !erased && (
               <button
                 type="button"
+                ref={(el) => {
+                  // After an incomplete erase the confirm is gone and focus
+                  // fell to <body>: it comes back to the button that retries.
+                  if (incomplete && el && document.activeElement === document.body) el.focus();
+                }}
                 onClick={() => setConfirming(true)}
                 className="mt-4 inline-flex min-h-12 items-center gap-2 rounded-control border-2 border-ink bg-paper px-4 py-2.5 font-bold text-ink hover:bg-wash"
               >

@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
-import { ensureEntryTag, entryTag, eraseAll, erasureCount, savedZip, setPrefs, subscribe } from '../lib/local';
+import { ensureEntryTag, entryTag, eraseAll, erasureCount, heldSnapshotCaches, savedZip, setPrefs, subscribe } from '../lib/local';
+import { shareRepLookup, sharedRepLookupNow } from '../lib/rep-lookup-share';
 
 /*
  * AN ERASE IN ANOTHER TAB, OR WHILE THE PAGE SLEPT (lib/local.ts, 2026-11-18).
@@ -145,6 +146,128 @@ test('an erase made on this page is not counted again when the page comes back f
     const before = erasureCount();
     fire('pageshow', { persisted: true });
     expect(erasureCount(), 'the members found after the erase stay').toBe(before);
+  } finally {
+    off();
+  }
+});
+
+test('an erase empties the members held in memory for the bill and Call pages (lib/rep-lookup-share.ts)', () => {
+  const off = subscribe(() => {});
+  try {
+    const lookup = { zip: '20001', multiDistrict: false, reps: [{ bioguide: 'X000001', name: 'A member', state: 'DC', type: 'rep' as const }] };
+    shareRepLookup(lookup);
+    expect(sharedRepLookupNow()?.zip).toBe('20001');
+    eraseAll();
+    expect(sharedRepLookupNow(), 'this tab\'s erase').toBeNull();
+
+    shareRepLookup(lookup);
+    fire('storage', removed('oravan.entry'));
+    expect(sharedRepLookupNow(), 'another tab\'s erase').toBeNull();
+  } finally {
+    off();
+  }
+});
+
+test('an erase that cannot remove a key says so, and removes the tag first', () => {
+  const remove = (window as unknown as { localStorage: { removeItem: (k: string) => void } }).localStorage.removeItem;
+  for (const stuck of ['oravan.entry', 'oravan.prefs', 'oravan.calls', 'oravan.reads']) {
+    data.clear();
+    for (const k of ['oravan.entry', 'oravan.prefs', 'oravan.calls', 'oravan.reads']) data.set(k, k === 'oravan.entry' ? '0123456789abcdef0123456789abcdef' : '[]');
+    const order: string[] = [];
+    (window as unknown as { localStorage: { removeItem: (k: string) => void } }).localStorage.removeItem = (k: string) => {
+      order.push(k);
+      if (k === stuck) throw new Error('refused');
+      data.delete(k);
+    };
+    try {
+      const before = erasureCount();
+      expect(eraseAll(), `${stuck} would not go`).toBe(false);
+      expect(order[0], 'the tag first').toBe('oravan.entry');
+      expect(order, 'every key tried').toEqual(['oravan.entry', 'oravan.prefs', 'oravan.calls', 'oravan.reads']);
+      expect([...data.keys()]).toEqual([stuck]);
+      expect(erasureCount(), 'counted all the same').toBe(before + 1);
+      if (stuck === 'oravan.entry') expect(entryTag(), 'a tag that would not go is dead in this tab').toBeNull();
+    } finally {
+      (window as unknown as { localStorage: { removeItem: (k: string) => void } }).localStorage.removeItem = remove;
+    }
+  }
+  data.clear();
+  expect(eraseAll(), 'nothing stuck: a whole erase').toBe(true);
+});
+
+test('an erase leaves no copy of the ZIP in this page\'s memory: snapshot caches and a refused write', () => {
+  const store = (window as unknown as { localStorage: { setItem: (k: string, v: string) => void } }).localStorage;
+  const set = store.setItem;
+  const off = subscribe(() => {});
+  try {
+    data.clear();
+    setPrefs({ zip: '20001' });
+    expect(savedZip()).toBe('20001');
+    expect(heldSnapshotCaches()).toBeGreaterThan(0);
+    eraseAll();
+    expect(heldSnapshotCaches(), 'the last string read is not kept').toBe(0);
+
+    // This tab's store refuses writes (full): the ZIP is kept in memory.
+    // Another tab then erases: that copy goes too.
+    store.setItem = () => {
+      throw new Error('full');
+    };
+    setPrefs({ zip: '20001' });
+    expect(savedZip()).toBe('20001');
+    fire('storage', removed('oravan.prefs'));
+    expect(savedZip(), 'the refused write kept in memory').toBeNull();
+  } finally {
+    store.setItem = set;
+    off();
+  }
+});
+
+test('another tab\'s erase is not counted again when this page comes back from the cache', () => {
+  const off = subscribe(() => {});
+  try {
+    data.clear();
+    setPrefs({ zip: '20001' });
+    ensureEntryTag();
+    expect(entryTag()).not.toBeNull();
+    expect(savedZip()).toBe('20001');
+    for (const k of ['oravan.entry', 'oravan.prefs']) {
+      data.delete(k);
+      fire('storage', removed(k));
+    }
+    setPrefs({ zip: '10001' }); // a new ZIP after it, read here
+    expect(savedZip()).toBe('10001');
+    const before = erasureCount();
+    fire('pageshow', { persisted: true });
+    expect(erasureCount(), 'the members found after that erase stay').toBe(before);
+  } finally {
+    off();
+  }
+});
+
+test('another tab\'s erase, tag first: the ZIP still visible here already reads as nothing; a new save there is seen', () => {
+  const off = subscribe(() => {});
+  try {
+    data.clear();
+    setPrefs({ zip: '20001' });
+    ensureEntryTag();
+    expect(savedZip()).toBe('20001');
+    // The other tab removes the tag first; its other removals have not
+    // reached this tab yet.
+    data.delete('oravan.entry');
+    fire('storage', removed('oravan.entry'));
+    expect(data.has('oravan.prefs'), 'still stored here').toBe(true);
+    expect(savedZip(), 'but read as erased').toBeNull();
+    // The other tab saves a ZIP again (the same one, even): it is seen.
+    data.set('oravan.prefs', JSON.stringify({ zip: '20001' }));
+    fire('storage', { key: 'oravan.prefs', newValue: JSON.stringify({ zip: '20001' }), oldValue: null });
+    expect(savedZip()).toBe('20001');
+
+    // Erased again from there; then this tab saves the same ZIP itself: seen.
+    data.delete('oravan.entry');
+    fire('storage', removed('oravan.entry'));
+    expect(savedZip()).toBeNull();
+    setPrefs({ zip: '20001' });
+    expect(savedZip()).toBe('20001');
   } finally {
     off();
   }

@@ -67,6 +67,9 @@ export function AddressForm({
 }) {
   const t = useTranslations('reps');
   const hydrated = useHydrated();
+  // No erase can leave a typed address behind: an erase, here or in another
+  // tab, takes this form off the members page (components/RepsLookup.tsx),
+  // and the address with it.
   const [address, setAddress] = useState('');
   const [status, setStatus] = useState<Status>('idle');
 

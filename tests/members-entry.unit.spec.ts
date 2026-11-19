@@ -128,9 +128,11 @@ test('forgetStaleEntry: an entry the erase made unreadable is emptied; a current
   };
   try {
     eraseAll();
-    stored.set('oravan.entry', TAG);
+    // Its own made-up tag: other files in this worker revoke the shared one.
+    const OWN = 'f00df00df00df00df00df00df00df00d';
+    stored.set('oravan.entry', OWN);
     // Current: kept, untouched.
-    history.state = { __NA: true, [ENTRY_KEY]: { zip: '10001', tag: TAG } };
+    history.state = { __NA: true, [ENTRY_KEY]: { zip: '10001', tag: OWN } };
     forgetStaleEntry();
     expect(calls).toEqual([]);
     // Erased since (no tag): the ZIP goes, the router's own keys stay.

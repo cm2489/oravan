@@ -793,3 +793,246 @@ test('two tabs: the Call page in the other tab drops its members, and its lookup
   await answered;
   await expect(other.locator('[data-call-reach]')).toHaveCount(0);
 });
+
+/* ------------------------------------------------------------------------
+ * THE THIRD RE-CHECK (2026-11-19, PR #521).
+ * ---------------------------------------------------------------------- */
+
+/** /reps crashed, then erased from the error screen: the reloaded page shows the line. */
+async function erasedFromErrorScreen(page: Page, prefix: string, m: M) {
+  await seedZipOnce(page);
+  await page.addInitScript(ARM, REPS_PATH);
+  await page.goto(`${prefix}/reps`);
+  await page.getByRole('button', { name: m.errorBoundary.erase }).click();
+  const fresh = page.waitForEvent('load');
+  await page.getByRole('button', { name: m.impact.confirmErase }).click();
+  await fresh;
+  const notice = page.locator('[data-erased-notice]');
+  await expect(notice).toHaveText(m.impact.erased);
+  await expect(notice).toBeFocused();
+  return notice;
+}
+
+/* 1. "All local data erased." is said and focused once: never again after a
+   move to another page, Back, or a switch of language. */
+for (const [prefix, m, other] of [
+  ['', en, 'es'],
+  ['/es', es, 'en'],
+] as const) {
+  test(`${prefix || '/en'}: the erased line is said once: not after Bills and Back, not after a language switch`, async ({ page }) => {
+    const notice = await erasedFromErrorScreen(page, prefix, m);
+    // A jump within the page is not another page.
+    await page.getByRole('link', { name: m.common.skipToContent }).focus();
+    await page.keyboard.press('Enter');
+    await expect(page).toHaveURL(/#main$/);
+    await expect(notice).toBeVisible();
+
+    await navLink(page, m, 'bills').click();
+    await expect(page.getByRole('heading', { level: 1, name: m.bills.title })).toBeVisible();
+    await expect(notice).toHaveCount(0);
+    await page.goBack();
+    await page.goBack();
+    await expect(page).toHaveURL(new RegExp(`${prefix}/reps$`));
+    await expect(page.getByRole('heading', { level: 1, name: m.reps.membersHeading })).toBeVisible();
+    await expect(notice).toHaveCount(0);
+
+    await page.locator(`header a[hreflang="${other}"]`).first().click();
+    await expect(page).toHaveURL(new RegExp(`${other === 'es' ? '/es' : ''}/reps$`));
+    await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible();
+    await expect(notice).toHaveCount(0);
+    await expect(page.locator('[data-erased-notice]')).toHaveCount(0);
+  });
+}
+
+for (const [prefix, m, other, om] of [
+  ['', en, 'es', es],
+  ['/es', es, 'en', en],
+] as const) {
+  test(`${prefix || '/en'}: the erased line is not said again in the other language, straight after it showed`, async ({ page }) => {
+    await erasedFromErrorScreen(page, prefix, m);
+    await page.locator(`header a[hreflang="${other}"]`).first().click();
+    await expect(page).toHaveURL(new RegExp(`${other === 'es' ? '/es' : ''}/reps$`));
+    await expect(page.getByRole('heading', { level: 1, name: om.reps.membersHeading })).toBeVisible();
+    await expect(page.locator('[data-erased-notice]')).toHaveCount(0);
+    await expect(page.getByText(om.impact.erased)).toHaveCount(0);
+  });
+}
+
+test('the erased line: not after Reload, not in a duplicated tab', async ({ page, context }) => {
+  const notice = await erasedFromErrorScreen(page, '', en);
+  const state = await page.evaluate(() => JSON.stringify(window.history.state));
+  await page.reload();
+  await expect(page.getByRole('heading', { level: 1, name: en.reps.membersHeading })).toBeVisible();
+  await expect(notice).toHaveCount(0);
+
+  // A duplicated tab starts with a copy of this tab's entry.
+  const copy = await context.newPage();
+  await copy.goto('/reps');
+  await copy.evaluate((s) => window.history.replaceState(JSON.parse(s), ''), state);
+  await copy.reload();
+  await expect(copy.getByRole('heading', { level: 1, name: en.reps.membersHeading })).toBeVisible();
+  await expect(copy.locator('[data-erased-notice]')).toHaveCount(0);
+});
+
+/* 2. An erase that could not remove every key does not say "erased", keeps
+   the erase control, and the history tag has gone first. */
+const ALL_KEYS = ['oravan.entry', 'oravan.prefs', 'oravan.calls', 'oravan.reads'] as const;
+
+/** Make the browser refuse to remove one key, as a full or broken store can. */
+async function refuseRemoving(page: Page, key: string) {
+  await page.addInitScript((k: string) => {
+    const remove = Storage.prototype.removeItem;
+    Storage.prototype.removeItem = function (this: Storage, name: string) {
+      if (name === k) throw new DOMException('refused', 'QuotaExceededError');
+      return remove.call(this, name);
+    };
+  }, key);
+}
+
+async function seedEverything(page: Page) {
+  await page.addInitScript((data: Record<string, string>) => {
+    if (window.name.includes('e2e-seeded')) return;
+    window.name += ' e2e-seeded';
+    for (const [k, v] of Object.entries(data)) localStorage.setItem(k, v);
+  }, {
+    'oravan.prefs': PREFS,
+    'oravan.calls': JSON.stringify([
+      { billSlug: referenceBill().slug, billLabel: 'A call', repBioguide: 'X000001', repName: 'A member', stance: 'support', outcome: 'voicemail', at: '2026-09-24T15:00:00.000Z' },
+    ]),
+    'oravan.reads': JSON.stringify([{ billSlug: referenceBill().slug, billLabel: 'A read', at: '2026-09-24T15:00:00.000Z' }]),
+  });
+}
+
+for (const key of ALL_KEYS) {
+  test(`"Erase my data" on /reps when ${key} will not go: no "erased", the control stays, focused`, async ({ page }) => {
+    await refuseRemoving(page, key);
+    await seedEverything(page);
+    await page.goto('/reps');
+    await expectWorkingMembers(page, en);
+    const erase = page.locator('[data-record-erase]');
+    await erase.getByRole('button', { name: en.impact.erase }).click();
+    await erase.getByRole('button', { name: en.impact.confirmErase }).click();
+    const again = erase.getByRole('button', { name: en.impact.erase });
+    await expect(again).toBeVisible();
+    await expect(again).toBeFocused();
+    await expect(page.getByText(en.impact.erased)).toHaveCount(0);
+    // Every other key went, the tag first. (When the ZIP itself would not
+    // go, it is still saved, so the page looks it up again and may keep the
+    // answer under a new tag: the erase did not happen, and says nothing.)
+    const left = await page.evaluate((keys) => keys.filter((k) => localStorage.getItem(k) !== null), [...ALL_KEYS]);
+    expect(key === 'oravan.prefs' ? left.filter((k) => k !== 'oravan.entry') : left).toEqual([key]);
+    if (key === 'oravan.calls' || key === 'oravan.reads') {
+      // The ZIP and the tag went: no history copy of the ZIP is read again.
+      // (Where the stuck key is the tag or the ZIP itself, the ZIP is still
+      // saved or readable, honestly: the page says nothing was erased.)
+      const sent = sendsOf(page, ZIP);
+      await page.reload();
+      await expect(page.getByRole('heading', { level: 1, name: en.reps.membersHeading })).toBeVisible();
+      await expect(page.locator('[data-zip-line]')).toHaveCount(0);
+      expect(sent).toEqual([]);
+    }
+  });
+}
+
+test('the record page\'s erase when a key will not go: no "erased", the control stays', async ({ page }) => {
+  await refuseRemoving(page, 'oravan.calls');
+  await seedEverything(page);
+  await page.goto('/record');
+  const erase = page.locator('[data-record-erase]');
+  await erase.getByRole('button', { name: en.impact.erase }).click();
+  await erase.getByRole('button', { name: en.impact.confirmErase }).click();
+  await expect(erase.getByRole('button', { name: en.impact.erase })).toBeFocused();
+  await expect(page.getByText(en.impact.erased)).toHaveCount(0);
+});
+
+test('the error screen\'s erase when a key will not go: the reloaded page does not say "erased", the control is there', async ({ page }) => {
+  await refuseRemoving(page, 'oravan.calls');
+  await seedEverything(page);
+  await page.addInitScript(ARM, REPS_PATH);
+  await page.goto('/reps');
+  await page.getByRole('button', { name: en.errorBoundary.erase }).click();
+  const fresh = page.waitForEvent('load');
+  await page.getByRole('button', { name: en.impact.confirmErase }).click();
+  await fresh;
+  await expect(page.getByRole('heading', { level: 1, name: en.reps.membersHeading })).toBeVisible();
+  await expect(page.locator('[data-erased-notice]')).toHaveCount(0);
+  await expect(page.getByText(en.impact.erased)).toHaveCount(0);
+  await expect(page.locator('[data-record-erase]').getByRole('button', { name: en.impact.erase })).toBeVisible();
+});
+
+/* 3. An erase empties every field that holds a ZIP or a street address. */
+test('the ZIP field on /reps?change=1 is emptied by the erase', async ({ page }) => {
+  await page.goto('/reps?change=1');
+  const zip = page.getByRole('textbox', { name: en.home.zipLabel });
+  await zip.fill(SPLIT);
+  await zip.press('Enter');
+  await expect(page.locator('[data-zip-line]')).toContainText(SPLIT);
+  await eraseMyData(page);
+  await expect(zip).toHaveValue('');
+});
+
+test('two tabs: a ZIP typed but not sent on the home page, and a street address typed, are emptied by an erase in this tab', async ({ context }) => {
+  const other = await context.newPage();
+  await other.goto('/');
+  const homeZip = other.getByRole('textbox', { name: en.home.zipLabel }).first();
+  await homeZip.fill(ZIP);
+
+  const third = await context.newPage();
+  await third.addInitScript((prefs: string) => {
+    if (!window.name.includes('s')) {
+      window.name += 's';
+      localStorage.setItem('oravan.prefs', prefs);
+    }
+  }, JSON.stringify({ zip: SPLIT }));
+  await third.goto('/reps');
+  await expect(third.getByLabel(en.reps.addressLabel)).toBeVisible();
+  await third.getByLabel(en.reps.addressLabel).fill(ADDRESS);
+
+  const here = await context.newPage();
+  await here.goto('/record');
+  await here.evaluate((prefs) => localStorage.setItem('oravan.prefs', prefs), PREFS);
+  await here.reload();
+  await eraseMyData(here);
+  await expect(homeZip).toHaveValue('');
+  await expect(third.getByLabel(en.reps.addressLabel)).toHaveCount(0);
+  await expect(third.getByRole('textbox', { name: en.home.zipLabel })).toHaveValue('');
+});
+
+/* 6. A tab hidden when the erase happened; a tab whose page memory is gone
+   but whose history entry remains. */
+test('two tabs: a tab hidden when the erase happens shows nothing when it is shown again', async ({ context }) => {
+  const other = await context.newPage();
+  await other.goto('/record');
+  await other.evaluate((prefs) => localStorage.setItem('oravan.prefs', prefs), PREFS);
+  await other.goto('/reps');
+  await expectWorkingMembers(other, en);
+  const setVisibility = (state: 'hidden' | 'visible') =>
+    other.evaluate((s) => {
+      Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => s });
+      Object.defineProperty(document, 'hidden', { configurable: true, get: () => s === 'hidden' });
+      document.dispatchEvent(new Event('visibilitychange'));
+    }, state);
+  await setVisibility('hidden');
+
+  const here = await context.newPage();
+  await here.goto('/record');
+  const sent = sendsOf(other, ZIP);
+  await eraseMyData(here);
+  await setVisibility('visible');
+  await expectPromptOnly(other, en);
+  await other.reload();
+  await expectPromptOnly(other, en);
+  expect(sent).toEqual([]);
+});
+
+test('a tab whose page memory is gone but whose entry remains, tagged by an erased tag: nothing sent, nothing shown', async ({ page }) => {
+  await page.goto('/reps');
+  await page.evaluate((zip) => {
+    window.history.replaceState({ ...window.history.state, oravanMembers: { zip, tag: '0123456789abcdef0123456789abcdef' } }, '');
+  }, ZIP);
+  const sent = sendsOf(page, ZIP);
+  await page.reload();
+  await expectPromptOnly(page, en);
+  expect(sent).toEqual([]);
+  expect(await page.evaluate(() => (window.history.state as Record<string, unknown> | null)?.oravanMembers ?? null)).toBeNull();
+});
