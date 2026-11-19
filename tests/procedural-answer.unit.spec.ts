@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import * as congressFetch from '../scripts/congress-fetch.mjs';
 import {
   FLOOR_SETTLED,
+  amendmentExchange,
   concurrentAdoptedBy,
   passageState,
   procedureEndedConsideration,
@@ -263,7 +264,12 @@ test.describe('floorAnsweredChamber: what answered before still answers', () => 
   test('a motion whose carrying IS agreement to the text (constructed)', () => {
     for (const { text, chamber } of PASSAGE_MOTIONS_CONSTRUCTED) {
       expect(procedureIsTheSubject(text), text).toBe(false);
-      expect(floorAnsweredChamber(text), text).toBe(chamber);
+      // Each is a chamber agreeing to the other chamber's amendment with no
+      // amendment of its own, so since 2026-11-18 (#523) the answer is 'both'
+      // (both chambers hold one text), not only the acting chamber; the
+      // acting chamber is still the one the reader names.
+      expect(floorAnsweredChamber(text), text).toBe('both');
+      expect(amendmentExchange(text), text).toEqual({ chamber, final: true });
     }
   });
 

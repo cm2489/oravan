@@ -558,15 +558,18 @@ function recordStatusKey(bill: StatusKeyBill, now: number): StatusLabelKey {
   const status = recordStatus(bill) as Bill['status'];
   if (status === 'passed_chamber') {
     if (concurrentAdoptedBy(bill)) return 'adopted';
-    // EVERY STAGE PAST THE SECOND CHAMBER'S VOTE (2026-11-18). 'back' — both
-    // chambers passed it, in different versions — read `passed_chamber`,
-    // "Passed one chamber", which is false: both did (H.R. 5349). 'both' now
-    // also covers presentment and agreement to the other chamber's amendment
-    // (passageState). All three print the existing "Passed both chambers",
-    // which is true of each; the record's finer stage is the stepper's
-    // "Right now:" sentence. This changes no decision: decisionState and
+    // EVERY STAGE PAST THE SECOND CHAMBER'S VOTE (2026-11-18). 'both' and
+    // 'second' print "Passed both chambers"; 'both' now also covers
+    // presentment and agreement to the other chamber's amendment
+    // (passageState). 'back' — both chambers passed it in different versions
+    // (H.R. 5349) — read "Passed one chamber", which was false, and "Passed
+    // both chambers" alone reads as "it goes to the president next", which it
+    // does not: it prints the home rows' own words instead, "Back in the
+    // House / Senate to settle the changes", naming the chamber that acts
+    // next (`next`). This changes no decision: decisionState and
     // settledDecision read neither the key nor the stage.
-    const { stage } = passageState(bill);
+    const { stage, next } = passageState(bill);
+    if (stage === 'back') return next === 'senate' ? 'passed_back_senate' : 'passed_back_house';
     return stage === 'first' ? 'passed_chamber' : 'passed_both';
   }
   if (status !== 'floor_vote') return status;
@@ -1958,7 +1961,10 @@ export function endedDecision(
   const settled = finishedDecision(bill);
   if (settled?.kind === 'law') return { ...base, kind: 'law' };
   if (settled) return { ...base, kind: 'decided' };
-  if (bill.status === 'passed_chamber' && passageState(bill).stage === 'both') return { ...base, kind: 'presented' };
+  // recordStatus, as statusKeyFor reads it (re-check of #523, round 3): a
+  // record stored at `committee` over a final agreement is a bill both
+  // chambers passed in one form.
+  if (recordStatus(bill) === 'passed_chamber' && passageState(bill).stage === 'both') return { ...base, kind: 'presented' };
   return { ...base, kind: 'ended' };
 }
 

@@ -263,9 +263,11 @@ export function statusKeyFor(status, lastActionText, lastActionDate, now = Date.
       status_basis_text: record.status_basis_text ?? null,
     };
     if (concurrentAdoptedBy(bill)) return 'adopted';
-    // Every stage past the second chamber's vote reads `passed_both`,
-    // 'back' included (2026-11-18; lib/journey.ts recordStatusKey says why).
-    const { stage } = passageState(bill);
+    // Every stage past the second chamber's vote, as lib/journey.ts
+    // recordStatusKey reads it (2026-11-18): 'back' names the chamber that
+    // settles the changes, the rest read `passed_both`.
+    const { stage, next } = passageState(bill);
+    if (stage === 'back') return next === 'senate' ? 'passed_back_senate' : 'passed_back_house';
     return stage === 'first' ? status : 'passed_both';
   }
   if (status !== 'floor_vote') return status;

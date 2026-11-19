@@ -156,11 +156,6 @@ export type StanceLineBill = StatusKeyBill & Pick<Bill, 'title'>;
 export function passedBothReading(bill: StanceLineBill): PassedBothReading | null {
   if (statusKeyFor(bill) !== 'passed_both') return null;
   const { stage } = passageState(bill);
-  // 'back' (2026-11-18): both chambers passed it in different versions, so it
-  // prints "Passed both chambers" now, but the chamber it went back to still
-  // votes on the changes. Its stance lines stay the ordinary ones, exactly as
-  // they were when it printed "Passed one chamber": a vote is still ahead.
-  if (stage === 'back') return null;
   const toPresident = stage === 'both' && journeyEnding(bill.bill_type, bill.title) === 'president';
   return toPresident ? 'to_president' : 'next_unstated';
 }
@@ -193,9 +188,57 @@ function passedBothStanceLine(stance: Stance, reading: PassedBothReading): strin
 }
 
 /** The stance line the prompt carries for this bill at its current stage. */
+/*
+ * THE ASK WHEN BOTH CHAMBERS PASSED IT IN DIFFERENT VERSIONS (re-check of
+ * #523, round 3; H.R. 5349). The site prints "Back in the House to settle the
+ * changes" (statusKeyFor's `passed_back_house`). The one script is read to the
+ * caller's Representative's office AND both Senators' offices, and one of those
+ * chambers has already voted on the bill, so the script may not ask the member
+ * to "vote for it": a senator asked to vote on H.R. 5349 would be asked to do
+ * what the Senate already did. It asks every office for a PUBLIC STAND while
+ * the chamber named in the record settles the changes, and says where the bill
+ * stands in the Big Questions line's own words
+ * (messages/en.json moments.status.line.passedBack), naming that chamber.
+ * Naming it there is the one exception to the chamber-neutral rule below, and
+ * the line says so; the recipient is still never addressed by chamber or
+ * title.
+ */
+export type PassedBackChamber = 'house' | 'senate';
+
+/** The chamber a bill passed in different versions is back with, or null. */
+export function passedBackChamber(bill: StanceLineBill): PassedBackChamber | null {
+  const key = statusKeyFor(bill);
+  return key === 'passed_back_house' ? 'house' : key === 'passed_back_senate' ? 'senate' : null;
+}
+
+const CHAMBER_NAME: Record<PassedBackChamber, string> = { house: 'House', senate: 'Senate' };
+const OTHER_CHAMBER: Record<PassedBackChamber, PassedBackChamber> = { house: 'senate', senate: 'house' };
+
+/** "Both chambers passed it in different versions; it is back with the House
+ *  to settle the changes." — the Big Questions line, read from the one copy. */
+function passedBackWhere(chamber: PassedBackChamber): string {
+  const icu = en.moments.status.line.passedBack;
+  const m = new RegExp(`${chamber === 'house' ? 'house' : 'other'} \\{([^}]*)\\}`).exec(icu);
+  return m ? m[1] : icu;
+}
+
+function passedBackStanceLine(stance: Stance, chamber: PassedBackChamber): string {
+  const settling = ` while the ${CHAMBER_NAME[chamber]} settles the changes`;
+  const ask: Record<Stance, string> = {
+    support: `The caller SUPPORTS this bill and urges the member to publicly back it${settling}.`,
+    oppose: `The caller OPPOSES this bill and urges the member to publicly oppose it${settling}.`,
+    undecided: concernedLine(`asks the member to state a public position on the bill${settling}`),
+  };
+  const where = `Where the bill stands: ${passedBackWhere(chamber)} The script must say so plainly. Naming the ${CHAMBER_NAME[chamber]} to say where the bill stands is the one exception to the chamber-neutral rule below; never address or describe the recipient by chamber or title.`;
+  const never = `NEVER ask the member to vote for or against this bill: the same script is read to offices in both chambers, and the ${CHAMBER_NAME[OTHER_CHAMBER[chamber]]} has already voted on it. NEVER say or imply how the member voted, or whether the member voted at all.`;
+  return `${ask[stance]} ${where} ${never}`;
+}
+
 export function stanceLine(bill: StanceLineBill, stance: Stance): string {
   const reading = passedBothReading(bill);
-  return reading ? passedBothStanceLine(stance, reading) : STANCE_LINES[stance];
+  if (reading) return passedBothStanceLine(stance, reading);
+  const back = passedBackChamber(bill);
+  return back ? passedBackStanceLine(stance, back) : STANCE_LINES[stance];
 }
 
 function langLine(lang: 'en' | 'es'): string {

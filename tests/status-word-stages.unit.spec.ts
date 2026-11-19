@@ -3,14 +3,24 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   deriveJourney,
+  endedDecision,
   liveCallTarget,
   passageState,
   settledDecision,
   statusKeyFor,
 } from '../lib/journey';
-import { agreedToOtherChamberAmendment, amendmentExchangeContinues, amendmentExchangeFailed, recordStatus } from '../lib/floor-text.mjs';
-import { announcementAnswered, decisionState, floorAnsweredChamber } from '../lib/docket.mjs';
-import { passedBothReading } from '../lib/scriptprompt';
+import {
+  agreedToOtherChamberAmendment,
+  amendmentExchange,
+  amendmentExchangeContinues,
+  amendmentExchangeFailed,
+  presentedToPresident,
+  recordStatus,
+} from '../lib/floor-text.mjs';
+import { announcementAnswered, decisionState, docketRung, floorAnsweredChamber } from '../lib/docket.mjs';
+import { withSitePolicyForTest } from '../lib/ended-state.mjs';
+import { lowercaseLead } from '../lib/lead-lowercase';
+import { buildScriptPrompt, passedBackChamber, passedBothReading, stanceLine } from '../lib/scriptprompt';
 import { isStatusReading } from '../lib/moment-updates-gate.mjs';
 import { mapStatus } from '../scripts/congress-fetch.mjs';
 import { statusKeyFor as statusKeyForMjs } from '../scripts/moment-candidates.mjs';
@@ -26,7 +36,14 @@ import type { Bill, BillStatus } from '../lib/types';
  * Every fixture below is a record's own sentence, copied from data/bills.json
  * on 2026-11-18; nothing here reads data/ or the real clock, so no fixture can
  * go stale when those bills move on.
+ *
+ * NOT THE 119TH CONGRESS (re-check of #523, round 3). Every fixture carries
+ * TEST_CONGRESS, a number no Congress list will ever hold, so the January
+ * switch that puts 119 on the ended list (lib/congress.mjs ENDED_CONGRESSES)
+ * cannot turn these readings into "Ended". The one test about an ended
+ * Congress sets its own policy (withSitePolicyForTest).
  */
+const TEST_CONGRESS = 9_119;
 
 const NOW = Date.parse('2026-11-18T18:00:00Z');
 const EN = JSON.parse(readFileSync(join(process.cwd(), 'messages/en.json'), 'utf8'));
@@ -39,7 +56,7 @@ type Fixture = Pick<Bill, 'bill_type' | 'status' | 'last_action_text' | 'last_ac
 };
 const bill = (f: Partial<Fixture> & Pick<Fixture, 'bill_type' | 'status' | 'last_action_text'>): Fixture => ({
   last_action_date: '2026-11-12',
-  congress_number: 119,
+  congress_number: TEST_CONGRESS,
   status_basis_text: null,
   title: 'A bill.',
   ...f,
@@ -69,6 +86,7 @@ const SIX = {
 
 test.describe('the six bills the audit found', () => {
   for (const [slug, b] of Object.entries(SIX)) {
+    if (slug === 'hr-5349-119') continue;
     test(`${slug} reads "Passed both chambers" in both languages, from both copies of the gate`, () => {
       expect(statusKeyFor(b, NOW)).toBe('passed_both');
       expect(keyMjs(b)).toBe('passed_both');
@@ -76,6 +94,29 @@ test.describe('the six bills the audit found', () => {
       expect(ES.bills.status[statusKeyFor(b, NOW)]).toBe('Aprobado por ambas cámaras');
     });
   }
+
+  test('hr-5349-119 reads "Back in the House to settle the changes", the home rows’ own words, in both languages', () => {
+    const b = SIX['hr-5349-119'];
+    expect(statusKeyFor(b, NOW)).toBe('passed_back_house');
+    expect(keyMjs(b)).toBe('passed_back_house');
+    expect(EN.bills.status.passed_back_house).toBe('Back in the House to settle the changes');
+    expect(ES.bills.status.passed_back_house).toBe('De vuelta en la Cámara para resolver los cambios');
+    expect(EN.bills.status.passed_back_senate).toBe('Back in the Senate to settle the changes');
+    expect(ES.bills.status.passed_back_senate).toBe('De vuelta en el Senado para resolver los cambios');
+    // Exactly the words the home rows already print for the same record.
+    for (const [cat, ch] of [[EN, 'house'], [EN, 'senate'], [ES, 'house'], [ES, 'senate']] as const) {
+      const icu: string = cat.homeLine.passedBack;
+      const words = new RegExp(`${ch === 'house' ? 'house' : 'other'} \\{([^}]*)\\}`).exec(icu)![1];
+      expect(cat.bills.status[`passed_back_${ch}`]).toBe(words);
+    }
+    // A Senate bill the House amended is back with the Senate.
+    const s = bill({ bill_type: 's', status: 'passed_chamber', last_action_text: 'Passed House with an amendment by voice vote.' });
+    expect(passageState(s).stage).toBe('back');
+    expect(statusKeyFor(s, NOW)).toBe('passed_back_senate');
+    expect(keyMjs(s)).toBe('passed_back_senate');
+    expect(isStatusReading('passed_chamber', 'passed_back_house')).toBe(true);
+    expect(isStatusReading('passed_chamber', 'passed_back_senate')).toBe(true);
+  });
 
   test('presented: the stepper stands it at the President’s desk and routes no live call', () => {
     const b = SIX['hr-10167-119'];
@@ -94,9 +135,52 @@ test.describe('the six bills the audit found', () => {
     expect(passageState(b)).toEqual({ stage: 'back', passedBy: 'senate', next: 'house' });
     expect(deriveJourney(b).nowKey).toMatch(/^nowPassedBack/);
     expect(liveCallTarget(b)).toEqual({ chamber: 'house', afterVote: true, soleChamber: false });
-    // The House still votes on the changes, so the script keeps the ordinary
-    // ask (a vote), as it did when the word was "Passed one chamber".
+    // Not the "goes to the president" ask: the House still settles the changes.
     expect(passedBothReading({ ...b, title: b.title ?? 'A bill.' })).toBeNull();
+  });
+
+  /*
+   * THE CALL SCRIPT FOR H.R. 5349 (re-check of #523, round 3). One script is
+   * read to the caller's Representative's office and to both Senators'
+   * offices. The Senate has already voted on H.R. 5349, so the script asks
+   * every office for a public stand while the House settles the changes, and
+   * never asks the member to vote: a representative is asked to publicly back
+   * (or oppose) it while the House settles the changes, and so is a senator,
+   * in the same words. It names the House only to say where the bill stands.
+   */
+  test('hr-5349-119 call script: what it asks a representative and a senator', () => {
+    const b = { ...SIX['hr-5349-119'], title: 'A bill.', bill_number: 5349, short_title: null, ai_summary: 'A summary.' };
+    expect(passedBackChamber(b)).toBe('house');
+    const support = stanceLine(b, 'support');
+    const oppose = stanceLine(b, 'oppose');
+    const undecided = stanceLine(b, 'undecided');
+    expect(support).toContain('urges the member to publicly back it while the House settles the changes.');
+    expect(oppose).toContain('urges the member to publicly oppose it while the House settles the changes.');
+    expect(undecided).toContain('state a public position on the bill while the House settles the changes');
+    for (const line of [support, oppose, undecided]) {
+      expect(line).toContain('Where the bill stands: Both chambers passed it in different versions; it is back with the House to settle the changes.');
+      expect(line).toContain('NEVER ask the member to vote for or against this bill');
+      expect(line).toContain('the Senate has already voted on it');
+      expect(line).not.toContain('urges the member to vote');
+    }
+    // The prompt is the same text for the representative's office and each
+    // senator's office (buildScriptPrompt says so), in both languages.
+    for (const lang of ['en', 'es'] as const) {
+      const prompt = buildScriptPrompt({ bill: b, stance: 'support', lang });
+      expect(prompt).toContain('Current status: Back in the House to settle the changes');
+      expect(prompt).toContain('read verbatim to the caller\'s U.S. Representative\'s office and, separately, to both of the caller\'s U.S. Senators\' offices');
+      expect(prompt).toContain('urges the member to publicly back it while the House settles the changes.');
+      expect(prompt).not.toContain('urges the member to vote for it');
+    }
+  });
+
+  test('a Senate bill back with the Senate: the House is the chamber that already voted', () => {
+    const s = { ...bill({ bill_type: 's', status: 'passed_chamber', last_action_text: 'Passed House with an amendment by voice vote.' }), title: 'A bill.' };
+    expect(passedBackChamber(s)).toBe('senate');
+    const line = stanceLine(s, 'support');
+    expect(line).toContain('it is back with the Senate to settle the changes.');
+    expect(line).toContain('the House has already voted on it');
+    expect(line).toContain('while the Senate settles the changes.');
   });
 
   test('H.R. 2400: the record’s own sentence outranks the stored "committee"', () => {
@@ -177,6 +261,16 @@ test.describe('the nightly mapping reads agreement to the other chamber’s amen
     { text: 'On motion that the House agree to the Senate amendment Not agreed to by voice vote.', type: 'hr', map: 'floor_vote', answered: 'house', stage: 'first', key: 'floor_activity', nowKey: 'nowFloorActivityNeutral', why: '"Not agreed to" contains "agreed to": a defeat is never read as agreement; the House answered no' },
     { text: 'On motion that the House disagree to the Senate amendment Not agreed to by voice vote.', type: 'hr', map: 'floor_vote', answered: 'house', stage: 'first', key: 'floor_activity', nowKey: 'nowFloorActivityNeutral', why: 'a failed motion to disagree is still the House answering on its floor' },
     { text: 'POSTPONED PROCEEDINGS - At the conclusion of debate on the motion that the House suspend the rules and agree to the Senate amendment to H.R. 2400, the Chair put the question on the motion and by voice vote, announced that the ayes had prevailed. Mr. Westerman demanded the yeas and nays and the Chair postponed further proceedings on the motion until a time designated by the Speaker.', type: 'hr', map: 'floor_vote', answered: null, stage: 'first', key: 'floor_activity', nowKey: /^nowFloorActivity(Stale)?$/, why: 'the vote is postponed: no "Agreed to", so no agreement and no answer yet' },
+    { text: 'On motion that the House agree with an amendment to the Senate amendment Agreed to without objection.', type: 'hr', map: 'floor_vote', answered: 'house', stage: 'first', key: 'floor_activity', nowKey: 'nowFloorActivityNeutral', why: 'the House’s usual wording for agreeing WITH an amendment: it sends it back, only the House has answered (main: "In committee")' },
+    { text: 'On motion that the House recede from its disagreement to the amendment of the Senate and concur therein Agreed to without objection.', type: 'hr', map: 'passed_chamber', answered: 'both', stage: 'both', key: 'passed_both', nowKey: 'nowPassedBoth', why: '"recede … and concur therein" with no amendment is final agreement (main: "In committee")' },
+    { text: 'On motion that the House recede from its disagreement to the amendment of the Senate and concur therein with an amendment Agreed to without objection.', type: 'hr', map: 'floor_vote', answered: 'house', stage: 'first', key: 'floor_activity', nowKey: 'nowFloorActivityNeutral', why: 'the same with an amendment: back to the Senate (main: "In committee")' },
+    { text: 'On motion that the House insist upon its amendment and request a conference Agreed to without objection.', type: 'hr', map: 'floor_vote', answered: 'house', stage: 'first', key: 'floor_activity', nowKey: 'nowFloorActivityNeutral', why: 'insisting keeps the exchange going on the floor (main: "In committee")' },
+    { text: 'House insisted upon its amendment and asked for a conference.', type: 'hr', map: 'floor_vote', answered: 'house', stage: 'first', key: 'floor_activity', nowKey: 'nowFloorActivityNeutral', why: 'the chamber’s own sentence for insisting (main: "In committee")' },
+    { text: 'Senate disagreed to the House amendment, requested a conference with the House on the disagreeing votes of the two Houses, and appointed conferees by Unanimous Consent.', type: 's', map: 'floor_vote', answered: 'senate', stage: 'first', key: 'floor_activity', nowKey: 'nowFloorActivityNeutral', why: 'the Senate disagreed: a floor act, the exchange goes on (main: "In committee")' },
+    { text: 'Motion by Senator Thune to concur in the House amendment to S. 1234 made in Senate.', type: 's', map: 'floor_vote', answered: null, stage: 'first', key: 'floor_activity', nowKey: 'nowFloorActivityNeutral', why: 'a motion that is only MADE is not an agreement, and nobody has answered (main: "In committee")' },
+    { text: 'Motion by Senator Thune to concur in the House amendment to S. 1234 agreed to in Senate by Yea-Nay Vote. 60 - 38. Record Vote Number: 310.', type: 's', map: 'passed_chamber', answered: 'both', stage: 'both', key: 'passed_both', nowKey: 'nowPassedBoth', why: 'the Senate’s motion to concur, agreed to with no amendment: final (main: "Passed one chamber")' },
+    { text: 'Motion by Senator Thune to concur in the House amendment to S. 1234 with an amendment (SA 2600) agreed to in Senate by Voice Vote.', type: 's', map: 'floor_vote', answered: 'senate', stage: 'first', key: 'floor_activity', nowKey: 'nowFloorActivityNeutral', why: 'agreed WITH an amendment: back to the House' },
+    { text: 'Motion by Senator Thune to concur in the House amendment to S. 1234 not agreed to in Senate by Yea-Nay Vote. 45 - 53.', type: 's', map: 'floor_vote', answered: 'senate', stage: 'first', key: 'floor_activity', nowKey: 'nowFloorActivityNeutral', why: 'voted down: never an agreement' },
     { text: 'Conference report agreed to in Senate by Yea-Nay Vote. 70 - 28.', type: 's', map: 'conference', answered: 'senate', stage: 'first', key: 'conference', nowKey: 'nowConference', why: 'conference-report language is the conference stage, not this reader' },
     { text: 'On agreeing to the conference report Agreed to by the Yeas and Nays: 300 - 120 (Roll no. 310).', type: 'hr', map: 'conference', answered: null, stage: 'first', key: 'conference', nowKey: 'nowConference', why: 'the same; it names no chamber, so no chamber is read as having answered' },
     { text: 'Motion to reconsider laid on the table Agreed to without objection.', type: 'hr', map: 'passed_chamber', answered: 'unknown', stage: 'first', key: 'passed_chamber', nowKey: /^nowPassed(Stale)?$/, why: 'unchanged: the post-vote motion is only a default, and every write path reads the action before it (resolveAmbiguousStatus)' },
@@ -258,7 +352,7 @@ const STAGES: { name: string; b: Fixture; key: string; decision: string; settled
   { name: 'failed motion', b: bill({ bill_type: 'sjres', status: 'floor_vote', last_action_text: 'Motion to proceed to consideration of measure rejected in Senate by Yea-Nay Vote. 47 - 50. Record Vote Number: 111.' }), key: 'floor_activity', decision: 'pending', settled: null },
   { name: 'rejected on passage', b: bill({ bill_type: 'sjres', status: 'floor_vote', last_action_text: 'Failed of passage in Senate by Yea-Nay Vote. 47 - 51. Record Vote Number: 554.' }), key: 'rejected', decision: 'settled', settled: 'rejected' },
   { name: 'passed one chamber', b: bill({ bill_type: 'hr', status: 'passed_chamber', last_action_text: 'Received in the Senate and Read twice and referred to the Committee on Finance.' }), key: 'passed_chamber', decision: 'pending', settled: null },
-  { name: 'passed both, different versions', b: SIX['hr-5349-119'], key: 'passed_both', decision: 'pending', settled: null },
+  { name: 'passed both, different versions', b: SIX['hr-5349-119'], key: 'passed_back_house', decision: 'pending', settled: null },
   { name: 'passed both, same text', b: bill({ bill_type: 'hr', status: 'passed_chamber', last_action_text: 'Passed Senate without amendment by Unanimous Consent.' }), key: 'passed_both', decision: 'pending', settled: null },
   { name: 'both acted, record silent on versions', b: bill({ bill_type: 'hr', status: 'passed_chamber', last_action_text: 'Message on Senate action sent to the House.', status_basis_text: 'Passed Senate.' }), key: 'passed_both', decision: 'pending', settled: null },
   { name: 'agreed to the other chamber’s amendment', b: SIX['hr-2400-119'], key: 'passed_both', decision: 'pending', settled: null },
@@ -281,3 +375,77 @@ test.describe('every stage: the word, and open or settled', () => {
     });
   }
 });
+
+/* ------------------------------------------------------------------ *
+ * Round 3 of the re-check of #523.
+ * ------------------------------------------------------------------ */
+
+test.describe('the card note "Just passed a chamber" (lib/docket.mjs)', () => {
+  const FRESH = new Date(NOW - 2 * 86_400_000).toISOString().slice(0, 10);
+  const rung = (b: Fixture) => docketRung({ ...b, last_action_date: FRESH }, null, { now: NOW });
+  test('kept on a first passage', () => {
+    const b = bill({ bill_type: 'hr', status: 'passed_chamber', last_action_text: 'Received in the Senate.' });
+    expect(rung(b).annotation).toBe('just_passed');
+  });
+  test('left out where the word is "Passed both chambers" or "Back in the … to settle the changes"', () => {
+    for (const b of [
+      SIX['hr-10167-119'],
+      SIX['hr-5349-119'],
+      bill({ bill_type: 'hr', status: 'passed_chamber', last_action_text: 'Passed Senate without amendment by Unanimous Consent.' }),
+      bill({ bill_type: 'hr', status: 'passed_chamber', last_action_text: 'Message on Senate action sent to the House.', status_basis_text: 'Passed Senate.' }),
+    ]) {
+      expect(['passed_both', 'passed_back_house'], b.last_action_text ?? '').toContain(statusKeyFor(b, NOW));
+      expect(rung(b).tier, b.last_action_text ?? '').toBe('t3');
+      expect(rung(b).annotation, b.last_action_text ?? '').toBeNull();
+    }
+  });
+});
+
+test.describe('lowercaseLead (the stepper’s reused sentence after "Right now:")', () => {
+  test('the presented sentence, in both languages', () => {
+    expect(lowercaseLead(EN.moments.status.line.presented, 'en')).toBe('both chambers passed it, and it has been sent to the president.');
+    expect(lowercaseLead(ES.moments.status.line.presented, 'es')).toBe('ambas cámaras lo aprobaron y se envió al presidente.');
+  });
+  test('leaves proper nouns, bill numbers and acronyms alone', () => {
+    for (const s of ['Senate passed it.', 'House passed it.', 'Congress acted.', 'H.R. 2400 passed.', 'HHS must report.', 'Cámara aprobó.', 'Senado aprobó.', 'November 12.', 'S. 1234 passed.', 'Él lo firmó.']) {
+      expect(lowercaseLead(s, 'en'), s).toBe(s === 'Él lo firmó.' ? 'él lo firmó.' : s);
+    }
+    expect(lowercaseLead('', 'en')).toBe('');
+  });
+});
+
+test.describe('an ended Congress (lib/journey.ts endedDecision reads recordStatus)', () => {
+  const POLICY = { tracked: TEST_CONGRESS + 1, ended: [{ number: TEST_CONGRESS, ended: '2027-01-03' }] };
+  test('a bill stored at committee whose record holds a final agreement ended as presented, and keeps "Passed both chambers"', () => {
+    withSitePolicyForTest(POLICY, () => {
+      const b = SIX['hr-2400-119'];
+      expect(endedDecision(b)?.kind).toBe('presented');
+      expect(statusKeyFor(b, NOW)).toBe('passed_both');
+    });
+  });
+  test('a bill passed in different versions reads "Ended" once its Congress ends', () => {
+    withSitePolicyForTest(POLICY, () => {
+      expect(statusKeyFor(SIX['hr-5349-119'], NOW)).toBe('ended');
+      expect(endedDecision(SIX['hr-5349-119'])?.kind).toBe('ended');
+    });
+  });
+});
+
+test.describe('the readers’ anchors (mutants the re-check found)', () => {
+  test('the Senate’s own sentence form is read only at the start of the action', () => {
+    const t = 'Motion to reconsider the vote by which the Senate concurred in the House amendment to S. 1234 entered in Senate.';
+    expect(amendmentExchange(t)).toBeNull();
+    expect(agreedToOtherChamberAmendment(t)).toBeNull();
+  });
+  test('"Presented to President" counts only as the opening of the action', () => {
+    const b = bill({
+      bill_type: 'hr',
+      status: 'passed_chamber',
+      last_action_text: 'Pursuant to the provisions of H. Con. Res. 30, enrolled bill to be Presented to President after the adjournment.',
+    });
+    expect(presentedToPresident(b)).toBe(false);
+    expect(passageState(b).stage).toBe('first');
+    expect(presentedToPresident(SIX['hr-10167-119'])).toBe(true);
+  });
+});
+

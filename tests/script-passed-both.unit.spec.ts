@@ -8,6 +8,7 @@ import { lintForbidden } from '../lib/moments-gate.mjs';
 import { contentVersion } from '../lib/scriptcache';
 import {
   buildScriptPrompt,
+  passedBackChamber,
   passedBothReading,
   PROMPT_VERSION,
   stanceLine,
@@ -255,7 +256,16 @@ test.describe('every other stage is unchanged', () => {
       // went back to still votes, so it keeps the vote ask (the null branch
       // below checks it word for word).
       expect(reading !== null, id).toBe(statusKeyFor(raw) === 'passed_both' && passageState(raw).stage !== 'back');
-      if (reading === null) {
+      if (reading === null && passedBackChamber(raw)) {
+        // Passed in different versions (2026-11-18, #523): one script is read to
+        // both chambers' offices and one chamber has already voted, so it asks
+        // for a public stand and never for a vote.
+        for (const stance of STANCE_ORDER) {
+          const line = stanceLine(raw, stance);
+          expect(line, id).toContain('Where the bill stands: Both chambers passed it in different versions;');
+          expect(line, id).not.toContain('urges the member to vote');
+        }
+      } else if (reading === null) {
         for (const stance of STANCE_ORDER) expect(stanceLine(raw, stance), id).toBe(UNCHANGED[stance]);
       } else {
         readings[reading]++;
