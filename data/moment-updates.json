@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-11-18T22:36:14.890Z"
+    "generated_at": "2026-11-19T21:27:41.197Z"
   },
   "government-funding-deadline": {
     "updates": [],
@@ -308,6 +308,45 @@
   },
   "iran-war-powers": {
     "updates": [
+      {
+        "id": "u_51f964da",
+        "class": "vote",
+        "vehicle": "hconres-93-119",
+        "day": "2026-11-19",
+        "occurred_at": "2026-11-19",
+        "occurred_precision": "day",
+        "recorded_at": "2026-11-19T21:27:41.197Z",
+        "text": {
+          "en": "Senate roll call vote 269: “On the Concurrent Resolution H.Con.Res. 93” — “Concurrent Resolution Rejected”; Yeas 48, Nays 51, Not Voting 1.",
+          "es": "Votación nominal 269 del Senado, registro oficial en inglés: “On the Concurrent Resolution H.Con.Res. 93” — “Concurrent Resolution Rejected”; a favor 48, en contra 51, no votaron 1."
+        },
+        "source": {
+          "kind": "roll_call",
+          "refs": [
+            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00269.xml",
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/93"
+          ]
+        },
+        "record": {
+          "action_text": "On the Concurrent Resolution H.Con.Res. 93: Concurrent Resolution Rejected. Yeas 48, Nays 51, Not Voting 1. Senate roll call vote 269.",
+          "action_code": null,
+          "action_type": "roll_call_vote",
+          "source_system": "senate.gov roll call vote record",
+          "roll_call": {
+            "chamber": "senate",
+            "number": 269
+          },
+          "question": "On the Concurrent Resolution H.Con.Res. 93",
+          "result": "Concurrent Resolution Rejected",
+          "totals": {
+            "yea": 48,
+            "nay": 51,
+            "present": 0,
+            "notVoting": 1
+          }
+        },
+        "ai": false
+      },
       {
         "id": "u_40aa8bf1",
         "class": "vote",
@@ -1031,8 +1070,13 @@
       }
     ],
     "summary_attempts": {
-      "day": "2026-10-04",
+      "day": "2026-11-19",
       "count": 1
+    },
+    "summary_refusals": {
+      "count": 1,
+      "day": "2026-11-19",
+      "reason": "en: forbidden vocabulary \"party name\" (inherited table, moments spec §3.3); es: the English and the Spanish state different numbers — only in the English: 43; only in the Spanish: none"
     }
   },
   "syria-sanctions-repeal": {
