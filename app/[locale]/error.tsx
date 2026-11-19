@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { Trash2 } from 'lucide-react';
-import { useTranslations } from 'next-intl';
-import { Link } from '@/i18n/navigation';
+import { useLocale, useTranslations } from 'next-intl';
+import { getPathname } from '@/i18n/navigation';
 import { eraseAll } from '@/lib/local';
 
 /*
@@ -55,14 +55,27 @@ import { eraseAll } from '@/lib/local';
  * as finished copy. That gap now covers `body` (rewritten), `eraseHelp` and
  * `erase` as well.
  */
-export default function LocaleError({
-  error,
-  reset,
-}: {
-  error: Error & { digest?: string };
-  reset: () => void;
-}) {
+
+/*
+ * EVERY WAY OUT IS A FULL PAGE LOAD (2026-11-18). This boundary renders
+ * because the running app crashed, and nothing here may ask that app to
+ * render again. Measured on /reps with a saved ZIP: the crashing page's own
+ * members lookup (a server action) answers BEHIND this screen, and from then
+ * on the next render of the router's root fails (React #310), whatever
+ * starts it. `reset()` ("Try again"), a client-side link ("Go home") and a
+ * reset after the erase each took the whole document down to the framework's
+ * "This page couldn't load", in every run measured on 2026-11-18, and so did
+ * the header's links and Back. With no saved ZIP they worked, which is why
+ * this stayed hidden. A full load starts a new app, so
+ * all three load the page: Try again reloads it (the screen's own advice,
+ * "Reloading usually fixes it"), Go home loads the home page of this
+ * language, and the erase reloads after erasing.
+ */
+const reload = () => window.location.reload();
+
+export default function LocaleError({ error }: { error: Error & { digest?: string }; reset: () => void }) {
   const t = useTranslations('errorBoundary');
+  const locale = useLocale();
   const tImpact = useTranslations('impact');
   const [confirming, setConfirming] = useState(false);
 
@@ -71,6 +84,38 @@ export default function LocaleError({
     console.error('[oravan] render error', error.digest ?? '(no digest)');
   }, [error]);
 
+  // The rest of the page stays up around this screen (the header, the
+  // footer, the language switch), and every link there is the router's:
+  // a click would ask the crashed app to render (see "EVERY WAY OUT"). So
+  // while this screen is up, a click on a link, and Back or Forward, become
+  // full page loads. Both listeners capture, so they run before the router's
+  // own: React's at the root for clicks, Next.js's popstate handler on the
+  // window.
+  useEffect(() => {
+    function onClick(e: MouseEvent) {
+      // A click meant for a new tab or window is the browser's, as always.
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      const link = e.target instanceof Element ? e.target.closest('a[href]') : null;
+      if (!(link instanceof HTMLAnchorElement) || (link.target && link.target !== '_self') || link.hasAttribute('download')) return;
+      // Loading the link's address is what the browser does for any link the
+      // router does not take (another site's, the skip link's #main), so this
+      // asks nothing of them that their default would not.
+      e.preventDefault();
+      e.stopPropagation();
+      window.location.assign(link.href);
+    }
+    function onPopState(e: PopStateEvent) {
+      e.stopImmediatePropagation();
+      reload(); // the address is already the entry Back or Forward chose
+    }
+    window.addEventListener('click', onClick, true);
+    window.addEventListener('popstate', onPopState, true);
+    return () => {
+      window.removeEventListener('click', onClick, true);
+      window.removeEventListener('popstate', onPopState, true);
+    };
+  }, []);
+
   return (
     <article className="mx-auto max-w-read px-4 py-16" role="alert">
       <h1 className="text-h1 font-extrabold text-ink">{t('title')}</h1>
@@ -78,17 +123,19 @@ export default function LocaleError({
       <div className="mt-8 flex flex-wrap items-center gap-3">
         <button
           type="button"
-          onClick={reset}
+          onClick={reload}
           className="ring-edge inline-flex min-h-12 items-center justify-center rounded-control border-2 border-ink bg-urgent px-6 font-bold text-ink transition-colors hover:bg-urgent-deep"
         >
           {t('retry')}
         </button>
-        <Link
-          href="/"
+        {/* A plain link, not the router's: a full page load on purpose
+            (see "EVERY WAY OUT" above). */}
+        <a
+          href={getPathname({ locale: locale as Parameters<typeof getPathname>[0]['locale'], href: '/' })}
           className="ring-gap inline-flex min-h-12 items-center justify-center rounded-control border-2 border-ink px-6 font-bold text-ink no-underline transition-colors hover:bg-wash"
         >
           {t('home')}
-        </Link>
+        </a>
       </div>
 
       {/* THE ESCAPE HATCH, third and quietest. Reloading fixes almost
@@ -122,23 +169,20 @@ export default function LocaleError({
               ref={(el) => el?.focus()}
               onClick={() => {
                 eraseAll();
-                // A FRESH PAGE, NOT reset() (2026-11-18). This boundary
-                // rendered because the running app crashed, and re-rendering
-                // that same app is not a way out: on /reps, after reset() the
-                // next members lookup (a server action; the page fires one by
-                // itself) took the whole document down to the framework's
-                // "This page couldn't load" (React #310 in the router's root),
-                // in 12 of 12 runs that waited 1.5 s for it. Reloading starts
-                // from nothing but the now-empty storage.
-                //
-                // The tab's history entry is emptied first. The members page
-                // keeps the ZIP it last showed there (lib/members-entry.ts),
-                // a reload keeps the entry, and the page would look the erased
-                // ZIP up again from it. With no address, Next's own
-                // replaceState only carries its router keys over; it does not
-                // touch the router.
-                window.history.replaceState(null, '');
-                window.location.reload();
+                // The current history entry is emptied as well: it may hold
+                // the ZIP the members page last showed (lib/members-entry.ts).
+                // The erase already made every entry's copy unreadable (its
+                // tag is gone); this removes the copy itself from the one
+                // entry a page can rewrite. With no address, Next's own
+                // replaceState only carries its router keys over and does not
+                // touch the router. A refusal (Safari limits how often it may
+                // be called) must never stop the reload.
+                try {
+                  window.history.replaceState(null, '');
+                } catch {
+                  /* the tag already covers this entry */
+                }
+                reload();
               }}
               className="ring-gap inline-flex min-h-12 items-center gap-2 rounded-control border-2 border-ink bg-ink-deep px-4 py-2.5 font-bold text-paper"
             >

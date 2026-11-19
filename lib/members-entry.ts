@@ -1,4 +1,5 @@
 import type { MembersResult } from '@/lib/members';
+import { ensureEntryTag, entryTag } from '@/lib/local';
 
 /*
  * WHAT THE MEMBERS PAGE SHOWED, KEPT IN ITS OWN HISTORY ENTRY (2026-11-12).
@@ -48,12 +49,20 @@ const DISTRICT_RE = /^[A-Z]{2}-\d{1,2}$/;
  * The entry a history state object holds, or null. Total: anything else that
  * happens to sit in the state (another script's, a damaged one) reads as
  * nothing rather than as a lookup.
+ *
+ * AND ONLY WHILE ITS TAG IS THE CURRENT ONE (2026-11-18). `tag` is this
+ * browser's entry tag (lib/local.ts, `entryTag`): every entry written since
+ * the last erase carries it, and an erase deletes it. An entry with another
+ * tag, or with none (one written before this rule, or before the erase),
+ * reads as empty, so Reload and Back never bring an erased ZIP back.
  */
-export function readEntry(state: unknown): MembersEntry | null {
+export function readEntry(state: unknown, tag: string | null): MembersEntry | null {
+  if (!tag) return null;
   if (typeof state !== 'object' || state === null) return null;
   const v = (state as Record<string, unknown>)[ENTRY_KEY];
   if (typeof v !== 'object' || v === null) return null;
-  const { zip, district } = v as Record<string, unknown>;
+  const { zip, district, tag: own } = v as Record<string, unknown>;
+  if (own !== tag) return null;
   if (typeof zip !== 'string' || !ZIP_RE.test(zip)) return null;
   return typeof district === 'string' && DISTRICT_RE.test(district) ? { zip, district } : { zip };
 }
@@ -84,7 +93,8 @@ export function rememberMembers(entry: MembersEntry | null, mode: 'push' | 'repl
   for (const name of DROPPED) url.searchParams.delete(name);
   const clean = `${url.pathname}${url.search}${url.hash}`;
   const here = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-  const state = entry ? { [ENTRY_KEY]: entry } : {};
+  // Tagged (see readEntry): an erase makes this entry unreadable.
+  const state = entry ? { [ENTRY_KEY]: { ...entry, tag: ensureEntryTag() } } : {};
   // No URL when it is unchanged: the router then has nothing to learn, and
   // only copies its own keys into `state`.
   const address = clean === here ? undefined : clean;
@@ -94,5 +104,5 @@ export function rememberMembers(entry: MembersEntry | null, mode: 'push' | 'repl
 
 /** The entry the current history entry holds. Browser only. */
 export function currentEntry(): MembersEntry | null {
-  return readEntry(window.history.state);
+  return readEntry(window.history.state, entryTag());
 }

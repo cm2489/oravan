@@ -84,6 +84,8 @@ export interface ReadRecord {
 const PREFS_KEY = 'oravan.prefs';
 const CALLS_KEY = 'oravan.calls';
 const READS_KEY = 'oravan.reads';
+/** The members page's history-entry tag (see `ensureEntryTag` below). */
+const ENTRY_TAG_KEY = 'oravan.entry';
 
 /** The reading history is capped: past this many bills the oldest row falls
  *  off. A visitor who reads for a year should not carry an unbounded list in
@@ -382,10 +384,72 @@ export function removeRead(billSlug: string) {
 }
 
 /**
+ * THE KEY TO THE MEMBERS PAGE'S HISTORY ENTRIES (2026-11-18).
+ *
+ * The members page keeps the ZIP it shows, and a district found for it, in
+ * this tab's own history entries (lib/members-entry.ts), so Reload and Back
+ * work. An erase cannot reach those entries: a page can rewrite only the entry
+ * it stands on, and every earlier entry, and every entry of another open tab,
+ * kept the ZIP after "erase everything". Reload or Back to one of them sent the
+ * erased ZIP to the lookup and showed the members again.
+ *
+ * So every entry that carries a ZIP also carries this tag, and an entry counts
+ * only while its tag is the one stored here. Erasing deletes the tag, and from
+ * then on every entry written before the erase, in this tab or any other, reads
+ * as empty. The next lookup makes a new tag.
+ *
+ * What it is: 32 random hexadecimal characters, made in this browser. It says
+ * nothing about the visitor, it is never sent anywhere (no request, address,
+ * cookie or log ever carries it), and it is not a fingerprint: it is a fresh
+ * random value after every erase, and no other site and no server can read it.
+ * When the browser refuses storage it is kept for the visit, in memory, like
+ * the preferences (see `memory` above).
+ */
+const TAG_RE = /^[0-9a-f]{32}$/;
+
+export function entryTag(): string | null {
+  const raw = read(ENTRY_TAG_KEY);
+  return raw !== null && TAG_RE.test(raw) ? raw : null;
+}
+
+export function ensureEntryTag(): string {
+  const have = entryTag();
+  if (have) return have;
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  const tag = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+  try {
+    window.localStorage.setItem(ENTRY_TAG_KEY, tag);
+    memory.delete(ENTRY_TAG_KEY);
+  } catch {
+    memory.set(ENTRY_TAG_KEY, tag); // storage refused: this visit only (see above)
+  }
+  return tag;
+}
+
+/**
+ * How many times this page's JavaScript has erased. The members page compares
+ * it with the count at the time it found its members: an erase after that
+ * drops them from the screen, and a lookup still on its way when the erase
+ * came is discarded rather than shown and remembered.
+ */
+let erasures = 0;
+
+export function erasureCount(): number {
+  return erasures;
+}
+
+export function useErasures(): number {
+  return useSyncExternalStore(subscribe, erasureCount, () => 0);
+}
+
+/**
  * ERASE COMPLETENESS. Every key this module writes is removed here — that is
  * the whole promise the privacy page and `impact.eraseConfirm` make out loud,
  * so a new store is not finished until its key is on this list and named in
- * both locales' confirm string.
+ * both locales' confirm string. The entry tag is the one key that is not
+ * named there: it is not the visitor's data but the lock on the ZIP's copies
+ * in history, and removing it is what makes "erases your ZIP" true of them.
  */
 export function eraseAll() {
   memory.clear();
@@ -393,8 +457,10 @@ export function eraseAll() {
     window.localStorage.removeItem(PREFS_KEY);
     window.localStorage.removeItem(CALLS_KEY);
     window.localStorage.removeItem(READS_KEY);
+    window.localStorage.removeItem(ENTRY_TAG_KEY);
   } catch {
     /* nothing to erase */
   }
+  erasures += 1;
   notify();
 }

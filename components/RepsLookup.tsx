@@ -12,6 +12,7 @@ import { VacantSeatCard } from '@/components/VacantSeatCard';
 import { lookupMembers } from '@/lib/members-action';
 import type { MembersResult } from '@/lib/members';
 import { currentEntry, entryFor, readEntry, rememberMembers, sameEntry, type MembersEntry } from '@/lib/members-entry';
+import { entryTag, erasureCount, useErasures } from '@/lib/local';
 
 /*
  * THE MEMBERS, LOOKED UP WITHOUT AN ADDRESS (owner, 2026-11-12; CLAUDE.md
@@ -82,9 +83,23 @@ export function RepsLookup({ initial, legacy, preview, switchboard, continuation
   // The no-JS answer (way 2) arrives as this state; with JavaScript the
   // dispatcher is only ever the native form's action, never called here.
   const [formState, formAction] = useActionState(lookupMembers, initial, repsPermalink(locale));
-  // Lookups made with JavaScript (way 1). `undefined` until the first one.
-  const [live, setLive] = useState<MembersResult | null | undefined>(undefined);
-  const result = live === undefined ? formState : live;
+  // Lookups made with JavaScript (way 1), each with the erase count it was
+  // made under (lib/local.ts). `undefined` until the first one.
+  const [live, setLive] = useState<{ members: MembersResult | null; erasures: number } | undefined>(undefined);
+  // AN ERASE TAKES THE MEMBERS OFF THE SCREEN (2026-11-18). "Erase my data"
+  // on this page (components/YourRecord.tsx) used to leave the members and
+  // the ZIP standing above it. Members found before the latest erase are not
+  // shown; the prompt comes back, with its field empty.
+  const erasures = useErasures();
+  const [erasuresAtOpen] = useState(erasures);
+  const result =
+    live === undefined
+      ? erasures === erasuresAtOpen
+        ? formState
+        : null
+      : live.erasures === erasures
+        ? live.members
+        : null;
   const asking = useSearchParams().has('change');
   const latest = useRef(0);
   const scrollToHash = useRef(false);
@@ -113,7 +128,7 @@ export function RepsLookup({ initial, legacy, preview, switchboard, continuation
   // entry the browser moved to is looked up here.
   useEffect(() => {
     function onPopState(e: PopStateEvent) {
-      const entry = readEntry(e.state);
+      const entry = readEntry(e.state, entryTag());
       if (entry) void lookup(entry, 'none');
     }
     window.addEventListener('popstate', onPopState);
@@ -142,14 +157,18 @@ export function RepsLookup({ initial, legacy, preview, switchboard, continuation
     fromArrival = false
   ): Promise<boolean> {
     const ticket = ++latest.current;
+    const erasuresAtStart = erasureCount();
     // A POST body, built field by field: the ZIP is never in an address.
     const body = new FormData();
     for (const [name, value] of Object.entries({ zip, district })) if (value) body.append(name, value);
     try {
       const next = await lookupMembers(null, body);
       if (ticket !== latest.current) return true;
+      // Erased while the answer was on its way: the answer is for a ZIP that
+      // no longer exists here, so it is neither shown nor remembered.
+      if (erasureCount() !== erasuresAtStart) return true;
       scrollToHash.current = fromArrival;
-      setLive(next);
+      setLive({ members: next, erasures: erasuresAtStart });
       if (history !== 'none') rememberMembers(entryFor(next), history);
       return true;
     } catch {
@@ -163,7 +182,9 @@ export function RepsLookup({ initial, legacy, preview, switchboard, continuation
   const prompt = (
     <div className="max-w-xl rounded-control border-[1.5px] border-line-strong bg-paper p-6">
       <p className="mb-4 text-lg font-bold">{t('noZip')}</p>
-      {zipForm(true)}
+      {/* No autofocus when an erase on this page brought the prompt back:
+          the reader's focus stays on the erase's own confirmation. */}
+      {zipForm(erasures === erasuresAtOpen)}
     </div>
   );
 

@@ -318,7 +318,16 @@ export function YourRecord({ standalone = false }: { standalone?: boolean }) {
             role="status"
             tabIndex={-1}
             ref={(el) => {
-              if (erased && el && document.activeElement === document.body) el.focus();
+              if (!erased || !el || document.activeElement !== document.body) return;
+              // Focused without the browser's own scroll, which would leave it
+              // on the screen's very edge. On /reps the erase also takes the
+              // members off the page above (components/RepsLookup.tsx), and
+              // the page shrinks under the reader: when the confirmation has
+              // left the screen, bring it back to the middle of it, with its
+              // box around it.
+              el.focus({ preventScroll: true });
+              const { top, bottom } = el.getBoundingClientRect();
+              if (top < 0 || bottom > window.innerHeight) el.scrollIntoView({ block: 'center' });
             }}
           >
             {erased ? t('erased') : ''}

@@ -59,6 +59,7 @@ export function SavedZipLookup({
 }) {
   const t = useTranslations('reps');
   const [zip, setZip] = useState<string | null>(null);
+  const prefs = usePrefs();
 
   useEffect(() => {
     const saved = savedZip();
@@ -90,7 +91,10 @@ export function SavedZipLookup({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  if (!zip) return <>{children}</>;
+  // The line names the ZIP "saved on this device", so it stands only while
+  // that is still true: an erase on this page (components/YourRecord.tsx)
+  // brings the prompt back at once, even with the lookup still on its way.
+  if (!zip || prefs.zip !== zip) return <>{children}</>;
   return (
     <p role="status" data-saved-zip-lookup="" className="max-w-xl text-lg font-bold">
       {t('savedZipLoading', { zip })}
