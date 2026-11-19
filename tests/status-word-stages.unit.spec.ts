@@ -624,6 +624,8 @@ const READING_TABLE: [string, string][] = [
   ["step:senate", "Motion by Senator Thune to concur in the House amendment with a further amendment (SA 4200) agreed to in Senate by Voice Vote."],
   ["step:senate", "Senate concurred in the House amendment to the title by Unanimous Consent."],
   ["final", "On motion that the House concur in the Senate amendments to the text and title Agreed to by voice vote."],
+  ["step:senate", "Senate concurred in the House amendment with Senate amendment SA 4300 by Unanimous Consent."],
+  ["final", "On motion that the House concur in the Senate amendment to the text and the Senate amendment to the title Agreed to by voice vote."],
 ];
 
 function reading(text: string): string {
