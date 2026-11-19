@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { ENTRY_KEY, entryFor, forgetStaleEntry, readEntry, rememberMembers, sameEntry } from '../lib/members-entry';
+import { ENTRY_KEY, entryFor, entryNow, forgetStaleEntry, readEntry, rememberMembers, sameEntry } from '../lib/members-entry';
 import { membersFor } from '../lib/members';
 import { eraseAll } from '../lib/local';
 
@@ -145,6 +145,33 @@ test('forgetStaleEntry: an entry the erase made unreadable is emptied; a current
     history.state = null;
     forgetStaleEntry();
     expect(calls).toEqual([]);
+  } finally {
+    delete (globalThis as { window?: unknown }).window;
+  }
+});
+
+test('entryNow: an entry for a ZIP that is no longer the saved one counts as nothing', () => {
+  const stored = new Map<string, string>();
+  (globalThis as unknown as { window: unknown }).window = {
+    localStorage: {
+      getItem: (k: string) => stored.get(k) ?? null,
+      setItem: (k: string, v: string) => void stored.set(k, v),
+      removeItem: (k: string) => void stored.delete(k),
+    },
+  };
+  try {
+    eraseAll();
+    const OWN = 'beadbeadbeadbeadbeadbeadbeadbead';
+    stored.set('oravan.entry', OWN);
+    const state = { [ENTRY_KEY]: { zip: '78501', district: 'TX-15', tag: OWN } };
+    // No saved ZIP (an old /reps?zip= link): the entry stands.
+    expect(entryNow(state)).toEqual({ zip: '78501', district: 'TX-15' });
+    // The saved ZIP is the entry's: it stands.
+    stored.set('oravan.prefs', JSON.stringify({ zip: '78501' }));
+    expect(entryNow(state)).toEqual({ zip: '78501', district: 'TX-15' });
+    // Another ZIP was saved since (in another tab): it is nothing.
+    stored.set('oravan.prefs', JSON.stringify({ zip: '10001' }));
+    expect(entryNow(state)).toBeNull();
   } finally {
     delete (globalThis as { window?: unknown }).window;
   }

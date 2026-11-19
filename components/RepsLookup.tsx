@@ -11,8 +11,8 @@ import { RepCard } from '@/components/RepCard';
 import { VacantSeatCard } from '@/components/VacantSeatCard';
 import { lookupMembers } from '@/lib/members-action';
 import type { MembersResult } from '@/lib/members';
-import { currentEntry, entryFor, forgetStaleEntry, readEntry, rememberMembers, sameEntry, type MembersEntry } from '@/lib/members-entry';
-import { entryTag, erasureCount, useErasures } from '@/lib/local';
+import { currentEntry, entryFor, entryNow, forgetStaleEntry, rememberMembers, sameEntry, type MembersEntry } from '@/lib/members-entry';
+import { erasureCount, useErasures } from '@/lib/local';
 
 /*
  * THE MEMBERS, LOOKED UP WITHOUT AN ADDRESS (owner, 2026-11-12; CLAUDE.md
@@ -137,7 +137,7 @@ export function RepsLookup({ initial, legacy, preview, switchboard, continuation
   // entry the browser moved to is looked up here.
   useEffect(() => {
     function onPopState(e: PopStateEvent) {
-      const entry = readEntry(e.state, entryTag());
+      const entry = entryNow(e.state);
       if (entry) void lookup(entry, 'none');
       else forgetStaleEntry();
     }

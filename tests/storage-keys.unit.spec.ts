@@ -23,12 +23,20 @@ import { ERASED_KEYS, eraseAll } from '../lib/local';
  *   - every name in lib/storage-keys.ts is either erased (ERASED_KEYS) or
  *     kept for a reason written below, and nothing else.
  *
+ *   - nothing writes `window.name` or opens a `BroadcastChannel` (each would
+ *     carry data across pages or tabs past the erase), and only three files
+ *     write this tab's history state, each pinned below to what it may put
+ *     there (since 2026-11-19).
+ *
+ * WHAT IS READ: every top-level folder of the repository except the ones
+ * EXCLUDED names (with why), and the top-level source files, so a new folder
+ * is read without anyone remembering to add it here.
+ *
  * WHAT STILL GETS PAST IT: code that hides its intent on purpose, such as the
  * store's name split into smaller pieces ('Stor' + 'age'), `eval`, or
- * `Reflect.get(window, …)`; code outside the four folders read here
- * (public/, scripts/, server-only routes, which never run in a visitor's
- * browser); and other browser stores reached by a name this test does not
- * list. It is a guard against mistakes, not against someone hiding a key.
+ * `Reflect.get(window, …)`; code in the excluded folders; and other browser
+ * stores reached by a name this test does not list. It is a guard against
+ * mistakes, not against someone hiding a key.
  *
  * KEPT, WITH THE REASON RECORDED WHERE THE KEY IS USED: two keys hold chrome,
  * not the civic record, and an erase leaves them on purpose. `impact.erased`
@@ -46,14 +54,16 @@ const KEYS_FILE = 'lib/storage-keys.ts';
 /** The only files allowed to call the browser's storage. */
 const STORAGE_FILES = ['lib/local.ts', 'lib/locale-pref.ts', 'components/LocalePreferenceNote.tsx'];
 /**
- * Parameters lib/local.ts passes as a key, each typed as a StorageKey there:
- * `key` (read, write, the erase's loop) and `newKey` (the one-time migration
- * from the pre-rename names). `oldKey` is that migration's pre-rename name:
- * read once and removed, never written (only removeItem/getItem may take it).
+ * lib/local.ts reaches the store only through three helpers, each typed to
+ * take a named key (or a pre-rename name being migrated away): these, word
+ * for word, are its only uses of the store, so a new helper with a key typed
+ * as a plain string fails here, and a call to these with one fails TypeScript.
  */
-const TYPED_PARAMS: Record<string, readonly string[]> = {
-  'lib/local.ts': ['key', 'newKey', 'oldKey'],
-};
+const LOCAL_STORE_HELPERS = [
+  'function storeGet(key: StorageKey | LegacyKey): string | null {\n  return window.localStorage.getItem(key);\n}',
+  'function storeSet(key: StorageKey, value: string): void {\n  window.localStorage.setItem(key, value);\n}',
+  'function storeRemove(key: StorageKey | LegacyKey): void {\n  window.localStorage.removeItem(key);\n}',
+];
 /** Identifiers that contain "Storage" and are not a way into it. */
 const STORAGE_WORDS = new Set(['localStorage', 'StorageEvent', 'StorageKey', 'noteStorageEvent', 'lastStorageEvent', 'onStorage']);
 
@@ -65,7 +75,42 @@ function sources(dir: string): string[] {
   });
 }
 
-const FILES = ['app', 'components', 'lib', 'i18n'].flatMap(sources);
+/** Top-level folders not read, and why. */
+const EXCLUDED: Record<string, string> = {
+  node_modules: 'installed packages',
+  '.next': 'build output',
+  tests: 'the tests themselves (they plant keys on purpose)',
+  public: 'static files, no code that reaches storage (gated by scripts/check-public-allowlist.mjs)',
+  data: 'the committed JSON corpus',
+  scripts: 'build and nightly scripts that run on a server, never in a visitor\'s browser',
+  docs: 'documents',
+  'test-results': 'test output',
+  '.git': 'the repository itself',
+  '.github': 'CI workflows (YAML)',
+  '.githooks': 'git hooks',
+  '.impeccable': 'design tool settings',
+};
+/** Top-level source files not read: test configuration. */
+const EXCLUDED_FILES = new Set(['playwright.config.ts']);
+
+const isSource = (name: string) => /\.(ts|tsx|mjs|js|cjs)$/.test(name);
+const FILES = readdirSync('.').flatMap((name) => {
+  if (statSync(name).isDirectory()) return name in EXCLUDED ? [] : sources(name);
+  return isSource(name) && !EXCLUDED_FILES.has(name) ? [name] : [];
+});
+/** The files that may write this tab's history state, and exactly what each writes. */
+const HISTORY_WRITES: Record<string, string[]> = {
+  // The members page's tagged entry (or an empty one), and an erased entry emptied.
+  'lib/members-entry.ts': [
+    "window.history.pushState(state, '', address)",
+    "window.history.replaceState(state, '', address)",
+    "window.history.replaceState(rest, '')",
+  ],
+  // The error screen's erase: only the mark that an erase just happened, or nothing.
+  'app/[locale]/error.tsx': ["window.history.replaceState(complete ? { [ERASED_MARK]: true } : null, '')"],
+  // The reloaded page removes that mark.
+  'components/ErasedNotice.tsx': ["window.history.replaceState(rest, '')"],
+};
 /** The code with its comments removed (a `//` inside a string is left alone). */
 const code = (path: string) =>
   readFileSync(path, 'utf8')
@@ -81,6 +126,26 @@ function keyConstants(): Map<string, string> {
   return names;
 }
 
+test('the folders read: every top-level folder but the named exclusions', () => {
+  const read = new Set(FILES.map((f) => f.split('/')[0]));
+  for (const must of ['app', 'components', 'lib', 'i18n', 'proxy.ts', 'next.config.ts']) expect(read, must).toContain(must);
+  for (const name of readdirSync('.')) {
+    if (statSync(name).isDirectory() && !(name in EXCLUDED) && sources(name).length > 0) expect(read, name).toContain(name);
+  }
+});
+
+test('nothing writes window.name or opens a BroadcastChannel; history is written only where named', () => {
+  for (const f of FILES) {
+    const src = code(f);
+    expect(src, `${f}: window.name`).not.toMatch(/\bwindow\s*\.\s*name\b|\bself\s*\.\s*name\b|\[\s*['"`]name['"`]\s*\]/);
+    expect(src, `${f}: BroadcastChannel`).not.toMatch(/\bBroadcastChannel\b/);
+    const writes = [...src.matchAll(/(?:window\.)?history\.(?:pushState|replaceState)\([^;\n]*\)/g)].map((m) => m[0]);
+    expect(writes, `${f}: a history write`).toEqual(HISTORY_WRITES[f] ?? []);
+  }
+  // members-entry.ts puts only its own tagged entry, or nothing, in the state.
+  expect(code('lib/members-entry.ts')).toMatch(/const state = entry \? \{ \[ENTRY_KEY\]: \{ \.\.\.entry, tag: ensureEntryTag\(\) \} \} : \{\};/);
+});
+
 test('only the three named files reach the browser\'s storage, and by no other way', () => {
   const ways = /\b(localStorage|sessionStorage|indexedDB|caches)\b|document\s*\.\s*cookie|cookieStore/;
   const touching = FILES.filter((f) => ways.test(code(f)));
@@ -94,9 +159,14 @@ test('only the three named files reach the browser\'s storage, and by no other w
 
 test('every storage call names a key constant: no literal, template, built or aliased key', () => {
   const constants = keyConstants();
+  const local = code('lib/local.ts');
+  for (const helper of LOCAL_STORE_HELPERS) expect(local, 'a store helper changed').toContain(helper);
+  // The pre-rename names are the keys of the migration map, which holds
+  // named keys only (the naming gate keeps the old names out of this file).
+  expect(local).toMatch(/\} as const satisfies Record<string, StorageKey>;\ntype LegacyKey = keyof typeof LEGACY;/);
   for (const f of STORAGE_FILES) {
-    const src = code(f);
-    const params = TYPED_PARAMS[f] ?? [];
+    const src = f === 'lib/local.ts' ? LOCAL_STORE_HELPERS.reduce((rest, h) => rest.replace(h, ''), local) : code(f);
+    const params: string[] = [];
     // Every identifier with "Storage" in it is a known one.
     const words = [...src.matchAll(/\b\w*Storage\w*\b/g)].map((m) => m[0]);
     expect(words.filter((w) => !STORAGE_WORDS.has(w)), `${f}: another name for a store`).toEqual([]);
@@ -108,15 +178,12 @@ test('every storage call names a key constant: no literal, template, built or al
       const [, method, arg] = call!;
       const named = constants.has(arg) || params.includes(arg);
       expect(named, `${f}: ${method}(${arg}) does not name a key constant`).toBe(true);
-      if (arg === 'oldKey') expect(method, 'the pre-rename name is never written').not.toBe('setItem');
     }
   }
-  // lib/local.ts's key parameters are typed as StorageKey, so TypeScript holds
-  // them to the same names.
-  const local = code('lib/local.ts');
+  // Every other way lib/local.ts names a key is typed, so TypeScript holds it
+  // to the named ones.
   expect(local).toMatch(/function read\(key: StorageKey\)/);
   expect(local).toMatch(/function write\(key: StorageKey,/);
-  expect(local).toMatch(/const LEGACY: Record<string, StorageKey>/);
   expect(code(KEYS_FILE)).toMatch(/export const ERASED_KEYS: readonly StorageKey\[\]/);
 });
 

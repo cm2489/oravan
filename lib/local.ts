@@ -99,20 +99,37 @@ const READS_CAP = 100;
 // M2): purging them would silently wipe pre-rename testers' data.
 // READS_KEY is deliberately absent: `oravan.reads` was born under this name,
 // so it has no pre-rename generation to inherit from.
-const LEGACY: Record<string, StorageKey> = {
+const LEGACY = {
   'cabina.prefs': PREFS_KEY,
   'cabina.calls': CALLS_KEY,
   'rostra.prefs': PREFS_KEY,
   'rostra.calls': CALLS_KEY,
-};
+} as const satisfies Record<string, StorageKey>;
+type LegacyKey = keyof typeof LEGACY;
+
+/*
+ * THE ONLY WAY INTO THE STORE FROM THIS MODULE (2026-11-19). Every read, write
+ * and removal goes through these three, typed so that TypeScript refuses any
+ * key that is not a named one (lib/storage-keys.ts) or a pre-rename name being
+ * migrated away; tests/storage-keys.unit.spec.ts holds this module to them.
+ * They throw when the browser refuses storage, as the store itself does.
+ */
+function storeGet(key: StorageKey | LegacyKey): string | null {
+  return window.localStorage.getItem(key);
+}
+function storeSet(key: StorageKey, value: string): void {
+  window.localStorage.setItem(key, value);
+}
+function storeRemove(key: StorageKey | LegacyKey): void {
+  window.localStorage.removeItem(key);
+}
+
 if (typeof window !== 'undefined') {
   try {
-    for (const [oldKey, newKey] of Object.entries(LEGACY)) {
-      const v = window.localStorage.getItem(oldKey);
-      if (v !== null && window.localStorage.getItem(newKey) === null) {
-        window.localStorage.setItem(newKey, v);
-      }
-      if (v !== null) window.localStorage.removeItem(oldKey);
+    for (const [oldKey, newKey] of Object.entries(LEGACY) as [LegacyKey, StorageKey][]) {
+      const v = storeGet(oldKey);
+      if (v !== null && storeGet(newKey) === null) storeSet(newKey, v);
+      if (v !== null) storeRemove(oldKey);
     }
   } catch {
     /* storage blocked - nothing to migrate */
@@ -140,7 +157,7 @@ export function subscribe(cb: () => void) {
     cb();
   };
   listeners.add(cb);
-  watchPageShow();
+  watchReturns();
   window.addEventListener('storage', onStorage);
   return () => {
     listeners.delete(cb);
@@ -175,8 +192,13 @@ function noteStorageEvent(e: StorageEvent) {
   if (e === lastStorageEvent) return;
   lastStorageEvent = e;
   if (e.key === null || (isErasedKey(e.key) && e.newValue === null)) noteErase();
-  // Another tab wrote a new value since: that one is not erased.
-  else if (isErasedKey(e.key) && e.newValue !== null) revoked.delete(e.key);
+  else if (isErasedKey(e.key)) {
+    // Another tab wrote a new value since: that one is not erased.
+    revoked.delete(e.key);
+    // And if it is another ZIP, or another tag, what this tab shows for the
+    // old one is not what storage holds now (see "WHAT A TAB SHOWS" below).
+    if (e.oldValue !== null && matters(e.key, e.oldValue, e.newValue)) noteChange();
+  }
 }
 
 /*
@@ -193,30 +215,107 @@ const revoked = new Map<StorageKey, string>();
 function noteErase() {
   for (const key of ERASED_KEYS) {
     try {
-      const visible = window.localStorage.getItem(key);
+      const visible = storeGet(key);
       if (visible !== null) revoked.set(key, visible);
     } catch {
       /* storage blocked: nothing shared to revoke */
     }
   }
+  noteChange();
+}
+
+/*
+ * WHAT A TAB SHOWS MUST MATCH WHAT STORAGE HOLDS NOW (2026-11-19).
+ *
+ * Whenever the saved ZIP a tab found members for is no longer the saved ZIP,
+ * gone or different, those members leave its screen: the prompt comes back
+ * and the saved ZIP, if there is one, fills it in. A page remembers the value
+ * it last read for each erase key (`seen`), and checks it against storage
+ * when it may have missed what happened meanwhile:
+ *
+ *   - back from the back/forward cache (`pageshow`, persisted): a page there
+ *     hears no event while it sleeps;
+ *   - shown again (`visibilitychange` to visible) and focused (`focus`): a
+ *     hidden tab can be throttled, and events can come late.
+ *
+ * It counts as a change when the ZIP or the history tag is gone or different,
+ * or when the calls or the reads are gone (an erase). The same count every
+ * reader already checks rises (`erasures` below), so every page drops what
+ * it found for the old ZIP; a value that is merely new is not marked erased.
+ * Another tab's `storage` event that turns the ZIP or the tag into another
+ * value counts the same way (above).
+ */
+const seen = new Map<StorageKey, string>();
+
+function zipOf(raw: string | null): string | null {
+  if (raw === null) return null;
+  try {
+    const v: unknown = JSON.parse(raw);
+    return isPlainObject(v) && typeof v.zip === 'string' ? v.zip : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Whether `now` makes what was found for `was` stale. */
+function matters(key: StorageKey, was: string, now: string | null): boolean {
+  if (now === null) return true;
+  if (key === PREFS_KEY) return zipOf(was) !== zipOf(now);
+  if (key === ENTRY_TAG_KEY) return was !== now;
+  return false;
+}
+
+/** What storage holds for `key` now, as this tab reads it, without noting it. */
+function current(key: StorageKey): string | null {
+  const kept = memory.get(key);
+  let value: string | null = kept ?? null;
+  if (kept === undefined) {
+    try {
+      value = storeGet(key);
+    } catch {
+      value = null;
+    }
+  }
+  return value !== null && revoked.get(key) === value ? null : value;
+}
+
+function recheck(): boolean {
+  for (const [key, was] of seen) {
+    if (matters(key, was, current(key))) {
+      noteChange();
+      return true;
+    }
+  }
+  return false;
+}
+
+/** An erase, or the saved ZIP changed elsewhere: everything found before goes. */
+function noteChange() {
   memory.clear();
-  seenWithValue.clear();
+  seen.clear();
   erasures += 1;
   for (const hook of eraseHooks) hook();
 }
 
-/** Erase keys this page has read with a value since its last erase. */
-const seenWithValue = new Set<StorageKey>();
-let watchingPageShow = false;
+let watchingReturns = false;
 
-function watchPageShow() {
-  if (watchingPageShow) return;
-  watchingPageShow = true;
+function watchReturns() {
+  if (watchingReturns) return;
+  watchingReturns = true;
   window.addEventListener('pageshow', (e) => {
     if (!(e as PageTransitionEvent).persisted) return;
-    if ([...seenWithValue].some((k) => read(k) === null)) noteErase();
+    recheck();
     notify();
   });
+  const again = () => {
+    if (recheck()) notify();
+  };
+  if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') again();
+    });
+  }
+  window.addEventListener('focus', again);
 }
 
 function notify() {
@@ -244,11 +343,15 @@ function notify() {
 const memory = new Map<StorageKey, string>();
 const KEPT_IN_MEMORY = new Set<StorageKey>([PREFS_KEY]);
 
+/** Whether storage has held anything of ours this visit (see `eraseAll`). */
+let storeHeldOurs = false;
+
 function write(key: StorageKey, value: unknown) {
   const raw = JSON.stringify(value);
   revoked.delete(key);
   try {
-    window.localStorage.setItem(key, raw);
+    storeSet(key, raw);
+    storeHeldOurs = true;
     memory.delete(key);
   } catch {
     // Storage full or blocked: keep the preferences for this visit (see above).
@@ -263,13 +366,14 @@ function read(key: StorageKey): string | null {
   let value: string | null = kept ?? null;
   if (kept === undefined) {
     try {
-      value = window.localStorage.getItem(key);
+      value = storeGet(key);
+      if (value !== null) storeHeldOurs = true;
     } catch {
       value = null; // blocked
     }
   }
   if (value !== null && revoked.get(key) === value) value = null; // erased elsewhere (see above)
-  if (value !== null && isErasedKey(key)) seenWithValue.add(key);
+  if (value !== null && isErasedKey(key)) seen.set(key, value);
   return value;
 }
 
@@ -306,22 +410,23 @@ function read(key: StorageKey): string | null {
  * value from the snapshot, so the first write after a filtered read persists
  * the cleaned list and the unreadable row is gone from the device for good.
  */
-/** How many snapshot caches hold a value (tests/erase-signal.unit.spec.ts). */
-const heldCaches = new Set<string>();
-export function heldSnapshotCaches(): number {
-  return heldCaches.size;
+/**
+ * Every snapshot's cache, in one place: the last raw string read (the ZIP, in
+ * the preferences' case) is not kept in memory past an erase or a change of
+ * the saved ZIP made elsewhere.
+ */
+const snapshotCache = new Map<StorageKey, { raw: string | null; value: unknown }>();
+onErase(() => snapshotCache.clear());
+
+/** The raw strings the snapshot caches hold now (tests/erase-signal.unit.spec.ts). */
+export function snapshotCacheContents(): (string | null)[] {
+  return [...snapshotCache.values()].map((c) => c.raw);
 }
 
 function makeSnapshot<T>(key: StorageKey, fallback: T, coerce: (v: unknown) => T | null) {
-  let cache: { raw: string | null; value: T } | null = null;
-  // The last raw string read (the ZIP, in the preferences' case) is not kept
-  // in memory past an erase.
-  onErase(() => {
-    cache = null;
-    heldCaches.delete(key);
-  });
-  return () => {
+  return (): T => {
     const raw = read(key);
+    let cache = snapshotCache.get(key) as { raw: string | null; value: T } | undefined;
     if (!cache || cache.raw !== raw) {
       // Nothing stored is not something to coerce: an absent key returns the
       // shared `fallback` constant itself, which is also what the server
@@ -336,7 +441,7 @@ function makeSnapshot<T>(key: StorageKey, fallback: T, coerce: (v: unknown) => T
         }
       }
       cache = { raw, value };
-      heldCaches.add(key);
+      snapshotCache.set(key, cache);
     }
     return cache.value;
   };
@@ -521,14 +626,19 @@ export function entryTag(): string | null {
   return raw !== null && TAG_RE.test(raw) ? raw : null;
 }
 
+function freshTag(): string {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
 export function ensureEntryTag(): string {
   const have = entryTag();
   if (have) return have;
-  const bytes = new Uint8Array(16);
-  crypto.getRandomValues(bytes);
-  const tag = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+  const tag = freshTag();
   try {
-    window.localStorage.setItem(ENTRY_TAG_KEY, tag);
+    storeSet(ENTRY_TAG_KEY, tag);
+    storeHeldOurs = true;
     memory.delete(ENTRY_TAG_KEY);
   } catch {
     memory.set(ENTRY_TAG_KEY, tag); // storage refused: this visit only (see above)
@@ -569,34 +679,48 @@ export function useErasures(): number {
  * Reload sent the ZIP again. Now the tag goes first (once it is gone, no copy
  * of the ZIP in history can be read, whatever happens to the rest), each key
  * is tried on its own and then checked, and the count of erases rises either
- * way. The answer is whether every key is gone: the callers say "erased" only
- * then. A store the browser will not even read (storage blocked) holds
- * nothing of ours, since every write to it was refused; this visit's memory
- * is cleared above.
+ * way. A tag that will not go is replaced by a fresh random one, which kills
+ * every history copy as surely; if even that write is refused, the store is
+ * unusable. The answer is whether every key is gone (or the tag replaced):
+ * the callers say "erased" only then. A store the browser will not even read
+ * is no erase if it held something of ours this visit (storage blocked
+ * mid-visit: the data may still be on disk); one blocked from the start never
+ * held anything, and this visit's memory is cleared.
  */
 export function eraseAll(): boolean {
-  memory.clear();
-  seenWithValue.clear();
   let complete = true;
   for (const key of ERASED_KEYS) {
     try {
-      window.localStorage.removeItem(key);
+      storeRemove(key);
     } catch {
       /* checked just below */
     }
+    let left: string | null;
     try {
-      const left = window.localStorage.getItem(key);
-      if (left !== null) {
-        complete = false;
-        // A tag that would not go is at least dead in this tab.
-        if (key === ENTRY_TAG_KEY) revoked.set(key, left);
-      }
+      left = storeGet(key);
     } catch {
-      /* storage blocked: nothing of ours is in it */
+      // The store will not even be read. If it never held anything of ours
+      // this visit (storage blocked from the start), there is nothing in it
+      // to erase; if it did, it may still hold it, and this is no erase.
+      if (storeHeldOurs) complete = false;
+      continue;
     }
+    if (left === null) continue;
+    if (key === ENTRY_TAG_KEY) {
+      // A tag that will not go is replaced by a fresh random one: no copy of
+      // the ZIP in history carries it, so none can be read again, after a
+      // reload either. If even that is refused, the store is unusable.
+      try {
+        storeSet(key, freshTag());
+        continue;
+      } catch {
+        revoked.set(key, left); // dead in this tab at least
+      }
+    }
+    complete = false;
   }
-  erasures += 1;
+  memory.clear();
+  noteChange();
   notify();
-  for (const hook of eraseHooks) hook();
   return complete;
 }

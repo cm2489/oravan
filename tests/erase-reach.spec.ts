@@ -903,7 +903,7 @@ async function seedEverything(page: Page) {
   });
 }
 
-for (const key of ALL_KEYS) {
+for (const key of ALL_KEYS.filter((k) => k !== 'oravan.entry')) {
   test(`"Erase my data" on /reps when ${key} will not go: no "erased", the control stays, focused`, async ({ page }) => {
     await refuseRemoving(page, key);
     await seedEverything(page);
@@ -923,8 +923,8 @@ for (const key of ALL_KEYS) {
     expect(key === 'oravan.prefs' ? left.filter((k) => k !== 'oravan.entry') : left).toEqual([key]);
     if (key === 'oravan.calls' || key === 'oravan.reads') {
       // The ZIP and the tag went: no history copy of the ZIP is read again.
-      // (Where the stuck key is the tag or the ZIP itself, the ZIP is still
-      // saved or readable, honestly: the page says nothing was erased.)
+      // (Where the stuck key is the ZIP itself, it is still saved, honestly:
+      // the page says nothing was erased.)
       const sent = sendsOf(page, ZIP);
       await page.reload();
       await expect(page.getByRole('heading', { level: 1, name: en.reps.membersHeading })).toBeVisible();
@@ -933,6 +933,82 @@ for (const key of ALL_KEYS) {
     }
   });
 }
+
+/* A tag that will not go is replaced by a fresh one (lib/local.ts eraseAll):
+   every history copy of the ZIP is as dead as if it had gone, after a reload
+   too, so the erase is whole and says so. */
+test('"Erase my data" when the tag will not go but can be replaced: erased, and Reload reads no old entry', async ({ page }) => {
+  await refuseRemoving(page, 'oravan.entry');
+  await seedEverything(page);
+  await page.goto('/reps');
+  await expectWorkingMembers(page, en);
+  const tagBefore = await page.evaluate(() => localStorage.getItem('oravan.entry'));
+  expect(tagBefore).not.toBeNull();
+  await eraseMyData(page);
+  const tagAfter = await page.evaluate(() => localStorage.getItem('oravan.entry'));
+  expect(tagAfter).toMatch(/^[0-9a-f]{32}$/);
+  expect(tagAfter).not.toBe(tagBefore);
+  const sent = sendsOf(page, ZIP);
+  await page.reload();
+  await expectPromptOnly(page, en);
+  expect(sent).toEqual([]);
+});
+
+/* Neither removed nor replaced: the store is unusable, and nothing says "erased". */
+test('"Erase my data" when the tag will neither go nor be replaced: no "erased", the control stays', async ({ page }) => {
+  await page.addInitScript(() => {
+    const { removeItem, setItem } = Storage.prototype;
+    const refusing = (name: string) => name === 'oravan.entry' && (window as unknown as { __refuse?: boolean }).__refuse === true;
+    Storage.prototype.removeItem = function (this: Storage, name: string) {
+      if (refusing(name)) throw new DOMException('refused', 'QuotaExceededError');
+      return removeItem.call(this, name);
+    };
+    Storage.prototype.setItem = function (this: Storage, name: string, value: string) {
+      if (refusing(name)) throw new DOMException('refused', 'QuotaExceededError');
+      return setItem.call(this, name, value);
+    };
+  });
+  await seedEverything(page);
+  await page.goto('/reps');
+  await expectWorkingMembers(page, en);
+  expect(await page.evaluate(() => localStorage.getItem('oravan.entry'))).not.toBeNull();
+  const erase = page.locator('[data-record-erase]');
+  await erase.getByRole('button', { name: en.impact.erase }).click();
+  await page.evaluate(() => {
+    (window as unknown as { __refuse?: boolean }).__refuse = true;
+  });
+  await erase.getByRole('button', { name: en.impact.confirmErase }).click();
+  await expect(erase.getByRole('button', { name: en.impact.erase })).toBeFocused();
+  await expect(page.getByText(en.impact.erased)).toHaveCount(0);
+});
+
+/* Storage blocked part-way through the visit, after it held our data: the
+   data may still be on disk, so nothing says "erased". */
+test('"Erase my data" when storage becomes blocked mid-visit: no "erased", the control stays', async ({ page }) => {
+  await page.addInitScript(() => {
+    const { removeItem, getItem } = Storage.prototype;
+    const blocked = () => (window as unknown as { __blocked?: boolean }).__blocked === true;
+    Storage.prototype.removeItem = function (this: Storage, name: string) {
+      if (blocked()) throw new DOMException('blocked', 'SecurityError');
+      return removeItem.call(this, name);
+    };
+    Storage.prototype.getItem = function (this: Storage, name: string) {
+      if (blocked()) throw new DOMException('blocked', 'SecurityError');
+      return getItem.call(this, name);
+    };
+  });
+  await seedEverything(page);
+  await page.goto('/reps');
+  await expectWorkingMembers(page, en);
+  const erase = page.locator('[data-record-erase]');
+  await erase.getByRole('button', { name: en.impact.erase }).click();
+  await page.evaluate(() => {
+    (window as unknown as { __blocked?: boolean }).__blocked = true;
+  });
+  await erase.getByRole('button', { name: en.impact.confirmErase }).click();
+  await expect(erase.getByRole('button', { name: en.impact.erase })).toBeFocused();
+  await expect(page.getByText(en.impact.erased)).toHaveCount(0);
+});
 
 test('the record page\'s erase when a key will not go: no "erased", the control stays', async ({ page }) => {
   await refuseRemoving(page, 'oravan.calls');
@@ -1036,3 +1112,145 @@ test('a tab whose page memory is gone but whose entry remains, tagged by an eras
   expect(sent).toEqual([]);
   expect(await page.evaluate(() => (window.history.state as Record<string, unknown> | null)?.oravanMembers ?? null)).toBeNull();
 });
+
+/* ------------------------------------------------------------------------
+ * THE FOURTH RE-CHECK (2026-11-19, PR #521): what a tab shows must match what
+ * storage holds now. After "erase, then another ZIP saved elsewhere", a tab
+ * that slept, was hidden, was out of focus, was mid-request or heard about it
+ * by event shows nothing for the old ZIP; the new saved ZIP fills in.
+ * ---------------------------------------------------------------------- */
+
+const NEW_ZIP = '10001';
+
+/** What another tab did while this one could not hear it: erase, then a new ZIP. */
+async function eraseAndSaveElsewhere(page: Page) {
+  await page.evaluate((zip) => {
+    for (const k of ['oravan.entry', 'oravan.prefs', 'oravan.calls', 'oravan.reads']) localStorage.removeItem(k);
+    localStorage.setItem('oravan.prefs', JSON.stringify({ zip }));
+    localStorage.setItem('oravan.entry', 'abcdefabcdefabcdefabcdefabcdef12');
+  }, NEW_ZIP);
+}
+
+const RETURNS = {
+  'back from the back/forward cache': (page: Page) =>
+    page.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }))),
+  'shown again after being hidden': (page: Page) =>
+    page.evaluate(() => {
+      Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'visible' });
+      document.dispatchEvent(new Event('visibilitychange'));
+    }),
+  focused: (page: Page) => page.evaluate(() => window.dispatchEvent(new Event('focus'))),
+} as const;
+
+for (const [how, wake] of Object.entries(RETURNS)) {
+  test(`/reps, ${how}, after an erase and another ZIP saved elsewhere: the old members go, the new ZIP fills in`, async ({ page }) => {
+    await seedZipOnce(page);
+    await page.goto('/reps');
+    await expectWorkingMembers(page, en);
+    const sent = sendsOf(page, ZIP);
+    await eraseAndSaveElsewhere(page);
+    await wake(page);
+    await expect(page.locator('[data-zip-line]')).toContainText(NEW_ZIP);
+    await expect(page.locator('main')).not.toContainText(ZIP);
+    expect(sent).toEqual([]);
+  });
+
+  test(`home page, ${how}, after an erase and another ZIP saved elsewhere: the old members block goes`, async ({ page }) => {
+    await seedZipOnce(page);
+    await page.goto('/');
+    await expect(page.locator('[data-saved-zip]')).toHaveAttribute('data-saved-zip', ZIP);
+    await eraseAndSaveElsewhere(page);
+    await wake(page);
+    await expect(page.locator(`[data-saved-zip="${ZIP}"]`)).toHaveCount(0);
+    await expect(page.locator('main')).not.toContainText(ZIP);
+  });
+}
+
+test('two tabs: another tab saves a different ZIP: the old members leave this one, the new ZIP fills in', async ({ context }) => {
+  const here = await context.newPage();
+  await here.goto('/record');
+  await here.evaluate((prefs) => localStorage.setItem('oravan.prefs', prefs), PREFS);
+  await here.goto('/reps');
+  await expectWorkingMembers(here, en);
+  const sent = sendsOf(here, ZIP);
+
+  const other = await context.newPage();
+  await other.goto('/reps?change=1');
+  const zip = other.getByRole('textbox', { name: en.home.zipLabel });
+  await zip.fill(NEW_ZIP);
+  await zip.press('Enter');
+  await expect(other.locator('[data-zip-line]')).toContainText(NEW_ZIP);
+
+  await expect(here.locator('[data-zip-line]')).toContainText(NEW_ZIP);
+  await expect(here.locator('main')).not.toContainText(ZIP);
+  expect(sent).toEqual([]);
+});
+
+test('two tabs: erase, then another ZIP, in the other tab: this one never shows the old ZIP again', async ({ context }) => {
+  const here = await context.newPage();
+  await here.goto('/record');
+  await here.evaluate((prefs) => localStorage.setItem('oravan.prefs', prefs), PREFS);
+  await here.goto('/reps');
+  await expectWorkingMembers(here, en);
+  const sent = sendsOf(here, ZIP);
+
+  const other = await context.newPage();
+  await other.goto('/record');
+  await eraseMyData(other);
+  await other.goto('/reps');
+  const zip = other.getByRole('textbox', { name: en.home.zipLabel });
+  await zip.fill(NEW_ZIP);
+  await zip.press('Enter');
+  await expect(other.locator('[data-zip-line]')).toContainText(NEW_ZIP);
+
+  await expect(here.locator('[data-zip-line]')).toHaveCount(0);
+  await expect(here.locator('main')).not.toContainText(ZIP);
+  await here.reload();
+  await expect(here.locator('[data-zip-line]')).toContainText(NEW_ZIP);
+  await expect(here.locator('main')).not.toContainText(ZIP);
+  expect(sent).toEqual([]);
+});
+
+test('a lookup for the old ZIP still out when another tab saves a different one is not shown', async ({ context }) => {
+  const here = await context.newPage();
+  await here.goto('/record');
+  await here.evaluate((prefs) => localStorage.setItem('oravan.prefs', prefs), PREFS);
+  let held!: import('@playwright/test').Route;
+  const caught = new Promise<void>((ok) => {
+    void here.route('**/reps', (route) => {
+      if (!isLookup(route.request()) || held) return route.continue();
+      held = route;
+      ok();
+    });
+  });
+  await here.goto('/reps');
+  await caught;
+
+  const other = await context.newPage();
+  await other.goto('/reps?change=1');
+  const zip = other.getByRole('textbox', { name: en.home.zipLabel });
+  await zip.fill(NEW_ZIP);
+  await zip.press('Enter');
+  await expect(other.locator('[data-zip-line]')).toContainText(NEW_ZIP);
+
+  const answered = here.waitForEvent('requestfinished', isLookup);
+  await held.continue();
+  await answered;
+  await expect(here.locator('main')).not.toContainText(ZIP);
+});
+
+/* 2. The language switch on the error screen remembers the choice, both ways. */
+for (const [prefix, m, other] of [
+  ['', en, 'es'],
+  ['/es', es, 'en'],
+] as const) {
+  test(`${prefix || '/en'}: the language switch on the error screen remembers the choice`, async ({ page }) => {
+    await crashRepsWithLookupAnswered(page, prefix, m);
+    expect(await page.evaluate(() => localStorage.getItem('oravan.locale.chosen'))).toBeNull();
+    const fresh = page.waitForEvent('load');
+    await page.locator(`header a[hreflang="${other}"]`).first().click();
+    await fresh;
+    await expect(page).toHaveURL(new RegExp(`${other === 'es' ? '/es' : ''}/reps$`));
+    expect(await page.evaluate(() => localStorage.getItem('oravan.locale.chosen'))).toBe(other);
+  });
+}

@@ -5,6 +5,7 @@ import { Trash2 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { getPathname } from '@/i18n/navigation';
 import { eraseAll } from '@/lib/local';
+import { rememberLocaleChoice } from '@/lib/locale-pref';
 import { ERASED_MARK } from '@/components/ErasedNotice';
 
 /*
@@ -110,6 +111,11 @@ export default function LocaleError({ error }: { error: Error & { digest?: strin
       // that their default would not.
       e.preventDefault();
       e.stopPropagation();
+      // Stopping the router's click also stops the language switcher's own:
+      // a link to the other language is remembered here, the way the
+      // switcher does it (lib/locale-pref.ts), before the page loads.
+      const lang = link.getAttribute('hreflang');
+      if (lang === 'en' || lang === 'es') rememberLocaleChoice(lang);
       window.location.assign(link.href);
     }
     let here = window.location.href;

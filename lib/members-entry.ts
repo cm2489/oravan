@@ -1,5 +1,5 @@
 import type { MembersResult } from '@/lib/members';
-import { ensureEntryTag, entryTag } from '@/lib/local';
+import { ensureEntryTag, entryTag, savedZip } from '@/lib/local';
 
 /*
  * WHAT THE MEMBERS PAGE SHOWED, KEPT IN ITS OWN HISTORY ENTRY (2026-11-12).
@@ -121,7 +121,23 @@ export function forgetStaleEntry() {
   }
 }
 
-/** The entry the current history entry holds. Browser only. */
+/**
+ * The entry a history state object holds, as this browser stands now: only
+ * while its tag is current (readEntry), and, when a ZIP is saved, only for
+ * that ZIP (2026-11-19). Another tab can save a different ZIP; this tab's
+ * entries then remember a ZIP that is no longer the saved one, and Reload,
+ * Back or the members page's own arrival would bring its members back. With
+ * no saved ZIP (an old /reps?zip= link) the entry stands as it is. Browser
+ * only.
+ */
+export function entryNow(state: unknown): MembersEntry | null {
+  const entry = readEntry(state, entryTag());
+  if (!entry) return null;
+  const saved = savedZip();
+  return saved !== null && entry.zip !== saved ? null : entry;
+}
+
+/** The entry the current history entry holds (see entryNow). Browser only. */
 export function currentEntry(): MembersEntry | null {
-  return readEntry(window.history.state, entryTag());
+  return entryNow(window.history.state);
 }
