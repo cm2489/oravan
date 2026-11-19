@@ -4,6 +4,7 @@ import { ExternalLink } from 'lucide-react';
 import { setRequestLocale, getTranslations, getFormatter } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { settledDecision, statusKeyFor } from '@/lib/journey';
+import { calendarMarkSuspended } from '@/lib/floor-session';
 import { routing } from '@/i18n/routing';
 import { ActionPanel } from '@/components/ActionPanel';
 import { CallTabTarget } from '@/components/CallTabTarget';
@@ -430,6 +431,7 @@ export default async function MomentPage({
         statusKey={statusKeyFor(bill)}
         tags={bill.issue_tags ?? []}
         lastActionDate={bill.last_action_date}
+        floorSuspended={calendarMarkSuspended(raw)}
         coverageCount={coverageCount}
         role={localeText(v.role, locale)}
         ctaLabel={t(ctaKey)}

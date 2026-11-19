@@ -67,6 +67,7 @@ export function MomentVehicleCard({
   explainer,
   tag,
   ctaContext,
+  floorSuspended = false,
 }: {
   slug: string;
   identifier: string;
@@ -82,6 +83,10 @@ export function MomentVehicleCard({
   statusKey: StatusLabelKey;
   tags: string[];
   lastActionDate: string | null;
+  /** The chamber this placement names is not meeting (lib/floor-session.ts
+   *  `calendarMarkSuspended`, the bill page's own reading), so the amber
+   *  mark stands down. Absent = false, today's behaviour. */
+  floorSuspended?: boolean;
   coverageCount?: number;
   /** The both-directions yes/no framing, already localized. */
   role: string;
@@ -134,7 +139,12 @@ export function MomentVehicleCard({
   // future caller may hand a key to, and DESIGN.md's law on the new key —
   // stale is INK, never amber — must hold on this surface by construction and
   // not by the caller having remembered.
-  const onCalendar = statusKey === 'floor_vote' && isSignalFresh(lastActionDate);
+  //
+  // AND THE CHAMBER MUST BE MEETING (2026-11-18, docs/record-truth.md §5): a
+  // placement is a record floor fact, and the bill page stands its band down
+  // while the chamber is out. The caller passes that same reading
+  // (lib/floor-session.ts `calendarMarkSuspended`); absent, nothing changes.
+  const onCalendar = statusKey === 'floor_vote' && isSignalFresh(lastActionDate) && !floorSuspended;
 
   // Separators ride at the END of the preceding chunk, so a wrapped line can
   // never start with a floating "·" (the /es long-status failure shape).

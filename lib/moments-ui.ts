@@ -11,8 +11,8 @@ import { nominationHasCallScript, settledDecision } from './journey';
 import { getUpdates, groupUpdatesByDay, type UpdateDayGroup } from './moment-updates';
 import { getLiveMoments, vehicleKind, type Localized, type MomentVehicle } from './moments';
 import type { MomentSearchTeaser } from './moments-search';
+import { siteBillStatusLine } from './floor-session';
 import {
-  billStatusLine,
   nominationStatusLine,
   questionStatus,
   vehicleGroup,
@@ -494,7 +494,9 @@ export function vehicleStatuses(vehicles: MomentVehicle[], now: number = Date.no
     if (!b) continue;
     out.push({
       vehicle: v,
-      line: billStatusLine(b, now),
+      // The session gate rides here (lib/floor-session.ts): every Big
+      // Question surface reads its lines from this function.
+      line: siteBillStatusLine(b, now),
       group: vehicleGroup({ kind: 'bill', bill_type: b.bill_type, status: b.status }),
     });
   }
