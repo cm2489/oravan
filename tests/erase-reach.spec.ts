@@ -813,7 +813,7 @@ async function erasedFromErrorScreen(page: Page, prefix: string, m: M) {
   return notice;
 }
 
-/* 1. "All local data erased." is said and focused once: never again after a
+/* 1. The erase's confirmation (`impact.erased`) is said and focused once: never again after a
    move to another page, Back, or a switch of language. */
 for (const [prefix, m, other] of [
   ['', en, 'es'],
@@ -1254,3 +1254,23 @@ for (const [prefix, m, other] of [
     expect(await page.evaluate(() => localStorage.getItem('oravan.locale.chosen'))).toBe(other);
   });
 }
+
+/* Back to this page's own earlier entry, for a ZIP that is no longer the
+   saved one (the visitor changed it since): the old ZIP's members do not come
+   back; the saved ZIP's stay. */
+test('Back to an entry for a ZIP that is no longer saved shows the saved ZIP, not the old one', async ({ page }) => {
+  await seedZipOnce(page);
+  await page.goto('/reps');
+  await expectWorkingMembers(page, en); // entry 1: ZIP 78501
+  await page.getByRole('link', { name: en.reps.changeZip }).click(); // entry 2
+  const zip = page.getByRole('textbox', { name: en.home.zipLabel });
+  await zip.fill(NEW_ZIP);
+  await zip.press('Enter');
+  await expect(page.locator('[data-zip-line]')).toContainText(NEW_ZIP); // saved: 10001
+  const sent = sendsOf(page, ZIP);
+  await page.goBack();
+  await expect(page).toHaveURL(/\/reps$/);
+  await expect(page.locator('[data-zip-line]')).toContainText(NEW_ZIP);
+  await expect(page.locator('main')).not.toContainText(ZIP);
+  expect(sent).toEqual([]);
+});

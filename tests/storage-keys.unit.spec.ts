@@ -39,9 +39,10 @@ import { ERASED_KEYS, eraseAll } from '../lib/local';
  * mistakes, not against someone hiding a key.
  *
  * KEPT, WITH THE REASON RECORDED WHERE THE KEY IS USED: two keys hold chrome,
- * not the civic record, and an erase leaves them on purpose. `impact.erased`
- * ("All local data erased.") is therefore not literally true of them; the
- * owner rewords that sentence, not this code (PR #521).
+ * not the civic record, and an erase leaves them on purpose. The erase's
+ * confirmation (`impact.erased`, reworded on the owner's answer of
+ * 2026-11-19) names what is erased (the ZIP, interests, reading history and
+ * call history) and so does not claim these two.
  */
 const KEPT: Record<string, string> = {
   'oravan.locale.chosen':

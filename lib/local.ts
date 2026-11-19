@@ -672,7 +672,7 @@ export function useErasures(): number {
  *
  * ONLY A WHOLE ERASE SAYS SO (2026-11-19). The removals used to sit in one
  * try, the tag last: when one threw, the rest, the tag included, were never
- * tried, and the page said "All local data erased." all the same, while
+ * tried, and the page said it had erased all the same, while
  * Reload sent the ZIP again. Now the tag goes first (once it is gone, no copy
  * of the ZIP in history can be read, whatever happens to the rest), each key
  * is tried on its own and then checked, and the count of erases rises either

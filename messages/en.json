@@ -692,7 +692,7 @@
     "eraseBody": "Your ZIP, topics, reading and calls are kept in this browser, not in an account.",
     "erase": "Erase all my data",
     "eraseConfirm": "Erase your ZIP, interests, reading history, and call history from this device? This can't be undone.",
-    "erased": "All local data erased.",
+    "erased": "Your ZIP, interests, reading history and call history were erased from this device.",
     "deleteRecord": "Delete this record",
     "confirmErase": "Yes, erase everything",
     "cancel": "Cancel"
