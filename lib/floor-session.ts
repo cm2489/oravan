@@ -31,9 +31,14 @@ export function floorSuspendedFrom(sessionOf: (chamber: Chamber) => ChamberSessi
 }
 
 /** The gate the site builds with: the committed data/floor-signals.json, read
- *  at `now` (the build's clock unless a caller passes one). */
-export function floorSuspendedAt(now: number = Date.now()): FloorSuspended {
-  return floorSuspendedFrom((chamber) => chamberSession(chamber, now));
+ *  at `now` (the build's clock unless a caller passes one). `readSession` is
+ *  lib/docket.ts `chamberSession`; a test passes its own to see the clock it
+ *  is asked at. */
+export function floorSuspendedAt(
+  now: number = Date.now(),
+  readSession: (chamber: Chamber, now: number) => ChamberSession = chamberSession
+): FloorSuspended {
+  return floorSuspendedFrom((chamber) => readSession(chamber, now));
 }
 
 /** One bill's status line as every page prints it: lib/moment-status.mjs's

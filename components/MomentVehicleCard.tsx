@@ -7,7 +7,7 @@ import { Chip } from '@/components/system';
 import { HeadlineOrTitle } from '@/components/HeadlineOrTitle';
 import { isInPageTarget } from '@/lib/call-tab';
 import type { BillStatus, StatusLabelKey } from '@/lib/types';
-import { isSignalFresh } from '@/lib/signal-window';
+import { calendarMarkShows } from '@/lib/calendar-mark';
 import type { StatusLine } from '@/lib/moment-status.mjs';
 import { MomentStatusLine } from '@/components/MomentStatusLine';
 
@@ -144,7 +144,7 @@ export function MomentVehicleCard({
   // placement is a record floor fact, and the bill page stands its band down
   // while the chamber is out. The caller passes that same reading
   // (lib/floor-session.ts `calendarMarkSuspended`); absent, nothing changes.
-  const onCalendar = statusKey === 'floor_vote' && isSignalFresh(lastActionDate) && !floorSuspended;
+  const onCalendar = calendarMarkShows({ statusKey, lastActionDate, floorSuspended });
 
   // Separators ride at the END of the preceding chunk, so a wrapped line can
   // never start with a floating "·" (the /es long-status failure shape).

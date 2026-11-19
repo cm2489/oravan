@@ -7,7 +7,9 @@ import es from '../messages/es.json';
 import { billStatusLine, type StatusLine } from '../lib/moment-status.mjs';
 import { chamberSessionFrom } from '../lib/docket.mjs';
 import { floorFactSuspended, type ChamberSession } from '../lib/journey';
-import { calendarMarkSuspended, floorSuspendedFrom, siteBillStatusLine } from '../lib/floor-session';
+import { calendarMarkSuspended, floorSuspendedAt, floorSuspendedFrom, siteBillStatusLine } from '../lib/floor-session';
+import { calendarMarkShows } from '../lib/calendar-mark';
+import { renderStatusDigest, statusRun } from '../scripts/moment-watch.mjs';
 
 /*
  * THE SESSION GATE ON THE BIG QUESTIONS STATUS LINE (2026-11-18;
@@ -36,11 +38,21 @@ const gate = (house: ChamberSession, senate: ChamberSession) => floorSuspendedFr
 
 /* ---- frozen records ------------------------------------------------- */
 
+/*
+ * EVERY FIXTURE SAYS CONGRESS 120. A bill of an ended Congress carries no
+ * floor fact at all (docs/record-truth.md §8), so a fixture in the 119th
+ * would change meaning on the review build that marks it ended
+ * (ORAVAN_REVIEW_ENDED_CONGRESS=119) and, after January 3, 2027, for real.
+ * No list names the 120th, so these cases hold either way.
+ */
+const CONGRESS = 120;
+
 const NOW = at('2026-11-20T15:00:00Z');
 const daysBefore = (n: number) => new Date(NOW - n * DAY).toISOString().slice(0, 10);
 
 /** Senate cloture filed 3 days before NOW. */
 const senateCloture = {
+  congress_number: CONGRESS,
   bill_type: 's',
   status: 'floor_vote' as const,
   last_action_text: 'Cloture motion on the measure presented in Senate. (CR S5701)',
@@ -48,6 +60,7 @@ const senateCloture = {
 };
 /** A House floor line (H.R. 3495's record of 2026-11-17, re-dated). */
 const houseRule = {
+  congress_number: CONGRESS,
   bill_type: 'hr',
   status: 'floor_vote' as const,
   last_action_text:
@@ -56,6 +69,7 @@ const houseRule = {
 };
 /** A House bill on the Senate floor (H.R. 2347's record of 2026-11-17). */
 const senateConsideration = {
+  congress_number: CONGRESS,
   bill_type: 'hr',
   status: 'floor_vote' as const,
   last_action_text: 'Considered by Senate. (consideration: CR S5705)',
@@ -63,6 +77,7 @@ const senateConsideration = {
 };
 /** A House calendar placement (H.R. 4464's record of 2026-11-17). */
 const housePlacement = {
+  congress_number: CONGRESS,
   bill_type: 'hr',
   status: 'floor_vote' as const,
   last_action_text: 'Placed on the Union Calendar, Calendar No. 777.',
@@ -260,21 +275,23 @@ test.describe('the August replay, frozen (S. 4668 and H.R. 3633 on 2026-08-18)',
       house: { date: '2026-08-20', label: '10 a.m., Thursday, August 20' },
     },
   };
+  // Verbatim from that commit apart from the Congress number (see CONGRESS
+  // above); the label keeps the real citation.
   const s4668 = {
-    full_identifier: 's-4668-119',
+    label: 'S. 4668 (s-4668-119)',
     bill_type: 's',
     bill_number: 4668,
-    congress_number: 119,
+    congress_number: CONGRESS,
     status: 'floor_vote' as const,
     last_action_text: 'Cloture motion on the motion to proceed to the measure presented in Senate. (CR S4449)',
     last_action_date: '2026-08-05',
     status_basis_text: null,
   };
   const hr3633 = {
-    full_identifier: 'hr-3633-119',
+    label: 'H.R. 3633 (hr-3633-119)',
     bill_type: 'hr',
     bill_number: 3633,
-    congress_number: 119,
+    congress_number: CONGRESS,
     status: 'floor_vote' as const,
     last_action_text: 'Cloture motion on the motion to proceed to the measure presented in Senate. (CR S4557)',
     last_action_date: '2026-08-08',
@@ -283,7 +300,7 @@ test.describe('the August replay, frozen (S. 4668 and H.R. 3633 on 2026-08-18)',
   const fromFile = floorSuspendedFrom((c) => chamberSessionFrom(meta, c, BUILD, null) as ChamberSession);
 
   for (const bill of [s4668, hr3633]) {
-    test(`${bill.full_identifier}: live words before the gate, the record’s words with it`, () => {
+    test(`${bill.label}: live words before the gate, the record’s words with it`, () => {
       expect(chamberSessionFrom(meta, 'senate', BUILD, null)).toBe('out_of_session');
       expect(billStatusLine(bill, BUILD).key).toBe('clotureFiled');
       const line = siteBillStatusLine(bill, BUILD, fromFile);
@@ -297,7 +314,7 @@ test.describe('the August replay, frozen (S. 4668 and H.R. 3633 on 2026-08-18)',
 });
 
 test.describe('the vehicle card’s amber calendar mark', () => {
-  const placement = { ...housePlacement, bill_type: 'hr', congress_number: 119 };
+  const placement = housePlacement;
   test('stands down while the House is out, stays while it meets or the session is unknown', () => {
     expect(calendarMarkSuspended(placement, NOW, sessions('out_of_session', 'in_session'))).toBe(true);
     expect(calendarMarkSuspended(placement, NOW, sessions('in_session', 'out_of_session'))).toBe(false);
@@ -307,37 +324,155 @@ test.describe('the vehicle card’s amber calendar mark', () => {
     const aged = { ...placement, last_action_date: daysBefore(30) };
     expect(calendarMarkSuspended(aged, NOW, sessions('out_of_session', 'out_of_session'))).toBe(false);
   });
+
+  /*
+   * THE CARD ITSELF (components/MomentVehicleCard.tsx). The card cannot be
+   * rendered here (next-intl's navigation does not load under Node; see
+   * tests/card-title-lang.unit.spec.ts), so its rule lives in
+   * lib/calendar-mark.ts and the card is held to calling it with the flag.
+   */
+  test('the mark’s rule: a suspended placement shows no mark, a live one does', () => {
+    const fresh = { statusKey: 'floor_vote' as const, lastActionDate: daysBefore(3), now: NOW };
+    expect(calendarMarkShows(fresh)).toBe(true);
+    expect(calendarMarkShows({ ...fresh, floorSuspended: false })).toBe(true);
+    expect(calendarMarkShows({ ...fresh, floorSuspended: true })).toBe(false);
+    expect(calendarMarkShows({ ...fresh, statusKey: 'floor_vote_stale' })).toBe(false);
+    expect(calendarMarkShows({ ...fresh, lastActionDate: daysBefore(15) })).toBe(false);
+  });
+
+  test('the card decides the mark through that rule, passing the flag', () => {
+    const src = readFileSync('components/MomentVehicleCard.tsx', 'utf8');
+    expect(src).toMatch(
+      /const onCalendar = calendarMarkShows\(\{[^}]*\bfloorSuspended\b[^}]*\}\);/
+    );
+    // ... and the chip renders on that decision alone.
+    expect(src.match(/\{onCalendar && \(/g)).toHaveLength(1);
+    expect(src).not.toMatch(/isSignalFresh/);
+  });
+});
+
+test.describe('floorSuspendedAt reads the session at the clock it is given', () => {
+  test('the instant passed in is the instant the session is read at', () => {
+    const asked: number[] = [];
+    const read = (_chamber: Chamber, at: number): ChamberSession => {
+      asked.push(at);
+      return at === NOW ? 'out_of_session' : 'in_session';
+    };
+    expect(floorSuspendedAt(NOW, read)('pending', 'senate')).toBe(true);
+    expect(floorSuspendedAt(NOW + DAY, read)('pending', 'senate')).toBe(false);
+    expect(asked).toEqual([NOW, NOW + DAY]);
+  });
+});
+
+test.describe('the owner’s nightly digest says what it is', () => {
+  /*
+   * scripts/moment-watch.mjs reads the line WITHOUT the session check, on
+   * purpose: its stored snapshot must not flip at the start and end of every
+   * recess. So its header may not claim to be "the same status lines the
+   * question pages render"; while a chamber is out, a page shows the record's
+   * own words where the digest still shows the floor or cloture line.
+   */
+  const NIGHT = at('2026-08-18T23:03:17Z');
+  const s4668 = {
+    full_identifier: 's-4668-120',
+    congress_number: CONGRESS,
+    bill_type: 's',
+    status: 'floor_vote' as const,
+    last_action_text: 'Cloture motion on the motion to proceed to the measure presented in Senate. (CR S4449)',
+    last_action_date: '2026-08-05',
+  };
+  const moments = { q: { status: 'live', review_by: '2026-12-31', vehicles: [{ slug: 's-4668-120' }] } };
+
+  test('the digest’s line is the ungated one, so a recess cannot flip its snapshot', () => {
+    const run = statusRun({ moments, bills: [s4668], nominations: [], prev: null, now: NIGHT });
+    expect(run.snapshot.q.vehicles['s-4668-120'].fingerprint).toMatch(/^clotureFiled\|senate\|/);
+  });
+
+  test('its header says the pages differ while the chamber is out', () => {
+    const body = renderStatusDigest({
+      changes: [{ id: 'q', slug: 's-4668-120', from: null, to: 'clotureFiled|senate||2026-08-05', text: s4668.last_action_text }],
+      past: [],
+      newlyPast: [],
+      now: NIGHT,
+    });
+    expect(body).not.toMatch(/the same status lines the question pages render/);
+    expect(body).toMatch(/the status lines the question pages render while the chamber is meeting/);
+    expect(body).toMatch(/record's own words in place of a floor or cloture line/);
+  });
 });
 
 test.describe('one decision, every surface', () => {
   /*
-   * The proof that no page prints a status line around the gate: the only
-   * site file that may call `billStatusLine` is lib/floor-session.ts (and the
-   * module that defines it). Every Big Question surface reads its lines from
-   * lib/moments-ui.ts `vehicleStatuses` (the /questions cards through
-   * momentStatus, the question page's header, vehicle cards and still-open
-   * rail through questionVehicles, the home band through lib/home.ts), which
-   * calls siteBillStatusLine; the home page's week rows call it directly.
-   * scripts/moment-watch.mjs (the owner's nightly digest, not a page) is
-   * outside app/, components/ and lib/ and stays ungated on purpose.
+   * The proof that no page prints a status line around the gate.
+   *
+   * Every Big Question surface reads its lines from lib/moments-ui.ts
+   * `vehicleStatuses` (the /questions cards through momentStatus, the question
+   * page's header, vehicle cards and still-open rail through questionVehicles,
+   * the home band through lib/home.ts), which calls siteBillStatusLine; the
+   * home page's week rows call it directly.
+   *
+   * So outside lib/floor-session.ts, no file in app/, components/, lib/ or
+   * scripts/ may reach `billStatusLine` at all: not by name in code (an
+   * import, renamed or not, a re-export, or `ns['billStatusLine']`), and not
+   * through a namespace import, `export *`, a dynamic import or a require of
+   * lib/moment-status.mjs, any of which could reach it without naming it in an
+   * import. scripts/moment-watch.mjs is the one allowed script: the owner's
+   * nightly digest reads the line without the session check on purpose, so
+   * its stored snapshot does not flip at the start and end of every recess.
    */
-  const ROOTS = ['app', 'components', 'lib'];
-  const ALLOWED = new Set(['lib/moment-status.mjs', 'lib/floor-session.ts']);
-  const files: string[] = [];
-  const walk = (dir: string) => {
-    for (const name of readdirSync(dir)) {
-      const p = path.join(dir, name);
-      if (statSync(p).isDirectory()) walk(p);
-      else if (/\.(ts|tsx|mjs|js)$/.test(name)) files.push(p.split(path.sep).join('/'));
-    }
-  };
-  for (const r of ROOTS) walk(r);
+  const ROOTS = ['app', 'components', 'lib', 'scripts'];
+  const ALLOWED = new Set(['lib/moment-status.mjs', 'lib/floor-session.ts', 'scripts/moment-watch.mjs']);
+  const MODULE = String.raw`['"][^'"]*moment-status(?:\.mjs)?['"]`;
+  const NAMESPACE = new RegExp(String.raw`import\s+(?:type\s+)?(?:\w+\s*,\s*)?\*\s+as\s+\w+\s+from\s+${MODULE}`);
+  const EXPORT_ALL = new RegExp(String.raw`export\s+\*\s+(?:as\s+\w+\s+)?from\s+${MODULE}`);
+  const DYNAMIC = new RegExp(String.raw`(?:\bimport|\brequire)\s*\(\s*${MODULE}`);
+  /** Code only: block and line comments removed (a `//` right after a colon
+   *  is a URL, not a comment), so a file may still mention the name in prose. */
+  const code = (src: string) => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\])\/\/.*$/gm, '$1');
 
-  test('no app/, components/ or lib/ file calls billStatusLine around the session gate', () => {
-    const offenders = files.filter(
-      (f) => !ALLOWED.has(f) && /\bbillStatusLine\s*\(/.test(readFileSync(f, 'utf8'))
-    );
-    expect(offenders).toEqual([]);
+  /** Does this source reach billStatusLine (or could it, without naming it)? */
+  function reaches(src: string): boolean {
+    const c = code(src);
+    return /billStatusLine/.test(c) || NAMESPACE.test(c) || EXPORT_ALL.test(c) || DYNAMIC.test(c);
+  }
+  function offendersIn(files: string[]): string[] {
+    return files.filter((f) => !ALLOWED.has(f) && reaches(readFileSync(f, 'utf8')));
+  }
+  function sourceFiles(): string[] {
+    const out: string[] = [];
+    const walk = (dir: string) => {
+      for (const name of readdirSync(dir)) {
+        if (name === 'node_modules') continue;
+        const p = path.join(dir, name);
+        if (statSync(p).isDirectory()) walk(p);
+        else if (/\.(ts|tsx|mjs|js|cjs)$/.test(name)) out.push(p.split(path.sep).join('/'));
+      }
+    };
+    for (const r of ROOTS) walk(r);
+    return out;
+  }
+
+  test('nothing outside lib/floor-session.ts reaches billStatusLine around the session gate', () => {
+    expect(offendersIn(sourceFiles())).toEqual([]);
+  });
+
+  test('the guard catches every bypass shape it names', () => {
+    const shapes: Record<string, string> = {
+      plain: `import { billStatusLine } from '@/lib/moment-status.mjs';\nbillStatusLine(b);`,
+      renamed: `import { questionStatus, billStatusLine as read } from './moment-status.mjs';\nread(b);`,
+      reexport: `export { billStatusLine as line } from '../lib/moment-status.mjs';`,
+      namespace: `import * as ms from '@/lib/moment-status.mjs';\nms[k](b);`,
+      exportAll: `export * from './moment-status.mjs';`,
+      dynamic: `const ms = await import('@/lib/moment-status.mjs');`,
+      require: `const ms = require("../lib/moment-status.mjs");`,
+      bracket: `import { questionStatus } from './moment-status.mjs';\nconst f = mod['billStatusLine'];`,
+    };
+    const hit = reaches;
+    for (const [name, src] of Object.entries(shapes)) expect(hit(src), name).toBe(true);
+    // The shapes the site legitimately uses stay allowed.
+    expect(hit(`import { questionStatus } from '@/lib/moment-status.mjs';`)).toBe(false);
+    expect(hit(`import type { StatusLine } from '@/lib/moment-status.mjs';`)).toBe(false);
+    expect(hit(`// billStatusLine is read through lib/floor-session.ts\nconst u = 'https://x.y/billStatus';`)).toBe(false);
   });
 
   test('vehicleStatuses and the home page read the gated line', () => {
