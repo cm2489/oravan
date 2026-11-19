@@ -31,6 +31,9 @@ export interface Sentence {
   type: string;
   truth: Truth;
   text: string;
+  /** The bill's own number, where the sentence names its bill (round 7);
+   *  1 otherwise. */
+  number?: number;
   main: Reading;
 }
 
@@ -254,9 +257,9 @@ export const SENTENCES: Sentence[] = [
   { id: 'm60', src: 'pr523', type: 's', truth: 'S', text: 'Senate concurred in the House amendment with Senate amendment SA 4300 by Unanimous Consent.', main: ['committee', 'committee', 'first/null/house', null, 'nowCommittee', 'pending', 'committee'] },
   { id: 'm61', src: 'pr523', type: 'hr', truth: 'F', text: 'On motion that the House concur in the Senate amendment to the text and the Senate amendment to the title Agreed to by voice vote.', main: ['committee', 'committee', 'first/null/senate', null, 'nowCommittee', 'pending', 'committee'] },
   { id: 'm62', src: 'pr523', type: 'hr', truth: 'F', text: 'On motion that the House suspend the rules and agree to the Senate amendment Agreed to by voice vote. (text: CR H6247-6248)', main: ['committee', 'committee', 'first/null/senate', null, 'nowCommittee', 'pending', 'committee'] },
-  { id: 'm63', src: 'pr523', type: 's', truth: 'F', text: 'Senate agreed to the House amendment to S. 240 by Unanimous Consent.', main: ['committee', 'committee', 'first/null/house', null, 'nowCommittee', 'pending', 'committee'] },
-  { id: 'm64', src: 'pr523', type: 's', truth: 'F', text: 'Senate agreed to the House amendment to S. 240 by Unanimous Consent. (consideration: CR S5020)', main: ['committee', 'committee', 'first/null/house', null, 'nowCommittee', 'pending', 'committee'] },
-  { id: 'm65', src: 'pr523', type: 's', truth: 'F', text: 'Senate agreed to the House amendment to S. 283 by Unanimous Consent. (consideration: CR S5020)', main: ['committee', 'committee', 'first/null/house', null, 'nowCommittee', 'pending', 'committee'] },
+  { id: 'm63', src: 'pr523', type: 's', truth: 'F', number: 240, text: 'Senate agreed to the House amendment to S. 240 by Unanimous Consent.', main: ['committee', 'committee', 'first/null/house', null, 'nowCommittee', 'pending', 'committee'] },
+  { id: 'm64', src: 'pr523', type: 's', truth: 'F', number: 240, text: 'Senate agreed to the House amendment to S. 240 by Unanimous Consent. (consideration: CR S5020)', main: ['committee', 'committee', 'first/null/house', null, 'nowCommittee', 'pending', 'committee'] },
+  { id: 'm65', src: 'pr523', type: 's', truth: 'F', number: 283, text: 'Senate agreed to the House amendment to S. 283 by Unanimous Consent. (consideration: CR S5020)', main: ['committee', 'committee', 'first/null/house', null, 'nowCommittee', 'pending', 'committee'] },
   { id: 'm66', src: 'pr523', type: 'hr', truth: 'N', text: 'Message on House action received in Senate and at desk: House amendment to Senate bill.', main: ['committee', 'committee', 'first/null/senate', 'house', 'nowCommittee', 'pending', 'committee'] },
   { id: 'm67', src: 'pr523', type: 's', truth: 'S', text: 'Message on House action received in Senate and at desk: House amendment to Senate bill.', main: ['committee', 'committee', 'first/null/house', 'house', 'nowCommittee', 'pending', 'committee'] },
   { id: 'm68', src: 'pr523', type: 'hr', truth: 'N', text: 'Rules Committee Resolution H. Res. 1530 Reported to House. Rule provides for consideration of H.R. 9576, H.R. 10326, H.J. Res. 210 and H.J. Res. 213. The resolution provides for consideration of H.R. 9576, H.R. 10326, H.J.Res. 210, and H.J.Res. 213 under a closed rule with one hour of debate on each measure. The resolution provides for a motion to concur in the Senate amendments to H.R. 5334.', main: ['floor_vote', 'floor_activity', 'first/null/senate', null, 'nowFloorActivity', 'pending', 'committee'] },

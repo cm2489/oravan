@@ -269,7 +269,7 @@ test.describe('every other stage is unchanged', () => {
       expect(reading !== null, id).toBe(statusKeyFor(raw) === 'passed_both' && passageState(raw).stage !== 'back');
       if (reading === null && passedBackChamber(raw)) {
         // Passed in different versions (2026-11-18, #523): one script is read to
-        // both chambers' offices and one chamber has already voted, so it asks
+        // both chambers' offices and one chamber has already passed it, so it asks
         // for a public stand and never for a vote.
         for (const stance of STANCE_ORDER) {
           const line = stanceLine(raw, stance);

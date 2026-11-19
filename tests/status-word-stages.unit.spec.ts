@@ -18,6 +18,7 @@ import { isStatusReading } from '../lib/moment-updates-gate.mjs';
 import { mapStatus } from '../scripts/congress-fetch.mjs';
 import { statusKeyFor as statusKeyForMjs } from '../scripts/moment-candidates.mjs';
 import type { Bill, BillStatus } from '../lib/types';
+import { fixClock } from './fixed-clock';
 
 /*
  * THE STATUS WORD FOR EVERY STAGE THE RECORD HOLDS (2026-11-18).
@@ -39,6 +40,10 @@ import type { Bill, BillStatus } from '../lib/types';
 const TEST_CONGRESS = 9_119;
 
 const NOW = Date.parse('2026-11-18T18:00:00Z');
+// Never today (round 7): the functions that take a clock are handed NOW, and
+// the clock is fixed at NOW for the ones that cannot take one
+// (liveCallTarget, settledDecision, the script prompt's status word).
+fixClock(NOW);
 const EN = JSON.parse(readFileSync(join(process.cwd(), 'messages/en.json'), 'utf8'));
 const ES = JSON.parse(readFileSync(join(process.cwd(), 'messages/es.json'), 'utf8'));
 
@@ -114,7 +119,7 @@ test.describe('the six bills the audit found', () => {
   test('presented: the stepper stands it at the President’s desk and routes no live call', () => {
     const b = SIX['hr-10167-119'];
     expect(passageState(b)).toEqual({ stage: 'both', passedBy: null, next: null });
-    const j = deriveJourney(b);
+    const j = deriveJourney(b, NOW);
     expect(j.step).toBe(4);
     expect(j.nowKey).toBe('nowPassedBoth');
     // It used to route to the Senate "after the House voted", which the record
@@ -131,7 +136,7 @@ test.describe('the six bills the audit found', () => {
   test('passed in different versions: the stepper and the call routing are unchanged', () => {
     const b = SIX['hr-5349-119'];
     expect(passageState(b)).toEqual({ stage: 'back', passedBy: 'senate', next: 'house' });
-    expect(deriveJourney(b).nowKey).toMatch(/^nowPassedBack/);
+    expect(deriveJourney(b, NOW).nowKey).toMatch(/^nowPassedBack/);
     expect(liveCallTarget(b)).toEqual({ chamber: 'house', afterVote: true, soleChamber: false });
     // Not the "goes to the president" ask: the House still settles the changes.
     expect(passedBothReading({ ...b, title: b.title ?? 'A bill.' })).toBeNull();
@@ -189,7 +194,7 @@ test.describe('the six bills the audit found', () => {
     const b = SIX['hr-2400-119'];
     expect(recordStatus(b)).toBe('passed_chamber');
     expect(passageState(b)).toEqual({ stage: 'both', passedBy: 'house', next: null });
-    const j = deriveJourney(b);
+    const j = deriveJourney(b, NOW);
     expect(j.step).toBe(4);
     expect(j.nowKey).toBe('nowPassedBoth');
     expect(liveCallTarget(b)).toBeNull();
@@ -207,9 +212,9 @@ test.describe('the six bills the audit found', () => {
   });
 
   test('presented: the stepper flags presentment, and only there', () => {
-    expect(deriveJourney(SIX['hr-10167-119']).presented).toBe(true);
-    expect(deriveJourney(SIX['hr-2400-119']).presented).toBe(false);
-    expect(deriveJourney(bill({ bill_type: 'hr', status: 'passed_chamber', last_action_text: 'Passed Senate without amendment by Unanimous Consent.' })).presented).toBe(false);
+    expect(deriveJourney(SIX['hr-10167-119'], NOW).presented).toBe(true);
+    expect(deriveJourney(SIX['hr-2400-119'], NOW).presented).toBe(false);
+    expect(deriveJourney(bill({ bill_type: 'hr', status: 'passed_chamber', last_action_text: 'Passed Senate without amendment by Unanimous Consent.' }), NOW).presented).toBe(false);
     // The sentence it prints is the Big Questions status line's existing one.
     expect(EN.moments.status.line.presented).toBe('Both chambers passed it, and it has been sent to the president.');
     expect(ES.moments.status.line.presented).toBe('Ambas cámaras lo aprobaron y se envió al presidente.');
@@ -355,8 +360,9 @@ test.describe('an ended Congress (lib/journey.ts endedDecision reads recordStatu
 test.describe('the readers’ anchors (mutants the re-check found)', () => {
   test('the Senate’s own sentence form is read only as the whole action', () => {
     const t = 'Motion to reconsider the vote by which the Senate agreed to the House amendment to S. 240 by Unanimous Consent.';
-    expect(agreedToOtherChamberAmendment(t)).toBeNull();
-    expect(agreedToOtherChamberAmendment('Senate agreed to the House amendment to S. 240 by Unanimous Consent.')).toBe('senate');
+    const s240 = { bill_type: 's', bill_number: 240 };
+    expect(agreedToOtherChamberAmendment(t, s240)).toBeNull();
+    expect(agreedToOtherChamberAmendment('Senate agreed to the House amendment to S. 240 by Unanimous Consent.', s240)).toBe('senate');
   });
   test('"Presented to President." counts only as the whole action', () => {
     const b = bill({

@@ -12,6 +12,7 @@ import { decisionState, floorAnsweredChamber } from '../lib/docket.mjs';
 import { mapStatus } from '../scripts/congress-fetch.mjs';
 import type { BillStatus } from '../lib/types';
 import { SENTENCES, type Reading, type Sentence } from './amendment-exchange-sentences';
+import { fixClock } from './fixed-clock';
 
 /*
  * FINAL BY WHOLE-SENTENCE WHITELIST ONLY (re-check of #523, round 6).
@@ -32,10 +33,17 @@ import { SENTENCES, type Reading, type Sentence } from './amendment-exchange-sen
 
 const NOW = Date.parse('2026-11-18T18:00:00Z');
 const TEST_CONGRESS = 9_119;
+// Every reading here is taken at NOW, never at today (round 7): the
+// functions that take a clock are handed NOW, and the clock is fixed for the
+// rest.
+fixClock(NOW);
 
-/** The record a sentence stands in, exactly as the main readings were taken. */
-const asBill = (type: string, text: string) => ({
+/** The record a sentence stands in, exactly as the main readings were taken.
+ *  `number` is the bill's own number (a sentence that names its bill must
+ *  name this one); 1 where the sentence names none. */
+const asBill = (type: string, text: string, number: number = 1) => ({
   bill_type: type,
+  bill_number: number,
   status: mapStatus(text) as BillStatus,
   last_action_text: text,
   status_basis_text: null,
@@ -45,15 +53,15 @@ const asBill = (type: string, text: string) => ({
 });
 
 /** The same seven readings tests/amendment-exchange-sentences.ts holds for main. */
-function readingOf(type: string, text: string): Reading {
-  const b = asBill(type, text);
+function readingOf(type: string, text: string, number: number = 1): Reading {
+  const b = asBill(type, text, number);
   const p = passageState(b);
   return [
     b.status,
     statusKeyFor(b, NOW),
     `${p.stage}/${p.passedBy}/${p.next}`,
-    floorAnsweredChamber(text),
-    deriveJourney(b).nowKey,
+    floorAnsweredChamber(text, b),
+    deriveJourney(b, NOW).nowKey,
     decisionState(b).state,
     statusKeyFor({ ...b, status: 'committee' as BillStatus }, NOW),
   ];
@@ -64,34 +72,39 @@ function readingOf(type: string, text: string): Reading {
  * Copied from data/bills.json and its git history; the commit is the
  * first data commit that holds the sentence.
  * ------------------------------------------------------------------ */
-const REAL: { text: string; type: string; chamber: 'house' | 'senate'; record: string }[] = [
+const REAL: { text: string; type: string; number: number; chamber: 'house' | 'senate'; record: string }[] = [
   {
     text: 'On motion that the House suspend the rules and agree to the Senate amendment Agreed to by voice vote.',
     type: 'hr',
+    number: 2400,
     chamber: 'house',
     record: 'H.R. 2400 (119th), status basis of 2026-11-17, data commit e0777202 (2026-11-18)',
   },
   {
     text: 'On motion that the House suspend the rules and agree to the Senate amendment Agreed to by voice vote. (text: CR H6247-6248)',
     type: 'hr',
+    number: 2400,
     chamber: 'house',
     record: 'H.R. 2400 (119th), data commit 2b2d1d2c (2026-11-18)',
   },
   {
     text: 'Senate agreed to the House amendment to S. 240 by Unanimous Consent.',
     type: 's',
+    number: 240,
     chamber: 'senate',
     record: 'S. 240 (119th), last action of 2026-09-24, data commit bb7dd84b (2026-09-25)',
   },
   {
     text: 'Senate agreed to the House amendment to S. 240 by Unanimous Consent. (consideration: CR S5020)',
     type: 's',
+    number: 240,
     chamber: 'senate',
     record: 'S. 240 (119th), data commit 5e446a64 (2026-09-26)',
   },
   {
     text: 'Senate agreed to the House amendment to S. 283 by Unanimous Consent. (consideration: CR S5020)',
     type: 's',
+    number: 283,
     chamber: 'senate',
     record: 'S. 283 (119th), last action of 2026-09-24, data commit 5e446a64 (2026-09-26)',
   },
@@ -111,13 +124,18 @@ test.describe('(a) the whitelist: every shape has a real example, and it reads f
   });
   for (const r of REAL) {
     test(`${r.record}: ${r.text}`, () => {
-      expect(agreedToOtherChamberAmendment(r.text)).toBe(r.chamber);
-      const b = asBill(r.type, r.text);
-      expect(b.status).toBe('passed_chamber');
+      const b = asBill(r.type, r.text, r.number);
+      expect(agreedToOtherChamberAmendment(r.text, b)).toBe(r.chamber);
+      // The nightly mapping reads action text alone. The House sentence names
+      // no bill, so it maps to passed_chamber; the Senate one names its bill
+      // and the mapping has none to check it against, so it stays at main's
+      // `committee` and recordStatus, which has the bill, reads it at display.
+      expect(b.status).toBe(r.chamber === 'house' ? 'passed_chamber' : 'committee');
+      expect(recordStatus(b)).toBe('passed_chamber');
       expect(statusKeyFor(b, NOW)).toBe('passed_both');
       expect(passageState(b)).toEqual({ stage: 'both', passedBy: r.chamber, next: null });
-      expect(floorAnsweredChamber(r.text)).toBe('both');
-      expect(deriveJourney(b).nowKey).toBe('nowPassedBoth');
+      expect(floorAnsweredChamber(r.text, b)).toBe('both');
+      expect(deriveJourney(b, NOW).nowKey).toBe('nowPassedBoth');
       // Stored at `committee` before the fix (H.R. 2400), it reads the same.
       expect(recordStatus({ ...b, status: 'committee' })).toBe('passed_chamber');
     });
@@ -140,10 +158,38 @@ test.describe('(a) the whitelist: every shape has a real example, and it reads f
     expect(agreedToOtherChamberAmendment(null)).toBeNull();
   });
   test('the leading label counts only when it names the chamber that acted', () => {
+    const s240 = { bill_type: 's', bill_number: 240 };
     expect(agreedToOtherChamberAmendment(`Resolving differences -- House actions: ${REAL[0].text}`)).toBe('house');
-    expect(agreedToOtherChamberAmendment(`Resolving differences -- Senate actions: ${REAL[2].text}`)).toBe('senate');
+    expect(agreedToOtherChamberAmendment(`Resolving differences -- Senate actions: ${REAL[2].text}`, s240)).toBe('senate');
     expect(agreedToOtherChamberAmendment(`Resolving differences -- Senate actions: ${REAL[0].text}`)).toBeNull();
-    expect(agreedToOtherChamberAmendment(`Resolving differences -- House actions: ${REAL[2].text}`)).toBeNull();
+    expect(agreedToOtherChamberAmendment(`Resolving differences -- House actions: ${REAL[2].text}`, s240)).toBeNull();
+  });
+  test('a sentence that names its bill reads final only on that bill (round 7)', () => {
+    const t = REAL[2].text; // "… to S. 240 …"
+    expect(agreedToOtherChamberAmendment(t, { bill_type: 's', bill_number: 240 })).toBe('senate');
+    expect(agreedToOtherChamberAmendment(t, { bill_type: 's', bill_number: '240' })).toBe('senate');
+    // The same number, another type.
+    for (const type of ['hr', 'sjres', 'sres', 'sconres', 'hjres']) {
+      expect(agreedToOtherChamberAmendment(t, { bill_type: type, bill_number: 240 }), type).toBeNull();
+    }
+    // The right type, another number.
+    for (const n of [241, 24, 2400, 1240, 0]) {
+      expect(agreedToOtherChamberAmendment(t, { bill_type: 's', bill_number: n }), String(n)).toBeNull();
+    }
+    // No bill to check it against: never final.
+    expect(agreedToOtherChamberAmendment(t)).toBeNull();
+    expect(agreedToOtherChamberAmendment(t, null)).toBeNull();
+    expect(agreedToOtherChamberAmendment(t, { bill_type: 's' })).toBeNull();
+    // Through every reader that has the bill.
+    for (const [type, number] of [['hr', 240], ['s', 241]] as const) {
+      const b = asBill(type, t, number);
+      expect(recordStatus(b), `${type} ${number}`).toBe('committee');
+      expect(passageState(b).stage, `${type} ${number}`).not.toBe('both');
+      expect(statusKeyFor(b, NOW), `${type} ${number}`).not.toBe('passed_both');
+      expect(floorAnsweredChamber(t, b), `${type} ${number}`).not.toBe('both');
+    }
+    // The House sentence names no bill, so it needs none.
+    expect(agreedToOtherChamberAmendment(REAL[0].text)).toBe('house');
   });
 });
 
@@ -153,7 +199,8 @@ test.describe('(a) the whitelist: every shape has a real example, and it reads f
  * "Presented to President." reads presented; every other sentence reads
  * exactly what origin/main read.
  * ------------------------------------------------------------------ */
-const whitelisted = (s: Sentence) => REAL.some((r) => stripActionFrame(r.text).body === stripActionFrame(s.text).body && agreedToOtherChamberAmendment(s.text) !== null);
+const whitelisted = (s: Sentence) =>
+  REAL.some((r) => stripActionFrame(r.text).body === stripActionFrame(s.text).body && agreedToOtherChamberAmendment(s.text, asBill(s.type, s.text, s.number ?? 1)) !== null);
 const presentedExact = (s: Sentence) => normaliseAction(s.text) === PRESENTED_REAL && !/conres$/.test(s.type);
 
 test.describe('(b) every sentence of the re-checks, with the reading it must give', () => {
@@ -166,7 +213,7 @@ test.describe('(b) every sentence of the re-checks, with the reading it must giv
   for (const s of SENTENCES) {
     const expected = whitelisted(s) ? 'final' : presentedExact(s) ? 'presented' : 'as on main';
     test(`${s.id} [${s.type}] ${expected}: ${JSON.stringify(s.text).slice(1, 100)}`, () => {
-      const r = readingOf(s.type, s.text);
+      const r = readingOf(s.type, s.text, s.number ?? 1);
       if (expected === 'final') {
         expect(r[1]).toBe('passed_both');
         expect(r[2]).toMatch(/^both\//);
@@ -175,13 +222,13 @@ test.describe('(b) every sentence of the re-checks, with the reading it must giv
         expect(r[1]).toBe('passed_both');
         expect(r[2]).toBe('both/null/null');
       } else {
-        expect(agreedToOtherChamberAmendment(s.text)).toBeNull();
+        expect(agreedToOtherChamberAmendment(s.text, asBill(s.type, s.text, s.number ?? 1))).toBeNull();
         expect(r).toEqual(s.main);
       }
     });
   }
   test('which sentences read differently from main: the five real ones and the exact presentment, nothing else', () => {
-    const changed = SENTENCES.filter((s) => JSON.stringify(readingOf(s.type, s.text)) !== JSON.stringify(s.main)).map((s) => s.id);
+    const changed = SENTENCES.filter((s) => JSON.stringify(readingOf(s.type, s.text, s.number ?? 1)) !== JSON.stringify(s.main)).map((s) => s.id);
     expect(changed).toEqual(SENTENCES.filter((s) => whitelisted(s) || presentedExact(s)).map((s) => s.id));
     expect(changed.length).toBe(7);
   });
@@ -237,7 +284,10 @@ const EDITS: Edit[] = [
   { name: 'the other chamber’s label', keeps: false, apply: (t) => [`Resolving differences -- ${/^Senate/.test(t) ? 'House' : 'Senate'} actions: ${t}`] },
   { name: 'two labels', keeps: false, apply: (t) => [`Resolving differences -- House actions: Resolving differences -- House actions: ${t}`, `Resolving differences -- Senate actions: Resolving differences -- Senate actions: ${t}`] },
   { name: 'a second or misplaced citation', keeps: false, apply: (t) => [`${t} (text: CR H1) (text: CR H2)`, /\)$/.test(t) ? `${t} (consideration: CR S1)` : `${t} (text: CR H1)`.replace(/\.( \(text: CR H1\))$/, '$1.'), t.replace(' Agreed', ' (text: CR H1) Agreed').replace(' by Unanimous', ' (consideration: CR S1) by Unanimous')].filter((x) => x !== t) },
-  { name: 'a malformed citation', keeps: false, apply: (t) => [`${normaliseAction(t).replace(/ \([^)]*\)$/, '')} (text: CR X1)`, `${normaliseAction(t).replace(/ \([^)]*\)$/, '')} (see: CR H1)`] },
+  // A citation that is not one of the record's own forms is not stripped, so
+  // the sentence is not whitelisted (round 7: "CR [HS][^)]*" would have
+  // stripped the first three).
+  { name: 'a malformed citation', keeps: false, apply: (t) => ['(text: CR X1)', '(see: CR H1)', '(text: CR H1-2; motion later vacated)', '(consideration: CR S5020; vacated)', '(text: CR H6247-6248 and H6250)'].map((c) => `${normaliseAction(t).replace(/ \([^)]*\)$/, '')} ${c}`) },
   { name: 'the bill number mangled', keeps: false, apply: (t) => (/S\. \d+/.test(t) ? [t.replace(/S\. (\d+)/, 'S. 0$1'), t.replace(/S\. (\d+)/, 'S. $1a'), t.replace(/S\. (\d+)/, 'S.$1'), t.replace(/S\. (\d+)/, 'H.R. $1')] : [t.replace('the Senate amendment', 'the Senate amendment to H.R. 2400')]) },
   { name: 'the object made plural or bare', keeps: false, apply: (t) => [t.replace('amendment', 'amendments'), t.replace('the Senate amendment', 'Senate amendment'), t.replace('the House amendment', 'House amendment')].filter((x) => x !== t) },
 ];
@@ -256,14 +306,16 @@ test.describe('(c) the generator: an edited real example is never final unless o
         for (const v of variants) {
           const sameAfterNormalising = stripActionFrame(v).body === stripActionFrame(r.text).body && stripActionFrame(v).label === null;
           expect(sameAfterNormalising, `edit kind says keeps=${e.keeps}: ${JSON.stringify(v)}`).toBe(e.keeps);
-          expect(agreedToOtherChamberAmendment(v), JSON.stringify(v)).toBe(e.keeps ? r.chamber : null);
-          // The nightly mapping and the passage reading agree with the reader.
-          const b = asBill(r.type, v);
+          // Read on the real example's own bill, so a sentence that names its
+          // bill is checked against the right one.
+          const b = asBill(r.type, v, r.number);
+          expect(agreedToOtherChamberAmendment(v, b), JSON.stringify(v)).toBe(e.keeps ? r.chamber : null);
+          // The passage reading and the status word agree with the reader.
           if (!e.keeps) {
             expect(passageState(b).stage, JSON.stringify(v)).not.toBe('both');
             expect(statusKeyFor(b, NOW), JSON.stringify(v)).not.toBe('passed_both');
           } else {
-            expect(b.status).toBe('passed_chamber');
+            expect(statusKeyFor(b, NOW)).toBe('passed_both');
           }
         }
       });
@@ -296,14 +348,14 @@ const correct = (r: Reading, s: Sentence) => claimsBoth(r) === states(s);
 test.describe('(d) no sentence reads worse than on main', () => {
   for (const s of SENTENCES) {
     test(`${s.id}: ${JSON.stringify(s.text).slice(1, 90)}`, () => {
-      const b = readingOf(s.type, s.text);
+      const b = readingOf(s.type, s.text, s.number ?? 1);
       const mainRightBranchWrong = correct(s.main, s) && !correct(b, s);
       const newUnstatedClaim = claimsBoth(b) && !claimsBoth(s.main) && !states(s);
       expect(mainRightBranchWrong, `main ${JSON.stringify(s.main)} / branch ${JSON.stringify(b)}`).toBe(false);
       expect(newUnstatedClaim, `branch ${JSON.stringify(b)}`).toBe(false);
       // No new claim from the two readers this work added, where the sentence does not state it.
       if (!states(s)) {
-        expect(agreedToOtherChamberAmendment(s.text)).toBeNull();
+        expect(agreedToOtherChamberAmendment(s.text, asBill(s.type, s.text, s.number ?? 1))).toBeNull();
         expect(presentedToPresident({ bill_type: s.type, last_action_text: s.text })).toBe(false);
       }
     });

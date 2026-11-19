@@ -331,7 +331,11 @@ export function mapStatus(actionText) {
     // lib/floor-text.mjs (agreedToOtherChamberAmendment), which passageState
     // reads as 'both'. It reads only whitelisted complete sentences, in the
     // record's own case, so it is handed the action as written, not the
-    // lowercased `text` the rest of this function reads.
+    // lowercased `text` the rest of this function reads. It is handed no
+    // bill: this function reads action text alone, so a sentence that names
+    // its bill ("Senate agreed to the House amendment to S. 240 …") is not
+    // final here, as on main, and recordStatus — which has the bill — reads
+    // it at display time.
     agreedToOtherChamberAmendment(actionText) !== null ||
     // THE POST-PASSAGE MOTION (2026-09-18). "Motion to reconsider laid on the
     // table Agreed to without objection." is what a chamber does immediately

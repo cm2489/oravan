@@ -1345,7 +1345,12 @@ export function deriveJourney(
      *  ignores it. Omitted, a joint resolution keeps the ordinary presented
      *  ending, which is the right answer for all but that one class. */
     title?: string | null;
-  }
+  },
+  /** The clock the "live" vs stale tenses are read against. Callers leave it
+   *  out and get today, exactly as before; tests pass a fixed instant so a
+   *  reading never changes with the date it is run on (re-check of #523,
+   *  round 7). */
+  now: number = Date.now()
 ): JourneyState {
   const origin: Chamber = bill.bill_type.startsWith('h') ? 'house' : 'senate';
   const other: Chamber = origin === 'house' ? 'senate' : 'house';
@@ -1381,7 +1386,7 @@ export function deriveJourney(
        * discipline the settled-motion split used in #198, where the chamber
        * was right and the verb was the lie.
        */
-      const live = isSignalFresh(bill.last_action_date);
+      const live = isSignalFresh(bill.last_action_date, now);
       // Every sentence below reads the record the status was read from
       // (statusBasisText) — for a defeated House vote under "Motion to
       // reconsider laid on the table…", that is the defeat, so the settled
@@ -1699,7 +1704,7 @@ export function deriveJourney(
           showTrailer: false,
         };
       }
-      const live = isSignalFresh(bill.last_action_date);
+      const live = isSignalFresh(bill.last_action_date, now);
       const { stage, passedBy } = passageState(bill);
       if (stage === 'first') {
         // Corpus-verified copy: nearly all passed_chamber actions read

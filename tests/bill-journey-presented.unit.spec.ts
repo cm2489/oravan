@@ -23,6 +23,8 @@ function rendered(lang: 'en' | 'es', lastAction: string): string {
   const html = execFileSync(process.execPath, [TSX, join(ROOT, 'tests', 'render-bill-journey.mts'), lang, lastAction], {
     cwd: ROOT,
     encoding: 'utf8',
+    // A hung child must not block the job.
+    timeout: 60_000,
   });
   return html.replace(/<[^>]+>/g, ' ').replace(/&#x27;/g, "'").replace(/\s+/g, ' ');
 }

@@ -33,7 +33,9 @@ const record = {
   congress_number: 9_119,
   title: 'A bill.',
 };
-const journey = deriveJourney(record);
+// Read at a fixed instant, never today (round 7): the fixture is dated
+// 2026-11-12 and this is the day after.
+const journey = deriveJourney(record, Date.parse('2026-11-13T18:00:00Z'));
 process.stdout.write(
   renderToStaticMarkup(
     createElement(NextIntlClientProvider, { locale: lang, messages, timeZone: 'UTC', children: createElement(BillJourney, { journey }) })
