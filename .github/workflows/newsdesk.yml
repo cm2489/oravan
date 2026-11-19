@@ -232,17 +232,28 @@ jobs:
         # and one "SHORT TITLES NEWS DESK:" line, never the nightly's summary
         # line (the health report reads that from the nightly's log only). A
         # failed read puts the bill in the retry file, as on a nightly.
-        # Cost: one free Congress.gov request per added bill (two on a retry).
+        # Cost: one free Congress.gov request per added bill as a rule; a bill
+        # with more than 250 titles takes up to 4 pages, each retried once on a
+        # failure, so at most 8.
         # continue-on-error and its own ceiling, so it can never redden, block
         # or slow this run by more than three minutes; and the commit step
         # below drops this step's two files rather than merge them if its
         # push has to rebase (2026-11-18).
+        #
+        # WORST CASE, well under the 3-minute kill (2026-11-18): the budget
+        # (60 s) is checked before every bill AND every page, so the last page
+        # starts by 60 s; one page is at most two requests of 10 s each with a
+        # 2 s pause between (SHORT_TITLES_REQUEST_TIMEOUT_MS, the script's
+        # retry delay): 60 + 10 + 2 + 10 = 82 s, plus well under a second to
+        # start and to write. Each file is written whole or not at all (a
+        # temporary file, then a rename), so even a kill leaves no cut-off file.
         continue-on-error: true
         timeout-minutes: 3
         env:
           CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}
           SHORT_TITLES_MAX: '10'
           SHORT_TITLES_BUDGET_MS: '60000'
+          SHORT_TITLES_REQUEST_TIMEOUT_MS: '10000'
         run: node scripts/sync-short-titles.mjs --new-only
       - name: Save seen-headlines cache
         # Always saves under this run's own unique key (see the restore
@@ -271,6 +282,8 @@ jobs:
             echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
+          # The commit this run started from: what "the other side changed" is measured against.
+          base="$(git rev-parse HEAD)"
           git commit -m "chore(data): newsdesk trigger $(date -u +%FT%HZ)"
           # This job touches data/bills.json/data/bills-es.json and
           # data/conversation.json (the conversation lamp's committed
@@ -292,29 +305,6 @@ jobs:
               exit 0
             fi
             echo "push rejected, rebasing onto latest main (attempt $i)"
-            # NEVER MERGE THE SHORT-TITLES FILES (2026-11-18). They are one line
-            # per bill, so a rebase could merge them line by line into a file no
-            # gate has checked. If this run changed them and its push was
-            # rejected, it drops its own copies first: the bill it read stays
-            # unread and is read again next hour or by the nightly, and nothing
-            # the other push wrote is touched. Nothing left: no push at all.
-            if [ "$i" = 1 ]; then
-              dropped=false
-              for f in data/short-titles.json data/short-titles-retry.json; do
-                if git diff --quiet HEAD~1 HEAD -- "$f"; then continue; fi
-                dropped=true
-                if git cat-file -e "HEAD~1:$f" 2>/dev/null; then git checkout HEAD~1 -- "$f"; else git rm -q -f -- "$f"; fi
-              done
-              if [ "$dropped" = true ]; then
-                if git diff --cached --quiet HEAD~1; then
-                  echo "only this run's short titles had changed; dropped rather than merged, so nothing is left to push"
-                  echo "changed=false" >> "$GITHUB_OUTPUT"
-                  exit 0
-                fi
-                git commit -q --amend --no-edit
-                echo "this run's short titles were dropped rather than merged; the bill is read again next hour or by the nightly"
-              fi
-            fi
             # Guarded: a bare `git fetch` under `bash -e` kills the step on the
             # spot, which would make these five attempts as decorative as
             # sync-bills.yml's were on 2026-08-07.
@@ -322,7 +312,32 @@ jobs:
               echo "fetch failed (attempt $i) - retrying"
               continue
             fi
+            # NEVER MERGE THE SHORT-TITLES FILES (2026-11-18). They are one line
+            # per bill, so a rebase could merge them line by line into a file no
+            # gate has checked. So when this run changed them AND the push that
+            # landed first changed either of them too (measured from the commit
+            # this run sits on, `base`, on every attempt), this run drops its own
+            # copies: the bill it read stays unread and is read again next hour
+            # or by the nightly, and nothing the other push wrote is touched. A
+            # push that did not touch them (a pull-request merge, another
+            # workflow) leaves them alone: they rebase like any other file.
+            # Nothing left after the drop: no push at all.
+            if ! git diff --quiet "$base" HEAD -- data/short-titles.json data/short-titles-retry.json \
+              && ! git diff --quiet "$base" origin/main -- data/short-titles.json data/short-titles-retry.json; then
+              for f in data/short-titles.json data/short-titles-retry.json; do
+                if git diff --quiet "$base" HEAD -- "$f"; then continue; fi
+                if git cat-file -e "$base:$f" 2>/dev/null; then git checkout "$base" -- "$f"; else git rm -q -f -- "$f"; fi
+              done
+              if git diff --cached --quiet "$base"; then
+                echo "only this run's short titles had changed, and the other push changed them too; dropped rather than merged, so nothing is left to push"
+                echo "changed=false" >> "$GITHUB_OUTPUT"
+                exit 0
+              fi
+              git commit -q --amend --no-edit
+              echo "this run's short titles were dropped rather than merged (the other push changed them too); the bill is read again next hour or by the nightly"
+            fi
             if git rebase origin/main; then
+              base="$(git rev-parse origin/main)"
               continue
             fi
             # A stopped rebase is NOT retryable: every later iteration fails
