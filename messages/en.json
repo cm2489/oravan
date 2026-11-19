@@ -1159,7 +1159,7 @@
         "passedOnCalendar": "{chamber, select, house {Passed the Senate; placed on the House calendar, where it can be called up any day the House is in session.} other {Passed the House; placed on the Senate calendar, where it can be called up any day the Senate is in session.}}",
         "heldAtDesk": "{chamber, select, house {Passed the Senate; held at the House desk.} other {Passed the House; held at the Senate desk.}}",
         "passedWaiting": "{chamber, select, house {Passed the Senate; waiting on the House.} other {Passed the House; waiting on the Senate.}}",
-        "clotureFiled": "Cloture was filed in the Senate. Under Senate rules, that vote comes within days.",
+        "clotureFiled": "Cloture was filed in the Senate.",
         "onFloor": "{chamber, select, house {Moving on the House floor, with a vote ahead.} other {Moving on the Senate floor, with a vote ahead.}}",
         "failedReconsider": "A Senate vote on it failed, and a motion to reconsider is pending, so another vote is possible.",
         "onCalendar": "{chamber, select, house {Placed on the House calendar. It can be called up any day the House is in session.} other {Placed on the Senate calendar. It can be called up any day the Senate is in session.}}",
