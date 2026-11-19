@@ -113,7 +113,7 @@ function homeWords(line: StatusLine, loc: 'en' | 'es'): string {
 /* ---- the cases ------------------------------------------------------- */
 
 test.describe('the status line stands down while its chamber is not meeting', () => {
-  test('Senate out, cloture filed 3 days ago: the record’s own words, not "that vote comes within days"', () => {
+  test('Senate out, cloture filed 3 days ago: the record’s own words, not the cloture line', () => {
     expect(billStatusLine(senateCloture, NOW, gate('in_session', 'in_session')).key).toBe('clotureFiled');
     const out = billStatusLine(senateCloture, NOW, gate('in_session', 'out_of_session'));
     expect(out.key).toBe('recordStep');
@@ -179,17 +179,51 @@ test.describe('the status line stands down while its chamber is not meeting', ()
     expect(billStatusLine(day15, EDGE, gate('in_session', 'in_session')).key).toBe('recordStep');
   });
 
-  test('the fallback is exactly the aged fallback (same key, text and date), and adds no words', () => {
+  /*
+   * The whole line, not only its words: `rank` decides which vehicle's line
+   * leads the question's header (questionStatus), and `terminal` decides the
+   * card's button. A recess must not move either differently from age.
+   */
+  const sameLine = (a: StatusLine, b: StatusLine) => {
+    expect(a.key).toBe(b.key);
+    expect(a.text).toBe(b.text);
+    expect(a.date).toBe(b.date);
+    expect(a.rank).toBe(b.rank);
+    expect(a.chamber).toBe(b.chamber);
+    expect(a.passedBy).toBe(b.passedBy);
+    expect(a.terminal).toBe(b.terminal);
+  };
+
+  test('the fallback is exactly the aged fallback (key, text, date, rank and the rest), and adds no words', () => {
+    const fresh = { ...senateCloture, last_action_date: daysBefore(3) };
     const aged = { ...senateCloture, last_action_date: daysBefore(20) };
-    const outLine = billStatusLine(
-      { ...senateCloture, last_action_date: daysBefore(20) },
-      NOW - 17 * DAY,
-      gate('in_session', 'out_of_session')
-    );
+    const outLine = billStatusLine(fresh, NOW, gate('in_session', 'out_of_session'));
     const agedLine = billStatusLine(aged, NOW, gate('in_session', 'in_session'));
-    expect(outLine.key).toBe(agedLine.key);
-    expect(outLine.text).toBe(agedLine.text);
-    expect(outLine.date).toBe(agedLine.date);
+    expect(outLine.key).toBe('recordStep');
+    sameLine(outLine, { ...agedLine, date: fresh.last_action_date });
+  });
+
+  test('a bill that passed one chamber, now on the other’s floor: the recess fallback runs the same rules as age', () => {
+    // A House bill the House passed, whose latest sentence is a pending Senate
+    // floor step. Rule 7 (the passed-one-chamber readings) is skipped while a
+    // pending floor step is read, in both fallbacks, so neither may turn it
+    // into "Passed the House; waiting on the Senate".
+    const passed = {
+      congress_number: CONGRESS,
+      bill_type: 'hr',
+      status: 'passed_chamber' as const,
+      last_action_text: 'Considered by Senate. (consideration: CR S5705)',
+      last_action_date: daysBefore(3),
+    };
+    const live = billStatusLine(passed, NOW, gate('in_session', 'in_session'));
+    expect(live).toMatchObject({ key: 'onFloor', chamber: 'senate' });
+    const out = billStatusLine(passed, NOW, gate('in_session', 'out_of_session'));
+    const aged = billStatusLine(passed, NOW + 13 * DAY, gate('in_session', 'in_session'));
+    expect(aged.key).toBe('recordStep');
+    sameLine(out, aged);
+    // And it keeps the passed-chamber rank, so a question's header ranks it
+    // above a bill in committee exactly as it did when aged.
+    expect(out.rank).toBe(65);
   });
 
   test('a calendar placement line is not touched (it says what CAN happen, not what is happening)', () => {
@@ -261,10 +295,11 @@ test.describe('the August replay, frozen (S. 4668 and H.R. 3633 on 2026-08-18)',
    * bills' records and the floor-signals metadata, verbatim. The Senate's own
    * Daily Digest gave its next meeting as a pro forma session (in_session:
    * out_of_session). Replayed with the code before this change, both lines
-   * read "Cloture was filed in the Senate. Under Senate rules, that vote
-   * comes within days." — 13 and 10 days after the filings, in a week the
-   * Senate held no business. (The status line shipped 2026-09-24, so these
-   * were never actually shown.)
+   * read as the cloture line ("Cloture was filed in the Senate."; until #526
+   * it also said when the vote would come) — 13 and 10 days after the
+   * filings, in a week the Senate held no business. On Big Question pages
+   * these were never shown: the status line shipped there on 2026-09-24
+   * (#281).
    */
   const BUILD = at('2026-08-18T23:03:17Z');
   const meta = {
@@ -340,11 +375,20 @@ test.describe('the vehicle card’s amber calendar mark', () => {
     expect(calendarMarkShows({ ...fresh, lastActionDate: daysBefore(15) })).toBe(false);
   });
 
-  test('the card decides the mark through that rule, passing the flag', () => {
-    const src = readFileSync('components/MomentVehicleCard.tsx', 'utf8');
-    expect(src).toMatch(
-      /const onCalendar = calendarMarkShows\(\{[^}]*\bfloorSuspended\b[^}]*\}\);/
-    );
+  test('the card decides the mark through that rule, passing its own flag straight through', () => {
+    // Code only, so a comment cannot satisfy or defeat the checks below.
+    const src = readFileSync('components/MomentVehicleCard.tsx', 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/(^|[^:])\/\/.*$/gm, '$1');
+    // The prop is REQUIRED (no `?`) and has NO default, so the typechecker
+    // refuses a caller that leaves it out (tsc --noEmit, in CI's build).
+    expect(src).toMatch(/^\s*floorSuspended: boolean;$/m);
+    expect(src).toMatch(/^\s*floorSuspended,$/m);
+    // Its value reaches the rule untouched: the shorthand, nothing else. A
+    // `floorSuspended: false && floorSuspended`, a default or a reassignment
+    // would each change what the rule is told.
+    expect(src).toMatch(/const onCalendar = calendarMarkShows\(\{ statusKey, lastActionDate, floorSuspended \}\);/);
+    expect(src.match(/\bfloorSuspended\b/g)).toHaveLength(3); // the binding, the type, the call
     // ... and the chip renders on that decision alone.
     expect(src.match(/\{onCalendar && \(/g)).toHaveLength(1);
     expect(src).not.toMatch(/isSignalFresh/);
@@ -396,8 +440,11 @@ test.describe('the owner’s nightly digest says what it is', () => {
       now: NIGHT,
     });
     expect(body).not.toMatch(/the same status lines the question pages render/);
-    expect(body).toMatch(/the status lines the question pages render while the chamber is meeting/);
-    expect(body).toMatch(/record's own words in place of a floor or cloture line/);
+    // It names the READING, not the fact: with a stale session file the
+    // reading is "unknown" and the pages keep the floor line (§5).
+    expect(body).toMatch(
+      /while the Daily Digest reads a chamber as out of session, the pages show the record's own words in place of that chamber's floor or cloture line/
+    );
   });
 });
 

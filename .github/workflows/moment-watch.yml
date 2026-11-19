@@ -6,8 +6,9 @@ name: Moment watch
 # THE STATUS REFRESH (owner, 2026-09-24: "Big Questions should get a nightly
 # refresh, don't you think?"). Every push-mode night, after the candidate
 # issues, `--mode=status` re-derives each open question's per-vehicle status
-# lines from the just-synced record (lib/moment-status.mjs — the same lines the
-# pages render at build time), diffs them against data/moment-status-seen.json,
+# lines from the just-synced record (lib/moment-status.mjs — the lines the
+# pages render at build time, without the pages' chamber-session check, so a
+# recess never flips the snapshot), diffs them against data/moment-status-seen.json,
 # and comments on the standing moment-review issue when a line moved or a
 # question is newly past its review_by. No new issue type, no model call, $0.
 # It never writes data/moments.json: whether a summary needs a PR is the

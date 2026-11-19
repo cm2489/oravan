@@ -64,8 +64,9 @@ The two record facts (§2) may be presented as live **only while the chamber the
 - **Unknown fails safe to live** — a dead pipeline must never suppress a true claim, so a Digest older than the 48-hour ceiling reads as in session.
 - **The copy never says "recess" and never claims a duration** — the record carries one session verdict and one next-meeting label, and those are the only facts the sentence states.
 - The window is unchanged (`SIGNAL_WINDOW_DAYS` = 14, `lib/urgency.mjs`). It self-heals when a chamber returns: the session verdict is part of the hourly write fingerprint (#230), so the flip forces a data commit and a rebuild.
+- *2026-11-18 (#525).* The Big Questions status line, the homepage's week rows and the amber "On the floor calendar" mark on a Big Question's vehicle card follow the same session reading (`lib/floor-session.ts`, built from `chamberSession` and `floorFactSuspended`). While the chamber a "vote ahead" or cloture line names reads as out of session, the line falls back to the record's own words with its date, as it does after the 14-day window; the week rows stay and show that status; the mark stands down. The owner's nightly status digest (`scripts/moment-watch.mjs`) reads the line without this check, so its stored snapshot does not change with the session, and says so.
 
-Gates: `tests/journey.unit.spec.ts` ("the session gate"), and the session-aware cases in `tests/freshness.spec.ts`.
+Gates: `tests/journey.unit.spec.ts` ("the session gate"), the session-aware cases in `tests/freshness.spec.ts`, and `tests/floor-session.unit.spec.ts`.
 
 ## 6. Counted claims about the press use stored evidence only
 

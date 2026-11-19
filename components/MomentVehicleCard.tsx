@@ -67,7 +67,7 @@ export function MomentVehicleCard({
   explainer,
   tag,
   ctaContext,
-  floorSuspended = false,
+  floorSuspended,
 }: {
   slug: string;
   identifier: string;
@@ -85,8 +85,9 @@ export function MomentVehicleCard({
   lastActionDate: string | null;
   /** The chamber this placement names is not meeting (lib/floor-session.ts
    *  `calendarMarkSuspended`, the bill page's own reading), so the amber
-   *  mark stands down. Absent = false, today's behaviour. */
-  floorSuspended?: boolean;
+   *  mark stands down. REQUIRED, with no default: a caller that forgot it
+   *  would show the mark in a recess, so the typechecker refuses the call. */
+  floorSuspended: boolean;
   coverageCount?: number;
   /** The both-directions yes/no framing, already localized. */
   role: string;
@@ -143,7 +144,7 @@ export function MomentVehicleCard({
   // AND THE CHAMBER MUST BE MEETING (2026-11-18, docs/record-truth.md §5): a
   // placement is a record floor fact, and the bill page stands its band down
   // while the chamber is out. The caller passes that same reading
-  // (lib/floor-session.ts `calendarMarkSuspended`); absent, nothing changes.
+  // (lib/floor-session.ts `calendarMarkSuspended`), as a required prop.
   const onCalendar = calendarMarkShows({ statusKey, lastActionDate, floorSuspended });
 
   // Separators ride at the END of the preceding chunk, so a wrapped line can

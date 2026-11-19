@@ -737,8 +737,10 @@ export function expiringMoments(moments, now, days = 14) {
  * Owner, 2026-09-24: "Big Questions should get a nightly refresh, don't you
  * think?" The refresh is of STATUS, from the record — never of prose. Every
  * night after the sync, `--mode=status` re-derives each open question's
- * per-vehicle status lines (lib/moment-status.mjs, the same derivation the
- * pages render at build time), diffs them against the snapshot the last run
+ * per-vehicle status lines (lib/moment-status.mjs, the derivation the pages
+ * render at build time, but WITHOUT the pages' chamber-session check of #525,
+ * so a recess never flips the snapshot — renderStatusDigest says so in the
+ * digest), diffs them against the snapshot the last run
  * committed, and prints a digest when either:
  *
  *   - a vehicle's derived line MOVED (a new action, a new state, a vehicle
@@ -823,7 +825,7 @@ export function renderStatusDigest({ changes, past, newlyPast, now, firstRun = f
     // The pages pass a chamber-session check (lib/floor-session.ts, #525);
     // this digest does not, on purpose — its snapshot must not flip at the
     // start and end of every recess — so the sentence says where they differ.
-    '> Derived nightly from the official record by `lib/moment-status.mjs` — the status lines the question pages render while the chamber is meeting (while it is out, the pages show the record\'s own words in place of a floor or cloture line). No prose was written or changed; whether a summary needs a PR is the owner\'s call.',
+    '> Derived nightly from the official record by `lib/moment-status.mjs` — the status lines the question pages render, with one difference: while the Daily Digest reads a chamber as out of session, the pages show the record\'s own words in place of that chamber\'s floor or cloture line. No prose was written or changed; whether a summary needs a PR is the owner\'s call.',
     '',
   ];
   if (firstRun) {
