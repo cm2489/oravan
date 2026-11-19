@@ -130,3 +130,22 @@ test('the first of another tab\'s erase events revokes the tag this tab can stil
     off();
   }
 });
+
+test('an erase made on this page is not counted again when the page comes back from the cache', () => {
+  const off = subscribe(() => {});
+  try {
+    data.clear();
+    setPrefs({ zip: '20001' });
+    expect(savedZip()).toBe('20001');
+    ensureEntryTag();
+    expect(entryTag()).not.toBeNull(); // read with a value before the erase, absent after it
+    eraseAll(); // here, on this page: counted once, now
+    setPrefs({ zip: '10001' }); // a new ZIP after it
+    expect(savedZip()).toBe('10001');
+    const before = erasureCount();
+    fire('pageshow', { persisted: true });
+    expect(erasureCount(), 'the members found after the erase stay').toBe(before);
+  } finally {
+    off();
+  }
+});

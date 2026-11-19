@@ -1,7 +1,7 @@
 import { expect, test, type Page, type Request } from '@playwright/test';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
-import { referenceBill } from './corpus-fixtures';
+import { referenceBill, settledBill } from './corpus-fixtures';
 import { mockScriptApi } from './helpers';
 
 /*
@@ -332,6 +332,8 @@ test('after "Erase my data", Back to an earlier members entry on the same page s
   await page.goBack();
   await expect(page).toHaveURL(/\/reps$/);
   await expectPromptOnly(page, en);
+  // The entry Back landed on no longer holds the erased ZIP either.
+  await expect.poll(() => page.evaluate(() => (window.history.state as Record<string, unknown> | null)?.oravanMembers ?? null)).toBeNull();
   await page.goForward();
   await expectPromptOnly(page, en);
   expect(sent).toEqual([]);
@@ -719,6 +721,11 @@ for (const [prefix, m] of LOCALES) {
       await expect(notice).toHaveAttribute('role', 'status');
       await expect(notice).toBeFocused();
       expect(await page.evaluate(() => Object.keys(window.history.state ?? {}))).not.toContain('oravanErased');
+      // It belongs to this page: a move to another one leaves it behind.
+      await navLink(page, m, 'bills').click();
+      await expect(page.getByRole('heading', { level: 1, name: m.bills.title })).toBeVisible();
+      await expect(notice).toHaveCount(0);
+      await page.goBack();
       // Said once: a reload does not say it again, and nothing else was kept.
       await page.reload();
       await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible();
@@ -726,3 +733,63 @@ for (const [prefix, m] of LOCALES) {
     });
   }
 }
+
+/* A settled bill's panel (components/SettledPanel.tsx) lists how the
+   visitor's members voted, from the same kind of lookup. */
+test("two tabs: a settled bill's members lookup out in the other tab when this one erases is not shown", async ({ context }) => {
+  const SETTLED = settledBill('rejected', { withVotes: true }) ?? settledBill('law', { withVotes: true });
+  test.skip(!SETTLED, 'no settled bill with a roll call in the corpus');
+  const other = await context.newPage();
+  await other.goto('/record');
+  await other.evaluate((zip) => localStorage.setItem('oravan.prefs', JSON.stringify({ zip })), ZIP);
+  let held!: import('@playwright/test').Route;
+  const caught = new Promise<void>((ok) => {
+    void other.route('**/api/reps', (route) => {
+      if (held) return route.continue();
+      held = route;
+      ok();
+    });
+  });
+  await other.goto(`/bills/${SETTLED!.slug}`);
+  await caught;
+
+  const here = await context.newPage();
+  await here.goto('/record');
+  await eraseMyData(here);
+  const answered = other.waitForEvent('requestfinished', (r) => r.url().endsWith('/api/reps'));
+  await held.continue();
+  await answered;
+  const panel = other.locator('[data-settled-panel]');
+  await expect(panel.getByText(en.bill.settled.needZip)).toBeVisible();
+  await expect(panel.locator('[data-settled-votes]')).toHaveCount(0);
+});
+
+/* The Call page's "your members" block (components/CallHubReach.tsx): another
+   tab's erase takes it off, and a lookup it had out is not shown. */
+test('two tabs: the Call page in the other tab drops its members, and its lookup out is not shown', async ({ context }) => {
+  const other = await context.newPage();
+  await other.goto('/record');
+  await other.evaluate((zip) => localStorage.setItem('oravan.prefs', JSON.stringify({ zip })), ZIP);
+  await other.goto('/call');
+  await expect(other.locator('[data-call-reach="ready"]')).toBeVisible();
+
+  let held!: import('@playwright/test').Route;
+  const caught = new Promise<void>((ok) => {
+    void other.route('**/api/reps', (route) => {
+      if (held) return route.continue();
+      held = route;
+      ok();
+    });
+  });
+  await other.reload();
+  await caught;
+
+  const here = await context.newPage();
+  await here.goto('/record');
+  await eraseMyData(here);
+  await expect(other.locator('[data-call-reach]')).toHaveCount(0);
+  const answered = other.waitForEvent('requestfinished', (r) => r.url().endsWith('/api/reps'));
+  await held.continue();
+  await answered;
+  await expect(other.locator('[data-call-reach]')).toHaveCount(0);
+});

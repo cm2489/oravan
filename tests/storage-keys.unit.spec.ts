@@ -24,8 +24,11 @@ const KEPT: Record<string, string> = {
     'components/LocalePreferenceNote.tsx: erasing it would bring back the "¿Prefieres español?" note for the visitor who asked it to go away',
 };
 
-/** Read once and removed on the first page load (lib/local.ts LEGACY), never written. */
-const MIGRATED_AWAY = ['cabina.prefs', 'cabina.calls', 'rostra.prefs', 'rostra.calls'];
+/*
+ * Not counted here: the pre-rename keys lib/local.ts migrates (its LEGACY
+ * map), which are read once on the first page load and removed, never
+ * written, and whose names the naming gate keeps out of this file.
+ */
 
 /** The only files allowed to call the browser's storage. */
 const STORAGE_FILES = ['lib/local.ts', 'lib/locale-pref.ts', 'components/LocalePreferenceNote.tsx'];
@@ -54,9 +57,9 @@ test('only the known files touch the browser\'s storage', () => {
 test('every storage key in the code is erased or kept with a reason', () => {
   const found = new Set<string>();
   for (const f of STORAGE_FILES) {
-    for (const m of code(f).matchAll(/['"`]((?:oravan|cabina|rostra)\.[A-Za-z.]+)['"`]/g)) found.add(m[1]);
+    for (const m of code(f).matchAll(/['"`](oravan\.[A-Za-z.]+)['"`]/g)) found.add(m[1]);
   }
-  const accounted = new Set([...ERASED_KEYS, ...Object.keys(KEPT), ...MIGRATED_AWAY]);
+  const accounted = new Set([...ERASED_KEYS, ...Object.keys(KEPT)]);
   expect([...found].filter((k) => !accounted.has(k)), 'a key with no decision').toEqual([]);
   expect([...accounted].filter((k) => !found.has(k)), 'a decision for a key the code no longer has').toEqual([]);
   expect(ERASED_KEYS).toContain('oravan.entry');

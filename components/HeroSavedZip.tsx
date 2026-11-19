@@ -78,9 +78,9 @@ export function HeroSavedZip({ children }: { children: ReactNode }) {
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((body: unknown) => {
         const answer = readLookup(body);
-        if (live && erasureCount() === asked && answer && namedMembers(answer).length > 0) {
-          setSaved({ zip, answer, erasures: asked });
-        }
+        // Kept with the erase count from before the lookup: if an erase
+        // came while it was out, the render below does not show it.
+        if (live && answer && namedMembers(answer).length > 0) setSaved({ zip, answer, erasures: asked });
       })
       .catch(() => {
         /* the form stays: a lookup that did not go through names nobody */

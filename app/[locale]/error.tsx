@@ -122,16 +122,11 @@ export default function LocaleError({ error }: { error: Error & { digest?: strin
       if (was.pathname === window.location.pathname && was.search === window.location.search) return;
       reload(); // the address is already the entry Back or Forward chose
     }
-    function onHashChange() {
-      here = window.location.href;
-    }
     window.addEventListener('click', onClick, true);
     window.addEventListener('popstate', onPopState, true);
-    window.addEventListener('hashchange', onHashChange);
     return () => {
       window.removeEventListener('click', onClick, true);
       window.removeEventListener('popstate', onPopState, true);
-      window.removeEventListener('hashchange', onHashChange);
     };
   }, []);
 
