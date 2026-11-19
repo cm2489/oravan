@@ -14,6 +14,7 @@ import {
   amendmentExchange,
   amendmentExchangeContinues,
   amendmentExchangeFailed,
+  amendmentExchangeMotionMade,
   presentedToPresident,
   recordStatus,
 } from '../lib/floor-text.mjs';
@@ -437,6 +438,29 @@ test.describe('the readers’ anchors (mutants the re-check found)', () => {
     expect(amendmentExchange(t)).toBeNull();
     expect(agreedToOtherChamberAmendment(t)).toBeNull();
   });
+  test('a motion to TABLE the motion to concur is never agreement, however short the senator’s name', () => {
+    for (const text of [
+      'Motion by Senator Lee to table motion to concur in the House amendment agreed to in Senate by Yea-Nay Vote. 51 - 49.',
+      'Motion by Senator Thune to table the motion to concur in the House amendment agreed to in Senate by Yea-Nay Vote. 51 - 49.',
+      'Motion to table the motion to concur in the House amendment agreed to in Senate.',
+    ]) {
+      expect(amendmentExchange(text), text).toBeNull();
+      expect(amendmentExchangeMotionMade(text), text).toBe(false);
+    }
+    expect(amendmentExchange('Motion to recede and concur agreed to in House by voice vote.')).toEqual({ chamber: 'house', final: true });
+    expect(amendmentExchange('Motion to concur in the House amendment agreed to in Senate by Yea-Nay Vote. 68 - 30.')).toEqual({ chamber: 'senate', final: true });
+    expect(amendmentExchangeMotionMade('Motion by Senator Thune to concur in the House amendment to S. 1234 made in Senate.')).toBe(true);
+    expect(amendmentExchangeMotionMade('Motion by Senator Thune to concur in the House amendment to S. 1234 withdrawn in Senate.')).toBe(false);
+    // A motion to table one, only made, is not a motion to concur that was made.
+    expect(amendmentExchangeMotionMade('Motion by Senator Lee to table motion to concur in the House amendment made in Senate.')).toBe(false);
+  });
+
+  test('the chamber’s own "disagreed" sentence is read only at the start of the action', () => {
+    const t = 'Motion to reconsider the vote by which the Senate disagreed to the House amendment entered in Senate.';
+    expect(amendmentExchangeContinues(t)).toBeNull();
+    expect(amendmentExchangeContinues('Senate disagreed to the House amendment, requested a conference.')).toBe('senate');
+  });
+
   test('"Presented to President" counts only as the opening of the action', () => {
     const b = bill({
       bill_type: 'hr',
