@@ -344,7 +344,8 @@ test('storage blocked mid-visit, after it held our data: no whole erase', () => 
  * however this tab learns of it.
  */
 test('back from the cache, shown again, or focused: another ZIP saved meanwhile is a change', () => {
-  const off = subscribe(() => {});
+  let redraws = 0;
+  const off = subscribe(() => redraws++);
   try {
     for (const how of ['pageshow', 'visibilitychange', 'focus'] as const) {
       data.clear();
@@ -356,6 +357,7 @@ test('back from the cache, shown again, or focused: another ZIP saved meanwhile 
       data.clear();
       data.set('oravan.prefs', JSON.stringify({ zip: '10001' }));
       const before = erasureCount();
+      redraws = 0;
       if (how === 'pageshow') fire('pageshow', { persisted: true });
       if (how === 'visibilitychange') {
         doc.visibilityState = 'visible';
@@ -363,6 +365,7 @@ test('back from the cache, shown again, or focused: another ZIP saved meanwhile 
       }
       if (how === 'focus') fire('focus', {});
       expect(erasureCount(), how).toBe(before + 1);
+      expect(redraws, `${how}: the page redraws`).toBeGreaterThan(0);
       // The new ZIP is not marked erased: it fills in.
       expect(savedZip(), how).toBe('10001');
     }
@@ -403,5 +406,56 @@ test('another tab turns the ZIP or the tag into another value: a change here; a 
     expect(erasureCount(), 'another tag').toBe(before + 2);
   } finally {
     off();
+  }
+});
+
+test('storage that stops answering: no whole erase if it held ours (read or written), a whole one if it never did', () => {
+  const store = (window as unknown as { localStorage: Record<string, (...a: string[]) => unknown> }).localStorage;
+  const { removeItem, getItem } = store;
+  const block = () => {
+    store.removeItem = () => {
+      throw new Error('blocked');
+    };
+    store.getItem = () => {
+      throw new Error('blocked');
+    };
+  };
+  const unblock = () => {
+    store.removeItem = removeItem;
+    store.getItem = getItem;
+  };
+  try {
+    // Held ours by a read (another tab saved it): no whole erase.
+    data.clear();
+    expect(eraseAll(), 'start clean').toBe(true);
+    data.set('oravan.prefs', JSON.stringify({ zip: '20001' }));
+    expect(savedZip()).toBe('20001');
+    block();
+    expect(eraseAll(), 'read here, then blocked').toBe(false);
+    unblock();
+
+    // Held ours by a write here: no whole erase.
+    data.clear();
+    expect(eraseAll(), 'start clean').toBe(true);
+    ensureEntryTag();
+    block();
+    expect(eraseAll(), 'written here, then blocked').toBe(false);
+    unblock();
+
+    // Held ours by a preferences write here (never read back): no whole erase.
+    data.clear();
+    expect(eraseAll(), 'start clean').toBe(true);
+    setPrefs({ zip: '20001' });
+    block();
+    expect(eraseAll(), 'preferences written here, then blocked').toBe(false);
+    unblock();
+
+    // Never held anything of ours (blocked from the start): a whole erase.
+    data.clear();
+    expect(eraseAll(), 'start clean').toBe(true);
+    block();
+    expect(eraseAll(), 'blocked from the start').toBe(true);
+  } finally {
+    unblock();
   }
 });

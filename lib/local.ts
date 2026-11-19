@@ -265,18 +265,15 @@ function matters(key: StorageKey, was: string, now: string | null): boolean {
   return false;
 }
 
-/** What storage holds for `key` now, as this tab reads it, without noting it. */
+/** What storage holds for `key` now, without noting it. */
 function current(key: StorageKey): string | null {
   const kept = memory.get(key);
-  let value: string | null = kept ?? null;
-  if (kept === undefined) {
-    try {
-      value = storeGet(key);
-    } catch {
-      value = null;
-    }
+  if (kept !== undefined) return kept;
+  try {
+    return storeGet(key);
+  } catch {
+    return null;
   }
-  return value !== null && revoked.get(key) === value ? null : value;
 }
 
 function recheck(): boolean {
@@ -719,6 +716,8 @@ export function eraseAll(): boolean {
     }
     complete = false;
   }
+  // A whole erase leaves nothing of ours in the store.
+  if (complete) storeHeldOurs = false;
   memory.clear();
   noteChange();
   notify();
