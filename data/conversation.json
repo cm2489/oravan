@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-19T03:53:42.990Z",
+    "fetched_at": "2026-11-19T12:55:53.851Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-19T03:53:42.990Z"
+        "checked_at": "2026-11-19T12:55:53.851Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-15",
         "week_label": "Most-Viewed Bills - Week of November 15, 2026",
         "entries": 7,
-        "checked_at": "2026-11-19T03:53:42.990Z"
+        "checked_at": "2026-11-19T12:55:53.851Z"
       },
       "leans": {
         "center": {
@@ -563,6 +563,18 @@
       ],
       "mostViewed": null
     },
+    "hr-5525-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "legis1.com",
+          "firstSeen": "2026-11-19",
+          "lastSeen": "2026-11-19",
+          "url": "https://news.google.com/rss/articles/CBMidEFVX3lxTE5pcXU4eFNkbVBvdkM1ME9MQU1zYm5ZNktBbU5qcUY2Vmg5ZWpfbnlEaXI1d1BmeWxnYjZZdDl3TGZHcktxTDdOZ2NqZGRZamtOWDJZNG1jbk92SGk4VVh1d0xFTnFYTEw3YkFMOS1mNS1tOG5y?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-5602-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -578,6 +590,12 @@
     "hr-5631-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "wmbdradio.com",
+          "firstSeen": "2026-11-19",
+          "lastSeen": "2026-11-19",
+          "url": "https://news.google.com/rss/articles/CBMiuAFBVV95cUxPbjlRYVBFa1hBMDVsWXNCQzN1ZzZUc2R2YTVkUGg3cTFvNmdkZXpyczBjSEFMY29hVmhRWEw2ZWkxME9NdUtaVkQ0WjR6N3ZMZnpWc0RDY1loaDlUR3NyUC04LVhGWXduckNySUtPVm16aW9FUTZLRFhkbVRzbjVLUkc3b1JVa21YMGp6clRpZFVKa29WWU9PSGtTNVhVZ0dJc29jYjBBYlBvUDdOU1BaMUxVNnlYSE1j?oc=5"
+        },
         {
           "domain": "tradingview.com",
           "firstSeen": "2026-11-18",
@@ -699,8 +717,8 @@
           "domain": "thehill.com",
           "lean": "center",
           "firstSeen": "2026-11-13",
-          "lastSeen": "2026-11-13",
-          "url": "https://thehill.com/homenews/senate/6217691-republican-reconciliation-threatens-government-funding/"
+          "lastSeen": "2026-11-19",
+          "url": "https://thehill.com/homenews/senate/6229008-congress-faces-government-shutdown-deadline/"
         }
       ],
       "unratedOutlets7d": [
@@ -1753,6 +1771,19 @@
           "url": "https://news.google.com/rss/articles/CBMidkFVX3lxTE02Nk95NDIzaDRaTUpwNUR4NmZObUdjRmJ0Nm91YV9wWW80TlRtYzNRQjZSQVdlTkJPUW9RU0ZLNzdHSmE0OWoyM1JqeTNHdnd5VUltakR6SmQyTXE0MUFPLXkxM2lYdWVSSm84cUhURjRzVmZYX1E?oc=5"
         }
       ],
+      "mostViewed": null
+    },
+    "s-865-119": {
+      "outlets7d": [
+        {
+          "domain": "breitbart.com",
+          "lean": "right",
+          "firstSeen": "2026-11-19",
+          "lastSeen": "2026-11-19",
+          "url": "https://news.google.com/rss/articles/CBMi4gFBVV95cUxNZjlsX2dYTHlLVGU3WTRPWWVkVGliV1J1Qm1tRGpyN0pkMEFSdUx1SHNrVFB2czlMc0poNFQtRGFyRXJQd3A4WFpkX3pKSFlQTFZwbl80WXpicC1xUno4LUJLMGRCYVRKZE5Lazk1SU51Qkd5MlRmUi12N0FIbkpRcm5aWGhONEZQajlpVjB5UDdWY1FDQjc4Vzh5UFV6dHZUcDlmV3J1eHcydE1LcVVxNEZBNWdNU0lwUHgzNEdaMUxpNV93VWhrUXRJaHpXSExtSFJjR0YzTkJ4VDJxSExzdHRB?oc=5"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "sconres-40-119": {
