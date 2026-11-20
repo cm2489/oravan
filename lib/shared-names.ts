@@ -41,7 +41,8 @@ import {
 import { nameTablesForBuild, readShortTitles, reservedNames } from './short-address-build';
 import type { ChamberSession } from './docket';
 import { billFloorBand, type Chamber, type FloorBandKind } from './journey';
-import { billStatusLine, type StatusLine } from './moment-status.mjs';
+import { floorSuspendedFrom, siteBillStatusLine } from './floor-session';
+import type { StatusLine } from './moment-status.mjs';
 
 /** The order a page lists bills in: House types, then Senate types, as Congress numbers them. */
 export const SHARED_NAME_TYPE_ORDER: readonly ShortAddressType[] = Object.freeze([
@@ -149,7 +150,8 @@ export function sharedNamePath(congress: number, name: string): string {
  * it and now it is at the house for a vote.").
  *
  * Two readings the site already makes, and nothing new (hard rule 6):
- *   - THE LINE: lib/moment-status.mjs billStatusLine, the record-only "where it
+ *   - THE LINE: lib/moment-status.mjs billStatusLine (through lib/floor-session.ts
+ *     siteBillStatusLine, like every site surface since #525), the record-only "where it
  *     stands" line a Big Question's vehicle cards print for the same purpose
  *     (twin bills side by side): "Passed the House; waiting on the Senate.",
  *     "Signed into law as Public Law 119-1.", "In committee.", else the
@@ -171,12 +173,10 @@ export function sharedNamePath(congress: number, name: string): string {
  * days."). While the chamber they name is not meeting (the same
  * `out_of_session` the tag's gate reads), this page prints the record's own
  * latest action in its own words with its date instead (`recordStep`), which
- * is exactly true. The Big Question surfaces call billStatusLine directly and
- * are unchanged by this.
+ * is exactly true. Since main's #525 (2026-11-18) the site's one session gate
+ * does this for every surface (lib/floor-session.ts); this page hands it the
+ * same session reader its tag uses, so the line and the tag never disagree.
  */
-
-/** The line readings that claim something is happening on the floor now. */
-export const LIVE_SOUNDING_LINES: ReadonlySet<string> = new Set(['onFloor', 'clotureFiled']);
 
 /** The chip strings, exactly the bill page's and the homepage crown's (FLOOR_COPY / FLOOR_LABEL_KEYS). */
 export const SHARED_NAME_FLOOR_CHIP = {
@@ -198,11 +198,9 @@ export function sharedNameStanding(
   { now = Date.now(), sessionOf }: { now?: number; sessionOf?: (chamber: Chamber) => ChamberSession } = {},
 ): SharedNameStanding {
   const band = billFloorBand(bill, announcement, now, sessionOf);
-  let line: StatusLine = billStatusLine(bill, now);
-  if (sessionOf && LIVE_SOUNDING_LINES.has(line.key) && line.chamber && sessionOf(line.chamber) === 'out_of_session') {
-    // The record's own words and date, never a live-sounding line while that chamber is out.
-    line = { ...line, key: 'recordStep', chamber: null, passedBy: null };
-  }
+  // The record's own words and date, never a live-sounding line while that chamber is out. With no session
+  // reader nothing is suspended, exactly as billFloorBand reads it, so the function stays pure.
+  const line: StatusLine = siteBillStatusLine(bill, now, sessionOf ? floorSuspendedFrom(sessionOf) : () => false);
   return {
     line,
     floor: band && !band.suspended ? { ...band, key: SHARED_NAME_FLOOR_CHIP[band.kind][band.chamber] } : null,

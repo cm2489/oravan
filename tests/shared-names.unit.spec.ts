@@ -140,7 +140,7 @@ test('when names change: unique becomes shared lands on the page; shared becomes
   expect(gone.target('/laken-riley-act')).toBeNull();
 });
 
-test('Share: its own name; no short title, the number; a SHARED name, the name (the owner’s share = b, Nov 15)', () => {
+test('Share: its own name; no short title, the address that carries its Congress (card 196); a SHARED name, the name (share = b)', () => {
   const corpus = [b('hr', 9770), b('sjres', 99), b('s', 5), b('hr', 29)];
   const titles: ShortTitleFile = {
     'hr-9770-119': { titles: ['Continuing Appropriations Act, 2027'] },
@@ -150,7 +150,7 @@ test('Share: its own name; no short title, the number; a SHARED name, the name (
   };
   const { tables } = world(corpus, titles);
   expect(shareAddress(corpus[0], 'en', tables)).toBe('https://oravan.org/continuing-appropriations-act-2027');
-  expect(shareAddress(corpus[1], 'en', tables)).toBe('https://oravan.org/sjres99');
+  expect(shareAddress(corpus[1], 'en', tables)).toBe('https://oravan.org/sjres99-119');
   // The name lands on the list page, and the friend picks:
   expect(shareAddress(corpus[2], 'en', tables)).toBe('https://oravan.org/laken-riley-act');
   expect(shareAddress(corpus[3], 'es', tables)).toBe('https://oravan.org/es/laken-riley-act');

@@ -109,6 +109,38 @@ test.describe('fallback (no navigator.share)', () => {
     expect(message).not.toContain(`${CANONICAL}?`);
   });
 
+  test('the address Copy hands out opens this very bill on this site, in both languages', async ({ page, request }) => {
+    await page.addInitScript(() => {
+      const w = window as unknown as { __copied: string | null };
+      w.__copied = null;
+      Object.defineProperty(navigator, 'clipboard', {
+        configurable: true,
+        value: { writeText: (t: string) => ((w.__copied = t), Promise.resolve()) },
+      });
+    });
+    for (const [prefix, labels, expected] of [
+      ['', en.bill.share, CANONICAL],
+      ['/es', es.bill.share, CANONICAL_ES],
+    ] as const) {
+      await page.goto(prefix + PATH);
+      await page.getByRole('button', { name: labels.copyLink }).click();
+      await expect(page.getByRole('button', { name: labels.copied })).toBeVisible();
+      const copied = await page.evaluate(() => (window as unknown as { __copied: string | null }).__copied);
+      expect(copied).toBe(expected);
+      // The copied address, asked of this server: a 307 to this bill's page (a bill with no name of its own, or
+      // while names are off), or to the page listing the bills that share its name, which lists this one.
+      const from = new URL(copied!).pathname;
+      const res = await request.get(from, { maxRedirects: 0, headers: { accept: 'text/html' } });
+      expect(res.status(), from).toBe(307);
+      const to = new URL(res.headers()['location'] ?? '', 'http://x').pathname;
+      if (to.startsWith(`${prefix}/names/`)) {
+        expect(await (await request.get(to)).text(), to).toContain(`/bills/${REF.slug}`);
+      } else {
+        expect(to, from).toBe(prefix + PATH);
+      }
+    }
+  });
+
   test('spanish fallback renders localized labels', async ({ page }) => {
     await page.goto('/es' + PATH);
     await expect(page.getByRole('button', { name: es.bill.share.copyLink })).toBeVisible();

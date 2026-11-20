@@ -91,6 +91,21 @@ test('fill complete, one bill tried and never read: the name its stored title ma
   expect(refresh.open('laken-riley-act')).toBe('/bills/hr-29-119');
 });
 
+test('fill complete, a name two READ bills share, and a third bill tried and never read whose stored title makes it: the name keeps opening the list page', () => {
+  // The merge of main's fill gate into #510 (Nov 19, 2026): a name already shared stays shared, never held back.
+  const HR7 = bill('hr', 7, 'Laken Riley Act');
+  const corpus = [S5, HR29, HR7, HR9770];
+  const g = table(
+    corpus,
+    { 's-5-119': entry('Laken Riley Act'), 'hr-29-119': entry('Laken Riley Act'), 'hr-9770-119': entry('Continuing Appropriations Act, 2027') },
+    { 'hr-7-119': failed },
+  );
+  expect(g.open('laken-riley-act')).toBe('/names/119/laken-riley-act');
+  expect(g.tables[0].names.get('laken-riley-act')).toBeNull();
+  expect(g.blocked).toEqual([]);
+  expect(g.open('continuing-appropriations-act-2027')).toBe('/bills/hr-9770-119');
+});
+
 test('the real partial fill of Nov 17, 2026 (300 of 3,335 read, as committed on main): zero names', () => {
   expect(REAL_BILLS).toHaveLength(3335);
   expect(Object.keys(REAL_TITLES)).toHaveLength(300);

@@ -63,7 +63,7 @@ test('a shared name: the name, which opens the page listing both bills; no short
   expect(shareAddress(corpus[3], 'es', t)).toBe('https://oravan.org/es/laken-riley-act');
   expect(nameAddressTarget('/laken-riley-act', ['en', 'es'], 'en', t.names)).toBe('/names/119/laken-riley-act');
   expect(nameAddressTarget('/es/laken-riley-act', ['en', 'es'], 'en', t.names)).toBe('/es/names/119/laken-riley-act');
-  expect(shareAddress(corpus[4], 'en', t)).toBe('https://oravan.org/sjres99');
+  expect(shareAddress(corpus[4], 'en', t)).toBe('https://oravan.org/sjres99-119'); // no short title: the address that carries its Congress
 });
 
 test('a bill with its own name AND a shared one shares its own name', () => {
@@ -89,37 +89,37 @@ test('every shared name handed out opens a page that lists that very bill', () =
   expect(checked).toBe(2);
 });
 
-test('before the nightly fills the titles: every bill shares its number', () => {
+test('before the nightly fills the titles (and while names are off): every bill shares the address that carries its Congress', () => {
   const t = tablesOf(corpus, {}, TODAY);
   expect(corpus.map((b) => shareAddress(b, 'en', t))).toEqual([
-    'https://oravan.org/hr9770',
-    'https://oravan.org/hr3633',
-    'https://oravan.org/s5',
-    'https://oravan.org/hr29',
-    'https://oravan.org/sjres99',
+    'https://oravan.org/hr9770-119',
+    'https://oravan.org/hr3633-119',
+    'https://oravan.org/s5-119',
+    'https://oravan.org/hr29-119',
+    'https://oravan.org/sjres99-119',
   ]);
 });
 
-test('after the switch: an ended bill whose number and name the new Congress took shares its full address', () => {
+test('after the switch: an ended bill whose name the new Congress took shares the address that carries its own Congress', () => {
   const switched: ShortAddressPolicy = { tracked: 120, ended: [{ number: 119, ended: congressTerm(119).end }] };
   const both = [...corpus, { bill_type: 'hr', bill_number: 9770, congress_number: 120 }];
   const t = tablesOf(both, { ...titles, 'hr-9770-120': { titles: ['Continuing Appropriations Act, 2027'] } }, switched);
-  expect(shareAddress(corpus[0], 'en', t)).toBe('https://oravan.org/bills/hr-9770-119');
+  expect(shareAddress(corpus[0], 'en', t)).toBe('https://oravan.org/hr9770-119');
   expect(shareAddress(both[5], 'en', t)).toBe('https://oravan.org/continuing-appropriations-act-2027');
   // S. 5's name is still shared only in the 119th, so it opens the 119th's page listing S. 5 and H.R. 29.
   expect(shareAddress(corpus[2], 'es', t)).toBe('https://oravan.org/es/laken-riley-act');
   expect(nameAddressTarget('/es/laken-riley-act', ['en', 'es'], 'en', t.names)).toBe('/es/names/119/laken-riley-act');
-  expect(shareAddress(corpus[4], 'es', t)).toBe('https://oravan.org/es/sjres99'); // the 120th has no S.J.Res. 99 yet
+  expect(shareAddress(corpus[4], 'es', t)).toBe('https://oravan.org/es/sjres99-119');
 });
 
 test('after the switch: a 119th bill whose SHARED name a 120th bill took never hands out that name', () => {
   const switched: ShortAddressPolicy = { tracked: 120, ended: [{ number: 119, ended: congressTerm(119).end }] };
   const both = [...corpus, { bill_type: 'hr', bill_number: 7, congress_number: 120 }];
   const t = tablesOf(both, { ...titles, 'hr-7-120': { titles: ['Laken Riley Act'] } }, switched);
-  // The name now opens the 120th's H.R. 7, so the 119th's S. 5 and H.R. 29 share their numbers (the 120th has neither yet).
+  // The name now opens the 120th's H.R. 7, so the 119th's S. 5 and H.R. 29 share the addresses that carry their Congress.
   expect(nameAddressTarget('/laken-riley-act', ['en', 'es'], 'en', t.names)).toBe('/bills/hr-7-120');
-  expect(shortSharePath(corpus[2], t)).toBe('/s5');
-  expect(shareAddress(corpus[3], 'en', t)).toBe('https://oravan.org/hr29');
+  expect(shortSharePath(corpus[2], t)).toBe('/s5-119');
+  expect(shareAddress(corpus[3], 'en', t)).toBe('https://oravan.org/hr29-119');
   expect(shortSharePath(both[5], t)).toBe('/laken-riley-act');
 });
 

@@ -22,9 +22,18 @@
  *      (/names/<its congress>/<name>; same order). A name the new Congress
  *      took after a switch opens another Congress's bill or page and is never
  *      handed out for this one;
- *   3. otherwise its number (oravan.org/hr9770), when the number opens it
- *      (always, for a bill of the tracked Congress): a bill with no short title;
- *   4. otherwise the full address (/bills/<slug>), as before.
+ *   3. otherwise the short address that CARRIES ITS CONGRESS
+ *      (oravan.org/hr1109-119; lib/short-address.ts), which opens this bill
+ *      and never another, before or after the change of Congress. His card
+ *      196 (Nov 19, 2026, 12:50 PM ET): "Build a short address that carries
+ *      the Congress and never changes, and have Share copy that." It replaced
+ *      the bare number (oravan.org/hr1109), which from Jan 3, 2027 opens the
+ *      120th Congress's bill of that number;
+ *   4. otherwise the full address (/bills/<slug>), which every bill page has.
+ * While the fill gate keeps every name off (lib/short-address-build.ts
+ * gateNameTables), steps 1 and 2 find nothing and every bill shares step 3:
+ * Share never hands out a name that does not open yet. The page's canonical
+ * address and og:url stay the permanent /bills/<slug>.
  * English at oravan.org/<address>, Spanish at oravan.org/es/<address>.
  *
  * WHAT IT NEVER DOES: carry a query, a stance or anything about the reader
@@ -33,6 +42,7 @@
  * finished address string reaches the page.
  */
 import {
+  congressAddressPath,
   decodeNameTables,
   decodeShortAddressFallback,
   decodeShortAddressIndex,
@@ -61,7 +71,7 @@ export interface ShareTables {
 
 const LOCALES = ['en', 'es'];
 
-/** The path part of the short address for one bill: '/<name>', '/<type><number>', or null. Pure. */
+/** The path part of the short address for one bill: '/<name>', '/<type><number>-<congress>', or null. Pure. */
 export function shortSharePath(bill: ShortAddressBill, tables: ShareTables): string | null {
   const slug = `${bill.bill_type}-${bill.bill_number}-${bill.congress_number}`;
   const target = (path: string) =>
@@ -75,8 +85,8 @@ export function shortSharePath(bill: ShortAddressBill, tables: ShareTables): str
   if (own) return `/${own}`;
   const shared = all.find((name) => target(`/${name}`) === `/names/${bill.congress_number}/${name}`);
   if (shared) return `/${shared}`;
-  const number = `/${bill.bill_type}${bill.bill_number}`;
-  return opens(number) ? number : null;
+  const carried = congressAddressPath(bill);
+  return opens(carried) ? carried : null;
 }
 
 /** The absolute URL a share hands out, in the page's language. Pure. */

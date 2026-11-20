@@ -104,6 +104,46 @@ export function parseShortAddress(segment: string): ShortAddress | null {
   return { type: match[1] as ShortAddressType, number: Number(match[2]) };
 }
 
+/*
+ * THE ADDRESS THAT CARRIES ITS CONGRESS (the owner's card 196, Nov 19, 2026,
+ * 12:50 PM ET: "Build a short address that carries the Congress and never
+ * changes, and have Share copy that."). oravan.org/hr1109-119 is H.R. 1109 of
+ * the 119th Congress, today and after the change of Congress, when the bare
+ * oravan.org/hr1109 starts opening the 120th's H.R. 1109 (decision 190).
+ *
+ * THE FORM: type, number, a hyphen, the Congress, in the order of the bill's
+ * permanent slug (hr-1109-119). The same typed variants as the bare number
+ * address: any letter case, one optional hyphen between type and number
+ * (hr-1109-119), a trailing slash, and /en/ or /es/ in front. No leading zero
+ * in the number or the Congress; a Congress of at most four digits.
+ *
+ * WHAT IT OPENS: only that Congress's bill. It is looked up in that one
+ * Congress's table (the tracked Congress's, or an ended Congress's fallback
+ * table) and nowhere else: never another Congress's bill of the same number.
+ * A bill the corpus does not hold, or a Congress it holds no table for (a
+ * future one), is the site's normal not-found.
+ *
+ * It can never be a name: nameAddressRefusal refuses every name of this shape.
+ */
+const CONGRESS_ADDRESS_PATTERN = /^(hconres|sconres|hjres|sjres|hres|sres|hr|s)-?([1-9]\d{0,4})-([1-9]\d{0,3})$/;
+
+/** A short address with its Congress. */
+export interface CongressAddress extends ShortAddress {
+  congress: number;
+}
+
+/** Read one path segment as a Congress-carrying address (hr1109-119, HR-1109-119), or null. */
+export function parseCongressAddress(segment: string): CongressAddress | null {
+  const match = CONGRESS_ADDRESS_PATTERN.exec(segment.toLowerCase());
+  if (!match) return null;
+  return { type: match[1] as ShortAddressType, number: Number(match[2]), congress: Number(match[3]) };
+}
+
+/** The Congress-carrying address's path for a bill, e.g. /hr1109-119 (no language prefix). */
+export function congressAddressPath(bill: ShortAddressBill): string {
+  return `/${String(bill.bill_type).toLowerCase()}${bill.bill_number}-${bill.congress_number}`;
+}
+
 /** The canonical bill slug a short address points at, e.g. hr-9340-119. */
 export function shortAddressSlug(address: ShortAddress, congress: number = SHORT_ADDRESS_CONGRESS): string {
   return `${address.type}-${address.number}-${congress}`;
@@ -261,6 +301,14 @@ export function shortAddressTarget(
   let locale: string | null = null;
   if (segments.length === 2 && locales.includes(segments[0])) locale = segments.shift() ?? null;
   if (segments.length !== 1) return null;
+  const prefix = locale && locale !== defaultLocale ? `/${locale}` : '';
+  // A Congress-carrying address opens that Congress's bill and no other (card 196).
+  const carried = parseCongressAddress(segments[0]);
+  if (carried) {
+    const table = carried.congress === congress ? index : fallback.find((t) => t.congress === carried.congress)?.index;
+    if (!table || !indexHas(table, carried)) return null;
+    return `${prefix}/bills/${shortAddressSlug(carried, carried.congress)}`;
+  }
   const address = parseShortAddress(segments[0]);
   if (!address) return null;
   let resolved: number | null = indexHas(index, address) ? congress : null;
@@ -269,7 +317,6 @@ export function shortAddressTarget(
     if (indexHas(table.index, address)) resolved = table.congress;
   }
   if (resolved === null) return null;
-  const prefix = locale && locale !== defaultLocale ? `/${locale}` : '';
   return `${prefix}/bills/${shortAddressSlug(address, resolved)}`;
 }
 
@@ -455,6 +502,7 @@ export function nameAddressRefusal(
   if (name.length > NAME_MAX) return `longer than ${NAME_MAX} characters`;
   if (!NAME_SHAPE.test(name) || !/[a-z]/.test(name)) return 'not a-z, 0-9 and single hyphens with a letter';
   if (parseShortAddress(name) !== null || parseShortAddress(name.replace(/-/g, '')) !== null) return 'it reads as a number address';
+  if (parseCongressAddress(name) !== null) return 'it reads as a number address with its Congress';
   if (![`/${name}`, ...locales.map((l) => `/${l}/${name}`)].every(proxySeesPath)) {
     return "proxy.ts's matcher skips it in at least one language";
   }

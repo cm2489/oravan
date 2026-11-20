@@ -230,6 +230,25 @@ test('driven: a burst of short-address requests leaves one daily "short" count o
   );
 });
 
+test('driven: the address that carries its Congress (card 196) counts the same one "short" word, and nothing about bill or Congress', async () => {
+  const corpus: ShortAddressBill[] = [
+    { bill_type: 'hr', bill_number: 4321, congress_number: SHORT_ADDRESS_CONGRESS },
+    { bill_type: 's', bill_number: 765, congress_number: SHORT_ADDRESS_CONGRESS },
+  ];
+  const index = decodeShortAddressIndex(encodeShortAddressIndex(corpus, SHORT_ADDRESS_CONGRESS));
+  const C = SHORT_ADDRESS_CONGRESS;
+  const targets = await drivenBurst(
+    index,
+    [],
+    C,
+    [`/hr4321-${C}`, `/HR-4321-${C}`, `/es/s765-${C}?stance=oppose&utm_source=probe`, `/hr4321-${C}/`],
+    // A bill the corpus does not hold, a future Congress, a Congress with no table: the normal path, counted 'other'.
+    [`/hr4322-${C}`, `/hr4321-${C + 1}`, `/hr4321-${C - 1}`],
+    ['4321', '765', `-${C}`, 'stance', 'probe'],
+  );
+  expect(targets).toEqual([`/bills/hr-4321-${C}`, `/bills/hr-4321-${C}`, `/es/bills/s-765-${C}`, `/bills/hr-4321-${C}`]);
+});
+
 test('driven, after the switch: a fallback to the ended Congress counts the same one word, and nothing about which Congress', async () => {
   // The switch as #486 models it: 119 ended, 120 tracked. The corpus's bill
   // numbers, labelled as the 119th's, are the ended table; a small 120th

@@ -241,6 +241,70 @@ test.describe('short addresses', () => {
     expect(landed.hash).toBe('#top');
   });
 
+  /*
+   * THE ADDRESS THAT CARRIES ITS CONGRESS (the owner's card 196, Nov 19, 2026:
+   * "Build a short address that carries the Congress and never changes, and
+   * have Share copy that."). /hr1109-119 opens the 119th's H.R. 1109 and
+   * nothing else, ever. Same answer as the number address in every other way.
+   */
+  test('the address that carries its Congress redirects (307) to the bill, every spelling, both languages', async ({ request }) => {
+    const bill = SAMPLES[0];
+    test.skip(!bill, 'no short address to check');
+    const c = SHORT_ADDRESS_CONGRESS;
+    const short = `${bill.bill_type}${bill.bill_number}-${c}`;
+    const cases: Array<[string, string]> = [
+      [`/${short}`, `/bills/${bill.slug}`],
+      [`/${short.toUpperCase()}`, `/bills/${bill.slug}`],
+      [`/${bill.bill_type}-${bill.bill_number}-${c}`, `/bills/${bill.slug}`],
+      [`/en/${short}`, `/bills/${bill.slug}`],
+      [`/${short}?stance=support&utm_source=x`, `/bills/${bill.slug}`],
+      [`/es/${short}`, `/es/bills/${bill.slug}`],
+      [`/es/${bill.bill_type.toUpperCase()}-${bill.bill_number}-${c}?stance=oppose`, `/es/bills/${bill.slug}`],
+    ];
+    for (const [from, to] of cases) {
+      expect(expectedTarget(from), from).toBe(to);
+      const res = await request.get(from, { maxRedirects: 0, headers: { accept: 'text/html' } });
+      expect(res.status(), from).toBe(307);
+      const location = new URL(res.headers()['location'] ?? '', 'http://x');
+      expect(location.pathname, from).toBe(to);
+      expect(location.search, from).toBe('');
+      expect(res.headers()['cache-control'], from).toContain('no-store');
+      expect(res.headers()['x-robots-tag'], from).toBe('noindex');
+      expect(res.headers()['set-cookie'], from).toBeUndefined();
+    }
+    for (const [from, to] of [
+      [`/${short}/`, `/bills/${bill.slug}`],
+      [`/es/${short}`, `/es/bills/${bill.slug}`],
+    ] as const) {
+      const page = await request.get(from, { headers: { accept: 'text/html' } });
+      expect(page.status(), from).toBe(200);
+      expect(new URL(page.url()).pathname, from).toBe(to);
+    }
+  });
+
+  test('the address that carries its Congress: a bill not held, or a Congress with no table (a future one), is the normal 404', async ({ request }) => {
+    const bill = SAMPLES[0];
+    test.skip(!bill, 'no short address to check');
+    const c = SHORT_ADDRESS_CONGRESS;
+    const n = unheldHouseNumber();
+    const titleOf = (html: string) => /<title>([^<]*)<\/title>/.exec(html)?.[1];
+    const ref = await request.get('/this-page-does-not-exist-404', { maxRedirects: 0 });
+    expect(ref.status()).toBe(404);
+    const refTitle = titleOf(await ref.text());
+    for (const from of [
+      `/hr${n}-${c}`,
+      `/es/hr${n}-${c}`,
+      `/${bill.bill_type}${bill.bill_number}-${c + 1}`, // a future Congress: never a guess
+      `/es/${bill.bill_type}${bill.bill_number}-${c + 1}`,
+      `/${bill.bill_type}${bill.bill_number}-9999`,
+    ]) {
+      expect(expectedTarget(from), from).toBeNull();
+      const res = await request.get(from, { maxRedirects: 0 });
+      expect(res.status(), from).toBe(404);
+      expect(titleOf(await res.text()), from).toBe(refTitle);
+    }
+  });
+
   test('the sitemap and robots.txt carry no short address', async ({ request }) => {
     const shortShape = /^(?:\/(?:en|es))?\/(?:hconres|sconres|hjres|sjres|hres|sres|hr|s)-?\d+\/?$/i;
     const sitemap = await (await request.get('/sitemap.xml')).text();
