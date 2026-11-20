@@ -262,7 +262,7 @@ test.describe('short addresses', () => {
       [`/es/${bill.bill_type.toUpperCase()}-${bill.bill_number}-${c}?stance=oppose`, `/es/bills/${bill.slug}`],
     ];
     for (const [from, to] of cases) {
-      expect(expectedTarget(from), from).toBe(to);
+      expect(expectedTarget(from.split('?')[0]), from).toBe(to);
       const res = await request.get(from, { maxRedirects: 0, headers: { accept: 'text/html' } });
       expect(res.status(), from).toBe(307);
       const location = new URL(res.headers()['location'] ?? '', 'http://x');
@@ -288,9 +288,12 @@ test.describe('short addresses', () => {
     const c = SHORT_ADDRESS_CONGRESS;
     const n = unheldHouseNumber();
     const titleOf = (html: string) => /<title>([^<]*)<\/title>/.exec(html)?.[1];
-    const ref = await request.get('/this-page-does-not-exist-404', { maxRedirects: 0 });
-    expect(ref.status()).toBe(404);
-    const refTitle = titleOf(await ref.text());
+    const refTitles: Record<string, string | undefined> = {};
+    for (const lang of ['', '/es']) {
+      const ref = await request.get(`${lang}/this-page-does-not-exist-404`, { maxRedirects: 0 });
+      expect(ref.status()).toBe(404);
+      refTitles[lang] = titleOf(await ref.text());
+    }
     for (const from of [
       `/hr${n}-${c}`,
       `/es/hr${n}-${c}`,
@@ -301,7 +304,7 @@ test.describe('short addresses', () => {
       expect(expectedTarget(from), from).toBeNull();
       const res = await request.get(from, { maxRedirects: 0 });
       expect(res.status(), from).toBe(404);
-      expect(titleOf(await res.text()), from).toBe(refTitle);
+      expect(titleOf(await res.text()), from).toBe(refTitles[from.startsWith('/es/') ? '/es' : '']);
     }
   });
 
