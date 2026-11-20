@@ -909,6 +909,7 @@ for (const key of ALL_KEYS.filter((k) => k !== 'oravan.entry')) {
     await seedEverything(page);
     await page.goto('/reps');
     await expectWorkingMembers(page, en);
+    const sentAfter = sendsOf(page, ZIP);
     const erase = page.locator('[data-record-erase]');
     await erase.getByRole('button', { name: en.impact.erase }).click();
     await erase.getByRole('button', { name: en.impact.confirmErase }).click();
@@ -916,11 +917,14 @@ for (const key of ALL_KEYS.filter((k) => k !== 'oravan.entry')) {
     await expect(again).toBeVisible();
     await expect(again).toBeFocused();
     await expect(page.getByText(en.impact.erased)).toHaveCount(0);
-    // Every other key went, the tag first. (When the ZIP itself would not
-    // go, it is still saved, so the page looks it up again and may keep the
-    // answer under a new tag: the erase did not happen, and says nothing.)
+    // Every other key went, the tag first, and what would not go is dead in
+    // this tab (check 5, 2026-11-19): when it is the ZIP, the page neither
+    // shows it nor looks it up again, and makes no new tag for it.
+    await expect(page.locator('[data-zip-line]')).toHaveCount(0);
+    await expect(page.getByRole('textbox', { name: en.home.zipLabel })).toHaveValue('');
     const left = await page.evaluate((keys) => keys.filter((k) => localStorage.getItem(k) !== null), [...ALL_KEYS]);
-    expect(key === 'oravan.prefs' ? left.filter((k) => k !== 'oravan.entry') : left).toEqual([key]);
+    expect(left).toEqual([key]);
+    expect(sentAfter).toEqual([]);
     if (key === 'oravan.calls' || key === 'oravan.reads') {
       // The ZIP and the tag went: no history copy of the ZIP is read again.
       // (Where the stuck key is the ZIP itself, it is still saved, honestly:
@@ -1008,6 +1012,57 @@ test('"Erase my data" when storage becomes blocked mid-visit: no "erased", the c
   await erase.getByRole('button', { name: en.impact.confirmErase }).click();
   await expect(erase.getByRole('button', { name: en.impact.erase })).toBeFocused();
   await expect(page.getByText(en.impact.erased)).toHaveCount(0);
+});
+
+/* Blocked before the reader even opens the erase (check 5, 2026-11-19): this
+   tab held data this visit and can no longer read it, so it cannot say what
+   is still saved. The members leave the screen, the erase box and its button
+   stay, and nothing says "erased". */
+test('storage blocked mid-visit, before "Erase my data" is pressed: the members go, the box and button stay, no "erased"', async ({ page }) => {
+  await page.addInitScript(() => {
+    const { removeItem, getItem } = Storage.prototype;
+    const blocked = () => (window as unknown as { __blocked?: boolean }).__blocked === true;
+    Storage.prototype.removeItem = function (this: Storage, name: string) {
+      if (blocked()) throw new DOMException('blocked', 'SecurityError');
+      return removeItem.call(this, name);
+    };
+    Storage.prototype.getItem = function (this: Storage, name: string) {
+      if (blocked()) throw new DOMException('blocked', 'SecurityError');
+      return getItem.call(this, name);
+    };
+  });
+  await seedEverything(page);
+  await page.goto('/reps');
+  await expectWorkingMembers(page, en);
+  const sent = sendsOf(page, ZIP);
+  await page.evaluate(() => {
+    (window as unknown as { __blocked?: boolean }).__blocked = true;
+  });
+  const erase = page.locator('[data-record-erase]');
+  await erase.getByRole('button', { name: en.impact.erase }).click();
+  await expect(page.locator('[data-zip-line]')).toHaveCount(0);
+  await expect(erase).toBeVisible();
+  await erase.getByRole('button', { name: en.impact.confirmErase }).click();
+  await expect(erase.getByRole('button', { name: en.impact.erase })).toBeFocused();
+  await expect(page.getByText(en.impact.erased)).toHaveCount(0);
+  await expect(page.locator('[data-zip-line]')).toHaveCount(0);
+  expect(sent).toEqual([]);
+});
+
+/* The confirmation in the erase box takes focus after a click as well as a
+   key, and draws the site's focus ring either way (hard rule 7). */
+test('"Erase my data": the confirmation that takes focus draws the focus ring', async ({ page }) => {
+  await seedEverything(page);
+  await page.goto('/reps');
+  await expectWorkingMembers(page, en);
+  await eraseMyData(page);
+  const said = page.locator('[data-record-erase] [role="status"]');
+  await expect(said).toBeFocused();
+  const ring = await said.evaluate((el) => {
+    const s = getComputedStyle(el);
+    return { style: s.outlineStyle, width: s.outlineWidth, offset: s.outlineOffset };
+  });
+  expect(ring).toEqual({ style: 'solid', width: '3px', offset: '2px' });
 });
 
 test('the record page\'s erase when a key will not go: no "erased", the control stays', async ({ page }) => {
@@ -1131,6 +1186,95 @@ async function eraseAndSaveElsewhere(page: Page) {
   }, NEW_ZIP);
 }
 
+
+/* ==== TEMPORARY DIAGNOSIS (PR #521, check 5, 2026-11-19). REMOVE BEFORE MERGE. ====
+ * Logs, per tab, with the time in epoch milliseconds: each members lookup's
+ * body (which ZIP), each storage event (key, old, new), each storage write,
+ * each history write, the ZIP field's value and whether React has taken it
+ * over, Enter, the submit's value, focus, visibility and page shows. Attached
+ * to the test as diag.txt, sorted by time. Read by the temporary `erase-repeat`
+ * job in .github/workflows/ci.yml. */
+type Diag = string[];
+async function diagnose(page: Page, tab: string, lines: Diag) {
+  page.on('console', (msg) => {
+    const text = msg.text();
+    if (text.startsWith('[diag] ')) lines.push(`${text.slice(7, 20)} ${tab} ${text.slice(21)}`);
+  });
+  page.on('request', (r) => {
+    if (!isLookup(r)) return;
+    const body = r.postData() ?? '';
+    const zips = [ZIP, NEW_ZIP].filter((z) => body.includes(z)).join(',') || 'none';
+    lines.push(`${Date.now()} ${tab} [node] lookup sent, zip=${zips}`);
+  });
+  page.on('framenavigated', (f) => {
+    if (f === page.mainFrame()) lines.push(`${Date.now()} ${tab} [node] navigated ${new URL(f.url()).pathname}${new URL(f.url()).search}`);
+  });
+  await page.addInitScript(() => {
+    const now = () => String(Math.round(performance.timeOrigin + performance.now()));
+    const log = (...parts: unknown[]) =>
+      console.log(['[diag]', now(), ...parts.map((p) => (typeof p === 'string' ? p : JSON.stringify(p)))].join(' '));
+    window.addEventListener('storage', (e) => log('storage-event', e.key, e.oldValue, e.newValue), true);
+    for (const m of ['setItem', 'removeItem'] as const) {
+      const orig = Storage.prototype[m] as (...a: string[]) => unknown;
+      (Storage.prototype as unknown as Record<string, unknown>)[m] = function (this: Storage, ...a: string[]) {
+        log(`store.${m}`, ...a);
+        return orig.apply(this, a);
+      };
+    }
+    for (const m of ['pushState', 'replaceState'] as const) {
+      const orig = history[m];
+      history[m] = function (this: History, state: unknown, unused: string, url?: string | URL | null) {
+        const shown = JSON.stringify(state, (k, v) => (k.startsWith('__') ? '…' : v));
+        log(`history.${m}`, shown, url === undefined ? '(no url)' : String(url));
+        return orig.call(this, state, unused, url);
+      };
+    }
+    let last: string | null = null;
+    let woke = false;
+    const tick = () => {
+      const f = document.querySelector('[data-zip-field]') as HTMLInputElement | null;
+      if (!f) {
+        if (last !== null) log('field gone');
+        last = null;
+        return;
+      }
+      const w = Object.keys(f).some((k) => k.startsWith('__reactProps$'));
+      if (w !== woke) {
+        woke = w;
+        log('field react-owned', w, 'value', f.value);
+      }
+      if (f.value !== last) {
+        log('field value', last, '->', f.value, 'react-owned', w);
+        last = f.value;
+      }
+    };
+    setInterval(tick, 4);
+    document.addEventListener('input', (e) => {
+      if ((e.target as Element | null)?.matches?.('[data-zip-field]')) log('input event', (e.target as HTMLInputElement).value, 'trusted', e.isTrusted);
+    }, true);
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter') return;
+      tick();
+      log('keydown Enter, field', (document.querySelector('[data-zip-field]') as HTMLInputElement | null)?.value ?? '(none)');
+    }, true);
+    document.addEventListener('submit', (e) => {
+      tick();
+      log('submit, form zip', new FormData(e.target as HTMLFormElement).get('zip'));
+    }, true);
+    window.addEventListener('focus', () => log('window focus'), true);
+    window.addEventListener('blur', () => log('window blur'), true);
+    document.addEventListener('visibilitychange', () => log('visibility', document.visibilityState), true);
+    window.addEventListener('pageshow', (e) => log('pageshow persisted', e.persisted), true);
+    document.addEventListener('DOMContentLoaded', () => log('DOMContentLoaded'), true);
+    window.addEventListener('load', () => log('load'), true);
+  });
+}
+async function attachDiag(testInfo: import('@playwright/test').TestInfo, lines: Diag) {
+  const sorted = [...lines].sort((a, b) => Number(a.slice(0, 13)) - Number(b.slice(0, 13)));
+  await testInfo.attach('diag.txt', { body: sorted.join('\n'), contentType: 'text/plain' });
+}
+/* ==== END TEMPORARY DIAGNOSIS ==== */
+
 const RETURNS = {
   'back from the back/forward cache': (page: Page) =>
     page.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }))),
@@ -1166,8 +1310,28 @@ for (const [how, wake] of Object.entries(RETURNS)) {
   });
 }
 
-test('two tabs: another tab saves a different ZIP: the old members leave this one, the new ZIP fills in', async ({ context }) => {
+/* The tag a page makes for its own entry is one it has read (check 5,
+   2026-11-19): an old refined link, then "erase, then the same ZIP saved
+   again" elsewhere, is a change when the page comes back into focus, though
+   the saved ZIP is the same: the refined view was found under the old tag. */
+test('an old /reps?zip=&district= link, then an erase and the same ZIP saved again elsewhere: focus drops the refined view', async ({ page }) => {
+  await page.goto(`/reps?zip=${NEW_ZIP}&district=NY-12`);
+  await expect(page.getByText('Jerrold Nadler')).toBeVisible();
+  await expect(page.getByText('Daniel S. Goldman')).toHaveCount(0);
+  await expect(page).toHaveURL(/\/reps$/);
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('oravan.entry'))).toMatch(/^[0-9a-f]{32}$/);
+  await eraseAndSaveElsewhere(page);
+  await RETURNS.focused(page);
+  // The saved ZIP fills in, unrefined: every district of it, Goldman's too.
+  await expect(page.getByText('Daniel S. Goldman')).toBeVisible();
+  await expect(page.locator('[data-zip-line]')).toContainText(NEW_ZIP);
+});
+
+test('two tabs: another tab saves a different ZIP: the old members leave this one, the new ZIP fills in', async ({ context }, testInfo) => {
+  const diag: Diag = []; // TEMPORARY DIAGNOSIS
+  try {
   const here = await context.newPage();
+  await diagnose(here, 'here', diag); // TEMPORARY DIAGNOSIS
   await here.goto('/record');
   await here.evaluate((prefs) => localStorage.setItem('oravan.prefs', prefs), PREFS);
   await here.goto('/reps');
@@ -1175,6 +1339,7 @@ test('two tabs: another tab saves a different ZIP: the old members leave this on
   const sent = sendsOf(here, ZIP);
 
   const other = await context.newPage();
+  await diagnose(other, 'other', diag); // TEMPORARY DIAGNOSIS
   await other.goto('/reps?change=1');
   const zip = other.getByRole('textbox', { name: en.home.zipLabel });
   await zip.fill(NEW_ZIP);
@@ -1184,10 +1349,16 @@ test('two tabs: another tab saves a different ZIP: the old members leave this on
   await expect(here.locator('[data-zip-line]')).toContainText(NEW_ZIP);
   await expect(here.locator('main')).not.toContainText(ZIP);
   expect(sent).toEqual([]);
+  } finally {
+    await attachDiag(testInfo, diag); // TEMPORARY DIAGNOSIS
+  }
 });
 
-test('two tabs: erase, then another ZIP, in the other tab: this one never shows the old ZIP again', async ({ context }) => {
+test('two tabs: erase, then another ZIP, in the other tab: this one never shows the old ZIP again', async ({ context }, testInfo) => {
+  const diag: Diag = []; // TEMPORARY DIAGNOSIS
+  try {
   const here = await context.newPage();
+  await diagnose(here, 'here', diag); // TEMPORARY DIAGNOSIS
   await here.goto('/record');
   await here.evaluate((prefs) => localStorage.setItem('oravan.prefs', prefs), PREFS);
   await here.goto('/reps');
@@ -1195,6 +1366,7 @@ test('two tabs: erase, then another ZIP, in the other tab: this one never shows 
   const sent = sendsOf(here, ZIP);
 
   const other = await context.newPage();
+  await diagnose(other, 'other', diag); // TEMPORARY DIAGNOSIS
   await other.goto('/record');
   await eraseMyData(other);
   await other.goto('/reps');
@@ -1209,10 +1381,16 @@ test('two tabs: erase, then another ZIP, in the other tab: this one never shows 
   await expect(here.locator('[data-zip-line]')).toContainText(NEW_ZIP);
   await expect(here.locator('main')).not.toContainText(ZIP);
   expect(sent).toEqual([]);
+  } finally {
+    await attachDiag(testInfo, diag); // TEMPORARY DIAGNOSIS
+  }
 });
 
-test('a lookup for the old ZIP still out when another tab saves a different one is not shown', async ({ context }) => {
+test('a lookup for the old ZIP still out when another tab saves a different one is not shown', async ({ context }, testInfo) => {
+  const diag: Diag = []; // TEMPORARY DIAGNOSIS
+  try {
   const here = await context.newPage();
+  await diagnose(here, 'here', diag); // TEMPORARY DIAGNOSIS
   await here.goto('/record');
   await here.evaluate((prefs) => localStorage.setItem('oravan.prefs', prefs), PREFS);
   let held!: import('@playwright/test').Route;
@@ -1227,6 +1405,7 @@ test('a lookup for the old ZIP still out when another tab saves a different one 
   await caught;
 
   const other = await context.newPage();
+  await diagnose(other, 'other', diag); // TEMPORARY DIAGNOSIS
   await other.goto('/reps?change=1');
   const zip = other.getByRole('textbox', { name: en.home.zipLabel });
   await zip.fill(NEW_ZIP);
@@ -1237,6 +1416,9 @@ test('a lookup for the old ZIP still out when another tab saves a different one 
   await held.continue();
   await answered;
   await expect(here.locator('main')).not.toContainText(ZIP);
+  } finally {
+    await attachDiag(testInfo, diag); // TEMPORARY DIAGNOSIS
+  }
 });
 
 /* 2. The language switch on the error screen remembers the choice, both ways. */

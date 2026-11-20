@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { ensureEntryTag, entryTag, eraseAll, erasureCount, savedZip, setPrefs, snapshotCacheContents, subscribe } from '../lib/local';
+import { ensureEntryTag, entryTag, eraseAll, erasureCount, savedZip, setPrefs, snapshotCacheContents, storeLost, subscribe } from '../lib/local';
 import { shareRepLookup, sharedRepLookupNow } from '../lib/rep-lookup-share';
 
 /*
@@ -84,17 +84,24 @@ test('another tab erasing counts here once, however many readers listen', () => 
   }
 });
 
+/** Another tab's write, as this tab sees it: storage holds the value when the event comes. */
+const wrote = (key: string, newValue: string, oldValue: string | null = null) => {
+  data.set(key, newValue);
+  return { key, newValue, oldValue };
+};
+
 test('ordinary writes in another tab are not an erase', () => {
   const off = subscribe(() => {});
   try {
     const before = erasureCount();
-    fire('storage', { key: 'oravan.prefs', newValue: '{"zip":"20001"}', oldValue: null });
-    fire('storage', { key: 'oravan.calls', newValue: '[]', oldValue: '[]' });
+    fire('storage', wrote('oravan.prefs', '{"zip":"20001"}'));
+    fire('storage', wrote('oravan.calls', '[]', '[]'));
     fire('storage', { key: 'oravan.locale.chosen', newValue: null, oldValue: 'es' });
-    fire('storage', { key: 'oravan.entry', newValue: '0123456789abcdef0123456789abcdef', oldValue: null });
+    fire('storage', wrote('oravan.entry', '0123456789abcdef0123456789abcdef'));
     expect(erasureCount()).toBe(before);
   } finally {
     off();
+    data.clear();
   }
 });
 
@@ -396,14 +403,239 @@ test('nothing changed, or only the topics: not a change', () => {
 test('another tab turns the ZIP or the tag into another value: a change here; a first ZIP or tag is not', () => {
   const off = subscribe(() => {});
   try {
+    data.clear();
+    eraseAll();
     const before = erasureCount();
-    fire('storage', { key: 'oravan.prefs', oldValue: null, newValue: JSON.stringify({ zip: '10001' }) });
-    fire('storage', { key: 'oravan.entry', oldValue: null, newValue: '0123456789abcdef0123456789abcdef' });
+    fire('storage', wrote('oravan.prefs', JSON.stringify({ zip: '78501' })));
+    fire('storage', wrote('oravan.entry', '0123456789abcdef0123456789abcdef'));
     expect(erasureCount(), 'a first value').toBe(before);
-    fire('storage', { key: 'oravan.prefs', oldValue: JSON.stringify({ zip: '78501' }), newValue: JSON.stringify({ zip: '10001' }) });
+    // This tab reads them (a page shows the members for them).
+    expect(savedZip()).toBe('78501');
+    expect(entryTag()).toBe('0123456789abcdef0123456789abcdef');
+    fire('storage', wrote('oravan.prefs', JSON.stringify({ zip: '10001' }), JSON.stringify({ zip: '78501' })));
     expect(erasureCount(), 'another ZIP').toBe(before + 1);
-    fire('storage', { key: 'oravan.entry', oldValue: '0123456789abcdef0123456789abcdef', newValue: 'fedcba9876543210fedcba9876543210' });
+    expect(entryTag()).toBe('0123456789abcdef0123456789abcdef');
+    fire('storage', wrote('oravan.entry', 'fedcba9876543210fedcba9876543210', '0123456789abcdef0123456789abcdef'));
     expect(erasureCount(), 'another tag').toBe(before + 2);
+  } finally {
+    off();
+  }
+});
+
+/*
+ * WHAT STORAGE HOLDS NOW DECIDES, NOT THE EVENT (check 5, 2026-11-19). The
+ * other tab erases and then saves another ZIP; this tab hears the events in
+ * the order they happened or (simulated) the other way round. Either way it
+ * ends showing what storage holds: the new ZIP, never revoked.
+ */
+test('another tab erases, then saves another ZIP: the new ZIP is seen, whatever order the events come in', () => {
+  const OLD_TAG = '0123456789abcdef0123456789abcdef';
+  const NEW_TAG = 'fedcba9876543210fedcba9876543210';
+  const OLD = JSON.stringify({ zip: '78501' });
+  const NEW = JSON.stringify({ zip: '10001' });
+  const off = subscribe(() => {});
+  try {
+    for (const order of ['as they happened', 'reversed'] as const) {
+      data.clear();
+      eraseAll();
+      data.set('oravan.prefs', OLD);
+      data.set('oravan.entry', OLD_TAG);
+      data.set('oravan.calls', '[]');
+      data.set('oravan.reads', '[]');
+      expect(savedZip()).toBe('78501');
+      expect(entryTag()).toBe(OLD_TAG);
+      const events = [
+        { key: 'oravan.entry', oldValue: OLD_TAG, newValue: null, after: () => data.delete('oravan.entry') },
+        { key: 'oravan.prefs', oldValue: OLD, newValue: null, after: () => data.delete('oravan.prefs') },
+        { key: 'oravan.calls', oldValue: '[]', newValue: null, after: () => data.delete('oravan.calls') },
+        { key: 'oravan.reads', oldValue: '[]', newValue: null, after: () => data.delete('oravan.reads') },
+        { key: 'oravan.prefs', oldValue: null, newValue: NEW, after: () => data.set('oravan.prefs', NEW) },
+        { key: 'oravan.entry', oldValue: null, newValue: NEW_TAG, after: () => data.set('oravan.entry', NEW_TAG) },
+      ];
+      const before = erasureCount();
+      if (order === 'as they happened') {
+        // Storage changes one key at a time, each before its event.
+        for (const { after, ...e } of events) {
+          after();
+          fire('storage', e);
+          if (e.key === 'oravan.entry' && e.newValue === null) {
+            expect(data.get('oravan.prefs'), 'the old ZIP is still visible here').toBe(OLD);
+            expect(savedZip(), 'but it reads as erased').toBeNull();
+          }
+        }
+      } else {
+        // Every change is already in storage; the events come last first.
+        for (const { after } of events) after();
+        for (const { key, oldValue, newValue } of [...events].reverse()) {
+          const e = { key, oldValue, newValue };
+          fire('storage', e);
+          expect(savedZip(), `reversed, after ${e.key} ${e.newValue === null ? 'removed' : 'written'}`).toBe('10001');
+        }
+      }
+      expect(erasureCount(), `${order}: a change here`).toBeGreaterThan(before);
+      expect(savedZip(), `${order}: the new ZIP, really saved, is seen`).toBe('10001');
+      expect(entryTag(), `${order}: and the new tag`).toBe(NEW_TAG);
+    }
+  } finally {
+    off();
+  }
+});
+
+/* An erase on this page that leaves a key behind (check 5, 2026-11-19): what
+   is left is not used here until a new value is written. */
+test('an erase that leaves the ZIP behind: this tab does not read it, until a new one is saved', () => {
+  const store = (window as unknown as { localStorage: Record<string, (...a: string[]) => unknown> }).localStorage;
+  const { removeItem } = store;
+  data.clear();
+  setPrefs({ zip: '78501' });
+  ensureEntryTag();
+  store.removeItem = (k: string) => {
+    if (k === 'oravan.prefs') throw new Error('refused');
+    data.delete(k);
+  };
+  try {
+    expect(eraseAll()).toBe(false);
+    expect(data.get('oravan.prefs'), 'still stored').toBe(JSON.stringify({ zip: '78501' }));
+    expect(savedZip(), 'but not read here').toBeNull();
+    expect(data.has('oravan.entry'), 'the tag went').toBe(false);
+    setPrefs({ zip: '10001' });
+    expect(savedZip(), 'a new ZIP is read').toBe('10001');
+  } finally {
+    store.removeItem = removeItem;
+  }
+});
+
+/* Storage that stops answering mid-visit, after it held ours (check 5,
+   2026-11-19): the tab cannot confirm what is saved. It says so to its
+   readers (the erase control stays), counts it as a change (the members go),
+   and an erase there is not whole. */
+test('storage that stops answering after it held ours: lost, a change, and no whole erase', async () => {
+  const store = (window as unknown as { localStorage: Record<string, (...a: string[]) => unknown> }).localStorage;
+  const { getItem, removeItem } = store;
+  data.clear();
+  expect(eraseAll(), 'start clean').toBe(true);
+  expect(storeLost()).toBe(false);
+  setPrefs({ zip: '78501' });
+  expect(savedZip()).toBe('78501');
+  let redraws = 0;
+  const off = subscribe(() => redraws++);
+  store.getItem = () => {
+    throw new Error('blocked');
+  };
+  store.removeItem = () => {
+    throw new Error('blocked');
+  };
+  try {
+    const before = erasureCount();
+    expect(savedZip(), 'nothing can be read').toBeNull();
+    expect(storeLost(), 'and that is not "nothing saved"').toBe(true);
+    await Promise.resolve(); // the change is told after the read, never during it
+    expect(erasureCount(), 'what was shown goes').toBe(before + 1);
+    expect(redraws).toBeGreaterThan(0);
+    expect(eraseAll(), 'no whole erase').toBe(false);
+    expect(storeLost(), 'still unconfirmed').toBe(true);
+    store.getItem = getItem;
+    expect(savedZip(), 'readable again: still not used until written').toBeNull();
+  } finally {
+    off();
+    store.getItem = getItem;
+    store.removeItem = removeItem;
+  }
+  setPrefs({ zip: '10001' });
+  expect(storeLost(), 'a write that succeeds is a store that answers').toBe(false);
+  expect(savedZip()).toBe('10001');
+});
+
+/* The whole store cleared elsewhere, then a ZIP saved there, the clear's
+   event arriving last: the ZIP storage holds is read. */
+test('another tab clears the store and saves a ZIP; the clear is heard last: the ZIP is read', () => {
+  const off = subscribe(() => {});
+  try {
+    data.clear();
+    eraseAll();
+    data.set('oravan.prefs', JSON.stringify({ zip: '10001' }));
+    const before = erasureCount();
+    fire('storage', { key: null, oldValue: null, newValue: null });
+    expect(erasureCount()).toBe(before + 1);
+    expect(savedZip()).toBe('10001');
+  } finally {
+    off();
+  }
+});
+
+/* An erase that is the first to find the store unreadable says so too. */
+test('storage blocked after it held ours, found by the erase itself: lost, and a new tag is read', () => {
+  const store = (window as unknown as { localStorage: Record<string, (...a: string[]) => unknown> }).localStorage;
+  const { getItem, removeItem } = store;
+  data.clear();
+  expect(eraseAll(), 'start clean').toBe(true);
+  setPrefs({ zip: '78501' }); // written, never read back
+  store.getItem = () => {
+    throw new Error('blocked');
+  };
+  store.removeItem = () => {
+    throw new Error('blocked');
+  };
+  try {
+    expect(eraseAll()).toBe(false);
+    expect(storeLost()).toBe(true);
+    store.getItem = getItem;
+    // Dead in this tab until written: a new tag written here is read.
+    expect(entryTag()).toBeNull();
+    const tag = ensureEntryTag();
+    expect(entryTag()).toBe(tag);
+  } finally {
+    store.getItem = getItem;
+    store.removeItem = removeItem;
+  }
+  data.clear();
+  expect(eraseAll()).toBe(true);
+});
+
+/* A whole erase starts this tab afresh: what an earlier, unfinished one
+   left dead here is not dead after it. A ZIP saved later where no event
+   reached this page (it slept in the back/forward cache) is read. */
+test('a whole erase after an unfinished one: a ZIP saved later is read', () => {
+  const store = (window as unknown as { localStorage: Record<string, (...a: string[]) => unknown> }).localStorage;
+  const { getItem, removeItem } = store;
+  const off = subscribe(() => {});
+  try {
+    data.clear();
+    setPrefs({ zip: '78501' });
+    store.getItem = () => {
+      throw new Error('blocked');
+    };
+    store.removeItem = () => {
+      throw new Error('blocked');
+    };
+    expect(eraseAll(), 'blocked: unfinished').toBe(false);
+    store.getItem = getItem;
+    store.removeItem = removeItem;
+    expect(eraseAll(), 'unblocked: whole').toBe(true);
+    data.set('oravan.prefs', JSON.stringify({ zip: '10001' }));
+    fire('pageshow', { persisted: true });
+    expect(savedZip()).toBe('10001');
+  } finally {
+    store.getItem = getItem;
+    store.removeItem = removeItem;
+    off();
+  }
+});
+
+/* The tag a page makes is one it has read (check 5, 2026-11-19): erase and
+   another lookup elsewhere, with no event reaching this page, is a change on
+   its return, though the saved ZIP did not change. */
+test('a tag made here, then replaced elsewhere: a change when the page comes back', () => {
+  const off = subscribe(() => {});
+  try {
+    data.clear();
+    eraseAll();
+    const tag = ensureEntryTag(); // made here; this page read nothing else
+    data.set('oravan.entry', 'fedcba9876543210fedcba9876543210');
+    expect(tag).not.toBe('fedcba9876543210fedcba9876543210');
+    const before = erasureCount();
+    fire('focus', {});
+    expect(erasureCount()).toBe(before + 1);
   } finally {
     off();
   }

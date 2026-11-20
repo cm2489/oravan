@@ -23,10 +23,16 @@ import { ERASED_KEYS, eraseAll } from '../lib/local';
  *   - every name in lib/storage-keys.ts is either erased (ERASED_KEYS) or
  *     kept for a reason written below, and nothing else.
  *
- *   - nothing writes `window.name` or opens a `BroadcastChannel` (each would
- *     carry data across pages or tabs past the erase), and only three files
- *     write this tab's history state, each pinned below to what it may put
- *     there (since 2026-11-19).
+ *   - nothing writes `window.name` (or `globalThis.name`, `self.name`) or
+ *     opens a `BroadcastChannel` or a `SharedWorker` (each would carry data
+ *     across pages or tabs past the erase), nothing reaches
+ *     `navigator.storage`, only the three embed widgets call `postMessage`
+ *     (to the page that frames them), and only three files write this tab's
+ *     history state, each pinned below to what it may put there, by
+ *     `window.history` itself: not by a second name for it
+ *     (`const h = window.history`), and not through the Navigation API
+ *     (`navigation.navigate`, `updateCurrentEntry`, `reload`) (since
+ *     2026-11-19).
  *
  * WHAT IS READ: every top-level folder of the repository except the ones
  * EXCLUDED names (with why), and the top-level source files, so a new folder
@@ -135,13 +141,34 @@ test('the folders read: every top-level folder but the named exclusions', () => 
   }
 });
 
+/** The files that may call postMessage: the embed widgets, to the page that frames them. */
+const POST_MESSAGE_FILES = [
+  'components/embed/ActionPanelWidget.tsx',
+  'components/embed/BillCardWidget.tsx',
+  'components/embed/RepLookupWidget.tsx',
+];
+
 test('nothing writes window.name or opens a BroadcastChannel; history is written only where named', () => {
   for (const f of FILES) {
     const src = code(f);
-    expect(src, `${f}: window.name`).not.toMatch(/\bwindow\s*\.\s*name\b|\bself\s*\.\s*name\b|\[\s*['"`]name['"`]\s*\]/);
-    expect(src, `${f}: BroadcastChannel`).not.toMatch(/\bBroadcastChannel\b/);
+    expect(src, `${f}: window.name`).not.toMatch(
+      /\b(?:window|self|globalThis)\s*\.\s*name\b|\[\s*['"`]name['"`]\s*\]/
+    );
+    expect(src, `${f}: BroadcastChannel or SharedWorker`).not.toMatch(/\b(?:BroadcastChannel|SharedWorker)\b/);
+    expect(src, `${f}: navigator.storage`).not.toMatch(/\bnavigator\s*\.\s*storage\b/);
+    expect(/\bpostMessage\b/.test(src), `${f}: postMessage`).toBe(POST_MESSAGE_FILES.includes(f));
+    // The Navigation API carries state into history entries too.
+    expect(src, `${f}: a Navigation API write`).not.toMatch(/\bnavigation\s*\??\.\s*(?:navigate|updateCurrentEntry|reload|traverseTo|back|forward)\b/);
     const writes = [...src.matchAll(/(?:window\.)?history\.(?:pushState|replaceState)\([^;\n]*\)/g)].map((m) => m[0]);
     expect(writes, `${f}: a history write`).toEqual(HISTORY_WRITES[f] ?? []);
+    // Every pushState / replaceState is one of those: none through a second
+    // name for history (`const h = window.history; h.pushState(…)`), a
+    // destructured one, or one named in a string.
+    const named = [...src.matchAll(/\b(?:pushState|replaceState)\b/g)].length;
+    expect(named, `${f}: pushState or replaceState other than window.history's own`).toBe(writes.length);
+    expect(src, `${f}: a second name for history`).not.toMatch(
+      /[=(,:?]\s*(?:window|self|globalThis)\s*\.\s*history\s*(?:[;,)}\]]|$)|=\s*history\s*;/m
+    );
   }
   // members-entry.ts puts only its own tagged entry, or nothing, in the state.
   expect(code('lib/members-entry.ts')).toMatch(/const state = entry \? \{ \[ENTRY_KEY\]: \{ \.\.\.entry, tag: ensureEntryTag\(\) \} \} : \{\};/);
