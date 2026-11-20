@@ -1,5 +1,5 @@
 import { execSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
@@ -8,6 +8,7 @@ import en from '../messages/en.json';
 import es from '../messages/es.json';
 import { congressTerm } from '../lib/congress.mjs';
 import { withSitePolicyForTest } from '../lib/ended-state.mjs';
+import { fixtureRetries } from '../lib/names-fixture.mjs';
 import { getAllBills } from '../lib/core';
 import { statusKeyFor } from '../lib/journey';
 import { billStatusLine } from '../lib/moment-status.mjs';
@@ -436,3 +437,22 @@ test('the row’s label reads the pinned clock, never the real one: a calendar p
     expect(sharedNameStanding(s4870, null, { now: Date.parse('2026-11-13T15:00:00Z'), sessionOf: MEETING }).statusKey).toBe('floor_vote');
     expect(sharedNameStanding(s4870, null, { now: Date.parse('2027-01-20T15:00:00Z'), sessionOf: MEETING }).statusKey).toBe('floor_vote_stale');
   }));
+
+test('the list pages are worked out per root: a root with titles, then one without, never hands back the first root’s pages', () => {
+  const withTitles = mkdtempSync(join(tmpdir(), 'with-titles-'));
+  const without = mkdtempSync(join(tmpdir(), 'no-titles-'));
+  try {
+    const bills = getAllBills();
+    const fixture = JSON.parse(readFileSync(join(process.cwd(), 'tests/fixtures/names-e2e/short-titles.json'), 'utf8')) as ShortTitleFile;
+    mkdirSync(join(withTitles, 'data'));
+    writeFileSync(join(withTitles, 'data/short-titles.json'), JSON.stringify(fixture));
+    writeFileSync(join(withTitles, 'data/short-titles-retry.json'), JSON.stringify(fixtureRetries(bills, fixture)));
+    const pages = sharedNamePages(bills, withTitles);
+    test.skip(pages.length === 0, 'the names fixture no longer gives a page (tests/fixtures/names-e2e/README.md)');
+    expect(sharedNamePages(bills, withTitles)).toBe(pages); // the same root: the cached answer
+    expect(sharedNamePages(bills, without)).toEqual([]); // another root: worked out again
+  } finally {
+    rmSync(withTitles, { recursive: true, force: true });
+    rmSync(without, { recursive: true, force: true });
+  }
+});
