@@ -455,94 +455,6 @@ jobs:
           path: blob-report/
           retention-days: 1
 
-  erase-repeat:
-    # TEMPORARY (PR #521, check 5, 2026-11-19). REMOVE BEFORE MERGE, or keep
-    # it with a reason. The two-tab erase cases, and the ZIP typed before the
-    # page wakes, run many times over with no retries and more workers than
-    # the shards use, to load the machine the way a full local run did when
-    # tests/erase-reach.spec.ts failed about one run in four. The report and
-    # each case's diag.txt go up as an artifact and into this job's log.
-    name: erase-repeat
-    needs: build
-    runs-on: ubuntu-24.04
-    timeout-minutes: 40
-    env:
-      REPEAT: '40'
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: npm
-      - run: npm ci
-      - name: Resolve Playwright version (browser-cache key)
-        id: pw
-        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
-      - name: Cache Playwright WebKit browser
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
-      - name: Install Playwright WebKit
-        # The browser binary comes from the cache above. The system libraries
-        # come from the Ubuntu mirror, and that mirror sometimes crawls: from
-        # 2026-11-17 to 11-18 this step sat at 20 minutes on five of six shards
-        # (a few kB/s per package) while a sixth finished in 46 seconds, and
-        # every such run went red with no test run. So the libraries install
-        # in attempts of at most 4 minutes; packages an attempt finished stay
-        # in apt's cache, so a retry picks up where the last stopped, and
-        # from the second attempt on the runner's regional mirror is swapped
-        # for archive.ubuntu.com (a no-op if the runner names another).
-        run: |
-          npx playwright install webkit
-          for attempt in 1 2 3; do
-            if [ "$attempt" -gt 1 ]; then
-              sudo pkill -x apt-get || true
-              sleep 2
-              sudo dpkg --configure -a || true
-              for f in /etc/apt/sources.list /etc/apt/sources.list.d/* /etc/apt/apt-mirrors.txt; do
-                if [ -f "$f" ]; then
-                  sudo sed -i -E 's#https?://[a-z0-9.-]+\.ec2\.archive\.ubuntu\.com#http://archive.ubuntu.com#g' "$f"
-                fi
-              done
-            fi
-            if timeout 240 npx playwright install-deps webkit; then
-              exit 0
-            fi
-            echo "::warning::WebKit system libraries: attempt $attempt did not finish in 4 minutes or failed"
-          done
-          echo "::error::WebKit system libraries did not install in 3 attempts"
-          exit 1
-      - name: Download the build
-        uses: actions/download-artifact@v8
-        with:
-          name: next-build.tar.zst
-      - name: Unpack the build
-        run: |
-          tar --zstd -xf next-build.tar.zst
-          rm next-build.tar.zst
-      - name: The erase cases, repeated, no retries
-        env:
-          E2E_SERVER_MODE: start
-          PLAYWRIGHT_JSON_OUTPUT_FILE: erase-repeat.json
-        run: >-
-          npx playwright test tests/erase-reach.spec.ts tests/zip-typed-before-hydration.spec.ts
-          --project=webkit-desktop --project=webkit-mobile
-          --repeat-each=${REPEAT} --retries=0 --workers=4
-          --grep "two tabs: another tab saves a different ZIP|two tabs: erase, then another ZIP|a lookup for the old ZIP still out|before the page wakes"
-          --reporter=line,json
-      - name: What each run did
-        if: ${{ !cancelled() }}
-        run: node tests/erase-repeat-summary.mjs erase-repeat.json
-      - uses: actions/upload-artifact@v7
-        if: ${{ !cancelled() }}
-        with:
-          name: erase-repeat
-          path: |
-            erase-repeat.json
-            test-results/
-          retention-days: 7
-
   e2e-report:
     # Information only: one HTML report stitched from the six shards. `test`
     # does not wait for it.
@@ -575,7 +487,7 @@ jobs:
     # because a check that is skipped counts as passing: this job must run
     # and fail whenever anything it depends on failed, was cancelled, or was
     # skipped when it should have run.
-    needs: [changes, gates, unit, build, e2e, erase-repeat]
+    needs: [changes, gates, unit, build, e2e]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -602,11 +514,9 @@ jobs:
             expect unit skipped
             expect build skipped
             expect e2e skipped
-            expect erase-repeat skipped
           else
             expect unit success
             expect build success
             expect e2e success
-            expect erase-repeat success
           fi
           exit $FAIL
