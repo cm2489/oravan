@@ -41,7 +41,9 @@ import { sharedNamePages, sharedNamePath, sharedNameStanding, type SharedNamePag
  * The page prints the data's age (hard rule 6). The ORDER stays mechanical:
  * the line and the tag say which bill is moving, so the order never has to.
  * Under the line the card prints no status label (BillCard `showStatus`),
- * since the two could read as contradicting each other; while a chamber is
+ * since the two could read as contradicting each other, except for a bill
+ * whose Congress has ended: its line is the record's own dated words and its
+ * card prints "Ended" or the outcome, as the bill page does; while a chamber is
  * out, a line that would sound live is the record's own words instead
  * (lib/shared-names.ts). The outline is h1, an h2 for each chamber's group,
  * then the cards' h3s; two spellings of the title are heard with "or". The AI label sits
@@ -180,7 +182,19 @@ export default async function SharedNamePage({
                 {titles.length > 1 && (
                   <>
                     {' · '}
-                    {t('namesPage.ownTitle')} <q lang="en">{bill.titles.join(' / ')}</q>
+                    {t('namesPage.ownTitle')}{' '}
+                    {bill.titles.map((title, j) => (
+                      <span key={title}>
+                        {/* As in the heading: seen as a slash, heard as "or". */}
+                        {j > 0 && (
+                          <>
+                            <span aria-hidden> / </span>
+                            <span className="sr-only">{` ${t('namesPage.titleOr')} `}</span>
+                          </>
+                        )}
+                        <q lang="en">{title}</q>
+                      </span>
+                    ))}
                   </>
                 )}
               </div>
@@ -193,8 +207,11 @@ export default async function SharedNamePage({
               )}
               <MomentStatusLine line={standing.line} className="mb-3" />
               {/* The line above says where the bill stands, more precisely than the card's
-                  status label could, so the card prints none (the Big Question cards' rule). */}
-              <BillCard bill={teaser} showStatus={false} />
+                  status label could, so the card prints none (the Big Question cards' rule).
+                  EXCEPT once the bill's Congress has ended: then the line is the record's own
+                  words and the card prints its label, "Ended" or the outcome, exactly as the
+                  bill page and every other card do (lib/shared-names.ts sharedNameStanding). */}
+              <BillCard bill={teaser} showStatus={standing.ended !== null} />
             </li>
           );
         })}

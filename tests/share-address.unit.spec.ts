@@ -129,3 +129,22 @@ test('the address never carries a query, a stance or anything but the bill', () 
     expect(shareAddress(b, l, t)).toMatch(/^https:\/\/oravan\.org(?:\/es)?\/(?:[a-z0-9]+(?:-[a-z0-9]+)*|bills\/[a-z]+-\d+-\d+)$/);
   }
 });
+
+test('a name shared in ANOTHER Congress is never handed out: its page does not list this bill (the independent check of #510, Nov 19, 2026)', () => {
+  const switched: ShortAddressPolicy = { tracked: 120, ended: [{ number: 119, ended: congressTerm(119).end }] };
+  // "Twin Act": shared by two 120th bills (it opens /names/120/twin-act), and carried by one 119th bill alone.
+  const both: ShortAddressBill[] = [
+    ...corpus,
+    { bill_type: 'hr', bill_number: 1, congress_number: 120 },
+    { bill_type: 's', bill_number: 1, congress_number: 120 },
+    { bill_type: 'hr', bill_number: 30, congress_number: 119 },
+  ];
+  const t = tablesOf(both, { ...titles, 'hr-1-120': { titles: ['Twin Act'] }, 's-1-120': { titles: ['Twin Act'] }, 'hr-30-119': { titles: ['Twin Act'] } }, switched);
+  expect(nameAddressTarget('/twin-act', ['en', 'es'], 'en', t.names)).toBe('/names/120/twin-act');
+  // The 119th's H.R. 30 shares the address that carries its Congress, never the 120th's list.
+  expect(shortSharePath(both[7], t)).toBe('/hr30-119');
+  expect(shareAddress(both[7], 'es', t)).toBe('https://oravan.org/es/hr30-119');
+  // The 120th's two bills share the name, which lists them.
+  expect(shortSharePath(both[5], t)).toBe('/twin-act');
+  expect(shortSharePath(both[6], t)).toBe('/twin-act');
+});

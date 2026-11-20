@@ -23,6 +23,7 @@ import {
   type ShortTitleFile,
 } from './short-address';
 import { SHORT_TITLES_PATH, SHORT_TITLES_RETRY_PATH } from './short-titles.mjs';
+import { fixtureRetries, NAMES_FIXTURE_ON, NAMES_FIXTURE_TITLES_PATH } from './names-fixture.mjs';
 
 /** Every word a name may never take: the reserved list and every real route's first segment, read now. */
 export function reservedNames(root: string = process.cwd()): Set<string> {
@@ -30,8 +31,9 @@ export function reservedNames(root: string = process.cwd()): Set<string> {
 }
 
 /** data/short-titles.json, or {} before the nightly first writes it. */
-export function readShortTitles(root: string = process.cwd()): ShortTitleFile {
-  const file = join(root, SHORT_TITLES_PATH);
+export function readShortTitles(root: string = process.cwd(), fixture: boolean = NAMES_FIXTURE_ON): ShortTitleFile {
+  // The CI names fixture (lib/names-fixture.mjs, test data only) when its switch is on; data/ otherwise.
+  const file = join(root, fixture ? NAMES_FIXTURE_TITLES_PATH : SHORT_TITLES_PATH);
   return existsSync(file) ? (JSON.parse(readFileSync(file, 'utf8')) as ShortTitleFile) : {};
 }
 
@@ -85,6 +87,8 @@ const ordinal = (n: number) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['
  *     entry) blocks every name its stored title in data/bills.json makes
  *     (`title`, and `short_title` when present, through the same nameSlug): that
  *     name stays in the table opening nothing, so the search stops there too.
+ *     That includes a name two read bills share: it has no list page until the
+ *     unread bill is read, so a list never leaves out a bill that makes the name.
  * THE RESIDUAL: an unread bill whose record short title makes a name its stored
  * title does not can still share that name unseen until it is read.
  */
@@ -134,8 +138,9 @@ export function gateNameTables(
         const here = names.has(name);
         const later = searched.slice(at + 1).some((c) => built.get(c)?.has(name));
         if (!here && !later) continue;
-        // Already shared here: it keeps opening the page that lists the bills read, never one of them.
-        if (names.get(name) === null) continue;
+        // Shared here too: held back as well, so no list page is built that leaves this bill out (the
+        // independent check of #510, Nov 19, 2026: the page says it lists every tracked bill that makes the
+        // name, which is true only once every bill that could make it has been read).
         if (names.get(name) !== NAME_HELD_BACK) {
           blocked.push(`${name} (${slugOf(b)} not read yet)`);
           blockedHere++;
@@ -165,9 +170,12 @@ export function nameTablesForBuild(
   bills: readonly GateBill[],
   root: string = process.cwd(),
   onRefused?: (refusal: NameRefusal) => void,
+  fixture: boolean = NAMES_FIXTURE_ON,
 ): string {
-  const titlesFile = readNamesFile(root, SHORT_TITLES_PATH);
-  const retryFile = readNamesFile(root, SHORT_TITLES_RETRY_PATH);
+  // The CI names fixture (lib/names-fixture.mjs, test data only): its titles, and every other bill counted as
+  // tried. Off, which is every real build, exactly the data files as before.
+  const titlesFile = readNamesFile(root, fixture ? NAMES_FIXTURE_TITLES_PATH : SHORT_TITLES_PATH);
+  const retryFile = fixture ? { data: fixtureRetries(bills, titlesFile.data), problem: null } : readNamesFile(root, SHORT_TITLES_RETRY_PATH);
   const problems = [titlesFile.problem, retryFile.problem].filter((p): p is string => p !== null);
   if (problems.length > 0) {
     onRefused?.({

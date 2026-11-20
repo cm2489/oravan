@@ -7,11 +7,13 @@ import {
   encodeNameTables,
   nameAddressTarget,
   NAME_ADDRESS_RESERVED,
+  NAME_HELD_BACK,
   SHORT_ADDRESS_CONGRESS,
   shortAddressFallbackCongresses,
   type ShortTitleFile,
 } from '../lib/short-address';
 import { gateNameTables, nameTablesForBuild, refusalLine, type GateBill } from '../lib/short-address-build';
+import { sharedNamePagesFrom } from '../lib/shared-names';
 import { pageviewSurfaceForPath } from '../lib/usage';
 
 /*
@@ -91,19 +93,24 @@ test('fill complete, one bill tried and never read: the name its stored title ma
   expect(refresh.open('laken-riley-act')).toBe('/bills/hr-29-119');
 });
 
-test('fill complete, a name two READ bills share, and a third bill tried and never read whose stored title makes it: the name keeps opening the list page', () => {
-  // The merge of main's fill gate into #510 (Nov 19, 2026): a name already shared stays shared, never held back.
+test('fill complete, a name two READ bills share, and a third bill tried and never read whose stored title makes it: held back, no list page, until that bill is read', () => {
+  // The independent check of #510 (Nov 19, 2026): a list page says it lists every tracked bill that makes the
+  // name, so it is built only once every bill that could make the name has been read.
   const HR7 = bill('hr', 7, 'Laken Riley Act');
   const corpus = [S5, HR29, HR7, HR9770];
-  const g = table(
-    corpus,
-    { 's-5-119': entry('Laken Riley Act'), 'hr-29-119': entry('Laken Riley Act'), 'hr-9770-119': entry('Continuing Appropriations Act, 2027') },
-    { 'hr-7-119': failed },
-  );
-  expect(g.open('laken-riley-act')).toBe('/names/119/laken-riley-act');
-  expect(g.tables[0].names.get('laken-riley-act')).toBeNull();
-  expect(g.blocked).toEqual([]);
+  const read = { 's-5-119': entry('Laken Riley Act'), 'hr-29-119': entry('Laken Riley Act'), 'hr-9770-119': entry('Continuing Appropriations Act, 2027') };
+  const g = table(corpus, read, { 'hr-7-119': failed });
+  expect(g.open('laken-riley-act')).toBeNull();
+  expect(g.tables[0].names.get('laken-riley-act')).toBe(NAME_HELD_BACK);
+  expect(g.blocked).toEqual(['laken-riley-act (hr-7-119 not read yet)']);
+  expect(sharedNamePagesFrom(corpus, read, [C], new Set(NAME_ADDRESS_RESERVED), g.encoded)).toEqual([]);
   expect(g.open('continuing-appropriations-act-2027')).toBe('/bills/hr-9770-119');
+  // Once H.R. 7 is read, the page exists and lists all three.
+  const all = { ...read, 'hr-7-119': entry('Laken Riley Act') };
+  const after = table(corpus, all);
+  expect(after.open('laken-riley-act')).toBe('/names/119/laken-riley-act');
+  const pages = sharedNamePagesFrom(corpus, all, [C], new Set(NAME_ADDRESS_RESERVED), after.encoded);
+  expect(pages.map((p) => [p.name, p.bills.map((b) => b.slug)])).toEqual([['laken-riley-act', ['hr-7-119', 'hr-29-119', 's-5-119']]]);
 });
 
 test('the real partial fill of Nov 17, 2026 (300 of 3,335 read, as committed on main): zero names', () => {

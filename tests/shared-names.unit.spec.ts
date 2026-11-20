@@ -5,6 +5,7 @@ import { expect, test } from '@playwright/test';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
 import { congressTerm } from '../lib/congress.mjs';
+import { withSitePolicyForTest } from '../lib/ended-state.mjs';
 import { getAllBills } from '../lib/core';
 import { statusKeyFor } from '../lib/journey';
 import { billStatusLine } from '../lib/moment-status.mjs';
@@ -116,10 +117,13 @@ test('the January rule: the tracked Congress first; a name shared there lists TH
     'hr-32-119': { titles: ['Carry Act'] },
   };
   const { pages, target } = world(corpus, titles, SWITCHED);
-  expect(pages.map((p) => `${p.congress}/${p.name}`)).toEqual(['120/twin-act', '119/save-act']);
+  // The 119th's shared "carry-act" keeps its page (the independent check of #510, Nov 19, 2026): the bare name
+  // now reaches the 120th's bill, but /names/119/carry-act, which someone may have copied, still lists the same bills.
+  expect(pages.map((p) => `${p.congress}/${p.name}`)).toEqual(['120/twin-act', '119/carry-act', '119/save-act']);
   expect(target('/twin-act')).toBe('/names/120/twin-act');
   expect(target('/save-act')).toBe('/names/119/save-act');
-  expect(target('/carry-act')).toBe('/bills/hr-31-120'); // and no page for the 119th's shared "carry-act": unreachable
+  expect(target('/carry-act')).toBe('/bills/hr-31-120');
+  expect(pages.find((p) => p.name === 'carry-act')!.bills.map((x) => x.slug)).toEqual(['hr-32-119', 's-31-119']);
 });
 
 test('when names change: unique becomes shared lands on the page; shared becomes unique lands on the bill; gone is the not-found', () => {
@@ -164,12 +168,15 @@ test('Share: its own name; no short title, the address that carries its Congress
  * so nothing ages out.
  */
 const NOW = Date.parse('2026-11-17T15:00:00Z');
+// These records are read while their Congress sits: pinned, so a run with the review switch on (119 ended) reads them the same.
+const SITTING = { tracked: 119, ended: [] };
 const MEETING = () => 'in_session' as const;
 const OUT = () => 'out_of_session' as const;
 const rec = (bill_type: string, bill_number: number, status: string, last_action_text: string, last_action_date: string, extra: object = {}) =>
   ({ bill_type, bill_number, congress_number: 119, status, last_action_text, last_action_date, ...extra }) as Parameters<typeof sharedNameStanding>[0];
 
-test('standing, case 1 (today’s data): on this week’s House floor schedule; the tag carries the schedule’s own date', () => {
+test('standing, case 1 (today’s data): on this week’s House floor schedule; the tag carries the schedule’s own date', () =>
+  withSitePolicyForTest(SITTING, () => {
   const hr2400 = rec('hr', 2400, 'passed_chamber', 'Message on Senate action sent to the House.', '2026-11-16', {
     status_basis_text: 'Passed Senate with an amendment by Unanimous Consent. (consideration: CR S5297-5298)',
   });
@@ -180,18 +187,20 @@ test('standing, case 1 (today’s data): on this week’s House floor schedule; 
   const twin = sharedNameStanding(s2871, null, { now: NOW, sessionOf: MEETING });
   expect(twin.floor).toBeNull();
   expect(twin.line).toMatchObject({ key: 'inCommittee', date: '2026-06-03' });
-});
+  }));
 
-test('standing, the owner’s example (constructed): the Senate passed it and the House has it on its schedule', () => {
+test('standing, the owner’s example (constructed): the Senate passed it and the House has it on its schedule', () =>
+  withSitePolicyForTest(SITTING, () => {
   const s5 = rec('s', 5, 'passed_chamber', 'Received in the House.', '2026-11-14');
   const atHouse = sharedNameStanding(s5, { chamber: 'house', published: '2026-11-16' }, { now: NOW, sessionOf: MEETING });
   expect(atHouse.line).toMatchObject({ key: 'passedWaiting', chamber: 'house', passedBy: 'senate', date: '2026-11-14' });
   expect(atHouse.floor?.key).toBe('bill.floor.announcedHouse');
   // The same bill before the House names it: where it stands, and no tag.
   expect(sharedNameStanding(s5, null, { now: NOW, sessionOf: MEETING }).floor).toBeNull();
-});
+  }));
 
-test('standing, a fresh calendar placement (today’s data, S. 4870): tagged while the Senate meets, not while it is out', () => {
+test('standing, a fresh calendar placement (today’s data, S. 4870): tagged while the Senate meets, not while it is out', () =>
+  withSitePolicyForTest(SITTING, () => {
   const s4870 = rec('s', 4870, 'floor_vote', 'Placed on Senate Legislative Calendar under General Orders. Calendar No. 709.', '2026-11-12');
   expect(sharedNameStanding(s4870, null, { now: NOW, sessionOf: MEETING }).floor).toMatchObject({ kind: 'calendar', chamber: 'senate', date: '2026-11-12', key: 'bill.floor.calendarSenate' });
   expect(sharedNameStanding(s4870, null, { now: NOW, sessionOf: OUT }).floor).toBeNull();
@@ -199,9 +208,10 @@ test('standing, a fresh calendar placement (today’s data, S. 4870): tagged whi
   expect(sharedNameStanding(s4870, null, { now: NOW, sessionOf: OUT }).line).toMatchObject({ key: 'onCalendar', chamber: 'senate' });
   // Weeks later the placement is no longer a fresh floor fact: no tag (the line still says where it stands).
   expect(sharedNameStanding(s4870, null, { now: Date.parse('2027-01-20T15:00:00Z'), sessionOf: MEETING }).floor).toBeNull();
-});
+  }));
 
-test('standing, cases 2 to 4 (today’s data): passed one chamber; a law beside its twin on a calendar; twins in committee: no tag on any', () => {
+test('standing, cases 2 to 4 (today’s data): passed one chamber; a law beside its twin on a calendar; twins in committee: no tag on any', () =>
+  withSitePolicyForTest(SITTING, () => {
   const cases = [
     [rec('hr', 8800, 'passed_chamber', 'Received in the Senate.', '2026-09-14'), { key: 'passedWaiting', chamber: 'senate', passedBy: 'house' }],
     [rec('s', 5, 'signed', 'Became Public Law No: 119-1.', '2025-01-29'), { key: 'signed', law: '119-1', terminal: true }],
@@ -214,7 +224,7 @@ test('standing, cases 2 to 4 (today’s data): passed one chamber; a law beside 
     expect(s.floor, `${bill.bill_type} ${bill.last_action_text}`).toBeNull();
     expect(s.line).toMatchObject({ ...line, date: bill.last_action_date });
   }
-});
+  }));
 
 test('standing: the chip strings are the bill page’s and the crown’s own, in both languages; the page prints the data’s age', () => {
   const billPage = readFileSync(join(process.cwd(), 'app/[locale]/bills/[id]/page.tsx'), 'utf8');
@@ -268,7 +278,8 @@ test('check 1: under the record’s line the card prints no status label; nowher
   const page = readFileSync(join(process.cwd(), 'app/[locale]/names/[congress]/[name]/page.tsx'), 'utf8');
   // The line is printed for every card, and every card on this page goes without its label.
   expect(page).toContain('<MomentStatusLine line={standing.line} className="mb-3" />');
-  expect(page).toContain('<BillCard bill={teaser} showStatus={false} />');
+  // Except a bill whose Congress has ended: its card prints "Ended" or the outcome (tests/shared-names-agree.unit.spec.ts).
+  expect(page).toContain('<BillCard bill={teaser} showStatus={standing.ended !== null} />');
   expect(page.match(/<BillCard /g)).toHaveLength(1);
   const card = readFileSync(join(process.cwd(), 'components/BillCard.tsx'), 'utf8');
   // Absent, the prop keeps the label, and with it the identifier's separator: the card renders as before.
@@ -281,7 +292,8 @@ test('check 1: under the record’s line the card prints no status label; nowher
   expect(callers).toEqual(['app/[locale]/names/[congress]/[name]/page.tsx', 'components/BillCard.tsx']);
 });
 
-test('check 1, the reviewer’s H.R. 2400: the line says where it stands; the card’s label (true since #523) would only repeat it', () => {
+test('check 1, the reviewer’s H.R. 2400: the line says where it stands; the card’s label (true since #523) would only repeat it', () =>
+  withSitePolicyForTest(SITTING, () => {
   const hr2400 = rec('hr', 2400, 'passed_chamber', 'Message on Senate action sent to the House.', '2026-11-16', {
     status_basis_text: 'Passed Senate with an amendment by Unanimous Consent. (consideration: CR S5297-5298)',
   });
@@ -292,9 +304,10 @@ test('check 1, the reviewer’s H.R. 2400: the line says where it stands; the ca
   // it is now true, and on this page it would repeat the line just above it, so the page still drops it.
   expect(statusKeyFor(hr2400 as Parameters<typeof statusKeyFor>[0], NOW)).toBe('passed_back_house');
   expect(en.bills.status.passed_back_house).toBe('Back in the House to settle the changes');
-});
+  }));
 
-test('check 2: while the chamber is out, a live-sounding line becomes the record’s own words; in session it is unchanged; elsewhere unchanged', () => {
+test('check 2: while the chamber is out, a live-sounding line becomes the record’s own words; in session it is unchanged; elsewhere unchanged', () =>
+  withSitePolicyForTest(SITTING, () => {
   const onFloor = rec('s', 4784, 'floor_vote', 'Motion to proceed to consideration of measure made in Senate. (CR S4276)', '2026-11-13');
   const cloture = rec('s', 4870, 'floor_vote', 'Cloture motion on the motion to proceed to the measure presented in Senate. (CR S5310)', '2026-11-13');
   for (const [bill, key] of [[onFloor, 'onFloor'], [cloture, 'clotureFiled']] as const) {
@@ -312,7 +325,7 @@ test('check 2: while the chamber is out, a live-sounding line becomes the record
   // A line that claims nothing live is left alone while the chamber is out.
   const signed = rec('s', 5, 'signed', 'Became Public Law No: 119-1.', '2025-01-29');
   expect(sharedNameStanding(signed, null, { now: NOW, sessionOf: OUT }).line.key).toBe('signed');
-});
+  }));
 
 test('check 3: the tag sentence says exactly when a tag appears, in both languages, and only beside a tag', () => {
   expect(SIGNAL_WINDOW_DAYS).toBe(14);
@@ -340,4 +353,19 @@ test('check 4: an h2 for each chamber’s group and a spoken "or" between two sp
     { type: 'hjres', number: 3 },
   ] as Parameters<typeof inSharedNameOrder>[0]);
   expect(ordered.map((b) => b.type)).toEqual(['hr', 'hjres', 's', 'sres']);
+});
+
+test('the order sentence says what the order is (by type, then by number), in both languages; each card’s own titles are heard with "or" (the independent check of #510, Nov 19, 2026)', () => {
+  expect(en.namesPage.order).toBe('House bills are listed first, then Senate bills, each by type, then by number.');
+  expect(es.namesPage.order).toBe('Primero aparecen los proyectos de la Cámara de Representantes y luego los del Senado, cada uno por tipo y luego por número.');
+  // The order really is by type first: a House joint resolution numbered 2 comes after H.R. 30.
+  const ordered = inSharedNameOrder([
+    { type: 'hjres', number: 2 },
+    { type: 'hr', number: 30 },
+  ] as Parameters<typeof inSharedNameOrder>[0]);
+  expect(ordered.map((b) => `${b.type}${b.number}`)).toEqual(['hr30', 'hjres2']);
+  const page = readFileSync(join(process.cwd(), 'app/[locale]/names/[congress]/[name]/page.tsx'), 'utf8');
+  // The card's title line: no bare join; the heading's pattern (a hidden slash, a spoken "or").
+  expect(page).not.toContain("bill.titles.join(' / ')");
+  expect(page).toMatch(/bill\.titles\.map\(\(title, j\) =>[\s\S]{0,400}<span aria-hidden> \/ <\/span>\s*<span className="sr-only">\{` \$\{t\('namesPage\.titleOr'\)\} `\}<\/span>/);
 });

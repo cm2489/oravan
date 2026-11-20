@@ -3,6 +3,7 @@ import path from 'node:path';
 import { expect, test } from '@playwright/test';
 import { congressTerm } from '../lib/congress.mjs';
 import { shareAddress, shortSharePath, type ShareTables } from '../lib/share-address';
+import { sharedNamePagesFrom, sharedNamePath } from '../lib/shared-names';
 import {
   congressAddressPath,
   decodeNameTables,
@@ -215,4 +216,42 @@ test('Share over every bill, both languages: every address it hands out resolves
   expect(named).toBeGreaterThan(100);
   expect(named + carried).toBe(3335);
   test.info().annotations.push({ type: 'share once names are on (simulated)', description: `${named} by name, ${carried} by the Congress-carrying address` });
+});
+
+test('Share over every bill of TODAY’s committed corpus, both languages: names as the build has them, and simulated on (every unread bill tried); every address opens that bill or a list page that lists it', () => {
+  const corpus = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'data/bills.json'), 'utf8')) as Array<ShortAddressBill & { title?: string }>;
+  const titlesPath = path.join(process.cwd(), 'data/short-titles.json');
+  const titles = (fs.existsSync(titlesPath) ? JSON.parse(fs.readFileSync(titlesPath, 'utf8')) : {}) as ShortTitleFile;
+  const order = [TODAY.tracked];
+  const reserved = reservedNames(process.cwd());
+  const counts: Record<string, number> = {};
+  for (const [label, retry] of [
+    ['as built', {} as Record<string, unknown>],
+    ['simulated on', Object.fromEntries(corpus.filter((b) => !titles[slugOf(b)]).map((b) => [slugOf(b), { failures: 1 }]))],
+  ] as const) {
+    const gated = gateNameTables(encodeNameTables(corpus, titles, order, reserved), corpus, titles, retry, order, reserved);
+    const index = decodeShortAddressIndex(encodeShortAddressIndex(corpus, TODAY.tracked));
+    const fallback = decodeShortAddressFallback(encodeShortAddressFallback(corpus, TODAY));
+    const names = decodeNameTables(gated.encoded);
+    const share: ShareTables = { index, fallback, names, titles, congress: TODAY.tracked };
+    const pages = new Map(sharedNamePagesFrom(corpus, titles, order, reserved, gated.encoded).map((p) => [sharedNamePath(p.congress, p.name), p]));
+    for (const b of corpus) {
+      for (const locale of LOCALES) {
+        const prefix = locale === 'en' ? '' : `/${locale}`;
+        const p = new URL(shareAddress(b, locale, share)).pathname;
+        const to = shortAddressTarget(p, LOCALES, 'en', index, fallback, TODAY.tracked) ?? nameAddressTarget(p, LOCALES, 'en', names);
+        const key = `${label}: ${p.startsWith(`${prefix}/bills/`) ? 'full' : parseCongressAddress(p.replace(/^\/es/, '').slice(1)) ? 'congress' : to?.includes('/names/') ? 'shared name' : 'name'}`;
+        counts[key] = (counts[key] ?? 0) + 1;
+        if (p.startsWith(`${prefix}/bills/`)) continue; // only when no short address opens it
+        if (to?.startsWith(`${prefix}/names/`)) {
+          const page = pages.get(to.slice(prefix.length));
+          expect(page?.bills.some((x) => x.slug === slugOf(b)), `${slugOf(b)} ${p} -> ${to}`).toBe(true);
+        } else {
+          expect(to, `${slugOf(b)} ${p}`).toBe(`${prefix}/bills/${slugOf(b)}`);
+        }
+      }
+    }
+  }
+  expect(counts['as built: full'] ?? 0).toBe(0);
+  test.info().annotations.push({ type: 'today’s corpus', description: `${corpus.length} bills; ${JSON.stringify(counts)}` });
 });

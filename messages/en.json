@@ -1866,7 +1866,7 @@
     "eyebrow": "Bills with this short title",
     "recordWords": "{count, plural, one {The official short title, as the record writes it.} other {The official short titles, as the record writes them.}}",
     "intro": "{count} bills Oravan tracks in the {congress, selectordinal, one {#st} two {#nd} few {#rd} other {#th}} Congress have a short title that makes this name, so this address lists them all instead of picking one.",
-    "order": "House bills are listed first, then Senate bills, each by number.",
+    "order": "House bills are listed first, then Senate bills, each by type, then by number.",
     "ownTitle": "Its short title:",
     "standing": "Above each bill: where it stands now in the official record.",
     "standingFloor": "A dated tag means one of two things: a chamber has named the bill on the floor schedule it published for these days; or, while that chamber is meeting, the record shows the bill was placed on its calendar or has a floor vote pending, in the last 14 days. The date is that fact’s own date, never the date of a vote.",

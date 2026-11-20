@@ -10,13 +10,22 @@
  * with a 307 to /names/<congress>/<name>, a page prerendered here at BUILD
  * time that lists those bills and picks none of them.
  *
- * WHICH PAGES EXIST: exactly the shared names the proxy can reach. The proxy
- * searches the Congresses in the number addresses' order (the tracked one,
- * then each ended one, most recently ended first) and the first Congress that
- * holds a name answers. So a page exists for (congress, name) when the name is
- * shared in that Congress and no Congress searched before it holds the name at
- * all. The Congress is in the address, so the same shared name in two
- * Congresses has two stable, unambiguous pages.
+ * WHICH PAGES EXIST: one for every name shared in a Congress whose table the
+ * build holds (the tracked one, and each ended one). The proxy searches the
+ * Congresses in the number addresses' order (the tracked one, then each ended
+ * one, most recently ended first) and the first Congress that holds a name
+ * answers, so a bare name reaches the newest page. The page of an older
+ * Congress is still built when a newer Congress takes the name (the
+ * independent check of #510, Nov 19, 2026): its address carries its Congress,
+ * someone may have copied it from the address bar, and it must keep opening
+ * the same list. The Congress is in the address, so the same shared name in
+ * two Congresses has two stable, unambiguous pages.
+ *
+ * A NAME AN UNREAD BILL COULD ALSO CARRY HAS NO PAGE (same check): the page
+ * says the address lists every tracked bill that makes the name, which is
+ * true only once every bill that could make it has been read. The fill gate
+ * (lib/short-address-build.ts gateNameTables) holds such a name back until
+ * then, so it opens nothing and no page is built for it.
  *
  * THE ORDER OF THE BILLS, mechanical and stated on the page: House bills
  * first, then Senate bills; inside each chamber by type in the order Congress
@@ -40,7 +49,8 @@ import {
 } from './short-address';
 import { nameTablesForBuild, readShortTitles, reservedNames } from './short-address-build';
 import type { ChamberSession } from './docket';
-import { billFloorBand, type Chamber, type FloorBandKind } from './journey';
+import { billFloorBand, deriveJourney, endedDecision, statusKeyFor, type JourneyNowKey, type Chamber, type EndedDecision, type FloorBandKind } from './journey';
+import type { StatusLabelKey } from './types';
 import { floorSuspendedFrom, siteBillStatusLine } from './floor-session';
 import type { StatusLine } from './moment-status.mjs';
 
@@ -90,16 +100,14 @@ export function sharedNamePagesFrom(
   encodedTables: string,
 ): SharedNamePage[] {
   const tables = decodeNameTables(encodedTables);
-  const seen = new Set<string>();
   const out: SharedNamePage[] = [];
   for (const congress of order.filter((c, i, all) => all.indexOf(c) === i)) {
     const table = tables.find((t) => t.congress === congress);
     if (!table) continue;
     const holders = namesOfCongress(bills, titles, congress, reserved);
     for (const [name, address] of table.names) {
-      if (seen.has(name)) continue;
-      seen.add(name);
-      if (address !== null) continue; // a unique name opens its bill, not a page
+      // A unique name opens its bill, not a page; a held-back name (NAME_HELD_BACK) opens nothing.
+      if (address !== null) continue;
       const list = [...(holders.get(name) ?? [])].map((key) => {
         const a = parseShortAddress(key)!;
         const slug = `${a.type}-${a.number}-${congress}`;
@@ -189,20 +197,73 @@ export interface SharedNameStanding {
   line: StatusLine;
   /** The live floor tag, or null: no floor fact, or its chamber is not meeting. */
   floor: { kind: FloorBandKind; chamber: Chamber; date: string; key: string } | null;
+  /** The status label every card and the bill page read (lib/journey.ts statusKeyFor): "Ended", or the outcome, once its Congress has ended. */
+  statusKey: StatusLabelKey;
+  /** The bill page's own ended reading (lib/journey.ts endedDecision, which lib/bill-rail.ts reads), or null while its Congress sits. */
+  ended: EndedDecision | null;
 }
+
+/*
+ * A BILL OF AN ENDED CONGRESS (the independent check of #510, Nov 19, 2026;
+ * page 1, rule 6). The line's readings describe a stage a bill can still move
+ * from ("waiting on the Senate", "can be called up any day…"); once the
+ * bill's Congress has ended nothing can move it, and the bill page and every
+ * card say "Ended" or its outcome instead. So for such a bill the row prints
+ * exactly that: the card's own status label (statusKeyFor, shown on this page
+ * only for these bills) and, as the line, the record's own latest step in its
+ * own words with its date. Never a present-tense reading, never a tag.
+ */
+
+/*
+ * NEVER MORE, OR OTHER, THAN THE BILL'S OWN PAGE (the independent check of
+ * #510, Nov 19, 2026). The line is lib/moment-status.mjs's reading, which the
+ * Big Question cards print; the bill page's own "Right now:" sentence is
+ * lib/journey.ts deriveJourney's `nowKey`. They are two readers of one record,
+ * and on Nov 19, 2026 they agreed on every bill of the corpus but one: H.R.
+ * 8035, where the line read "A House floor vote on it failed." over "Rule H.
+ * Res. 1175 failed passage of House." (the RULE failed) while the bill page
+ * said a committee is reviewing it. So the row prints a reading only when the
+ * bill page's sentence is one this table lists for it; otherwise the record's
+ * own latest step, in its own words, with its date, which is always true.
+ */
+export const LINE_AGREES_WITH: Readonly<Record<string, readonly JourneyNowKey[]>> = Object.freeze({
+  signed: ['nowSigned'],
+  vetoed: ['nowVetoed'],
+  presented: ['nowPassedBoth'],
+  bothAgreed: ['nowPassedBoth', 'nowAdoptedBoth'],
+  passedBack: ['nowPassedBack', 'nowPassedBackStale'],
+  passedOnCalendar: ['nowPassed', 'nowPassedStale'],
+  heldAtDesk: ['nowPassed', 'nowPassedStale'],
+  passedWaiting: ['nowPassed', 'nowPassedStale'],
+  onCalendar: ['nowFloor', 'nowFloorStale'],
+  onFloor: ['nowFloorActivity', 'nowFloorClotureInvoked'],
+  clotureFiled: ['nowFloorActivity', 'nowFloorClotureInvoked'],
+  failed: ['nowFloorPassageRejected', 'nowFloorMotionFailed', 'nowFloorSuspensionFailed'],
+  failedReconsider: ['nowFloorMotionFailed'],
+  inCommittee: ['nowCommittee'],
+});
 
 /** One listed bill's standing. Pure: the record, the bill's live announcement (or null), the clock, the sessions. */
 export function sharedNameStanding(
-  bill: Parameters<typeof billFloorBand>[0] & { bill_type: string; last_action_text?: string | null },
+  bill: Parameters<typeof billFloorBand>[0] &
+    Parameters<typeof endedDecision>[0] &
+    Parameters<typeof deriveJourney>[0] &
+    Parameters<typeof statusKeyFor>[0] & { bill_type: string; last_action_text?: string | null },
   announcement: { chamber: Chamber; published: string } | null,
   { now = Date.now(), sessionOf }: { now?: number; sessionOf?: (chamber: Chamber) => ChamberSession } = {},
 ): SharedNameStanding {
   const band = billFloorBand(bill, announcement, now, sessionOf);
   // The record's own words and date, never a live-sounding line while that chamber is out. With no session
   // reader nothing is suspended, exactly as billFloorBand reads it, so the function stays pure.
-  const line: StatusLine = siteBillStatusLine(bill, now, sessionOf ? floorSuspendedFrom(sessionOf) : () => false);
+  const read: StatusLine = siteBillStatusLine(bill, now, sessionOf ? floorSuspendedFrom(sessionOf) : () => false);
+  const ended = endedDecision(bill);
+  // Ended, or a reading the bill page's own sentence does not bear out: the record's own words and date only.
+  const agrees = read.key === 'recordStep' || (LINE_AGREES_WITH[read.key] ?? []).includes(deriveJourney(bill, now).nowKey);
+  const line: StatusLine = ended || !agrees ? { ...read, key: 'recordStep', chamber: null, passedBy: null, law: null } : read;
   return {
     line,
-    floor: band && !band.suspended ? { ...band, key: SHARED_NAME_FLOOR_CHIP[band.kind][band.chamber] } : null,
+    floor: !ended && band && !band.suspended ? { ...band, key: SHARED_NAME_FLOOR_CHIP[band.kind][band.chamber] } : null,
+    statusKey: statusKeyFor(bill, now),
+    ended,
   };
 }

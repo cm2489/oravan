@@ -455,6 +455,89 @@ jobs:
           path: blob-report/
           retention-days: 1
 
+  names-fixture:
+    # THE LIST PAGE IN A BROWSER (the independent check of #510, Nov 19,
+    # 2026). While the nightly's first fill of data/short-titles.json is
+    # unfinished, names are off and no page under /names/ exists, so the
+    # build above has none and its shards skip every test of one. This job
+    # makes its OWN build with ORAVAN_E2E_NAMES_FIXTURE=1, which reads a
+    # small FIXTURE titles file (tests/fixtures/names-e2e/, test data only,
+    # never the live data; lib/names-fixture.mjs, refused on Vercel), and runs
+    # the list page's browser tests against it. The `build` job above never
+    # sets the switch, so the build the six shards test, and what a deploy
+    # serves, are unchanged (tests/names-fixture.unit.spec.ts pins both).
+    needs: changes
+    if: needs.changes.outputs.docs_only != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      ORAVAN_E2E_NAMES_FIXTURE: '1'
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Resolve Playwright version (browser-cache key)
+        id: pw
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - name: Cache Playwright WebKit browser
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
+      - name: Install Playwright WebKit
+        # The same bounded attempts as the e2e shards (see there for why).
+        run: |
+          npx playwright install webkit
+          for attempt in 1 2 3; do
+            if [ "$attempt" -gt 1 ]; then
+              sudo pkill -x apt-get || true
+              sleep 2
+              sudo dpkg --configure -a || true
+              for f in /etc/apt/sources.list /etc/apt/sources.list.d/* /etc/apt/apt-mirrors.txt; do
+                if [ -f "$f" ]; then
+                  sudo sed -i -E 's#https?://[a-z0-9.-]+\.ec2\.archive\.ubuntu\.com#http://archive.ubuntu.com#g' "$f"
+                fi
+              done
+            fi
+            if timeout 240 npx playwright install-deps webkit; then
+              exit 0
+            fi
+            echo "::warning::WebKit system libraries: attempt $attempt did not finish in 4 minutes or failed"
+          done
+          echo "::error::WebKit system libraries did not install in 3 attempts"
+          exit 1
+      - name: Build with the names fixture (this job's own build; never uploaded or deployed)
+        env:
+          E2E_SERVER_MODE: build
+        run: npx tsx tests/e2e-server.mjs
+      - name: The list page's browser tests
+        # names-fixture.spec (the pages, the shared-name 307s, the spoken "or",
+        # the rows at 360/390/430, every page at 320 @reflow, the pictures),
+        # names-a11y.spec (the accessibility floor, @reflow at 320) and
+        # short-address.spec (its name tests: a shared name's 307 to its page,
+        # in both languages).
+        env:
+          E2E_SERVER_MODE: start
+        run: npx playwright test tests/names-fixture.spec.ts tests/names-a11y.spec.ts tests/short-address.spec.ts --project=webkit-mobile --project=webkit-desktop --project=webkit-320 --reporter=github,html
+      - name: The pictures and the report, for a reviewer
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: names-fixture-report
+          path: |
+            playwright-report/
+            names-fixture-shots/
+          retention-days: 14
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: playwright-traces-names-fixture
+          path: test-results/
+          retention-days: 7
+
   e2e-report:
     # Information only: one HTML report stitched from the six shards. `test`
     # does not wait for it.
@@ -487,7 +570,7 @@ jobs:
     # because a check that is skipped counts as passing: this job must run
     # and fail whenever anything it depends on failed, was cancelled, or was
     # skipped when it should have run.
-    needs: [changes, gates, unit, build, e2e]
+    needs: [changes, gates, unit, build, e2e, names-fixture]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -514,9 +597,11 @@ jobs:
             expect unit skipped
             expect build skipped
             expect e2e skipped
+            expect names-fixture skipped
           else
             expect unit success
             expect build success
             expect e2e success
+            expect names-fixture success
           fi
           exit $FAIL
