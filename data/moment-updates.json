@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-11-19T22:43:08.203Z"
+    "generated_at": "2026-11-20T20:04:55.446Z"
   },
   "government-funding-deadline": {
     "updates": [],
@@ -346,6 +346,33 @@
           }
         },
         "ai": false
+      },
+      {
+        "id": "u_d8ec3f89",
+        "class": "floor_action",
+        "vehicle": "hconres-93-119",
+        "day": "2026-11-19",
+        "occurred_at": "2026-11-19",
+        "occurred_precision": "day",
+        "recorded_at": "2026-11-20T20:04:55.446Z",
+        "text": {
+          "en": "The Senate Committee on Foreign Relations was discharged from consideration of H. Con. Res. 93 on November 19, 2026, under the order of November 9, 2026.",
+          "es": "La Comisión de Relaciones Exteriores del Senado fue liberada de considerar H. Con. Res. 93 el 19 de noviembre de 2026, conforme a la orden del 9 de noviembre de 2026."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/93"
+          ]
+        },
+        "record": {
+          "action_text": "Senate Committee on Foreign Relations discharged, under the order of 11/9/26. (consideration: CR S5791)",
+          "action_code": null,
+          "action_type": "Discharge",
+          "source_system": "Senate",
+          "day_position": 1
+        },
+        "ai": true
       },
       {
         "id": "u_40aa8bf1",
