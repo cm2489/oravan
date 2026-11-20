@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-20T20:04:31.994Z",
+    "fetched_at": "2026-11-20T21:42:41.320Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-20T20:04:31.994Z"
+        "checked_at": "2026-11-20T21:42:41.320Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-15",
         "week_label": "Most-Viewed Bills - Week of November 15, 2026",
         "entries": 7,
-        "checked_at": "2026-11-20T20:04:31.994Z"
+        "checked_at": "2026-11-20T21:42:41.320Z"
       },
       "leans": {
         "center": {
@@ -203,6 +203,18 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "mlq.ai",
+          "firstSeen": "2026-11-20",
+          "lastSeen": "2026-11-20",
+          "url": "https://news.google.com/rss/articles/CBMipgFBVV95cUxQSFlrX0NJaDVEOUxuWDFQN0dxalRWY2NUeHFabXNqOTZTT3JCdG14SU5kUUktSVZyemNQR3hJX2plQ0w1LWJ2MUt6OFNDWFhKN1ZaTWZFZ2x5NkQ2M0VaeFBlUVlnWWxpWU9qMDNybWFBa1lkcThFNFEySkVCQm1LYTlmM24tWnNwNmJNZ1RkWkJ1dDVkcVdaMEpUNTJFeDNGSlNjQ253?oc=5"
+        },
+        {
+          "domain": "palestinechronicle.com",
+          "firstSeen": "2026-11-20",
+          "lastSeen": "2026-11-20",
+          "url": "https://news.google.com/rss/articles/CBMipAFBVV95cUxPai1tSkxUY3p1MFlfRXpQZjFJYU1hRWpRbGJGUGdzSWpJRTFKdElBbVRzNE5mdXBfN3FuaUJJSDJJYW85YWVQVXlORWpLSjdoUElmY2YzbzVnbHFWb3Jma18yOWhZM0R0QjFqN3Z5T08wVWFFRnF4ZXFzMUNxSk5pNlRuMUpYN1lZT1dMRjJGbXJNZ0xVenVYc2s2VmM3ZHRoOWloXw?oc=5"
+        },
         {
           "domain": "rollcall.com",
           "firstSeen": "2026-11-20",
@@ -524,6 +536,18 @@
           "firstSeen": "2026-11-18",
           "lastSeen": "2026-11-18",
           "url": "https://news.google.com/rss/articles/CBMifEFVX3lxTFB5RVV3aEk2Z21nX3E4M2pXNUVPZWVQelhSM2ZaRXpsOW5vUzVzNHBsOFBhNnM1ZkdkWVFGN0VaNldqQVFBNlVpTzJWdGNFVXVsbGpETk5BVk9fRzVpV2dvUWozTV9YcUZWVGlXdkpVcjhzZC12b1RTOHNhR0w?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-4624-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "espn.com",
+          "firstSeen": "2026-11-20",
+          "lastSeen": "2026-11-20",
+          "url": "https://news.google.com/rss/articles/CBMiigFBVV95cUxQb3c1TFA0VmlVaFZzcFhlOGNwTHlnWkpNU3dOc01Db29Xbk01alpKY1NfVUR4OWQ5aWN2MDBIT3AzNHVoZld4WlpYeWQ5emhhazhZR2ZKbnVOMGYzZmF6b0gxbW1iMXhncFBxSGhiYzFXc25KaTVWamZLdFJZUUpfMUYwdWFVck9LcWc?oc=5"
         }
       ],
       "mostViewed": null
@@ -1151,6 +1175,18 @@
       ],
       "mostViewed": null
     },
+    "hr-8665-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "stimson.org",
+          "firstSeen": "2026-11-20",
+          "lastSeen": "2026-11-20",
+          "url": "https://news.google.com/rss/articles/CBMi5gFBVV95cUxNOENwMTdhU0c1MHFGMkNHTXFpNkRZSG1aNkhnMTlxcUk3bzNHQkNONlBYQXdrSFdHeVpYXzYtRVJjQjEyM3lsaEdnVzFQdU9VeDk0aWNKbHVDSi01djhpcGVod1ZuYXk0bjJuSG84VlVKN0NNYUQ2QW1tX2JoSm1PckltSVVoNldkS0tWcXowNXQ4aFFXUmVMWl80MjBOak1TRjRtLUZhVkVxS0lQZEZKUng1X0dCRUM4TWNwNExBUFhEWlF2S2l1MG5GUXNvYTk1YU0wRDJZWFZaUy0zZXYzOEY4Zk1zQQ?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-8748-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1273,6 +1309,12 @@
           "firstSeen": "2026-11-20",
           "lastSeen": "2026-11-20",
           "url": "https://news.google.com/rss/articles/CBMigAFBVV95cUxQQzVZNDJIUHFEYkViay1qbnZLX2VZRUl5b3RUSDdwTkFpYlAwc3RsbS1kcEs5TjhOdnlWeWYzVTBEWHVkdW5Qdk1Md2NqdHlWNlJDMlFWcDR1QUtsY0NzZlp4eEowRnBMS1RiU3Myb2x0dzdsRUIyU0xESXFwT2FTSA?oc=5"
+        },
+        {
+          "domain": "northjersey.com",
+          "firstSeen": "2026-11-20",
+          "lastSeen": "2026-11-20",
+          "url": "https://news.google.com/rss/articles/CBMiugFBVV95cUxQRjNBNnVUMmN3RlhJa1RRRlQ3Qkw3U0ZRTHU3b0JLSTJtS2dadVRxR3JaOVh5c3lZM1lyVVV5Q29VaEVmNVZqcGhwdXkyempxeXA4R2ZVNjl1ZGp3b3NyRTlod0t5RENwYzJacHpyc0pEdlR3dzk4UG1oM09lTEhnTHN6cUdoX3FsSHo3eFcwV2RzXzkxX3FvQ0ZEcU9xM3BSZWFlMTVUaXI2U1R4RVpUSUp5dG1iV2JCb0E?oc=5"
         }
       ],
       "mostViewed": null
@@ -1532,6 +1574,18 @@
           "firstSeen": "2026-11-18",
           "lastSeen": "2026-11-18",
           "url": "https://rollcall.com/2026/11/17/capitol-lens-an-act-of-defiance"
+        }
+      ],
+      "mostViewed": null
+    },
+    "s-195-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "sourcessay.news",
+          "firstSeen": "2026-11-20",
+          "lastSeen": "2026-11-20",
+          "url": "https://news.google.com/rss/articles/CBMikwFBVV95cUxPWWQzN1RQdHpLLWk0THZiQmZudTdBYzZZaHF6QWhRLWR6dXREXzZTS2tMWDFPYUZFdmR3ZnNtUF9wZkl5MkpLNmxLdkIyVUpmLU5LV0VpOFprU25XNGYwdkpQWXhCaXljU1hoXzNYdkdzV29DOHV5MHI5Tk9PcHFkUEN2eTNWN215MUlXaWdtcmFzUTQ?oc=5"
         }
       ],
       "mostViewed": null
