@@ -255,3 +255,63 @@ test('Share over every bill of TODAY’s committed corpus, both languages: names
   expect(counts['as built: full'] ?? 0).toBe(0);
   test.info().annotations.push({ type: 'today’s corpus', description: `${corpus.length} bills; ${JSON.stringify(counts)}` });
 });
+
+test('after Jan 3, Share over every bill of today’s corpus plus made-up 120th bills, both languages: the 120th read in full, and one 120th bill unread; every address opens that bill or a list page that lists it', () => {
+  const today = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'data/bills.json'), 'utf8')) as Array<ShortAddressBill & { title?: string }>;
+  const titlesPath = path.join(process.cwd(), 'data/short-titles.json');
+  const stored = (fs.existsSync(titlesPath) ? JSON.parse(fs.readFileSync(titlesPath, 'utf8')) : {}) as ShortTitleFile;
+  // Made-up 120th bills: the first 40 119th bills with a read short title come back in the 120th under new numbers
+  // with the same titles (so their names are held by both Congresses), plus one 120th bill with a name of its own.
+  const reused = today.filter((b) => (stored[slugOf(b)]?.titles ?? []).length > 0).slice(0, 40);
+  const b120 = reused.map((b, i) => ({ bill_type: b.bill_type, bill_number: 9000 + i, congress_number: 120 }));
+  const own120 = { bill_type: 'hr', bill_number: 9999, congress_number: 120 };
+  const corpus = [...today, ...b120, own120];
+  const base: ShortTitleFile = {
+    ...stored,
+    [slugOf(own120)]: { titles: ['A Name Only The 120th Has Act'] },
+    ...Object.fromEntries(reused.map((b, i) => [slugOf(b120[i]), stored[slugOf(b)]])),
+  };
+  // The 119th is read in full by then: every bill not read is tried.
+  const retry119 = Object.fromEntries(today.filter((b) => !stored[slugOf(b)]).map((b) => [slugOf(b), { failures: 1 }]));
+  const order = [SWITCHED.tracked, 119];
+  const reserved = reservedNames(process.cwd());
+  const counts: Record<string, number> = {};
+  const unreadName = nameSlug(stored[slugOf(reused[0])].titles[0])!;
+  for (const [label, titles] of [
+    ['120th read in full', base],
+    ['one 120th bill unread', Object.fromEntries(Object.entries(base).filter(([slug]) => slug !== slugOf(b120[0])))],
+  ] as const) {
+    const gated = gateNameTables(encodeNameTables(corpus, titles, order, reserved), corpus as Array<ShortAddressBill & { title?: string }>, titles, retry119, order, reserved);
+    const index = decodeShortAddressIndex(encodeShortAddressIndex(corpus, SWITCHED.tracked));
+    const fallback = decodeShortAddressFallback(encodeShortAddressFallback(corpus, SWITCHED));
+    const names = decodeNameTables(gated.encoded);
+    const share: ShareTables = { index, fallback, names, titles, congress: SWITCHED.tracked };
+    const pages = new Map(sharedNamePagesFrom(corpus, titles, order, reserved, gated.encoded).map((p) => [sharedNamePath(p.congress, p.name), p]));
+    for (const b of corpus) {
+      for (const locale of LOCALES) {
+        const prefix = locale === 'en' ? '' : `/${locale}`;
+        const p = new URL(shareAddress(b, locale, share)).pathname;
+        const to = shortAddressTarget(p, LOCALES, 'en', index, fallback, SWITCHED.tracked) ?? nameAddressTarget(p, LOCALES, 'en', names);
+        const kind = p.startsWith(`${prefix}/bills/`) ? 'full' : parseCongressAddress(p.replace(/^\/es/, '').slice(1)) ? 'congress' : to?.includes('/names/') ? 'shared name' : 'name';
+        counts[`${label}: ${b.congress_number} ${kind}`] = (counts[`${label}: ${b.congress_number} ${kind}`] ?? 0) + 1;
+        if (kind === 'full') continue;
+        if (to?.startsWith(`${prefix}/names/`)) {
+          expect(pages.get(to.slice(prefix.length))?.bills.some((x) => x.slug === slugOf(b)), `${label}: ${slugOf(b)} ${p} -> ${to}`).toBe(true);
+        } else {
+          expect(to, `${label}: ${slugOf(b)} ${p}`).toBe(`${prefix}/bills/${slugOf(b)}`);
+        }
+      }
+    }
+    // The 120th unread: its names open nothing, and a name it is known to make never reaches the 119th's bill.
+    if (label === 'one 120th bill unread') {
+      expect(gated.off).toEqual([120]);
+      expect(nameAddressTarget(`/${unreadName}`, LOCALES, 'en', names)).toBeNull();
+      expect(nameAddressTarget('/a-name-only-the-120th-has-act', LOCALES, 'en', names)).toBeNull();
+      expect(pages.size).toBeGreaterThan(0); // the 119th's list pages stay
+    } else {
+      expect(nameAddressTarget('/a-name-only-the-120th-has-act', LOCALES, 'en', names)).toBe('/bills/hr-9999-120');
+    }
+  }
+  expect(counts['120th read in full: 119 full'] ?? 0).toBe(0);
+  test.info().annotations.push({ type: 'after Jan 3 (made-up 120th bills)', description: JSON.stringify(counts) });
+});

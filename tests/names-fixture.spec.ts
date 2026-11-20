@@ -4,8 +4,9 @@ import { expect, test, type Page } from '@playwright/test';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
 import { getAllBills } from '../lib/core';
-import { NAMES_FIXTURE_ENV, NAMES_FIXTURE_ON } from '../lib/names-fixture.mjs';
-import { sharedNamePages, sharedNamePath, type SharedNamePage } from '../lib/shared-names';
+import fixtureTitles from './fixtures/names-e2e/short-titles.json';
+import { missingFixtureBills, NAMES_FIXTURE_ENV, NAMES_FIXTURE_ON, namesFixtureWarning } from '../lib/names-fixture.mjs';
+import { distinctSpellings, sharedNamePages, sharedNamePath, type SharedNamePage } from '../lib/shared-names';
 import { decodeNameTables, nameAddressTarget } from '../lib/short-address';
 import { nameTablesForBuild } from '../lib/short-address-build';
 
@@ -28,8 +29,11 @@ import { nameTablesForBuild } from '../lib/short-address-build';
 const OFF = `runs only in the CI names-fixture job (${NAMES_FIXTURE_ENV}=1)`;
 const PAGES: SharedNamePage[] = NAMES_FIXTURE_ON ? sharedNamePages(getAllBills()) : [];
 const TABLES = NAMES_FIXTURE_ON ? decodeNameTables(nameTablesForBuild(getAllBills())) : [];
-/** The page the pictures show: two spellings of the title, if the fixture still gives one, else the first. */
-const SHOWN = PAGES.find((p) => new Set(p.bills.flatMap((b) => b.titles)).size > 1) ?? PAGES[0];
+/** A stale fixture (a bill left the corpus, or fewer than three pages): every test here skips with this named warning. */
+const STALE = NAMES_FIXTURE_ON ? namesFixtureWarning(missingFixtureBills(getAllBills(), fixtureTitles), PAGES.length) : null;
+/** The page the pictures show: H.R. 9237 and S. 4744, whose record writes the title with a straight and a curly
+ *  apostrophe (one title on the page since Nov 20, 2026), else the first. */
+const SHOWN = PAGES.find((p) => p.name === 'take-care-of-americas-veterans-act') ?? PAGES[0];
 const SHOTS = path.join(process.cwd(), 'names-fixture-shots');
 
 async function sideways(page: Page) {
@@ -48,6 +52,7 @@ async function sideways(page: Page) {
 test.describe('the list page, built from the CI names fixture', () => {
   test.beforeEach(() => {
     test.skip(!NAMES_FIXTURE_ON, OFF);
+    test.skip(!!STALE, STALE ?? '');
   });
 
   test('at least three list pages exist; each opens in both languages and lists exactly its bills', async ({ request }, testInfo) => {
@@ -89,8 +94,10 @@ test.describe('the list page, built from the CI names fixture', () => {
 
   test('two spellings of the title are heard with "or", on the heading and on each card’s own title line', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'webkit-mobile', 'run once, at 390px');
-    const two = PAGES.find((p) => new Set(p.bills.flatMap((b) => b.titles)).size > 1);
-    test.skip(!two, 'the fixture gives no name with two spellings');
+    const two = PAGES.find((p) => distinctSpellings(p.bills.flatMap((b) => b.titles)).length > 1);
+    // Since Nov 20, 2026 the fixture's only two-spelling name (straight vs curly apostrophe) is one title, and no shared
+    // name in the record has two real spellings; the markup is pinned in tests/shared-names.unit.spec.ts.
+    test.skip(!two, 'the fixture gives no name with two different spellings');
     for (const [prefix, or] of [
       ['', ` ${en.namesPage.titleOr} `],
       ['/es', ` ${es.namesPage.titleOr} `],
@@ -154,6 +161,9 @@ test.describe('the list page, built from the CI names fixture', () => {
 
   test('pictures for the reviewer: one list page, full height, English and Spanish, at 320 and 390px (taken by CI)', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'webkit-desktop', 'run once; sets its own widths');
+    // The heading shows one title, not the straight and curly spellings joined by a slash.
+    await page.goto(sharedNamePath(SHOWN.congress, SHOWN.name));
+    await expect(page.locator('main h1 .sr-only')).toHaveCount(distinctSpellings(SHOWN.bills.flatMap((b) => b.titles)).length - 1);
     fs.mkdirSync(SHOTS, { recursive: true });
     for (const width of [320, 390]) {
       await page.setViewportSize({ width, height: 844 });

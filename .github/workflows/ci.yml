@@ -470,6 +470,9 @@ jobs:
     if: needs.changes.outputs.docs_only != 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    # Least privilege: it reads the repository and uploads its own artifacts, nothing more.
+    permissions:
+      contents: read
     env:
       ORAVAN_E2E_NAMES_FIXTURE: '1'
     steps:
@@ -513,6 +516,18 @@ jobs:
         env:
           E2E_SERVER_MODE: build
         run: npx tsx tests/e2e-server.mjs
+      - name: Is the fixture still in the corpus? (a warning, never a failure)
+        # A fixture bill that has left data/bills.json would leave fewer pages;
+        # the tests then skip, and this says why, by name (NAMES FIXTURE STALE).
+        run: |
+          node -e '
+            const bills = require("./data/bills.json");
+            const fx = require("./tests/fixtures/names-e2e/short-titles.json");
+            const held = new Set(bills.map((b) => `${b.bill_type}-${b.bill_number}-${b.congress_number}`));
+            const gone = Object.keys(fx).filter((s) => !held.has(s));
+            if (gone.length) console.log(`::warning title=NAMES FIXTURE STALE::${gone.join(", ")} left data/bills.json; refresh tests/fixtures/names-e2e/short-titles.json`);
+            else console.log(`names fixture: all ${Object.keys(fx).length} bills are in the corpus`);
+          '
       - name: The list page's browser tests
         # names-fixture.spec (the pages, the shared-name 307s, the spoken "or",
         # the rows at 360/390/430, every page at 320 @reflow, the pictures),

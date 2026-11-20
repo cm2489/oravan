@@ -379,9 +379,11 @@ export function shortAddressTarget(
  * A name opens a bill only when every bill Oravan tracks in that Congress
  * has been read or tried, no other of those bills has a short title that
  * makes the same name and no unread one has a stored title that makes it,
- * and every Congress searched before that one (the tracked Congress first,
- * then each ended Congress, most recently ended first) has been read or
- * tried in full and does not hold the name. ("SAFE Act" and "Safe Act" make
+ * and no Congress searched before that one (the tracked Congress first,
+ * then each ended Congress, most recently ended first) holds the name or,
+ * while not read or tried in full, is known to make it. (Each Congress is
+ * judged on its own since the second independent check of #510, Nov 20,
+ * 2026: an unread 120th bill turns off the 120th's names only.) ("SAFE Act" and "Safe Act" make
  * one name, and so do "Twin Spelling Act" and "Twin-Spelling Act".) A twin Oravan does not track (most bills of a Congress are never in
  * the corpus) is not counted, so which bill a name opens depends on which
  * bills Oravan tracks, and a name can stop opening its bill the day a twin

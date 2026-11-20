@@ -1865,7 +1865,7 @@
   "namesPage": {
     "eyebrow": "Proyectos de ley con este título corto",
     "recordWords": "{count, plural, one {El título corto oficial, tal como lo escribe el registro, en inglés.} other {Los títulos cortos oficiales, tal como los escribe el registro, en inglés.}}",
-    "intro": "{count} proyectos de ley que Oravan sigue en el Congreso {congress} tienen un título corto que forma este nombre, así que esta dirección los muestra todos en lugar de elegir uno.",
+    "intro": "{count, plural, one {# proyecto de ley del Congreso {congress} que Oravan ya leyó tiene} other {# proyectos de ley del Congreso {congress} que Oravan ya leyó tienen}} un título corto que forma este nombre, así que esta dirección {count, plural, one {lo muestra} other {los muestra}} en lugar de elegir uno.",
     "order": "Primero aparecen los proyectos de la Cámara de Representantes y luego los del Senado, cada uno por tipo y luego por número.",
     "ownTitle": "Su título corto:",
     "standing": "Encima de cada proyecto: dónde está ahora según el registro oficial.",

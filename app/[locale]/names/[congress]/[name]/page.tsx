@@ -9,7 +9,7 @@ import { getAllBills, getBill, teaserFor } from '@/lib/core';
 import { chamberSession, rungFor } from '@/lib/docket';
 import { dataAsOfString } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
-import { sharedNamePages, sharedNamePath, sharedNameStanding, type SharedNamePage } from '@/lib/shared-names';
+import { distinctSpellings, sharedNamePages, sharedNamePath, sharedNameStanding, type SharedNamePage } from '@/lib/shared-names';
 
 /*
  * THE PAGE FOR A SHARED NAME (DRAFT, 2026-11-15; waits for the owner to see
@@ -84,9 +84,10 @@ export function generateStaticParams() {
   );
 }
 
-/** Every distinct spelling of the record's short title among the bills, in code-point order. */
+/** Every distinct spelling of the record's short title among the bills (one per title that differs only in
+ *  apostrophe, quote, dash or spacing: lib/shared-names.ts distinctSpellings), in code-point order. */
 function spellings(page: SharedNamePage): string[] {
-  return [...new Set(page.bills.flatMap((b) => b.titles))].sort();
+  return distinctSpellings(page.bills.flatMap((b) => b.titles));
 }
 
 export async function generateMetadata({

@@ -1,7 +1,9 @@
 import { execSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
+import { createTranslator } from 'next-intl';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
 import { congressTerm } from '../lib/congress.mjs';
@@ -12,6 +14,7 @@ import { billStatusLine } from '../lib/moment-status.mjs';
 import { SIGNAL_WINDOW_DAYS } from '../lib/urgency.mjs';
 import { shareAddress, type ShareTables } from '../lib/share-address';
 import {
+  distinctSpellings,
   inSharedNameOrder,
   SHARED_NAME_FLOOR_CHIP,
   SHARED_NAME_TYPE_ORDER,
@@ -248,18 +251,15 @@ test('standing: the chip strings are the bill page’s and the crown’s own, in
   expect(page).toContain("{anyFloor && <> {t('namesPage.standingFloor')}</>}");
 });
 
-test('the committed state: no titles file, so no page; the page reads its strings on the server only', () => {
-  const titlesFile = join(process.cwd(), 'data/short-titles.json');
-  const hasTitles = (() => {
-    try {
-      readFileSync(titlesFile);
-      return true;
-    } catch {
-      return false;
-    }
-  })();
-  test.skip(hasTitles, 'data/short-titles.json exists: the build test in tests/static-rendering.spec.ts counts the pages');
-  expect(sharedNamePages(getAllBills())).toEqual([]);
+test('no titles file, so no page (a root with none, since data/short-titles.json now exists); the page reads its strings on the server only', () => {
+  // Until Nov 20, 2026 this skipped whenever data/short-titles.json existed, which it now always does; it runs against
+  // an empty root instead (the second independent check of #510).
+  const empty = mkdtempSync(join(tmpdir(), 'no-titles-'));
+  try {
+    expect(sharedNamePages(getAllBills(), empty)).toEqual([]);
+  } finally {
+    rmSync(empty, { recursive: true, force: true });
+  }
   expect(Object.keys(en.namesPage).sort()).toEqual(Object.keys(es.namesPage).sort());
   const page = readFileSync(join(process.cwd(), 'app/[locale]/names/[congress]/[name]/page.tsx'), 'utf8');
   // The bills/[id] posture: unknown addresses are notFound() inside the locale boundary.
@@ -385,3 +385,54 @@ test('a name shared in BOTH Congresses: each Congress keeps its own page at its 
   ]);
   expect(target('/both-act')).toBe('/names/120/both-act');
 });
+
+test('the intro claims only what was checked: the bills Oravan has READ that make the name; both languages, one and many (the second independent check of #510, Nov 20, 2026)', () => {
+  const tr = { en: createTranslator({ locale: 'en', messages: en }), es: createTranslator({ locale: 'es', messages: es }) };
+  const intro = (l: 'en' | 'es', count: number) => tr[l]('namesPage.intro', { count, congress: 119 });
+  expect(intro('en', 2)).toBe('2 bills of the 119th Congress that Oravan has read have a short title that makes this name, so this address lists them instead of picking one.');
+  expect(intro('en', 1)).toBe('1 bill of the 119th Congress that Oravan has read has a short title that makes this name, so this address lists it instead of picking one.');
+  expect(intro('es', 2)).toBe('2 proyectos de ley del Congreso 119 que Oravan ya leyó tienen un título corto que forma este nombre, así que esta dirección los muestra en lugar de elegir uno.');
+  expect(intro('es', 1)).toBe('1 proyecto de ley del Congreso 119 que Oravan ya leyó tiene un título corto que forma este nombre, así que esta dirección lo muestra en lugar de elegir uno.');
+  // No sentence on the page claims completeness. "each"/"cada" below refer to the bills the page lists, which is true.
+  const allowed: Record<string, RegExp> = { standing: /^Above each bill|^Encima de cada proyecto/, order: /each by type|cada uno por tipo/ };
+  for (const [lang, m] of [['en', en.namesPage], ['es', es.namesPage]] as const) {
+    for (const [key, text] of Object.entries(m)) {
+      const words = String(text).match(/\b(all|every|todos|todas|todo|cada|each)\b/gi) ?? [];
+      if (words.length === 0) continue;
+      expect(allowed[key], `${lang} namesPage.${key}: "${text}"`).toBeDefined();
+      expect(String(text), `${lang} namesPage.${key}`).toMatch(allowed[key]);
+      expect(String(text), `${lang} namesPage.${key}`).not.toMatch(/\b(all|every|todos|todas)\b/i);
+    }
+  }
+});
+
+test('spellings that differ only in apostrophe, quote, dash or spacing are one title; the record’s own form is shown (the second independent check of #510)', () => {
+  // H.R. 9237's two record spellings, straight and curly apostrophe: one title.
+  expect(distinctSpellings(["Take Care of America's Veterans Act", 'Take Care of America’s Veterans Act'])).toEqual(["Take Care of America's Veterans Act"]);
+  // The same whatever order the record lists them in.
+  expect(distinctSpellings(['Take Care of America’s Veterans Act', "Take Care of America's Veterans Act"])).toEqual(["Take Care of America's Veterans Act"]);
+  expect(distinctSpellings(['The “GOOD” Act', 'The "GOOD" Act'])).toEqual(['The "GOOD" Act']);
+  expect(distinctSpellings(['Anti–CBDC Act', 'Anti-CBDC Act', 'Anti—CBDC Act'])).toEqual(['Anti-CBDC Act']);
+  expect(distinctSpellings(['Laken  Riley Act', 'Laken Riley Act', ' Laken Riley Act'])).toEqual([' Laken Riley Act']);
+  // Real differences stay two spellings, and every one shown is one the record wrote.
+  expect(distinctSpellings(["Alaska's Right To Ivory Sales and Tradition Act", "Alaska's Right to Ivory Sales and Tradition Act"])).toHaveLength(2);
+  // The list page's data: H.R. 9237 and S. 4744 (today's record) make one spelling, so the page shows one title, no slash.
+  const corpus = [b('hr', 9237), b('s', 4744)];
+  const titles: ShortTitleFile = {
+    'hr-9237-119': { titles: ["Take Care of America's Veterans Act", 'Take Care of America’s Veterans Act'] },
+    's-4744-119': { titles: ['Take Care of America’s Veterans Act'] },
+  };
+  const { pages } = world(corpus, titles);
+  expect(pages).toHaveLength(1);
+  expect(distinctSpellings(pages[0].bills.flatMap((x) => x.titles))).toEqual(["Take Care of America's Veterans Act"]);
+  expect(pages[0].bills.map((x) => x.titles)).toEqual([["Take Care of America's Veterans Act"], ['Take Care of America’s Veterans Act']]);
+  const page = readFileSync(join(process.cwd(), 'app/[locale]/names/[congress]/[name]/page.tsx'), 'utf8');
+  expect(page).toContain('return distinctSpellings(page.bills.flatMap((b) => b.titles));');
+});
+
+test('the row’s label reads the pinned clock, never the real one: a calendar placement is "On the floor calendar" the day after, "Placed on the calendar" weeks later', () =>
+  withSitePolicyForTest(SITTING, () => {
+    const s4870 = rec('s', 4870, 'floor_vote', 'Placed on Senate Legislative Calendar under General Orders. Calendar No. 709.', '2026-11-12');
+    expect(sharedNameStanding(s4870, null, { now: Date.parse('2026-11-13T15:00:00Z'), sessionOf: MEETING }).statusKey).toBe('floor_vote');
+    expect(sharedNameStanding(s4870, null, { now: Date.parse('2027-01-20T15:00:00Z'), sessionOf: MEETING }).statusKey).toBe('floor_vote_stale');
+  }));

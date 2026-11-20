@@ -81,6 +81,35 @@ export interface SharedNamePage {
   bills: SharedNameBill[];
 }
 
+/*
+ * ONE TITLE, NOT TWO (the second independent check of #510, Nov 20, 2026). The
+ * record sometimes writes the same short title twice, once with a straight
+ * apostrophe and once with a curly one (H.R. 9237: "Take Care of America's
+ * Veterans Act" and "Take Care of America’s Veterans Act"), and the page
+ * printed both, joined by a slash. Spellings that differ only in apostrophe or
+ * quote style, dash style or spacing are one title: the page shows one of the
+ * record's own forms (the first in code-point order, so the choice never
+ * changes with the order the record lists them in).
+ */
+export function titleSpellingKey(title: string): string {
+  return title
+    .replace(/[\u2018\u2019\u201A\u201B\u2032\u0060\u00B4]/g, "'")
+    .replace(/[\u201C\u201D\u201E\u201F\u2033]/g, '"')
+    .replace(/[\u2010-\u2015\u2212]/g, '-')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/** The distinct spellings of a set of record titles, each one of the record's own forms, in code-point order. Pure. */
+export function distinctSpellings(titles: readonly string[]): string[] {
+  const kept = new Map<string, string>();
+  for (const t of [...new Set(titles)].sort()) {
+    const key = titleSpellingKey(t);
+    if (!kept.has(key)) kept.set(key, t);
+  }
+  return [...kept.values()].sort();
+}
+
 /** Sort bills the stated way. Pure. */
 export function inSharedNameOrder<T extends { type: ShortAddressType; number: number }>(bills: readonly T[]): T[] {
   return [...bills].sort(
@@ -116,7 +145,7 @@ export function sharedNamePagesFrom(
           type: a.type,
           number: a.number,
           chamber: a.type.startsWith('h') ? ('house' as const) : ('senate' as const),
-          titles: [...new Set((titles[slug]?.titles ?? []).filter((t) => nameSlug(t) === name))].sort(),
+          titles: distinctSpellings((titles[slug]?.titles ?? []).filter((t) => nameSlug(t) === name)),
         };
       });
       if (list.length > 1) out.push({ congress, name, bills: inSharedNameOrder(list) });
@@ -125,11 +154,11 @@ export function sharedNamePagesFrom(
   return out.sort((a, b) => b.congress - a.congress || (a.name < b.name ? -1 : 1));
 }
 
-let memo: { key: unknown; pages: SharedNamePage[] } | null = null;
+let memo: { key: unknown; root: string; pages: SharedNamePage[] } | null = null;
 
 /** Every reachable shared-name page for this build's data. [] while data/short-titles.json does not exist. */
 export function sharedNamePages(bills: readonly ShortAddressBill[], root: string = process.cwd()): SharedNamePage[] {
-  if (memo && memo.key === bills) return memo.pages;
+  if (memo && memo.key === bills && memo.root === root) return memo.pages;
   const titles = readShortTitles(root);
   const pages =
     Object.keys(titles).length === 0
@@ -141,7 +170,7 @@ export function sharedNamePages(bills: readonly ShortAddressBill[], root: string
           reservedNames(root),
           nameTablesForBuild(bills, root),
         );
-  memo = { key: bills, pages };
+  memo = { key: bills, root, pages };
   return pages;
 }
 

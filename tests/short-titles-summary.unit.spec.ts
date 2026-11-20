@@ -541,7 +541,8 @@ test('round 6 (3): after a person’s one-run override the falling alarm says so
 
 test('round 6 (4): the name rule is the same exact sentence in the code, the runbook and the direction page', () => {
   const SENTENCE =
-    'A name opens a bill only when every bill Oravan tracks in that Congress has been read or tried, no other of those bills has a short title that makes the same name and no unread one has a stored title that makes it, and every Congress searched before that one (the tracked Congress first, then each ended Congress, most recently ended first) has been read or tried in full and does not hold the name.';
+    // Since the second independent check of #510 (Nov 20, 2026): each Congress judged on its own.
+    'A name opens a bill only when every bill Oravan tracks in that Congress has been read or tried, no other of those bills has a short title that makes the same name and no unread one has a stored title that makes it, and no Congress searched before that one (the tracked Congress first, then each ended Congress, most recently ended first) holds the name or, while not read or tried in full, is known to make it.';
   const flat = (p: string) => readFileSync(join(process.cwd(), p), 'utf8').replace(/\n\s*\*\s?/g, ' ').replace(/\s+/g, ' ');
   for (const p of ['lib/short-address.ts', 'docs/runbooks/new-congress-switch.md', 'docs/current-direction.md']) expect(flat(p), p).toContain(SENTENCE);
   expect(flat('lib/short-address.ts')).not.toContain('A name opens a bill when no other bill Oravan tracks has a short title');

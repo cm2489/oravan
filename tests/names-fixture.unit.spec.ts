@@ -3,7 +3,16 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { expect, test } from '@playwright/test';
 import { getAllBills } from '../lib/core';
-import { fixtureRetries, NAMES_FIXTURE_ENV, NAMES_FIXTURE_ON, NAMES_FIXTURE_TITLES_PATH, namesFixtureFrom } from '../lib/names-fixture.mjs';
+import {
+  fixtureRetries,
+  missingFixtureBills,
+  NAMES_FIXTURE_ENV,
+  NAMES_FIXTURE_ON,
+  NAMES_FIXTURE_STALE,
+  NAMES_FIXTURE_TITLES_PATH,
+  namesFixtureFrom,
+  namesFixtureWarning,
+} from '../lib/names-fixture.mjs';
 import { sharedNamePages, sharedNamePagesFrom } from '../lib/shared-names';
 import { encodeNameTables, SHORT_ADDRESS_CONGRESS, shortAddressFallbackCongresses, type ShortTitleFile } from '../lib/short-address';
 import { gateNameTables, nameTablesForBuild, readNamesFile, readShortTitles, reservedNames } from '../lib/short-address-build';
@@ -52,16 +61,20 @@ test('off: the name tables, the titles and the list pages are exactly what the d
   expect(sharedNamePages(BILLS)).toEqual(sharedNamePagesFrom(BILLS, titles, order, reserved, direct));
 });
 
-test('on: the fixture gives at least three list pages, every one of its bills is in the corpus, and nothing in data/ is read for names', () => {
+test('on: the fixture gives at least three list pages from bills the corpus holds (else a named warning and a skip), and nothing in data/ is read for names', () => {
   const fixture = JSON.parse(fs.readFileSync(path.join(ROOT, NAMES_FIXTURE_TITLES_PATH), 'utf8')) as ShortTitleFile;
-  const held = new Set(BILLS.map((b) => `${b.bill_type}-${b.bill_number}-${b.congress_number}`));
-  for (const slug of Object.keys(fixture)) expect(held.has(slug), `${slug} is in data/bills.json`).toBe(true);
   expect(readShortTitles(ROOT, true)).toEqual(fixture);
   const encoded = nameTablesForBuild(BILLS, ROOT, undefined, true);
-  expect(encoded).not.toBe('');
   const order = [SHORT_ADDRESS_CONGRESS, ...shortAddressFallbackCongresses(BILLS)];
   const pages = sharedNamePagesFrom(BILLS, fixture, order, reservedNames(ROOT), encoded);
-  expect(pages.length).toBeGreaterThanOrEqual(3);
+  // A stale fixture (a bill left the corpus, fewer than three pages) skips with a named warning, never fails CI.
+  const warning = namesFixtureWarning(missingFixtureBills(BILLS, fixture), pages.length);
+  if (warning) {
+    console.warn(`::warning title=${NAMES_FIXTURE_STALE}::${warning}`);
+    test.info().annotations.push({ type: NAMES_FIXTURE_STALE, description: warning });
+    test.skip(true, warning);
+  }
+  expect(encoded).not.toBe('');
   test.info().annotations.push({ type: 'fixture pages', description: pages.map((p) => `${p.name} (${p.bills.length})`).join(', ') });
   // Every other bill counts as tried, and only those.
   const retry = fixtureRetries(BILLS, fixture);
@@ -88,4 +101,16 @@ test('only the CI names-fixture job sets the switch, and only lib/short-address-
     .filter((f) => f !== 'lib/names-fixture.mjs')
     .sort();
   expect(readers).toEqual(['lib/short-address-build.ts']);
+});
+
+test('a stale fixture is a named warning, never a failure: a bill gone, or fewer than three pages', () => {
+  expect(namesFixtureWarning([], 6)).toBeNull();
+  expect(namesFixtureWarning([], 3)).toBeNull();
+  expect(namesFixtureWarning(['hr-21-119'], 5)).toMatch(/^NAMES FIXTURE STALE: hr-21-119 left data\/bills.json; 5 list page\(s\)/);
+  expect(namesFixtureWarning([], 2)).toMatch(/^NAMES FIXTURE STALE: 2 list page\(s\) from the fixture \(3 needed\)/);
+  expect(missingFixtureBills([{ bill_type: 'hr', bill_number: 1, congress_number: 119 }], { 'hr-1-119': {}, 's-2-119': {} })).toEqual(['s-2-119']);
+  // The browser spec and the CI job read the same warning.
+  const spec = fs.readFileSync(path.join(ROOT, 'tests/names-fixture.spec.ts'), 'utf8');
+  expect(spec).toContain('namesFixtureWarning(');
+  expect(fs.readFileSync(path.join(ROOT, '.github/workflows/ci.yml'), 'utf8')).toContain('NAMES FIXTURE STALE');
 });

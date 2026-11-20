@@ -78,11 +78,18 @@ const ordinal = (n: number) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['
  *   - A Congress is READ IN FULL when every bill of it in data/bills.json has
  *     an entry in data/short-titles.json (read) or one in
  *     data/short-titles-retry.json (tried, and its last read failed).
- *   - The Congresses are walked in the search order (the tracked one, then each
- *     ended one, most recently ended first). At the first Congress not read in
- *     full, the walk STOPS: that Congress and every one after it hold no table,
- *     so no name opens a bill there and the search never reaches past it to an
- *     older bill. Before the first fill completes, that is every name.
+ *   - EACH CONGRESS IS JUDGED ON ITS OWN (the second independent check of
+ *     #510, Nov 20, 2026; until then the walk stopped at the first Congress
+ *     not read in full and turned names off for every older Congress too, so
+ *     one unread 120th bill would have removed every 119th name and list page).
+ *     A Congress not read in full opens no name of its own: before the first
+ *     fill completes, that is every name of the tracked Congress (#517's
+ *     safety, unchanged). It holds back, opening nothing, every name it is
+ *     known to make (its read bills' record short titles, its unread bills'
+ *     stored titles) that an older Congress also holds, so the search never
+ *     reaches past it to an older bill for a name it may carry. Every other
+ *     name of an older Congress read in full stays on, and its list pages are
+ *     built.
  *   - In a Congress read in full, a bill never read successfully (tried, no
  *     entry) blocks every name its stored title in data/bills.json makes
  *     (`title`, and `short_title` when present, through the same nameSlug): that
@@ -118,11 +125,23 @@ export function gateNameTables(
     const read = tracked.filter(isRead);
     const neverTried = tracked.filter((b) => !isRead(b) && !Object.prototype.hasOwnProperty.call(retry, slugOf(b)));
     if (neverTried.length > 0) {
+      // This Congress opens no name until every bill is read or tried. A name it is known to make that an
+      // older Congress holds is held back here, so the search stops at it instead of reaching the older bill.
+      const known = new Set(built.get(congress)?.keys() ?? []);
+      for (const b of tracked) {
+        if (isRead(b)) continue;
+        for (const stored of [b.title, b.short_title]) {
+          const name = typeof stored === 'string' ? nameSlug(stored) : null;
+          if (name && nameAddressAllowed(name, reserved)) known.add(name);
+        }
+      }
+      const shadowed = [...known].filter((name) => searched.slice(at + 1).some((c) => built.get(c)?.has(name))).sort();
       said.push(
-        `OFF from the ${ordinal(congress)} Congress on: ${read.length} of its ${tracked.length} bills read, ${neverTried.length} never read or tried, so no name opens a bill there or in any Congress searched after it until every one has been read or tried`,
+        `OFF for the ${ordinal(congress)} Congress: ${read.length} of its ${tracked.length} bills read, ${neverTried.length} never read or tried, so no name opens a bill of it until every one has been read or tried; ${shadowed.length} name(s) an older Congress also holds held back`,
       );
-      off.push(...searched.slice(at));
-      break;
+      off.push(congress);
+      if (shadowed.length > 0) parts.push(`${congress}@${shadowed.map((name) => `${name}=-`).join(',')}`);
+      continue;
     }
     const names = new Map(built.get(congress) ?? []);
     let blockedHere = 0;

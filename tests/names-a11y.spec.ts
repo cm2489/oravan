@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { getAllBills } from '../lib/core';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
-import { sharedNamePages, sharedNamePath } from '../lib/shared-names';
+import { distinctSpellings, sharedNamePages, sharedNamePath } from '../lib/shared-names';
 
 /*
  * THE SHARED-NAME PAGE'S ACCESSIBILITY FLOOR (CLAUDE.md rule 7), in the style
@@ -94,7 +94,7 @@ test.describe('shared-name page accessibility floor', () => {
       for (const meta of await page.locator('main ul[aria-label] > li a[href] > div:first-child').allTextContents()) {
         for (const s of statuses) expect(meta.toUpperCase(), path).not.toContain(String(s).toUpperCase());
       }
-      if (first!.bills.some((b) => b.titles.join() !== first!.bills[0].titles.join())) {
+      if (distinctSpellings(first!.bills.flatMap((b) => b.titles)).length > 1) {
         await expect(page.locator('main h1 .sr-only').first()).toHaveText(or);
       }
     }
