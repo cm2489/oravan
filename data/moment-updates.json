@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-11-20T20:04:55.446Z"
+    "generated_at": "2026-11-20T22:26:38.881Z"
   },
   "government-funding-deadline": {
     "updates": [],
@@ -372,6 +372,40 @@
           "source_system": "Senate",
           "day_position": 1
         },
+        "ai": true
+      },
+      {
+        "id": "u_9b0d169e",
+        "class": "press_cluster",
+        "vehicle": "sjres-185-119",
+        "day": "2026-11-19",
+        "occurred_at": "2026-11-19",
+        "occurred_precision": "day",
+        "recorded_at": "2026-11-20T22:26:38.881Z",
+        "text": {
+          "en": "CBS News and ZeroHedge published coverage of S.J.Res. 185 on November 19, 2026.",
+          "es": "CBS News y ZeroHedge publicaron cobertura de S.J.Res. 185 el 19 de noviembre de 2026."
+        },
+        "source": {
+          "kind": "press",
+          "refs": [
+            "https://www.cbsnews.com/news/iran-war-powers-vote-senate-republicans/",
+            "https://www.zerohedge.com/political/senate-kills-house-passed-resolution-end-iran-war-tillis-flips"
+          ],
+          "outlets": [
+            "cbsnews.com",
+            "zerohedge.com"
+          ],
+          "outlet_names": [
+            "CBS News",
+            "ZeroHedge"
+          ],
+          "lean_set": [
+            "left",
+            "right"
+          ]
+        },
+        "record": null,
         "ai": true
       },
       {
@@ -1169,8 +1203,13 @@
       }
     ],
     "summary_attempts": {
-      "day": "2026-11-19",
-      "count": 2
+      "day": "2026-11-20",
+      "count": 1
+    },
+    "summary_refusals": {
+      "count": 1,
+      "day": "2026-11-20",
+      "reason": "es: the English and the Spanish state different numbers — only in the English: 1, 43; only in the Spanish: none"
     }
   },
   "syria-sanctions-repeal": {
@@ -3035,6 +3074,33 @@
   "penny-production-and-cash-rounding": {
     "updates": [
       {
+        "id": "u_efc6d2fc",
+        "class": "floor_action",
+        "vehicle": "hr-10167-119",
+        "day": "2026-11-20",
+        "occurred_at": "2026-11-20",
+        "occurred_precision": "day",
+        "recorded_at": "2026-11-20T22:26:38.881Z",
+        "text": {
+          "en": "The president signed H.R. 10167 on November 20, 2026.",
+          "es": "El presidente firmó H.R. 10167 el 20 de noviembre de 2026."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/10167"
+          ]
+        },
+        "record": {
+          "action_text": "Signed by President.",
+          "action_code": "E30000",
+          "action_type": "President",
+          "source_system": "Library of Congress",
+          "day_position": 1
+        },
+        "ai": true
+      },
+      {
         "id": "u_cbb3a86d",
         "class": "floor_action",
         "vehicle": "hr-10167-119",
@@ -3221,13 +3287,13 @@
       }
     ],
     "summary_attempts": {
-      "day": "2026-11-19",
+      "day": "2026-11-20",
       "count": 1
     },
     "summary_refusals": {
-      "count": 7,
-      "day": "2026-11-19",
-      "reason": "en: absence claim \"No roll-call tallies\" over a record that is not empty — the grounding holds a vote or action in this window, so \"nothing happened\" is false; en: absence claim \"the only action\" over a record that is not empty — the grounding holds a vote or action in this window, so \"nothing happ…"
+      "count": 8,
+      "day": "2026-11-20",
+      "reason": "en: absence claim \"No recorded votes\" over a record that is not empty — the grounding holds a vote or action in this window, so \"nothing happened\" is false; en: absence claim \"No recorded\" over a record that is not empty — the grounding holds a vote or action in this window, so \"nothing happened\" i…"
     }
   }
 }
