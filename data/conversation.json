@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-20T03:05:51.701Z",
+    "fetched_at": "2026-11-20T03:46:39.685Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-20T03:05:51.701Z"
+        "checked_at": "2026-11-20T03:46:39.685Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-15",
         "week_label": "Most-Viewed Bills - Week of November 15, 2026",
         "entries": 7,
-        "checked_at": "2026-11-20T03:05:51.701Z"
+        "checked_at": "2026-11-20T03:46:39.685Z"
       },
       "leans": {
         "center": {
@@ -560,6 +560,18 @@
       ],
       "mostViewed": null
     },
+    "hr-5490-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "legis1.com",
+          "firstSeen": "2026-11-20",
+          "lastSeen": "2026-11-20",
+          "url": "https://news.google.com/rss/articles/CBMie0FVX3lxTE1iUVg2YnVGc1lfZXk5eVRLX25jWWVTN2dvMXAzUmRnZE8ya0wtdUJEZmtFSHRQV2dHMWo5TFE5a1p1WTVBTVlNeExjWWlMRWJjcjZnbWpHbnFnQW1wRzlEWkRvcXBsWVFkcmYydEtmN2U4azQ2MUIyQUpONA?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-5525-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -585,7 +597,15 @@
       "mostViewed": null
     },
     "hr-5631-119": {
-      "outlets7d": [],
+      "outlets7d": [
+        {
+          "domain": "cbsnews.com",
+          "lean": "left",
+          "firstSeen": "2026-11-20",
+          "lastSeen": "2026-11-20",
+          "url": "https://www.cbsnews.com/news/senate-bipartisan-permitting-reform-bill-energy-baaja-trump/"
+        }
+      ],
       "unratedOutlets7d": [
         {
           "domain": "wmbdradio.com",
@@ -699,6 +719,26 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-6373-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-11-20",
+          "lastSeen": "2026-11-20",
+          "url": "https://thehill.com/homenews/senate/6229829-senate-passes-permitting-reform/"
+        }
+      ],
+      "unratedOutlets7d": [
+        {
+          "domain": "rollcall.com",
+          "firstSeen": "2026-11-20",
+          "lastSeen": "2026-11-20",
+          "url": "https://rollcall.com/2026/11/19/sweeping-permitting-overhaul-passes-senate-on-to-house"
+        }
+      ],
       "mostViewed": null
     },
     "hr-6500-119": {
@@ -1038,6 +1078,19 @@
           "firstSeen": "2026-11-15",
           "lastSeen": "2026-11-15",
           "url": "https://thehill.com/homenews/campaign/6221530-scott-colom-democrats-invest-mississippi/"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-8870-119": {
+      "outlets7d": [
+        {
+          "domain": "nbcnews.com",
+          "lean": "left",
+          "firstSeen": "2026-11-20",
+          "lastSeen": "2026-11-20",
+          "url": "https://news.google.com/rss/articles/CBMiwAFBVV95cUxQZUpXVzFubXdxckRNdFplUkJKaFpsdnQxZXJjcWtFYmJlWTZ1UTNMMGc5UmIzLXFkQWdfQjZoRmh4RTExZDNlRzhQR25XUzJzbk1oclUzbWZtMXdUbVZoX0xVRHBDckRudUxhM043eEtLekV0Z20tMk1FckJHRzVsM2dfeXBEOVZYVWdpeUFMd1QtV2FHUnVhSl9IOTFLcFBMSmRIbHJucWhLYzVvaEpUQmw3ZTVEc1VqV3JnYnlMaHc?oc=5"
         }
       ],
       "unratedOutlets7d": [],
