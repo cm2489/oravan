@@ -369,3 +369,19 @@ test('the order sentence says what the order is (by type, then by number), in bo
   expect(page).not.toContain("bill.titles.join(' / ')");
   expect(page).toMatch(/bill\.titles\.map\(\(title, j\) =>[\s\S]{0,400}<span aria-hidden> \/ <\/span>\s*<span className="sr-only">\{` \$\{t\('namesPage\.titleOr'\)\} `\}<\/span>/);
 });
+
+test('a name shared in BOTH Congresses: each Congress keeps its own page at its own address; the bare name reaches the newest (made-up 120th bills)', () => {
+  const corpus = [b('hr', 40, 120), b('s', 40, 120), b('hr', 41, 119), b('s', 41, 119)];
+  const titles: ShortTitleFile = {
+    'hr-40-120': { titles: ['Both Act'] },
+    's-40-120': { titles: ['Both Act'] },
+    'hr-41-119': { titles: ['Both Act'] },
+    's-41-119': { titles: ['Both Act'] },
+  };
+  const { pages, target } = world(corpus, titles, SWITCHED);
+  expect(pages.map((p) => [`${p.congress}/${p.name}`, p.bills.map((x) => x.slug)])).toEqual([
+    ['120/both-act', ['hr-40-120', 's-40-120']],
+    ['119/both-act', ['hr-41-119', 's-41-119']],
+  ]);
+  expect(target('/both-act')).toBe('/names/120/both-act');
+});
