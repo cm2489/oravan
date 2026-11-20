@@ -1,0 +1,63 @@
+name: Reviewer probes for 521 (temporary, never merged)
+
+# Throwaway: runs only on the reviewer's scratch branch, to gather browser
+# evidence for the review of pull request 521. No retries anywhere.
+on:
+  pull_request:
+
+jobs:
+  probes:
+    if: startsWith(github.head_ref, 'review/521-probes-')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Install Playwright WebKit
+        run: |
+          npx playwright install webkit
+          for attempt in 1 2 3; do
+            if timeout 240 npx playwright install-deps webkit; then exit 0; fi
+            echo "::warning::WebKit system libraries: attempt $attempt failed"
+            sudo pkill -x apt-get || true
+            sleep 2
+            sudo dpkg --configure -a || true
+          done
+          exit 1
+      - name: Build once
+        env:
+          E2E_SERVER_MODE: build
+        run: npx tsx tests/e2e-server.mjs
+      - name: Probes (i)-(iv), (4), (vi), once each, no retries
+        continue-on-error: true
+        env:
+          E2E_SERVER_MODE: start
+          REVIEW_PROBES: '1'
+          PLAYWRIGHT_JSON_OUTPUT_NAME: probes.json
+        run: npx playwright test tests/review-probes-521.spec.ts --project=webkit-desktop --project=webkit-mobile --retries=0 --reporter=line,json
+      - name: Probe (v), Back right after Reload, 30 repeats, no retries
+        continue-on-error: true
+        env:
+          E2E_SERVER_MODE: start
+          REVIEW_PROBES: '1'
+          PLAYWRIGHT_JSON_OUTPUT_NAME: back.json
+        run: npx playwright test tests/review-probes-521-back.spec.ts --project=webkit-desktop --project=webkit-mobile --retries=0 --repeat-each=30 --reporter=line,json
+      - name: The PR's own erase and typing tests, 3 repeats, no retries
+        continue-on-error: true
+        env:
+          E2E_SERVER_MODE: start
+          PLAYWRIGHT_JSON_OUTPUT_NAME: own.json
+        run: npx playwright test tests/erase-reach.spec.ts tests/zip-typed-before-hydration.spec.ts --project=webkit-desktop --project=webkit-mobile --retries=0 --repeat-each=3 --reporter=line,json
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: review-probes-521
+          path: |
+            probes.json
+            back.json
+            own.json
+          retention-days: 3
