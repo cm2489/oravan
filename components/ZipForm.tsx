@@ -5,7 +5,7 @@ import { ArrowRight } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useRouter, getPathname } from '@/i18n/navigation';
 import type { routing } from '@/i18n/routing';
-import { setPrefs, useErasures, usePrefs } from '@/lib/local';
+import { savedZip, setPrefs, useErasures, usePrefs } from '@/lib/local';
 import { lookupMembers } from '@/lib/members-action';
 
 /*
@@ -154,6 +154,43 @@ function ZipFormBody({
    * attribute; React's client render never does, so the attribute is what
    * tells the two apart.
    */
+  /*
+   * A ZIP TYPED BEFORE THE PAGE WOKE IS KEPT (2026-11-19, PR #521). The
+   * server renders this field empty: it cannot know the saved ZIP. A reader
+   * who types before the page's JavaScript has started (a slow phone, a busy
+   * machine) puts a value in the field that React leaves in place when it
+   * takes the page over, but nothing tells this component, and the first
+   * render that reads the saved ZIP (`prefs.zip` below, right after) wrote
+   * the saved ZIP over it. Enter then saved and looked up the OLD ZIP: on
+   * /reps?change=1 the reader typed 10001 and got 78501 back
+   * (tests/zip-typed-before-hydration.spec.ts).
+   *
+   * And the saved ZIP used to arrive one task AFTER the page woke (the
+   * store's first read in the browser waits for the page's effects), so for
+   * that moment the field stood empty and took keys, and then the saved ZIP
+   * landed on whatever was being typed. Measured on CI under load
+   * (2026-11-19): typing in that gap went into a field the saved ZIP had just
+   * filled, and Enter sent the saved ZIP.
+   *
+   * So, as the field is first mounted and before anything else can happen:
+   * a value in it that is not the one rendered (`defaultValue` holds the
+   * rendered one) is what the reader typed, and it is kept as typed; an
+   * empty field gets the saved ZIP now, in the same step, not one task later.
+   * A field mounted after the page woke already holds what it should, and
+   * nothing changes.
+   */
+  useLayoutEffect(() => {
+    const field = fieldRef.current;
+    if (!field) return;
+    if (field.value !== field.defaultValue) setTyped(field.value);
+    else if (field.value === '') {
+      const saved = savedZip();
+      if (saved) setTyped(saved);
+    }
+    // Once, when the field first mounts.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useLayoutEffect(() => {
     const field = fieldRef.current;
     if (!autoFocus || !field || document.activeElement !== field) return;

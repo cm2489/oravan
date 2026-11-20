@@ -467,7 +467,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 40
     env:
-      REPEAT: '20'
+      REPEAT: '40'
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v6
@@ -543,85 +543,6 @@ jobs:
             test-results/
           retention-days: 7
 
-  main-check:
-    # TEMPORARY (PR #521, check 5, 2026-11-19). REMOVE BEFORE MERGE. Builds
-    # main as it is, adds only this PR's tests/zip-typed-before-hydration.spec.ts,
-    # and runs it with no retries: does main lose a ZIP typed before the page
-    # wakes? The test step may fail without failing the job; its log is the
-    # answer.
-    name: main-check
-    needs: changes
-    if: needs.changes.outputs.docs_only != 'true'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 40
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: main
-      - name: Add this PR's new test, and nothing else
-        env:
-          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-        run: |
-          git fetch --no-tags --depth=1 origin "$HEAD_SHA"
-          git checkout FETCH_HEAD -- tests/zip-typed-before-hydration.spec.ts
-          git log -1 --format='main at %H' HEAD
-          git status --short
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: npm
-      - run: npm ci
-      - name: Resolve Playwright version (browser-cache key)
-        id: pw
-        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
-      - name: Cache Playwright WebKit browser
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
-      - name: Install Playwright WebKit
-        # The browser binary comes from the cache above. The system libraries
-        # come from the Ubuntu mirror, and that mirror sometimes crawls: from
-        # 2026-11-17 to 11-18 this step sat at 20 minutes on five of six shards
-        # (a few kB/s per package) while a sixth finished in 46 seconds, and
-        # every such run went red with no test run. So the libraries install
-        # in attempts of at most 4 minutes; packages an attempt finished stay
-        # in apt's cache, so a retry picks up where the last stopped, and
-        # from the second attempt on the runner's regional mirror is swapped
-        # for archive.ubuntu.com (a no-op if the runner names another).
-        run: |
-          npx playwright install webkit
-          for attempt in 1 2 3; do
-            if [ "$attempt" -gt 1 ]; then
-              sudo pkill -x apt-get || true
-              sleep 2
-              sudo dpkg --configure -a || true
-              for f in /etc/apt/sources.list /etc/apt/sources.list.d/* /etc/apt/apt-mirrors.txt; do
-                if [ -f "$f" ]; then
-                  sudo sed -i -E 's#https?://[a-z0-9.-]+\.ec2\.archive\.ubuntu\.com#http://archive.ubuntu.com#g' "$f"
-                fi
-              done
-            fi
-            if timeout 240 npx playwright install-deps webkit; then
-              exit 0
-            fi
-            echo "::warning::WebKit system libraries: attempt $attempt did not finish in 4 minutes or failed"
-          done
-          echo "::error::WebKit system libraries did not install in 3 attempts"
-          exit 1
-      - name: Build main
-        env:
-          E2E_SERVER_MODE: build
-        run: npx tsx tests/e2e-server.mjs
-      - name: The new test against main, no retries
-        continue-on-error: true
-        env:
-          E2E_SERVER_MODE: start
-        run: >-
-          npx playwright test tests/zip-typed-before-hydration.spec.ts
-          --project=webkit-desktop --project=webkit-mobile
-          --repeat-each=3 --retries=0 --reporter=line
-
   e2e-report:
     # Information only: one HTML report stitched from the six shards. `test`
     # does not wait for it.
@@ -654,7 +575,7 @@ jobs:
     # because a check that is skipped counts as passing: this job must run
     # and fail whenever anything it depends on failed, was cancelled, or was
     # skipped when it should have run.
-    needs: [changes, gates, unit, build, e2e, erase-repeat, main-check]
+    needs: [changes, gates, unit, build, e2e, erase-repeat]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -682,12 +603,10 @@ jobs:
             expect build skipped
             expect e2e skipped
             expect erase-repeat skipped
-            expect main-check skipped
           else
             expect unit success
             expect build success
             expect e2e success
             expect erase-repeat success
-            expect main-check success
           fi
           exit $FAIL
