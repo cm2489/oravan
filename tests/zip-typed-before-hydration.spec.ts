@@ -92,6 +92,31 @@ for (const [prefix, m] of [
   });
 }
 
+/* The field had focus while it stood empty, and the saved ZIP arrived as the
+   page woke: it arrives selected, so the next keys replace it. (A driver's
+   fill selects the empty field, then types: on CI the typing landed on the
+   five saved digits and went nowhere, 2026-11-19.) */
+test('/reps?change=1 with a ZIP saved: a field focused before the page wakes gets the saved ZIP selected, and typing replaces it', async ({ page }) => {
+  await save(page, SAVED);
+  const release = await holdScripts(page);
+  const sent = lookups(page);
+  await page.goto('/reps?change=1', { waitUntil: 'commit' });
+  const field = page.getByRole('textbox', { name: en.home.zipLabel });
+  await field.waitFor();
+  await field.evaluate((el: HTMLInputElement) => {
+    el.focus();
+    el.select();
+  });
+  release();
+  await awake(page);
+  await expect(field).toHaveValue(SAVED);
+  await page.keyboard.insertText(TYPED);
+  await expect(field).toHaveValue(TYPED);
+  await field.press('Enter');
+  await expect(page.locator('[data-zip-line]')).toContainText(TYPED);
+  expect(sent).not.toContain(SAVED);
+});
+
 test('/reps with no ZIP saved: a ZIP typed before the page wakes is kept and looked up', async ({ page }) => {
   const release = await holdScripts(page);
   const sent = lookups(page);

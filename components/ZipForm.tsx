@@ -175,7 +175,8 @@ function ZipFormBody({
    * So, as the field is first mounted and before anything else can happen:
    * a value in it that is not the one rendered (`defaultValue` holds the
    * rendered one) is what the reader typed, and it is kept as typed; an
-   * empty field gets the saved ZIP now, in the same step, not one task later.
+   * empty field gets the saved ZIP now, in the same step, not one task later,
+   * selected when the field already has focus (below).
    * A field mounted after the page woke already holds what it should, and
    * nothing changes.
    */
@@ -185,7 +186,17 @@ function ZipFormBody({
     if (field.value !== field.defaultValue) setTyped(field.value);
     else if (field.value === '') {
       const saved = savedZip();
-      if (saved) setTyped(saved);
+      if (!saved) return;
+      setTyped(saved);
+      // Already focused (its autofocus, or a tap) while it stood empty: the
+      // reader may be about to type, so the saved ZIP arrives selected, and
+      // what they type replaces it rather than landing after five digits
+      // (the field takes five). Measured on CI (2026-11-19): a field
+      // selected while empty, then filled, took no keys at all.
+      if (document.activeElement === field) {
+        field.value = saved;
+        field.select();
+      }
     }
     // Once, when the field first mounts.
     // eslint-disable-next-line react-hooks/exhaustive-deps
