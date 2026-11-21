@@ -18,8 +18,8 @@
  * tests/floor-session.unit.spec.ts fails if any other file in app/,
  * components/ or lib/ calls `billStatusLine` directly.
  */
-import { chamberSession } from './docket';
-import { billFloorBand, floorFactSuspended, type ChamberSession, type FloorBandKind } from './journey';
+import { chamberSession, rungFor } from './docket';
+import { billFloorBand, floorFactSuspended, type ChamberSession, type FloorBandKind, type JourneySession } from './journey';
 import { billStatusLine, type FloorSuspended, type StatusLine } from './moment-status.mjs';
 
 type Chamber = 'house' | 'senate';
@@ -67,4 +67,25 @@ export function calendarMarkSuspended(
   sessionOf: (chamber: Chamber) => ChamberSession = (chamber) => chamberSession(chamber, now)
 ): boolean {
   return billFloorBand(bill, null, now, sessionOf)?.suspended === true;
+}
+
+/**
+ * THE SESSION READING THE STEPPER'S "Right now:" SENTENCE IS ASKED UNDER
+ * (lib/journey.ts `JourneySession`, 2026-11-20): the same reader and the same
+ * announcement the bill page's floor band reads, so every surface that prints
+ * the sentence (the bill page, a member's votes, the shared-name list) holds
+ * it to the gate the band and the recess note hold. `readSession` is the test
+ * seam, as in `floorSuspendedAt`.
+ */
+export function journeySessionAt(
+  bill: Parameters<typeof rungFor>[0],
+  slug: string,
+  now: number = Date.now(),
+  readSession: (chamber: Chamber, now: number) => ChamberSession = chamberSession
+): JourneySession {
+  const rung = rungFor(bill, slug, now);
+  return {
+    sessionOf: (chamber) => readSession(chamber, now),
+    announced: rung.tier === 't0' ? (rung.announced?.chamber ?? null) : null,
+  };
 }

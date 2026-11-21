@@ -990,7 +990,13 @@ export default async function BillPage({
               className="mt-4 rounded-control border-2 border-ink px-4 pt-4 pb-12"
             >
               <BillJourney
-                journey={deriveJourney(bill)}
+                /* The same session reading and announcement the floor band
+                   reads: while the chamber the sentence names is not meeting,
+                   it takes its stale variant (lib/journey.ts JourneySession). */
+                journey={deriveJourney(bill, undefined, {
+                  sessionOf: (c) => chamberSession(c),
+                  announced: announcement?.chamber ?? null,
+                })}
                 /* An ended bill's "Right now:" says it ended (or, passed by
                    both chambers, that the record does not yet show what the
                    president did), never a stage it can no longer move from. */

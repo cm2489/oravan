@@ -287,7 +287,9 @@ export function sharedNameStanding(
   const read: StatusLine = siteBillStatusLine(bill, now, sessionOf ? floorSuspendedFrom(sessionOf) : () => false);
   const ended = endedDecision(bill);
   // Ended, or a reading the bill page's own sentence does not bear out: the record's own words and date only.
-  const agrees = read.key === 'recordStep' || (LINE_AGREES_WITH[read.key] ?? []).includes(deriveJourney(bill, now).nowKey);
+  const agrees = read.key === 'recordStep' || (LINE_AGREES_WITH[read.key] ?? []).includes(
+    deriveJourney(bill, now, sessionOf ? { sessionOf, announced: announcement?.chamber ?? null } : undefined).nowKey,
+  );
   const line: StatusLine = ended || !agrees ? { ...read, key: 'recordStep', chamber: null, passedBy: null, law: null } : read;
   return {
     line,
