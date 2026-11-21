@@ -387,6 +387,27 @@ test.describe('the absence lint · the twin table: every row caught in both lang
       expect(absenceClaims(es, 'es', { rollCallsOnRecord: 1 }), es).not.toEqual([]);
     }
   });
+
+  test('…also when it names the bill or "these measures" (penny question, refused 8 runs to 2026-11-20), and the narrowness holds', () => {
+    // The refusal reason stored in data/moment-updates.json on 2026-11-20:
+    // absence claim "No recorded votes" + "No recorded", with zero roll calls
+    // on H.R. 10167, S. 1525 or H.R. 3074 in data/votes.json.
+    const pairs: Pair[] = [
+      { en: 'No recorded votes were taken on H.R. 10167.', es: 'No se registró ninguna votación nominal sobre el H.R. 10167.' },
+      { en: 'No recorded votes have been taken on these measures.', es: 'No se registró ninguna votación nominal sobre estas medidas.' },
+      { en: 'No roll call was taken on H.R. 10167 or S. 1525.', es: 'Sin votación nominal sobre H.R. 10167 ni S. 1525.' },
+    ];
+    for (const { en, es } of pairs) {
+      expect(absenceClaims(en, 'en', { rollCallsOnRecord: 0 }), en).toEqual([]);
+      expect(absenceClaims(es, 'es', { rollCallsOnRecord: 0 }), es).toEqual([]);
+      expect(absenceClaims(en, 'en', { rollCallsOnRecord: 1 }), en).not.toEqual([]);
+      expect(absenceClaims(es, 'es', { rollCallsOnRecord: 1 }), es).not.toEqual([]);
+    }
+    // Still ends at punctuation: more claim after the label is still caught.
+    for (const en of ['No roll call or other action on H.R. 10167.', 'No recorded votes on H.R. 10167 this week.']) {
+      expect(absenceClaims(en, 'en', { rollCallsOnRecord: 0 }), en).not.toEqual([]);
+    }
+  });
 });
 
 /* ------------------------------------------------------------------ *
