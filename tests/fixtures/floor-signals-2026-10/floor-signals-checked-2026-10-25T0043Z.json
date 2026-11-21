@@ -1,0 +1,13 @@
+{
+  "schema": "floor-signals-checked/v1",
+  "checked_at": "2026-10-25T00:43:32.736Z",
+  "in_session": {
+    "senate": "unknown",
+    "house": "unknown",
+    "basis": "Daily Digest \"Program for\" blocks"
+  },
+  "next_meeting": {
+    "senate": null,
+    "house": null
+  }
+}
