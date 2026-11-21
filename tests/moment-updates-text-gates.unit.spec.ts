@@ -397,16 +397,53 @@ test.describe('the absence lint · the twin table: every row caught in both lang
       { en: 'No recorded votes have been taken on these measures.', es: 'No se registró ninguna votación nominal sobre estas medidas.' },
       { en: 'No roll call was taken on H.R. 10167 or S. 1525.', es: 'Sin votación nominal sobre H.R. 10167 ni S. 1525.' },
     ];
+    // The question's own measures, as slugs (grounded_in.vehicle_statuses' keys).
+    const vehicles = ['hr-10167-119', 's-1525-119', 'hr-3074-119'];
     for (const { en, es } of pairs) {
-      expect(absenceClaims(en, 'en', { rollCallsOnRecord: 0 }), en).toEqual([]);
-      expect(absenceClaims(es, 'es', { rollCallsOnRecord: 0 }), es).toEqual([]);
-      expect(absenceClaims(en, 'en', { rollCallsOnRecord: 1 }), en).not.toEqual([]);
-      expect(absenceClaims(es, 'es', { rollCallsOnRecord: 1 }), es).not.toEqual([]);
+      expect(absenceClaims(en, 'en', { rollCallsOnRecord: 0, vehicles }), en).toEqual([]);
+      expect(absenceClaims(es, 'es', { rollCallsOnRecord: 0, vehicles }), es).toEqual([]);
+      expect(absenceClaims(en, 'en', { rollCallsOnRecord: 1, vehicles }), en).not.toEqual([]);
+      expect(absenceClaims(es, 'es', { rollCallsOnRecord: 1, vehicles }), es).not.toEqual([]);
     }
     // Still ends at punctuation: more claim after the label is still caught.
     for (const en of ['No roll call or other action on H.R. 10167.', 'No recorded votes on H.R. 10167 this week.']) {
-      expect(absenceClaims(en, 'en', { rollCallsOnRecord: 0 }), en).not.toEqual([]);
+      expect(absenceClaims(en, 'en', { rollCallsOnRecord: 0, vehicles }), en).not.toEqual([]);
     }
+  });
+
+  test('…and a bill it names must be one of the question\'s own measures: the count vouches for no other bill', () => {
+    const vehicles = ['hr-10167-119', 's-1525-119', 'sjres-124-119'];
+    // Another bill, a bill of the same number in the other chamber, one own and
+    // one foreign, and the older trailer stopping a letter into a label.
+    const foreign: Pair[] = [
+      { en: 'No recorded votes were taken on H.R. 1.', es: 'No se registró ninguna votación nominal sobre el H.R. 1.' },
+      { en: 'No recorded votes were taken on S. 10167.', es: 'No se registró ninguna votación nominal sobre el S. 10167.' },
+      { en: 'No roll call was taken on H.R. 10167 or S. 9.', es: 'Sin votación nominal sobre H.R. 10167 ni S. 9.' },
+      { en: 'No recorded vote was taken on the H.R. 1.', es: 'No hubo votación nominal sobre la H.R. 1.' },
+      { en: 'No recorded votes were taken on H.R. 101670.', es: 'No se registró ninguna votación nominal sobre el H.R. 101670.' },
+    ];
+    for (const { en, es } of foreign) {
+      expect(absenceClaims(en, 'en', { rollCallsOnRecord: 0, vehicles }), en).not.toEqual([]);
+      expect(absenceClaims(es, 'es', { rollCallsOnRecord: 0, vehicles }), es).not.toEqual([]);
+    }
+    // No vehicles passed: a phrase that names a bill is never let through…
+    expect(absenceClaims('No recorded votes were taken on H.R. 10167.', 'en', { rollCallsOnRecord: 0 })).not.toEqual([]);
+    expect(absenceClaims('No se registró ninguna votación nominal sobre el H.R. 10167.', 'es', { rollCallsOnRecord: 0 })).not.toEqual([]);
+    // …and one that names none is read as it always was.
+    expect(absenceClaims('No recorded votes have been taken on these measures.', 'en', { rollCallsOnRecord: 0 })).toEqual([]);
+    expect(absenceClaims('No se registró ninguna votación nominal sobre estas medidas.', 'es', { rollCallsOnRecord: 0 })).toEqual([]);
+    // Every label shape reads to the slug's own key, and a sentence that ends
+    // "…measures. 5 …" is not mistaken for "S. 5".
+    expect(absenceClaims('No recorded vote was taken on S.J. Res. 124.', 'en', { rollCallsOnRecord: 0, vehicles })).toEqual([]);
+    expect(absenceClaims('No recorded vote was taken on S. J. Res. 124.', 'en', { rollCallsOnRecord: 0, vehicles })).toEqual([]);
+    expect(absenceClaims('No recorded vote was taken on H.J. Res. 124.', 'en', { rollCallsOnRecord: 0, vehicles })).not.toEqual([]);
+    expect(absenceClaims('No recorded votes have been taken on these measures. 5 senators spoke.', 'en', { rollCallsOnRecord: 0, vehicles })).toEqual([]);
+    // Through the whole lint, as the collector calls it.
+    const whole = (text: string, v?: string[]) =>
+      lintRevisionText(text, 'en', { groundedEvents: true, rollCallsOnRecord: 0, vehicles: v }).filter((f: string) => f.startsWith('absence claim'));
+    expect(whole('No recorded votes were taken on H.R. 10167.', vehicles)).toEqual([]);
+    expect(whole('No recorded votes were taken on H.R. 1.', vehicles)).not.toEqual([]);
+    expect(whole('No recorded votes were taken on H.R. 10167.')).not.toEqual([]);
   });
 });
 

@@ -1746,7 +1746,9 @@ Output STRICT JSON only — {"en":"…","es":"…"} — no prose, no markdown fe
     // grounded_in.roll_calls_on_record — the same number the gate re-lints it
     // with. Never the window's count (`votes`): see ROLL_CALL_ABSENCE.
     const rollCallsOnRecord = Array.isArray(onRecord) ? onRecord.length : undefined;
-    for (const f of lintRevisionText(value, lang, { groundedEvents, rollCallsOnRecord, numbers })) {
+    // `vehicles`: a roll-call absence phrase may name only this question's
+    // own measures (the gate re-lints with grounded_in.vehicle_statuses' keys).
+    for (const f of lintRevisionText(value, lang, { groundedEvents, rollCallsOnRecord, vehicles: Object.keys(statuses), numbers })) {
       failures.push(`${lang}: ${f}`);
     }
   }
