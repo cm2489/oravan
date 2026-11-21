@@ -9,9 +9,9 @@ import { expect, test } from '@playwright/test';
  * first, read on the committed S. 4668 fixture), the position the collector
  * stores at intake and when it stores none, the reader's order on a day that
  * has positions, on a day that mixes old and new rows, and on a day with two
- * bills, the render cap that still picks by class priority, the CI gate and
- * the pre-commit check that accept the field and refuse a malformed one, and
- * the committed file, on which no page changes. Pure: no network, no model.
+ * bills, the render cap that still picks by class priority, and the CI gate
+ * and the pre-commit check that accept the field and refuse a malformed one.
+ * Pure: no network, no model.
  */
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
@@ -241,14 +241,13 @@ test.describe('the CI gate and the pre-commit check', () => {
   });
 });
 
-test('the committed file: no row carries a position yet, so every day renders in the order it had before', () => {
-  const real = readJson(join(process.cwd(), 'data/moment-updates.json'));
-  for (const [id, entry] of Object.entries(real) as [string, Row][]) {
-    if (id === '_meta') continue;
-    const updates: Row[] = entry.updates ?? [];
-    expect(updates.filter((u) => u?.record && Object.hasOwn(u.record, 'day_position')), id).toEqual([]);
-    for (const day of groupByDay(updates, 90, Date.now())) {
-      expect(ids(day.rendered), `${id} ${day.day}`).toEqual(ids(selectDayUpdates(day.updates, RENDER_DAY_CAP)));
-    }
-  }
-});
+/*
+ * No test here reads data/moment-updates.json. One did until 2026-11-20: it
+ * asserted that no stored row carried a position "yet", which was true only
+ * until the collector stored its first one, and it turned main red on the hour
+ * that happened. The committed file is held by its gates instead:
+ * scripts/check-moment-updates.mjs in CI and verify-sync before the nightly
+ * commit both refuse a malformed position (dayPositionProblem, pinned above on
+ * fixtures), and the order on a day that mixes old and new rows is pinned above
+ * on fixtures too.
+ */
