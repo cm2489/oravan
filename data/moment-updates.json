@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-11-20T22:26:38.881Z"
+    "generated_at": "2026-11-21T21:02:50.115Z"
   },
   "government-funding-deadline": {
     "updates": [],
@@ -1200,16 +1200,86 @@
           "updates:+1"
         ],
         "model": "claude-sonnet-5-5"
+      },
+      {
+        "id": "s_e9a19764",
+        "generated_at": "2026-11-21T21:03:06.605Z",
+        "as_of_day": "2026-11-21",
+        "text": {
+          "en": "On November 19, 2026, the Senate voted on H. Con. Res. 93, a concurrent resolution. The Senate Committee on Foreign Relations was discharged from the measure that day, under the order of 11/9/26. The Senate then rejected the resolution by a recorded vote of 48 to 51 (Roll no. 269), with 1 senator not voting. By party, the record shows these counts: 3 Republicans and 43 Democrats voted yes. Republicans: 3 yea, 50 nay. The record also lists 2 independents voting yea. H. Con. Res. 93 now stands as \"Rejected.\" Separately, news coverage of S.J.Res. 185 was published on November 19, 2026, by CBS News and ZeroHedge.",
+          "es": "El 19 de noviembre de 2026, el Senado votó sobre la H. Con. Res. 93, una resolución concurrente. Ese día se relevó al Comité de Relaciones Exteriores del Senado del estudio de la medida, conforme a la orden del 11/9/26. Después, el Senado rechazó la resolución por votación nominal de 48 a 51 (votación núm. 269), con 1 senador sin votar. Por partido, el registro muestra estas cifras: 3 republicanos y 43 demócratas votaron a favor. Republicanos: 3 a favor, 50 en contra. El registro también indica que 2 independientes votaron a favor. La H. Con. Res. 93 queda como \"Rechazado\". Por otra parte, el 19 de noviembre de 2026, CBS News y ZeroHedge publicaron cobertura de noticias sobre la S.J.Res. 185."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "hconres-93-119": "floor_vote",
+            "hconres-89-119": "floor_vote",
+            "hconres-86-119": "passed_chamber",
+            "sjres-185-119": "floor_vote",
+            "sjres-200-119": "committee",
+            "sjres-211-119": "committee",
+            "sjres-180-119": "floor_vote",
+            "sjres-181-119": "floor_vote",
+            "sjres-172-119": "floor_vote",
+            "hconres-38-119": "floor_vote"
+          },
+          "vehicle_status_keys": {
+            "hconres-93-119": "rejected",
+            "hconres-89-119": "rejected",
+            "hconres-86-119": "adopted",
+            "sjres-185-119": "floor_activity",
+            "sjres-200-119": "committee",
+            "sjres-211-119": "committee",
+            "sjres-180-119": "floor_activity",
+            "sjres-181-119": "floor_activity",
+            "sjres-172-119": "floor_activity",
+            "hconres-38-119": "rejected"
+          },
+          "update_ids": [
+            "u_51f964da",
+            "u_d8ec3f89",
+            "u_9b0d169e"
+          ],
+          "roll_calls": [
+            "s-119-2-269"
+          ],
+          "roll_calls_on_record": [
+            "h-119-2-199",
+            "h-119-2-282",
+            "h-119-2-307",
+            "h-119-2-85",
+            "s-119-2-129",
+            "s-119-2-174",
+            "s-119-2-184",
+            "s-119-2-192",
+            "s-119-2-207",
+            "s-119-2-216",
+            "s-119-2-244",
+            "s-119-2-269"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/93",
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/89",
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/86",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/185",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/200",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/211",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/180",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/181",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/172",
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/38",
+            "https://www.congress.gov/crs-report/R42699"
+          ]
+        },
+        "changed_because": [
+          "status:hconres-93-119 passed_chamber→floor_vote",
+          "updates:+2"
+        ],
+        "model": "claude-sonnet-5-5"
       }
     ],
     "summary_attempts": {
-      "day": "2026-11-20",
+      "day": "2026-11-21",
       "count": 1
-    },
-    "summary_refusals": {
-      "count": 1,
-      "day": "2026-11-20",
-      "reason": "es: the English and the Spanish state different numbers — only in the English: 1, 43; only in the Spanish: none"
     }
   },
   "syria-sanctions-repeal": {
@@ -3101,6 +3171,108 @@
         "ai": true
       },
       {
+        "id": "u_186559b5",
+        "class": "press_cluster",
+        "vehicle": "s-1525-119",
+        "day": "2026-11-20",
+        "occurred_at": "2026-11-20",
+        "occurred_precision": "day",
+        "recorded_at": "2026-11-21T21:02:50.115Z",
+        "text": {
+          "en": "CBS News and The Washington Times published coverage of S. 1525.",
+          "es": "CBS News y The Washington Times publicaron cobertura de S. 1525."
+        },
+        "source": {
+          "kind": "press",
+          "refs": [
+            "https://www.cbsnews.com/news/trump-signs-common-cents-act-into-law/",
+            "https://www.washingtontimes.com/news/2026/nov/20/trump-officially-ends-penny-production/"
+          ],
+          "outlets": [
+            "cbsnews.com",
+            "washingtontimes.com"
+          ],
+          "outlet_names": [
+            "CBS News",
+            "The Washington Times"
+          ],
+          "lean_set": [
+            "left",
+            "right"
+          ]
+        },
+        "record": null,
+        "ai": true
+      },
+      {
+        "id": "u_1d27ef24",
+        "class": "press_cluster",
+        "vehicle": "hr-10167-119",
+        "day": "2026-11-20",
+        "occurred_at": "2026-11-20",
+        "occurred_precision": "day",
+        "recorded_at": "2026-11-21T21:02:50.115Z",
+        "text": {
+          "en": "CBS News and The Washington Times published coverage of H.R. 10167.",
+          "es": "CBS News y The Washington Times publicaron cobertura de H.R. 10167."
+        },
+        "source": {
+          "kind": "press",
+          "refs": [
+            "https://www.cbsnews.com/news/trump-signs-common-cents-act-into-law/",
+            "https://www.washingtontimes.com/news/2026/nov/20/trump-officially-ends-penny-production/"
+          ],
+          "outlets": [
+            "cbsnews.com",
+            "washingtontimes.com"
+          ],
+          "outlet_names": [
+            "CBS News",
+            "The Washington Times"
+          ],
+          "lean_set": [
+            "left",
+            "right"
+          ]
+        },
+        "record": null,
+        "ai": true
+      },
+      {
+        "id": "u_b8eadd8b",
+        "class": "press_cluster",
+        "vehicle": "hr-3074-119",
+        "day": "2026-11-20",
+        "occurred_at": "2026-11-20",
+        "occurred_precision": "day",
+        "recorded_at": "2026-11-21T21:02:50.115Z",
+        "text": {
+          "en": "CBS News and The Washington Times published coverage of H.R. 3074.",
+          "es": "CBS News y The Washington Times publicaron cobertura de H.R. 3074."
+        },
+        "source": {
+          "kind": "press",
+          "refs": [
+            "https://www.cbsnews.com/news/trump-signs-common-cents-act-into-law/",
+            "https://www.washingtontimes.com/news/2026/nov/20/trump-officially-ends-penny-production/"
+          ],
+          "outlets": [
+            "cbsnews.com",
+            "washingtontimes.com"
+          ],
+          "outlet_names": [
+            "CBS News",
+            "The Washington Times"
+          ],
+          "lean_set": [
+            "left",
+            "right"
+          ]
+        },
+        "record": null,
+        "ai": true
+      },
+      {
         "id": "u_cbb3a86d",
         "class": "floor_action",
         "vehicle": "hr-10167-119",
@@ -3284,16 +3456,51 @@
           "reanchor:8d"
         ],
         "model": "record-only"
+      },
+      {
+        "id": "s_7558ad6b",
+        "generated_at": "2026-11-21T21:03:10.418Z",
+        "as_of_day": "2026-11-21",
+        "text": {
+          "en": "The latest action in the official record on these measures is dated November 20, 2026.",
+          "es": "La última acción del registro oficial sobre estas medidas es del 20 de noviembre de 2026."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "hr-10167-119": "signed",
+            "s-1525-119": "passed_chamber",
+            "hr-3074-119": "passed_chamber"
+          },
+          "vehicle_status_keys": {
+            "hr-10167-119": "signed",
+            "s-1525-119": "passed_chamber",
+            "hr-3074-119": "passed_chamber"
+          },
+          "update_ids": [
+            "u_efc6d2fc",
+            "u_186559b5",
+            "u_1d27ef24",
+            "u_b8eadd8b",
+            "u_cbb3a86d"
+          ],
+          "roll_calls": [],
+          "roll_calls_on_record": [],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/10167",
+            "https://www.congress.gov/bill/119th-congress/senate-bill/1525",
+            "https://www.congress.gov/bill/119th-congress/house-bill/3074"
+          ]
+        },
+        "changed_because": [
+          "status:hr-10167-119 passed_chamber→signed",
+          "updates:+5"
+        ],
+        "model": "record-only"
       }
     ],
     "summary_attempts": {
-      "day": "2026-11-20",
+      "day": "2026-11-21",
       "count": 1
-    },
-    "summary_refusals": {
-      "count": 8,
-      "day": "2026-11-20",
-      "reason": "en: absence claim \"No recorded votes\" over a record that is not empty — the grounding holds a vote or action in this window, so \"nothing happened\" is false; en: absence claim \"No recorded\" over a record that is not empty — the grounding holds a vote or action in this window, so \"nothing happened\" i…"
     }
   }
 }
