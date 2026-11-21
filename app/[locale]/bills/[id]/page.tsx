@@ -50,6 +50,7 @@ import { buildBillJsonLd } from '@/lib/jsonld';
 import { billRail } from '@/lib/bill-rail';
 import { getMomentsForBill } from '@/lib/moments';
 import { chamberSession, floorSignalsCheckedAt, rungFor } from '@/lib/docket';
+import { journeySessionFrom } from '@/lib/floor-session';
 import { SITE_ORIGIN } from '@/lib/site';
 import { shareAddress, shareTablesFor } from '@/lib/share-address';
 import { settledDecisionDate, settledVoteGroups } from '@/lib/settled-votes';
@@ -993,10 +994,7 @@ export default async function BillPage({
                 /* The same session reading and announcement the floor band
                    reads: while the chamber the sentence names is not meeting,
                    it takes its stale variant (lib/journey.ts JourneySession). */
-                journey={deriveJourney(bill, undefined, {
-                  sessionOf: (c) => chamberSession(c),
-                  announced: announcement?.chamber ?? null,
-                })}
+                journey={deriveJourney(bill, undefined, journeySessionFrom(rung, (c) => chamberSession(c)))}
                 /* An ended bill's "Right now:" says it ended (or, passed by
                    both chambers, that the record does not yet show what the
                    president did), never a stage it can no longer move from. */

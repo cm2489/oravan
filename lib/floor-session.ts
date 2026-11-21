@@ -72,20 +72,30 @@ export function calendarMarkSuspended(
 /**
  * THE SESSION READING THE STEPPER'S "Right now:" SENTENCE IS ASKED UNDER
  * (lib/journey.ts `JourneySession`, 2026-11-20): the same reader and the same
- * announcement the bill page's floor band reads, so every surface that prints
- * the sentence (the bill page, a member's votes, the shared-name list) holds
- * it to the gate the band and the recess note hold. `readSession` is the test
- * seam, as in `floorSuspendedAt`.
+ * announcement the bill page's floor band reads, so the bill page and a
+ * member's votes list hold the sentence to the gate the band and the recess
+ * note hold. The announcement is the rung's own (`rungFor`: tier t0 only), so
+ * a bill on a chamber's own published schedule keeps its exemption.
+ *
+ * `journeySessionFrom` is the pure half, which the unit tests feed a rung made
+ * from a frozen schedule fixture; `journeySessionAt` reads the committed
+ * schedule. tests/right-now-session.unit.spec.ts pins both and the wiring.
  */
+export function journeySessionFrom(
+  rung: { tier: string; announced: { chamber: Chamber } | null },
+  sessionOf: (chamber: Chamber) => ChamberSession
+): JourneySession {
+  return {
+    sessionOf,
+    announced: rung.tier === 't0' ? (rung.announced?.chamber ?? null) : null,
+  };
+}
+
 export function journeySessionAt(
   bill: Parameters<typeof rungFor>[0],
   slug: string,
   now: number = Date.now(),
   readSession: (chamber: Chamber, now: number) => ChamberSession = chamberSession
 ): JourneySession {
-  const rung = rungFor(bill, slug, now);
-  return {
-    sessionOf: (chamber) => readSession(chamber, now),
-    announced: rung.tier === 't0' ? (rung.announced?.chamber ?? null) : null,
-  };
+  return journeySessionFrom(rungFor(bill, slug, now), (chamber) => readSession(chamber, now));
 }
