@@ -180,7 +180,9 @@ export function MomentVehicleCard({
       )}
       <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs leading-tight font-bold tracking-[0.06em] text-ink-2 uppercase">
         {meta.map((part, i) => (
-          <span key={part.key} className="whitespace-nowrap">
+          // The status part may wrap inside itself (re-check of #523, round 5):
+          // a long status word must never push the card past the screen.
+          <span key={part.key} className={part.key === 'status' ? 'whitespace-normal' : 'whitespace-nowrap'}>
             {part.node}
             {i < meta.length - 1 && <span aria-hidden> ·</span>}
           </span>

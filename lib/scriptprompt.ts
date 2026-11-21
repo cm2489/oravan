@@ -1,5 +1,6 @@
 import en from '../messages/en.json';
 import { formatCitation } from './format';
+import { presentedToPresident } from './floor-text.mjs';
 import { journeyEnding, passageState, statusKeyFor, type StatusKeyBill } from './journey';
 import { PRESIDENT_STYLE_RULE, presidentStyle } from './president-style.mjs';
 import type { Bill, Stance, StatusLabelKey } from './types';
@@ -149,20 +150,31 @@ const STANCE_LINES: Record<Stance, string> = {
  * READS MORE THAN THIS KEY HOLDS"): a move between readings that leaves the
  * status and the last-action date alone lives at most one cache TTL.
  */
-export type PassedBothReading = 'to_president' | 'next_unstated';
+/*
+ * `presented` (re-check of #523, round 4): the record says the enrolled bill
+ * went to the desk ("Presented to President.", lib/floor-text.mjs
+ * presentedToPresident). The page's stepper says so in the Big Questions
+ * line's words, "Both chambers passed it, and it has been sent to the
+ * president.", so the script is told the same sentence instead of "it goes to
+ * the president next". The ask is the same as `to_president`'s.
+ */
+export type PassedBothReading = 'to_president' | 'presented' | 'next_unstated';
 
 export type StanceLineBill = StatusKeyBill & Pick<Bill, 'title'>;
 
 export function passedBothReading(bill: StanceLineBill): PassedBothReading | null {
   if (statusKeyFor(bill) !== 'passed_both') return null;
-  const toPresident = passageState(bill).stage === 'both' && journeyEnding(bill.bill_type, bill.title) === 'president';
-  return toPresident ? 'to_president' : 'next_unstated';
+  const { stage } = passageState(bill);
+  const toPresident = stage === 'both' && journeyEnding(bill.bill_type, bill.title) === 'president';
+  if (!toPresident) return 'next_unstated';
+  return presentedToPresident(bill) ? 'presented' : 'to_president';
 }
 
 /** Where the bill stands, as the script must say it. */
 const PASSED_BOTH_WHERE: Record<PassedBothReading, string> = {
   to_president:
     'Where the bill stands: both chambers of Congress have passed this bill, and it goes to the president next. The script must say so plainly.',
+  presented: `Where the bill stands: ${en.moments.status.line.presented} The script must say so plainly.`,
   next_unstated:
     'Where the bill stands: both chambers of Congress have passed this bill. The script must say so plainly, and must not say what happens to the bill next (for example, never say that it goes to the president).',
 };
@@ -177,7 +189,7 @@ const PASSED_BOTH_NEVER =
  * either way.
  */
 function passedBothStanceLine(stance: Stance, reading: PassedBothReading): string {
-  const before = reading === 'to_president' ? ' before the president acts on it' : '';
+  const before = reading === 'next_unstated' ? '' : ' before the president acts on it';
   const ask: Record<Stance, string> = {
     support: `The caller SUPPORTS this bill and urges the member to publicly back it${before}.`,
     oppose: `The caller OPPOSES this bill and urges the member to publicly oppose it${before}.`,
@@ -187,9 +199,57 @@ function passedBothStanceLine(stance: Stance, reading: PassedBothReading): strin
 }
 
 /** The stance line the prompt carries for this bill at its current stage. */
+/*
+ * THE ASK WHEN BOTH CHAMBERS PASSED IT IN DIFFERENT VERSIONS (re-check of
+ * #523, round 3; H.R. 5349). The site prints "Back in the House to settle the
+ * changes" (statusKeyFor's `passed_back_house`). The one script is read to the
+ * caller's Representative's office AND both Senators' offices, and one of those
+ * chambers has already passed the bill, so the script may not ask the member
+ * to "vote for it": a senator asked to vote on H.R. 5349 would be asked to do
+ * what the Senate already did. It asks every office for a PUBLIC STAND while
+ * the chamber named in the record settles the changes, and says where the bill
+ * stands in the Big Questions line's own words
+ * (messages/en.json moments.status.line.passedBack), naming that chamber.
+ * Naming it there is the one exception to the chamber-neutral rule below, and
+ * the line says so; the recipient is still never addressed by chamber or
+ * title.
+ */
+export type PassedBackChamber = 'house' | 'senate';
+
+/** The chamber a bill passed in different versions is back with, or null. */
+export function passedBackChamber(bill: StanceLineBill): PassedBackChamber | null {
+  const key = statusKeyFor(bill);
+  return key === 'passed_back_house' ? 'house' : key === 'passed_back_senate' ? 'senate' : null;
+}
+
+const CHAMBER_NAME: Record<PassedBackChamber, string> = { house: 'House', senate: 'Senate' };
+const OTHER_CHAMBER: Record<PassedBackChamber, PassedBackChamber> = { house: 'senate', senate: 'house' };
+
+/** "Both chambers passed it in different versions; it is back with the House
+ *  to settle the changes." — the Big Questions line, read from the one copy. */
+function passedBackWhere(chamber: PassedBackChamber): string {
+  const icu = en.moments.status.line.passedBack;
+  const m = new RegExp(`${chamber === 'house' ? 'house' : 'other'} \\{([^}]*)\\}`).exec(icu);
+  return m ? m[1] : icu;
+}
+
+function passedBackStanceLine(stance: Stance, chamber: PassedBackChamber): string {
+  const settling = ` while the ${CHAMBER_NAME[chamber]} settles the changes`;
+  const ask: Record<Stance, string> = {
+    support: `The caller SUPPORTS this bill and urges the member to publicly back it${settling}.`,
+    oppose: `The caller OPPOSES this bill and urges the member to publicly oppose it${settling}.`,
+    undecided: concernedLine(`asks the member to state a public position on the bill${settling}`),
+  };
+  const where = `Where the bill stands: ${passedBackWhere(chamber)} The script must say so plainly, naming the ${CHAMBER_NAME[chamber]} in that one sentence; never address or describe the recipient by chamber or title.`;
+  const never = `NEVER ask the member to vote for or against this bill: the same script is read to offices in both chambers, and the ${CHAMBER_NAME[OTHER_CHAMBER[chamber]]} has already passed it. NEVER say or imply how the member voted, or whether the member voted at all.`;
+  return `${ask[stance]} ${where} ${never}`;
+}
+
 export function stanceLine(bill: StanceLineBill, stance: Stance): string {
   const reading = passedBothReading(bill);
-  return reading ? passedBothStanceLine(stance, reading) : STANCE_LINES[stance];
+  if (reading) return passedBothStanceLine(stance, reading);
+  const back = passedBackChamber(bill);
+  return back ? passedBackStanceLine(stance, back) : STANCE_LINES[stance];
 }
 
 function langLine(lang: 'en' | 'es'): string {
@@ -244,11 +304,26 @@ export interface ScriptPromptInput {
   lang: 'en' | 'es';
 }
 
+/*
+ * THE CHAMBER INSTRUCTIONS FOR A BILL PASSED IN DIFFERENT VERSIONS (re-check
+ * of #523, round 4). Its stance line asks the script to name the chamber that
+ * settles the changes, once, in the sentence that says where the bill stands.
+ * The prompt's opening and its chamber-neutral rule state the same exception
+ * in the same words, so no instruction contradicts another. Every other
+ * bill's prompt is byte-for-byte what it was (the two clauses are empty), so
+ * PROMPT_VERSION stays as it is.
+ */
+const CHAMBER_OPENING_EXCEPTION = (c: PassedBackChamber) =>
+  `, except in the one sentence that says where the bill stands, which names the ${CHAMBER_NAME[c]} exactly as the stance line below gives it`;
+const CHAMBER_RULE_EXCEPTION = (c: PassedBackChamber) =>
+  `, except the one sentence that says where the bill stands, which names the ${CHAMBER_NAME[c]} as the stance line above gives it`;
+
 /** The exact 30-second call-script prompt, shared by the route and pregen. */
 export function buildScriptPrompt({ bill, stance, lang }: ScriptPromptInput): string {
   const citation = formatCitation(bill.bill_type, bill.bill_number);
 
-  return `Write a 30-second phone script for a constituent calling their members of Congress about this bill. The exact same script is read verbatim to the caller's U.S. Representative's office and, separately, to both of the caller's U.S. Senators' offices - so it must never assume, name, or imply a single chamber.
+  const back = passedBackChamber(bill);
+  return `Write a 30-second phone script for a constituent calling their members of Congress about this bill. The exact same script is read verbatim to the caller's U.S. Representative's office and, separately, to both of the caller's U.S. Senators' offices - so it must never assume, name, or imply a single chamber${back ? CHAMBER_OPENING_EXCEPTION(back) : ''}.
 
 Bill: ${citation} — ${bill.short_title ?? bill.title}
 Plain-language summary: ${bill.ai_summary ?? bill.title}
@@ -262,7 +337,7 @@ Rules:
 - 60-90 words. It must be comfortably readable aloud in 30 seconds.
 - Structure: greeting + name placeholder + constituent location placeholder, the bill by its number, the position, ONE concrete reason grounded in the summary, a clear ask, thanks.
 - Greeting must be time-neutral: e.g. "Hello, my name is..." / "Hola, me llamo...". NEVER use a time-of-day greeting ("good morning," "good afternoon," "good evening," "buenos días," "buenas tardes," "buenas noches," or similar) - calls happen at any hour, including after business hours.
-- Chamber-neutral, always: NEVER address or describe the recipient as "Representative," "Senator," "Congressman," "Congresswoman," or the Spanish equivalents ("representante," "senador," "senadora," "congresista") used as a title - the same script is read to a Representative's office and to Senators' offices alike. Refer to the recipient generically instead: "your office" / "the office" ("su oficina" / "la oficina"). Naming the bill and stating the position is fine; naming a chamber or title is not.
+- Chamber-neutral, always: NEVER address or describe the recipient as "Representative," "Senator," "Congressman," "Congresswoman," or the Spanish equivalents ("representante," "senador," "senadora," "congresista") used as a title - the same script is read to a Representative's office and to Senators' offices alike. Refer to the recipient generically instead: "your office" / "the office" ("su oficina" / "la oficina"). Naming the bill and stating the position is fine; naming a chamber or title is not${back ? CHAMBER_RULE_EXCEPTION(back) : ''}.
 - No ambiguous "this" or "it": never use a bare "this" or "it" as a sentence's subject unless its antecedent is the noun immediately before it. Name what's being referred to instead - the bill by its short number, "this bill," or the position/concern by name - so no sentence can be misheard as meaning the opposite of what's intended.
 - Refer to the bill exactly as "${citation}" - do not alter, translate, or extend that citation.
 - Must work equally well read to a live staffer or left as a voicemail: the final sentence has to be a self-contained statement - never a question mark, and never a request whose meaning depends on a spoken reply or a callback.

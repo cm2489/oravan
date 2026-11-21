@@ -63,6 +63,7 @@ import {
   floorPassageRejectedChamber,
   floorReconsiderPendingChamber,
   passageState,
+  recordStatus,
   statusBasisText,
 } from '../lib/floor-text.mjs';
 
@@ -246,6 +247,13 @@ export function floorCalendarChamber(actionText) {
  * @returns {string} a `bills.status.*` message key
  */
 export function statusKeyFor(status, lastActionText, lastActionDate, now = Date.now(), record = null) {
+  // recordStatus, exactly as lib/journey.ts reads it (2026-11-18): a
+  // pre-passage status stored over a sentence that says both chambers agreed
+  // reads `passed_chamber`. Only when handed the bill, like the passage
+  // readings below.
+  if (record?.bill_type) {
+    status = recordStatus({ status, last_action_text: lastActionText, status_basis_text: record.status_basis_text ?? null });
+  }
   if (status === 'passed_chamber') {
     if (!record?.bill_type) return status;
     const bill = {
@@ -255,8 +263,12 @@ export function statusKeyFor(status, lastActionText, lastActionDate, now = Date.
       status_basis_text: record.status_basis_text ?? null,
     };
     if (concurrentAdoptedBy(bill)) return 'adopted';
-    const { stage } = passageState(bill);
-    return stage === 'both' || stage === 'second' ? 'passed_both' : status;
+    // Every stage past the second chamber's vote, as lib/journey.ts
+    // recordStatusKey reads it (2026-11-18): 'back' names the chamber that
+    // settles the changes, the rest read `passed_both`.
+    const { stage, next } = passageState(bill);
+    if (stage === 'back') return next === 'senate' ? 'passed_back_senate' : 'passed_back_house';
+    return stage === 'first' ? status : 'passed_both';
   }
   if (status !== 'floor_vote') return status;
   const basis = statusBasisText({

@@ -75,6 +75,8 @@ import {
   floorReconsiderPendingChamber,
   floorSettledChamber,
   passageState as passageStateMjs,
+  presentedToPresident,
+  recordStatus,
   // Read together, and only by pointOfOrderUpheldChamber below.
   floorActionChamber,
   procedureEndedConsideration,
@@ -549,11 +551,26 @@ export function statusKeyFor(bill: StatusKeyBill, now: number = Date.now()): Sta
 
 /** The status key the record alone answers, before the ended reading. */
 function recordStatusKey(bill: StatusKeyBill, now: number): StatusLabelKey {
-  const { status } = bill;
+  // recordStatus (lib/floor-text.mjs): the stored status, except a
+  // pre-passage status stored over a sentence that says both chambers agreed
+  // (H.R. 2400, 2026-11-18). deriveJourney reads the same, so the word and
+  // the stepper cannot disagree.
+  const status = recordStatus(bill) as Bill['status'];
   if (status === 'passed_chamber') {
     if (concurrentAdoptedBy(bill)) return 'adopted';
-    const { stage } = passageState(bill);
-    return stage === 'both' || stage === 'second' ? 'passed_both' : 'passed_chamber';
+    // EVERY STAGE PAST THE SECOND CHAMBER'S VOTE (2026-11-18). 'both' and
+    // 'second' print "Passed both chambers"; 'both' now also covers
+    // presentment and agreement to the other chamber's amendment
+    // (passageState). 'back' — both chambers passed it in different versions
+    // (H.R. 5349) — read "Passed one chamber", which was false, and "Passed
+    // both chambers" alone reads as "it goes to the president next", which it
+    // does not: it prints the home rows' own words instead, "Back in the
+    // House / Senate to settle the changes", naming the chamber that acts
+    // next (`next`). This changes no decision: decisionState and
+    // settledDecision read neither the key nor the stage.
+    const { stage, next } = passageState(bill);
+    if (stage === 'back') return next === 'senate' ? 'passed_back_senate' : 'passed_back_house';
+    return stage === 'first' ? 'passed_chamber' : 'passed_both';
   }
   if (status !== 'floor_vote') return status;
   if (settledDecision(bill)?.kind === 'rejected') return 'rejected';
@@ -1209,6 +1226,14 @@ export interface JourneyState {
   floorCalendar: FloorCalendar | null;
   isLaw: boolean;
   isVetoed: boolean;
+  /** True only on `nowPassedBoth` when the record's own sentence says the
+   *  enrolled bill went to the desk ("Presented to President.", 2026-11-18).
+   *  "It goes to the president next" is the wrong tense there: it has been
+   *  sent. components/BillJourney.tsx then prints the sentence the Big
+   *  Questions status line already prints for the same record
+   *  (`moments.status.line.presented`, lib/moment-status.mjs rule 2), so the
+   *  two surfaces say it the same way. Optional: absent means false. */
+  presented?: boolean;
   /** True only when a chamber voted the measure down on passage or adoption
    *  and no motion to reconsider is entered — exactly settledDecision's
    *  `rejected` (2026-09-29). The stepper then marks `step` as where the
@@ -1320,7 +1345,12 @@ export function deriveJourney(
      *  ignores it. Omitted, a joint resolution keeps the ordinary presented
      *  ending, which is the right answer for all but that one class. */
     title?: string | null;
-  }
+  },
+  /** The clock the "live" vs stale tenses are read against. Callers leave it
+   *  out and get today, exactly as before; tests pass a fixed instant so a
+   *  reading never changes with the date it is run on (re-check of #523,
+   *  round 7). */
+  now: number = Date.now()
 ): JourneyState {
   const origin: Chamber = bill.bill_type.startsWith('h') ? 'house' : 'senate';
   const other: Chamber = origin === 'house' ? 'senate' : 'house';
@@ -1338,7 +1368,9 @@ export function deriveJourney(
     date: null,
     ending: journeyEnding(bill.bill_type, bill.title),
   };
-  switch (bill.status) {
+  // recordStatus, as statusKeyFor reads it (2026-11-18): the chip and the
+  // stepper read one status.
+  switch (recordStatus(bill)) {
     case 'introduced':
       return { ...base, step: 0, nowKey: 'nowIntroduced' };
     case 'committee':
@@ -1354,7 +1386,7 @@ export function deriveJourney(
        * discipline the settled-motion split used in #198, where the chamber
        * was right and the verb was the lie.
        */
-      const live = isSignalFresh(bill.last_action_date);
+      const live = isSignalFresh(bill.last_action_date, now);
       // Every sentence below reads the record the status was read from
       // (statusBasisText) — for a defeated House vote under "Motion to
       // reconsider laid on the table…", that is the defeat, so the settled
@@ -1672,7 +1704,7 @@ export function deriveJourney(
           showTrailer: false,
         };
       }
-      const live = isSignalFresh(bill.last_action_date);
+      const live = isSignalFresh(bill.last_action_date, now);
       const { stage, passedBy } = passageState(bill);
       if (stage === 'first') {
         // Corpus-verified copy: nearly all passed_chamber actions read
@@ -1734,6 +1766,7 @@ export function deriveJourney(
           nowChamber: passedBy ?? other,
           nowKey: 'nowPassedBoth',
           showTrailer: false,
+          presented: presentedToPresident(bill),
         };
       }
       // 'second' — both chambers have passed it and the record does not say
@@ -1933,7 +1966,10 @@ export function endedDecision(
   const settled = finishedDecision(bill);
   if (settled?.kind === 'law') return { ...base, kind: 'law' };
   if (settled) return { ...base, kind: 'decided' };
-  if (bill.status === 'passed_chamber' && passageState(bill).stage === 'both') return { ...base, kind: 'presented' };
+  // recordStatus, as statusKeyFor reads it (re-check of #523, round 3): a
+  // record stored at `committee` over a final agreement is a bill both
+  // chambers passed in one form.
+  if (recordStatus(bill) === 'passed_chamber' && passageState(bill).stage === 'both') return { ...base, kind: 'presented' };
   return { ...base, kind: 'ended' };
 }
 

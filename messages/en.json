@@ -292,6 +292,8 @@
       "floor_activity": "Floor activity",
       "passed_chamber": "Passed one chamber",
       "passed_both": "Passed both chambers",
+      "passed_back_house": "Back in the House to settle the changes",
+      "passed_back_senate": "Back in the Senate to settle the changes",
       "adopted": "Adopted by both chambers",
       "rejected": "Rejected",
       "conference": "In conference",

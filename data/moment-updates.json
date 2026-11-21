@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-11-19T21:27:41.197Z"
+    "generated_at": "2026-11-20T22:26:38.881Z"
   },
   "government-funding-deadline": {
     "updates": [],
@@ -346,6 +346,67 @@
           }
         },
         "ai": false
+      },
+      {
+        "id": "u_d8ec3f89",
+        "class": "floor_action",
+        "vehicle": "hconres-93-119",
+        "day": "2026-11-19",
+        "occurred_at": "2026-11-19",
+        "occurred_precision": "day",
+        "recorded_at": "2026-11-20T20:04:55.446Z",
+        "text": {
+          "en": "The Senate Committee on Foreign Relations was discharged from consideration of H. Con. Res. 93 on November 19, 2026, under the order of November 9, 2026.",
+          "es": "La Comisión de Relaciones Exteriores del Senado fue liberada de considerar H. Con. Res. 93 el 19 de noviembre de 2026, conforme a la orden del 9 de noviembre de 2026."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/93"
+          ]
+        },
+        "record": {
+          "action_text": "Senate Committee on Foreign Relations discharged, under the order of 11/9/26. (consideration: CR S5791)",
+          "action_code": null,
+          "action_type": "Discharge",
+          "source_system": "Senate",
+          "day_position": 1
+        },
+        "ai": true
+      },
+      {
+        "id": "u_9b0d169e",
+        "class": "press_cluster",
+        "vehicle": "sjres-185-119",
+        "day": "2026-11-19",
+        "occurred_at": "2026-11-19",
+        "occurred_precision": "day",
+        "recorded_at": "2026-11-20T22:26:38.881Z",
+        "text": {
+          "en": "CBS News and ZeroHedge published coverage of S.J.Res. 185 on November 19, 2026.",
+          "es": "CBS News y ZeroHedge publicaron cobertura de S.J.Res. 185 el 19 de noviembre de 2026."
+        },
+        "source": {
+          "kind": "press",
+          "refs": [
+            "https://www.cbsnews.com/news/iran-war-powers-vote-senate-republicans/",
+            "https://www.zerohedge.com/political/senate-kills-house-passed-resolution-end-iran-war-tillis-flips"
+          ],
+          "outlets": [
+            "cbsnews.com",
+            "zerohedge.com"
+          ],
+          "outlet_names": [
+            "CBS News",
+            "ZeroHedge"
+          ],
+          "lean_set": [
+            "left",
+            "right"
+          ]
+        },
+        "record": null,
+        "ai": true
       },
       {
         "id": "u_40aa8bf1",
@@ -1067,16 +1128,88 @@
           "reanchor:7d"
         ],
         "model": "record-only"
+      },
+      {
+        "id": "s_fe315d87",
+        "generated_at": "2026-11-19T22:43:15.953Z",
+        "as_of_day": "2026-11-19",
+        "text": {
+          "en": "On November 19, 2026, the Senate voted on H. Con. Res. 93 and rejected it, by a recorded vote of 48 to 51 (Roll no. 269), with 1 senator not voting. Republicans: 3 yea, 50 nay. In that same vote, 43 Democrats voted yes and 1 Democrat voted no. The measure now stands as \"Passed one chamber.\"",
+          "es": "El 19 de noviembre de 2026, el Senado votó sobre la H. Con. Res. 93 y la rechazó, por votación nominal de 48 a 51 (votación núm. 269), con 1 senador sin votar. Republicanos: 3 a favor, 50 en contra. En esa misma votación, 43 demócratas votaron a favor y 1 demócrata votó en contra. La medida figura ahora como \"Aprobado por una cámara\"."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "hconres-93-119": "passed_chamber",
+            "hconres-89-119": "floor_vote",
+            "hconres-86-119": "passed_chamber",
+            "sjres-185-119": "floor_vote",
+            "sjres-200-119": "committee",
+            "sjres-211-119": "committee",
+            "sjres-180-119": "floor_vote",
+            "sjres-181-119": "floor_vote",
+            "sjres-172-119": "floor_vote",
+            "hconres-38-119": "floor_vote"
+          },
+          "vehicle_status_keys": {
+            "hconres-93-119": "passed_chamber",
+            "hconres-89-119": "rejected",
+            "hconres-86-119": "adopted",
+            "sjres-185-119": "floor_activity",
+            "sjres-200-119": "committee",
+            "sjres-211-119": "committee",
+            "sjres-180-119": "floor_activity",
+            "sjres-181-119": "floor_activity",
+            "sjres-172-119": "floor_activity",
+            "hconres-38-119": "rejected"
+          },
+          "update_ids": [
+            "u_51f964da"
+          ],
+          "roll_calls": [
+            "s-119-2-269"
+          ],
+          "roll_calls_on_record": [
+            "h-119-2-199",
+            "h-119-2-282",
+            "h-119-2-307",
+            "h-119-2-85",
+            "s-119-2-129",
+            "s-119-2-174",
+            "s-119-2-184",
+            "s-119-2-192",
+            "s-119-2-207",
+            "s-119-2-216",
+            "s-119-2-244",
+            "s-119-2-269"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/93",
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/89",
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/86",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/185",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/200",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/211",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/180",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/181",
+            "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/172",
+            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/38",
+            "https://www.congress.gov/crs-report/R42699"
+          ]
+        },
+        "changed_because": [
+          "updates:+1"
+        ],
+        "model": "claude-sonnet-5-5"
       }
     ],
     "summary_attempts": {
-      "day": "2026-11-19",
+      "day": "2026-11-20",
       "count": 1
     },
     "summary_refusals": {
       "count": 1,
-      "day": "2026-11-19",
-      "reason": "en: forbidden vocabulary \"party name\" (inherited table, moments spec §3.3); es: the English and the Spanish state different numbers — only in the English: 43; only in the Spanish: none"
+      "day": "2026-11-20",
+      "reason": "es: the English and the Spanish state different numbers — only in the English: 1, 43; only in the Spanish: none"
     }
   },
   "syria-sanctions-repeal": {
@@ -2941,6 +3074,33 @@
   "penny-production-and-cash-rounding": {
     "updates": [
       {
+        "id": "u_efc6d2fc",
+        "class": "floor_action",
+        "vehicle": "hr-10167-119",
+        "day": "2026-11-20",
+        "occurred_at": "2026-11-20",
+        "occurred_precision": "day",
+        "recorded_at": "2026-11-20T22:26:38.881Z",
+        "text": {
+          "en": "The president signed H.R. 10167 on November 20, 2026.",
+          "es": "El presidente firmó H.R. 10167 el 20 de noviembre de 2026."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/10167"
+          ]
+        },
+        "record": {
+          "action_text": "Signed by President.",
+          "action_code": "E30000",
+          "action_type": "President",
+          "source_system": "Library of Congress",
+          "day_position": 1
+        },
+        "ai": true
+      },
+      {
         "id": "u_cbb3a86d",
         "class": "floor_action",
         "vehicle": "hr-10167-119",
@@ -3127,13 +3287,13 @@
       }
     ],
     "summary_attempts": {
-      "day": "2026-11-18",
+      "day": "2026-11-20",
       "count": 1
     },
     "summary_refusals": {
-      "count": 6,
-      "day": "2026-11-18",
-      "reason": "en: absence claim \"no recorded votes\" over a record that is not empty — the grounding holds a vote or action in this window, so \"nothing happened\" is false; en: absence claim \"no recorded\" over a record that is not empty — the grounding holds a vote or action in this window, so \"nothing happened\" i…"
+      "count": 8,
+      "day": "2026-11-20",
+      "reason": "en: absence claim \"No recorded votes\" over a record that is not empty — the grounding holds a vote or action in this window, so \"nothing happened\" is false; en: absence claim \"No recorded\" over a record that is not empty — the grounding holds a vote or action in this window, so \"nothing happened\" i…"
     }
   }
 }
