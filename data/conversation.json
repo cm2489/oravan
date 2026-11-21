@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-21T03:41:21.207Z",
+    "fetched_at": "2026-11-21T09:41:39.245Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-21T03:41:21.207Z"
+        "checked_at": "2026-11-21T09:41:39.245Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-15",
         "week_label": "Most-Viewed Bills - Week of November 15, 2026",
         "entries": 7,
-        "checked_at": "2026-11-21T03:41:21.207Z"
+        "checked_at": "2026-11-21T09:41:39.245Z"
       },
       "leans": {
         "center": {
@@ -994,6 +994,18 @@
       ],
       "mostViewed": null
     },
+    "hr-7386-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "wisevoter.com",
+          "firstSeen": "2026-11-21",
+          "lastSeen": "2026-11-21",
+          "url": "https://news.google.com/rss/articles/CBMimAFBVV95cUxNRU9WVG1YVnFMT3BmcjNxX2tzMjZwWFJFd01haFpnMlA2MmduRU9DQXN2T2luN2FGQjA2aXl4N3pTcWwxOFRqZ0V4R3JfdFhOeWY3MlhNOEJ2MGNJbWFVVHZsczc1YXRJSmRsM0FlNk9zZ3BTUXRFbjhJeXlUbVUwZU90Z3o4NUlqaXJCcHg0U2tpRE1GeEcybg?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-7501-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1236,6 +1248,12 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "wisevoter.com",
+          "firstSeen": "2026-11-21",
+          "lastSeen": "2026-11-21",
+          "url": "https://news.google.com/rss/articles/CBMijwFBVV95cUxNenJlcHhqM0M3NG9YMHZGTTFUTTAwZjBMV2FsaF80blBEd2hiVktJTmZLSHl2ek9ycXBReWZZVlpwOGI5Nk9EUUlvWG1lNG9oZzhrQTFhcE9vZnlFTUZyeVV6Zmtzamw4OENGbUtKdUFZZXhEWGZ0OUtyY2ZiMFp3aF9iSWFKZlZrSTRJeG1qcw?oc=5"
+        },
         {
           "domain": "immigration-analytics.com",
           "firstSeen": "2026-11-20",
