@@ -7,11 +7,13 @@ import {
   encodeNameTables,
   nameAddressTarget,
   NAME_ADDRESS_RESERVED,
+  NAME_HELD_BACK,
   SHORT_ADDRESS_CONGRESS,
   shortAddressFallbackCongresses,
   type ShortTitleFile,
 } from '../lib/short-address';
 import { gateNameTables, nameTablesForBuild, refusalLine, type GateBill } from '../lib/short-address-build';
+import { sharedNamePagesFrom } from '../lib/shared-names';
 import { pageviewSurfaceForPath } from '../lib/usage';
 
 /*
@@ -54,7 +56,7 @@ test('the live case: H.R. 29 read, S. 5 not: laken-riley-act opens nothing; nor 
   expect(tonight.open('laken-riley-act')).toBeNull();
   expect(tonight.open('crossett-experimental-forest-act-of-2026')).toBeNull();
   expect(tonight.encoded).toBe('');
-  expect(tonight.line).toMatch(/^OFF from the 119th Congress on: 2 of its 4 bills read, 2 never read or tried/);
+  expect(tonight.line).toMatch(/^OFF for the 119th Congress: 2 of its 4 bills read, 2 never read or tried/);
   // S. 5 read too, H.R. 9770 still not: still nothing at all.
   const more = table(corpus, { 'hr-29-119': entry('Laken Riley Act'), 's-5-119': entry('Laken Riley Act'), 'hr-10136-119': entry('Crossett Experimental Forest Act of 2026') });
   expect(more.open('laken-riley-act')).toBeNull();
@@ -66,7 +68,8 @@ test('the live case: H.R. 29 read, S. 5 not: laken-riley-act opens nothing; nor 
     'hr-10136-119': entry('Crossett Experimental Forest Act of 2026'),
     'hr-9770-119': entry('Continuing Appropriations Act, 2027'),
   });
-  expect(full.open('laken-riley-act')).toBeNull();
+  // Shared by two read bills: since the owner's card 193 (#510) it opens the page that lists them.
+  expect(full.open('laken-riley-act')).toBe('/names/119/laken-riley-act');
   expect(full.tables[0].names.get('laken-riley-act')).toBeNull();
   expect(full.open('crossett-experimental-forest-act-of-2026')).toBe('/bills/hr-10136-119');
   expect(full.open('continuing-appropriations-act-2027')).toBe('/bills/hr-9770-119');
@@ -90,6 +93,26 @@ test('fill complete, one bill tried and never read: the name its stored title ma
   expect(refresh.open('laken-riley-act')).toBe('/bills/hr-29-119');
 });
 
+test('fill complete, a name two READ bills share, and a third bill tried and never read whose stored title makes it: held back, no list page, until that bill is read', () => {
+  // The independent check of #510 (Nov 19, 2026): a list page says it lists every tracked bill that makes the
+  // name, so it is built only once every bill that could make the name has been read.
+  const HR7 = bill('hr', 7, 'Laken Riley Act');
+  const corpus = [S5, HR29, HR7, HR9770];
+  const read = { 's-5-119': entry('Laken Riley Act'), 'hr-29-119': entry('Laken Riley Act'), 'hr-9770-119': entry('Continuing Appropriations Act, 2027') };
+  const g = table(corpus, read, { 'hr-7-119': failed });
+  expect(g.open('laken-riley-act')).toBeNull();
+  expect(g.tables[0].names.get('laken-riley-act')).toBe(NAME_HELD_BACK);
+  expect(g.blocked).toEqual(['laken-riley-act (hr-7-119 not read yet)']);
+  expect(sharedNamePagesFrom(corpus, read, [C], new Set(NAME_ADDRESS_RESERVED), g.encoded)).toEqual([]);
+  expect(g.open('continuing-appropriations-act-2027')).toBe('/bills/hr-9770-119');
+  // Once H.R. 7 is read, the page exists and lists all three.
+  const all = { ...read, 'hr-7-119': entry('Laken Riley Act') };
+  const after = table(corpus, all);
+  expect(after.open('laken-riley-act')).toBe('/names/119/laken-riley-act');
+  const pages = sharedNamePagesFrom(corpus, all, [C], new Set(NAME_ADDRESS_RESERVED), after.encoded);
+  expect(pages.map((p) => [p.name, p.bills.map((b) => b.slug)])).toEqual([['laken-riley-act', ['hr-7-119', 'hr-29-119', 's-5-119']]]);
+});
+
 test('the real partial fill of Nov 17, 2026 (300 of 3,335 read, as committed on main): zero names', () => {
   expect(REAL_BILLS).toHaveLength(3335);
   expect(Object.keys(REAL_TITLES)).toHaveLength(300);
@@ -99,14 +122,14 @@ test('the real partial fill of Nov 17, 2026 (300 of 3,335 read, as committed on 
   expect(g.open('laken-riley-act')).toBeNull();
   expect(g.open('crossett-experimental-forest-act-of-2026')).toBeNull();
   expect(g.line).toBe(
-    'OFF from the 119th Congress on: 300 of its 3335 bills read, 3035 never read or tried, so no name opens a bill there or in any Congress searched after it until every one has been read or tried',
+    'OFF for the 119th Congress: 300 of its 3335 bills read, 3035 never read or tried, so no name opens a bill of it until every one has been read or tried; 0 name(s) an older Congress also holds held back',
   );
   // What the table held before this fix, on the same files: names opening one bill each.
   const before = decodeNameTables(encodeNameTables(REAL_BILLS, REAL_TITLES, order, new Set(NAME_ADDRESS_RESERVED)));
   expect(nameAddressTarget('/laken-riley-act', LOCALES, 'en', before)).toBe('/bills/hr-29-119');
 });
 
-test('the January order: an incomplete Congress holds no names and the search stops there, never reaching an older bill', () => {
+test('the January order: an incomplete Congress opens no name of its own, and the search never reaches an older bill for a name it is known to make', () => {
   const old = [bill('s', 5, 'Laken Riley Act'), bill('hr', 7, 'Old Unique Act')];
   const neu = [bill('hr', 1, 'New Act', 120), bill('hr', 2, 'Second New Act', 120)];
   const corpus = [...old, ...neu];
@@ -116,20 +139,83 @@ test('the January order: an incomplete Congress holds no names and the search st
   const both = table(corpus, { ...oldRead, 'hr-1-120': entry('New Act'), 'hr-2-120': entry('Second New Act') }, {}, order);
   expect(both.open('new-act')).toBe('/bills/hr-1-120');
   expect(both.open('old-unique-act')).toBe('/bills/hr-7-119');
-  // The 120th not read in full: nothing opens, not even a name only the 119th holds.
+  // The 120th not read in full: none of its names opens; a name only the 119th holds still opens the 119th's bill
+  // (the second independent check of #510, Nov 20, 2026: each Congress is judged on its own).
   const partial = table(corpus, { ...oldRead, 'hr-1-120': entry('New Act') }, {}, order);
-  expect(partial.encoded).toBe('');
-  expect(partial.open('old-unique-act')).toBeNull();
+  expect(partial.open('old-unique-act')).toBe('/bills/hr-7-119');
+  expect(partial.open('laken-riley-act')).toBe('/bills/s-5-119');
   expect(partial.open('new-act')).toBeNull();
+  expect(partial.off).toEqual([120]);
   // The 120th in full and the 119th not: the 120th's names open, the 119th holds nothing.
   const oldPartial = table(corpus, { 's-5-119': entry('Laken Riley Act'), 'hr-1-120': entry('New Act'), 'hr-2-120': entry('Second New Act') }, {}, order);
   expect(oldPartial.open('new-act')).toBe('/bills/hr-1-120');
   expect(oldPartial.open('laken-riley-act')).toBeNull();
-  expect(oldPartial.line).toMatch(/^ON for the 120th Congress: .*; OFF from the 119th Congress on: 1 of its 2 bills read, 1 never read or tried/);
+  expect(oldPartial.line).toMatch(/^ON for the 120th Congress: .*; OFF for the 119th Congress: 1 of its 2 bills read, 1 never read or tried/);
   // An unread 120th bill whose stored title makes an old name stops the search there: the old bill is not opened.
   const shadow = table([...old, bill('hr', 1, 'Old Unique Act', 120)], { ...oldRead }, { 'hr-1-120': failed }, order);
   expect(shadow.open('old-unique-act')).toBeNull();
   expect(shadow.open('laken-riley-act')).toBe('/bills/s-5-119');
+});
+
+test('after Jan 3 (made-up 120th bills; the 119th read in full): each Congress judged on its own; what a visitor gets at /names/119/<name>, at a 119th-only name and at a name both hold', () => {
+  const order = [120, 119];
+  const reserved = new Set(NAME_ADDRESS_RESERVED);
+  const old = [bill('s', 5, 'Laken Riley Act'), bill('hr', 29, 'Laken Riley Act'), bill('hr', 7, 'Old Unique Act'), bill('hr', 8, 'Both Act'), bill('s', 8, 'Both Act')];
+  const oldRead = {
+    's-5-119': entry('Laken Riley Act'),
+    'hr-29-119': entry('Laken Riley Act'),
+    'hr-7-119': entry('Old Unique Act'),
+    'hr-8-119': entry('Both Act'),
+    's-8-119': entry('Both Act'),
+  };
+  const H1 = bill('hr', 1, 'Both Act', 120);
+  const H2 = bill('hr', 2, 'New Act', 120);
+  const visit = (corpus: GateBill[], titles: ShortTitleFile, retry: Record<string, unknown> = {}) => {
+    const g = table(corpus, titles, retry, order);
+    const pages = sharedNamePagesFrom(corpus, titles, order, reserved, g.encoded).map((p) => `${p.congress}/${p.name}`);
+    return { g, pages, at: (name: string) => g.open(name) };
+  };
+  const OLD_PAGES = ['119/both-act', '119/laken-riley-act'];
+  // (a) Every 120th bill read: the 119th's list pages are built; a 119th-only name opens the 119th's bill;
+  // a name both hold opens the 120th's.
+  const a = visit([...old, H1, H2], { ...oldRead, 'hr-1-120': entry('Both Act'), 'hr-2-120': entry('New Act') });
+  expect(a.pages).toEqual(OLD_PAGES);
+  expect(a.at('laken-riley-act')).toBe('/names/119/laken-riley-act');
+  expect(a.at('old-unique-act')).toBe('/bills/hr-7-119');
+  expect(a.at('both-act')).toBe('/bills/hr-1-120');
+  expect(a.at('new-act')).toBe('/bills/hr-2-120');
+  // (b) One 120th bill neither read nor tried: no 120th name opens; a name both hold opens nothing (the normal
+  // not-found), never the 119th's; a 119th-only name and the 119th's pages are untouched.
+  const b = visit([...old, H1, H2], { ...oldRead, 'hr-1-120': entry('Both Act') });
+  expect(b.g.off).toEqual([120]);
+  expect(b.pages).toEqual(OLD_PAGES);
+  expect(b.at('laken-riley-act')).toBe('/names/119/laken-riley-act');
+  expect(b.at('old-unique-act')).toBe('/bills/hr-7-119');
+  expect(b.at('both-act')).toBeNull();
+  expect(b.at('new-act')).toBeNull();
+  // The same with the unread 120th bill being the one whose stored title makes the shared name.
+  const b2 = visit([...old, H1, H2], { ...oldRead, 'hr-2-120': entry('New Act') });
+  expect(b2.at('both-act')).toBeNull();
+  expect(b2.pages).toEqual(OLD_PAGES);
+  // (c) One 120th bill tried and failed (the 120th counts as read in full): the 120th is on, the failed bill's stored
+  // title holds its names back; the 119th as before.
+  const c = visit([...old, H1, H2], { ...oldRead, 'hr-1-120': entry('Both Act') }, { 'hr-2-120': failed });
+  expect(c.g.off).toEqual([]);
+  expect(c.pages).toEqual(OLD_PAGES);
+  expect(c.at('both-act')).toBe('/bills/hr-1-120');
+  expect(c.at('old-unique-act')).toBe('/bills/hr-7-119');
+  const c2 = visit([...old, H1, H2], { ...oldRead, 'hr-2-120': entry('New Act') }, { 'hr-1-120': failed });
+  expect(c2.at('both-act')).toBeNull();
+  expect(c2.at('new-act')).toBe('/bills/hr-2-120');
+  expect(c2.pages).toEqual(OLD_PAGES);
+  // (d) No 120th bill at all: the 119th answers every name it holds.
+  const d = visit(old, oldRead);
+  expect(d.pages).toEqual(OLD_PAGES);
+  expect(d.at('both-act')).toBe('/names/119/both-act');
+  expect(d.at('old-unique-act')).toBe('/bills/hr-7-119');
+  // Today's first-fill safety (#517) is unchanged: one untried 119th bill turns every 119th name off.
+  const today = visit(old, { ...oldRead, 'hr-7-119': undefined } as unknown as ShortTitleFile, {}).g;
+  expect(today.encoded).toBe('');
 });
 
 test('a blocked name is the normal not-found path, counted under the same page shape as before', () => {
@@ -157,7 +243,7 @@ test('the build reads the committed files and prints one line: names on or off, 
     };
     const none = run(null, null);
     expect(none.encoded).toBe('');
-    expect(none.gateLine).toEqual(['short-address names: OFF from the 119th Congress on: 0 of its 3 bills read, 3 never read or tried, so no name opens a bill there or in any Congress searched after it until every one has been read or tried']);
+    expect(none.gateLine).toEqual(['short-address names: OFF for the 119th Congress: 0 of its 3 bills read, 3 never read or tried, so no name opens a bill of it until every one has been read or tried; 0 name(s) an older Congress also holds held back']);
     const partial = run({ 'hr-29-119': entry('Laken Riley Act') }, null);
     expect(partial.encoded).toBe('');
     const full = run({ 'hr-29-119': entry('Laken Riley Act'), 'hr-10136-119': entry('Crossett Experimental Forest Act of 2026') }, { 's-5-119': failed });
@@ -227,9 +313,9 @@ test('follow-up 6: while names are off, a "shared by" line says it is not in eff
     };
     // H.R. 10136 never read: names off for the 119th.
     expect(run([S5, HR29, HR10136])).toEqual([
-      'short-address names: "laken-riley-act" opens nothing: shared by 2 bills, so it opens none of them (not in effect: names are off for the 119th Congress) (hr-29-119 s-5-119)',
+      'short-address names: "laken-riley-act" opens no single bill: shared by 2 bills, so it opens the page that lists them, /names/119/laken-riley-act (not in effect: names are off for the 119th Congress) (hr-29-119 s-5-119)',
     ]);
-    expect(run([S5, HR29])).toEqual(['short-address names: "laken-riley-act" opens nothing: shared by 2 bills, so it opens none of them (hr-29-119 s-5-119)']);
+    expect(run([S5, HR29])).toEqual(['short-address names: "laken-riley-act" opens no single bill: shared by 2 bills, so it opens the page that lists them, /names/119/laken-riley-act (hr-29-119 s-5-119)']);
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
@@ -270,7 +356,7 @@ test('check of #520: an entry whose `titles` is not a list never fails the build
       // Not read and not tried: the Congress is not read in full, so no name opens (S. 5 does not get laken-riley-act).
       const off = run(null);
       expect(off.encoded).toBe('');
-      expect(off.gate).toContain('OFF from the 119th Congress on: 2 of its 3 bills read, 1 never read or tried');
+      expect(off.gate).toContain('OFF for the 119th Congress: 2 of its 3 bills read, 1 never read or tried');
       // Not read but tried: its stored title holds laken-riley-act back; other names open as before.
       const on = run({ 'hr-29-119': failed });
       expect(nameAddressTarget('/laken-riley-act', LOCALES, 'en', on.t)).toBeNull();

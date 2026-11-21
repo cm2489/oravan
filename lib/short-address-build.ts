@@ -12,6 +12,7 @@ import { topRouteSegments } from './route-segments.mjs';
 import {
   decodeNameTables,
   encodeNameTables,
+  NAME_HELD_BACK,
   NAME_ADDRESS_RESERVED,
   nameAddressAllowed,
   nameSlug,
@@ -22,6 +23,7 @@ import {
   type ShortTitleFile,
 } from './short-address';
 import { SHORT_TITLES_PATH, SHORT_TITLES_RETRY_PATH } from './short-titles.mjs';
+import { fixtureRetries, NAMES_FIXTURE_ON, NAMES_FIXTURE_TITLES_PATH } from './names-fixture.mjs';
 
 /** Every word a name may never take: the reserved list and every real route's first segment, read now. */
 export function reservedNames(root: string = process.cwd()): Set<string> {
@@ -29,8 +31,9 @@ export function reservedNames(root: string = process.cwd()): Set<string> {
 }
 
 /** data/short-titles.json, or {} before the nightly first writes it. */
-export function readShortTitles(root: string = process.cwd()): ShortTitleFile {
-  const file = join(root, SHORT_TITLES_PATH);
+export function readShortTitles(root: string = process.cwd(), fixture: boolean = NAMES_FIXTURE_ON): ShortTitleFile {
+  // The CI names fixture (lib/names-fixture.mjs, test data only) when its switch is on; data/ otherwise.
+  const file = join(root, fixture ? NAMES_FIXTURE_TITLES_PATH : SHORT_TITLES_PATH);
   return existsSync(file) ? (JSON.parse(readFileSync(file, 'utf8')) as ShortTitleFile) : {};
 }
 
@@ -75,15 +78,24 @@ const ordinal = (n: number) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['
  *   - A Congress is READ IN FULL when every bill of it in data/bills.json has
  *     an entry in data/short-titles.json (read) or one in
  *     data/short-titles-retry.json (tried, and its last read failed).
- *   - The Congresses are walked in the search order (the tracked one, then each
- *     ended one, most recently ended first). At the first Congress not read in
- *     full, the walk STOPS: that Congress and every one after it hold no table,
- *     so no name opens a bill there and the search never reaches past it to an
- *     older bill. Before the first fill completes, that is every name.
+ *   - EACH CONGRESS IS JUDGED ON ITS OWN (the second independent check of
+ *     #510, Nov 20, 2026; until then the walk stopped at the first Congress
+ *     not read in full and turned names off for every older Congress too, so
+ *     one unread 120th bill would have removed every 119th name and list page).
+ *     A Congress not read in full opens no name of its own: before the first
+ *     fill completes, that is every name of the tracked Congress (#517's
+ *     safety, unchanged). It holds back, opening nothing, every name it is
+ *     known to make (its read bills' record short titles, its unread bills'
+ *     stored titles) that an older Congress also holds, so the search never
+ *     reaches past it to an older bill for a name it may carry. Every other
+ *     name of an older Congress read in full stays on, and its list pages are
+ *     built.
  *   - In a Congress read in full, a bill never read successfully (tried, no
  *     entry) blocks every name its stored title in data/bills.json makes
  *     (`title`, and `short_title` when present, through the same nameSlug): that
  *     name stays in the table opening nothing, so the search stops there too.
+ *     That includes a name two read bills share: it has no list page until the
+ *     unread bill is read, so a list never leaves out a bill that makes the name.
  * THE RESIDUAL: an unread bill whose record short title makes a name its stored
  * title does not can still share that name unseen until it is read.
  */
@@ -113,11 +125,23 @@ export function gateNameTables(
     const read = tracked.filter(isRead);
     const neverTried = tracked.filter((b) => !isRead(b) && !Object.prototype.hasOwnProperty.call(retry, slugOf(b)));
     if (neverTried.length > 0) {
+      // This Congress opens no name until every bill is read or tried. A name it is known to make that an
+      // older Congress holds is held back here, so the search stops at it instead of reaching the older bill.
+      const known = new Set(built.get(congress)?.keys() ?? []);
+      for (const b of tracked) {
+        if (isRead(b)) continue;
+        for (const stored of [b.title, b.short_title]) {
+          const name = typeof stored === 'string' ? nameSlug(stored) : null;
+          if (name && nameAddressAllowed(name, reserved)) known.add(name);
+        }
+      }
+      const shadowed = [...known].filter((name) => searched.slice(at + 1).some((c) => built.get(c)?.has(name))).sort();
       said.push(
-        `OFF from the ${ordinal(congress)} Congress on: ${read.length} of its ${tracked.length} bills read, ${neverTried.length} never read or tried, so no name opens a bill there or in any Congress searched after it until every one has been read or tried`,
+        `OFF for the ${ordinal(congress)} Congress: ${read.length} of its ${tracked.length} bills read, ${neverTried.length} never read or tried, so no name opens a bill of it until every one has been read or tried; ${shadowed.length} name(s) an older Congress also holds held back`,
       );
-      off.push(...searched.slice(at));
-      break;
+      off.push(congress);
+      if (shadowed.length > 0) parts.push(`${congress}@${shadowed.map((name) => `${name}=-`).join(',')}`);
+      continue;
     }
     const names = new Map(built.get(congress) ?? []);
     let blockedHere = 0;
@@ -133,18 +157,21 @@ export function gateNameTables(
         const here = names.has(name);
         const later = searched.slice(at + 1).some((c) => built.get(c)?.has(name));
         if (!here && !later) continue;
-        if (names.get(name) !== null) {
+        // Shared here too: held back as well, so no list page is built that leaves this bill out (the
+        // independent check of #510, Nov 19, 2026: the page says it lists every tracked bill that makes the
+        // name, which is true only once every bill that could make it has been read).
+        if (names.get(name) !== NAME_HELD_BACK) {
           blocked.push(`${name} (${slugOf(b)} not read yet)`);
           blockedHere++;
         }
-        names.set(name, null);
+        names.set(name, NAME_HELD_BACK);
       }
     }
     said.push(`ON for the ${ordinal(congress)} Congress: ${tracked.length} bills, ${read.length} read, ${tracked.length - read.length} tried and waiting; ${blockedHere} name(s) held back by a bill not read yet`);
     if (names.size === 0) continue;
     const entries = [...names.keys()].sort().map((name) => {
       const a = names.get(name);
-      return `${name}=${a ? `${a.type}${a.number}` : ''}`;
+      return `${name}=${a === NAME_HELD_BACK ? '-' : a ? `${a.type}${a.number}` : ''}`;
     });
     parts.push(`${congress}@${entries.join(',')}`);
   }
@@ -162,9 +189,12 @@ export function nameTablesForBuild(
   bills: readonly GateBill[],
   root: string = process.cwd(),
   onRefused?: (refusal: NameRefusal) => void,
+  fixture: boolean = NAMES_FIXTURE_ON,
 ): string {
-  const titlesFile = readNamesFile(root, SHORT_TITLES_PATH);
-  const retryFile = readNamesFile(root, SHORT_TITLES_RETRY_PATH);
+  // The CI names fixture (lib/names-fixture.mjs, test data only): its titles, and every other bill counted as
+  // tried. Off, which is every real build, exactly the data files as before.
+  const titlesFile = readNamesFile(root, fixture ? NAMES_FIXTURE_TITLES_PATH : SHORT_TITLES_PATH);
+  const retryFile = fixture ? { data: fixtureRetries(bills, titlesFile.data), problem: null } : readNamesFile(root, SHORT_TITLES_RETRY_PATH);
   const problems = [titlesFile.problem, retryFile.problem].filter((p): p is string => p !== null);
   if (problems.length > 0) {
     onRefused?.({
@@ -196,11 +226,11 @@ export function nameTablesForBuild(
  * name at all, or a name refused: too short or long, number-like, skipped by
  * the proxy's matcher, a route or reserved word) and for each name two or
  * more bills share (it is in the table, so the search stops there, but it
- * opens none of them).
+ * opens no single bill: since card 193 it opens the page that lists them).
  */
 export function refusalLine(r: NameRefusal): string {
   // The fill gate's one line: names on or off, and why.
   if (!r.slug) return `short-address names: ${r.reason}`;
-  if (!r.title) return `short-address names: "${r.name}" opens nothing: ${r.reason} (${r.slug})`;
+  if (!r.title) return `short-address names: "${r.name}" opens no single bill: ${r.reason} (${r.slug})`;
   return `short-address names: ${r.slug} "${r.title}" -> ${r.name ? `"${r.name}"` : 'no name'} left out: ${r.reason}`;
 }

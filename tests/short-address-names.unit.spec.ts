@@ -219,7 +219,8 @@ test('two different titles that make the same name block each other, like the sa
   ];
   const titles: ShortTitleFile = { [`hr-7001-${C}`]: { titles: ['SAFE Act'] }, [`s-7002-${C}`]: { titles: ['Safe Act'] } };
   const tables = decodeNameTables(encodeNameTables(corpus, titles, [C], NONE));
-  expect(nameAddressTarget('/safe-act', LOCALES, 'en', tables)).toBeNull();
+  // Neither bill: the page that lists both (card 193).
+  expect(nameAddressTarget('/safe-act', LOCALES, 'en', tables)).toBe(`/names/${C}/safe-act`);
 });
 
 test('the build log names every title that gets no address and every shared name', () => {
@@ -245,7 +246,7 @@ test('the build log names every title that gets no address and every shared name
     `short-address names: hr-7103-${C} "2026" -> no name left out: the title has no letter`,
     `short-address names: hr-7104-${C} "H.R. 1" -> "h-r-1" left out: it reads as a number address`,
     `short-address names: hr-7105-${C} "Privacy" -> "privacy" left out: a route or reserved word of that name`,
-    `short-address names: "twin-act" opens nothing: shared by 2 bills, so it opens none of them (hr-7101-${C} s-7102-${C})`,
+    `short-address names: "twin-act" opens no single bill: shared by 2 bills, so it opens the page that lists them, /names/${C}/twin-act (hr-7101-${C} s-7102-${C})`,
   ]);
 });
 
@@ -357,8 +358,11 @@ test('a name resolves only when exactly one bill of the Congress carries it', ()
   expect(target('/laken-riley-act')).toBe(`/bills/s-5-${C}`);
   expect(target('/rescissions-act-of-2025')).toBe(`/bills/hr-4-${C}`);
   expect(target('/second-name-act')).toBe(`/bills/hr-4-${C}`); // each short title resolves
-  expect(target('/save-act')).toBeNull(); // shared: never chosen
-  expect(target('/es/save-act')).toBeNull();
+  // Shared: never chosen. Since the owner's card 193 (Nov 14, 2026) it opens
+  // the page that lists both bills, under this Congress's number.
+  expect(target('/save-act')).toBe(`/names/${C}/save-act`);
+  expect(target('/es/save-act')).toBe(`/es/names/${C}/save-act`);
+  expect(target('/SAVE-ACT/')).toBe(`/names/${C}/save-act`);
   expect(target('/privacy')).toBeNull(); // reserved: left out at build time
   expect(target('/hr-1')).toBeNull(); // a number-shaped title is never a name
 });
@@ -380,7 +384,7 @@ test('a malformed table or entry is skipped, never a throw, and never an open re
   expect(ok.map((t) => t.congress)).toEqual([119, 118]);
   expect(nameAddressTarget('/abcd', LOCALES, 'en', ok, )).toBe('/bills/s-5-119');
   expect(nameAddressTarget('/ijkl', LOCALES, 'en', ok)).toBe('/bills/hjres-3-119');
-  expect(nameAddressTarget('/efgh', LOCALES, 'en', ok)).toBeNull();
+  expect(nameAddressTarget('/efgh', LOCALES, 'en', ok)).toBe('/names/119/efgh');
 });
 
 // --- the redirect target ---------------------------------------------------------------
@@ -414,9 +418,9 @@ test('same shapes as number addresses: case-insensitive, a trailing slash, /en a
   ]) {
     expect(target(near), near).toBeNull();
   }
-  // The answer is always a bare bill path of this site.
-  for (const p of ['/laken-riley-act', '/es/rescissions-act-of-2025', '/second-name-act']) {
-    expect(target(p), p).toMatch(/^(\/es)?\/bills\/[a-z]+-\d+-\d+$/);
+  // The answer is always a bare bill path of this site, or a shared name's page.
+  for (const p of ['/laken-riley-act', '/es/rescissions-act-of-2025', '/second-name-act', '/save-act', '/es/save-act']) {
+    expect(target(p), p).toMatch(/^(\/es)?\/(bills\/[a-z]+-\d+-\d+|names\/\d+\/[a-z0-9]+(-[a-z0-9]+)*)$/);
   }
 });
 
@@ -538,9 +542,10 @@ test('after the switch: the tracked Congress first, then each ended one, the uni
   expect(target('/laken-riley-act')).toBe('/bills/s-5-119');
   expect(target('/es/laken-riley-act')).toBe('/es/bills/s-5-119');
   expect(target('/rescissions-act')).toBe('/bills/hr-7-120');
-  expect(target('/save-act')).toBeNull();
-  // Shared in the Congress searched first: the not-found, never the older bill.
-  expect(target('/twin-act')).toBeNull();
+  // Shared in the ended Congress, held by no newer one: its page, under the 119th.
+  expect(target('/save-act')).toBe('/names/119/save-act');
+  // Shared in the Congress searched first: that Congress's page, never the older bill.
+  expect(target('/twin-act')).toBe('/names/120/twin-act');
   expect(target('/carry-act')).toBe('/bills/hr-31-120');
   expect(target('/nothing-act')).toBeNull();
   // Switch day, before the new Congress has any bill: every ended name answers from the 119th.
@@ -589,7 +594,8 @@ test('the committed state: the table is built from data/short-titles.json alone,
           b.congress_number === table.congress &&
           (titles[`${b.bill_type}-${b.bill_number}-${b.congress_number}`]?.titles ?? []).some((t) => nameSlug(t) === name),
       );
-      if (address === null) expect(carriers.length > 1 || unreadNames.has(name), name).toBe(true);
+      if (address === null) expect(carriers.length > 1, name).toBe(true);
+      else if (address === false) expect(unreadNames.has(name), name).toBe(true); // held back by a bill not read yet
       else {
         expect(carriers.map((b) => `${b.bill_type}${b.bill_number}`), name).toEqual([`${address.type}${address.number}`]);
         checked++;

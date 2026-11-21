@@ -40,6 +40,7 @@ export function BillCard({
   coverageCount,
   caption,
   emphasis = false,
+  showStatus = true,
 }: {
   bill: BillTeaser;
   coverageCount?: number;
@@ -57,6 +58,14 @@ export function BillCard({
       it's read (2026-07 critique round 2). Never a new color, per the
       nonpartisan-palette rule. */
   emphasis?: boolean;
+  /** false drops the status label from the meta row. ONLY the shared-name page
+      (app/[locale]/names) passes it, because it prints the record's own,
+      more precise "where it stands" line right above the card, and the two
+      can read as contradicting each other (H.R. 2400, 2026-11-17: "back with
+      the House to settle the changes" over "PASSED ONE CHAMBER"). The Big
+      Question cards follow the same rule (components/MomentVehicleCard.tsx).
+      Absent, the card renders exactly as it always has. */
+  showStatus?: boolean;
 }) {
   const t = useTranslations();
   const format = useFormatter();
@@ -85,18 +94,21 @@ export function BillCard({
             and `font-mono` was neither */}
         <span className="whitespace-nowrap tabular-nums normal-case">
           {bill.identifier}
-          <span aria-hidden> ·</span>
+          {(showStatus || annotation || coverageCount != null) && <span aria-hidden> ·</span>}
         </span>
         {/* The STATUS chunk may wrap inside itself at every width (re-check of
             #523, round 5): "De vuelta en la Cámara para resolver los cambios"
             is wider than a card's text column at every phone width from 320
             to 430px. A flex item wraps inside only when it alone is wider than
             the line, so every status word that fits renders exactly as
-            before; the other chunks keep their own rule above. */}
-        <span className="whitespace-normal">
-          {t(`bills.status.${bill.statusKey}`)}
-          {(annotation || coverageCount != null) && <span aria-hidden> ·</span>}
-        </span>
+            before; the other chunks keep their own rule above. Left out when
+            `showStatus` is false (the shared-name page). */}
+        {showStatus && (
+          <span className="whitespace-normal">
+            {t(`bills.status.${bill.statusKey}`)}
+            {(annotation || coverageCount != null) && <span aria-hidden> ·</span>}
+          </span>
+        )}
         {/* THE RUNG'S FOOTNOTE, in ink like everything else in this row.
             `just_passed` exists because a bill that has just cleared a chamber
             used to read as ordinary (on the day the Senate passed the

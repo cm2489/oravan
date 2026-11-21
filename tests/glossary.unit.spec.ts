@@ -733,6 +733,11 @@ test.describe('the client payload', () => {
       const expected = withoutEndedMessages(msgs) as Record<string, unknown>;
       for (const key of Object.keys(msgs)) {
         if (key === 'glossary') continue;
+        // The shared-name page's strings are read only on the server (i18n/client-messages.ts).
+        if (key === 'namesPage') {
+          expect(client[key], key).toBeUndefined();
+          continue;
+        }
         expect(client[key], key).toEqual(expected[key]);
       }
     }

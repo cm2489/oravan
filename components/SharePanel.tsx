@@ -5,10 +5,11 @@ import { Check, Link as LinkIcon, MessageCircle, Share2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 /*
- * Share a bill page. The URL is always the canonical, slug-only page URL
- * (built server-side from lib/site.ts): no query params, no stance, no
- * locale-tracking params — a shared link must say nothing about the person
- * who shared it. Native share sheet when the browser has one; otherwise a
+ * Share a bill page. The URL is the bill's short address (DRAFT, waits for
+ * the owner; built server-side by lib/share-address.ts: a record short
+ * title's name, shared or not, else the number, else the full page URL): no query params,
+ * no stance, no locale-tracking params — a shared link must say nothing
+ * about the person who shared it. Native share sheet when the browser has one; otherwise a
  * copy-link button plus a plain WhatsApp anchor (user-initiated navigation).
  * No third-party share SDKs, widgets, or scripts, ever.
  *
@@ -17,7 +18,7 @@ import { useTranslations } from 'next-intl';
  */
 
 interface Props {
-  /** Canonical slug-only URL for this bill page. */
+  /** The bill's short address (or its full page URL), slug-only, no query. */
   url: string;
   /** Neutral share text: citation + headline. */
   text: string;

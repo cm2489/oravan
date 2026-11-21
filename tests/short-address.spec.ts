@@ -241,6 +241,73 @@ test.describe('short addresses', () => {
     expect(landed.hash).toBe('#top');
   });
 
+  /*
+   * THE ADDRESS THAT CARRIES ITS CONGRESS (the owner's card 196, Nov 19, 2026:
+   * "Build a short address that carries the Congress and never changes, and
+   * have Share copy that."). /hr1109-119 opens the 119th's H.R. 1109 and
+   * nothing else, ever. Same answer as the number address in every other way.
+   */
+  test('the address that carries its Congress redirects (307) to the bill, every spelling, both languages', async ({ request }) => {
+    const bill = SAMPLES[0];
+    test.skip(!bill, 'no short address to check');
+    const c = SHORT_ADDRESS_CONGRESS;
+    const short = `${bill.bill_type}${bill.bill_number}-${c}`;
+    const cases: Array<[string, string]> = [
+      [`/${short}`, `/bills/${bill.slug}`],
+      [`/${short.toUpperCase()}`, `/bills/${bill.slug}`],
+      [`/${bill.bill_type}-${bill.bill_number}-${c}`, `/bills/${bill.slug}`],
+      [`/en/${short}`, `/bills/${bill.slug}`],
+      [`/${short}?stance=support&utm_source=x`, `/bills/${bill.slug}`],
+      [`/es/${short}`, `/es/bills/${bill.slug}`],
+      [`/es/${bill.bill_type.toUpperCase()}-${bill.bill_number}-${c}?stance=oppose`, `/es/bills/${bill.slug}`],
+    ];
+    for (const [from, to] of cases) {
+      expect(expectedTarget(from.split('?')[0]), from).toBe(to);
+      const res = await request.get(from, { maxRedirects: 0, headers: { accept: 'text/html' } });
+      expect(res.status(), from).toBe(307);
+      const location = new URL(res.headers()['location'] ?? '', 'http://x');
+      expect(location.pathname, from).toBe(to);
+      expect(location.search, from).toBe('');
+      expect(res.headers()['cache-control'], from).toContain('no-store');
+      expect(res.headers()['x-robots-tag'], from).toBe('noindex');
+      expect(res.headers()['set-cookie'], from).toBeUndefined();
+    }
+    for (const [from, to] of [
+      [`/${short}/`, `/bills/${bill.slug}`],
+      [`/es/${short}`, `/es/bills/${bill.slug}`],
+    ] as const) {
+      const page = await request.get(from, { headers: { accept: 'text/html' } });
+      expect(page.status(), from).toBe(200);
+      expect(new URL(page.url()).pathname, from).toBe(to);
+    }
+  });
+
+  test('the address that carries its Congress: a bill not held, or a Congress with no table (a future one), is the normal 404', async ({ request }) => {
+    const bill = SAMPLES[0];
+    test.skip(!bill, 'no short address to check');
+    const c = SHORT_ADDRESS_CONGRESS;
+    const n = unheldHouseNumber();
+    const titleOf = (html: string) => /<title>([^<]*)<\/title>/.exec(html)?.[1];
+    const refTitles: Record<string, string | undefined> = {};
+    for (const lang of ['', '/es']) {
+      const ref = await request.get(`${lang}/this-page-does-not-exist-404`, { maxRedirects: 0 });
+      expect(ref.status()).toBe(404);
+      refTitles[lang] = titleOf(await ref.text());
+    }
+    for (const from of [
+      `/hr${n}-${c}`,
+      `/es/hr${n}-${c}`,
+      `/${bill.bill_type}${bill.bill_number}-${c + 1}`, // a future Congress: never a guess
+      `/es/${bill.bill_type}${bill.bill_number}-${c + 1}`,
+      `/${bill.bill_type}${bill.bill_number}-9999`,
+    ]) {
+      expect(expectedTarget(from), from).toBeNull();
+      const res = await request.get(from, { maxRedirects: 0 });
+      expect(res.status(), from).toBe(404);
+      expect(titleOf(await res.text()), from).toBe(refTitles[from.startsWith('/es/') ? '/es' : '']);
+    }
+  });
+
   test('the sitemap and robots.txt carry no short address', async ({ request }) => {
     const shortShape = /^(?:\/(?:en|es))?\/(?:hconres|sconres|hjres|sjres|hres|sres|hr|s)-?\d+\/?$/i;
     const sitemap = await (await request.get('/sitemap.xml')).text();
@@ -269,6 +336,7 @@ const NO_NAMES = 'no name resolves yet: data/short-titles.json is absent, or its
 const nameOf = (shared: boolean): { name: string; target: string | null } | undefined => {
   for (const table of NAMES) {
     for (const [name, address] of table.names) {
+      if (address === false) continue; // held back by the fill gate: the normal not-found, neither kind
       if ((address === null) !== shared) continue;
       // The expectation through the same order the proxy uses: a number first, then a name.
       return { name, target: expectedTarget(`/${name}`) ?? nameAddressTarget(`/${name}`, ['en', 'es'], 'en', NAMES) };
@@ -321,18 +389,37 @@ test.describe('name addresses', () => {
     }
   });
 
-  test('a name two or more bills share, a near miss and a reserved word are the normal 404 or the real page', async ({ request }) => {
+  test('a name two or more bills share opens their page (307); a near miss is the normal 404; a reserved word is the real page', async ({ request }) => {
     test.skip(NAMES.length === 0, NO_NAMES);
     const shared = nameOf(true);
     const unique = nameOf(false);
     const titleOf = (html: string) => /<title>([^<]*)<\/title>/.exec(html)?.[1];
+    if (shared) {
+      // The owner's card 193 (Nov 14, 2026): "Build the small page for shared names, so a name never breaks."
+      for (const [from, to] of [
+        [`/${shared.name}`, shared.target!],
+        [`/es/${shared.name}?stance=support`, `/es${shared.target!}`],
+      ] as const) {
+        expect(to).toMatch(/^(\/es)?\/names\/\d+\/[a-z0-9-]+$/);
+        const res = await request.get(from, { maxRedirects: 0, headers: { accept: 'text/html' } });
+        expect(res.status(), from).toBe(307);
+        const location = new URL(res.headers()['location'] ?? '', 'http://x');
+        expect(location.pathname, from).toBe(to);
+        expect(location.search, from).toBe('');
+        expect(res.headers()['cache-control'], from).toContain('no-store');
+        expect(res.headers()['x-robots-tag'], from).toBe('noindex');
+        expect(res.headers()['set-cookie'], from).toBeUndefined();
+        const page = await request.get(to, { headers: { accept: 'text/html' } });
+        expect(page.status(), to).toBe(200);
+      }
+    }
     const reference = {
       en: titleOf(await (await request.get('/this-page-does-not-exist-404')).text()),
       es: titleOf(await (await request.get('/es/this-page-does-not-exist-404')).text()),
     };
     const notFound = [
-      ...(shared ? [`/${shared.name}`, `/es/${shared.name}`] : []),
       ...(unique ? [`/${unique.name}-x`, `/x-${unique.name}`, `/${unique.name.replace(/-/g, '_')}`] : []),
+      ...(shared ? [`/names/1/${shared.name}`, `/names/${SHORT_ADDRESS_CONGRESS}/${shared.name}-x`] : []),
     ].filter((p) => expectedTarget(p) === null && nameAddressTarget(p, ['en', 'es'], 'en', NAMES) === null);
     for (const from of notFound) {
       const res = await request.get(from, { maxRedirects: 0 });
@@ -342,6 +429,25 @@ test.describe('name addresses', () => {
     for (const path of ['/privacy', '/es/privacy', '/bills', '/today', '/about']) {
       const res = await request.get(path, { maxRedirects: 0 });
       expect(res.status(), path).not.toBe(307);
+    }
+  });
+
+  test('a shared name\u2019s page lists its bills and nothing to act on, and stays out of search', async ({ page }) => {
+    test.skip(NAMES.length === 0, NO_NAMES);
+    const shared = nameOf(true);
+    test.skip(!shared, 'no name is shared by two bills in the data');
+    for (const locale of ['en', 'es'] as const) {
+      const to = locale === 'es' ? `/es${shared!.target!}` : shared!.target!;
+      const res = await page.goto(to);
+      expect(res?.status(), to).toBe(200);
+      await expect(page.locator('html')).toHaveAttribute('lang', locale);
+      await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
+      const items = page.locator('main ul > li');
+      expect(await items.count(), to).toBeGreaterThan(1);
+      const links = await page.locator('main ul > li a').evaluateAll((as) => as.map((a) => new URL((a as HTMLAnchorElement).href).pathname));
+      for (const href of links) expect(href, to).toMatch(/^(\/es)?\/bills\/[a-z]+-\d+-\d+$/);
+      // Nothing to act on: no form, no stance radio, no call link, no tel: link.
+      await expect(page.locator('main form, main [role="radio"], main a[href*="/call"], main a[href^="tel:"]')).toHaveCount(0);
     }
   });
 });

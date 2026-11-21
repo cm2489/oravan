@@ -405,9 +405,12 @@ test('after the switch: the ended Congress when the new one has no such bill yet
 });
 
 test('after the switch: a number neither Congress holds is still the normal 404, and the shapes are unchanged', () => {
-  for (const pathname of ['/hr2', '/s1', '/hres10', '/hr99999', '/hr-1-119', '/bills/hr1', '/hr1/extra', '/fr/hr1', '/es/es/hr1']) {
+  for (const pathname of ['/hr2', '/s1', '/hres10', '/hr99999', '/hr-2-119', '/bills/hr1', '/hr1/extra', '/fr/hr1', '/es/es/hr1']) {
     expect(switchedTarget(pathname), pathname).toBeNull();
   }
+  // Since the owner's card 196 (Nov 19, 2026), /hr-1-119 is the address that carries its Congress, typed with
+  // hyphens: it opens the 119th's H.R. 1 and nothing else, before and after the switch.
+  expect(switchedTarget('/hr-1-119'), '/hr-1-119').toBe('/bills/hr-1-119');
   // The target is always a bare bill path of one of the two Congresses.
   for (const pathname of ['/hr1', '/es/hr9340', '/S5', '/s7']) {
     expect(switchedTarget(pathname), pathname).toMatch(/^(\/es)?\/bills\/[a-z]+-\d+-(119|120)$/);
@@ -460,10 +463,14 @@ test('the full address always opens the same bill: short addresses never touch /
   // The card's promise: "the full address (oravan.org/bills/hr-9340-119)
   // always opens the same bill." No full address is a short address, before
   // or after the switch.
-  for (const pathname of ['/bills/hr-9340-119', '/es/bills/hr-9340-119', '/bills/hr-1-120', '/hr-9340-119']) {
+  for (const pathname of ['/bills/hr-9340-119', '/es/bills/hr-9340-119', '/bills/hr-1-120']) {
     expect(switchedTarget(pathname), pathname).toBeNull();
     expect(shortAddressTarget(pathname, LOCALES, 'en', INDEX, FALLBACK), pathname).toBeNull();
   }
+  // The full address's last part typed at the root (/hr-9340-119) is, since the owner's card 196 (Nov 19, 2026),
+  // the address that carries its Congress: it opens that same bill, before and after the switch, never another.
+  expect(switchedTarget('/hr-9340-119')).toBe('/bills/hr-9340-119');
+  expect(shortAddressTarget('/hr-9340-119', LOCALES, 'en', INDEX, FALLBACK)).toBe('/bills/hr-9340-119');
 });
 
 test('a malformed fallback table is skipped, never a throw, and the order of the rest is kept', () => {

@@ -104,6 +104,46 @@ export function parseShortAddress(segment: string): ShortAddress | null {
   return { type: match[1] as ShortAddressType, number: Number(match[2]) };
 }
 
+/*
+ * THE ADDRESS THAT CARRIES ITS CONGRESS (the owner's card 196, Nov 19, 2026,
+ * 12:50 PM ET: "Build a short address that carries the Congress and never
+ * changes, and have Share copy that."). oravan.org/hr1109-119 is H.R. 1109 of
+ * the 119th Congress, today and after the change of Congress, when the bare
+ * oravan.org/hr1109 starts opening the 120th's H.R. 1109 (decision 190).
+ *
+ * THE FORM: type, number, a hyphen, the Congress, in the order of the bill's
+ * permanent slug (hr-1109-119). The same typed variants as the bare number
+ * address: any letter case, one optional hyphen between type and number
+ * (hr-1109-119), a trailing slash, and /en/ or /es/ in front. No leading zero
+ * in the number or the Congress; a Congress of at most four digits.
+ *
+ * WHAT IT OPENS: only that Congress's bill. It is looked up in that one
+ * Congress's table (the tracked Congress's, or an ended Congress's fallback
+ * table) and nowhere else: never another Congress's bill of the same number.
+ * A bill the corpus does not hold, or a Congress it holds no table for (a
+ * future one), is the site's normal not-found.
+ *
+ * It can never be a name: nameAddressRefusal refuses every name of this shape.
+ */
+const CONGRESS_ADDRESS_PATTERN = /^(hconres|sconres|hjres|sjres|hres|sres|hr|s)-?([1-9]\d{0,4})-([1-9]\d{0,3})$/;
+
+/** A short address with its Congress. */
+export interface CongressAddress extends ShortAddress {
+  congress: number;
+}
+
+/** Read one path segment as a Congress-carrying address (hr1109-119, HR-1109-119), or null. */
+export function parseCongressAddress(segment: string): CongressAddress | null {
+  const match = CONGRESS_ADDRESS_PATTERN.exec(segment.toLowerCase());
+  if (!match) return null;
+  return { type: match[1] as ShortAddressType, number: Number(match[2]), congress: Number(match[3]) };
+}
+
+/** The Congress-carrying address's path for a bill, e.g. /hr1109-119 (no language prefix). */
+export function congressAddressPath(bill: ShortAddressBill): string {
+  return `/${String(bill.bill_type).toLowerCase()}${bill.bill_number}-${bill.congress_number}`;
+}
+
 /** The canonical bill slug a short address points at, e.g. hr-9340-119. */
 export function shortAddressSlug(address: ShortAddress, congress: number = SHORT_ADDRESS_CONGRESS): string {
   return `${address.type}-${address.number}-${congress}`;
@@ -261,6 +301,14 @@ export function shortAddressTarget(
   let locale: string | null = null;
   if (segments.length === 2 && locales.includes(segments[0])) locale = segments.shift() ?? null;
   if (segments.length !== 1) return null;
+  const prefix = locale && locale !== defaultLocale ? `/${locale}` : '';
+  // A Congress-carrying address opens that Congress's bill and no other (card 196).
+  const carried = parseCongressAddress(segments[0]);
+  if (carried) {
+    const table = carried.congress === congress ? index : fallback.find((t) => t.congress === carried.congress)?.index;
+    if (!table || !indexHas(table, carried)) return null;
+    return `${prefix}/bills/${shortAddressSlug(carried, carried.congress)}`;
+  }
   const address = parseShortAddress(segments[0]);
   if (!address) return null;
   let resolved: number | null = indexHas(index, address) ? congress : null;
@@ -269,7 +317,6 @@ export function shortAddressTarget(
     if (indexHas(table.index, address)) resolved = table.congress;
   }
   if (resolved === null) return null;
-  const prefix = locale && locale !== defaultLocale ? `/${locale}` : '';
   return `${prefix}/bills/${shortAddressSlug(address, resolved)}`;
 }
 
@@ -332,9 +379,11 @@ export function shortAddressTarget(
  * A name opens a bill only when every bill Oravan tracks in that Congress
  * has been read or tried, no other of those bills has a short title that
  * makes the same name and no unread one has a stored title that makes it,
- * and every Congress searched before that one (the tracked Congress first,
- * then each ended Congress, most recently ended first) has been read or
- * tried in full and does not hold the name. ("SAFE Act" and "Safe Act" make
+ * and no Congress searched before that one (the tracked Congress first,
+ * then each ended Congress, most recently ended first) holds the name or,
+ * while not read or tried in full, is known to make it. (Each Congress is
+ * judged on its own since the second independent check of #510, Nov 20,
+ * 2026: an unread 120th bill turns off the 120th's names only.) ("SAFE Act" and "Safe Act" make
  * one name, and so do "Twin Spelling Act" and "Twin-Spelling Act".) A twin Oravan does not track (most bills of a Congress are never in
  * the corpus) is not counted, so which bill a name opens depends on which
  * bills Oravan tracks, and a name can stop opening its bill the day a twin
@@ -349,6 +398,9 @@ export function shortAddressTarget(
  * data/short-titles-retry.json does; until a Congress is read or tried in full
  * it holds no names and the search stops there, and a bill tried but never
  * read holds back every name its stored title in data/bills.json makes.
+ * (Since the owner's card 193, Nov 14, 2026, 9:13 PM ET, on the draft #510: the
+ * shared case opens /names/<congress>/<name>, a prerendered page listing the
+ * bills, instead of the not-found.)
  *
  * THE TABLE (encodeNameTables / decodeNameTables). Built at BUILD time by
  * next.config.ts and inlined into the proxy bundle as SHORT_ADDRESS_NAMES:
@@ -383,6 +435,7 @@ export const NAME_ADDRESS_RESERVED: readonly string[] = Object.freeze([
   'admin', 'login', 'logout', 'account', 'settings', 'help', 'static', 'assets', 'public', 'sitemap', 'robots',
   'manifest', 'favicon', 'icon', 'llms', 'mcp', 'glossary', 'citations', 'follow', 'why-call', 'law', 'laws', 'new',
   'week', 'weekly', 'brief', 'briefs', 'topics', 'topic', 'issues', 'issue', 'contact', 'news', 'press', 'blog',
+  'names', 'name',
 ]);
 
 const NAME_MIN = 4;
@@ -451,6 +504,7 @@ export function nameAddressRefusal(
   if (name.length > NAME_MAX) return `longer than ${NAME_MAX} characters`;
   if (!NAME_SHAPE.test(name) || !/[a-z]/.test(name)) return 'not a-z, 0-9 and single hyphens with a letter';
   if (parseShortAddress(name) !== null || parseShortAddress(name.replace(/-/g, '')) !== null) return 'it reads as a number address';
+  if (parseCongressAddress(name) !== null) return 'it reads as a number address with its Congress';
   if (![`/${name}`, ...locales.map((l) => `/${l}/${name}`)].every(proxySeesPath)) {
     return "proxy.ts's matcher skips it in at least one language";
   }
@@ -467,7 +521,16 @@ export function nameAddressAllowed(name: string, reserved: ReadonlySet<string>):
 export type ShortTitleFile = Readonly<Record<string, { readonly titles: readonly string[] }>>;
 
 /** One Congress's names: name -> its one bill, or null when two or more bills share it. */
-export type NameTable = ReadonlyMap<string, ShortAddress | null>;
+/**
+ * A name HELD BACK by the fill gate (lib/short-address-build.ts gateNameTables): a bill not yet read
+ * could make it. It opens nothing and stops the search, like the normal not-found. Distinct from a
+ * SHARED name (`null`), which since the owner's card 193 opens the page that lists its bills: a held-back
+ * name has no such page, so it must never redirect to one (found merging main into #510, 2026-11-19).
+ * Encoded as `name=-`.
+ */
+export const NAME_HELD_BACK = false as const;
+
+export type NameTable = ReadonlyMap<string, ShortAddress | null | typeof NAME_HELD_BACK>;
 
 export type NameTables = ReadonlyArray<{ congress: number; names: NameTable }>;
 
@@ -541,12 +604,12 @@ export function encodeNameTables(
     const entries = [...names.keys()].sort().map((name) => {
       const holders = names.get(name)!;
       if (holders.size > 1) {
-        // A shared name is in the table (so the search stops there) but opens nothing: say so too.
+        // A shared name is in the table (so the search stops there) and opens no single bill: say so too.
         const bills = [...holders].sort().map((h) => {
           const a = parseShortAddress(h)!;
           return `${a.type}-${a.number}-${congress}`;
         });
-        onRefused?.({ slug: bills.join(' '), title: '', name, reason: `shared by ${holders.size} bills, so it opens none of them` });
+        onRefused?.({ slug: bills.join(' '), title: '', name, reason: `shared by ${holders.size} bills, so it opens the page that lists them, /names/${congress}/${name}` });
       }
       return `${name}=${holders.size === 1 ? [...holders][0] : ''}`;
     });
@@ -561,7 +624,7 @@ export function decodeNameTables(encoded: string | undefined): NameTables {
   for (const part of (encoded ?? '').split('|')) {
     const match = /^([1-9]\d{0,3})@(.+)$/.exec(part);
     if (!match) continue;
-    const names = new Map<string, ShortAddress | null>();
+    const names = new Map<string, ShortAddress | null | typeof NAME_HELD_BACK>();
     for (const entry of match[2].split(',')) {
       const eq = entry.indexOf('=');
       if (eq <= 0) continue;
@@ -570,6 +633,10 @@ export function decodeNameTables(encoded: string | undefined): NameTables {
       const bill = entry.slice(eq + 1);
       if (bill === '') {
         names.set(name, null);
+        continue;
+      }
+      if (bill === '-') {
+        names.set(name, NAME_HELD_BACK);
         continue;
       }
       const address = parseShortAddress(bill);
@@ -603,8 +670,14 @@ export function nameAddressTarget(
   for (const table of tables) {
     if (!table.names.has(name)) continue;
     const address = table.names.get(name);
-    if (!address) return null; // two or more bills of this Congress carry it: never choose
+    // Held back by the fill gate: the normal not-found, and the search stops here.
+    if (address === NAME_HELD_BACK) return null;
     const prefix = locale && locale !== defaultLocale ? `/${locale}` : '';
+    // Two or more bills of this Congress make the name: never choose. Since the
+    // owner's card 193 (Nov 14, 2026), the name opens the page that lists them
+    // all (app/[locale]/names/[congress]/[name], prerendered; lib/shared-names.ts),
+    // under this Congress's number, never an older Congress's bill.
+    if (!address) return `${prefix}/names/${table.congress}/${name}`;
     return `${prefix}/bills/${shortAddressSlug(address, table.congress)}`;
   }
   return null;

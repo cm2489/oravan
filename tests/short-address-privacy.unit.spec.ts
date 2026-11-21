@@ -158,7 +158,8 @@ async function drivenBurst(
 
     // Every redirect target is a bare bill path: no query, no stance.
     expect(targets).toHaveLength(redirected.length);
-    for (const target of targets) expect(target).toMatch(/^(\/es)?\/bills\/[a-z]+-\d+-\d+$/);
+    // (or, since the owner's card 193, a shared name's page: /names/<congress>/<name>)
+    for (const target of targets) expect(target).toMatch(/^(\/es)?\/(bills\/[a-z]+-\d+-\d+|names\/\d+\/[a-z0-9]+(-[a-z0-9]+)*)$/);
 
     // Two keys exist, both bare template labels with a date.
     const day = usageDayKey();
@@ -227,6 +228,25 @@ test('driven: a burst of short-address requests leaves one daily "short" count o
     ['/hr99999', '/hres10'],
     [`hr${hr.bill_number}`, `-${hr.bill_number}-`, `s${s.bill_number}`],
   );
+});
+
+test('driven: the address that carries its Congress (card 196) counts the same one "short" word, and nothing about bill or Congress', async () => {
+  const corpus: ShortAddressBill[] = [
+    { bill_type: 'hr', bill_number: 4321, congress_number: SHORT_ADDRESS_CONGRESS },
+    { bill_type: 's', bill_number: 765, congress_number: SHORT_ADDRESS_CONGRESS },
+  ];
+  const index = decodeShortAddressIndex(encodeShortAddressIndex(corpus, SHORT_ADDRESS_CONGRESS));
+  const C = SHORT_ADDRESS_CONGRESS;
+  const targets = await drivenBurst(
+    index,
+    [],
+    C,
+    [`/hr4321-${C}`, `/HR-4321-${C}`, `/es/s765-${C}?stance=oppose&utm_source=probe`, `/hr4321-${C}/`],
+    // A bill the corpus does not hold, a future Congress, a Congress with no table: the normal path, counted 'other'.
+    [`/hr4322-${C}`, `/hr4321-${C + 1}`, `/hr4321-${C - 1}`],
+    ['4321', '765', `-${C}`, 'stance', 'probe'],
+  );
+  expect(targets).toEqual([`/bills/hr-4321-${C}`, `/bills/hr-4321-${C}`, `/es/bills/s-765-${C}`, `/bills/hr-4321-${C}`]);
 });
 
 test('driven, after the switch: a fallback to the ended Congress counts the same one word, and nothing about which Congress', async () => {
@@ -315,8 +335,10 @@ test('driven: name addresses count the same one "short" word, and the typed name
       '/es/laken-riley-act?stance=oppose&utm_source=probe',
       '/rescissions-act-of-2025?stance=support',
       '/s5', // a number beside them
+      '/save-act', // shared by two bills: the page that lists both (card 193)
+      '/es/SAVE-ACT?stance=support',
     ],
-    ['/save-act', '/es/save-act', '/laken-riley', '/laken-riley-act-of-2025', '/hr99999'],
+    ['/laken-riley', '/laken-riley-act-of-2025', '/hr99999'],
     ['laken', 'riley', 'rescission', 'save', 'act', 's5', '-5-', 'hr4'],
     names,
   );
@@ -326,5 +348,10 @@ test('driven: name addresses count the same one "short" word, and the typed name
     `/es/bills/s-5-${SHORT_ADDRESS_CONGRESS}`,
     `/bills/hr-4-${SHORT_ADDRESS_CONGRESS}`,
     `/bills/s-5-${SHORT_ADDRESS_CONGRESS}`,
+    `/names/${SHORT_ADDRESS_CONGRESS}/save-act`,
+    `/es/names/${SHORT_ADDRESS_CONGRESS}/save-act`,
   ]);
+  // The page itself is counted under the existing 'other' page shape, and nothing about the name.
+  expect(pageviewSurfaceForPath(`/names/${SHORT_ADDRESS_CONGRESS}/save-act`, LOCALES)).toBe('other');
+  expect(pageviewSurfaceForPath(`/es/names/${SHORT_ADDRESS_CONGRESS}/save-act`, LOCALES)).toBe('other');
 });

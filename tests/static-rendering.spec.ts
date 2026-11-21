@@ -1,7 +1,8 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
-import { getAllLegislators, getVacancies, vacancySlug } from '../lib/core';
+import { getAllBills, getAllLegislators, getVacancies, vacancySlug } from '../lib/core';
+import { sharedNamePages, sharedNamePath } from '../lib/shared-names';
 import {
   encodeShortAddressFallback,
   encodeShortAddressIndex,
@@ -119,7 +120,7 @@ const PER_REQUEST_IN_PROXY: Record<string, string> = {
  * The dynamic routes whose prerendered ids each have their own test below
  * (the id set is the route's own generateStaticParams, recomputed here).
  */
-const PRERENDERED_DYNAMIC = ['/bills/[id]', '/questions/[id]', '/reps/[bioguide]', '/today/[date]'];
+const PRERENDERED_DYNAMIC = ['/bills/[id]', '/questions/[id]', '/reps/[bioguide]', '/today/[date]', '/names/[congress]/[name]'];
 
 /**
  * Every [locale] page that must be prerendered HTML, in BOTH locales: every
@@ -234,6 +235,19 @@ test('the daily brief prerenders every dated permalink in its window, in both la
   expect(missing).toEqual([]);
 });
 
+test('every shared-name page is prerendered in both languages, and there is no other', () => {
+  // app/[locale]/names/[congress]/[name] (2026-11-15, draft #510): one page per
+  // shared name the proxy can reach (lib/shared-names.ts), from the committed
+  // data (unknown addresses are notFound(), the bills/[id] posture). None while data/short-titles.json does not
+  // exist, so this then pins that the route prerendered nothing at all.
+  const prerendered = routes();
+  const expected = ['en', 'es'].flatMap((locale) =>
+    sharedNamePages(getAllBills()).map((p) => `/${locale}${sharedNamePath(p.congress, p.name)}`),
+  );
+  const built = Object.keys(prerendered).filter((r) => /^\/(en|es)\/names\//.test(r));
+  expect(built.sort()).toEqual([...expected].sort());
+});
+
 test('any re-added loading boundary under [locale] is a client component', () => {
   /*
    * The fast, diagnostic half: the manifest assertions above say WHAT broke,
@@ -286,15 +300,19 @@ test('the short-address lookup in proxy.ts carries a build-time bitset, never th
   // the route tree) stay out of the proxy too: only their output crosses.
   expect(proxyImports.join('\n')).not.toMatch(/short-address-build|route-segments|short-titles/);
 
-  // Build half: find the server bundle(s) that hold the short-address
-  // pattern and prove none of them carries corpus text.
+  // Build half: the proxy's own server bundle, read from the chunks
+  // .next/server/middleware.js loads (Next 16 still names proxy.ts's entry
+  // that), must hold the short-address pattern and no corpus text. Since the
+  // share panel's draft (lib/share-address.ts) the bill PAGE's server chunk
+  // holds the pattern too, legitimately beside the bill it renders, so the
+  // proxy's chunks are named rather than found by the pattern.
   const serverDir = join(process.cwd(), '.next/server');
   if (!existsSync(serverDir)) throw new Error('No .next/server: run `npx next build` first (see routes() above).');
   const marker = 'hconres|sconres|hjres|sjres|hres|sres|hr|s';
-  const holders = readdirSync(serverDir, { withFileTypes: true, recursive: true })
-    .filter((e) => e.isFile() && e.name.endsWith('.js'))
-    .map((e) => join(e.parentPath ?? serverDir, e.name))
-    .filter((file) => readFileSync(file, 'utf8').includes(marker));
+  const entry = readFileSync(join(serverDir, 'middleware.js'), 'utf8');
+  const proxyChunks = [...entry.matchAll(/R\.c\("server\/([^"]+)"\)/g)].map((m) => join(serverDir, m[1]));
+  expect(proxyChunks.length, 'middleware.js names no chunk').toBeGreaterThan(0);
+  const holders = proxyChunks.filter((file) => readFileSync(file, 'utf8').includes(marker));
   expect(holders.length, 'no built server file holds the short-address lookup').toBeGreaterThan(0);
   for (const file of holders) {
     const text = readFileSync(file, 'utf8');
