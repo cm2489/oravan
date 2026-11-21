@@ -17,6 +17,7 @@ import { billRail } from '../lib/bill-rail';
 import { journeySessionAt, journeySessionFrom } from '../lib/floor-session';
 import { docketRung } from '../lib/docket.mjs';
 import type { Bill } from '../lib/types';
+import { fixClock } from './fixed-clock';
 
 /*
  * THE STEPPER'S "Right now:" SENTENCE FOLLOWS THE CHAMBER-SESSION GATE
@@ -35,6 +36,10 @@ import type { Bill } from '../lib/types';
 // Midnight UTC, so an action dated 14 days back sits exactly on the window's
 // last day (lib/urgency.mjs isSignalFresh: days <= 14).
 const NOW = Date.parse('2026-11-20T00:00:00Z');
+// liveCallTarget takes no clock: through recordCallTarget, isSignalFresh reads
+// Date.now(). Without this the rule 8 tests compare fixtures dated from NOW
+// against the real day and start failing 13 days later.
+fixClock(NOW);
 const day = (ago: number): string => new Date(NOW - ago * 86_400_000).toISOString().slice(0, 10);
 
 // Verbatim record sentences, one per floor shape the stepper can call live.
