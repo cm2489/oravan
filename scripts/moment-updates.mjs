@@ -2002,6 +2002,51 @@ export function recordOnlyRevision({ momentId, entry, statuses, records, votes, 
 }
 
 /**
+ * After writeSummaries: A RECORD-ONLY SENTENCE NEVER FALLS BEHIND THE RECORD
+ * (2026-11-21). The record-only sentence states one fact, the date of the
+ * latest action the record holds on the question's measures. When the record
+ * moves, the model is asked for a summary; when that rewrite does not land
+ * (refused by the lint, the call failed, the budget was spent, no key), the
+ * old sentence used to stand, and it was then false: the penny question's
+ * page said "The latest action in the official record on these measures is
+ * dated October 14, 2026." from 2026-11-12, when H.R. 10167 was presented to
+ * the president, through its signing on 2026-11-20, while the model's
+ * replies were refused eight runs in a row (rule 4: a shipped claim that has
+ * stopped being true; rule 6).
+ *
+ * So for every planned question whose CURRENT revision is the record-only
+ * template and no longer reads as the template reads against tonight's
+ * record, the sentence is restated: no model call, no budget, no attempt
+ * spent. A model-written revision is never replaced here (there the previous
+ * revision stands, as before), and a question whose model rewrite landed
+ * tonight is model-written by now and is skipped.
+ *
+ * The refusal streak ends with it, exactly as it does when the plan itself
+ * chooses the record-only sentence (see writeSummaries): the summary is
+ * current again, and the next model call waits for the record to move.
+ * Mutates `storeArg`; returns how many it wrote.
+ * @param {{ plan: Record<string, any>[], store: Record<string, any>, moments: Record<string, any> }} args
+ */
+export function writeBehindRecordOnlyFallbacks({ plan, store: storeArg, moments: momentsArg }) {
+  let written = 0;
+  for (const p of plan ?? []) {
+    const entry = storeArg?.[p.momentId];
+    const current = (entry?.summary_revisions ?? []).at(-1);
+    if (!entry || current?.model !== RECORD_ONLY_MODEL) continue;
+    const contextRefs = (momentsArg?.[p.momentId]?.context_refs ?? []).map((r) => r?.url).filter(Boolean);
+    const revision = recordOnlyRevision({ momentId: p.momentId, entry, statuses: p.statuses, records: p.records, votes: p.votes, rollCallsOnRecord: p.rollCallsOnRecord, day: p.day, contextRefs });
+    // No dated action tonight: nothing true to restate it with.
+    if (!revision) continue;
+    if (current.text?.en === revision.text.en && current.text?.es === revision.text.es) continue;
+    entry.summary_revisions = [...(entry.summary_revisions ?? []), revision].slice(-MAX_REVISIONS);
+    delete entry.summary_refusals;
+    written++;
+    console.log(`  summary ${p.momentId}: ${revision.id} (record-only: the record moved past the sentence on the page and no rewrite landed)`);
+  }
+  return written;
+}
+
+/**
  * After writeSummaries: every question whose current summary is
  * model-written and cites a row the re-check changed after it was written
  * (recheckPendingIds) gets the record-only revision now, in both languages,
@@ -2834,6 +2879,10 @@ async function main() {
   // budget): the record-only sentence replaces it, no model call (rule 4).
   const fallbacks = writeStaleRecheckFallbacks({ plan, store, moments });
   if (fallbacks) console.log(`summaries: ${fallbacks} record-only revision(s) written where a re-check rewrite did not land`);
+  // A record-only sentence states the date of the record's latest action; it
+  // must not stand once the record has moved past it and no rewrite landed.
+  const restated = writeBehindRecordOnlyFallbacks({ plan, store, moments });
+  if (restated) console.log(`summaries: ${restated} record-only sentence(s) restated where the record had moved past them`);
   console.log(
     `summaries: ${summaries} revision(s) written (mode ${MODE}; ${spentToday} call(s) already spent on ${todayET} ET of a daily cap of ${SUMMARY_DAILY_CAP} across all questions; intraday cap ${INTRADAY_SUMMARY_CAP} per question per ET day)`,
   );
