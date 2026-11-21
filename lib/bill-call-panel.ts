@@ -95,7 +95,9 @@ export function billCallPanelProps(
           published: announcement.published,
           session: chamberSession(announcement.chamber, now),
         }
-      : null
+      : null,
+    // §5: while the chamber is out, the routing line is the aged path's.
+    (c) => chamberSession(c, now)
   );
 
   const settledDate = settledDecisionDate(bill);
