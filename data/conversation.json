@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-21T17:26:25.296Z",
+    "fetched_at": "2026-11-21T20:24:38.158Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -9,15 +9,15 @@
       "press": {
         "status": "ok",
         "feeds_total": 11,
-        "feeds_silent": 1,
-        "checked_at": "2026-11-21T17:26:25.296Z"
+        "feeds_silent": 0,
+        "checked_at": "2026-11-21T20:24:38.158Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-15",
         "week_label": "Most-Viewed Bills - Week of November 15, 2026",
         "entries": 7,
-        "checked_at": "2026-11-21T17:26:25.296Z"
+        "checked_at": "2026-11-21T20:24:38.158Z"
       },
       "leans": {
         "center": {
@@ -203,6 +203,12 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "latintimes.com",
+          "firstSeen": "2026-11-21",
+          "lastSeen": "2026-11-21",
+          "url": "https://news.google.com/rss/articles/CBMigAFBVV95cUxQcnVMeFoyeUNGS0JaNnI2UVFaZXdfeW9JS1ZjQmgzdktlVjdwUzI3V0NqeEc5XzBuNmhQNVdLMjdNbDNZa1Q5UUpDT214Z196eXdNRTBvbDNnUWM4eS1Cek1BTGhnMWJKVVNGTXZYajdUUkd5OVF5aFR5UFFTVFlHUg?oc=5"
+        },
         {
           "domain": "mlq.ai",
           "firstSeen": "2026-11-20",
@@ -529,6 +535,18 @@
       ],
       "mostViewed": null
     },
+    "hr-4690-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "coyotegulch.blog",
+          "firstSeen": "2026-11-21",
+          "lastSeen": "2026-11-21",
+          "url": "https://news.google.com/rss/articles/CBMisgJBVV95cUxNeFpCYktXbVlDUzc2Rjd6WTUxMkhCOTgyd2xsaWpJemZ4bWVMUGNOV3FwQ3pvWEY5c3VrUVEwUnJQc1VoM0VqNGh1MFNpTXlMUUl5ZTM0WVBqUVRnc0VuS05FOTE3bjBHVV9ZSkNJNTFCczNwQm9XVUZUNGNfREtmTnNzQWVMbVQzOG92YXBOM0tBRExaXzVET1hLSE9PbnNrazNmX0hMZWxEUC13SmpBZ043cHFEWERhSHh2bzFxUlZJTUlKNzV5d0R6Y0RsZ0RfSWw1ZGFQWTExbHpMbURYcHRkU2tGWGZYX1dzZ2N3MThOYW5QQm1XYTUzcG8zbHVCNHZZNDNBamZ5Z2NHelNqWlBqc1lVdm5PNXJkdGl1emVIZm5vRDRORU9RUVF2NjBOTXc?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-4776-119": {
       "outlets7d": [
         {
@@ -666,6 +684,18 @@
           "url": "https://news.google.com/rss/articles/CBMimAFBVV95cUxQQi1nTklZa2N6SzlpVUEzSUFic2ZCMDFyb2VTWWhHVTZOQVR6dGRjV0FlUHdCWGJpMkh0S0NBU0o4LTdrakNRV01PcXZwWUozeGZzNk03Vk9nUzVwRDNNQXd0dkZRTDdic0J6T2ZEVTBLb3psTVNYWVk0VEJXbE5abzhSVzlqNEZsWXNrQzdDUWxqRWRmSms2VQ?oc=5"
         },
         {
+          "domain": "energynow.com",
+          "firstSeen": "2026-11-21",
+          "lastSeen": "2026-11-21",
+          "url": "https://news.google.com/rss/articles/CBMipwFBVV95cUxONDFNV0c4MjhGTnJ3R0NZRzE4clJGRmZ3QWxDNGhCbTJ2RXJ5c05rSkZUc1dKUEs2NWYwaG1zdUtPMF9JNG5Dc0lxMEpUaTRGaW9VSjg3WnBUc3VJNzF1bEtVNGdsUkZqT05ueHY5Nk9RdWtyamtxOXRZRmJwemk0c3NmSlRMWV9hdWxtZC1hSTNyckpLSEFVZTBwYS1GaXFJXzN1dDJTYw?oc=5"
+        },
+        {
+          "domain": "wisevoter.com",
+          "firstSeen": "2026-11-21",
+          "lastSeen": "2026-11-21",
+          "url": "https://news.google.com/rss/articles/CBMijwFBVV95cUxOMFRsUUdXRUUwUFlLelRxU29FcXppdkVVcG56T1ZHQnNJRU9QbjJ1VHZaMzhpSWxEQ0ZXNUZ2X2M4NXBMaW03cWRpM0FFekR1Z0lLOEZ2c0JnUDJfRy1DQmJYZ2l3LVdkd0xjTGNfZEdXLWtVOXk4Tmlvck56Ul9xZHVOVmVBcHR4YjNSZ3JtNA?oc=5"
+        },
+        {
           "domain": "wmbdradio.com",
           "firstSeen": "2026-11-19",
           "lastSeen": "2026-11-19",
@@ -718,6 +748,18 @@
           "firstSeen": "2026-11-17",
           "lastSeen": "2026-11-17",
           "url": "https://rollcall.com/2026/11/17/new-aviation-funding-request-hits-senate-turbulence/"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-6130-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "medicaldaily.com",
+          "firstSeen": "2026-11-21",
+          "lastSeen": "2026-11-21",
+          "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxPNkYyYTBPMzV6dktxMmtFaGRXT1ZkeVZmV1VnR2U0eEx1TnNMOFo3NEtKWlpLOWpibU5vYkg5YTU3b1Vtb09nbTFvM1BHYzNrcGVCd1hWRjVWUDlyX1BSekNMRTIzUUZvV1NxX1lhVXFRSHZJQWtWRld1UUVRTFEydzF5NG5mdnl0?oc=5"
         }
       ],
       "mostViewed": null
@@ -1269,6 +1311,19 @@
       ],
       "mostViewed": null
     },
+    "hr-9203-119": {
+      "outlets7d": [
+        {
+          "domain": "reason.com",
+          "lean": "right",
+          "firstSeen": "2026-11-21",
+          "lastSeen": "2026-11-21",
+          "url": "https://reason.com/volokh/2026/11/21/the-first-amendment-university-investigations-and-anti-israel-lawprofs-case-against-univ-of-kentucky/"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hr-9237-119": {
       "outlets7d": [],
       "unratedOutlets7d": [],
@@ -1768,6 +1823,12 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "variety.com",
+          "firstSeen": "2026-11-21",
+          "lastSeen": "2026-11-21",
+          "url": "https://news.google.com/rss/articles/CBMinAFBVV95cUxPNFowaFdQZjBlRlVZTTBiSldhbjdQUWNRa29FZzlUN2daVXNkVDdQdWdNdkNaZHI4SzhSbEVoQUlQOHZyM1Jra0FRbmJPaWFYQUlzZi1vYTBZTzJJbEZ2bUFpQUhoelliU2EzSy1aRFhsX3dEM0pBMmJBc0JsLUtyQVlIcC15V0xNemIzVmhKcWRjamM3SjJRV2N1RWM?oc=5"
+        },
+        {
           "domain": "ca.news.yahoo.com",
           "firstSeen": "2026-11-18",
           "lastSeen": "2026-11-18",
@@ -1811,6 +1872,18 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "thecomeback.com",
+          "firstSeen": "2026-11-21",
+          "lastSeen": "2026-11-21",
+          "url": "https://news.google.com/rss/articles/CBMikAJBVV95cUxQQVJlMHhRT3dzTWJIWmlUTkUyMDhJb2tsTThXVERhMGR4Y3VTOVhjdEwtUThIOUdYS1lNdjJGZnRqQlFZRXZXaE9neF9lOUNRSTVXa0p1NzJDY21WalpnLWpqUUFvTk9UX1BoRnMzczFsQkpPczVXWU1yeWZLN0J4aWJoTlpTc2Fyakk3TEl6SE9KZzUtVkctcFppMzZOTzNNUWdUZmtSZnBsVkRDQzRpWUE2OWZqck1mN3ZxdHNTUEtKTTlNWkt1a1dma1FoZEd0TjNOWVhHa2U2dlF2TmNqUGJZWGU5ZGZOLTZrNklZU3UyRl9ITkdaYmx6LThFMl9YaHpob2dyVEtyZ05tQVQwYQ?oc=5"
+        },
+        {
+          "domain": "wane.com",
+          "firstSeen": "2026-11-21",
+          "lastSeen": "2026-11-21",
+          "url": "https://news.google.com/rss/articles/CBMimwFBVV95cUxPOExYbGtOcllLa3FnYlRxNjJkMnB2RkhYaHl4M0FTVDNwbW1iV05leHd5MFR5ZHBDTUtrenJJbHI3OVNYYjFXSkZhdUlWdkttQ2FyUENkUFR2Vml5SVRaMzliNHVidVpiM2k0bm5uZEdoWnJhc25ZQ1JZSng3OHc1MVVEYjVhMVMwclg2b1EwdTcxVEJpSTVMbXlLMNIBmwFBVV95cUxPOExYbGtOcllLa3FnYlRxNjJkMnB2RkhYaHl4M0FTVDNwbW1iV05leHd5MFR5ZHBDTUtrenJJbHI3OVNYYjFXSkZhdUlWdkttQ2FyUENkUFR2Vml5SVRaMzliNHVidVpiM2k0bm5uZEdoWnJhc25ZQ1JZSng3OHc1MVVEYjVhMVMwclg2b1EwdTcxVEJpSTVMbXlLMA?oc=5"
+        },
         {
           "domain": "wisevoter.com",
           "firstSeen": "2026-11-19",
