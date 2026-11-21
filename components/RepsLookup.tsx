@@ -11,7 +11,8 @@ import { RepCard } from '@/components/RepCard';
 import { VacantSeatCard } from '@/components/VacantSeatCard';
 import { lookupMembers } from '@/lib/members-action';
 import type { MembersResult } from '@/lib/members';
-import { currentEntry, entryFor, readEntry, rememberMembers, sameEntry, type MembersEntry } from '@/lib/members-entry';
+import { currentEntry, entryFor, entryNow, forgetStaleEntry, rememberMembers, sameEntry, type MembersEntry } from '@/lib/members-entry';
+import { erasureCount, useErasures } from '@/lib/local';
 
 /*
  * THE MEMBERS, LOOKED UP WITHOUT AN ADDRESS (owner, 2026-11-12; CLAUDE.md
@@ -82,9 +83,27 @@ export function RepsLookup({ initial, legacy, preview, switchboard, continuation
   // The no-JS answer (way 2) arrives as this state; with JavaScript the
   // dispatcher is only ever the native form's action, never called here.
   const [formState, formAction] = useActionState(lookupMembers, initial, repsPermalink(locale));
-  // Lookups made with JavaScript (way 1). `undefined` until the first one.
-  const [live, setLive] = useState<MembersResult | null | undefined>(undefined);
-  const result = live === undefined ? formState : live;
+  // Lookups made with JavaScript (way 1), each with the erase count it was
+  // made under (lib/local.ts). `undefined` until the first one.
+  const [live, setLive] = useState<{ members: MembersResult | null; erasures: number } | undefined>(undefined);
+  // AN ERASE TAKES THE MEMBERS OFF THE SCREEN (2026-11-18). "Erase my data"
+  // on this page (components/YourRecord.tsx) used to leave the members and
+  // the ZIP standing above it. Members found before the latest erase (here,
+  // in another tab, or while the page slept: lib/local.ts) are not shown; the
+  // prompt comes back, with its field empty. The members an old /reps?zip=
+  // link drew on the server (`formState`) show only while this page has seen
+  // no erase at all: on Back the router draws them again from its own
+  // memory, long after an erase, with no request to tell it otherwise.
+  const erasures = useErasures();
+  const [erasuresAtOpen] = useState(erasures);
+  const result =
+    live === undefined
+      ? erasures === 0
+        ? formState
+        : null
+      : live.erasures === erasures
+        ? live.members
+        : null;
   const asking = useSearchParams().has('change');
   const latest = useRef(0);
   const scrollToHash = useRef(false);
@@ -95,6 +114,7 @@ export function RepsLookup({ initial, legacy, preview, switchboard, continuation
   // that up; otherwise, for an old link, keep its lookup in the entry and
   // drop it from the address, one tick later (see above).
   useEffect(() => {
+    forgetStaleEntry();
     if (!initial) return; // the prompt's arrival (SavedZipLookup) reads the entry
     const entry = currentEntry();
     if (entry && !sameEntry(entry, entryFor(initial))) {
@@ -102,7 +122,11 @@ export function RepsLookup({ initial, legacy, preview, switchboard, continuation
       return;
     }
     if (!legacy) return;
-    const id = setTimeout(() => rememberMembers(entryFor(initial), 'replace'), 0);
+    // Never after an erase (see `result` above): that would write the
+    // erased ZIP into this tab's history again, under a new tag.
+    const id = setTimeout(() => {
+      if (erasureCount() === 0) rememberMembers(entryFor(initial), 'replace');
+    }, 0);
     return () => clearTimeout(id);
     // Once, when the page opens: `lookup` is a new function on every render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -113,12 +137,19 @@ export function RepsLookup({ initial, legacy, preview, switchboard, continuation
   // entry the browser moved to is looked up here.
   useEffect(() => {
     function onPopState(e: PopStateEvent) {
-      const entry = readEntry(e.state);
+      const entry = entryNow(e.state);
       if (entry) void lookup(entry, 'none');
+      else forgetStaleEntry();
     }
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
+
+  // An erase (here, in another tab, or while the page slept) also takes the
+  // ZIP out of the history entry this page stands on.
+  useEffect(() => {
+    if (erasures !== erasuresAtOpen) forgetStaleEntry();
+  }, [erasures, erasuresAtOpen]);
 
   // A saved-ZIP arrival at /reps#your-calls: the router scrolled to the hash
   // before the members were in, so scroll again once they are.
@@ -139,8 +170,13 @@ export function RepsLookup({ initial, legacy, preview, switchboard, continuation
   async function lookup(
     { zip, district }: MembersEntry,
     history: 'push' | 'replace' | 'none',
-    fromArrival = false
+    fromArrival = false,
+    // The erase count when the visitor acted. A caller that waited for
+    // something first (the street-address check) passes the count from
+    // before its wait, so an erase during it still counts.
+    erasuresAtStart = erasureCount()
   ): Promise<boolean> {
+    if (erasureCount() !== erasuresAtStart) return true;
     const ticket = ++latest.current;
     // A POST body, built field by field: the ZIP is never in an address.
     const body = new FormData();
@@ -148,8 +184,11 @@ export function RepsLookup({ initial, legacy, preview, switchboard, continuation
     try {
       const next = await lookupMembers(null, body);
       if (ticket !== latest.current) return true;
+      // Erased while the answer was on its way: the answer is for a ZIP that
+      // no longer exists here, so it is neither shown nor remembered.
+      if (erasureCount() !== erasuresAtStart) return true;
       scrollToHash.current = fromArrival;
-      setLive(next);
+      setLive({ members: next, erasures: erasuresAtStart });
       if (history !== 'none') rememberMembers(entryFor(next), history);
       return true;
     } catch {
@@ -163,7 +202,9 @@ export function RepsLookup({ initial, legacy, preview, switchboard, continuation
   const prompt = (
     <div className="max-w-xl rounded-control border-[1.5px] border-line-strong bg-paper p-6">
       <p className="mb-4 text-lg font-bold">{t('noZip')}</p>
-      {zipForm(true)}
+      {/* No autofocus when an erase on this page brought the prompt back:
+          the reader's focus stays on the erase's own confirmation. */}
+      {zipForm(erasures === erasuresAtOpen)}
     </div>
   );
 
@@ -253,7 +294,7 @@ export function RepsLookup({ initial, legacy, preview, switchboard, continuation
           <p data-multi-district className={`mt-6 max-w-read ${NOTE}`}>
             {t('multiDistrict', { count: districts.length })}
           </p>
-          <AddressForm zip={zip} onRefined={(district) => lookup({ zip, district }, 'push')} />
+          <AddressForm zip={zip} onRefined={(district, asked) => lookup({ zip, district }, 'push', false, asked)} />
         </>
       )}
 

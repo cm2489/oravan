@@ -5,6 +5,7 @@ import { ArrowRight, X } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { Link, usePathname } from '@/i18n/navigation';
 import { readLocaleChoice, rememberLocaleChoice } from '@/lib/locale-pref';
+import { ES_NOTE_DISMISSED_KEY } from '@/lib/storage-keys';
 
 /*
  * "¿Prefieres español?" — the language-preference note (blind teardown
@@ -34,8 +35,6 @@ import { readLocaleChoice, rememberLocaleChoice } from '@/lib/locale-pref';
  * design.
  */
 
-const DISMISS_KEY = 'oravan.esNote.dismissed';
-
 /** Browser-only check, SSR-safe: the server snapshot is always false, so the
  *  static HTML never carries the note and hydration cannot mismatch — it
  *  appears in the first client render for a Spanish-preferring browser.
@@ -48,7 +47,7 @@ const DISMISS_KEY = 'oravan.esNote.dismissed';
  *  re-suggested Spanish just because their OS speaks it. */
 function readPrefersEs(): boolean {
   try {
-    if (window.localStorage.getItem(DISMISS_KEY)) return false;
+    if (window.localStorage.getItem(ES_NOTE_DISMISSED_KEY)) return false;
   } catch {
     // storage blocked: suggest anyway this session, never persist
   }
@@ -75,7 +74,7 @@ export function LocalePreferenceNote() {
   function dismiss() {
     setDismissed(true);
     try {
-      window.localStorage.setItem(DISMISS_KEY, '1');
+      window.localStorage.setItem(ES_NOTE_DISMISSED_KEY, '1');
     } catch {
       // storage blocked: dismissal lasts the session only
     }

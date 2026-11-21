@@ -8,6 +8,7 @@ import { clientMessages } from '@/i18n/client-messages';
 import { SITE_ORIGIN } from '@/lib/site';
 import { Header } from '@/components/Header';
 import { LocalePreferenceNote } from '@/components/LocalePreferenceNote';
+import { ErasedNotice } from '@/components/ErasedNotice';
 import { Footer } from '@/components/Footer';
 import '../globals.css';
 
@@ -124,6 +125,9 @@ export default async function LocaleLayout({
               server redirect (localeDetection: false is deliberate). */}
           <LocalePreferenceNote />
           <main id="main" className="flex-1 pb-24 md:pb-0">
+            {/* After the error screen's erase and reload: the erase's own
+                confirmation, said once (components/ErasedNotice.tsx). */}
+            <ErasedNotice />
             {children}
           </main>
           <Footer />

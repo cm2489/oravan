@@ -76,6 +76,16 @@ async function seed(page: Page, entries: Record<string, string>) {
   }, entries);
 }
 
+/** `seed`, once per tab: a reload must find what the page left behind, not
+ *  the seed again. For the cases whose erase loads the page afresh. */
+async function seedOnce(page: Page, entries: Record<string, string>) {
+  await page.addInitScript((e: Record<string, string>) => {
+    if (sessionStorage.getItem('e2e.seeded') !== null) return;
+    sessionStorage.setItem('e2e.seeded', '1');
+    for (const [k, v] of Object.entries(e)) localStorage.setItem(k, v);
+  }, entries);
+}
+
 const read = (page: Page, key: string) => page.evaluate((k) => localStorage.getItem(k), key);
 
 for (const locale of ['en', 'es'] as const) {
@@ -210,13 +220,18 @@ test('the next write persists the filtered list, so the bad row is gone for good
  */
 const CRASH_ONCE_ON_RECORD_SUBSCRIBE = () => {
   const add = window.addEventListener.bind(window);
-  let armed = true;
+  // Once per TAB, not per document: the boundary's erase loads the page
+  // afresh (app/[locale]/error.tsx), and this script, installed with
+  // addInitScript, runs again in the new document. The crash it stands in
+  // for came from the data the erase just removed, so it must not come back.
+  let armed = sessionStorage.getItem('e2e.crashed') === null;
   // Where the civic record renders, in either locale, and nowhere else:
   // /record, and since 2026-09-29 the Reps tab it is folded into (Q4 "b + c").
   const onRecordPage = () => /(^|\/)(record|reps)\/?$/.test(window.location.pathname);
   window.addEventListener = function (this: Window, type: string, ...rest: unknown[]) {
     if (type === 'storage' && armed && onRecordPage()) {
       armed = false;
+      sessionStorage.setItem('e2e.crashed', '1');
       throw new Error('e2e: forced client crash');
     }
     return (add as unknown as (...a: unknown[]) => void)(type, ...rest);
@@ -230,7 +245,7 @@ for (const locale of ['en', 'es'] as const) {
   test(`${locale}: the error boundary can erase this device's saved data, and recovers`, async ({
     page,
   }) => {
-    await seed(page, {
+    await seedOnce(page, {
       'oravan.calls': JSON.stringify([CALL]),
       'oravan.prefs': JSON.stringify({ zip: '78501', interests: ['health'] }),
     });
@@ -246,7 +261,11 @@ for (const locale of ['en', 'es'] as const) {
     // re-translate" a fact rather than a claim in the source comment.
     await page.getByRole('button', { name: m.errorBoundary.erase }).click();
     await expect(page.getByText(m.impact.eraseConfirm)).toBeVisible();
+    // The erase reloads the page (app/[locale]/error.tsx): wait for the new
+    // document, so nothing below is read off the crashed one.
+    const fresh = page.waitForEvent('load');
     await page.getByRole('button', { name: m.impact.confirmErase }).click();
+    await fresh;
 
     // Recovered onto the real page, with the device wiped — the promise the
     // copy makes, end to end.
@@ -281,7 +300,7 @@ for (const locale of ['en', 'es'] as const) {
 test('the escape hatch is there when the crash arrives via a client-side walk to the record', async ({
   page,
 }) => {
-  await seed(page, { 'oravan.prefs': JSON.stringify({ zip: '78501' }) });
+  await seedOnce(page, { 'oravan.prefs': JSON.stringify({ zip: '78501' }) });
   await page.goto('/');
   // The home page's hydration probe: the hero's saved-ZIP block, by its
   // `data-saved-zip` hook (Home option B, 2026-09-29: with a ZIP saved, the
@@ -308,11 +327,32 @@ test('the escape hatch is there when the crash arrives via a client-side walk to
   // where the armed crash lands.
   await expect(page.getByRole('heading', { level: 1, name: en.errorBoundary.title })).toBeVisible();
   await page.getByRole('button', { name: en.errorBoundary.erase }).click();
+  // The erase loads the page afresh (app/[locale]/error.tsx). The address does
+  // not change, so the wait is for the new document itself; everything below
+  // is asserted on it, never on the crashed one it replaced.
+  const fresh = page.waitForEvent('load');
   await page.getByRole('button', { name: en.impact.confirmErase }).click();
+  await fresh;
+  // The prompt for a ZIP: the page rendered from storage that holds nothing.
+  await expect(page.getByText(en.reps.noZip)).toBeVisible();
   await expect(page.getByRole('heading', { level: 1, name: en.reps.membersHeading })).toBeVisible();
   expect(
     await page.evaluate(() => ['oravan.reads', 'oravan.calls', 'oravan.prefs'].map((k) => localStorage.getItem(k)))
   ).toEqual([null, null, null]);
+  // Nor does the tab's history entry still hold the erased ZIP: the members
+  // page looks up whatever ZIP its entry remembers (lib/members-entry.ts).
+  expect(await page.evaluate(() => window.history.state?.oravanMembers ?? null)).toBeNull();
+
+  // A WORKING page, not one that only looks like it (2026-11-18). When the
+  // boundary recovered by re-rendering the crashed app, the page above came
+  // back, and the first members lookup after it, typed or automatic, took the
+  // whole document down to the framework's "This page couldn't load" (React
+  // #310), every time. A lookup that answers is the proof.
+  const zip = page.getByRole('textbox', { name: en.home.zipLabel });
+  await zip.fill('78501');
+  await zip.press('Enter');
+  await expect(page.locator('[data-zip-line]')).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: en.reps.membersHeading })).toBeVisible();
 });
 
 /*

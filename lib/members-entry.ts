@@ -1,4 +1,5 @@
 import type { MembersResult } from '@/lib/members';
+import { ensureEntryTag, entryTag, savedZip } from '@/lib/local';
 
 /*
  * WHAT THE MEMBERS PAGE SHOWED, KEPT IN ITS OWN HISTORY ENTRY (2026-11-12).
@@ -48,12 +49,20 @@ const DISTRICT_RE = /^[A-Z]{2}-\d{1,2}$/;
  * The entry a history state object holds, or null. Total: anything else that
  * happens to sit in the state (another script's, a damaged one) reads as
  * nothing rather than as a lookup.
+ *
+ * AND ONLY WHILE ITS TAG IS THE CURRENT ONE (2026-11-18). `tag` is this
+ * browser's entry tag (lib/local.ts, `entryTag`): every entry written since
+ * the last erase carries it, and an erase deletes it. An entry with another
+ * tag, or with none (one written before this rule, or before the erase),
+ * reads as empty, so Reload and Back never bring an erased ZIP back.
  */
-export function readEntry(state: unknown): MembersEntry | null {
+export function readEntry(state: unknown, tag: string | null): MembersEntry | null {
+  if (!tag) return null;
   if (typeof state !== 'object' || state === null) return null;
   const v = (state as Record<string, unknown>)[ENTRY_KEY];
   if (typeof v !== 'object' || v === null) return null;
-  const { zip, district } = v as Record<string, unknown>;
+  const { zip, district, tag: own } = v as Record<string, unknown>;
+  if (own !== tag) return null;
   if (typeof zip !== 'string' || !ZIP_RE.test(zip)) return null;
   return typeof district === 'string' && DISTRICT_RE.test(district) ? { zip, district } : { zip };
 }
@@ -84,7 +93,8 @@ export function rememberMembers(entry: MembersEntry | null, mode: 'push' | 'repl
   for (const name of DROPPED) url.searchParams.delete(name);
   const clean = `${url.pathname}${url.search}${url.hash}`;
   const here = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-  const state = entry ? { [ENTRY_KEY]: entry } : {};
+  // Tagged (see readEntry): an erase makes this entry unreadable.
+  const state = entry ? { [ENTRY_KEY]: { ...entry, tag: ensureEntryTag() } } : {};
   // No URL when it is unchanged: the router then has nothing to learn, and
   // only copies its own keys into `state`.
   const address = clean === here ? undefined : clean;
@@ -92,7 +102,59 @@ export function rememberMembers(entry: MembersEntry | null, mode: 'push' | 'repl
   else window.history.replaceState(state, '', address);
 }
 
-/** The entry the current history entry holds. Browser only. */
+/**
+ * AN ERASED ENTRY IS EMPTIED WHEN THE PAGE STANDS ON IT AGAIN (2026-11-18). A
+ * page can rewrite only the history entry it stands on, so the ZIP an erase
+ * made unreadable stays in an earlier entry until the visitor comes back to
+ * it: then it is taken out, here. No address, so Next.js's own replaceState
+ * only carries its router keys over. Browser only.
+ */
+export function forgetStaleEntry() {
+  const state = window.history.state as Record<string, unknown> | null;
+  if (!state || !(ENTRY_KEY in state) || readEntry(state, entryTag())) return;
+  const { [ENTRY_KEY]: _stale, ...rest } = state;
+  void _stale;
+  try {
+    window.history.replaceState(rest, '');
+  } catch {
+    /* unreadable all the same: its tag is gone */
+  }
+}
+
+/**
+ * The entry a history state object holds, as this browser stands now: only
+ * while its tag is current (readEntry), and, when a ZIP is saved, only for
+ * that ZIP (2026-11-19). Another tab can save a different ZIP; this tab's
+ * entries then remember a ZIP that is no longer the saved one, and Reload,
+ * Back or the members page's own arrival would bring its members back. With
+ * no saved ZIP (an old /reps?zip= link) the entry stands as it is. Browser
+ * only.
+ */
+export function entryNow(state: unknown): MembersEntry | null {
+  const entry = readEntry(state, entryTag());
+  if (!entry) return null;
+  const saved = savedZip();
+  return saved !== null && entry.zip !== saved ? null : entry;
+}
+
+/** The entry the current history entry holds (see entryNow). Browser only. */
 export function currentEntry(): MembersEntry | null {
-  return readEntry(window.history.state);
+  return entryNow(window.history.state);
+}
+
+/**
+ * The ZIP the members page's "Looking up …, saved on this device" line may
+ * name (components/SavedZipLookup.tsx), or null for the ZIP prompt. The line
+ * stands only while the lookup it announces is the one running: for the ZIP
+ * still saved, under the erase count it started with. After an erase, even
+ * with the same ZIP saved again since (here or in another tab), that lookup's
+ * answer is dropped (components/RepsLookup.tsx), so the line would wait for
+ * nothing; the page starts again instead (check 6, 2026-11-20).
+ */
+export function pendingSavedZip(
+  pending: { zip: string; erasures: number } | null,
+  savedNow: string | null | undefined,
+  erasuresNow: number
+): string | null {
+  return pending && pending.erasures === erasuresNow && pending.zip === savedNow ? pending.zip : null;
 }

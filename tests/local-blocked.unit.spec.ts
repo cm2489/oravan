@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { eraseAll, savedZip, setPrefs } from '../lib/local';
+import { ensureEntryTag, entryTag, eraseAll, erasureCount, savedZip, setPrefs } from '../lib/local';
 
 /*
  * STORAGE BLOCKED: THE ZIP STILL CROSSES THE VISIT (2026-11-12).
@@ -81,4 +81,53 @@ test('storage that works is read as before, and memory is never consulted', () =
   const store = useStore();
   store.data.set('oravan.prefs', JSON.stringify({ zip: '20001' }));
   expect(savedZip()).toBe('20001');
+});
+
+/*
+ * THE MEMBERS PAGE'S ENTRY TAG (lib/local.ts, 2026-11-18): the lock on the
+ * ZIP's copies in this tab's history (lib/members-entry.ts). Random, local
+ * only, and gone after an erase, so every entry tagged before the erase
+ * reads as empty from then on.
+ */
+test('the entry tag: made once, random, kept in this browser only', () => {
+  const store = useStore();
+  expect(entryTag()).toBeNull();
+  const tag = ensureEntryTag();
+  expect(tag).toMatch(/^[0-9a-f]{32}$/);
+  expect(store.data.get('oravan.entry')).toBe(tag);
+  expect(ensureEntryTag(), 'the same tag until an erase').toBe(tag);
+  expect(entryTag()).toBe(tag);
+});
+
+test('erasing deletes the tag; the next one is new', () => {
+  const store = useStore();
+  const before = erasureCount();
+  const first = ensureEntryTag();
+  eraseAll();
+  expect(store.data.has('oravan.entry')).toBe(false);
+  expect(entryTag()).toBeNull();
+  expect(erasureCount()).toBe(before + 1);
+  const second = ensureEntryTag();
+  expect(second).toMatch(/^[0-9a-f]{32}$/);
+  expect(second).not.toBe(first);
+});
+
+test('a damaged stored tag reads as none and is replaced', () => {
+  const store = useStore();
+  store.data.set('oravan.entry', 'not-a-tag');
+  expect(entryTag()).toBeNull();
+  const tag = ensureEntryTag();
+  expect(tag).toMatch(/^[0-9a-f]{32}$/);
+  expect(store.data.get('oravan.entry')).toBe(tag);
+});
+
+test('storage blocked: the tag is kept for the visit, and erasing clears it', () => {
+  const store = useStore();
+  store.blocked = true;
+  const tag = ensureEntryTag();
+  expect(tag).toMatch(/^[0-9a-f]{32}$/);
+  expect(entryTag()).toBe(tag);
+  expect(store.data.size, 'nothing reached storage').toBe(0);
+  eraseAll();
+  expect(entryTag()).toBeNull();
 });

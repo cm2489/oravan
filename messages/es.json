@@ -694,7 +694,7 @@
     "eraseBody": "Tu código postal, tus temas, tus lecturas y tus llamadas se guardan en este navegador, no en una cuenta.",
     "erase": "Borrar todos mis datos",
     "eraseConfirm": "¿Borrar tu código postal, tus intereses, tu historial de lectura y tu historial de llamadas de este dispositivo? Esto no se puede deshacer.",
-    "erased": "Todos los datos locales fueron borrados.",
+    "erased": "Se borraron de este dispositivo tu código postal, tus intereses, tu historial de lectura y tu historial de llamadas.",
     "deleteRecord": "Borrar este registro",
     "confirmErase": "Sí, borrar todo",
     "cancel": "Cancelar"
