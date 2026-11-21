@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { ensureEntryTag, entryTag, eraseAll, erasureCount, savedZip, setPrefs, snapshotCacheContents, storeLost, subscribe } from '../lib/local';
+import { ensureEntryTag, entryTag, eraseAll, erasureCount, savedZip, setPrefs, snapshotCacheContents, storeLost, subscribe, upsertCall } from '../lib/local';
 import { shareRepLookup, sharedRepLookupNow } from '../lib/rep-lookup-share';
 
 /*
@@ -689,5 +689,81 @@ test('storage that stops answering: no whole erase if it held ours (read or writ
     expect(eraseAll(), 'blocked from the start').toBe(true);
   } finally {
     unblock();
+  }
+});
+
+/*
+ * CHECK 6 (2026-11-20). An erase revokes only what this tab had read: the
+ * reviewer's case, events reversed, the same ZIP saved again from the home
+ * page and no new tag. The ZIP storage holds is read.
+ */
+test('another tab erases and saves the same ZIP again, no new tag, events reversed: the ZIP is read', () => {
+  const P78 = JSON.stringify({ zip: '78501' });
+  const TAG = '0123456789abcdef0123456789abcdef';
+  const off = subscribe(() => {});
+  try {
+    data.clear();
+    eraseAll();
+    for (const [k, v] of [['oravan.prefs', P78], ['oravan.entry', TAG], ['oravan.calls', '[]'], ['oravan.reads', '[]']]) data.set(k, v);
+    expect(savedZip()).toBe('78501');
+    expect(entryTag()).toBe(TAG);
+    // Elsewhere: the erase (tag first), then the same ZIP saved again.
+    for (const k of ['oravan.entry', 'oravan.prefs', 'oravan.calls', 'oravan.reads']) data.delete(k);
+    data.set('oravan.prefs', P78);
+    const events = [
+      { key: 'oravan.entry', oldValue: TAG, newValue: null },
+      { key: 'oravan.prefs', oldValue: P78, newValue: null },
+      { key: 'oravan.calls', oldValue: '[]', newValue: null },
+      { key: 'oravan.reads', oldValue: '[]', newValue: null },
+      { key: 'oravan.prefs', oldValue: null, newValue: P78 },
+    ];
+    for (const e of [...events].reverse()) fire('storage', e);
+    doc.visibilityState = 'visible';
+    fireDoc('visibilitychange');
+    fire('focus', {});
+    expect(savedZip()).toBe('78501');
+  } finally {
+    off();
+  }
+});
+
+/* This tab's own change of ZIP is what it has read: a return is no change. */
+test('this tab saves another ZIP: coming back into focus is not a change', () => {
+  const off = subscribe(() => {});
+  try {
+    data.clear();
+    eraseAll();
+    setPrefs({ zip: '78501' });
+    expect(savedZip()).toBe('78501');
+    setPrefs({ zip: '10001' }); // the members page's own "Change ZIP code"
+    const before = erasureCount();
+    fire('focus', {});
+    fire('pageshow', { persisted: true });
+    expect(erasureCount()).toBe(before);
+    expect(savedZip()).toBe('10001');
+  } finally {
+    off();
+  }
+});
+
+/* A write the browser refused and does not keep is not something read. */
+test('a refused write of the calls is not taken as read: a return is no change', () => {
+  const store = (window as unknown as { localStorage: Record<string, (...a: string[]) => unknown> }).localStorage;
+  const { setItem } = store;
+  const off = subscribe(() => {});
+  try {
+    data.clear();
+    eraseAll();
+    store.setItem = (k: string, v: string) => {
+      if (k === 'oravan.calls') throw new Error('full');
+      data.set(k, v);
+    };
+    upsertCall({ billSlug: 'hr-1-119', billLabel: 'A bill', repBioguide: 'X000001', repName: 'A member', stance: 'support', outcome: 'voicemail', at: '2026-11-20T15:00:00.000Z' });
+    const before = erasureCount();
+    fire('focus', {});
+    expect(erasureCount()).toBe(before);
+  } finally {
+    store.setItem = setItem;
+    off();
   }
 });

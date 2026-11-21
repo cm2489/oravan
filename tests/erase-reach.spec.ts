@@ -101,6 +101,18 @@ async function expectWorkingMembers(page: Page, m: M) {
   await expect(page.locator('[data-zip-line]')).toContainText(ZIP);
 }
 
+/**
+ * The app's router listens for Back: Next.js replaces history.pushState with
+ * its own in the same step that adds its popstate listener
+ * (next/dist/client/components/app-router.js), so a pushState that is no
+ * longer the browser's own means a Back now reaches the app. Pressed earlier,
+ * right after a reload, Back reached a page not yet listening (check 6,
+ * 2026-11-20: 6 of 400 runs, popstate before the listener every time).
+ */
+async function routerListens(page: Page) {
+  await page.waitForFunction(() => !String(window.history.pushState).includes('[native code]'));
+}
+
 async function expectPromptOnly(page: Page, m: M) {
   await expect(page.getByRole('heading', { level: 1, name: m.reps.membersHeading })).toBeVisible();
   await expect(page.getByText(m.reps.noZip)).toBeVisible();
@@ -186,6 +198,7 @@ test('Back after an erase: the earlier entry sends nothing and shows nothing', a
   // Back to the members' entry. Next.js keeps its router state in each
   // entry, so this Back is its own client-side restore, not a page load.
   const sent = zipSends(page);
+  await routerListens(page);
   await page.goBack();
   await expect(page).toHaveURL(/\/reps$/);
   await expectPromptOnly(page, en);
@@ -254,8 +267,10 @@ test('"Erase my data" on /reps takes the members off the screen; reload and Back
   const sent = zipSends(page);
   await page.reload();
   await expectPromptOnly(page, en);
+  await routerListens(page);
   await page.goBack(); // entry 2
   await expect(page.getByRole('heading', { level: 1, name: en.bills.title })).toBeVisible();
+  await routerListens(page);
   await page.goBack(); // entry 1, written by the document before the reload
   await expect(page).toHaveURL(/\/reps$/);
   await expectPromptOnly(page, en);
@@ -682,6 +697,82 @@ test("two tabs: a bill page's members lookup out in the other tab when this one 
   // The panel asks for a ZIP again, and no member's call button is there.
   await expect(other.getByRole('textbox', { name: en.home.zipLabel }).first()).toBeVisible();
   await expect(other.locator('[data-rep-name]')).toHaveCount(0);
+});
+
+/* CHECK 6 (2026-11-20). After "erase, then the same ZIP saved again"
+   elsewhere, nothing waits on a lookup that was dropped: the members page
+   never keeps its "Looking up …" line with nothing running, and the bill
+   page's panel looks the ZIP up again. */
+test('two tabs: this tab\'s first lookup out, an erase there, then the same ZIP saved again from the home page: no dead "Looking up" line', async ({ context }) => {
+  const here = await context.newPage();
+  await here.goto('/record');
+  await here.evaluate((prefs) => localStorage.setItem('oravan.prefs', prefs), PREFS);
+  let held!: import('@playwright/test').Route;
+  const caught = new Promise<void>((ok) => {
+    void here.route('**/reps', (route) => {
+      if (!isLookup(route.request()) || held) return route.continue();
+      held = route;
+      ok();
+    });
+  });
+  await here.goto('/reps');
+  await caught;
+  await expect(here.locator('[data-saved-zip-lookup]')).toBeVisible();
+
+  const other = await context.newPage();
+  await other.goto('/record');
+  await eraseMyData(other);
+  // This tab has heard the erase before the answer comes.
+  await expect.poll(() => here.evaluate(() => localStorage.getItem('oravan.prefs'))).toBeNull();
+  const answered = here.waitForEvent('requestfinished', isLookup);
+  await held.continue();
+  await answered;
+  await other.goto('/');
+  const zip = other.getByRole('textbox', { name: en.home.zipLabel });
+  await zip.fill(ZIP);
+  await zip.press('Enter');
+  await expect(other.locator('[data-zip-line]')).toContainText(ZIP);
+
+  // This tab heard the new save: its ZIP box holds the ZIP saved again, and
+  // no line waits on the lookup that was dropped.
+  await expect(here.getByRole('textbox', { name: en.home.zipLabel })).toHaveValue(ZIP);
+  await expect(here.locator('[data-saved-zip-lookup]')).toHaveCount(0);
+});
+
+test("two tabs: a bill page's lookup out when another tab's erase leaves the ZIP saved: the panel looks it up again", async ({ context }) => {
+  const other = await context.newPage();
+  await mockScriptApi(other); // a stance asks for a script: never a real one here
+  await other.goto('/record');
+  await other.evaluate((zip) => {
+    localStorage.setItem('oravan.prefs', JSON.stringify({ zip }));
+    localStorage.setItem('oravan.calls', '[]');
+  }, ZIP);
+  const bill = `/bills/${referenceBill().slug}`;
+  let held!: import('@playwright/test').Route;
+  const caught = new Promise<void>((ok) => {
+    void other.route('**/api/reps', (route) => {
+      if (held) return route.continue();
+      held = route;
+      ok();
+    });
+  });
+  await other.goto(bill);
+  await caught;
+  await other.getByRole('radio', { name: en.bill.stance.support }).click();
+
+  // Another tab's erase that could not remove the ZIP: only the calls go.
+  // The count moves here; the saved ZIP stays the same.
+  const here = await context.newPage();
+  await here.goto('/record');
+  await here.evaluate(() => localStorage.removeItem('oravan.calls'));
+  // The panel's tab has heard it before the answer comes.
+  await expect.poll(() => other.evaluate(() => localStorage.getItem('oravan.calls'))).toBeNull();
+  const answered = other.waitForEvent('requestfinished', (r) => r.url().endsWith('/api/reps'));
+  await held.continue();
+  await answered;
+  // The dropped answer is not waited on: the panel asks again and shows them.
+  await expect(other.locator('[data-rep-name]').first()).toBeVisible();
+  await expect(other.getByText(en.bill.repsLoading)).toHaveCount(0);
 });
 
 /* The error screen: "Skip to content" and any in-page link stay in the page. */

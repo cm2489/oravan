@@ -141,3 +141,20 @@ export function entryNow(state: unknown): MembersEntry | null {
 export function currentEntry(): MembersEntry | null {
   return entryNow(window.history.state);
 }
+
+/**
+ * The ZIP the members page's "Looking up …, saved on this device" line may
+ * name (components/SavedZipLookup.tsx), or null for the ZIP prompt. The line
+ * stands only while the lookup it announces is the one running: for the ZIP
+ * still saved, under the erase count it started with. After an erase, even
+ * with the same ZIP saved again since (here or in another tab), that lookup's
+ * answer is dropped (components/RepsLookup.tsx), so the line would wait for
+ * nothing; the page starts again instead (check 6, 2026-11-20).
+ */
+export function pendingSavedZip(
+  pending: { zip: string; erasures: number } | null,
+  savedNow: string | null | undefined,
+  erasuresNow: number
+): string | null {
+  return pending && pending.erasures === erasuresNow && pending.zip === savedNow ? pending.zip : null;
+}

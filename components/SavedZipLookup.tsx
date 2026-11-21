@@ -2,8 +2,8 @@
 
 import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
-import { savedZip, usePrefs } from '@/lib/local';
-import type { MembersEntry } from '@/lib/members-entry';
+import { erasureCount, savedZip, useErasures, usePrefs } from '@/lib/local';
+import { pendingSavedZip, type MembersEntry } from '@/lib/members-entry';
 
 /*
  * THE REPS TAB OPENS ON YOUR MEMBERS (owner, UX question Q8 answered "a" on
@@ -27,8 +27,14 @@ import type { MembersEntry } from '@/lib/members-entry';
  * ?zip=…&district=… did before 2026-11-12. A fresh arrival's entry holds
  * nothing, so the saved ZIP answers.
  *
- * The ZIP is read ONCE, when the page opens, so a ZIP typed into the form
- * below does not trigger a second lookup.
+ * The ZIP is read when the page opens, so a ZIP typed into the form below
+ * does not trigger a second lookup; and read again after every erase or
+ * change of ZIP made elsewhere (the erase count, lib/local.ts), because the
+ * lookup that was running then is dropped (components/RepsLookup.tsx). Its
+ * status line goes with it: after "erase, then the same ZIP saved again" it
+ * used to come back and wait for an answer that never came (check 6,
+ * 2026-11-20). Now the page starts again: the saved ZIP, if there is one, is
+ * looked up afresh; otherwise the prompt stays.
  *
  * Until then the children (the ZIP prompt) render, so the page still works
  * with JavaScript off or with no saved ZIP. While the lookup is on its way the
@@ -58,16 +64,18 @@ export function SavedZipLookup({
   onLookup: (entry: MembersEntry) => Promise<boolean>;
 }) {
   const t = useTranslations('reps');
-  const [zip, setZip] = useState<string | null>(null);
+  const [pending, setPending] = useState<{ zip: string; erasures: number } | null>(null);
   const prefs = usePrefs();
+  const erasures = useErasures();
 
   useEffect(() => {
     const saved = savedZip();
     const entry = arrival() ?? (saved ? { zip: saved } : null);
     if (!entry) return;
+    const asked = erasureCount();
     let live = true;
     void onLookup(entry).then((ok) => {
-      if (live && !ok) setZip(null);
+      if (live && !ok) setPending(null);
     });
     // The status line says the ZIP is the one "saved on this device", so it
     // shows only when that is the ZIP being looked up; a history entry's
@@ -80,21 +88,24 @@ export function SavedZipLookup({
     // The status line is set a tick later: a synchronous state write in the
     // effect body is what react-hooks/set-state-in-effect forbids (the same
     // defer components/ActionPanel.tsx documents for its own lookup).
-    const id = setTimeout(() => setZip(entry.zip), 0);
+    const id = setTimeout(() => setPending({ zip: entry.zip, erasures: asked }), 0);
     return () => {
       live = false;
       clearTimeout(id);
     };
-    // Once, when the page opens (see above): arrival and onLookup are new
+    // When the page opens, and again after each erase or change elsewhere
+    // (see above), never on anything else: arrival and onLookup are new
     // functions on every render of the page, and a re-run would look the ZIP
     // up again.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [erasures]);
 
   // The line names the ZIP "saved on this device", so it stands only while
-  // that is still true: an erase on this page (components/YourRecord.tsx)
-  // brings the prompt back at once, even with the lookup still on its way.
-  if (!zip || prefs.zip !== zip) return <>{children}</>;
+  // that is still true and its lookup is still the one running: an erase on
+  // this page (components/YourRecord.tsx) brings the prompt back at once,
+  // even with the lookup still on its way.
+  const zip = pendingSavedZip(pending, prefs.zip, erasures);
+  if (!zip) return <>{children}</>;
   return (
     <p role="status" data-saved-zip-lookup="" className="max-w-xl text-lg font-bold">
       {t('savedZipLoading', { zip })}

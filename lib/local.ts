@@ -246,7 +246,10 @@ function noteErase() {
   for (const key of ERASED_KEYS) {
     try {
       const visible = storeGet(key);
-      if (visible !== null) revoked.set(key, visible);
+      // Only what this tab read before (`seen`): a value it has not read
+      // was written since, maybe after the erase (events can come late), and
+      // is not this erase's to hide (check 6, 2026-11-20).
+      if (visible !== null && seen.get(key) === visible) revoked.set(key, visible);
     } catch {
       /* storage blocked: nothing shared to revoke */
     }
@@ -411,6 +414,7 @@ export function useStoreLost(): boolean {
 function write(key: StorageKey, value: unknown) {
   const raw = JSON.stringify(value);
   revoked.delete(key);
+  let took = true;
   try {
     storeSet(key, raw);
     storeHeldOurs = true;
@@ -419,7 +423,11 @@ function write(key: StorageKey, value: unknown) {
   } catch {
     // Storage full or blocked: keep the preferences for this visit (see above).
     if (KEPT_IN_MEMORY.has(key)) memory.set(key, raw);
+    else took = false;
   }
+  // What this tab wrote is what it has read: its own change of ZIP is never
+  // taken for one made elsewhere on a return (check 6, 2026-11-20).
+  if (took && isErasedKey(key)) seen.set(key, raw);
   notify();
 }
 

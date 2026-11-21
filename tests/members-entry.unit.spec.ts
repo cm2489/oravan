@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { ENTRY_KEY, entryFor, entryNow, forgetStaleEntry, readEntry, rememberMembers, sameEntry } from '../lib/members-entry';
+import { ENTRY_KEY, entryFor, entryNow, forgetStaleEntry, pendingSavedZip, readEntry, rememberMembers, sameEntry } from '../lib/members-entry';
 import { membersFor } from '../lib/members';
 import { eraseAll } from '../lib/local';
 
@@ -175,4 +175,17 @@ test('entryNow: an entry for a ZIP that is no longer the saved one counts as not
   } finally {
     delete (globalThis as { window?: unknown }).window;
   }
+});
+
+/* The "Looking up …, saved on this device" line (components/SavedZipLookup.tsx,
+   check 6, 2026-11-20): it stands only for the lookup still running, the
+   saved ZIP's under the erase count it started with. After "erase, then the
+   same ZIP saved again", that lookup's answer was dropped, so no line. */
+test('pendingSavedZip: the line only for the ZIP still saved, under the count its lookup started with', () => {
+  expect(pendingSavedZip(null, '78501', 0)).toBeNull();
+  expect(pendingSavedZip({ zip: '78501', erasures: 0 }, '78501', 0)).toBe('78501');
+  expect(pendingSavedZip({ zip: '78501', erasures: 0 }, undefined, 1), 'erased').toBeNull();
+  expect(pendingSavedZip({ zip: '78501', erasures: 0 }, '78501', 1), 'erased, then the same ZIP saved again').toBeNull();
+  expect(pendingSavedZip({ zip: '78501', erasures: 0 }, '10001', 0), 'another ZIP saved').toBeNull();
+  expect(pendingSavedZip({ zip: '78501', erasures: 2 }, '78501', 2), 'a lookup started after two erases').toBe('78501');
 });

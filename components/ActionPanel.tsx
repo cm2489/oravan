@@ -18,7 +18,7 @@ import type { VehicleKind } from '@/lib/moments';
 // string literal restated here — the route rejects an unrecognized audience
 // with a 400 rather than defaulting it, so a typo would be a dead control.
 import type { NominationAudience } from '@/lib/nomination-script';
-import { erasureCount, upsertCall, useCalls, usePrefs } from '@/lib/local';
+import { erasureCount, useErasures, upsertCall, useCalls, usePrefs } from '@/lib/local';
 import { shareRepLookup } from '@/lib/rep-lookup-share';
 import { crossesStateLine, nameWithState } from '@/lib/state-line';
 import type { CallOutcome, Legislator, Stance } from '@/lib/types';
@@ -427,6 +427,10 @@ export function ActionPanel({
   const [lookup, setLookup] = useState<RepLookup>({ status: 'idle' });
   const prefs = usePrefs();
   const zip = prefs.zip ?? null;
+  // An erase, here or in another tab (lib/local.ts), drops the lookup on its
+  // way; even when the same ZIP is saved again since, the panel looks it up
+  // afresh rather than waiting on that dropped answer (check 6, 2026-11-20).
+  const erasures = useErasures();
   const [copied, setCopied] = useState<string | null>(null);
   const [scriptCopied, setScriptCopied] = useState(false);
   const [loggedOutcomes, setLoggedOutcomes] = useState<Record<string, CallOutcome>>({});
@@ -641,7 +645,8 @@ export function ActionPanel({
       return;
     }
     setLookup({ status: 'loading' });
-    const asked = erasureCount();
+    // The count this lookup belongs to (see `erasures` above).
+    const asked = erasures;
     lookupReps(zip)
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((d) => {
@@ -658,7 +663,7 @@ export function ActionPanel({
         shareRepLookup({ zip, reps: d.reps, multiDistrict: d.multiDistrict ?? false });
       })
       .catch(() => setLookup({ status: 'error' }));
-  }, [zip]);
+  }, [zip, erasures]);
 
   // Deferred a tick: fetchReps sets 'loading' synchronously, which the
   // react-hooks/set-state-in-effect rule forbids inside the effect's own
