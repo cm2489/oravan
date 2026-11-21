@@ -746,6 +746,14 @@ export interface LiveCallTarget {
   /** NON-RELATIONAL: the other chamber has no vote on this object at all —
    *  not "not yet". True only for nominations. */
   soleChamber: boolean;
+  /** THE CHAMBER IS NOT MEETING (docs/record-truth.md §5, 2026-11-20). Set
+   *  only on a target read from a fresh floor fact (a calendar placement or a
+   *  vote still ahead) while `floorFactSuspended` holds that fact for the
+   *  chamber it names. The target is unchanged, so the offices keep their
+   *  order and every dial stays; `liveCallKey` then prints the line the aged
+   *  path prints for the same record, which is none (an aged floor fact gives
+   *  no target, so no line). Absent means false. */
+  held?: true;
 }
 
 /**
@@ -934,7 +942,10 @@ export function announcedCallTarget(
  */
 export function liveCallTarget(
   bill: Pick<Bill, 'bill_type' | 'status' | 'last_action_text' | 'last_action_date'> & Basis & EndedReadable,
-  announcement: RoutingAnnouncement | null = null
+  announcement: RoutingAnnouncement | null = null,
+  /** The chamber-session reader (lib/docket.ts `chamberSession`), LAST so
+   *  every existing call keeps its meaning: omitted, nothing is held. */
+  sessionOf?: (chamber: Chamber) => ChamberSession
 ): LiveCallTarget | null {
   // No chamber can act on a bill of an ended Congress, so there is no live
   // call to route (stage 3, 2026-11-13; empty ended list today).
@@ -942,9 +953,40 @@ export function liveCallTarget(
   const record = recordCallTarget(bill);
   if (TERMINAL_STATUSES.has(bill.status)) return record;
   const announced = announcedCallTarget(announcement);
-  if (!announced) return record;
+  if (!announced) return heldWhileOut(bill, record, announcement, sessionOf);
   if (record && record.chamber === announced.chamber) return record;
   return announced;
+}
+
+/**
+ * THE ROUTING LINE WHILE THE CHAMBER IS NOT MEETING (docs/record-truth.md §5;
+ * owner's orchestrator, 2026-11-20). "This bill is before the House right
+ * now" is a floor claim, so while the chamber it names reads out of session
+ * the line is what the aged path gives the same record: an aged floor fact has
+ * no target, so no line. The decision is `floorFactSuspended`'s, as for the
+ * floor band (#525) and the stepper's "Right now:" sentence (#532): a bill on
+ * that chamber's own published schedule is exempt, and `unknown` stays live.
+ *
+ * ONLY THE LINE MOVES (rule 8). The target is returned unchanged, with
+ * `held`, so the offices keep their order, the dials, the script and the
+ * panel stay; only `liveCallKey` reads `held`. A passage target ("…has already
+ * voted, and the Senate decides next") is not a floor fact and is never held,
+ * exactly as the aged path never clocks it.
+ */
+function heldWhileOut(
+  bill: Pick<Bill, 'status' | 'last_action_text'> & Basis,
+  record: LiveCallTarget | null,
+  announcement: RoutingAnnouncement | null,
+  sessionOf: ((chamber: Chamber) => ChamberSession) | undefined
+): LiveCallTarget | null {
+  if (!record || !sessionOf || bill.status !== 'floor_vote' || record.afterVote) return record;
+  const kind: FloorBandKind =
+    announcement?.chamber === record.chamber
+      ? 'announced'
+      : floorCalendarChamber(statusBasisText(bill))
+        ? 'calendar'
+        : 'pending';
+  return floorFactSuspended(kind, sessionOf(record.chamber)) ? { ...record, held: true } : record;
 }
 
 /** The record half — where the bill's OWN last action places the live
@@ -1157,6 +1199,9 @@ export function liveCallKey(
   reader: { hasSenator: boolean }
 ): LiveCallKey | null {
   if (!target) return null;
+  // Held by the chamber-session gate (heldWhileOut): the aged path's line,
+  // which is none. The target itself still orders the offices.
+  if (target.held) return null;
   // The reader gate runs BEFORE the record gate, because it is the stronger
   // claim: every key below names an office, and a sentence about an office the
   // reader does not have is false no matter what the record says.

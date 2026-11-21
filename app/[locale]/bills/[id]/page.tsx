@@ -453,7 +453,9 @@ export default async function BillPage({
           published: announcement.published,
           session: chamberSession(announcement.chamber),
         }
-      : null
+      : null,
+    // §5: while the chamber is out, the routing line is the aged path's.
+    (c) => chamberSession(c)
   );
 
   /*
