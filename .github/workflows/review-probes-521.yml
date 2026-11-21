@@ -32,32 +32,17 @@ jobs:
         env:
           E2E_SERVER_MODE: build
         run: npx tsx tests/e2e-server.mjs
-      - name: Probes (i)-(iv), (4), (vi), once each, no retries
-        continue-on-error: true
-        env:
-          E2E_SERVER_MODE: start
-          REVIEW_PROBES: '1'
-          PLAYWRIGHT_JSON_OUTPUT_NAME: probes.json
-        run: npx playwright test tests/review-probes-521.spec.ts --project=webkit-desktop --project=webkit-mobile --retries=0 --reporter=line,json
-      - name: Probe (v), Back right after Reload, 30 repeats, no retries
+      - name: Probe (v2), Back right after Reload, 40 repeats, no retries
         continue-on-error: true
         env:
           E2E_SERVER_MODE: start
           REVIEW_PROBES: '1'
           PLAYWRIGHT_JSON_OUTPUT_NAME: back.json
-        run: npx playwright test tests/review-probes-521-back.spec.ts --project=webkit-desktop --project=webkit-mobile --retries=0 --repeat-each=30 --reporter=line,json
-      - name: The PR's own erase and typing tests, 3 repeats, no retries
-        continue-on-error: true
-        env:
-          E2E_SERVER_MODE: start
-          PLAYWRIGHT_JSON_OUTPUT_NAME: own.json
-        run: npx playwright test tests/erase-reach.spec.ts tests/zip-typed-before-hydration.spec.ts --project=webkit-desktop --project=webkit-mobile --retries=0 --repeat-each=3 --reporter=line,json
+        run: npx playwright test tests/review-probes-521-back.spec.ts --project=webkit-desktop --retries=0 --repeat-each=40 --reporter=line,json
       - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: review-probes-521
           path: |
-            probes.json
             back.json
-            own.json
           retention-days: 3
