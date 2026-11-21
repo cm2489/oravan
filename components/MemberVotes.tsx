@@ -9,6 +9,7 @@ import { billSlug, getAllBills, localizeBill } from '@/lib/core';
 import { formatCitation } from '@/lib/format';
 import { rollCallPage } from '@/lib/roll-call-page';
 import { deriveJourney } from '@/lib/journey';
+import { journeySessionAt } from '@/lib/floor-session';
 import { adoptedConcurrentReading } from '@/lib/concurrent-explainer';
 import { ConcurrentExplainer } from '@/components/ConcurrentExplainer';
 import type { GlossaryTermId } from '@/lib/glossary';
@@ -174,7 +175,8 @@ export async function MemberVotes({
    *  without its "if the other chamber changes it" trailer and without the
    *  glossary link on the calendar phrase: same key, same values. */
   const rightNow = (bill: Bill) => {
-    const journey = deriveJourney(bill);
+    // The bill page's session reading too, so the two pages say one thing.
+    const journey = deriveJourney(bill, undefined, journeySessionAt(bill, billSlug(bill)));
     const chamber = journey.origin === 'house' ? 'House' : 'Senate';
     const other = chamber === 'House' ? 'Senate' : 'House';
     const nowChamber = journey.nowChamber === 'house' ? 'House' : 'Senate';

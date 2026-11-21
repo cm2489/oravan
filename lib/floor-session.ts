@@ -18,8 +18,8 @@
  * tests/floor-session.unit.spec.ts fails if any other file in app/,
  * components/ or lib/ calls `billStatusLine` directly.
  */
-import { chamberSession } from './docket';
-import { billFloorBand, floorFactSuspended, type ChamberSession, type FloorBandKind } from './journey';
+import { chamberSession, rungFor } from './docket';
+import { billFloorBand, floorFactSuspended, type ChamberSession, type FloorBandKind, type JourneySession } from './journey';
 import { billStatusLine, type FloorSuspended, type StatusLine } from './moment-status.mjs';
 
 type Chamber = 'house' | 'senate';
@@ -67,4 +67,35 @@ export function calendarMarkSuspended(
   sessionOf: (chamber: Chamber) => ChamberSession = (chamber) => chamberSession(chamber, now)
 ): boolean {
   return billFloorBand(bill, null, now, sessionOf)?.suspended === true;
+}
+
+/**
+ * THE SESSION READING THE STEPPER'S "Right now:" SENTENCE IS ASKED UNDER
+ * (lib/journey.ts `JourneySession`, 2026-11-20): the same reader and the same
+ * announcement the bill page's floor band reads, so the bill page and a
+ * member's votes list hold the sentence to the gate the band and the recess
+ * note hold. The announcement is the rung's own (`rungFor`: tier t0 only), so
+ * a bill on a chamber's own published schedule keeps its exemption.
+ *
+ * `journeySessionFrom` is the pure half, which the unit tests feed a rung made
+ * from a frozen schedule fixture; `journeySessionAt` reads the committed
+ * schedule. tests/right-now-session.unit.spec.ts pins both and the wiring.
+ */
+export function journeySessionFrom(
+  rung: { tier: string; announced: { chamber: Chamber } | null },
+  sessionOf: (chamber: Chamber) => ChamberSession
+): JourneySession {
+  return {
+    sessionOf,
+    announced: rung.tier === 't0' ? (rung.announced?.chamber ?? null) : null,
+  };
+}
+
+export function journeySessionAt(
+  bill: Parameters<typeof rungFor>[0],
+  slug: string,
+  now: number = Date.now(),
+  readSession: (chamber: Chamber, now: number) => ChamberSession = chamberSession
+): JourneySession {
+  return journeySessionFrom(rungFor(bill, slug, now), (chamber) => readSession(chamber, now));
 }

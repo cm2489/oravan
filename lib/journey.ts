@@ -1331,6 +1331,32 @@ export function pointOfOrderUpheldChamber(actionText: string | null | undefined)
 }
 
 /**
+ * THE CHAMBER-SESSION READING THE "Right now:" SENTENCE IS ASKED UNDER
+ * (docs/record-truth.md §5, 2026-11-20). The two floor facts the sentence can
+ * state in the present tense — a calendar placement (`nowFloor`) and a vote
+ * still ahead (`nowFloorActivity`, `nowFloorClotureInvoked`) — are live only
+ * while the chamber they name is meeting. Until this date the stepper read the
+ * 14-day clock and nothing else, so during a recess the bill page printed the
+ * quiet note "…so this page shows no live floor claim today" with "Right now:
+ * the House is deciding whether to bring it to a vote" a few lines below it.
+ *
+ * The decision is `floorFactSuspended`'s, never a second gate: `announced`
+ * (the chamber named the bill on its own published schedule) is exempt, and
+ * `unknown` fails safe to live, exactly as the floor band reads it. While the
+ * named chamber is out the sentence takes the same stale variant it takes
+ * after the 14-day window (`nowFloorStale`, `nowFloorActivityStale`): those say
+ * what the record holds and that it shows nothing since, which a recess does
+ * not make false. Omit it and the sentence reads the clock alone, as before.
+ */
+export interface JourneySession {
+  /** The session reader the floor band uses (lib/docket.ts `chamberSession`). */
+  sessionOf: (chamber: Chamber) => ChamberSession;
+  /** The chamber whose own published schedule names this bill (rungFor's
+   *  `announced`), or null. */
+  announced?: Chamber | null;
+}
+
+/**
  * The full status → position behavior table. Chamber for committee/markup
  * texts is not reliably derivable from referral text, so those stages stay
  * deliberately conservative (origin chamber). An unmapped status (the JSON
@@ -1350,8 +1376,15 @@ export function deriveJourney(
    *  out and get today, exactly as before; tests pass a fixed instant so a
    *  reading never changes with the date it is run on (re-check of #523,
    *  round 7). */
-  now: number = Date.now()
+  now: number = Date.now(),
+  /** The chamber-session reading (see JourneySession). Omitted: the clock
+   *  alone decides the tense, as before 2026-11-20. */
+  session?: JourneySession
 ): JourneyState {
+  /** Is this floor fact held by its chamber not meeting? floorFactSuspended
+   *  decides; a chamber's own published schedule naming the bill exempts it. */
+  const held = (kind: 'calendar' | 'pending', chamber: Chamber): boolean =>
+    session ? floorFactSuspended(session.announced === chamber ? 'announced' : kind, session.sessionOf(chamber)) : false;
   const origin: Chamber = bill.bill_type.startsWith('h') ? 'house' : 'senate';
   const other: Chamber = origin === 'house' ? 'senate' : 'house';
   const base = {
@@ -1394,6 +1427,8 @@ export function deriveJourney(
       const record = statusBasisText(bill);
       const cal = floorCalendarChamber(record);
       if (cal) {
+        // Live only while that chamber meets (JourneySession, §5).
+        const calLive = live && !held('calendar', cal);
         return {
           ...base,
           step: cal === origin ? 2 : 3,
@@ -1402,9 +1437,9 @@ export function deriveJourney(
           // `onCalendar` is the surfaces' urgency permission, not the record's
           // claim — an aged placement is still ON the calendar and the
           // demoted sentence still says so.
-          onCalendar: live,
+          onCalendar: calLive,
           floorCalendar: floorCalendarName(record),
-          nowKey: live ? 'nowFloor' : 'nowFloorStale',
+          nowKey: calLive ? 'nowFloor' : 'nowFloorStale',
         };
       }
       /*
@@ -1626,7 +1661,10 @@ export function deriveJourney(
        * and the final vote is still ahead — and an aged one takes the same
        * dated past-tense sentence as every other aged floor action.
        */
-      if (live && CLOTURE_INVOKED_ON_MEASURE.test(record ?? '')) {
+      // Live only while that chamber meets (JourneySession, §5): held, both
+      // sentences below take the stale variant, as after the 14-day window.
+      const pendingLive = live && !held('pending', pending);
+      if (pendingLive && CLOTURE_INVOKED_ON_MEASURE.test(record ?? '')) {
         return {
           ...base,
           step: pending === origin ? 2 : 3,
@@ -1641,7 +1679,7 @@ export function deriveJourney(
         step: pending === origin ? 2 : 3,
         current: pending,
         nowChamber: pending,
-        nowKey: live ? 'nowFloorActivity' : 'nowFloorActivityStale',
+        nowKey: pendingLive ? 'nowFloorActivity' : 'nowFloorActivityStale',
       };
     }
     case 'passed_chamber': {
