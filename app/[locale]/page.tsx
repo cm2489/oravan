@@ -361,11 +361,15 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             wrap, and "Understand it in plain words." never breaks (owner,
             2026-08-01) — `data-clause-lock` opts the h1 out of the global
             balance at md+, and md:text-h1-bill is the rung that holds the
-            clause-clean break in both locales. Below 360px one step down,
-            so "Luego haz que cuente." fits a 320px screen (WCAG 1.4.10). */}
+            clause-clean break in both locales. Below 384px one step down,
+            so the stroked beat fits the screen (WCAG 1.4.10): text-h1 holds
+            its 32px floor up to 457px, where "Then call your members." is
+            about 363px and cannot wrap, so it needs a screen of about 379px.
+            The step began at 360px until 2026-11-20 and the line ran 19px
+            past a 360px screen (tests/home-hero-width.spec.ts). */}
         <h1
           data-clause-lock
-          className="text-h1 font-extrabold max-[22.5rem]:text-[1.625rem] md:text-h1-bill"
+          className="text-h1 font-extrabold max-[24rem]:text-[1.625rem] md:text-h1-bill"
         >
           {t('heroTitle')}{' '}
           <span className="relative inline-block whitespace-nowrap after:absolute after:right-[0.08em] after:bottom-[-0.12em] after:left-[0.02em] after:h-[6px] after:rounded-stamp after:bg-go after:content-['']">
