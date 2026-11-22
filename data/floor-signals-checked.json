@@ -1,19 +1,13 @@
 {
   "schema": "floor-signals-checked/v1",
-  "checked_at": "2026-11-21T17:26:04.668Z",
+  "checked_at": "2026-11-22T02:50:02.385Z",
   "in_session": {
-    "senate": "in_session",
-    "house": "in_session",
+    "senate": "unknown",
+    "house": "unknown",
     "basis": "Daily Digest \"Program for\" blocks"
   },
   "next_meeting": {
-    "senate": {
-      "date": "2026-11-17",
-      "label": "10 a.m., Tuesday, November 17"
-    },
-    "house": {
-      "date": "2026-11-17",
-      "label": "12 noon, Tuesday, November 17"
-    }
+    "senate": null,
+    "house": null
   }
 }
