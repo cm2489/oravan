@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { PhoneCall, MessageCircle, Voicemail, Trash2, ArrowRight } from 'lucide-react';
 import { useFormatter, useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
-import { eraseAll, recordHref, removeCall, removeRead, useCalls, usePrefs, useReads } from '@/lib/local';
+import { eraseAll, recordHref, removeCall, removeRead, useCalls, usePrefs, useReads, useStoreLost } from '@/lib/local';
 
 /*
  * YOUR RECORD — the reader's own calls, topics and reading, and the way to
@@ -67,15 +67,22 @@ export function YourRecord({ standalone = false }: { standalone?: boolean }) {
   const calls = useCalls();
   const reads = useReads();
   const prefs = usePrefs();
+  // Storage that held this visit's data and will no longer be read: nothing
+  // here can say what is still saved, so the erase control stays (lib/local.ts).
+  const lost = useStoreLost();
   const [confirming, setConfirming] = useState(false);
   const [erased, setErased] = useState(false);
+  // An erase that could not remove every key (lib/local.ts eraseAll): it does
+  // not say "erased", and the button stays, focused, to be pressed again.
+  const [incomplete, setIncomplete] = useState(false);
   const interests = prefs.interests ?? [];
   const hasAnything = calls.length > 0 || reads.length > 0 || !!prefs.zip || interests.length > 0;
 
   function onErase() {
-    eraseAll();
+    const complete = eraseAll();
     setConfirming(false);
-    setErased(true);
+    setErased(complete);
+    setIncomplete(!complete);
   }
 
   const contacts = calls.filter((c) => c.outcome === 'contact').length;
@@ -269,7 +276,7 @@ export function YourRecord({ standalone = false }: { standalone?: boolean }) {
           line. The status <p role=status> is ALWAYS mounted and filled on
           erase — a live region that mounts with its text is the classic
           pattern screen readers fail to announce. */}
-      {(hasAnything || erased) && (
+      {(hasAnything || erased || incomplete || lost) && (
         <section className="mt-8 rounded-control bg-wash p-6" aria-labelledby="erase" data-record-erase="">
           <h2 id="erase" className="text-h3 font-extrabold">
             {t('eraseTitle')}
@@ -279,6 +286,11 @@ export function YourRecord({ standalone = false }: { standalone?: boolean }) {
             !erased && (
               <button
                 type="button"
+                ref={(el) => {
+                  // After an incomplete erase the confirm is gone and focus
+                  // fell to <body>: it comes back to the button that retries.
+                  if (incomplete && el && document.activeElement === document.body) el.focus();
+                }}
                 onClick={() => setConfirming(true)}
                 className="mt-4 inline-flex min-h-12 items-center gap-2 rounded-control border-2 border-ink bg-paper px-4 py-2.5 font-bold text-ink hover:bg-wash"
               >
@@ -313,12 +325,25 @@ export function YourRecord({ standalone = false }: { standalone?: boolean }) {
               </div>
             </div>
           )}
+          {/* Focused by script after a click as often as after a key, so it
+              draws the site's focus ring (app/globals.css, ":focus-visible")
+              whenever it has focus, not only when the browser would call it
+              keyboard focus: the same 3px ring, 2px out, in the same token. */}
           <p
-            className="mt-3 text-sm font-medium"
+            className="mt-3 text-sm font-medium focus:rounded-hair focus:outline-3 focus:outline-offset-2 focus:outline-(--focus) focus:outline-solid"
             role="status"
             tabIndex={-1}
             ref={(el) => {
-              if (erased && el && document.activeElement === document.body) el.focus();
+              if (!erased || !el || document.activeElement !== document.body) return;
+              // Focused without the browser's own scroll, which would leave it
+              // on the screen's very edge. On /reps the erase also takes the
+              // members off the page above (components/RepsLookup.tsx), and
+              // the page shrinks under the reader: when the confirmation has
+              // left the screen, bring it back to the middle of it, with its
+              // box around it.
+              el.focus({ preventScroll: true });
+              const { top, bottom } = el.getBoundingClientRect();
+              if (top < 0 || bottom > window.innerHeight) el.scrollIntoView({ block: 'center' });
             }}
           >
             {erased ? t('erased') : ''}

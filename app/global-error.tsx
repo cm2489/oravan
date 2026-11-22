@@ -16,13 +16,7 @@
  * app/[locale]/error.tsx is the boundary users will actually see; this one is
  * the net under the net.
  */
-export default function GlobalError({
-  error,
-  reset,
-}: {
-  error: Error & { digest?: string };
-  reset: () => void;
-}) {
+export default function GlobalError({ error }: { error: Error & { digest?: string }; reset: () => void }) {
   // Digest only — never the message, which can carry user-entered text.
   if (typeof window !== 'undefined') {
     console.error('[oravan] root error', error.digest ?? '(no digest)');
@@ -54,7 +48,10 @@ export default function GlobalError({
           <p style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
             <button
               type="button"
-              onClick={reset}
+              // A reload, not reset() (2026-11-18): re-rendering an app that
+              // has just crashed can crash it again (app/[locale]/error.tsx,
+              // "EVERY WAY OUT"), and this screen's own words advise a reload.
+              onClick={() => window.location.reload()}
               style={{
                 minHeight: '3rem',
                 padding: '0 1.5rem',

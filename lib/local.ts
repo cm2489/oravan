@@ -9,6 +9,7 @@
 
 import { useSyncExternalStore } from 'react';
 import type { CallOutcome, Stance } from './types';
+import { CALLS_KEY, ENTRY_TAG_KEY, ERASED_KEYS, PREFS_KEY, READS_KEY, type StorageKey } from './storage-keys';
 
 export interface Prefs {
   zip?: string;
@@ -81,9 +82,11 @@ export interface ReadRecord {
   at: string; // ISO timestamp
 }
 
-const PREFS_KEY = 'oravan.prefs';
-const CALLS_KEY = 'oravan.calls';
-const READS_KEY = 'oravan.reads';
+// Every key lives in lib/storage-keys.ts (tests/storage-keys.unit.spec.ts
+// holds every storage call to those names); ERASED_KEYS is what an erase
+// removes, the history tag first.
+export { ERASED_KEYS };
+const isErasedKey = (key: string): key is StorageKey => (ERASED_KEYS as readonly string[]).includes(key);
 
 /** The reading history is capped: past this many bills the oldest row falls
  *  off. A visitor who reads for a year should not carry an unbounded list in
@@ -101,15 +104,32 @@ const LEGACY = {
   'cabina.calls': CALLS_KEY,
   'rostra.prefs': PREFS_KEY,
   'rostra.calls': CALLS_KEY,
-} as const;
+} as const satisfies Record<string, StorageKey>;
+type LegacyKey = keyof typeof LEGACY;
+
+/*
+ * THE ONLY WAY INTO THE STORE FROM THIS MODULE (2026-11-19). Every read, write
+ * and removal goes through these three, typed so that TypeScript refuses any
+ * key that is not a named one (lib/storage-keys.ts) or a pre-rename name being
+ * migrated away; tests/storage-keys.unit.spec.ts holds this module to them.
+ * They throw when the browser refuses storage, as the store itself does.
+ */
+function storeGet(key: StorageKey | LegacyKey): string | null {
+  return window.localStorage.getItem(key);
+}
+function storeSet(key: StorageKey, value: string): void {
+  window.localStorage.setItem(key, value);
+}
+function storeRemove(key: StorageKey | LegacyKey): void {
+  window.localStorage.removeItem(key);
+}
+
 if (typeof window !== 'undefined') {
   try {
-    for (const [oldKey, newKey] of Object.entries(LEGACY)) {
-      const v = window.localStorage.getItem(oldKey);
-      if (v !== null && window.localStorage.getItem(newKey) === null) {
-        window.localStorage.setItem(newKey, v);
-      }
-      if (v !== null) window.localStorage.removeItem(oldKey);
+    for (const [oldKey, newKey] of Object.entries(LEGACY) as [LegacyKey, StorageKey][]) {
+      const v = storeGet(oldKey);
+      if (v !== null && storeGet(newKey) === null) storeSet(newKey, v);
+      if (v !== null) storeRemove(oldKey);
     }
   } catch {
     /* storage blocked - nothing to migrate */
@@ -118,13 +138,225 @@ if (typeof window !== 'undefined') {
 
 const listeners = new Set<() => void>();
 
-function subscribe(cb: () => void) {
+/**
+ * Memory that can hold the ZIP or the members found for it registers here to
+ * be emptied by every erase: this tab's, another tab's, and one seen on a
+ * return from the back/forward cache (`noteErase` below). The snapshot caches
+ * of this module do (`makeSnapshot`), and so does lib/rep-lookup-share.ts.
+ */
+const eraseHooks = new Set<() => void>();
+
+export function onErase(hook: () => void): void {
+  eraseHooks.add(hook);
+}
+
+/** Exported for tests/local-blocked.unit.spec.ts; the hooks below are its users. */
+export function subscribe(cb: () => void) {
+  const onStorage = (e: StorageEvent) => {
+    noteStorageEvent(e);
+    cb();
+  };
   listeners.add(cb);
-  window.addEventListener('storage', cb);
+  watchReturns();
+  window.addEventListener('storage', onStorage);
   return () => {
     listeners.delete(cb);
-    window.removeEventListener('storage', cb);
+    window.removeEventListener('storage', onStorage);
   };
+}
+
+/*
+ * AN ERASE IN ANOTHER TAB, OR WHILE THIS PAGE SLEPT (2026-11-18).
+ *
+ * The erase count below lived only in the tab that erased, so another open
+ * tab kept the members on its screen, a lookup it had on its way was shown
+ * and remembered, and what it did next (a street address, "Show all
+ * districts") sent the erased ZIP again. The browser tells every other tab of
+ * this site when storage changes (the `storage` event): an erase key removed
+ * (only `eraseAll` ever removes one) or the whole store cleared counts as an
+ * erase here too. Every subscriber hears the same event object, so it is
+ * counted once.
+ *
+ * A page kept in the browser's back/forward cache hears nothing while it
+ * sleeps. When it is shown again (`pageshow`, persisted), any erase key this
+ * page had read with a value and that is now gone counts as an erase, and
+ * every reader redraws.
+ *
+ * With storage blocked there is no shared store and no event: what another
+ * tab keeps is only in that tab's own memory, out of an erase's reach by
+ * construction, and it is gone when that tab reloads or closes.
+ */
+let lastStorageEvent: Event | null = null;
+
+/*
+ * WHAT STORAGE HOLDS NOW DECIDES, NOT THE EVENT (2026-11-19). An event says
+ * what one key was and became at one moment; by the time this tab hears it,
+ * later writes may already be in storage, and simulated or late events can
+ * come in any order. So an event only says "look again": this tab reads the
+ * key's current value, and compares what it last read (`seen`) with what
+ * storage holds now.
+ *
+ *   - The key is empty now: an erase (or a removal) is under way or done, and
+ *     that counts as an erase here. When it is the tag or the ZIP (the keys an
+ *     erase removes first), what this tab can still see of the other keys is
+ *     revoked (see below).
+ *   - The key holds a value now: that value was written after any removal
+ *     this event may report, so it is not erased; it is compared with what
+ *     this tab last read, and a different ZIP or tag is a change.
+ *
+ * The whole store cleared (key null) is an erase here as well; the browser
+ * empties this tab's copy before it tells it, so there is nothing left in it
+ * to revoke.
+ */
+function noteStorageEvent(e: StorageEvent) {
+  if (e === lastStorageEvent) return;
+  lastStorageEvent = e;
+  if (e.key === null) {
+    noteChange();
+    return;
+  }
+  if (!isErasedKey(e.key)) return;
+  if (stored(e.key) !== null) {
+    // Written since: that value is not erased. Anything else that changed
+    // against what this tab read is a change (see "WHAT A TAB SHOWS" below).
+    revoked.delete(e.key);
+    recheck();
+    return;
+  }
+  if (e.key === ENTRY_TAG_KEY || e.key === PREFS_KEY) noteErase();
+  else noteChange();
+}
+
+/*
+ * The other tab's erase arrives here as one event per key, and the first (the
+ * tag's, since the erase removes the tag first) comes while the ZIP and the
+ * other keys are still visible to this tab: a page that redraws on that first
+ * event would read the saved ZIP, or an old entry, and send the erased ZIP.
+ * So when the tag or the ZIP is found gone, every value of an erase key this
+ * tab can still see is revoked here: it reads as nothing until a new value is
+ * written (here, or in another tab: its event says so, and storage then holds
+ * it). An erase on this page that leaves a key behind revokes what is left
+ * the same way (`eraseAll`).
+ */
+/** Revokes whatever the key holds (an erase that could not even read it). */
+const ANY_VALUE = Symbol('any value');
+const revoked = new Map<StorageKey, string | typeof ANY_VALUE>();
+
+function noteErase() {
+  for (const key of ERASED_KEYS) {
+    try {
+      const visible = storeGet(key);
+      // Only what this tab read before (`seen`): a value it has not read was
+      // written since, and is not this erase's to hide (check 6, 2026-11-20).
+      // That covers a tab that read nothing since the erase. A tab that reads
+      // between the events has read a ZIP saved again after the erase, and
+      // it is revoked here with the rest. Events in order: the ZIP's own
+      // removal event follows, finds storage holding a value and lifts the
+      // revocation, so the ZIP is read. The tag's removal heard last: nothing
+      // lifts it, and the ZIP stays hidden in this tab until it is written
+      // again, here or in another tab. Hidden, never an erased ZIP shown
+      // (check 7, 2026-11-21; tests/erase-signal.unit.spec.ts holds both).
+      if (visible !== null && seen.get(key) === visible) revoked.set(key, visible);
+    } catch {
+      /* storage blocked: nothing shared to revoke */
+    }
+  }
+  noteChange();
+}
+
+/*
+ * WHAT A TAB SHOWS MUST MATCH WHAT STORAGE HOLDS NOW (2026-11-19).
+ *
+ * Whenever the saved ZIP a tab found members for is no longer the saved ZIP,
+ * gone or different, those members leave its screen: the prompt comes back
+ * and the saved ZIP, if there is one, fills it in. A page remembers the value
+ * it last read for each erase key (`seen`), and checks it against storage
+ * when it may have missed what happened meanwhile:
+ *
+ *   - back from the back/forward cache (`pageshow`, persisted): a page there
+ *     hears no event while it sleeps;
+ *   - shown again (`visibilitychange` to visible) and focused (`focus`): a
+ *     hidden tab can be throttled, and events can come late.
+ *
+ * It counts as a change when the ZIP or the history tag is gone or different,
+ * or when the calls or the reads are gone (an erase). The same count every
+ * reader already checks rises (`erasures` below), so every page drops what
+ * it found for the old ZIP; a value that is merely new is not marked erased.
+ * Another tab's `storage` event that turns the ZIP or the tag into another
+ * value counts the same way (above).
+ */
+const seen = new Map<StorageKey, string>();
+
+function zipOf(raw: string | null): string | null {
+  if (raw === null) return null;
+  try {
+    const v: unknown = JSON.parse(raw);
+    return isPlainObject(v) && typeof v.zip === 'string' ? v.zip : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Whether `now` makes what was found for `was` stale. */
+function matters(key: StorageKey, was: string, now: string | null): boolean {
+  if (now === null) return true;
+  if (key === PREFS_KEY) return zipOf(was) !== zipOf(now);
+  if (key === ENTRY_TAG_KEY) return was !== now;
+  return false;
+}
+
+/** What the shared store holds for `key` now, without noting it. */
+function stored(key: StorageKey): string | null {
+  try {
+    return storeGet(key);
+  } catch {
+    storeUnreadable();
+    return null;
+  }
+}
+
+/** What this page reads for `key` now (this visit's refused write first), without noting it. */
+function current(key: StorageKey): string | null {
+  return memory.get(key) ?? stored(key);
+}
+
+function recheck(): boolean {
+  for (const [key, was] of seen) {
+    if (matters(key, was, current(key))) {
+      noteChange();
+      return true;
+    }
+  }
+  return false;
+}
+
+/** An erase, or the saved ZIP changed elsewhere: everything found before goes. */
+function noteChange() {
+  memory.clear();
+  seen.clear();
+  erasures += 1;
+  for (const hook of eraseHooks) hook();
+}
+
+let watchingReturns = false;
+
+function watchReturns() {
+  if (watchingReturns) return;
+  watchingReturns = true;
+  window.addEventListener('pageshow', (e) => {
+    if (!(e as PageTransitionEvent).persisted) return;
+    recheck();
+    notify();
+  });
+  const again = () => {
+    if (recheck()) notify();
+  };
+  if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') again();
+    });
+  }
+  window.addEventListener('focus', again);
 }
 
 function notify() {
@@ -149,30 +381,80 @@ function notify() {
  * their old behaviour, a refused write is dropped, because nothing needs
  * them to cross a page and keeping them would change what /record shows.
  */
-const memory = new Map<string, string>();
-const KEPT_IN_MEMORY = new Set([PREFS_KEY]);
+const memory = new Map<StorageKey, string>();
+const KEPT_IN_MEMORY = new Set<StorageKey>([PREFS_KEY]);
 
-function write(key: string, value: unknown) {
+/** Whether storage has held anything of ours this visit (see `eraseAll`). */
+let storeHeldOurs = false;
+
+/*
+ * STORAGE THAT STOPS ANSWERING MID-VISIT (2026-11-19). When the browser
+ * refuses to read a store that held our data earlier in this visit (the
+ * reader blocked site data while the page was open), this tab cannot tell
+ * what is still saved. It does not show what it found before (the members
+ * leave the screen, as after an erase), and it does not read the store's
+ * silence as "nothing saved": /record's and /reps' erase control stays, with
+ * its button, and only a whole erase says "erased" (`eraseAll`). A store
+ * blocked from the start never held anything of ours, and nothing changes.
+ */
+let lost = false;
+
+function storeUnreadable() {
+  if (!storeHeldOurs || lost) return;
+  lost = true;
+  // Never during a render: the readers redraw once it is over.
+  queueMicrotask(() => {
+    noteChange();
+    notify();
+  });
+}
+
+/** Whether this tab held data this visit that storage will no longer let it read. */
+export function storeLost(): boolean {
+  return lost;
+}
+
+export function useStoreLost(): boolean {
+  return useSyncExternalStore(subscribe, storeLost, () => false);
+}
+
+function write(key: StorageKey, value: unknown) {
   const raw = JSON.stringify(value);
+  revoked.delete(key);
+  let took = true;
   try {
-    window.localStorage.setItem(key, raw);
+    storeSet(key, raw);
+    storeHeldOurs = true;
+    lost = false;
     memory.delete(key);
   } catch {
     // Storage full or blocked: keep the preferences for this visit (see above).
     if (KEPT_IN_MEMORY.has(key)) memory.set(key, raw);
+    else took = false;
   }
+  // What this tab wrote is what it has read: its own change of ZIP is never
+  // taken for one made elsewhere on a return (check 6, 2026-11-20).
+  if (took && isErasedKey(key)) seen.set(key, raw);
   notify();
 }
 
 /** What is stored under `key`: this visit's refused write first, then storage. */
-function read(key: string): string | null {
+function read(key: StorageKey): string | null {
   const kept = memory.get(key);
-  if (kept !== undefined) return kept;
-  try {
-    return window.localStorage.getItem(key);
-  } catch {
-    return null; // blocked
+  let value: string | null = kept ?? null;
+  if (kept === undefined) {
+    try {
+      value = storeGet(key);
+      if (value !== null) storeHeldOurs = true;
+    } catch {
+      value = null; // blocked
+      storeUnreadable();
+    }
   }
+  const gone = revoked.get(key);
+  if (value !== null && (gone === ANY_VALUE || gone === value)) value = null; // erased (see above)
+  if (value !== null && isErasedKey(key)) seen.set(key, value);
+  return value;
 }
 
 /**
@@ -208,10 +490,23 @@ function read(key: string): string | null {
  * value from the snapshot, so the first write after a filtered read persists
  * the cleaned list and the unreadable row is gone from the device for good.
  */
-function makeSnapshot<T>(key: string, fallback: T, coerce: (v: unknown) => T | null) {
-  let cache: { raw: string | null; value: T } | null = null;
-  return () => {
+/**
+ * Every snapshot's cache, in one place: the last raw string read (the ZIP, in
+ * the preferences' case) is not kept in memory past an erase or a change of
+ * the saved ZIP made elsewhere.
+ */
+const snapshotCache = new Map<StorageKey, { raw: string | null; value: unknown }>();
+onErase(() => snapshotCache.clear());
+
+/** The raw strings the snapshot caches hold now (tests/erase-signal.unit.spec.ts). */
+export function snapshotCacheContents(): (string | null)[] {
+  return [...snapshotCache.values()].map((c) => c.raw);
+}
+
+function makeSnapshot<T>(key: StorageKey, fallback: T, coerce: (v: unknown) => T | null) {
+  return (): T => {
     const raw = read(key);
+    let cache = snapshotCache.get(key) as { raw: string | null; value: T } | undefined;
     if (!cache || cache.raw !== raw) {
       // Nothing stored is not something to coerce: an absent key returns the
       // shared `fallback` constant itself, which is also what the server
@@ -226,6 +521,7 @@ function makeSnapshot<T>(key: string, fallback: T, coerce: (v: unknown) => T | n
         }
       }
       cache = { raw, value };
+      snapshotCache.set(key, cache);
     }
     return cache.value;
   };
@@ -382,19 +678,149 @@ export function removeRead(billSlug: string) {
 }
 
 /**
+ * THE KEY TO THE MEMBERS PAGE'S HISTORY ENTRIES (2026-11-18).
+ *
+ * The members page keeps the ZIP it shows, and a district found for it, in
+ * this tab's own history entries (lib/members-entry.ts), so Reload and Back
+ * work. An erase cannot reach those entries: a page can rewrite only the entry
+ * it stands on, and every earlier entry, and every entry of another open tab,
+ * kept the ZIP after "erase everything". Reload or Back to one of them sent the
+ * erased ZIP to the lookup and showed the members again.
+ *
+ * So every entry that carries a ZIP also carries this tag, and an entry counts
+ * only while its tag is the one stored here. Erasing deletes the tag, and from
+ * then on every entry written before the erase, in this tab or any other, reads
+ * as empty. The next lookup makes a new tag.
+ *
+ * What it is: 32 random hexadecimal characters, made in this browser. It says
+ * nothing about the visitor, it is never sent anywhere (no request, address,
+ * cookie or log ever carries it), and it is not a fingerprint: it is a fresh
+ * random value after every erase, and no other site and no server can read it.
+ * When the browser refuses storage it is kept for the visit, in memory, like
+ * the preferences (see `memory` above).
+ */
+const TAG_RE = /^[0-9a-f]{32}$/;
+
+export function entryTag(): string | null {
+  const raw = read(ENTRY_TAG_KEY);
+  return raw !== null && TAG_RE.test(raw) ? raw : null;
+}
+
+function freshTag(): string {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+export function ensureEntryTag(): string {
+  const have = entryTag();
+  if (have) return have;
+  const tag = freshTag();
+  revoked.delete(ENTRY_TAG_KEY);
+  try {
+    storeSet(ENTRY_TAG_KEY, tag);
+    storeHeldOurs = true;
+    memory.delete(ENTRY_TAG_KEY);
+  } catch {
+    memory.set(ENTRY_TAG_KEY, tag); // storage refused: this visit only (see above)
+  }
+  // The tag this page's entries now carry is what it has read: a return that
+  // finds another one (an erase elsewhere, then a new lookup) is a change
+  // (see "WHAT A TAB SHOWS" above).
+  seen.set(ENTRY_TAG_KEY, tag);
+  return tag;
+}
+
+/**
+ * How many erases this page has seen: its own, another tab's (the `storage`
+ * event) and one made while it slept in the back/forward cache (see "AN ERASE
+ * IN ANOTHER TAB" above). Every reader of the ZIP compares it with the count
+ * at the moment the visitor acted: members found before a later erase are
+ * not shown, and an answer that arrives after one is discarded rather than
+ * shown and remembered.
+ */
+let erasures = 0;
+
+export function erasureCount(): number {
+  return erasures;
+}
+
+export function useErasures(): number {
+  return useSyncExternalStore(subscribe, erasureCount, () => 0);
+}
+
+/**
  * ERASE COMPLETENESS. Every key this module writes is removed here — that is
  * the whole promise the privacy page and `impact.eraseConfirm` make out loud,
- * so a new store is not finished until its key is on this list and named in
- * both locales' confirm string.
+ * so a new store is not finished until its key is on ERASED_KEYS
+ * (lib/storage-keys.ts) and named in both locales' confirm string. The entry
+ * tag is the one key that is not named there: it is not the visitor's data
+ * but the lock on the ZIP's copies in history, and removing it is what makes
+ * "erases your ZIP" true of them.
+ *
+ * ONLY A WHOLE ERASE SAYS SO (2026-11-19). The removals used to sit in one
+ * try, the tag last: when one threw, the rest, the tag included, were never
+ * tried, and the page said it had erased all the same, while
+ * Reload sent the ZIP again. Now the tag goes first (once it is gone, no copy
+ * of the ZIP in history can be read, whatever happens to the rest), each key
+ * is tried on its own and then checked, and the count of erases rises either
+ * way. A tag that will not go is replaced by a fresh random one, which kills
+ * every history copy as surely; if even that write is refused, the store is
+ * unusable. The answer is whether every key is gone (or the tag replaced):
+ * the callers say "erased" only then. A store the browser will not even read
+ * is no erase if it held something of ours this visit (storage blocked
+ * mid-visit: the data may still be on disk); one blocked from the start never
+ * held anything, and this visit's memory is cleared.
  */
-export function eraseAll() {
-  memory.clear();
-  try {
-    window.localStorage.removeItem(PREFS_KEY);
-    window.localStorage.removeItem(CALLS_KEY);
-    window.localStorage.removeItem(READS_KEY);
-  } catch {
-    /* nothing to erase */
+export function eraseAll(): boolean {
+  let complete = true;
+  for (const key of ERASED_KEYS) {
+    try {
+      storeRemove(key);
+    } catch {
+      /* checked just below */
+    }
+    let left: string | null;
+    try {
+      left = storeGet(key);
+    } catch {
+      // The store will not even be read. If it never held anything of ours
+      // this visit (storage blocked from the start), there is nothing in it
+      // to erase; if it did, it may still hold it, and this is no erase:
+      // whatever it holds is dead in this tab until a new value is written.
+      if (storeHeldOurs) {
+        complete = false;
+        lost = true;
+        revoked.set(key, ANY_VALUE);
+      }
+      continue;
+    }
+    if (left === null) continue;
+    if (key === ENTRY_TAG_KEY) {
+      // A tag that will not go is replaced by a fresh random one: no copy of
+      // the ZIP in history carries it, so none can be read again, after a
+      // reload either. If even that is refused, the store is unusable.
+      try {
+        storeSet(key, freshTag());
+        continue;
+      } catch {
+        /* revoked just below */
+      }
+    }
+    // What would not go is dead in this tab: the page does not look up a ZIP
+    // the reader asked to erase, or show it, until a new value is written
+    // (here, or in another tab). The page says nothing was erased.
+    revoked.set(key, left);
+    complete = false;
   }
+  // A whole erase leaves nothing of ours in the store.
+  if (complete) {
+    storeHeldOurs = false;
+    lost = false;
+    revoked.clear();
+  }
+  memory.clear();
+  noteChange();
   notify();
+  return complete;
 }

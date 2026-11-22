@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type Re
 import { RotateCcw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
-import { usePrefs } from '@/lib/local';
+import { erasureCount, useErasures, usePrefs } from '@/lib/local';
 import { houseFinderRows, type FinderMember } from '@/lib/house-finder';
 import { crossesStateLine } from '@/lib/state-line';
 import type { SettledVoteGroup } from '@/lib/settled-votes';
@@ -117,6 +117,10 @@ export function SettledPanel({
   const tReps = useTranslations('reps');
   const tVotes = useTranslations('votes');
   const zip = usePrefs().zip ?? null;
+  // An erase, here or in another tab (lib/local.ts), drops the lookup on its
+  // way; even when the same ZIP is saved again since, the panel looks it up
+  // afresh rather than waiting on that dropped answer (check 6, 2026-11-20).
+  const erasures = useErasures();
   const hydrated = useHydrated();
   const [lookup, setLookup] = useState<Lookup>({ status: 'idle' });
   // Set by the in-panel ZipForms' onSaved, exactly as in the call panel: the
@@ -131,9 +135,13 @@ export function SettledPanel({
       return;
     }
     setLookup({ status: 'loading' });
+    // The count this lookup belongs to (see `erasures` above).
+    const asked = erasures;
     lookupReps(zip)
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((d: { reps: Legislator[]; vacancies?: District[]; multiDistrict?: boolean }) => {
+        // Erased while the answer was on its way (lib/local.ts): not shown.
+        if (erasureCount() !== asked) return;
         setLookup({
           status: 'ready',
           members: d.reps.map(({ bioguide, name, state, type, district }) => ({ bioguide, name, state, type, district })),
@@ -143,7 +151,7 @@ export function SettledPanel({
         });
       })
       .catch(() => setLookup({ status: 'error' }));
-  }, [zip]);
+  }, [zip, erasures]);
 
   // Deferred a tick, as in the call panel: fetchReps sets 'loading'
   // synchronously, which react-hooks/set-state-in-effect forbids inside the

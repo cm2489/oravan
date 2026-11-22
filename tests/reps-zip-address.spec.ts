@@ -311,9 +311,13 @@ for (const [prefix, m] of [
   /*
    * STORAGE BLOCKED (Safari "Block all cookies", 2026-11-12). localStorage
    * throws; the ZIP typed on the home page reaches /reps through this
-   * visit's memory (lib/local.ts), and Reload through the history entry.
-   * A fresh full page load has neither, so /reps asks for the ZIP: that
-   * cannot work with storage blocked, by design.
+   * visit's memory (lib/local.ts). Until 2026-11-18 Reload kept the members
+   * too, through the history entry. Since then an entry counts only while
+   * this browser holds its tag (lib/members-entry.ts), so that an erase
+   * reaches every copy of the ZIP; with storage blocked the tag lives in
+   * memory, which a reload clears, so Reload asks for the ZIP, like a fresh
+   * page load. The alternative was an erase that could not reach the
+   * history's copies in this mode.
    */
   test.describe(`${label}: with storage blocked`, () => {
     test.beforeEach(async ({ page }) => {
@@ -327,7 +331,7 @@ for (const [prefix, m] of [
       });
     });
 
-    test('a ZIP typed on the home page shows the members on /reps, and Reload keeps them', async ({ page }) => {
+    test('a ZIP typed on the home page shows the members on /reps; Reload asks again', async ({ page }) => {
       await page.goto(`${prefix}/`);
       expect(await page.evaluate(() => {
         try {
@@ -341,7 +345,8 @@ for (const [prefix, m] of [
       await expect(page).toHaveURL(new RegExp(`${prefix}/reps$`));
       await expectMembers(page);
       await page.reload();
-      await expectMembers(page);
+      await expect(page.getByText(m.reps.noZip)).toBeVisible();
+      await expect(page.getByText(MEMBERS[0], { exact: true })).toHaveCount(0);
     });
 
     test('a fresh page load of /reps asks for the ZIP (nothing was kept)', async ({ page }) => {

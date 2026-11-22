@@ -24,13 +24,13 @@
  * patron A's browsing.
  */
 
-export type LocaleChoice = 'en' | 'es';
+import { LOCALE_CHOICE_KEY } from './storage-keys';
 
-const KEY = 'oravan.locale.chosen';
+export type LocaleChoice = 'en' | 'es';
 
 export function rememberLocaleChoice(locale: LocaleChoice) {
   try {
-    window.localStorage.setItem(KEY, locale);
+    window.localStorage.setItem(LOCALE_CHOICE_KEY, locale);
   } catch {
     /* storage blocked — the choice lasts the navigation it powers */
   }
@@ -38,7 +38,7 @@ export function rememberLocaleChoice(locale: LocaleChoice) {
 
 export function readLocaleChoice(): LocaleChoice | null {
   try {
-    const v = window.localStorage.getItem(KEY);
+    const v = window.localStorage.getItem(LOCALE_CHOICE_KEY);
     return v === 'en' || v === 'es' ? v : null;
   } catch {
     return null;

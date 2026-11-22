@@ -3,6 +3,7 @@
 import { useState, useSyncExternalStore } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { erasureCount } from '@/lib/local';
 
 /*
  * Optional split-ZIP refinement: a street address, sent once via POST to
@@ -57,11 +58,18 @@ export function AddressForm({
   onRefined,
 }: {
   zip: string;
-  /** Show the one district ("NY-12"); resolves false when that lookup could not be made. */
-  onRefined: (district: string) => Promise<boolean>;
+  /**
+   * Show the one district ("NY-12"); resolves false when that lookup could not
+   * be made. `asked` is the erase count (lib/local.ts) when the visitor
+   * submitted: the members page drops an answer that an erase overtook.
+   */
+  onRefined: (district: string, asked: number) => Promise<boolean>;
 }) {
   const t = useTranslations('reps');
   const hydrated = useHydrated();
+  // No erase can leave a typed address behind: an erase, here or in another
+  // tab, takes this form off the members page (components/RepsLookup.tsx),
+  // and the address with it.
   const [address, setAddress] = useState('');
   const [status, setStatus] = useState<Status>('idle');
 
@@ -75,6 +83,7 @@ export function AddressForm({
       return;
     }
     setStatus('checking');
+    const asked = erasureCount();
     try {
       const res = await fetch('/api/district', {
         method: 'POST',
@@ -84,7 +93,7 @@ export function AddressForm({
       if (res.ok) {
         const { state, district } = (await res.json()) as { state: string; district: number };
         // Stay in 'checking' until the refined view replaces this form.
-        if (!(await onRefined(`${state}-${district}`))) setStatus('unavailable');
+        if (!(await onRefined(`${state}-${district}`, asked))) setStatus('unavailable');
         return;
       }
       setStatus(res.status === 404 ? 'notFound' : res.status === 429 ? 'rateLimited' : 'unavailable');
