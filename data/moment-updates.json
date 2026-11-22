@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-11-21T21:02:50.115Z"
+    "generated_at": "2026-11-22T06:37:49.299Z"
   },
   "government-funding-deadline": {
     "updates": [],
@@ -1950,99 +1950,6 @@
           "source_system": "Congress.gov senate-floor-today RSS"
         },
         "ai": true
-      },
-      {
-        "id": "u_53ca06ca",
-        "class": "vote",
-        "vehicle": "s-4668-119",
-        "day": "2026-09-22",
-        "occurred_at": "2026-09-22",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-25T13:41:33.041Z",
-        "text": {
-          "en": "Senate roll call vote 240: “On the Cloture Motion S.Amdt. 6776 to S. 4668 (No short title on file)” — “Cloture Motion Agreed to”; Yeas 70, Nays 21, Not Voting 9.",
-          "es": "Votación nominal 240 del Senado, registro oficial en inglés: “On the Cloture Motion S.Amdt. 6776 to S. 4668 (No short title on f…” — “Cloture Motion Agreed to”; a favor 70, en contra 21, no votaron 9."
-        },
-        "source": {
-          "kind": "roll_call",
-          "refs": [
-            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00240.xml",
-            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
-          ]
-        },
-        "record": {
-          "action_text": "On the Cloture Motion S.Amdt. 6776 to S. 4668 (No short title on file): Cloture Motion Agreed to. Yeas 70, Nays 21, Not Voting 9. Senate roll call vote 240.",
-          "action_code": null,
-          "action_type": "roll_call_vote",
-          "source_system": "senate.gov roll call vote record",
-          "roll_call": {
-            "chamber": "senate",
-            "number": 240
-          },
-          "question": "On the Cloture Motion S.Amdt. 6776 to S. 4668 (No short title on file)",
-          "result": "Cloture Motion Agreed to",
-          "totals": {
-            "yea": 70,
-            "nay": 21,
-            "present": 0,
-            "notVoting": 9
-          }
-        },
-        "ai": false
-      },
-      {
-        "id": "u_c6a1ebcb",
-        "class": "status_change",
-        "vehicle": "s-4668-119",
-        "day": "2026-09-22",
-        "occurred_at": "2026-09-22",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-23T16:51:20.985Z",
-        "text": {
-          "en": "The Senate considered S. 4668 on September 22, 2026.",
-          "es": "El Senado consideró S. 4668 el 22 de septiembre de 2026."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
-          ]
-        },
-        "record": {
-          "action_text": "Considered by Senate. (consideration: CR S4851)",
-          "action_code": null,
-          "action_type": "latestAction",
-          "source_system": "Congress.gov bill detail",
-          "status_from": "floor_vote",
-          "status_to": "committee"
-        },
-        "ai": true
-      },
-      {
-        "id": "u_fa1d2a34",
-        "class": "floor_action",
-        "vehicle": "s-4668-119",
-        "day": "2026-09-22",
-        "occurred_at": "2026-09-22",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-25T13:41:33.041Z",
-        "text": {
-          "en": "“Motion by Senator Thune to recommit to Senate Committee on Commerce, Science, and Transportation with instructions to report back forthwith with the following amendment (SA 6781) fell when cloture…”",
-          "es": "Registro oficial, en inglés: “Motion by Senator Thune to recommit to Senate Committee on Commerce, Science, and Transportation with instructions to report back forthwith with the following amendment…”"
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
-          ]
-        },
-        "record": {
-          "action_text": "Motion by Senator Thune to recommit to Senate Committee on Commerce, Science, and Transportation with instructions to report back forthwith with the following amendment (SA 6781) fell when cloture was invoked on amendment SA 6776 in Senate.",
-          "action_code": null,
-          "action_type": "Floor",
-          "source_system": "Senate"
-        },
-        "ai": false
       }
     ],
     "summary_revisions": [
@@ -2235,8 +2142,7 @@
             "s-4668-119": "committee"
           },
           "update_ids": [
-            "u_fcb078e5",
-            "u_c6a1ebcb"
+            "u_fcb078e5"
           ],
           "refs": [
             "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
@@ -2261,8 +2167,7 @@
             "s-4668-119": "floor_vote"
           },
           "update_ids": [
-            "u_fcb078e5",
-            "u_c6a1ebcb"
+            "u_fcb078e5"
           ],
           "refs": [
             "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
@@ -2290,10 +2195,7 @@
             "u_3385513a",
             "u_348552cd",
             "u_d5eaf6d9",
-            "u_fcb078e5",
-            "u_53ca06ca",
-            "u_c6a1ebcb",
-            "u_fa1d2a34"
+            "u_fcb078e5"
           ],
           "roll_calls": [
             "s-119-2-243",
@@ -2328,10 +2230,7 @@
             "u_3385513a",
             "u_348552cd",
             "u_d5eaf6d9",
-            "u_fcb078e5",
-            "u_53ca06ca",
-            "u_c6a1ebcb",
-            "u_fa1d2a34"
+            "u_fcb078e5"
           ],
           "roll_calls": [
             "s-119-2-243",
@@ -2366,10 +2265,7 @@
             "u_3385513a",
             "u_348552cd",
             "u_d5eaf6d9",
-            "u_fcb078e5",
-            "u_53ca06ca",
-            "u_c6a1ebcb",
-            "u_fa1d2a34"
+            "u_fcb078e5"
           ],
           "roll_calls": [
             "s-119-2-243",
@@ -2415,10 +2311,7 @@
             "u_3385513a",
             "u_348552cd",
             "u_d5eaf6d9",
-            "u_fcb078e5",
-            "u_53ca06ca",
-            "u_c6a1ebcb",
-            "u_fa1d2a34"
+            "u_fcb078e5"
           ],
           "roll_calls": [
             "s-119-2-248",
@@ -2474,10 +2367,7 @@
             "u_3385513a",
             "u_348552cd",
             "u_d5eaf6d9",
-            "u_fcb078e5",
-            "u_53ca06ca",
-            "u_c6a1ebcb",
-            "u_fa1d2a34"
+            "u_fcb078e5"
           ],
           "roll_calls": [
             "s-119-2-250",
@@ -2541,10 +2431,7 @@
             "u_3385513a",
             "u_348552cd",
             "u_d5eaf6d9",
-            "u_fcb078e5",
-            "u_53ca06ca",
-            "u_c6a1ebcb",
-            "u_fa1d2a34"
+            "u_fcb078e5"
           ],
           "roll_calls": [
             "s-119-2-250",
@@ -2611,10 +2498,7 @@
             "u_3385513a",
             "u_348552cd",
             "u_d5eaf6d9",
-            "u_fcb078e5",
-            "u_53ca06ca",
-            "u_c6a1ebcb",
-            "u_fa1d2a34"
+            "u_fcb078e5"
           ],
           "roll_calls": [
             "s-119-2-250",
