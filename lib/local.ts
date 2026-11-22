@@ -246,9 +246,16 @@ function noteErase() {
   for (const key of ERASED_KEYS) {
     try {
       const visible = storeGet(key);
-      // Only what this tab read before (`seen`): a value it has not read
-      // was written since, maybe after the erase (events can come late), and
-      // is not this erase's to hide (check 6, 2026-11-20).
+      // Only what this tab read before (`seen`): a value it has not read was
+      // written since, and is not this erase's to hide (check 6, 2026-11-20).
+      // That covers a tab that read nothing since the erase. A tab that reads
+      // between the events has read a ZIP saved again after the erase, and
+      // it is revoked here with the rest. Events in order: the ZIP's own
+      // removal event follows, finds storage holding a value and lifts the
+      // revocation, so the ZIP is read. The tag's removal heard last: nothing
+      // lifts it, and the ZIP stays hidden in this tab until it is written
+      // again, here or in another tab. Hidden, never an erased ZIP shown
+      // (check 7, 2026-11-21; tests/erase-signal.unit.spec.ts holds both).
       if (visible !== null && seen.get(key) === visible) revoked.set(key, visible);
     } catch {
       /* storage blocked: nothing shared to revoke */

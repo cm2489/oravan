@@ -695,9 +695,11 @@ test('storage that stops answering: no whole erase if it held ours (read or writ
 /*
  * CHECK 6 (2026-11-20). An erase revokes only what this tab had read: the
  * reviewer's case, events reversed, the same ZIP saved again from the home
- * page and no new tag. The ZIP storage holds is read.
+ * page and no new tag. This tab reads nothing between the events (its
+ * subscriber does not read), so the ZIP storage holds is read afterwards. A
+ * tab that reads between them is the next test.
  */
-test('another tab erases and saves the same ZIP again, no new tag, events reversed: the ZIP is read', () => {
+test('another tab erases and saves the same ZIP again, no new tag, events reversed, nothing read between them: the ZIP is read', () => {
   const P78 = JSON.stringify({ zip: '78501' });
   const TAG = '0123456789abcdef0123456789abcdef';
   const off = subscribe(() => {});
@@ -722,6 +724,67 @@ test('another tab erases and saves the same ZIP again, no new tag, events revers
     fireDoc('visibilitychange');
     fire('focus', {});
     expect(savedZip()).toBe('78501');
+  } finally {
+    off();
+  }
+});
+
+/*
+ * CHECK 7 (2026-11-21). The same case in a tab that reads on every event, as
+ * a page on screen does: its subscriber reads the ZIP and the tag. What the
+ * code does, and no more:
+ *
+ *   - events in the order they happened: the ZIP saved again is read;
+ *   - events reversed (the tag's removal heard last): this tab has read the
+ *     ZIP saved again by then, the erase revokes it with the rest, and it
+ *     stays hidden here until the ZIP is written again, in this tab or in
+ *     another. Hidden, never an erased ZIP shown.
+ */
+test('the same in a tab that reads on every event: in order the ZIP is read; reversed it stays hidden until it is written again', () => {
+  const P78 = JSON.stringify({ zip: '78501' });
+  const TAG = '0123456789abcdef0123456789abcdef';
+  const events = [
+    { key: 'oravan.entry', oldValue: TAG, newValue: null },
+    { key: 'oravan.prefs', oldValue: P78, newValue: null },
+    { key: 'oravan.calls', oldValue: '[]', newValue: null },
+    { key: 'oravan.reads', oldValue: '[]', newValue: null },
+    { key: 'oravan.prefs', oldValue: null, newValue: P78 },
+  ];
+  /** The erase elsewhere and the same ZIP saved again, heard here in `order`. */
+  const hear = (order: typeof events) => {
+    data.clear();
+    eraseAll();
+    for (const [k, v] of [['oravan.prefs', P78], ['oravan.entry', TAG], ['oravan.calls', '[]'], ['oravan.reads', '[]']]) data.set(k, v);
+    expect(savedZip()).toBe('78501');
+    expect(entryTag()).toBe(TAG);
+    for (const k of ['oravan.entry', 'oravan.prefs', 'oravan.calls', 'oravan.reads']) data.delete(k);
+    data.set('oravan.prefs', P78);
+    for (const e of order) fire('storage', e);
+    doc.visibilityState = 'visible';
+    fireDoc('visibilitychange');
+    fire('focus', {});
+  };
+  const off = subscribe(() => {
+    savedZip();
+    entryTag();
+  });
+  try {
+    hear(events);
+    expect(savedZip(), 'in order').toBe('78501');
+    expect(entryTag(), 'in order: the erased tag is not read').toBeNull();
+
+    hear([...events].reverse());
+    expect(savedZip(), 'reversed: hidden').toBeNull();
+    expect(entryTag(), 'reversed: the erased tag is not read').toBeNull();
+    // Written again in another tab: read.
+    fire('storage', { key: 'oravan.prefs', oldValue: P78, newValue: P78 });
+    expect(savedZip(), 'reversed, then written again elsewhere').toBe('78501');
+
+    hear([...events].reverse());
+    expect(savedZip(), 'reversed: hidden').toBeNull();
+    // Written again in this tab: read.
+    setPrefs({ zip: '78501' });
+    expect(savedZip(), 'reversed, then written again here').toBe('78501');
   } finally {
     off();
   }
