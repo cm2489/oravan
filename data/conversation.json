@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-22T02:50:06.546Z",
+    "fetched_at": "2026-11-22T15:14:56.011Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-22T02:50:06.546Z"
+        "checked_at": "2026-11-22T15:14:56.011Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-15",
         "week_label": "Most-Viewed Bills - Week of November 15, 2026",
         "entries": 7,
-        "checked_at": "2026-11-22T02:50:06.546Z"
+        "checked_at": "2026-11-22T15:14:56.011Z"
       },
       "leans": {
         "center": {
@@ -167,6 +167,13 @@
     "hconres-93-119": {
       "outlets7d": [
         {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-11-20",
+          "lastSeen": "2026-11-22",
+          "url": "https://thehill.com/homenews/house/6234623-house-lame-duck-shutdown-risk/"
+        },
+        {
           "domain": "cbsnews.com",
           "lean": "left",
           "firstSeen": "2026-11-20",
@@ -186,13 +193,6 @@
           "firstSeen": "2026-11-20",
           "lastSeen": "2026-11-20",
           "url": "https://news.google.com/rss/articles/CBMilAFBVV95cUxNN19EOFdQUmJBMGt4VUo3UFd6Tk5sRXpRYVBHd2YwNmVTOU9lNUItSjB2V1JRQmkySEs5VE9ialBQb3JXLWZGbjlBVW11ZFdYNFktdjZwZmcyaEhUYkpRbEdCSzZXSE9hWEZBTGZqUjBUNF9wanlmMWFlSWpXVXlaemMycWx6V1VrNzNYRF9tWW41WW9n?oc=5"
-        },
-        {
-          "domain": "thehill.com",
-          "lean": "center",
-          "firstSeen": "2026-11-20",
-          "lastSeen": "2026-11-20",
-          "url": "https://news.google.com/rss/articles/CBMinAFBVV95cUxPdl9VUjZXWHRPNHVhZTRzbkFNcWRqRHhvQ3VsZ2N1clgyalBkSWxQdERMYWw1N3BRRkJCT1JLM1k0NGNoMVc3a2ZyREVoSDNDd3NMRGFKZmM0RFJIVmNLd19RaUJ1QUlhaFV2T0hTLWtDY1V4XzlRdmlnQXZndktrRGNwS1RiM2M4MlVrMVh1OFNpaXZNWUFLd2N1Ym_SAaIBQVVfeXFMTWdOWjBsUzRjNUp4Uk5ab1czZlU4ZXAtU2p4Sm9UNkxVUFdSbWMzcVU2dG9jdWhERVg3Z0VtdzNJY1ZXWlAwNUphTmRNYnBXMi1yMTNNamd4T0wtazdPSGh4RGhaMG5tRVlERGNfQVhIMi03M0plMDBrczdqS0dfSDEycDdCbkhpTEdPQ1Uxand0N1c3dHNUS05HMWRjQjNuLTl3?oc=5"
         },
         {
           "domain": "washingtonpost.com",
@@ -1319,6 +1319,19 @@
       ],
       "mostViewed": null
     },
+    "hr-9393-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-11-22",
+          "lastSeen": "2026-11-22",
+          "url": "https://thehill.com/the-120/6233863-democrats-plan-lower-costs/"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hr-9495-119": {
       "outlets7d": [
         {
@@ -1863,6 +1876,19 @@
           "url": "https://news.google.com/rss/articles/CBMilgFBVV95cUxPMVoxMmh5YWZyY2F4b0tDMUVsOV9ncjNKem1tQnUxc3JVREpLSnlOeXNOQTJ3S2xpREVMRGNWVGxSS3p0b0pHNnI4dVFtRVpSLTRUbTdjbWJESGI4ZjRUNmZkQ1JQQV96VndpaU5hZEMtN0JuZjVnU2M3bndpdHFfMkpCN3gyYmg3bmRoeWMwdFpJVTNSOHc?oc=5"
         }
       ],
+      "mostViewed": null
+    },
+    "s-539-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-11-22",
+          "lastSeen": "2026-11-22",
+          "url": "https://thehill.com/opinion/healthcare/6234205-pass-elsa-health-care-bill/"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "s-5526-119": {
