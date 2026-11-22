@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-22T15:14:56.011Z",
+    "fetched_at": "2026-11-22T20:30:38.365Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-22T15:14:56.011Z"
+        "checked_at": "2026-11-22T20:30:38.365Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-15",
         "week_label": "Most-Viewed Bills - Week of November 15, 2026",
         "entries": 7,
-        "checked_at": "2026-11-22T15:14:56.011Z"
+        "checked_at": "2026-11-22T20:30:38.365Z"
       },
       "leans": {
         "center": {
@@ -895,7 +895,15 @@
       "mostViewed": null
     },
     "hr-7008-119": {
-      "outlets7d": [],
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-11-22",
+          "lastSeen": "2026-11-22",
+          "url": "https://thehill.com/homenews/house/6236202-jeffries-plans-congressional-stock-ban/"
+        }
+      ],
       "unratedOutlets7d": [
         {
           "domain": "legis1.com",
@@ -1230,6 +1238,18 @@
           "firstSeen": "2026-11-17",
           "lastSeen": "2026-11-17",
           "url": "https://news.google.com/rss/articles/CBMioAFBVV95cUxQVEZxdXR3dmtYYWhlWlg0NkdFdU51TERpNHVVWURIbWd6aXZlc2VWSkNoall1a3U3RXNhZHZGQXlENzZza0hRRlpmYnI0VFdoWXVaVXpzRkdPQW5jeXdIb1lmNkdqY0hnbDVIM0dPalhndWx0Sk5YVGpNT1F6WWVydnQyN2stS053RGFwZHAtQWxQQmtzQzNrQ0xDQUREN01S?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-909-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "breakingac.com",
+          "firstSeen": "2026-11-22",
+          "lastSeen": "2026-11-22",
+          "url": "https://news.google.com/rss/articles/CBMitgFBVV95cUxOMjBKbUJKa0pyV01UZDZka2lHZkttVHFHX2lFNVEzOUV0YzJ3X29oc21qOV8zdFFRWG5ycFVqQXFJX2xEdkRmMTJ6TmRFTklTcWRKYUt6bUZqaXFpay02SHZzaWVmVzVkejBnMFNmODc0Zmw1ajdPMnVDcVVRWVRjSUVmM2NxU2EzTWFJLUx4bDVpS1VBZHFFeTFaY0NaeE01SERWYXVJSEFfc0pUOENnWkphY0R1UQ?oc=5"
         }
       ],
       "mostViewed": null
