@@ -4,7 +4,7 @@
     "source": "GDELT DOC 2.0 API (https://api.gdeltproject.org/api/v2/doc/doc), ArtList mode — one search per term in the query shape below, over the days since the question was last checked; the rated outlets are picked out of GDELT’s results using the AllSides table, never named in the query",
     "attribution": "Article discovery by the GDELT Project (https://www.gdeltproject.org/), used under its terms of use with citation and link. Outlet leans by AllSides (https://www.allsides.com/media-bias/ratings), CC BY-NC 4.0.",
     "window_days": 7,
-    "as_of": "2026-11-20",
+    "as_of": "2026-11-22",
     "outlet_policy": "allsides-rated-only",
     "bias_table": "data/media-bias.json",
     "query_shape": "\"<term>\" (congress OR senate OR representatives OR lawmakers)",
@@ -13,23 +13,36 @@
   },
   "questions": {
     "annual-defense-policy": {
-      "checkedOn": "2026-11-19",
+      "checkedOn": "2026-11-22",
       "terms": [
         "national defense authorization act"
       ],
       "counts": {
         "outlets": {
           "left": 0,
-          "center": 0,
+          "center": 1,
           "right": 0
         },
         "articles": {
           "left": 0,
-          "center": 0,
+          "center": 1,
           "right": 0
         }
       },
-      "outlets": []
+      "outlets": [
+        {
+          "domain": "stripes.com",
+          "lean": "center",
+          "firstSeen": "2026-11-20",
+          "lastSeen": "2026-11-20",
+          "articles": [
+            {
+              "url": "https://www.stripes.com/branches/air_force/2026-11-19/lawsuit-105-families-mold-macdill-housing-23519839.html",
+              "seen": "2026-11-20"
+            }
+          ]
+        }
+      ]
     },
     "paying-college-athletes": {
       "checkedOn": "2026-11-20",
