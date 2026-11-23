@@ -112,8 +112,9 @@
  *
  * PEOPLE (ESTIMATE) joined 2026-11-23, on the owner's answer that day (card
  * `people`, option b): an actions row (ZIP lookups that found a district,
- * and call scripts served — actions, not people, and no lower bound), a ceiling (lib/ratelimit.ts's second daily
- * sketch, of addresses whose page load looked like a browser's) and bots'
+ * and call scripts served — actions, not people, and no lower bound), a browsers row (distinct browser
+ * addresses: lib/ratelimit.ts's second daily sketch, of addresses whose page load looked like a browser's;
+ * not an upper bound) and bots'
  * share of page loads, from lib/traffic-metrics.mjs's pure peopleEstimate.
  * ADDITIVE like the distinct-address line: these keys are new, so a failed
  * read prints "not read" on that block and the digest still posts.
@@ -563,7 +564,7 @@ async function main() {
   }
   if (!browserAddresses.ok) {
     console.log(
-      '::warning::could not read the browser-address sketch from the counters database — the People ceiling says "not read"'
+      '::warning::could not read the browser-address sketch from the counters database — the People browsers row says "not read"'
     );
   } else if (browserAddresses.noExpiry) {
     console.log(`::warning::the browser-address sketch for ${date} has NO expiry — it will not age out on its own`);
@@ -703,7 +704,7 @@ async function main() {
   const closedCount = hygiene ? closeStaleSpikeIssues(hygiene.closable, { digestIssue: issueNumber }) : 0;
 
   console.log(
-    `daily metrics digest posted for ${date} (mcp total ${mcpTotal.latest}${mcpTotal.spike ? ', SPIKE' : ''}; script ${script.latest}${script.spike ? ', SPIKE' : ''} (refused ${refusedYesterday}); 28d ${mcpDecline.recent} vs baseline ${mcpDecline.baseline}${mcpDecline.declining ? ', DECLINING' : ''}${dark.length ? `; dark tools: ${dark.map((d) => d.tool).join(', ')}` : ''}${hygiene ? `; hygiene: ${closedCount}/${hygiene.closable.length} stale spike issue(s) closed` : '; hygiene: SKIPPED'}; site page views ${siteTotal.latest}; distinct addresses ${siteDistinct.ok ? (siteDistinct.count ?? 'not recorded') : 'not read'}; people actions ${people ? `${people.repLookups}/${people.scriptsServed}` : 'not read'}, ceiling ${people ? (people.ceiling ?? people.ceilingState) : 'not read'}${health ? `; health: ${health.report.alarms.length} ⛔${healthIssueUrl ? ` at ${healthIssueUrl}` : ' (issue not updated)'}` : '; health: SKIPPED'})`
+    `daily metrics digest posted for ${date} (mcp total ${mcpTotal.latest}${mcpTotal.spike ? ', SPIKE' : ''}; script ${script.latest}${script.spike ? ', SPIKE' : ''} (refused ${refusedYesterday}); 28d ${mcpDecline.recent} vs baseline ${mcpDecline.baseline}${mcpDecline.declining ? ', DECLINING' : ''}${dark.length ? `; dark tools: ${dark.map((d) => d.tool).join(', ')}` : ''}${hygiene ? `; hygiene: ${closedCount}/${hygiene.closable.length} stale spike issue(s) closed` : '; hygiene: SKIPPED'}; site page views ${siteTotal.latest}; distinct addresses ${siteDistinct.ok ? (siteDistinct.count ?? 'not recorded') : 'not read'}; people actions ${people ? `${people.repLookups}/${people.scriptsServed}` : 'not read'}, browsers ${people ? (people.browsers ?? people.browsersState) : 'not read'}${health ? `; health: ${health.report.alarms.length} ⛔${healthIssueUrl ? ` at ${healthIssueUrl}` : ' (issue not updated)'}` : '; health: SKIPPED'})`
   );
 }
 
