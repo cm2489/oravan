@@ -758,7 +758,8 @@
     "correctionLinkText": "Escríbenos a hello@oravan.org",
     "whenConfirmedTitle": "Qué pasa cuando se confirma una corrección",
     "whenConfirmedBody": "Un error confirmado se corrige en la fuente: los datos con los que se construyen las versiones en lenguaje claro de los dos idiomas. A partir de ahí, cada superficie que lee esos datos se actualiza a la vez en el siguiente despliegue de Oravan. La página del proyecto, su imagen de tarjeta para compartir generada estáticamente y las respuestas del servidor MCP leen el mismo archivo, así que no hay una caché aparte que vaciar. Lo único que no se mueve por sí solo es el sello de fecha. La fecha de \"actualizado al\" del sitio y el campo {asOfField} del envoltorio del MCP siguen la última sincronización nocturna exitosa de Oravan, así que avanzan en la siguiente sincronización programada después de que se publique la corrección, igual que cada noche. La tarjeta de proyecto de ley para incrustar también lee ese mismo archivo, así que no necesita un paso de corrección aparte.",
-    "backlogNote": "Una corrección que señale un patrón más amplio, no un descuido puntual, se registra como un patrón en lugar de parchearse en silencio y olvidarse."
+    "backlogNote": "Una corrección que señale un patrón más amplio, no un descuido puntual, se registra como un patrón en lugar de parchearse en silencio y olvidarse.",
+    "aiReaderQuestions": "Las preguntas de los lectores en la página de una Gran pregunta se eligen de una lista fija de preguntas frecuentes; la IA nunca escribe una pregunta. Cada respuesta la escribe la IA una sola vez, en la fecha que aparece debajo, y no se reescribe cada noche. Cada oración cita una fuente oficial enlazada debajo de la respuesta o dice con claridad lo que no pudimos comprobar. Nada se publica sin pasar controles automáticos: los dos idiomas, y una cita y una fuente en cada oración."
   },
   "notFound": {
     "title": "Página no encontrada",
@@ -1873,5 +1874,15 @@
     "titleOr": "o",
     "listLabel": "Proyectos de ley con este título corto",
     "metaTitle": "Proyectos de ley titulados “{title}”"
+  },
+  "readerQuestions": {
+    "heading": "Preguntas de los lectores",
+    "aiLabel": "Respuestas escritas con IA a partir del registro oficial.",
+    "howMade": "Cómo se hace",
+    "intro": "Elegidas de nuestra lista fija de preguntas frecuentes y respondidas solo con las fuentes oficiales que aparecen debajo de cada respuesta.",
+    "couldntCheck": "No pudimos comprobarlo.",
+    "sources": "Fuentes",
+    "written": "Escrito el {date}. No se reescribe cada noche.",
+    "esQuotesNote": "Las citas de la versión en español son traducciones no oficiales de los originales en inglés."
   }
 }

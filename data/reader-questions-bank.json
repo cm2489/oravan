@@ -1,0 +1,580 @@
+{
+  "schema": "oravan.reader-questions/bank-v1",
+  "status": "DRAFT, needs one-time owner approval; Spanish pending native review",
+  "types": {
+    "war_powers": {
+      "en": "War powers / foreign policy",
+      "es": "Poderes de guerra / política exterior"
+    },
+    "spending_deadline": {
+      "en": "Spending / deadline",
+      "es": "Gasto / fecha límite"
+    },
+    "industry_regulation": {
+      "en": "Industry regulation",
+      "es": "Regulación de un sector"
+    },
+    "rights_eligibility": {
+      "en": "Rights / eligibility",
+      "es": "Derechos / requisitos"
+    },
+    "symbolic_currency": {
+      "en": "Symbolic / currency",
+      "es": "Simbólico / moneda"
+    },
+    "defense_authorization": {
+      "en": "Defense authorization",
+      "es": "Autorización de defensa"
+    }
+  },
+  "questions": [
+    {
+      "id": "core.status",
+      "types": [
+        "war_powers",
+        "spending_deadline",
+        "industry_regulation",
+        "rights_eligibility",
+        "symbolic_currency",
+        "defense_authorization"
+      ],
+      "deterministic": true,
+      "q": {
+        "en": "Where does it stand right now?",
+        "es": "¿En qué punto está ahora?"
+      },
+      "answered_by": [
+        "roll_call",
+        "official_actions"
+      ],
+      "note": "Built mechanically from the status line and the latest official action. The model never writes it."
+    },
+    {
+      "id": "core.votes",
+      "types": [
+        "war_powers",
+        "spending_deadline",
+        "industry_regulation",
+        "rights_eligibility",
+        "symbolic_currency",
+        "defense_authorization"
+      ],
+      "deterministic": true,
+      "q": {
+        "en": "What votes have there been so far, and what were the results?",
+        "es": "¿Qué votaciones ha habido hasta ahora y cuáles fueron los resultados?"
+      },
+      "answered_by": [
+        "roll_call"
+      ],
+      "note": "Every roll call on every vehicle under a written inclusion rule, never a selection. Counts and tallies come from the roll-call XML."
+    },
+    {
+      "id": "core.my_members",
+      "types": [
+        "war_powers",
+        "spending_deadline",
+        "industry_regulation",
+        "rights_eligibility",
+        "symbolic_currency",
+        "defense_authorization"
+      ],
+      "deterministic": true,
+      "q": {
+        "en": "How did my senators and my representative vote?",
+        "es": "¿Cómo votaron mis senadores y mi representante?"
+      },
+      "answered_by": [
+        "roll_call"
+      ],
+      "note": "Rendered in the browser from the reader's ZIP (localStorage). No party labels. Never model-written."
+    },
+    {
+      "id": "core.yes_no",
+      "types": [
+        "war_powers",
+        "spending_deadline",
+        "industry_regulation",
+        "rights_eligibility",
+        "symbolic_currency",
+        "defense_authorization"
+      ],
+      "q": {
+        "en": "What would a yes vote do, and what would a no vote do?",
+        "es": "¿Qué haría un voto a favor y qué haría un voto en contra?"
+      },
+      "answered_by": [
+        "bill_text",
+        "official_actions"
+      ],
+      "note": "Answer from the pending vehicle's own text. A no vote is described by what the text would not do, never by predicted consequences."
+    },
+    {
+      "id": "core.what_changes",
+      "types": [
+        "war_powers",
+        "spending_deadline",
+        "industry_regulation",
+        "rights_eligibility",
+        "symbolic_currency",
+        "defense_authorization"
+      ],
+      "q": {
+        "en": "What would change, and for whom?",
+        "es": "¿Qué cambiaría y para quién?"
+      },
+      "answered_by": [
+        "bill_text",
+        "crs"
+      ],
+      "note": "Each provision tied to a section number. Sponsor fact sheets are navigation aids only, never wording."
+    },
+    {
+      "id": "core.today_rules",
+      "types": [
+        "war_powers",
+        "spending_deadline",
+        "industry_regulation",
+        "rights_eligibility",
+        "symbolic_currency",
+        "defense_authorization"
+      ],
+      "q": {
+        "en": "What are the rules today, without this measure?",
+        "es": "¿Cuáles son las reglas hoy, sin esta medida?"
+      },
+      "answered_by": [
+        "statute",
+        "court_record",
+        "crs",
+        "bill_text"
+      ],
+      "note": "The status quo is where one-sided framing hides most easily; state it from law, court orders or CRS, not from either side's description."
+    },
+    {
+      "id": "core.do_nothing",
+      "types": [
+        "war_powers",
+        "spending_deadline",
+        "industry_regulation",
+        "rights_eligibility",
+        "symbolic_currency",
+        "defense_authorization"
+      ],
+      "q": {
+        "en": "What happens if Congress does not act?",
+        "es": "¿Qué pasa si el Congreso no actúa?"
+      },
+      "answered_by": [
+        "statute",
+        "crs",
+        "agency_report",
+        "court_record"
+      ],
+      "note": "Only what a law, rule or court order already says will happen. No forecasts."
+    },
+    {
+      "id": "core.next_step",
+      "types": [
+        "war_powers",
+        "spending_deadline",
+        "industry_regulation",
+        "rights_eligibility",
+        "symbolic_currency",
+        "defense_authorization"
+      ],
+      "q": {
+        "en": "What has to happen next for this to take effect?",
+        "es": "¿Qué tiene que pasar para que esto entre en vigor?"
+      },
+      "answered_by": [
+        "chamber_rules",
+        "constitution",
+        "crs",
+        "official_actions"
+      ],
+      "note": "Rules, not predictions. FUTURE_VOTE and speculation lints apply."
+    },
+    {
+      "id": "core.veto",
+      "types": [
+        "war_powers",
+        "spending_deadline",
+        "industry_regulation",
+        "rights_eligibility",
+        "symbolic_currency",
+        "defense_authorization"
+      ],
+      "q": {
+        "en": "Would it go to the President, and what happens if it is vetoed?",
+        "es": "¿Llegaría al Presidente y qué pasa si lo veta?"
+      },
+      "answered_by": [
+        "constitution",
+        "crs"
+      ],
+      "note": "Distinguishes bills and joint resolutions (presented) from concurrent and simple resolutions (not presented)."
+    },
+    {
+      "id": "core.cost",
+      "types": [
+        "war_powers",
+        "spending_deadline",
+        "industry_regulation",
+        "rights_eligibility",
+        "symbolic_currency",
+        "defense_authorization"
+      ],
+      "q": {
+        "en": "What would it cost, and who made that estimate?",
+        "es": "¿Cuánto costaría y quién hizo ese cálculo?"
+      },
+      "answered_by": [
+        "cbo",
+        "agency_report",
+        "gao",
+        "bill_text"
+      ],
+      "note": "Fixed order: CBO, then the agency that bears the cost, each with its as-of date. Figures from a side are attributed. Absence of a CBO estimate is stated. When the measure itself spends nothing (war-powers resolutions, for example), the answer opens by saying so and labels every figure as the cost of the underlying activity, not of the measure."
+    },
+    {
+      "id": "core.on_record",
+      "types": [
+        "war_powers",
+        "spending_deadline",
+        "industry_regulation",
+        "rights_eligibility",
+        "symbolic_currency",
+        "defense_authorization"
+      ],
+      "q": {
+        "en": "What are supporters and opponents saying on the record?",
+        "es": "¿Qué han declarado de forma oficial y citable quienes lo apoyan y quienes se oponen?"
+      },
+      "answered_by": [
+        "member_statement",
+        "sap",
+        "press_quote"
+      ],
+      "note": "One question, both sides, by construction. Paired, primary sources first, roles not parties."
+    },
+    {
+      "id": "core.alternatives",
+      "types": [
+        "war_powers",
+        "spending_deadline",
+        "industry_regulation",
+        "rights_eligibility",
+        "symbolic_currency",
+        "defense_authorization"
+      ],
+      "q": {
+        "en": "Are there other proposals on the same question?",
+        "es": "¿Hay otras propuestas sobre el mismo tema?"
+      },
+      "answered_by": [
+        "bill_text",
+        "official_actions"
+      ],
+      "note": "Lists competing vehicles with their status. Listing is not endorsement; no call-to-action on non-corpus measures."
+    },
+    {
+      "id": "core.timing",
+      "types": [
+        "war_powers",
+        "spending_deadline",
+        "industry_regulation",
+        "rights_eligibility",
+        "symbolic_currency",
+        "defense_authorization"
+      ],
+      "q": {
+        "en": "When would it take effect, and does any part of it expire?",
+        "es": "¿Cuándo entraría en vigor y vencería alguna parte?"
+      },
+      "answered_by": [
+        "bill_text"
+      ],
+      "note": "Both halves, always: when it takes effect (or that the text sets no delayed start date), then any sunset clauses, section by section."
+    },
+    {
+      "id": "core.versions",
+      "types": [
+        "war_powers",
+        "spending_deadline",
+        "industry_regulation",
+        "rights_eligibility",
+        "symbolic_currency",
+        "defense_authorization"
+      ],
+      "q": {
+        "en": "How do the House and Senate versions differ?",
+        "es": "¿En qué se diferencian las versiones de la Cámara de Representantes y del Senado?"
+      },
+      "answered_by": [
+        "bill_text",
+        "crs"
+      ],
+      "note": "Only when both chambers have text on the record."
+    },
+    {
+      "id": "wp.authorized",
+      "types": [
+        "war_powers"
+      ],
+      "q": {
+        "en": "Has Congress authorized the use of military force here?",
+        "es": "¿Ha autorizado el Congreso el uso de la fuerza militar en este caso?"
+      },
+      "answered_by": [
+        "statute",
+        "bill_text",
+        "crs"
+      ],
+      "note": "A statement about congressional action, not about the President's constitutional claims (see wp.admin_basis)."
+    },
+    {
+      "id": "wp.binding",
+      "types": [
+        "war_powers"
+      ],
+      "q": {
+        "en": "If it passes, does the President have to follow it?",
+        "es": "Si se aprueba, ¿está obligado el Presidente a cumplirla?"
+      },
+      "answered_by": [
+        "crs",
+        "constitution",
+        "court_record",
+        "member_statement"
+      ],
+      "note": "Contested legal question: CRS and the Constitution in our voice only as quoted; both sides' claims attributed."
+    },
+    {
+      "id": "wp.sixty_day",
+      "types": [
+        "war_powers"
+      ],
+      "q": {
+        "en": "What is the War Powers Resolution's 60-day limit, and how does it apply here?",
+        "es": "¿Qué es el límite de 60 días de la Resolución de Poderes de Guerra y cómo se aplica aquí?"
+      },
+      "answered_by": [
+        "statute",
+        "crs",
+        "bill_text",
+        "member_statement"
+      ],
+      "note": "Explains the rule; whether the clock is running is attributed to each side."
+    },
+    {
+      "id": "wp.admin_basis",
+      "types": [
+        "war_powers"
+      ],
+      "q": {
+        "en": "What legal authority and goals has the Administration stated?",
+        "es": "¿Qué autoridad legal y qué objetivos ha declarado el Gobierno?"
+      },
+      "answered_by": [
+        "agency_report",
+        "crs",
+        "member_statement"
+      ],
+      "note": "Added so the bank carries the Administration's side as a question of its own, in its own words, attributed."
+    },
+    {
+      "id": "wp.still_allowed",
+      "types": [
+        "war_powers",
+        "defense_authorization"
+      ],
+      "q": {
+        "en": "What would U.S. forces still be allowed to do?",
+        "es": "¿Qué seguirían teniendo permitido hacer las fuerzas de EE. UU.?"
+      },
+      "answered_by": [
+        "bill_text"
+      ],
+      "note": "Rules of construction and exceptions, per vehicle; vehicles differ."
+    },
+    {
+      "id": "sp.deadline",
+      "types": [
+        "spending_deadline"
+      ],
+      "q": {
+        "en": "What is the deadline, and what happens when it arrives?",
+        "es": "¿Cuál es la fecha límite y qué pasa cuando llega?"
+      },
+      "answered_by": [
+        "statute",
+        "bill_text",
+        "crs"
+      ],
+      "note": "The date comes from enacted text only."
+    },
+    {
+      "id": "sp.lapse",
+      "types": [
+        "spending_deadline"
+      ],
+      "q": {
+        "en": "If funding lapses, what keeps running and what pauses?",
+        "es": "Si se acaba el financiamiento, ¿qué sigue funcionando y qué se suspende?"
+      },
+      "answered_by": [
+        "crs",
+        "agency_report"
+      ],
+      "note": "From CRS shutdown reports and agency contingency plans, attributed by agency."
+    },
+    {
+      "id": "sp.duration",
+      "types": [
+        "spending_deadline",
+        "defense_authorization"
+      ],
+      "q": {
+        "en": "How long would the funding last?",
+        "es": "¿Cuánto tiempo duraría el financiamiento?"
+      },
+      "answered_by": [
+        "bill_text"
+      ],
+      "note": "End date as written in the text."
+    },
+    {
+      "id": "reg.state_law",
+      "types": [
+        "industry_regulation",
+        "rights_eligibility"
+      ],
+      "q": {
+        "en": "Would it override state laws?",
+        "es": "¿Prevalecería sobre las leyes estatales?"
+      },
+      "answered_by": [
+        "bill_text",
+        "crs"
+      ],
+      "note": "Preemption and savings clauses both, quoted."
+    },
+    {
+      "id": "reg.enforcement",
+      "types": [
+        "industry_regulation",
+        "rights_eligibility",
+        "symbolic_currency"
+      ],
+      "q": {
+        "en": "Who would enforce it, and how?",
+        "es": "¿Quién la haría cumplir y cómo?"
+      },
+      "answered_by": [
+        "bill_text"
+      ],
+      "note": "Agencies, private rights of action, penalties, as written."
+    },
+    {
+      "id": "reg.antitrust",
+      "types": [
+        "industry_regulation"
+      ],
+      "q": {
+        "en": "Does it change how antitrust law applies?",
+        "es": "¿Cambia cómo se aplican las leyes antimonopolio?"
+      },
+      "answered_by": [
+        "bill_text",
+        "crs",
+        "member_statement"
+      ],
+      "note": "Say 'antitrust exemption' when the text says it; attribute the arguments."
+    },
+    {
+      "id": "elig.who_qualifies",
+      "types": [
+        "rights_eligibility",
+        "industry_regulation"
+      ],
+      "q": {
+        "en": "Who qualifies, and what would they get?",
+        "es": "¿Quién cumpliría los requisitos y qué recibiría?"
+      },
+      "answered_by": [
+        "bill_text"
+      ],
+      "note": "Definitions section first."
+    },
+    {
+      "id": "elig.how_many",
+      "types": [
+        "rights_eligibility",
+        "industry_regulation",
+        "spending_deadline"
+      ],
+      "q": {
+        "en": "How many people would it affect, according to official sources?",
+        "es": "¿A cuántas personas afectaría, según fuentes oficiales?"
+      },
+      "answered_by": [
+        "cbo",
+        "agency_report",
+        "crs",
+        "sap"
+      ],
+      "note": "Counts only from official sources, attributed when the source is a party to the dispute."
+    },
+    {
+      "id": "elig.legal_status",
+      "types": [
+        "rights_eligibility",
+        "industry_regulation"
+      ],
+      "q": {
+        "en": "Would it change anyone's legal status?",
+        "es": "¿Cambiaría la situación legal de alguien?"
+      },
+      "answered_by": [
+        "bill_text",
+        "court_record"
+      ],
+      "note": "E.g. employee status, immigration status, tax status, as the text states."
+    },
+    {
+      "id": "sym.everyday",
+      "types": [
+        "symbolic_currency",
+        "industry_regulation",
+        "spending_deadline"
+      ],
+      "q": {
+        "en": "What would change in everyday life?",
+        "es": "¿Qué cambiaría en la vida diaria?"
+      },
+      "answered_by": [
+        "bill_text",
+        "agency_report"
+      ],
+      "note": "Concrete, text-backed effects only (e.g. rounding at the register), no predicted behavior."
+    },
+    {
+      "id": "def.topline",
+      "types": [
+        "defense_authorization",
+        "spending_deadline"
+      ],
+      "q": {
+        "en": "How much does it authorize, and for what?",
+        "es": "¿Cuánto autoriza y para qué?"
+      },
+      "answered_by": [
+        "bill_text",
+        "cbo",
+        "crs"
+      ],
+      "note": "Authorization is not appropriation; say which one the text is."
+    }
+  ]
+}
