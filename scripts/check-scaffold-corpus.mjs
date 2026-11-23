@@ -8,7 +8,9 @@
 // same guards:
 //   - TOTAL: every `floor_vote` bill that is not a calendar placement, not a
 //     shape read and judged claim-free (floorMakesNoClaim) and not a settled
-//     floor outcome (FLOOR_SETTLED) must be read as floor action;
+//     floor outcome (FLOOR_SETTLED, or since 2026-11-23 a procedure that
+//     ended the measure's consideration, procedureEndedConsideration) must be
+//     read as floor action;
 //   - NOWHERE ELSE: no placement, no claim-free sentence and no bill off the
 //     floor may be;
 //   - the population must not be empty, and the two carve-outs must never
@@ -48,7 +50,7 @@
 // Plain node: every module it reads is .mjs. Zero network.
 import { appendFileSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { FLOOR_SETTLED, floorMakesNoClaim, statusBasisText } from '../lib/floor-text.mjs';
+import { FLOOR_SETTLED, floorMakesNoClaim, procedureEndedConsideration, statusBasisText } from '../lib/floor-text.mjs';
 import { floorActionInRecord } from './moment-scaffold.mjs';
 
 /** The placement shape, exactly as the retired test read it (it mirrors
@@ -93,7 +95,26 @@ export function sweepFloorAction(bills) {
     }
     // Exemption 2 (2026-09-19): a settled floor outcome that matches no
     // activity shape derives nothing, and nothing is the honest answer.
-    if (onFloor && !placement && !derived && FLOOR_SETTLED.test(text ?? '')) {
+    //
+    // Widened 2026-11-23 (issue #398) to the procedural outcomes that ended
+    // the measure's consideration (lib/floor-text.mjs
+    // procedureEndedConsideration, #370). S.J.Res. 98's last action, verbatim:
+    //   "Point of order that the measure is not entitled to expedited
+    //    procedures under 50 U.S.C. 1546(a) raised against the measure agreed
+    //    to in Senate by Yea-Nay Vote. 50 - 50. Record Vote Number: 9."
+    // The Senate upheld a point of order that took the resolution off its
+    // expedited track. That is the floor answering, not the chamber MOVING on
+    // the measure, so `tier0_floor_action` ("the chamber is moving on it")
+    // would be a pending claim over a settled fact. Deriving nothing is the
+    // claim-free route, and FLOOR_ACTION_PATTERNS is deliberately NOT widened
+    // to read it. Like the FLOOR_SETTLED half, it counts only when the matcher
+    // derived nothing: a sentence a pattern does read stays in the population.
+    if (
+      onFloor &&
+      !placement &&
+      !derived &&
+      (FLOOR_SETTLED.test(text ?? '') || procedureEndedConsideration(text))
+    ) {
       counts.settledOutcome++;
       continue;
     }
