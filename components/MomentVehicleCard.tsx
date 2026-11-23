@@ -184,7 +184,7 @@ export function MomentVehicleCard({
           // a long status word must never push the card past the screen.
           <span key={part.key} className={part.key === 'status' ? 'whitespace-normal' : 'whitespace-nowrap'}>
             {part.node}
-            {i < meta.length - 1 && <span aria-hidden> ·</span>}
+            {i < meta.length - 1 && <span aria-hidden>&nbsp;·</span>}
           </span>
         ))}
       </div>

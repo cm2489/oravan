@@ -159,7 +159,7 @@ export function MomentNominationCard({
         {meta.map((part, i) => (
           <span key={part.key} className="whitespace-nowrap">
             {part.node}
-            {i < meta.length - 1 && <span aria-hidden> ·</span>}
+            {i < meta.length - 1 && <span aria-hidden>&nbsp;·</span>}
           </span>
         ))}
       </div>
@@ -179,7 +179,7 @@ export function MomentNominationCard({
         {receivedDate && (
           <span>
             {t('nominations.sentToSenate', { date: fmt(receivedDate) })}
-            {!onExecCalendar && !statusLine && lastActionDate && <span aria-hidden> ·</span>}
+            {!onExecCalendar && !statusLine && lastActionDate && <span aria-hidden>&nbsp;·</span>}
           </span>
         )}
         {!onExecCalendar && !statusLine && lastActionDate && (
