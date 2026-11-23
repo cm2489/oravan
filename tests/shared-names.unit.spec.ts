@@ -285,7 +285,7 @@ test('check 1: under the record’s line the card prints no status label; nowher
   const card = readFileSync(join(process.cwd(), 'components/BillCard.tsx'), 'utf8');
   // Absent, the prop keeps the label, and with it the identifier's separator: the card renders as before.
   expect(card).toContain('  showStatus = true,\n');
-  expect(card).toContain('{(showStatus || annotation || coverageCount != null) && <span aria-hidden> ·</span>}');
+  expect(card).toContain('{(showStatus || annotation || coverageCount != null) && <span aria-hidden>&nbsp;·</span>}');
   // Main's status span (#523: it wraps at every width) inside this page's wrapper.
   expect(card).toMatch(/\{showStatus && \(\n\s*<span className="whitespace-normal">\n\s*\{t\(`bills\.status\.\$\{bill\.statusKey\}`\)\}/);
   // No other caller passes it.

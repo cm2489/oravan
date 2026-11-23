@@ -164,7 +164,7 @@ export function RepCard({ rep }: { rep: CardMember }) {
         <RepPortrait rep={rep} photo={!rep.portraitMissing} />
         <div className="min-w-0">
           <p data-rep-role={repRoleKey(rep)} className="text-xs font-semibold tracking-[0.04em] text-ink-2">
-            {role} · {party} · {rep.state}
+            {role}&nbsp;· {party}&nbsp;· {rep.state}
           </p>
           {/* The name is the way to the member's own page. It is a heading's
               link, not a link inline in a sentence, so its own box is the 44px

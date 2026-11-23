@@ -204,15 +204,17 @@ export function Footer({ donateUrl = DONATE_URL }: { donateUrl?: string | null }
             masses and read as a second footer (owner, 2026-07-25). A one-line
             colophon reads as the section's baseline instead. The `·`
             separators are decorative — each fact is its own <span>, so a
-            screen reader hears three sentences, not soup. The funding line
+            screen reader hears three sentences, not soup — and each is tied
+            to the fact before it by a no-break space, so a wrapped line
+            never starts with "·". The funding line
             still upgrades itself the moment DONATE_URL is set (same constant
             as the CTA above, no second flag) and never claims
             tax-deductibility or nonprofit status. */}
         <p className="mt-10 text-xs text-ink-pale/90">
           <span>{t('footer.sourceNote')}</span>
-          <span aria-hidden> · </span>
+          <span aria-hidden>&nbsp;· </span>
           <span>{t('footer.aiNote')}</span>
-          <span aria-hidden> · </span>
+          <span aria-hidden>&nbsp;· </span>
           <span>{donateUrl ? t('footer.fundingLive') : t('footer.funding')}</span>
         </p>
       </div>
