@@ -1,0 +1,63 @@
+name: Weekly owner note
+
+# The owner's answer of 2026-11-23, 12:23 PM ET (card `emails`, option a):
+# "One plain note every Monday at 9 AM ET, and the robot threads go quiet".
+# Every Monday this opens ONE new issue written for him, assigned to him (the
+# assignment is what emails him), and closes last week's. What the note says,
+# and why each line reads its source the way it does, is lib/weekly-note.mjs;
+# the reading and posting is scripts/weekly-note.mjs.
+#
+# $0: no model call and no paid API. The counters database is READ only, for
+# aggregate counts (rule 1); no secret is ever printed (rule 10).
+
+on:
+  schedule:
+    # 14:00 UTC every Monday = 9:00 AM ET while Eastern Standard Time holds.
+    # Under daylight time (from Mar 14, 2027) the same slot is 10:00 AM ET;
+    # GitHub cron has no time zones, so moving it back to 9 AM ET then means
+    # changing this line to '0 13 * * 1'. GitHub may start a scheduled run some
+    # minutes late.
+    - cron: '0 14 * * 1' # 14:00 UTC Mon — 9:00 AM ET (EST) / 10:00 AM ET (EDT)
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Print the note in the log only; create, close and label nothing'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  # `gh run list` over sync-bills.yml (the "Nightly data" line). Read-only.
+  actions: read
+  # Open this week's note, label it, assign it, close last week's.
+  issues: write
+
+concurrency:
+  group: weekly-note
+  cancel-in-progress: false
+
+jobs:
+  note:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+        # tsx is a devDependency: scripts/weekly-note.mjs imports lib/usage.ts
+        # and lib/ratelimit.ts unchanged, the same reason daily-metrics.yml
+        # gives for its own `npm ci`.
+      - name: Write this week's note
+        env:
+          # The same counters secrets daily-metrics.yml reads, and the same
+          # VERCEL_ENV=production so the reads hit the live site's keyspace
+          # rather than an empty 'dev:' one (see daily-metrics.yml's note).
+          UPSTASH_COUNTERS_REST_URL: ${{ secrets.UPSTASH_COUNTERS_REST_URL }}
+          UPSTASH_COUNTERS_REST_TOKEN: ${{ secrets.UPSTASH_COUNTERS_REST_TOKEN }}
+          VERCEL_ENV: production
+          GH_TOKEN: ${{ github.token }}
+          DRY_RUN: ${{ inputs.dry_run && '--dry-run' || '' }}
+        run: npx tsx scripts/weekly-note.mjs $DRY_RUN

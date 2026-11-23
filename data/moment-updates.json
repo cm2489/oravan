@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-11-22T06:37:49.299Z"
+    "generated_at": "2026-11-23T12:21:01.884Z"
   },
   "government-funding-deadline": {
     "updates": [],
@@ -1923,33 +1923,6 @@
           "status_to": "committee"
         },
         "ai": false
-      },
-      {
-        "id": "u_fcb078e5",
-        "class": "scheduled",
-        "vehicle": "s-4668-119",
-        "day": "2026-09-23",
-        "occurred_at": "2026-09-23",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-23T16:51:20.985Z",
-        "text": {
-          "en": "S. 4668, the Protect College Sports Act of 2026, was scheduled for September 23, 2026.",
-          "es": "S. 4668, la Ley de Protección de los Deportes Universitarios de 2026, estaba programada para el 23 de septiembre de 2026."
-        },
-        "source": {
-          "kind": "tier0_feed",
-          "refs": [
-            "https://www.congress.gov/rss/senate-floor-today.xml",
-            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
-          ]
-        },
-        "record": {
-          "action_text": "S.4668 — Protect College Sports Act of 2026 (09/23/2026)",
-          "action_code": null,
-          "action_type": "Senate Floor Today",
-          "source_system": "Congress.gov senate-floor-today RSS"
-        },
-        "ai": true
       }
     ],
     "summary_revisions": [
@@ -2141,9 +2114,7 @@
           "vehicle_statuses": {
             "s-4668-119": "committee"
           },
-          "update_ids": [
-            "u_fcb078e5"
-          ],
+          "update_ids": [],
           "refs": [
             "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
           ]
@@ -2166,9 +2137,7 @@
           "vehicle_statuses": {
             "s-4668-119": "floor_vote"
           },
-          "update_ids": [
-            "u_fcb078e5"
-          ],
+          "update_ids": [],
           "refs": [
             "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
           ]
@@ -2194,8 +2163,7 @@
           "update_ids": [
             "u_3385513a",
             "u_348552cd",
-            "u_d5eaf6d9",
-            "u_fcb078e5"
+            "u_d5eaf6d9"
           ],
           "roll_calls": [
             "s-119-2-243",
@@ -2229,8 +2197,7 @@
           "update_ids": [
             "u_3385513a",
             "u_348552cd",
-            "u_d5eaf6d9",
-            "u_fcb078e5"
+            "u_d5eaf6d9"
           ],
           "roll_calls": [
             "s-119-2-243",
@@ -2264,8 +2231,7 @@
             "u_5f348c7a",
             "u_3385513a",
             "u_348552cd",
-            "u_d5eaf6d9",
-            "u_fcb078e5"
+            "u_d5eaf6d9"
           ],
           "roll_calls": [
             "s-119-2-243",
@@ -2310,8 +2276,7 @@
             "u_5f348c7a",
             "u_3385513a",
             "u_348552cd",
-            "u_d5eaf6d9",
-            "u_fcb078e5"
+            "u_d5eaf6d9"
           ],
           "roll_calls": [
             "s-119-2-248",
@@ -2366,8 +2331,7 @@
             "u_5f348c7a",
             "u_3385513a",
             "u_348552cd",
-            "u_d5eaf6d9",
-            "u_fcb078e5"
+            "u_d5eaf6d9"
           ],
           "roll_calls": [
             "s-119-2-250",
@@ -2430,8 +2394,7 @@
             "u_5f348c7a",
             "u_3385513a",
             "u_348552cd",
-            "u_d5eaf6d9",
-            "u_fcb078e5"
+            "u_d5eaf6d9"
           ],
           "roll_calls": [
             "s-119-2-250",
@@ -2497,8 +2460,7 @@
             "u_5f348c7a",
             "u_3385513a",
             "u_348552cd",
-            "u_d5eaf6d9",
-            "u_fcb078e5"
+            "u_d5eaf6d9"
           ],
           "roll_calls": [
             "s-119-2-250",
