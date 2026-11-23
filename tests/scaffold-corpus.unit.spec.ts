@@ -112,6 +112,32 @@ test.describe('sweepFloorAction — the classification the retired CI test made'
   });
 });
 
+test.describe('a procedure that ended consideration is a settled outcome (2026-11-23, issue #398)', () => {
+  const SJRES_98 =
+    'Point of order that the measure is not entitled to expedited procedures under 50 U.S.C. 1546(a) raised against the measure agreed to in Senate by Yea-Nay Vote. 50 - 50. Record Vote Number: 9.';
+
+  test('sjres-98-119 is counted settled, not missed, and derives nothing', () => {
+    const report = sweepFloorAction([
+      bill('s-1-119', 'floor_vote', MOTION_TO_PROCEED),
+      bill('s-2-119', 'floor_vote', CONSIDERED),
+      bill('sjres-98-119', 'floor_vote', SJRES_98),
+    ]);
+    expect(report.missed).toEqual([]);
+    expect(report.overfired).toEqual([]);
+    expect(report.counts.settledOutcome).toBe(1);
+    expect(report.counts.activityOnly).toBe(2);
+    expect(verdictFor(report)).toBe('clean');
+  });
+
+  test('a point of order NOT upheld is still unread floor activity', () => {
+    const report = sweepFloorAction([
+      bill('s-1-119', 'floor_vote', MOTION_TO_PROCEED),
+      bill('s-9-119', 'floor_vote', 'Point of order raised against the measure not well taken.'),
+    ]);
+    expect(report.missed.map((b) => b.slug)).toEqual(['s-9-119']);
+  });
+});
+
 test.describe('the issue body carries the record, not a paraphrase of it', () => {
   test('it quotes each missed sentence verbatim, names the file to extend, and says what it does NOT cost', () => {
     const report = sweepFloorAction([...CLEAN, bill('s-10-119', 'floor_vote', NOVEL)]);
