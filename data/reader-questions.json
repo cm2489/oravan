@@ -89,22 +89,6 @@
             "es": "Constitución de EE. UU., artículo I, sección 7 (en inglés)"
           }
         },
-        "bill-hr6500": {
-          "kind": "record",
-          "url": "https://www.congress.gov/bill/119th-congress/house-bill/6500",
-          "title": {
-            "en": "H.R. 6500, official bill record",
-            "es": "H.R. 6500, registro oficial del proyecto (en inglés)"
-          }
-        },
-        "actions-hr6500": {
-          "kind": "record",
-          "url": "https://www.congress.gov/bill/119th-congress/house-bill/6500/all-actions",
-          "title": {
-            "en": "H.R. 6500, official actions",
-            "es": "H.R. 6500, acciones oficiales (en inglés)"
-          }
-        },
         "bill-hr9770": {
           "kind": "record",
           "url": "https://www.congress.gov/bill/119th-congress/house-bill/9770",
@@ -204,12 +188,20 @@
           "claims": [
             {
               "kind": "record",
-              "en": "The law now in force, Public Law 119-103, funds federal agencies until “whichever of the following first occurs”: a full-year spending law for a program, a full-year law that leaves the program out, or “December 11, 2026.”",
-              "es": "La ley vigente, la Ley Pública 119-103, financia a las agencias federales hasta «lo primero que ocurra» entre tres hechos: una ley de gasto para todo el año que cubra un programa, una ley para todo el año que lo deje fuera, o el «11 de diciembre de 2026».",
+              "en": "The law now in force, Public Law 119-103, funds federal agencies until “whichever of the following first occurs”: a later law that appropriates money for a program, the applicable fiscal 2027 spending law if it is enacted without any provision for that program, or “December 11, 2026.”",
+              "es": "La ley vigente, la Ley Pública 119-103, financia a las agencias federales hasta «lo primero que ocurra» entre tres hechos: una ley posterior que asigne fondos a un programa, la ley de gasto aplicable del año fiscal 2027 si se promulga sin ninguna disposición para ese programa, o el «11 de diciembre de 2026».",
               "cites": [
                 {
                   "src": "plaw-119-103",
                   "quote": "shall be available until whichever of the following first occurs"
+                },
+                {
+                  "src": "plaw-119-103",
+                  "quote": "The enactment into law of an appropriation for any project or activity provided for in this Act."
+                },
+                {
+                  "src": "plaw-119-103",
+                  "quote": "The enactment into law of the applicable appropriations Act for fiscal year 2027 without any provision for such project or activity."
                 },
                 {
                   "src": "plaw-119-103",
@@ -258,8 +250,8 @@
           "claims": [
             {
               "kind": "record",
-              "en": "The law in force funds agencies through December 11, 2026, unless a full-year spending law replaces it sooner for a given program.",
-              "es": "La ley vigente financia a las agencias hasta el 11 de diciembre de 2026, salvo que antes una ley de gasto para todo el año la reemplace para un programa determinado.",
+              "en": "The law in force funds agencies through December 11, 2026, unless a later spending law ends that funding sooner for a given program.",
+              "es": "La ley vigente financia a las agencias hasta el 11 de diciembre de 2026, salvo que una ley de gasto posterior ponga fin a esos fondos más pronto para un programa determinado.",
               "cites": [
                 {
                   "src": "plaw-119-103",
@@ -268,6 +260,10 @@
                 {
                   "src": "plaw-119-103",
                   "quote": "The enactment into law of an appropriation for any project or activity provided for in this Act."
+                },
+                {
+                  "src": "plaw-119-103",
+                  "quote": "The enactment into law of the applicable appropriations Act for fiscal year 2027 without any provision for such project or activity."
                 }
               ]
             },
@@ -421,12 +417,16 @@
             },
             {
               "kind": "record",
-              "en": "H.R. 8469 covers only military construction, the Department of Veterans Affairs and related agencies; under the law in force, funding for everything else lasts until a full-year law for it is enacted or “December 11, 2026,” whichever comes first.",
-              "es": "La H.R. 8469 abarca solo la construcción militar, el Departamento de Asuntos de Veteranos y agencias relacionadas; según la ley vigente, los fondos de todo lo demás duran hasta que se promulgue una ley para todo el año que lo cubra o hasta el «11 de diciembre de 2026», lo que ocurra primero.",
+              "en": "H.R. 8469, as the House passed it, covers only military construction, the Department of Veterans Affairs and related agencies; under the law in force, funding for everything else lasts until “December 11, 2026,” unless a later spending law ends it sooner for a program.",
+              "es": "La H.R. 8469, tal como la aprobó la Cámara, abarca solo la construcción militar, el Departamento de Asuntos de Veteranos y agencias relacionadas; según la ley vigente, los fondos de todo lo demás duran hasta el «11 de diciembre de 2026», salvo que antes una ley de gasto posterior les ponga fin para un programa.",
               "cites": [
                 {
                   "src": "bill-hr8469",
                   "quote": "Making appropriations for military construction, the Department of Veterans Affairs, and related agencies for the fiscal year ending September 30, 2027"
+                },
+                {
+                  "src": "actions-hr8469",
+                  "quote": "2026-05-15 | On passage Passed by the Yeas and Nays: 400 - 15 (Roll no. 175)."
                 },
                 {
                   "src": "hr8469-pcs",
@@ -434,11 +434,15 @@
                 },
                 {
                   "src": "plaw-119-103",
-                  "quote": "shall be available until whichever of the following first occurs"
+                  "quote": "December 11, 2026."
                 },
                 {
                   "src": "plaw-119-103",
-                  "quote": "December 11, 2026."
+                  "quote": "The enactment into law of an appropriation for any project or activity provided for in this Act."
+                },
+                {
+                  "src": "plaw-119-103",
+                  "quote": "The enactment into law of the applicable appropriations Act for fiscal year 2027 without any provision for such project or activity."
                 }
               ]
             }
@@ -454,7 +458,7 @@
             {
               "kind": "absence",
               "absence_kind": "not_found",
-              "en": "The official bill records list no Congressional Budget Office cost estimate for H.R. 9770 or for H.R. 8469; cbo.gov itself was not searched.",
+              "en": "The official bill records list no Congressional Budget Office cost estimate for H.R. 9770 or H.R. 8469; cbo.gov was not searched.",
               "es": "Los registros oficiales de los proyectos no incluyen ninguna estimación de costos de la Oficina de Presupuesto del Congreso para la H.R. 9770 ni para la H.R. 8469; no se buscó en cbo.gov.",
               "searched": [
                 "bill-hr9770",
@@ -466,8 +470,8 @@
             },
             {
               "kind": "record",
-              "en": "For H.R. 8469 alone, not for the rest of federal funding, the House Appropriations Committee’s report on the bill as the committee reported it (April 23, 2026) says “The bill includes $323,972,953,000 for mandatory programs and $157,000,000,000 for discretionary programs,” and prints five-year outlay projections “as provided to the Committee by the Congressional Budget Office.”",
-              "es": "Solo para la H.R. 8469, no para el resto de los fondos federales, el informe de la Comisión de Asignaciones de la Cámara sobre el proyecto tal como lo presentó la comisión (23 de abril de 2026) dice: «El proyecto incluye 323.972.953.000 dólares para programas obligatorios y 157.000.000.000 de dólares para programas discrecionales», e incluye proyecciones de desembolsos a cinco años «según las proporcionó a la Comisión la Oficina de Presupuesto del Congreso».",
+              "en": "For H.R. 8469 alone, not all federal funding, the House Appropriations Committee’s report on its version (April 23, 2026) says “The bill includes $323,972,953,000 for mandatory programs and $157,000,000,000 for discretionary programs,” with five-year outlay projections “as provided to the Committee by the Congressional Budget Office.”",
+              "es": "Solo para la H.R. 8469, no para todos los fondos federales, el informe de la Comisión de Asignaciones de la Cámara sobre la versión de la comisión (23 de abril de 2026) dice: «El proyecto incluye 323.972.953.000 dólares para programas obligatorios y 157.000.000.000 de dólares para programas discrecionales», con proyecciones de desembolsos a cinco años «según las proporcionó a la Comisión la Oficina de Presupuesto del Congreso».",
               "cites": [
                 {
                   "src": "hrpt-119-622",
@@ -489,23 +493,27 @@
             },
             {
               "kind": "record",
-              "en": "The one estimate listed for H.R. 6500 covers the version “passed by the House of Representatives on January 12, 2026,” before the Senate passed it with an amendment that made it the stopgap law.",
-              "es": "La única estimación que figura para la H.R. 6500 corresponde a la versión «aprobada por la Cámara de Representantes el 12 de enero de 2026», antes de que el Senado la aprobara con una enmienda que la convirtió en la ley temporal.",
+              "en": "Of the fiscal 2027 total for veterans, it says “$122,258,000,000 for veterans' healthcare was advanced in the fiscal year 2026” spending law, a year early; the bill includes “$138,240,000,000 in advance appropriations for the four veterans' medical care accounts and $307,463,397,000 in advance appropriations for mandatory benefits programs,” available from “October 1, 2027.”",
+              "es": "Del total del año fiscal 2027 para los veteranos, dice que «122.258.000.000 de dólares para la atención médica de los veteranos se adelantaron en el año fiscal 2026» en una ley de gasto, un año antes; el proyecto incluye «138.240.000.000 de dólares en asignaciones anticipadas para las cuatro cuentas de atención médica de los veteranos y 307.463.397.000 de dólares en asignaciones anticipadas para programas de prestaciones obligatorias», disponibles a partir del «1 de octubre de 2027».",
               "cites": [
                 {
-                  "src": "bill-hr6500",
-                  "quote": "As passed by the House of Representatives on January 12, 2026"
+                  "src": "hrpt-119-622",
+                  "quote": "Of the total for fiscal year 2027, $122,258,000,000 for veterans' healthcare was advanced in the fiscal year 2026"
                 },
                 {
-                  "src": "actions-hr6500",
-                  "quote": "Passed Senate with an amendment and an amendment to the Title by Yea-Nay Vote. 90 - 6."
+                  "src": "hrpt-119-622",
+                  "quote": "the Committee recommendation includes $138,240,000,000 in advance appropriations for the four veterans' medical care accounts and $307,463,397,000 in advance appropriations for mandatory benefits programs"
+                },
+                {
+                  "src": "hr8469-pcs",
+                  "quote": "which shall become available on October 1, 2027"
                 }
               ]
             },
             {
               "kind": "record",
-              "en": "For the programs it continues, the law in force provides money “at a rate for operations as provided in the applicable appropriations Acts for fiscal year 2026.”",
-              "es": "Para los programas que mantiene, la ley vigente aporta fondos «al ritmo de operaciones previsto en las leyes de asignaciones aplicables del año fiscal 2026».",
+              "en": "The law in force funds the programs it continues “at a rate for operations as provided in the applicable appropriations Acts for fiscal year 2026.”",
+              "es": "La ley vigente financia los programas que mantiene «al ritmo de operaciones previsto en las leyes de asignaciones aplicables del año fiscal 2026».",
               "cites": [
                 {
                   "src": "plaw-119-103",
@@ -524,12 +532,16 @@
           "claims": [
             {
               "kind": "record",
-              "en": "The Senate has received two other House-passed fiscal 2027 spending bills, H.R. 8646 for agriculture and the Food and Drug Administration (passed 213–210 on June 4) and H.R. 8595 for national security and the Department of State (passed 217–209 on July 15); the record shows no Senate action on either since.",
-              "es": "El Senado ha recibido otros dos proyectos de gasto del año fiscal 2027 aprobados por la Cámara, la H.R. 8646 para agricultura y la Administración de Alimentos y Medicamentos (aprobada 213–210 el 4 de junio) y la H.R. 8595 para la seguridad nacional y el Departamento de Estado (aprobada 217–209 el 15 de julio); el expediente no muestra ninguna acción del Senado sobre ninguna de las dos desde entonces.",
+              "en": "The Senate has received two other House-passed full-year fiscal 2027 spending bills, H.R. 8646 for agriculture and the Food and Drug Administration (passed 213–210 on June 4) and H.R. 8595 for national security and the Department of State (passed 217–209 on July 15); the record shows no Senate action on either since.",
+              "es": "El Senado ha recibido otros dos proyectos de gasto para todo el año fiscal 2027 aprobados por la Cámara, la H.R. 8646 para agricultura y la Administración de Alimentos y Medicamentos (aprobada 213–210 el 4 de junio) y la H.R. 8595 para la seguridad nacional y el Departamento de Estado (aprobada 217–209 el 15 de julio); el expediente no muestra ninguna acción del Senado sobre ninguna de las dos desde entonces.",
               "cites": [
                 {
                   "src": "bill-hr8646",
                   "quote": "Agriculture, Rural Development, Food and Drug Administration, and Related Agency Appropriations Act, 2027"
+                },
+                {
+                  "src": "bill-hr8646",
+                  "quote": "Making appropriations for Agriculture, Rural Development, Food and Drug Administration, and Related Agencies programs for the fiscal year ending September 30, 2027"
                 },
                 {
                   "src": "latest-hr8646",
