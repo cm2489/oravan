@@ -30,10 +30,14 @@ import { isPageviewSurface, isSelfDeclaredCrawler, noteRead } from '@/lib/usage'
  *          counted. The body is read through lib/capped-body.ts, which stops
  *          past the cap, so a chunked body with no Content-Length is never
  *          read whole;
- *        - the caller is under this route's own per-IP limit (60 per 10
- *          minutes, keyed like every limiter here on a salted hash that
- *          rotates daily, lib/ratelimit.ts). A real page sends one signal
- *          per load.
+ *        - the caller is under this route's own per-IP limit (SEEN_MAX = 5
+ *          per SEEN_WINDOW_SEC = 10 minutes, keyed like every limiter here
+ *          on a salted hash that rotates daily, lib/ratelimit.ts). A real
+ *          page sends one signal per load, so 5 covers a person reading
+ *          five pages in ten minutes; a sixth in that window is not added
+ *          to the total (the address is already in the day's sketch). The
+ *          limit was 60 in the first draft; the second 2026-11-23 review
+ *          showed that let one address add ~8,640 a day to the total.
  *   3. DROPS the shape — it was only a validity check — and increments ONE
  *      daily total with no dimension (lib/usage.ts noteRead, no argument),
  *      then, in a SEPARATE call, adds the address to the day's third sketch
@@ -44,8 +48,11 @@ import { isPageviewSurface, isSelfDeclaredCrawler, noteRead } from '@/lib/usage'
  *
  * WHAT REMAINS SPOOFABLE, said plainly as the digest says it: a program can
  * send these headers and this body directly. The per-IP limit bounds what
- * one address can add to the total, and the sketch counts each address once
- * a day however often it sends, so inflating either takes many addresses.
+ * one address can add to the total: at most 5 per 10 minutes, so about 720
+ * a UTC day (a window that straddles the daily salt rotation can add 5
+ * more). The total can therefore rise by that bounded amount per address;
+ * the sketch counts each address once a day however often it sends, so
+ * moving the sketch takes many addresses.
  * Like every count here it is an operating signal, never audited.
  *
  * Nothing is logged. Static pages stay static: this is a route handler, the
@@ -53,7 +60,12 @@ import { isPageviewSurface, isSelfDeclaredCrawler, noteRead } from '@/lib/usage'
  * the browser after the prerendered page has loaded.
  */
 
-const limiter = createRateLimiter({ route: 'seen', max: 60, windowSec: 600 });
+/** At most this many counted signals per address per window. (Not exported: a route file exports only handlers.) */
+const SEEN_MAX = 5;
+/** The window, in seconds (10 minutes). */
+const SEEN_WINDOW_SEC = 600;
+
+const limiter = createRateLimiter({ route: 'seen', max: SEEN_MAX, windowSec: SEEN_WINDOW_SEC });
 
 /** Longest accepted body, in bytes; the longest page shape is 15 characters. */
 const MAX_BODY_BYTES = 64;

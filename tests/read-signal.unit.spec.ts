@@ -15,7 +15,7 @@ import {
 import { READ_SIGNAL_EVENTS, READ_SIGNAL_PATH, armReadSignal, sendReadSignal, type ReadSignalEnv } from '../lib/read-signal';
 import { readCappedBody } from '../lib/capped-body';
 import { PAGEVIEW_SURFACES, __memoryUsageCountForTests, noteRead, pageviewSurfaceForPath, readUsageKey, usageDayKey } from '../lib/usage';
-import { formatPeopleLines, peopleEstimate } from '../lib/traffic-metrics.mjs';
+import { PEOPLE_READ_CAVEAT, formatPeopleLines, peopleEstimate } from '../lib/traffic-metrics.mjs';
 import { scanText } from '../scripts/check-key-namespaces.mjs';
 import { COUNTERS_URL, MockUpstash, installUpstashFetch, setUpstashEnv } from './upstash-mock';
 
@@ -330,8 +330,18 @@ test.describe('POST /api/seen', () => {
     const ip = '203.0.113.200';
     const key = readUsageKey(usageDayKey());
     const before = __memoryUsageCountForTests(key);
-    for (let i = 0; i < 75; i += 1) await seen('today', ip);
-    expect(__memoryUsageCountForTests(key) - before).toBe(60);
+    for (let i = 0; i < 15; i += 1) await seen('today', ip);
+    // One signal per page load: five pages in ten minutes, then nothing more
+    // from that address until the window ends (60 in the first draft let one
+    // address add ~8,640 a day to the total).
+    expect(__memoryUsageCountForTests(key) - before).toBe(5);
+    // The digest caveat states the same limit the route enforces.
+    const route = readFileSync(join(process.cwd(), 'app/api/seen/route.ts'), 'utf8');
+    expect(route).toContain('const SEEN_MAX = 5;');
+    expect(route).toContain('const SEEN_WINDOW_SEC = 600;');
+    expect(route).toContain("createRateLimiter({ route: 'seen', max: SEEN_MAX, windowSec: SEEN_WINDOW_SEC })");
+    expect(PEOPLE_READ_CAVEAT).toContain('5 per 10 minutes');
+    expect(PEOPLE_READ_CAVEAT).not.toContain('60 per 10 minutes');
   });
 
   test('with the counters database: one dimensionless total and the address sketch; no key or command carries a page shape or the raw address', async () => {

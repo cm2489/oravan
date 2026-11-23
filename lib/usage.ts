@@ -366,7 +366,12 @@ export function isCountablePageviewRequest(req: {
  *      automated clients do not.
  *   3. a User-Agent that does NOT match SELF_DECLARED_CRAWLER below — the
  *      programs that say what they are.
- * All three must hold.
+ *   4. NO `Sec-Purpose` header. Chrome's prerender and prefetch (Speculation
+ *      Rules, address-bar preloading) send `Sec-Fetch-Dest: document` and
+ *      `Sec-Fetch-Mode: navigate` like a real open, but mark themselves with
+ *      `Sec-Purpose: prefetch` (or `prefetch;prerender`); such a load may
+ *      never be seen by anyone, so it is not "browser" (review, 2026-11-23).
+ * All four must hold.
  *
  * WHAT IT GETS WRONG, said here so nobody reads the number as exact:
  *   - a bot that copies a browser's headers passes (headless browsers do);
@@ -544,7 +549,7 @@ export function isSelfDeclaredCrawler(userAgent: string | null): boolean {
 }
 
 /**
- * The browser label for one page load. Pure: reads four headers, returns one
+ * The browser label for one page load. Pure: reads five headers, returns one
  * boolean, keeps nothing. proxy.ts asks it only of a load that
  * isCountablePageviewRequest already counts, so a non-GET, a prefetch or an
  * RSC fetch is never "browser" either way. See the section comment above for
@@ -553,6 +558,8 @@ export function isSelfDeclaredCrawler(userAgent: string | null): boolean {
 export function isBrowserPageLoad(headers: { get(name: string): string | null }): boolean {
   if ((headers.get('sec-fetch-dest') ?? '').toLowerCase() !== 'document') return false;
   if ((headers.get('sec-fetch-mode') ?? '').toLowerCase() !== 'navigate') return false;
+  // A speculative load (prerender / prefetch) is not a page someone opened.
+  if (headers.get('sec-purpose') !== null) return false;
   if ((headers.get('accept-language') ?? '').trim() === '') return false;
   return !isSelfDeclaredCrawler(headers.get('user-agent'));
 }
@@ -1007,7 +1014,8 @@ export type PeopleSignalsWindowResult =
  * Exported for the weekly owner note as well as the daily digest:
  * lib/traffic-metrics.mjs's peopleEstimate turns one day of this (plus the
  * page-view window and lib/ratelimit.ts's two sketch readings) into the
- * actions / ceiling / bots' share the digest prints.
+ * actions / browsers (distinct browser addresses) / bots' share rows the
+ * digest prints.
  */
 export async function readPeopleSignalsWindow(days: string[]): Promise<PeopleSignalsWindowResult> {
   const client = countersClient();

@@ -116,6 +116,14 @@ test.describe('isBrowserPageLoad', () => {
     expect(isBrowserPageLoad(headers({ ...base, 'sec-fetch-mode': 'no-cors' }))).toBe(false);
   });
 
+  test('a prerender or prefetch (Sec-Purpose present) is never "browser", though it sends document + navigate', () => {
+    const base = { ...BROWSER_OPEN, 'user-agent': CHROME };
+    expect(isBrowserPageLoad(headers(base))).toBe(true);
+    for (const purpose of ['prefetch', 'prefetch;prerender', 'prefetch;anonymous-client-ip', '']) {
+      expect(isBrowserPageLoad(headers({ ...base, 'sec-purpose': purpose })), purpose).toBe(false);
+    }
+  });
+
   test('a self-declared crawler is never "browser", even with a browser\'s headers', () => {
     const crawlers = [
       'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
@@ -158,7 +166,7 @@ test.describe('isBrowserPageLoad', () => {
     };
     expect(isBrowserPageLoad(h)).toBe(true);
     expect(isBrowserPageLoad(h)).toBe(true);
-    expect(new Set(reads)).toEqual(new Set(['sec-fetch-dest', 'sec-fetch-mode', 'accept-language', 'user-agent']));
+    expect(new Set(reads)).toEqual(new Set(['sec-fetch-dest', 'sec-fetch-mode', 'sec-purpose', 'accept-language', 'user-agent']));
   });
 });
 
@@ -308,7 +316,7 @@ test('readPeopleSignalsWindow: one MGET, day order kept, fail-closed without a d
 // --- the estimate and the digest ----------------------------------------------------
 
 test.describe('People (estimate)', () => {
-  test('actions are the two totals side by side, never a floor; ceiling is the browser sketch; bots share of loads', () => {
+  test('actions are the two totals side by side, never a floor; browsers is the browser sketch; bots share of loads', () => {
     const e = peopleEstimate({
       pageLoads: 4410,
       browserPageLoads: 441,
@@ -319,25 +327,27 @@ test.describe('People (estimate)', () => {
     expect(e).not.toHaveProperty('floor');
     expect(e.repLookups).toBe(30);
     expect(e.scriptsServed).toBe(12);
-    expect(e.ceiling).toBe(150);
-    expect(e.ceilingState).toBe('read');
+    expect(e.browsers).toBe(150);
+    expect(e.browsersState).toBe('read');
     expect(e.botShare).toBeCloseTo(0.9, 5);
     const lines = formatPeopleLines(e).join('\n');
     expect(lines).toContain('actions   30 / 12');
     expect(lines).toContain('ZIP lookups that found a district / call scripts shown (actions, not people)');
+    expect(lines).toContain('browsers  150');
+    expect(lines).toContain('distinct browser addresses');
   });
 
   test('every unread or empty state is said, never invented', () => {
     const notRead = peopleEstimate({ pageLoads: 0, browserPageLoads: 0, repLookups: 0, scriptsServed: 0, browserAddresses: { ok: false } });
-    expect(notRead.ceiling).toBeNull();
-    expect(notRead.ceilingState).toBe('not-read');
+    expect(notRead.browsers).toBeNull();
+    expect(notRead.browsersState).toBe('not-read');
     expect(notRead.botShare).toBeNull();
     const lines = formatPeopleLines(notRead).join('\n');
-    expect(lines).toContain('ceiling   not read');
+    expect(lines).toContain('browsers  not read');
     expect(lines).toContain('no page loads counted');
 
     const absent = peopleEstimate({ pageLoads: 10, browserPageLoads: 4, repLookups: 1, scriptsServed: 2, browserAddresses: { ok: true, count: null, noExpiry: false } });
-    expect(absent.ceilingState).toBe('not-recorded');
+    expect(absent.browsersState).toBe('not-recorded');
     expect(formatPeopleLines(absent).join('\n')).toContain('not recorded');
 
     expect(formatPeopleLines(null)[0]).toMatch(/^People \(estimate\): not read/);
@@ -351,6 +361,25 @@ test.describe('People (estimate)', () => {
     expect(text.match(/lower bound/gi) ?? []).toHaveLength(1);
     expect(Object.keys(e).join(' ')).not.toMatch(/floor/i);
     expect(PEOPLE_CAVEAT).toContain('not a lower bound on people');
+  });
+
+  test('the browser-address sketch is never called a ceiling: it is not an upper bound', () => {
+    // Shared addresses undercount and browsers without Sec-Fetch headers are
+    // left out, so "ceiling" would be a false claim (review of 2026-11-23).
+    const e = peopleEstimate({ pageLoads: 100, browserPageLoads: 50, repLookups: 80, scriptsServed: 3, browserAddresses: { ok: true, count: 20, noExpiry: false } });
+    const unread = peopleEstimate({ pageLoads: 0, browserPageLoads: 0, repLookups: 0, scriptsServed: 0, browserAddresses: { ok: false } });
+    const text = [...formatPeopleLines(e), ...formatPeopleLines(unread), ...formatPeopleLines(null), PEOPLE_CAVEAT].join('\n');
+    expect(text).not.toMatch(/ceiling/i);
+    expect(Object.keys(e).join(' ')).not.toMatch(/ceiling/i);
+    expect(PEOPLE_CAVEAT).toContain('not an upper bound on people');
+    // The People code in the digest library and its runner, source included.
+    const metrics = read('lib/traffic-metrics.mjs');
+    const block = metrics.slice(metrics.indexOf('// --- People (estimate)'), metrics.indexOf('export function formatSiteLines'));
+    expect(block.length).toBeGreaterThan(0);
+    expect(block).not.toMatch(/ceiling/i);
+    const digest = read('scripts/daily-metrics.mjs');
+    expect(digest.match(/[^\n]*ceiling[^\n]*/gi) ?? []).toEqual([]);
+    expect(read('lib/usage.ts')).not.toMatch(/ceiling/i);
   });
 
   test('the digest prints the block and its caveat only when supplied; old callers are unchanged', () => {
