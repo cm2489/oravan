@@ -99,15 +99,19 @@ const DAY_MS = 86_400_000;
 export const REVIEW_WINDOW_DAYS = 30;
 
 /**
- * What `moments.whyCriteria` and `moments.howMadeRule2` promise readers about
- * a qualifying signal: "within the last 45 days" — set equal to the watcher's
- * own currency floor (FLOORS.maxLastActionAgeDays) by owner ruling 2026-08-09,
- * which closed the gap this note was built to name (the copy used to say 14).
- * The note below stays as a tripwire: it can still fire on an out-of-band
- * invocation (`--only` against an older record), and it fires again the day
- * the two numbers drift apart — a drift test pins them equal.
+ * How recent a floor, scheduling or press signal must be for a question to
+ * open on it: 45 days, set equal to the watcher's own currency floor
+ * (FLOORS.maxLastActionAgeDays) by owner ruling 2026-08-09 — a drift test pins
+ * them equal. scripts/moment-approve.mjs applies it at opening time.
+ *
+ * Until 2026-11-22 the site printed this number to readers
+ * (`moments.whyCriteria`, `moments.howMadeRule2`). Since the owner ruled that
+ * a Big Question may be a STANDING TOPIC — open, at any age, while one of its
+ * bills still has a decision open (`qualifying_signal.type` is
+ * `standing_topic`) — the public copy no longer states it, and this window
+ * governs only the signal-based way in.
  */
-export const PUBLISHED_SIGNAL_MAX_AGE_DAYS = 45;
+export const SIGNAL_MAX_AGE_DAYS = 45;
 
 /** The id a scaffold carries when nothing was derived — deliberately the
  *  screaming placeholder, and deliberately NOT a valid moment id, so a code
@@ -461,14 +465,15 @@ export function signalFor(c, articles = [], { now = Date.now(), lastActionText =
   };
 }
 
-/** Named when the signal is older than what the site promises readers. The
- *  signal stays — a placement is true until it moves — and since the 2026-08-09
- *  ruling set the published criterion equal to the 45-day notification floor,
- *  this fires only on out-of-band invocations or renewed drift. */
+/** Named when the signal is older than the window a signal-based question
+ *  opens inside. The signal stays — a placement is true until it moves — and
+ *  since the 2026-08-09 ruling set that window equal to the 45-day
+ *  notification floor, this fires only on out-of-band invocations or renewed
+ *  drift. */
 function staleSignalNote(c, now) {
   const age = ageInDays(c?.lastActionDate, now);
-  if (age <= PUBLISHED_SIGNAL_MAX_AGE_DAYS) return null;
-  return `\`qualifying_signal\` is derived from an action ${age === Infinity ? 'with no date' : `${age} days old`} (${c?.lastActionDate ?? 'undated'}). It is still true of the record, but \`moments.whyCriteria\` tells readers a Big Question opens on a signal "within the last ${PUBLISHED_SIGNAL_MAX_AGE_DAYS} days" — check the record against that promise before merging.`;
+  if (age <= SIGNAL_MAX_AGE_DAYS) return null;
+  return `\`qualifying_signal\` is derived from an action ${age === Infinity ? 'with no date' : `${age} days old`} (${c?.lastActionDate ?? 'undated'}). It is still true of the record, but the approve step opens a question on a signal only within the last ${SIGNAL_MAX_AGE_DAYS} days. If a bill here still has a decision open, it can open as a standing topic instead: set the type to \`standing_topic\` and cite the bills' congress.gov pages.`;
 }
 
 /* ------------------------------------------------------------------ *

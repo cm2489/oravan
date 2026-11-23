@@ -83,6 +83,13 @@ export const QUALIFYING_SIGNAL_TYPES = [
      record it stands over. Same reason the two corpora are two files. */
   'tier0_exec_calendar',
   'press',
+  /* A STANDING TOPIC, added 2026-11-22 on the ruling of the owner that a Big
+     Question is a larger topic before Congress that may stay up with no vote
+     coming, as long as it holds a bill on the official record. The evidence
+     is the congress.gov record page of each bill (lib/moments-gate.mjs checks
+     the host), and the approve step refuses one whose bills are all settled.
+     No apostrophes in this comment: see the NOTE FOR THE NEXT EDITOR above. */
+  'standing_topic',
 ] as const;
 
 export type QualifyingSignalType = (typeof QUALIFYING_SIGNAL_TYPES)[number];
