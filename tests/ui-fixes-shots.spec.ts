@@ -46,9 +46,29 @@ for (const { prefix, lang, m } of LOCALES) {
     await page.goto(`${prefix}/`);
     const submit = page.locator('[data-hero]').getByRole('button', { name: m.home.zipCtaShort, exact: true });
     await expect(submit).toBeVisible();
-    // One 48px line: a wrapped label made it 70px or more.
+    // ONE LINE, measured on the label itself: the box around its glyphs is
+    // shorter than one line box (line-height 1.6) on one line, and a line
+    // box plus a line of glyphs on two. The button's own height says nothing
+    // here: it stretches to the field's row (56.8px, the field's text-lg).
+    const label = await submit.evaluate((el) => {
+      const text = [...el.childNodes].find((n) => n.nodeType === Node.TEXT_NODE && n.textContent!.trim());
+      const range = document.createRange();
+      range.selectNodeContents(text!);
+      const tops = new Set([...range.getClientRects()].map((r) => Math.round(r.top)));
+      return {
+        glyphs: range.getBoundingClientRect().height,
+        lineHeight: parseFloat(getComputedStyle(el).lineHeight),
+        lines: tops.size,
+        clipped: el.scrollWidth > el.clientWidth + 1, // 1px for rounding
+      };
+    });
+    expect(label.lines, 'the hero ZIP button label sits on one line').toBe(1);
+    expect(label.glyphs, 'the label is one line box tall').toBeLessThanOrEqual(label.lineHeight);
+    expect(label.clipped, 'the label fits inside the button').toBe(false);
+    // The field and the button beside it are one height.
     const box = await submit.boundingBox();
-    expect(box!.height, 'the hero ZIP button is one line tall').toBeLessThanOrEqual(50);
+    const fieldBox = await page.locator('[data-hero] [data-zip-field]').boundingBox();
+    expect(Math.abs(box!.height - fieldBox!.height), 'the button and the field are one height').toBeLessThanOrEqual(1);
     // A filled button, not the field's paper box.
     const bg = await submit.evaluate((el) => getComputedStyle(el).backgroundColor);
     const field = await page.locator('[data-hero] [data-zip-field]').evaluate((el) => getComputedStyle(el).backgroundColor);

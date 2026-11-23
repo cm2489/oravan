@@ -73,6 +73,23 @@ type ZipFormProps = {
    * `home.zipCtaShort` ("Find my reps" / "Buscar mis reps"), the header's
    * own short word for the members page. Every stacked instance (/reps, the
    * bill rail, the call dialog) keeps `home.zipCta`.
+   *
+   * THE FORM KEEPS ITS OLD HEIGHT ON A PHONE (2026-11-22). The hero's first
+   * screen is budgeted around this form (app/[locale]/page.tsx, the language
+   * link; components/HeroSavedZip.tsx, whose block is never shorter than
+   * the form). At 390 wide the long label wrapped to two 25.6px lines, so
+   * the row was 79.2px (12 + 51.2 + 12 + 4) and the form 166.4px: label
+   * 22.4, mt-2 8, row 79.2, mt-3 12, help line 44.8. On one line the row is
+   * the field's own 56.8px (12 + 28.8 + 12 + 4), 22.4px shorter, and
+   * "Ver en español" rose from 676 to 654 on a 390×664 screen, into the
+   * first screen and under the thumb bar. So below md the inline form pads
+   * its foot by exactly that line, 1.4rem: the field and the button stay
+   * one height, and nothing below the form moves.
+   *
+   * At 320 wide the 8.5rem field left the button 108px of text, and
+   * "Buscar mis reps" wrapped. Under 360px the button therefore takes its
+   * label's own width on one line (an `auto` track, nowrap, px-3) and the
+   * field the rest: 5 digits need about 91px, and the field keeps more.
    */
   inline?: boolean;
   /**
@@ -261,7 +278,12 @@ function ZipFormBody({
     // current page, which reads no ZIP, and the funnel's front door would be
     // a dead end. `submit` calls preventDefault(), so a hydrated visitor's
     // submit never reaches the action here.
-    <form onSubmit={submit} action={formAction} className="@container max-w-[30rem]" noValidate>
+    <form
+      onSubmit={submit}
+      action={formAction}
+      className={`@container max-w-[30rem] ${inline ? 'max-md:pb-[1.4rem]' : ''}`}
+      noValidate
+    >
       <label htmlFor={fieldId} className="block text-sm font-bold">
         {t('zipLabel')}
       </label>
@@ -270,7 +292,7 @@ function ZipFormBody({
       <div
         className={
           inline
-            ? 'mt-2 grid grid-cols-[8.5rem_minmax(0,1fr)] gap-2'
+            ? 'mt-2 grid grid-cols-[8.5rem_minmax(0,1fr)] gap-2 max-[22.5rem]:grid-cols-[minmax(0,1fr)_auto]'
             : 'mt-2 grid gap-2 @min-[26rem]:grid-cols-[9.5rem_minmax(0,1fr)]'
         }
       >
@@ -296,16 +318,15 @@ function ZipFormBody({
         />
         <button
           type="submit"
-          className={
+          className={`${
             submitTone === 'secondary'
               ? 'ring-gap inline-flex min-h-12 items-center justify-center gap-2 rounded-control border-2 border-ink bg-ink px-4 py-2 font-bold text-paper hover:bg-ink-2 active:bg-ink-2'
               : 'ring-edge inline-flex min-h-12 items-center justify-center gap-2 rounded-control border-2 border-ink bg-urgent px-6 py-3 font-bold text-ink hover:bg-urgent-deep active:bg-urgent-deep'
-          }
+          }${inline ? ' max-[22.5rem]:px-3 max-[22.5rem]:whitespace-nowrap' : ''}`}
         >
           {inline ? t('zipCtaShort') : t('zipCta')}
-          {/* At 320px the inline row leaves the submit 144px, and the arrow
-              is what would push the short label onto a second line. It is
-              decoration, so under 360px it steps out. */}
+          {/* Under 360px the arrow steps out: it is decoration, and the
+              row has no room to spare for it (see `inline` above). */}
           <ArrowRight
             className={`h-4 w-4 shrink-0 ${inline ? 'max-[22.5rem]:hidden' : ''}`}
             aria-hidden

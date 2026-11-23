@@ -426,7 +426,14 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                 below that fold in both locales (EN 676px, ES 697px), as it
                 did before (672px). With a ZIP saved it starts in the same
                 place or lower: below md the members block is never shorter
-                than the form it replaces (components/HeroSavedZip.tsx). */}
+                than the form it replaces (components/HeroSavedZip.tsx).
+                2026-11-22: the ZIP button's label went to one line, 22.4px
+                shorter, and this link rose to 654px (EN) under the bar; the
+                hero's form now pads its foot by that line below md
+                (components/ZipForm.tsx, `inline`), so the figures above hold:
+                EN 676–720, ES 696–740, and with a ZIP saved at worst ES
+                738–782: 13px clear of today's bar (top 795) and 6px clear of a
+                floating bar whose top is at 788. */}
             <p className="mt-8 max-w-note text-sm">
               <RememberLocaleLink
                 href="/"
