@@ -56,6 +56,9 @@ import { lookupReps } from '@/lib/reps-lookup';
  *      lower. The tallest blocks measured, in Spanish, end at 652px, which
  *      puts the link at 738–782: 10001 (a split district, with the longest
  *      senator names in data/) and 76936 (a vacant seat).
+ *      The island bar (2026-11-22) sits at 608–660 and 788–840, so that link
+ *      ends 6px above it; components/Header.tsx holds the bar to 56px of
+ *      screen for this reason.
  * A ZIP that crosses a state line names nobody (lib/home-zip.ts), so it keeps
  * the form. The owner's wireframe draws the ZIP line and Change ZIP code
  * together, after the names. Kept last, with a smaller names line, Change

@@ -23,7 +23,7 @@
  * carries no `ring-gap`, which exists for FILLED controls.
  *
  * Only the look lives here. Size, padding and layout stay with each caller,
- * because a 56px thumb-bar cell and a display-size phone number are not the
+ * because a 44px thumb-bar cell and a display-size phone number are not the
  * same box.
  */
 export const CALL_BUTTON =

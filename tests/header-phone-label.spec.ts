@@ -12,7 +12,8 @@ import { settledDecision } from '../lib/journey';
  *
  *   - the Questions cell reads `nav.tabQuestions` on one line ("Questions" /
  *     "Preguntas"; owner, 2026-11-22) and reaches /questions;
- *   - the bar floats: inset from both sides and from the bottom, 56px tall;
+ *   - the bar floats: inset from both sides and 4px off the bottom, 52px tall
+ *     (56px of screen in all; tests/home-fold.spec.ts holds the hero to it);
  *   - every tab is at least 44px each way, and no label spills past its own
  *     cell or touches its neighbour;
  *   - the page never scrolls sideways;
@@ -71,6 +72,7 @@ for (const [prefix, messages] of [
       return {
         left: r.left,
         right: r.right,
+        top: r.top,
         bottom: r.bottom,
         height: r.height,
         vw: document.documentElement.clientWidth,
@@ -83,8 +85,9 @@ for (const [prefix, messages] of [
     expect(m.cells).toHaveLength(5);
     expect(m.left, 'inset from the left edge').toBeGreaterThanOrEqual(5.5);
     expect(m.vw - m.right, 'inset from the right edge').toBeGreaterThanOrEqual(5.5);
-    expect(m.vh - m.bottom, 'lifted off the bottom edge').toBeGreaterThanOrEqual(7.5);
-    expect(m.height, 'the island is 56px tall').toBeLessThanOrEqual(56.5);
+    expect(m.vh - m.bottom, 'lifted off the bottom edge').toBeGreaterThanOrEqual(3.5);
+    expect(m.height, 'the island is 52px tall').toBeLessThanOrEqual(52.5);
+    expect(m.vh - m.top, 'the island takes at most 56px of the screen').toBeLessThanOrEqual(56.5);
     expect(m.scrollWidth, 'no sideways scroll').toBeLessThanOrEqual(m.vw);
     for (const c of m.cells) {
       expect(c.targetW, `${c.text}: tap width`).toBeGreaterThanOrEqual(44);

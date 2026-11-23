@@ -274,12 +274,17 @@ export function Header() {
           band and the footer are ink, 9.05:1). tests/island-bar.unit.spec.ts
           recomputes it from the CSS.
 
-          SIZE: 8px off the bottom, or the safe area where that is larger;
+          SIZE: 4px off the bottom, or the safe area where that is larger;
           6px off each side below 22.5rem (the 320px screen, where Spanish
-          needs the width), then at most 21rem wide, centred. Five 48px cells
-          and a 4px padding top and bottom make it 56px tall; a cell is 60.8px
+          needs the width), then at most 21rem wide, centred. Five 44px cells
+          and a 4px padding top and bottom make it 52px tall; a cell is 60.8px
           wide at 320px and 66.4px at 390px. Every cell is the whole tap
           target, at least 44px each way.
+          THE BAR TAKES 56px OF THE SCREEN, AND NO MORE (2026-11-22): its top
+          edge is at 788 on a 390×844 phone and 608 on 390×664. The first
+          build (56px tall, 8px off) put it at 780, over the last 2px of the
+          hero's "View in English" with ZIP 10001 saved (738–782,
+          tests/home-fold.spec.ts). 788 leaves that link 6px clear.
 
           `data-thumb-bar` is how an in-place glossary box finds the bar's
           top edge and keeps its last line (the AI label) above it
@@ -290,7 +295,7 @@ export function Header() {
       <nav
         data-thumb-bar
         aria-label={t('nav.primaryLabel')}
-        className="island-bar fixed inset-x-0 bottom-[max(0.5rem,env(safe-area-inset-bottom))] z-40 mx-auto w-[calc(100%-0.75rem)] rounded-full md:hidden min-[22.5rem]:w-[min(calc(100%-1rem),21rem)]"
+        className="island-bar fixed inset-x-0 bottom-[max(0.25rem,env(safe-area-inset-bottom))] z-40 mx-auto w-[calc(100%-0.75rem)] rounded-full md:hidden min-[22.5rem]:w-[min(calc(100%-1rem),21rem)]"
       >
         <ul className="grid grid-cols-5 px-0.5 py-1">
           {TABS.map(({ href, key, icon: Icon }) => {
@@ -300,15 +305,16 @@ export function Header() {
                  call-button.ts), as every call control does: page 2 has the
                  Call tab and the call buttons share one token set (2026-09-27
                  00:38) and says the Call tab in the island bar is not yellow
-                 (00:43). 44px tall inside the 48px cell, 2px in from it, so
-                 the focus ring (2px off its ink edge) stays inside the
-                 island. Current on /call only: the ink fill. */
+                 (00:43). 44px tall, the whole height of its cell; `ring-edge`
+                 sets the focus ring 1px off its ink edge, so the ring (3px)
+                 ends 4px out, inside the island's 4px padding. Current on
+                 /call only: the ink fill. */
               return (
                 <li key={key} className="flex min-w-0">
                   <CallLink
                     href={callHref}
                     current={onHub}
-                    className={`mx-0.5 my-0.5 flex min-h-11 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 text-2xs leading-tight tracking-tight min-[22.5rem]:tracking-normal ${
+                    className={`ring-edge mx-0.5 flex min-h-11 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 text-2xs leading-tight tracking-tight min-[22.5rem]:tracking-normal ${
                       onHub ? CALL_BUTTON_CURRENT : CALL_BUTTON
                     }`}
                   >
@@ -331,7 +337,7 @@ export function Header() {
                   // "Preguntas"). The current tab is marked by a wash lozenge
                   // with a line-strong edge AND a bold label (`.island-bar`
                   // in app/globals.css), never by colour alone.
-                  className={`flex min-h-12 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-control text-2xs leading-tight tracking-tight text-ink min-[22.5rem]:tracking-normal ${
+                  className={`flex min-h-11 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-control text-2xs leading-tight tracking-tight text-ink min-[22.5rem]:tracking-normal ${
                     active ? 'font-bold' : 'font-semibold'
                   }`}
                 >

@@ -562,10 +562,11 @@ label,
   }
 }
 /* Below 48rem the bar floats over the foot of the screen, so a jump to an
-   anchor or a focused control lands above it, not under it. */
+   anchor or a focused control lands above it, not under it: its 4px (or
+   safe-area) offset, its 52px height and 16px of air. */
 @media (max-width: 47.99rem) {
   html {
-    scroll-padding-bottom: calc(max(0.5rem, env(safe-area-inset-bottom)) + 4.5rem);
+    scroll-padding-bottom: calc(max(0.25rem, env(safe-area-inset-bottom)) + 4.25rem);
   }
 }
 
