@@ -124,7 +124,10 @@ export default async function LocaleLayout({
               on the EN locale — see the component for why this is not a
               server redirect (localeDetection: false is deliberate). */}
           <LocalePreferenceNote />
-          <main id="main" className="flex-1 pb-24 md:pb-0">
+          {/* No bottom padding: on a phone the footer carries the island bar's
+              clearance (components/Footer.tsx), so the page's last content
+              meets the footer's own 64px margin and nothing more. */}
+          <main id="main" className="flex-1">
             {/* After the error screen's erase and reload: the erase's own
                 confirmation, said once (components/ErasedNotice.tsx). */}
             <ErasedNotice />

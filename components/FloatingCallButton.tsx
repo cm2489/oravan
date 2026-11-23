@@ -47,6 +47,12 @@ import { CALL_BUTTON } from './call-button';
  * phone the tab and this button share the job of getting back to #act; the
  * tab is always there, and this is the one within thumb reach of the text.
  * It wears the one shared call style (components/call-button.ts).
+ *
+ * IT PARKS 12px ABOVE THE ISLAND BAR (2026-11-22). The bar floats 8px off the
+ * bottom, or the safe area where that is larger, and is 56px tall, so this
+ * button's bottom is that same offset plus 68px: the two never touch, and the
+ * observers below read the offset from the computed style, so the strip they
+ * watch moved with it.
  */
 export function FloatingCallButton({ href = '#act' }: { href?: string }) {
   const t = useTranslations('bill');
@@ -141,7 +147,7 @@ export function FloatingCallButton({ href = '#act' }: { href?: string }) {
       aria-label={label}
       aria-hidden={hidden}
       tabIndex={hidden ? -1 : 0}
-      className={`fixed right-4 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-30 inline-flex min-h-12 items-center gap-2 px-5 py-4 transition-all duration-300 md:bottom-6 ${CALL_BUTTON} ${
+      className={`fixed right-4 bottom-[calc(max(0.5rem,env(safe-area-inset-bottom))+4.25rem)] z-30 inline-flex min-h-12 items-center gap-2 px-5 py-4 transition-all duration-300 md:bottom-6 ${CALL_BUTTON} ${
         hidden ? 'pointer-events-none translate-y-3 opacity-0' : 'opacity-100'
       }`}
     >

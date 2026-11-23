@@ -83,8 +83,12 @@ export function Footer({ donateUrl = DONATE_URL }: { donateUrl?: string | null }
 
   return (
     <footer className="on-dark mt-16 bg-ink-deep text-ink-pale">
-      {/* pb clears the fixed thumb bar so footer links stay tappable on phones */}
-      <div className="mx-auto max-w-5xl px-4 pt-8 pb-16 text-sm leading-dark tracking-dark md:pt-12 md:pb-12">
+      {/* On a phone the bottom padding clears the floating island bar
+          (components/Header.tsx: 56px tall, 8px off the bottom or the safe
+          area) plus 24px, so the footer's last line scrolls clear of it. The
+          footer holds the whole clearance: <main> carries none, so there is
+          no blank band above the footer. */}
+      <div className="mx-auto max-w-5xl px-4 pt-8 pb-[calc(max(0.5rem,env(safe-area-inset-bottom))+5rem)] text-sm leading-dark tracking-dark md:pt-12 md:pb-12">
         <div className="grid gap-8 md:grid-cols-[2fr_1fr_1fr]">
           <div>
             <OravanLockup markRem={1.5} className="text-paper" />

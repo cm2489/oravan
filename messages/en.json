@@ -11,7 +11,8 @@
       "whyCall": "Why call?",
       "primaryLabel": "Primary",
       "moments": "Big Questions",
-      "today": "Today in Congress"
+      "today": "Today in Congress",
+      "tabQuestions": "Questions"
     },
     "footer": {
       "callHub": "Make a call",

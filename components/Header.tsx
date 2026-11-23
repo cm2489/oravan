@@ -49,9 +49,10 @@ import { LocaleSwitcher } from './LocaleSwitcher';
  * only"). The row nav is Today in Congress · Bills · Big Questions · My reps,
  * with the lockup as Home and the language switch last. The thumb bar keeps
  * the "nav 1" order of the same day — Home · Bills · Call · Big Questions ·
- * Reps — and its Questions cell reads "Big Questions" (his typed note: "I'd
- * like the phone to say Big Questions instead of just questions if
- * possible"; `common.tab.moments`, the thumb bar only). On a desktop the Call
+ * Reps. Its Questions cell said "Big Questions" from 2026-09-29 (his typed
+ * note: "I'd like the phone to say Big Questions instead of just questions
+ * if possible") until 2026-11-22, when he picked "Questions", on one line
+ * (`nav.tabQuestions`, the thumb bar only). On a desktop the Call
  * hub is the footer's first Site link ("Make a call"). Today stays off the
  * thumb bar — one tap from Home — and the owner's look at /today visits
  * around 2026-10-29 now applies to the phone only. "My record" left both
@@ -68,9 +69,9 @@ import { LocaleSwitcher } from './LocaleSwitcher';
  * target is readable on a desktop too.
  */
 
-/** The thumb bar (phones): five destinations, home included. Five cells at
- *  the 5xl max width is ≥64px each at 320px — comfortably over the 44px
- *  floor (verified in e2e). Moments joined 2026-07-25 (v2 slice S5): the
+/** The thumb bar (phones, the island): five destinations, home included.
+ *  Five cells are 60.8px each at 320px and 66.4px at 390px, every one 48px tall —
+ *  over the 44px floor both ways (tests/header-phone-label.spec.ts). Moments joined 2026-07-25 (v2 slice S5): the
  *  discovery layer is a flagship surface now, not an experiment. Call joined
  *  2026-09-29 in "My record"'s place (owner, "nav 1"). Labels come from
  *  `tabLabel`. */
@@ -118,9 +119,11 @@ const LINKS = [
   { href: '/reps', key: 'reps' },
 ] as const;
 
-/** A thumb-bar cell's label: `navShort`, except where the thumb bar has its
- *  own longer word (`common.tab`). Only the Big Questions cell does (owner,
- *  2026-09-29); the row nav keeps `navShort.moments` below 64rem. */
+/** A thumb-bar cell's label: `navShort`, except the Big Questions cell,
+ *  which reads `nav.tabQuestions` ("Questions" / "Preguntas", one line): the
+ *  owner's 2026-11-22 pick from the Round Two page, "The bottom bar says
+ *  'Questions', on one line, as in the September design" (it replaced the
+ *  two-line "Big Questions" of 2026-09-29). */
 const TAB_OWN_LABEL: ReadonlySet<string> = new Set(['moments']);
 
 /** Segment-exact for everything but Home: '/reps' is current on a member page
@@ -187,7 +190,7 @@ export function Header() {
   const callHref = callTarget ?? CALL_HUB_PATH;
   const onHub = isActive(pathname, CALL_HUB_PATH);
   const tabLabel = (key: (typeof TABS)[number]['key']) =>
-    TAB_OWN_LABEL.has(key) ? t(`tab.${key as 'moments'}`) : t(`navShort.${key}`);
+    TAB_OWN_LABEL.has(key) ? t('nav.tabQuestions') : t(`navShort.${key}`);
 
   return (
     <>
@@ -257,76 +260,83 @@ export function Header() {
         )}
       </header>
 
-      {/* The thumb bar. Paper, not ink: the footer is the page's only dark
-          mass, and a permanent dark band across the bottom of every phone
-          screen would take that meaning away from it. Its top rule is
-          `line-strong` (4.24:1 on paper) because THAT rule is a real
-          boundary — the only thing separating a fixed bar from the content
-          scrolling underneath it — and `line` would not clear 1.4.11.
+      {/* THE ISLAND BAR (phones). A floating, rounded bar inset from the
+          screen's edges, the owner's pick of 2026-09-27 ("the floating island
+          tab bar", docs/current-direction.md, Shape), built 2026-11-22 on his
+          card answer "Also build the floating tab bar before launch".
+
+          GLASS, COMPUTED: `.island-bar` (app/globals.css) is paper at 72%
+          over a 16px blur where the browser has backdrop-filter, solid paper
+          where it does not, under `prefers-reduced-transparency: reduce` and
+          under `prefers-contrast: more` (a 2px ink edge there). Every label is
+          ink, never ink-2: ink on the glass is 8.30:1 over pure black, the
+          floor nothing scrolling beneath can go below (the dark Big Questions
+          band and the footer are ink, 9.05:1). tests/island-bar.unit.spec.ts
+          recomputes it from the CSS.
+
+          SIZE: 8px off the bottom, or the safe area where that is larger;
+          6px off each side below 22.5rem (the 320px screen, where Spanish
+          needs the width), then at most 21rem wide, centred. Five 48px cells
+          and a 4px padding top and bottom make it 56px tall; a cell is 60.8px
+          wide at 320px and 66.4px at 390px. Every cell is the whole tap
+          target, at least 44px each way.
+
           `data-thumb-bar` is how an in-place glossary box finds the bar's
           top edge and keeps its last line (the AI label) above it
-          (components/GlossaryPopover.tsx). */}
+          (components/GlossaryPopover.tsx). The footer carries the clearance
+          that lets the last of every page scroll clear of the bar
+          (components/Footer.tsx), and the floating call button parks 12px
+          above it (components/FloatingCallButton.tsx). */}
       <nav
         data-thumb-bar
         aria-label={t('nav.primaryLabel')}
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-line-strong bg-paper pb-[env(safe-area-inset-bottom)] md:hidden"
+        className="island-bar fixed inset-x-0 bottom-[max(0.5rem,env(safe-area-inset-bottom))] z-40 mx-auto w-[calc(100%-0.75rem)] rounded-full md:hidden min-[22.5rem]:w-[min(calc(100%-1rem),21rem)]"
       >
-        <ul className="mx-auto grid max-w-5xl grid-cols-5">
+        <ul className="grid grid-cols-5 px-0.5 py-1">
           {TABS.map(({ href, key, icon: Icon }) => {
             const active = isActive(pathname, href);
             if (key === 'call') {
-              /* The call cell: the shared call style, inset 2px from the
-                 cell so its edge never meets the bar's top rule. 44px tall
-                 inside the 48px row (the touch floor), and the full cell
-                 wide less 4px. Current on /call only: the ink fill every
-                 current nav item uses, since a filled box already says
-                 "here" and the other tabs' 3px top rule would sit inside
-                 the edge. */
+              /* The Call cell wears the one call style (components/
+                 call-button.ts), as every call control does: page 2 has the
+                 Call tab and the call buttons share one token set (2026-09-27
+                 00:38) and says the Call tab in the island bar is not yellow
+                 (00:43). 44px tall inside the 48px cell, 2px in from it, so
+                 the focus ring (2px off its ink edge) stays inside the
+                 island. Current on /call only: the ink fill. */
               return (
-                <li key={key} className="flex">
+                <li key={key} className="flex min-w-0">
                   <CallLink
                     href={callHref}
                     current={onHub}
-                    className={`mx-0.5 my-0.5 flex min-h-11 flex-1 flex-col items-center justify-center gap-0.5 px-1 text-2xs leading-tight ${
+                    className={`mx-0.5 my-0.5 flex min-h-11 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 text-2xs leading-tight tracking-tight min-[22.5rem]:tracking-normal ${
                       onHub ? CALL_BUTTON_CURRENT : CALL_BUTTON
                     }`}
                   >
                     <Icon className="h-5 w-5" aria-hidden />
-                    <span data-tab-label>{tabLabel(key)}</span>
+                    <span data-tab-label className="whitespace-nowrap">
+                      {tabLabel(key)}
+                    </span>
                   </CallLink>
                 </li>
               );
             }
             return (
-              <li key={key}>
+              <li key={key} className="flex min-w-0">
                 <Link
                   href={href}
                   aria-current={active ? 'page' : undefined}
-                  // `tracking-tight` below 22.5rem, full tracking above it.
-                  // Five cells at 320px are 64px each, and Spanish is the
-                  // long language here: "Momentos" measures 61.6px of glyphs
-                  // in that cell — 1.2px of slack per side, so adjacent
-                  // labels very nearly touch (pre-launch audit, 2026-07-25;
-                  // English never showed it, which is exactly the
-                  // measure-the-longer-language lesson). Nothing was clipped,
-                  // so this buys breathing room rather than fixing a break —
-                  // and it buys it ONLY where the pressure is real.
-                  className={`relative flex min-h-12 flex-col items-center justify-center gap-0.5 px-1 text-2xs leading-tight tracking-tight min-[22.5rem]:px-2 min-[22.5rem]:tracking-normal ${
-                    active
-                      ? 'font-bold text-ink after:absolute after:inset-x-0 after:top-0 after:h-[3px] after:bg-ink'
-                      : 'font-semibold text-ink-2'
+                  data-island-tab
+                  // `tracking-tight` below 22.5rem: at 320px a cell is 60.8px
+                  // and Spanish is the long language ("Proyectos",
+                  // "Preguntas"). The current tab is marked by a wash lozenge
+                  // with a line-strong edge AND a bold label (`.island-bar`
+                  // in app/globals.css), never by colour alone.
+                  className={`flex min-h-12 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-control text-2xs leading-tight tracking-tight text-ink min-[22.5rem]:tracking-normal ${
+                    active ? 'font-bold' : 'font-semibold'
                   }`}
                 >
                   <Icon className="h-5 w-5" aria-hidden />
-                  {/* A two-word cell label wraps onto two lines at a phone's
-                      cell width, set solid (`leading-none`): icon 20 + gap 2 +
-                      two 12px lines = 46px, inside the 48px row, so the bar
-                      keeps its height and the floating call button above it
-                      keeps its offset. `leading-tight` would make it 52. */}
-                  <span
-                    data-tab-label
-                    className={TAB_OWN_LABEL.has(key) ? 'text-center leading-none' : undefined}
-                  >
+                  <span data-tab-label className="whitespace-nowrap">
                     {tabLabel(key)}
                   </span>
                 </Link>

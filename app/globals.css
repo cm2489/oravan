@@ -92,6 +92,11 @@
    A stance choice's hover is the half-lamp, `bg-urgent/50` over paper
    (#fee294, page 2's "half-lamp on hover"): ink on it computes to 13.55, and
    its ink edge (hover:border-ink) is 13.55 against it.
+   The island bar (phones) is paper at 72% over a blur, not a token, so its
+   pairs live in tests/island-bar.unit.spec.ts: ink labels on the frost over
+   pure black (the floor) compute to 8.30, over the ink footer and dark band
+   9.05, over the lamp 14.70; the current tab's wash lozenge carries ink at
+   15.13. Its rule block, `.island-bar`, is further down this file.
 
    NON-TEXT / BOUNDARY PAIRS (1.4.11 needs 3:1)
      line-strong on paper ......... 4.24  PASS  <- every component edge
@@ -470,6 +475,98 @@ label,
    at the same 1px offset as `ring-gap`. Opt in: `class="ring-edge"`. */
 .ring-edge:focus-visible {
   outline-offset: 1px;
+}
+
+/* THE ISLAND BAR (components/Header.tsx, phones only). The owner's floating
+   island tab bar (2026-09-27, docs/current-direction.md, Shape), built
+   2026-11-22. Glass where the browser can blur, solid paper everywhere else.
+
+   THE GLASS IS COMPUTED, NOT EYEBALLED. The frost is paper at
+   `--island-glass` over whatever scrolls beneath. Its darkest possible
+   result is paper at that alpha over pure black: no backdrop, blurred or
+   saturated, can go below black, so that is the floor for every label.
+   At 72% the frost over black is #b5b4b0, and ink on it computes to 8.30:1
+   (ink-2 would be 3.80, a fail, which is why every label in the bar is ink).
+   Over the darkest real content, the ink footer and the dark Big Questions
+   band, it is #b8b6b1 and 9.05:1; over the lamp, 14.70; over paper, 16.50.
+   The focus ring (ink, 3px) meets the same frost: 8.30 at worst.
+   tests/island-bar.unit.spec.ts reads `--island-glass` from this file and
+   recomputes all of it with lib/contrast.ts.
+
+   THE CURRENT TAB is a wash lozenge (ink on wash 15.13) with a line-strong
+   edge (3.89 against the wash) and a bold label: three signals, none of them
+   a hue. The Call cell is the one call style (components/call-button.ts),
+   opaque paper with a 2px ink edge, so it reads 16.50 over anything.
+
+   SOLID FALLBACKS: no backdrop-filter, `prefers-reduced-transparency:
+   reduce` and `prefers-contrast: more` all paint solid paper with no blur;
+   more contrast also draws a 2px ink edge round the bar and the lozenge.
+   No motion: the bar never moves, and its only transition is the base
+   colour ease, which reduced motion already removes. */
+.island-bar {
+  --island-glass: 72%;
+  background-color: var(--color-paper);
+  box-shadow:
+    0 0 0 1px var(--color-line-strong),
+    0 6px 20px color-mix(in srgb, var(--color-ink) 14%, transparent);
+}
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .island-bar {
+    background-color: color-mix(in srgb, var(--color-paper) var(--island-glass), transparent);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    backdrop-filter: blur(16px) saturate(160%);
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--color-paper) 70%, transparent),
+      0 0 0 1px color-mix(in srgb, var(--color-ink) 16%, transparent),
+      0 6px 20px color-mix(in srgb, var(--color-ink) 14%, transparent);
+  }
+}
+.island-bar [data-island-tab][aria-current='page'] {
+  background-color: var(--color-wash);
+  box-shadow: inset 0 0 0 1px var(--color-line-strong);
+}
+/* The ring sits inside a tab, so it never crosses the island's edge onto
+   the page beneath: ink on the frost (8.30 at worst) or on the wash (15.13). */
+.island-bar [data-island-tab]:focus-visible {
+  outline-offset: -3px;
+  border-radius: var(--radius-control);
+}
+@media (prefers-reduced-transparency: reduce) {
+  .island-bar {
+    background-color: var(--color-paper);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow:
+      0 0 0 1px var(--color-line-strong),
+      0 6px 20px color-mix(in srgb, var(--color-ink) 14%, transparent);
+  }
+}
+@media (prefers-contrast: more) {
+  .island-bar {
+    background-color: var(--color-paper);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: 0 0 0 2px var(--color-ink);
+  }
+  .island-bar [data-island-tab][aria-current='page'] {
+    background-color: var(--color-paper);
+    box-shadow: inset 0 0 0 2px var(--color-ink);
+  }
+}
+@media (forced-colors: active) {
+  .island-bar {
+    border: 1px solid CanvasText;
+  }
+  .island-bar [data-island-tab][aria-current='page'] {
+    border: 2px solid CanvasText;
+  }
+}
+/* Below 48rem the bar floats over the foot of the screen, so a jump to an
+   anchor or a focused control lands above it, not under it. */
+@media (max-width: 47.99rem) {
+  html {
+    scroll-padding-bottom: calc(max(0.5rem, env(safe-area-inset-bottom)) + 4.5rem);
+  }
 }
 
 /* prefers-reduced-motion kills transitions and animations globally.
