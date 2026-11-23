@@ -10,6 +10,7 @@ import { Header } from '@/components/Header';
 import { LocalePreferenceNote } from '@/components/LocalePreferenceNote';
 import { ErasedNotice } from '@/components/ErasedNotice';
 import { Footer } from '@/components/Footer';
+import { ReadSignal } from '@/components/ReadSignal';
 import '../globals.css';
 
 /**
@@ -106,10 +107,13 @@ export default async function LocaleLayout({
       className={`${franklin.variable} ${besley.variable}`}
     >
       <body className="min-h-dvh flex flex-col">
-        {/* For the curious who open devtools: the no-trackers claim, verifiable */}
+        {/* For the curious who open devtools: the no-trackers claim, verifiable.
+            Reworded 2026-11-23 with the reading signal: the Network tab is no
+            longer silent after a first scroll or tap, so it says what the one
+            first-party request is (lib/read-signal.ts). */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `console.log("%cOravan","font-size:16px;font-weight:bold","— your voice, carried. No analytics, no trackers, no account: check the Network tab, it's quiet in here. Code: https://github.com/cm2489/oravan");`,
+            __html: `console.log("%cOravan","font-size:16px;font-weight:bold","— your voice, carried. No third-party requests, no cookies, no trackers, no account. Check the Network tab: after your first scroll, tap or key press, one request to /api/seen sends the kind of page (a bill page, never which bill) and nothing else. Code: https://github.com/cm2489/oravan");`,
           }}
         />
         <a
@@ -120,6 +124,10 @@ export default async function LocaleLayout({
         </a>
         <NextIntlClientProvider messages={messages}>
           <Header />
+          {/* The reading signal (step 2 of the owner's answer of 2026-11-23,
+              card `people`): renders nothing, sends at most one first-party
+              request per page load after a first scroll, tap or key press. */}
+          <ReadSignal />
           {/* Client-side language suggestion for Spanish-preferring browsers
               on the EN locale — see the component for why this is not a
               server redirect (localeDetection: false is deliberate). */}

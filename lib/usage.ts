@@ -7,6 +7,7 @@
 // module cannot depend on lib/core/mcp.ts at runtime — see MCP_TOOL_NAMES
 // below for the (compile-time-checked) workaround.
 import type { ToolName } from './core/mcp';
+import { pageShapeForPath, type PageShape } from './page-shape';
 import { countersClient, keyPrefix, noteUpstashError, type UpstashClient } from './upstash';
 
 /*
@@ -77,6 +78,10 @@ import { countersClient, keyPrefix, noteUpstashError, type UpstashClient } from 
  *   <env>:usage:script-served:<YYYY-MM-DD>       an INCR'd daily counter of
  *                                                call scripts served, cache
  *                                                hits included (2026-11-23)
+ *   <env>:usage:read:<surface>:<YYYY-MM-DD>      an INCR'd daily counter per
+ *                                                route-TEMPLATE label, of the
+ *                                                reading signals app/api/seen
+ *                                                accepted (2026-11-23, step 2)
  *
  * scripts/check-key-namespaces.mjs (usage-shape) holds this list as exact
  * key literals: a usage key built any other way fails CI.
@@ -297,57 +302,21 @@ export function pageviewUsageKey(surface: PageviewSurface, day: string): string 
 }
 
 /**
- * Map a request path to its route-template label. The path is read, matched,
- * and DROPPED — only the returned label ever travels onward, and every
- * unmatched shape (including a 404 under app/[locale]/[...rest]) returns
- * 'other' rather than inventing a label from the path itself.
- *
- * `locales` is next-intl's own list (proxy.ts passes routing.locales), so a
- * leading /es is stripped before matching rather than being counted as a
- * separate surface — the locale must never become a key segment
- * (CONTENT_IDENTIFIER names it in every registry, usage included).
- *
- * Bare /nominations is 'other' on purpose: there is no nominations index
- * route (only app/[locale]/nominations/[slug]), so that path 404s, and
- * counting a 404 as the nominations surface would overstate it.
- *
- * The two labels added 2026-09-27 (SY-49) match their routes' exact depth,
- * and a deeper path under either is 'other' — neither route has a child
- * segment, so /reps/<id>/<anything> and /today/<date>/<anything> are 404s:
- *   - /reps/<bioguide> is 'member' (app/[locale]/reps/[bioguide]). The
- *     bioguide segment is matched and dropped like every other segment; it
- *     never travels onward.
- *   - /today AND /today/<date> are both 'today'. They are one template, not
- *     two: app/[locale]/today/page.tsx renders the newest brief and its dated
- *     twin renders the identical derivation for a named day (that file's own
- *     header), so splitting them would count a date, which is content.
- * The three older segment labels ('bill', 'question', 'nominations') keep
- * their original any-depth match — unchanged here on purpose, so their
- * series stay comparable across this change.
+ * Map a request path to its route-template label. The rule itself lives in
+ * lib/page-shape.ts (moved there unchanged on 2026-11-23, with its full
+ * comment) so the reading signal's browser script can use the same rule
+ * without the counters client; this is the server's name for it.
  */
 export function pageviewSurfaceForPath(pathname: string, locales: readonly string[] = []): PageviewSurface {
-  const segments = pathname.split('/').filter((segment) => segment !== '');
-  if (segments.length > 0 && locales.includes(segments[0])) segments.shift();
-  const [head, second, third] = segments;
-  if (head === undefined) return 'home';
-  switch (head) {
-    case 'bills':
-      return second === undefined ? 'bills-index' : 'bill';
-    case 'questions':
-      return second === undefined ? 'questions-index' : 'question';
-    case 'nominations':
-      return second === undefined ? OTHER_PAGEVIEW_SURFACE : 'nominations';
-    case 'reps':
-      if (second === undefined) return 'reps';
-      return third === undefined ? 'member' : OTHER_PAGEVIEW_SURFACE;
-    case 'today':
-      return third === undefined ? 'today' : OTHER_PAGEVIEW_SURFACE;
-    case 'record':
-      return second === undefined ? 'record' : OTHER_PAGEVIEW_SURFACE;
-    default:
-      return OTHER_PAGEVIEW_SURFACE;
-  }
+  return pageShapeForPath(pathname, locales);
 }
+
+// Compile-time: every shape the mapping can return is in the closed
+// vocabulary, so a new shape cannot reach a key without being added there
+// (and to the gate's allowlist) first.
+type _AssertPageShapesInVocabulary = PageShape extends PageviewSurface ? true : never;
+const _pageShapesInVocabulary: _AssertPageShapesInVocabulary = true;
+void _pageShapesInVocabulary;
 
 /**
  * Is this request one page view worth counting? Kept HERE rather than in
@@ -630,6 +599,33 @@ export function scriptServedUsageKey(day: string): string {
   return `${keyPrefix()}:usage:script-served:${day}`;
 }
 
+// --- the reading signal (owner, 2026-11-23, card `people`, option b, step 2)
+
+/*
+ * WHAT THIS IS, STATED PLAINLY: one integer per ROUTE TEMPLATE per UTC day —
+ * how many times Oravan's own browser script (lib/read-signal.ts) reported
+ * that someone, on a page of that shape, first scrolled, tapped or pressed a
+ * key while the page was visible. app/api/seen is the one writer. The value
+ * the browser sends is accepted only if it is EXACTLY one of
+ * PAGEVIEW_SURFACES (anything else is answered 204 and counted nowhere), and
+ * the key builder narrows it again, so a request can never write a label of
+ * its own. No path, bill, query, locale, header, address or timing reaches
+ * the key.
+ */
+export function readUsageKey(surface: PageviewSurface, day: string): string {
+  // Narrowing applied HERE as well — same structural rule as pageviewUsageKey.
+  return `${keyPrefix()}:usage:read:${asPageviewSurface(surface)}:${day}`;
+}
+
+/**
+ * Exact membership in the closed vocabulary, WITHOUT the 'other' fallback
+ * asPageviewSurface applies: app/api/seen counts only a value that already
+ * is a label, and drops everything else rather than filing it under 'other'.
+ */
+export function isPageviewSurface(raw: unknown): raw is PageviewSurface {
+  return typeof raw === 'string' && PAGEVIEW_SURFACE_SET.has(raw);
+}
+
 // --- /api/script refusal counters (2026-09-27) ------------------------------
 
 /*
@@ -854,6 +850,14 @@ export async function noteScriptServed(): Promise<void> {
   await noteUsage(scriptServedUsageKey(usageDayKey()));
 }
 
+/**
+ * Record one reading signal against a route-template label. Called by
+ * app/api/seen only after the value passed isPageviewSurface. Never throws.
+ */
+export async function noteRead(surface: PageviewSurface): Promise<void> {
+  await noteUsage(readUsageKey(surface, usageDayKey()));
+}
+
 // --- the digest read path (scripts/daily-metrics.mjs, via tsx) --------------
 
 export type UsageWindowResult =
@@ -983,6 +987,8 @@ export type PeopleSignalsWindowResult =
       repLookups: number[];
       /** Call scripts served, cache hits included (scriptServedUsageKey). */
       scriptsServed: number[];
+      /** Reading signals per route template (readUsageKey, step 2). */
+      readSurfaces: Record<PageviewSurface, number[]>;
     }
   | { ok: false };
 
@@ -1007,12 +1013,15 @@ export async function readPeopleSignalsWindow(days: string[]): Promise<PeopleSig
     for (const surface of PAGEVIEW_SURFACES) out[surface] = [];
     return out;
   };
-  if (days.length === 0) return { ok: true, browserSurfaces: emptySurfaces(), repLookups: [], scriptsServed: [] };
+  if (days.length === 0) {
+    return { ok: true, browserSurfaces: emptySurfaces(), repLookups: [], scriptsServed: [], readSurfaces: emptySurfaces() };
+  }
 
   const allKeys = [
     ...PAGEVIEW_SURFACES.flatMap((surface) => days.map((day) => browserPageviewUsageKey(surface, day))),
     ...days.map((day) => repLookupUsageKey(day)),
     ...days.map((day) => scriptServedUsageKey(day)),
+    ...PAGEVIEW_SURFACES.flatMap((surface) => days.map((day) => readUsageKey(surface, day))),
   ];
 
   let raw: unknown;
@@ -1034,8 +1043,14 @@ export async function readPeopleSignalsWindow(days: string[]): Promise<PeopleSig
   const repLookups = raw.slice(cursor, cursor + days.length).map(toNum);
   cursor += days.length;
   const scriptsServed = raw.slice(cursor, cursor + days.length).map(toNum);
+  cursor += days.length;
+  const readSurfaces = emptySurfaces();
+  for (const surface of PAGEVIEW_SURFACES) {
+    readSurfaces[surface] = raw.slice(cursor, cursor + days.length).map(toNum);
+    cursor += days.length;
+  }
 
-  return { ok: true, browserSurfaces, repLookups, scriptsServed };
+  return { ok: true, browserSurfaces, repLookups, scriptsServed, readSurfaces };
 }
 
 export type McpClientDayResult =

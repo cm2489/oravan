@@ -32,6 +32,10 @@ import { countersClient, keyPrefix, noteUpstashError, type UpstashClient } from 
  *                                      (owner, 2026-11-23, card `people`,
  *                                      option b). Same day salt, same
  *                                      deadline, no other dimension.
+ *   <env>:uniques-read:<YYYY-MM-DD>   a THIRD sketch per UTC day, the same
+ *                                      way, of the addresses that sent the
+ *                                      reading signal to /api/seen (step 2,
+ *                                      2026-11-23). Same salt and deadline.
  *   <env>:uniques-salt:<YYYY-MM-DD>   the sketches' OWN salt, one per UTC
  *                                      day, used by nothing else (hardened
  *                                      2026-09-27, owner decision "2. b").
@@ -132,7 +136,11 @@ export type RouteName =
   // /api/brand, /api/script has a cross-user cache in front of it, so this
   // breaker is only ever consumed by a real cache-MISS generation — see
   // serveScript in app/api/script/route.ts.
-  | 'script-day';
+  | 'script-day'
+  // /api/seen (2026-11-23, the reading signal, owner's answer card `people`,
+  // option b): the per-IP limiter that stops one caller from inflating the
+  // per-template read count. A real page sends at most one signal per load.
+  | 'seen';
 
 const SALT_TTL_SECONDS = 24 * 60 * 60;
 const SALT_BYTES = 16; // 128 bits of CSPRNG output — never date-derived (F5)
@@ -253,6 +261,15 @@ export function distinctAddressKey(day: string): string {
  */
 export function browserAddressKey(day: string): string {
   return `${keyPrefix()}:uniques-browser:${day}`;
+}
+
+/**
+ * The THIRD daily sketch's key (2026-11-23, step 2): the addresses that sent
+ * Oravan's reading signal (app/api/seen). Same one-argument discipline;
+ * scripts/check-key-namespaces.mjs pins this literal with the other two.
+ */
+export function readerAddressKey(day: string): string {
+  return `${keyPrefix()}:uniques-read:${day}`;
 }
 
 /**
@@ -808,6 +825,21 @@ export async function noteBrowserAddress(ip: string, now: Date = new Date()): Pr
   await addToDaySketch(browserAddressKey, ip, now);
 }
 
+/*
+ * THE THIRD SKETCH (2026-11-23, step 2 of the owner's answer, card `people`):
+ * the addresses that sent the reading signal app/api/seen accepted. The
+ * same construction, the same day salt and element, the same deadline, no
+ * other dimension — in particular, NOT the page shape the signal named: the
+ * route counts the shape in lib/usage.ts and the address here, in two
+ * separate calls, so nothing ever pairs an address-derived element with a
+ * page. The same honest limit: until the day's salt dies, someone holding
+ * the counters database and a candidate address could test whether that
+ * address sent the signal that day; after, no one can.
+ */
+export async function noteReaderAddress(ip: string, now: Date = new Date()): Promise<void> {
+  await addToDaySketch(readerAddressKey, ip, now);
+}
+
 /**
  * Count one address into `sketchKey(day)`'s sketch. Shared by the two daily
  * sketches; scripts/check-key-namespaces.mjs (distinct-shape) pins the only
@@ -869,6 +901,11 @@ export async function readDistinctAddressCount(day: string): Promise<DistinctAdd
  */
 export async function readBrowserAddressCount(day: string): Promise<DistinctAddressCountResult> {
   return readDaySketch(browserAddressKey(day));
+}
+
+/** Read ONE day's reader-address estimate (the third sketch), like the other two. */
+export async function readReaderAddressCount(day: string): Promise<DistinctAddressCountResult> {
+  return readDaySketch(readerAddressKey(day));
 }
 
 async function readDaySketch(key: string): Promise<DistinctAddressCountResult> {
