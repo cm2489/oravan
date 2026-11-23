@@ -11,6 +11,17 @@ mechanism.
    notification floor — a chamber has scheduled it or acted on it on the floor,
    coverage is real, the action is recent, and there is somewhere to put it.
    Nothing crossing the floor means no issue. Silence is the signal.
+
+   **A standing topic does not come from the watcher.** Since 2026-11-22 a Big
+   Question may also be a larger topic before Congress that opens, and stays
+   up, with no recent floor action, as long as at least one of its bills still
+   has a decision open on the official record (owner, 2026-11-22: "Larger
+   topics that can be called about even if there is no vote coming up but it
+   should definitely still have bills in them"). The watcher only notices
+   floor movement, so a standing topic is proposed by hand: a scaffold whose
+   `qualifying_signal` is `{ "type": "standing_topic", "refs": [...] }`, the
+   refs being its bills' congress.gov pages. It goes through steps 2 to 6
+   exactly like any other candidate.
 2. **You read the draft.** The issue carries the record it was written from and
    a paste-ready scaffold whose prose — name, summary, and each vehicle's role,
    both languages — is an **unreviewed AI first draft** (`moment-draft.mjs`),
@@ -34,8 +45,12 @@ mechanism.
    vehicle must also still have a decision open: a failed floor vote is refused
    like a signed law, because its page shows the record, not a call). Plus two questions only the
    approve step can ask: has the record moved since the draft was written, and
-   is the signal still inside the 45-day window the site publishes as its
-   criterion.
+   does the record let it open. A question on a floor, scheduling or press
+   signal opens only while its newest action is inside 45 days (the watcher's
+   own floor). A standing topic (`standing_topic`) has no age test; it opens
+   only while at least one of its bills still has a decision open. A topic
+   with no open bill is refused either way: no Big Question without a
+   legislative vehicle.
 6. **A PR opens, carrying the byte-fidelity attestation and the gate
    transcript.** The workflow branches, commits, opens the PR, and *attempts*
    auto-merge. **As this repository is configured today that attempt fails and
@@ -72,7 +87,8 @@ takes the label off. Nothing is written. **Re-applying the label is the retry.**
 | the id already exists | a second entry under one key silently replaces the first | rename it in the body |
 | all eight slots are full | the cap is the scarcity claim | comment `/replace <moment-id>`, then re-label |
 | the record has moved | Congress acted after the draft was written, so the approved sentences describe a state that is gone | wait for tonight's re-draft, or edit the body yourself |
-| the signal aged out | the newest action is over 45 days old, and `moments.whyCriteria` tells readers a question opens inside that window | wait for the next real signal |
+| the record does not let it open (signal) | a floor, scheduling or press signal whose newest action is over 45 days old | wait for the next real signal, or, if one of its bills is still open, set `qualifying_signal.type` to `standing_topic` with those bills' congress.gov pages as refs (the refusal names the open bills) |
+| the record does not let it open (standing topic) | a standing topic none of whose bills still has a decision open (signed, vetoed, a failed passage vote, or not in the corpus) | add a bill that is still open, or decline the topic |
 | `review_by` has already passed | it would read as `stale` the moment it published | edit `opened`/`review_by` in the body |
 | a gate violation | the entry does not satisfy the curation rules | fix it in the body, or let the next draft try |
 | the branch already exists | a PR for this question is open, or an earlier attempt left one behind | merge or delete it, then re-label |

@@ -609,15 +609,24 @@ test.describe('record drift', () => {
     expect(blocking.join(' ')).toContain('2026-08-04');
   });
 
-  test('a signal older than the published 45-day window blocks, and says why', () => {
+  test('a floor signal older than the 45-day window is refused by the opening rule, which names the standing-topic way in', () => {
     const late = Date.parse('2026-10-01T00:00:00Z');
-    const { blocking } = recordDrift(driftEntry(), {
+    const { blocking, opening } = recordDrift(driftEntry(), {
       billBySlug: driftRow(),
       nominationBySlug: new Map(),
       now: late,
     });
-    expect(blocking.join(' ')).toContain('45 days');
-    expect(blocking.join(' ')).toContain('whyCriteria');
+    // The vehicle did not move; only the fixture's review_by has passed by then.
+    expect(blocking.join(' ')).not.toContain('`s-1-119`');
+    expect(opening.join(' ')).toContain('45 days');
+    expect(opening.join(' ')).toContain('`s-1-119`');
+    expect(opening.join(' ')).toContain('standing_topic');
+  });
+
+  test('a floor signal inside the window still opens exactly as before', () => {
+    const { blocking, opening } = recordDrift(driftEntry(), { billBySlug: driftRow(), nominationBySlug: new Map(), now: AT });
+    expect(blocking).toEqual([]);
+    expect(opening).toEqual([]);
   });
 
   test('a review_by that already passed blocks — born stale is not a state to publish in', () => {
@@ -651,6 +660,135 @@ test.describe('record drift', () => {
     // second, vaguer complaint about the missing slug is added on top.
     expect(blocking.join(' ')).not.toContain('_status_at_scaffold');
     expect(notes).toEqual([]);
+  });
+});
+
+/* ================================================================== *
+ * 5b · THE OPENING RULE FOR A STANDING TOPIC (owner, 2026-11-22)
+ *
+ * A Big Question may be a larger topic that opens with no recent floor
+ * action, as long as it holds a bill whose decision is still open. Rule 6 is
+ * unchanged: no Big Question without a legislative vehicle.
+ * ================================================================== */
+
+const STANDING = { type: 'standing_topic', refs: ['https://www.congress.gov/bill/119th-congress/senate-bill/1'] };
+const YEARS_LATER = Date.parse('2028-01-01T00:00:00Z');
+
+test.describe('the opening rule for a standing topic', () => {
+  test('one open vehicle opens it at any age', () => {
+    const { blocking, opening } = recordDrift(driftEntry({ qualifying_signal: STANDING } as never), {
+      billBySlug: driftRow({ last_action_date: '2025-01-03' }),
+      nominationBySlug: new Map(),
+      now: YEARS_LATER,
+    });
+    // `_last_action_at_scaffold` in the fixture says 2026-08-01, so that is
+    // record drift; the point here is that NO age test fired.
+    expect(opening).toEqual([]);
+    expect(blocking.join(' ')).not.toContain('days old');
+  });
+
+  test('one open vehicle among settled ones is enough', () => {
+    const entry = driftEntry({
+      qualifying_signal: STANDING,
+      vehicles: [
+        { slug: 's-1-119', role: { en: 'x', es: 'x' } },
+        { slug: 's-2-119', role: { en: 'x', es: 'x' } },
+      ],
+    } as never);
+    const rows = new Map([
+      ['s-1-119', { full_identifier: 's-1-119', status: 'signed', last_action_date: '2025-01-03' }],
+      ['s-2-119', { full_identifier: 's-2-119', status: 'committee', last_action_date: '2025-01-03' }],
+    ]);
+    const { opening } = recordDrift(entry, { billBySlug: rows, nominationBySlug: new Map(), now: YEARS_LATER });
+    expect(opening).toEqual([]);
+  });
+
+  test('a topic whose vehicles are all terminal is refused, and says which', () => {
+    const entry = driftEntry({
+      qualifying_signal: STANDING,
+      vehicles: [
+        { slug: 's-1-119', role: { en: 'x', es: 'x' } },
+        { slug: 's-2-119', role: { en: 'x', es: 'x' } },
+      ],
+    } as never);
+    const rows = new Map([
+      ['s-1-119', { full_identifier: 's-1-119', status: 'signed', last_action_date: '2026-08-01' }],
+      ['s-2-119', { full_identifier: 's-2-119', status: 'vetoed', last_action_date: '2026-08-01' }],
+    ]);
+    const { opening } = recordDrift(entry, { billBySlug: rows, nominationBySlug: new Map(), now: AT });
+    expect(opening.join(' ')).toContain('standing topic');
+    expect(opening.join(' ')).toContain('`s-1-119` is `signed`');
+    expect(opening.join(' ')).toContain('`s-2-119` is `vetoed`');
+    expect(opening.join(' ')).toContain('No Big Question without a legislative vehicle');
+  });
+
+  test('a topic with no vehicle is refused', () => {
+    const { opening } = recordDrift(driftEntry({ qualifying_signal: STANDING, vehicles: [] } as never), {
+      billBySlug: driftRow(),
+      nominationBySlug: new Map(),
+      now: AT,
+    });
+    expect(opening.join(' ')).toContain('lists no bill at all');
+  });
+
+  test('a nomination alone does not hold a standing topic open — it needs a bill', () => {
+    const entry = driftEntry({
+      qualifying_signal: STANDING,
+      vehicles: [{ slug: 'pn-1-119', kind: 'nomination', role: { en: 'x', es: 'x' } }],
+    } as never);
+    const { opening } = recordDrift(entry, { billBySlug: new Map(), nominationBySlug: new Map(), now: AT });
+    expect(opening.join(' ')).toContain('lists no bill at all');
+  });
+
+  /* The same three, end to end through decide() on the real corpus, so the
+     gate the approve step runs after this check is part of the answer. */
+  const lateClock = (scaffold: Record<string, typeof ENTRY>, id: string, now: number) => {
+    const day = new Date(now).toISOString().slice(0, 10);
+    const out = structuredClone(scaffold);
+    out[id].opened = day;
+    out[id].review_by = new Date(now + 30 * DAY_MS).toISOString().slice(0, 10);
+    return out;
+  };
+
+  test('decide(): a real standing topic with an open bill approves long after its last action', async () => {
+    const { scaffold, id } = await realScaffold();
+    const later = NOW + 400 * DAY_MS;
+    const entry = lateClock(scaffold as never, id, later);
+    const slug = entry[id].vehicles[0].slug;
+    const row = billBySlug.get(slug) as BillRow & { congress_gov_url?: string | null };
+    entry[id].qualifying_signal = { type: 'standing_topic', refs: [String(row.congress_gov_url ?? STANDING.refs[0])] };
+    const body = ['```json', JSON.stringify(entry, null, 2), '```'].join('\n');
+    const d = decide({ body, comments: [], moments: withRoom(), bills, nominations, owner: OWNER, now: later });
+    expect(d.decision, d.decision === 'refuse' ? `${d.reason}: ${d.error}` : '').toBe('approve');
+  });
+
+  test('decide(): the same entry as a floor signal is refused by the opening rule at that age', async () => {
+    const { scaffold, id } = await realScaffold();
+    const later = NOW + 400 * DAY_MS;
+    const entry = lateClock(scaffold as never, id, later);
+    const body = ['```json', JSON.stringify(entry, null, 2), '```'].join('\n');
+    const d = decide({ body, comments: [], moments: withRoom(), bills, nominations, owner: OWNER, now: later });
+    expect(d.decision).toBe('refuse');
+    if (d.decision !== 'refuse') return;
+    expect(d.reason).toBe('opening');
+    expect(d.error).toContain('standing_topic');
+  });
+
+  test('decide(): a standing topic whose only bill is signed is refused, even with _terminal_ok', async () => {
+    const { scaffold, id } = await realScaffold();
+    const signed = bills.find((b) => b.status === 'signed');
+    expect(signed, 'the corpus holds no signed bill').toBeTruthy();
+    const entry = structuredClone(scaffold) as Record<string, typeof ENTRY>;
+    entry[id].vehicles = [
+      { slug: signed!.full_identifier, role: { en: 'Signed.', es: 'Firmado.' }, _terminal_ok: 'test' } as never,
+    ];
+    entry[id].qualifying_signal = STANDING;
+    const body = ['```json', JSON.stringify(entry, null, 2), '```'].join('\n');
+    const d = decide({ body, comments: [], moments: withRoom(), bills, nominations, owner: OWNER, now: NOW });
+    expect(d.decision).toBe('refuse');
+    if (d.decision !== 'refuse') return;
+    expect(d.reason).toBe('opening');
+    expect(d.error).toContain(`\`${signed!.full_identifier}\` is \`signed\``);
   });
 });
 

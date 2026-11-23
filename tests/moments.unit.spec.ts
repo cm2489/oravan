@@ -720,6 +720,20 @@ test.describe('checkMoments (fixtures)', () => {
     expect(v2.some((x: string) => x.includes('press signal needs'))).toBe(true);
   });
 
+  test('a standing topic cites its bills on congress.gov, and nothing else', () => {
+    const standing = validMoment() as Record<string, unknown>;
+    standing.qualifying_signal = {
+      type: 'standing_topic',
+      refs: ['https://www.congress.gov/bill/119th-congress/house-bill/7008'],
+    };
+    expect(run({ m: standing }).violations).toEqual([]);
+
+    const offRecord = validMoment() as Record<string, unknown>;
+    offRecord.qualifying_signal = { type: 'standing_topic', refs: ['https://example.com/story'] };
+    const v = run({ m: offRecord }).violations;
+    expect(v.some((x: string) => x.includes('not a congress.gov bill or nomination page'))).toBe(true);
+  });
+
   test('context_refs: valid CRS/CBO refs pass, with and without a bilingual title', () => {
     const m = {
       ...validMoment(),

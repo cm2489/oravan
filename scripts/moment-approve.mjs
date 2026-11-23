@@ -60,9 +60,13 @@
  *       `_last_action_at_scaffold` are what the draft was written from. If
  *       Congress has acted since, the approved sentences describe a record
  *       that no longer exists.
- *   the signal aged out .......... `moments.whyCriteria` tells readers a
- *       question opens on a signal inside 45 days. Approving one on a
- *       51-day-old action publishes a page that contradicts its own criteria.
+ *   the opening rule ............. a question opens in one of two ways
+ *       (owner, 2026-11-22). On a floor, scheduling or press signal, whose
+ *       newest action must be inside 45 days (the watcher's own floor, kept
+ *       as it was). Or as a STANDING TOPIC (`qualifying_signal.type` is
+ *       `standing_topic`), at any age, while at least one of its bills still
+ *       has a decision open on the record. A topic with no open bill is
+ *       refused either way: no Big Question without a legislative vehicle.
  *   all slots, no directive ...... the cap is the scarcity claim. Which one
  *       retires is an editorial decision, and it is his.
  *
@@ -92,8 +96,14 @@
 import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { decisionState } from '../lib/docket.mjs';
-import { ID_RE, checkMoments, vehicleKind } from '../lib/moments-gate.mjs';
-import { PLACEHOLDER_ID, PUBLISHED_SIGNAL_MAX_AGE_DAYS } from './moment-scaffold.mjs';
+import {
+  ID_RE,
+  STANDING_SIGNAL_TYPE,
+  TERMINAL_VEHICLE_STATUSES,
+  checkMoments,
+  vehicleKind,
+} from '../lib/moments-gate.mjs';
+import { PLACEHOLDER_ID, SIGNAL_MAX_AGE_DAYS } from './moment-scaffold.mjs';
 import { nominationSlug } from './nominations-fetch.mjs';
 
 const DAY_MS = 86_400_000;
@@ -371,28 +381,66 @@ function ageInDays(isoDate, now) {
 }
 
 /**
- * Everything about this entry that is no longer true of the record.
+ * The entry's BILL vehicles whose decision is still open on the record: in
+ * the corpus, not signed or vetoed, and read as `pending` by lib/docket.mjs
+ * `decisionState` (the reader the bill page and the gate's settled-record
+ * rule use, so "open" here cannot disagree with whether the page offers a
+ * call). Nominations are not counted: the owner's 2026-11-22 words are that a
+ * standing topic "should definitely still have bills in them".
  *
- * THREE KINDS, and all three block, because all three mean the same thing:
+ * @returns {{ open: string[], closed: string[] }} slugs, with a short reason
+ *   for each closed one
+ */
+export function openBills(entry, { billBySlug } = {}) {
+  const open = [];
+  const closed = [];
+  for (const v of Array.isArray(entry?.vehicles) ? entry.vehicles : []) {
+    if (!v || vehicleKind(v) !== 'bill') continue;
+    const row = billBySlug?.get(v.slug);
+    if (!row) {
+      closed.push(`\`${v.slug}\` is not in data/bills.json`);
+    } else if (TERMINAL_VEHICLE_STATUSES.has(row.status)) {
+      closed.push(`\`${v.slug}\` is \`${row.status}\``);
+    } else if (decisionState(row).state !== 'pending') {
+      closed.push(`\`${v.slug}\` has no decision left on its record (status \`${row.status}\`)`);
+    } else {
+      open.push(v.slug);
+    }
+  }
+  return { open, closed };
+}
+
+/**
+ * Everything about this entry that is no longer true of the record, and
+ * whether the record lets it open at all.
+ *
+ * `blocking` holds THREE KINDS of drift, and all three mean the same thing:
  * the sentences the owner approved describe a state of the world that has
- * changed since they were written.
+ * changed since they were written. `opening` holds the opening rule's answer
+ * (owner, 2026-11-22), kept apart so the refusal is headed truthfully.
  *
  *   1. THE VEHICLE MOVED. `_status_at_scaffold` and `_last_action_at_scaffold`
  *      are stamped into every scaffold by scripts/moment-watch.mjs precisely
  *      so this comparison is possible later. A bill that was on the calendar
  *      when the draft was written and has since passed its chamber has a role
  *      sentence describing a step it already took.
- *   2. THE SIGNAL AGED OUT. `moments.whyCriteria` and `moments.howMadeRule2`
- *      tell every reader that a Big Question opens on a signal "within the
- *      last 45 days". A candidate issue can sit for a week; approving one
- *      whose newest action is 51 days old publishes a page that contradicts
- *      its own published criteria. The number is IMPORTED from
- *      scripts/moment-scaffold.mjs so it cannot drift from the one the
- *      scaffold prints or the one the site promises.
- *   3. REVIEW_BY ALREADY PASSED. `opened`/`review_by` are stamped at DRAFTING
+ *   2. REVIEW_BY ALREADY PASSED. `opened`/`review_by` are stamped at DRAFTING
  *      time and are not touched here (byte fidelity), so a long-delayed
  *      approval can publish a question that lib/moments.ts immediately reads
  *      as 'stale'. Born stale is not a state to publish in.
+ *
+ * THE OPENING RULE, two ways in:
+ *
+ *   - A FLOOR, SCHEDULING OR PRESS SIGNAL: the newest action across the
+ *     vehicles must be inside SIGNAL_MAX_AGE_DAYS (45, the watcher's own
+ *     notification floor, imported from scripts/moment-scaffold.mjs). This is
+ *     how a question opened before 2026-11-22, unchanged. It counts ANY
+ *     action toward the window, as it always has, so a fresh referral passes
+ *     it; the owner's review is the check on the type.
+ *   - A STANDING TOPIC (`qualifying_signal.type` is `standing_topic`): no age
+ *     test at all, and instead at least one BILL vehicle whose decision is
+ *     still open (openBills). The public copy says a vote does not have to be
+ *     coming; it never says one is.
  *
  * A vehicle with no `_status_at_scaffold` (hand-authored, or the provenance
  * keys deleted on the way past) is NOT silently passed: it gets a note saying
@@ -401,7 +449,7 @@ function ageInDays(isoDate, now) {
  *
  * @param {Record<string, any>} entry  the parsed scaffold entry
  * @param {{ billBySlug?: Map<string, any>, nominationBySlug?: Map<string, any>, now?: number }} [opts]
- * @returns {{ blocking: string[], notes: string[] }}
+ * @returns {{ blocking: string[], notes: string[], opening: string[] }}
  */
 export function recordDrift(entry, { billBySlug, nominationBySlug, now = Date.now() } = {}) {
   const blocking = [];
@@ -441,11 +489,25 @@ export function recordDrift(entry, { billBySlug, nominationBySlug, now = Date.no
     }
   }
 
-  const age = ageInDays(newest, now);
-  if (age > PUBLISHED_SIGNAL_MAX_AGE_DAYS) {
-    blocking.push(
-      `the newest action across this question's vehicles is ${age === Infinity ? 'undated' : `${age} days old`} (${newest ?? 'no date on file'}). \`moments.whyCriteria\` tells readers a Big Question opens on a signal within the last ${PUBLISHED_SIGNAL_MAX_AGE_DAYS} days, so publishing it now would contradict the criteria printed on its own page.`,
-    );
+  const opening = [];
+  if (entry?.qualifying_signal?.type === STANDING_SIGNAL_TYPE) {
+    const { open, closed } = openBills(entry, { billBySlug });
+    if (open.length === 0) {
+      opening.push(
+        `this is a standing topic (\`qualifying_signal.type\` is \`${STANDING_SIGNAL_TYPE}\`), and a standing topic opens only while at least one of its bills still has a decision open on the official record. None does${closed.length ? `: ${closed.join('; ')}` : ' — it lists no bill at all'}. No Big Question without a legislative vehicle: add a bill that is still open, or decline the topic.`,
+      );
+    }
+  } else {
+    const age = ageInDays(newest, now);
+    if (age > SIGNAL_MAX_AGE_DAYS) {
+      const { open } = openBills(entry, { billBySlug });
+      opening.push(
+        `the newest action across this question's vehicles is ${age === Infinity ? 'undated' : `${age} days old`} (${newest ?? 'no date on file'}), and a \`${entry?.qualifying_signal?.type || '(blank)'}\` signal opens a question only inside ${SIGNAL_MAX_AGE_DAYS} days.` +
+          (open.length
+            ? ` ${open.map((s) => `\`${s}\``).join(', ')} still ${open.length === 1 ? 'has' : 'have'} a decision open, so this can open as a standing topic instead: in the issue body set \`qualifying_signal.type\` to \`${STANDING_SIGNAL_TYPE}\` and make its refs those bills' congress.gov pages.`
+            : ' None of its bills has a decision still open, so it cannot open as a standing topic either.'),
+      );
+    }
   }
 
   const reviewBy = Date.parse(`${String(entry?.review_by ?? '').slice(0, 10)}T00:00:00Z`);
@@ -455,7 +517,7 @@ export function recordDrift(entry, { billBySlug, nominationBySlug, now = Date.no
     );
   }
 
-  return { blocking, notes };
+  return { blocking, notes, opening };
 }
 
 /* ------------------------------------------------------------------ *
@@ -638,8 +700,14 @@ export function decide({ body, comments, moments, bills, nominations, owner, now
   const billBySlug = new Map(bills.map((b) => [b.full_identifier, b]));
   const nominationBySlug = new Map(nominations.map((n) => [storedNominationSlug(n), n]));
   const drift = recordDrift(entry, { billBySlug, nominationBySlug, now });
-  if (drift.blocking.length) {
-    return { decision: 'refuse', reason: 'drift', error: drift.blocking.join('\n\n'), id, directive };
+  if (drift.blocking.length || drift.opening.length) {
+    return {
+      decision: 'refuse',
+      reason: drift.blocking.length ? 'drift' : 'opening',
+      error: [...drift.blocking, ...drift.opening].join('\n\n'),
+      id,
+      directive,
+    };
   }
 
   const next = applyEntry(moments, id, entry, slots.retire);
@@ -693,6 +761,7 @@ const REFUSAL_HEAD = {
      else entirely. */
   'id-collision': 'Nothing was published — that moment id is already taken',
   drift: 'Nothing was published — the record has moved since this draft was written',
+  opening: 'Nothing was published — the record does not let this question open',
   gate: 'Nothing was published — the curation gate wants changes this workflow will not make',
 };
 
@@ -776,7 +845,10 @@ export function prBody(decision, { issue, moments, messages, now }) {
       : '- **warnings:** none',
     decision.drift.notes.length
       ? `- **drift checks that could not run:**\n${decision.drift.notes.map((n) => `  - ${n}`).join('\n')}`
-      : `- **record drift:** none — every vehicle's status and last-action date still match what it was drafted from, and the newest action is inside the ${PUBLISHED_SIGNAL_MAX_AGE_DAYS}-day window \`moments.whyCriteria\` publishes`,
+      : `- **record drift:** none — every vehicle's status and last-action date still match what it was drafted from`,
+    decision.entry?.qualifying_signal?.type === STANDING_SIGNAL_TYPE
+      ? `- **opening rule:** a standing topic — no age test; at least one of its bills still has a decision open on the record`
+      : `- **opening rule:** the newest action is inside the ${SIGNAL_MAX_AGE_DAYS}-day window a \`${decision.entry?.qualifying_signal?.type}\` signal needs`,
     '',
     '## Constitution check',
     '',
