@@ -15,7 +15,7 @@ import { questionVehicles } from '../lib/moments-ui';
  * part that guards the fix.
  *
  * Projects: webkit-mobile (390), webkit-desktop (1280) and, for the tests
- * tagged @reflow (the home page: the ZIP button and the phone bar), webkit-320.
+ * tagged @reflow (the home page: the ZIP button), webkit-320.
  */
 
 const SHOTS = path.join(process.cwd(), 'ui-fixes-shots');
@@ -40,7 +40,7 @@ const LOCALES = [
 ] as const;
 
 for (const { prefix, lang, m } of LOCALES) {
-  test(`${lang} home: the ZIP button reads as a button on one line; the phone bar says ${m.common.nav.tabQuestions} @reflow`, async ({
+  test(`${lang} home: the ZIP button reads as a button on one line @reflow`, async ({
     page,
   }, info) => {
     await page.goto(`${prefix}/`);
