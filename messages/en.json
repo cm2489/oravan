@@ -1171,7 +1171,7 @@
     },
     "glance": {
       "heading": "At a glance",
-      "billLabel": "The bill",
+      "lead": "{reason, select, only {The bill} onlyOpen {The one bill here still open} scheduled {The open bill on a chamber’s floor schedule} floorAction {The open bill with the newest floor action} action {The open bill with the newest action} other {An open bill}}",
       "votesLabel": "Votes so far",
       "votesHouse": "{count} in the House",
       "votesSenate": "{count} in the Senate",

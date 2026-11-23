@@ -8,13 +8,21 @@
  * AI-written and nothing is forecast (page 1, rule 6). Each row has an omit
  * rule: when the record cannot answer a row, the row is left out, never filled.
  *
+ *   Why it leads     one line (`leadReason`): the only bill, the one still
+ *                    open, or the open bill with the nearest floor date / the
+ *                    newest floor action / the newest action.
+ *   The bill         its citation, linked, with its latest-action date; then
+ *                    the record's short title, else its title, held to two
+ *                    lines on screen (the whole title stays in the page for
+ *                    screen readers, and on the bill's page). The bill comes
+ *                    BEFORE its status, so no status sentence on the page
+ *                    stands without the bill it is about (review, 2026-11-22).
  *   status line      the lead bill's own Big Questions status line, as every
  *                    other surface prints it (lib/moments-ui.ts
  *                    questionVehicles → lib/floor-session.ts
  *                    siteBillStatusLine): the chamber-session gate of
  *                    docs/record-truth.md §5 rides in it, so a floor claim is
  *                    live only while its chamber is meeting. No second reader.
- *   The bill         its citation and its record title, linked to its page.
  *   Votes so far     a count of the stored roll calls on the bill, by chamber,
  *                    and the newest one's recorded result, tally and date.
  *                    No stored roll call: the row is omitted.
@@ -89,6 +97,21 @@ export function pickLeadBill<C extends LeadCandidate>(candidates: readonly C[], 
   const acted = candidates.filter((c) => valid(c.actionDate));
   if (acted.length > 0) return firstBy(acted, (c) => -dayMs(c.actionDate!));
   return candidates[0];
+}
+
+/** Why the box's bill leads, so the box can say so in one line (review of
+ *  2026-11-22: a reader must tell which bill leads and that it is still
+ *  open). The tiers are exclusive in `pickLeadBill`'s order, so the lead's own
+ *  fields name its tier. */
+export type LeadReason = 'only' | 'onlyOpen' | 'scheduled' | 'floorAction' | 'action' | 'listed';
+
+export function leadReason(lead: LeadCandidate, openCount: number, billCount: number): LeadReason {
+  if (billCount <= 1) return 'only';
+  if (openCount <= 1) return 'onlyOpen';
+  if (valid(lead.floorDate)) return 'scheduled';
+  if (valid(lead.floorActionDate)) return 'floorAction';
+  if (valid(lead.actionDate)) return 'action';
+  return 'listed';
 }
 
 /** Status-line keys that report something a chamber did, or can do, on its
@@ -339,6 +362,9 @@ export interface Glance {
   membersAnchor: '#votes' | '#act' | null;
   /** How many other bills the question holds. */
   otherBills: number;
+  /** Why this bill leads (`leadReason`); a settled box, or a question with
+   *  one bill, reads 'only'. */
+  reason: LeadReason;
 }
 
 /**
@@ -357,6 +383,7 @@ export function questionGlance(
   const open = bills.filter((v) => v.open);
   const anyOpen = vehicles.some((v) => v.open);
   let leadVehicle: QuestionVehicle | null = null;
+  let reason: LeadReason = 'only';
 
   if (open.length > 0) {
     const candidates = open.flatMap((v) => {
@@ -373,7 +400,9 @@ export function questionGlance(
         },
       ];
     });
-    leadVehicle = pickLeadBill(candidates, easternDay(now))?.v ?? null;
+    const picked = pickLeadBill(candidates, easternDay(now));
+    leadVehicle = picked?.v ?? null;
+    if (picked) reason = leadReason(picked, open.length, bills.length);
   } else if (!anyOpen && bills.length > 0) {
     leadVehicle =
       bills.find((v) => v.line === questionLead) ??
@@ -398,5 +427,6 @@ export function questionGlance(
     next: settled ? null : ifItPasses(bill, line, rollCalls),
     membersAnchor: rollCalls.length === 0 ? null : settledDecision(bill) ? '#act' : '#votes',
     otherBills: bills.length - 1,
+    reason,
   };
 }

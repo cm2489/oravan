@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { Phone } from 'lucide-react';
 import { getFormatter, getLocale, getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
-import { MomentStatusLine } from '@/components/MomentStatusLine';
+import { MomentStatusDate, MomentStatusLine } from '@/components/MomentStatusLine';
 import { StalenessNote } from '@/components/StalenessNote';
 import { billCallPanelProps } from '@/lib/bill-call-panel';
 import { CALL_PANEL_ANCHOR, isInPageTarget } from '@/lib/call-tab';
@@ -30,11 +30,22 @@ import { settledOutcomeSentence } from '@/lib/status-word';
  * WHAT IT NEVER CARRIES: AI text (the title is the record's own, never the
  * decoded headline, so no AI label is owed), a forecast, or — on a settled
  * question — anything that dials (page 1, rule 6).
+ *
+ * ORDER (review of 2026-11-22): why this bill leads, then the bill — its
+ * number, linked, with its latest-action date, and its title held to two
+ * lines — and only then its status sentence, so the sentence's "it" always
+ * has its bill right above it. The call follows the rows; the link to the
+ * question's other bills sits under the call, so on a 390×844 phone the call
+ * is on the first screen for every live question
+ * (tests/question-glance-shots.spec.ts holds that).
  */
 
-const ROW = 'grid gap-0.5 min-[26rem]:grid-cols-[10rem_minmax(0,1fr)] min-[26rem]:gap-x-4';
+/* Below 26rem a row runs its label and value on one line when both fit and
+   wraps when they do not; from 26rem the label takes a 10rem column. */
+const ROW =
+  'flex flex-wrap items-baseline gap-x-2 gap-y-0.5 min-[26rem]:grid min-[26rem]:grid-cols-[10rem_minmax(0,1fr)] min-[26rem]:gap-x-4';
 const DT = 'text-sm text-ink-2';
-const DD = 'text-md font-semibold text-ink';
+const DD = 'min-w-0 flex-1 basis-48 text-md font-semibold text-ink';
 const SUB = 'mt-0.5 block text-sm font-normal text-ink-2';
 const LINK = 'text-go underline transition-colors hover:text-go-deep';
 
@@ -54,12 +65,16 @@ export async function QuestionGlance({
   const t = await getTranslations();
   const format = await getFormatter();
   const locale = await getLocale();
+  // The status line's own date style (components/MomentStatusLine.tsx).
   const fmtDate = (d: string) =>
-    format.dateTime(new Date(d), { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
+    format.dateTime(new Date(d), { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' });
 
   const { bill, slug, line, votes, passage, next } = glance;
   const citation = formatCitation(bill.bill_type, bill.bill_number);
-  // The record's own title, never the decoded headline (no AI text here). The
+  // The record's own title, never the decoded headline (no AI text here): its
+  // short title where the stored record has one, else its title, which the
+  // box holds to two lines (line-clamp clips the paint only, so a screen
+  // reader still reads all of it; the bill's page prints it whole). The
   // record is English, so a Spanish page marks it.
   const title = bill.short_title ?? bill.title;
   const titleLang = locale === 'en' ? undefined : 'en';
@@ -88,20 +103,7 @@ export async function QuestionGlance({
     </span>
   );
 
-  const rows: { key: string; label: string; value: ReactNode }[] = [
-    {
-      key: 'bill',
-      label: t('moments.glance.billLabel'),
-      value: (
-        <>
-          <Link href={`/bills/${slug}`} className={`${LINK} -my-3 inline-block py-3`}>
-            {citation}
-          </Link>
-          , <span lang={titleLang}>{title}</span>
-        </>
-      ),
-    },
-  ];
+  const rows: { key: string; label: string; value: ReactNode }[] = [];
   if (votes) {
     const counts = [
       votes.house > 0 ? t('moments.glance.votesHouse', { count: votes.house }) : null,
@@ -159,18 +161,35 @@ export async function QuestionGlance({
         {t('moments.glance.heading')}
       </h2>
 
-      {/* 1 · Where the lead bill stands, with its date. A settled bill shows
-             the record's outcome, as its record row and its bill page do. */}
+      {/* 1 · Which bill this is and why it leads, then the bill: its number
+             (linked) with its latest-action date, and its title. */}
+      <p className="text-sm text-ink-2" data-glance-row="reason">
+        {t('moments.glance.lead', { reason: glance.reason })}
+      </p>
+      <div className="mt-1" data-glance-row="bill">
+        <p className="flex flex-wrap items-baseline gap-x-2">
+          <Link href={`/bills/${slug}`} className={`${LINK} -my-3 inline-block py-3 text-md font-semibold`}>
+            {citation}
+          </Link>
+          {!glance.settled && <MomentStatusDate date={line.date} inline />}
+        </p>
+        <p className="mt-0.5 line-clamp-2 text-sm text-ink-2" lang={titleLang} data-glance-title>
+          {title}
+        </p>
+      </div>
+
+      {/* 2 · Where that bill stands. A settled bill shows the record's
+             outcome, with its date, as its record row and its bill page do. */}
       {settled ? (
-        <p className="max-w-read text-md font-semibold text-ink" data-glance-row="status">
+        <p className="mt-2 max-w-read text-md font-semibold text-ink" data-glance-row="status">
           {settledOutcomeSentence(t, settled, settledDate ? fmtDate(settledDate) : null)}
         </p>
       ) : (
-        <MomentStatusLine line={line} size="md" />
+        <MomentStatusLine line={line} size="md" dateless className="mt-2" />
       )}
       {glance.settled && <p className="mt-2 text-sm text-ink-2">{t('moments.status.explainer')}</p>}
 
-      <dl className="mt-4 grid gap-3">
+      <dl className="mt-3 grid gap-2.5">
         {rows.map((r) => (
           <div key={r.key} className={ROW} data-glance-row={r.key}>
             <dt className={DT}>{r.label}</dt>
@@ -178,14 +197,6 @@ export async function QuestionGlance({
           </div>
         ))}
       </dl>
-
-      {glance.otherBills > 0 && (
-        <p className="mt-1">
-          <a href="#vehicles-h" className={`${LINK} inline-flex min-h-11 items-center text-sm font-semibold`}>
-            {t('moments.glance.more', { count: glance.otherBills })}
-          </a>
-        </p>
-      )}
 
       {(panel || membersHref) && (
         <div className="mt-4 grid gap-2 min-[48rem]:grid-cols-2">
@@ -223,6 +234,14 @@ export async function QuestionGlance({
             </Link>
           )}
         </div>
+      )}
+
+      {glance.otherBills > 0 && (
+        <p className="mt-2">
+          <a href="#vehicles-h" className={`${LINK} inline-flex min-h-11 items-center text-sm font-semibold`}>
+            {t('moments.glance.more', { count: glance.otherBills })}
+          </a>
+        </p>
       )}
 
       {/* 8 · Whose words these are, and how old the data is. The staleness

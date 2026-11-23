@@ -12,6 +12,7 @@ import {
   floorActionDate,
   ifItPasses,
   isPassageVote,
+  leadReason,
   noChamberHasPassed,
   passageRow,
   pickLeadBill,
@@ -281,6 +282,33 @@ test.describe('If it passes', () => {
   });
 });
 
+/* ---- why the lead leads (the box's first line) ------------------------------ */
+
+test.describe('leadReason', () => {
+  test('one bill, or one still open, says so before any tier', () => {
+    expect(leadReason(cand('a', { floorDate: '2026-11-24' }), 1, 1)).toBe('only');
+    expect(leadReason(cand('a', { floorActionDate: '2026-07-30' }), 1, 10)).toBe('onlyOpen');
+  });
+
+  test('several open: the tier the lead won on, in pickLeadBill’s order', () => {
+    expect(leadReason(cand('a', { floorDate: '2026-11-24', floorActionDate: '2026-07-30' }), 3, 5)).toBe('scheduled');
+    expect(leadReason(cand('a', { floorActionDate: '2026-07-30', actionDate: '2026-08-01' }), 3, 5)).toBe('floorAction');
+    expect(leadReason(cand('a', { actionDate: '2026-08-01' }), 3, 5)).toBe('action');
+    expect(leadReason(cand('a'), 3, 5)).toBe('listed');
+  });
+
+  test('the line names the open bills only: a finished bill’s newer floor action does not contradict it', () => {
+    // Iran war powers, 2026-11-22: H.Con.Res. 93 (finished) failed Nov 19;
+    // S.J.Res. 181 (open) has the newest floor action among the OPEN bills.
+    for (const messages of [en, es]) {
+      const t = createTranslator({ locale: messages === en ? 'en' : 'es', messages });
+      for (const reason of ['scheduled', 'floorAction', 'action', 'listed']) {
+        expect(t('moments.glance.lead', { reason })).toMatch(messages === en ? /\bopen\b/i : /\babierto\b/i);
+      }
+    }
+  });
+});
+
 /* ---- floor action ---------------------------------------------------------- */
 
 test('floorActionDate: the newest roll call, or the last action when it is a floor action', () => {
@@ -308,6 +336,9 @@ test('every glance string exists in both languages and formats', () => {
       }
     }
     expect(t('moments.glance.more', { count: 6 })).toMatch(/6/);
+    for (const reason of ['only', 'onlyOpen', 'scheduled', 'floorAction', 'action', 'listed']) {
+      expect(t('moments.glance.lead', { reason })).not.toMatch(/\{/);
+    }
   }
   expect(Object.keys(en.moments.glance).sort()).toEqual(Object.keys(es.moments.glance).sort());
   expect(Object.keys(en.moments.glance.next).sort()).toEqual(Object.keys(es.moments.glance.next).sort());
@@ -364,4 +395,21 @@ test('the question page renders the box and lets it stand in for a status line t
   expect(src).toMatch(/const glance = questionGlance\(vehicles, lead\)/);
   expect(src).toMatch(/\{lead && glance\?\.line !== lead && \(/);
   expect(src).toMatch(/<QuestionGlance/);
+  // A question line about a different bill names that bill, with its date,
+  // before its sentence; the sentence then prints without a second date.
+  expect(src).toMatch(/data-question-line-bill/);
+  expect(src).toMatch(/<MomentStatusDate date=\{lead\.date\} inline \/>\s*<\/p>\s*<MomentStatusLine line=\{lead\} size="md" dateless \/>/);
+});
+
+test('the box names its bill before the bill’s status, and holds a long title to two lines', () => {
+  const src = readFileSync('components/QuestionGlance.tsx', 'utf8');
+  const order = ['data-glance-row="reason"', 'data-glance-row="bill"', 'data-glance-title', '<MomentStatusLine', '<dl', 'data-glance-call', "t('moments.glance.more'"];
+  const at = order.map((s) => src.indexOf(s));
+  expect(at.every((i) => i >= 0)).toBe(true);
+  expect([...at].sort((a, b) => a - b)).toEqual(at);
+  // The record's own title (short title first), never the AI headline, and
+  // clipped in paint only: the whole title stays in the page.
+  expect(src).toMatch(/const title = bill\.short_title \?\? bill\.title;/);
+  expect(src).not.toMatch(/ai_headline/);
+  expect(src).toMatch(/className="[^"]*\bline-clamp-2\b[^"]*"[^>]*data-glance-title/);
 });

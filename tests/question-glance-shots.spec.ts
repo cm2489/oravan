@@ -1,5 +1,5 @@
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
@@ -21,6 +21,15 @@ import { questionGlance, type Glance } from '../lib/question-glance';
  * named by hand — one whose box leads a single open bill and has no other
  * bills, one with several bills, and one whose every bill is finished. A
  * shape the corpus lacks today skips, and says so.
+ *
+ * THE FIRST SCREEN (review of 2026-11-22): on a 390×844 phone, for EVERY
+ * Big Question that is not retired and has a box, in both languages, the
+ * box's call button — or, on a settled box, the record's outcome line — ends
+ * above y = 780, the top edge of the bottom bar (taken at 780 because a
+ * taller bar is coming in another pull request). Measured at scroll 0 in the
+ * mobile project only; each measurement is also written to glance-shots/ so a
+ * reviewer can read the numbers. A question that cannot meet it goes in
+ * FIRST_SCREEN_EXCEPTIONS with its reason, never a looser number.
  */
 
 const SHOTS = path.join(process.cwd(), 'glance-shots');
@@ -53,6 +62,40 @@ const LOCALES = [
   { prefix: '', lang: 'en', m: en },
   { prefix: '/es', lang: 'es', m: es },
 ] as const;
+
+const BAR_TOP = 780;
+/** `<question id>:<lang>` → why it cannot meet the first-screen budget. */
+const FIRST_SCREEN_EXCEPTIONS: Record<string, string> = {};
+
+for (const { prefix, lang } of LOCALES) {
+  for (const { m: moment, g } of RENDERED) {
+    test(`${lang} ${moment.id}: the box's ${g.settled ? 'outcome' : 'call'} is on a 390×844 phone's first screen`, async ({
+      page,
+    }, info) => {
+      test.skip(info.project.name !== 'webkit-mobile', 'measured once, in the 390px phone project');
+      const why = FIRST_SCREEN_EXCEPTIONS[`${moment.id}:${lang}`];
+      test.skip(!!why, why);
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.goto(`${prefix}/questions/${moment.id}`);
+      await page.evaluate(() => document.fonts.ready);
+      await page.evaluate(() => window.scrollTo(0, 0));
+
+      const box = page.locator('[data-question-glance]');
+      await expect(box).toBeVisible();
+      const target = g.settled ? box.locator('[data-glance-row="status"]') : box.locator('[data-glance-call]');
+      await expect(target).toHaveCount(1);
+      const b = (await target.boundingBox())!;
+      const bottom = Math.round(b.y + b.height);
+      mkdirSync(SHOTS, { recursive: true });
+      writeFileSync(
+        path.join(SHOTS, `first-screen-${lang}-${moment.id}.json`),
+        JSON.stringify({ question: moment.id, lang, measured: g.settled ? 'outcome' : 'call', bottom, barTop: BAR_TOP }, null, 2)
+      );
+      info.annotations.push({ type: 'first-screen', description: `${moment.id} ${lang}: bottom ${bottom}px of ${BAR_TOP}` });
+      expect(bottom, `${moment.id} (${lang}): the ${g.settled ? 'outcome line' : 'call button'} ends above the bar`).toBeLessThanOrEqual(BAR_TOP);
+    });
+  }
+}
 
 for (const { prefix, lang, m } of LOCALES) {
   for (const { shape, pick } of SHAPES) {

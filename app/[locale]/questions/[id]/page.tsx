@@ -14,7 +14,7 @@ import { settledDecisionDate } from '@/lib/settled-votes';
 import { settledOutcomeSentence, statusWord } from '@/lib/status-word';
 import { MomentQuietNote } from '@/components/MomentQuietNote';
 import { MomentRecordRow } from '@/components/MomentRecordRow';
-import { MomentStatusLine } from '@/components/MomentStatusLine';
+import { MomentStatusDate, MomentStatusLine } from '@/components/MomentStatusLine';
 import { MomentStillOpenRail } from '@/components/MomentStillOpenRail';
 import { MomentTimeline, type TimelineVehicle } from '@/components/MomentTimeline';
 import { MomentNominationCard } from '@/components/MomentNominationCard';
@@ -222,6 +222,22 @@ export default async function MomentPage({
   // the record. It carries the page's data date, and it stands in for the
   // question's status line below whenever both would print the same line.
   const glance = questionGlance(vehicles, lead);
+  // When the question's own line is about a different bill than the box's
+  // (Iran war powers: H.Con.Res. 93 failed Nov 19, while the box leads with
+  // the open S.J.Res. 181), the line names its bill first, with its date, so
+  // the page never prints two status sentences in a row without the bill
+  // each one is about (review of 2026-11-22). Same bill: the box alone.
+  const leadSubject = (() => {
+    if (!glance || !lead) return null;
+    const v = vehicles.find((x) => x.line === lead);
+    if (!v) return null;
+    if (v.kind === 'nomination') {
+      const n = getNomination(v.vehicle.slug);
+      return n ? { label: n.citation, href: `/nominations/${v.vehicle.slug}` } : null;
+    }
+    const b = getBill(v.vehicle.slug);
+    return b ? { label: formatCitation(b.bill_type, b.bill_number), href: `/bills/${v.vehicle.slug}` } : null;
+  })();
 
   // ── The live layer (v2 spec §7) ────────────────────────────────────────
   const summaryRevision = getCurrentSummary(id);
@@ -564,7 +580,22 @@ export default async function MomentPage({
           >
             {t('moments.status.label')}
           </h2>
-          <MomentStatusLine line={lead} size="md" className="mt-2" />
+          {leadSubject ? (
+            <>
+              <p className="mt-2 flex flex-wrap items-baseline gap-x-2" data-question-line-bill>
+                <Link
+                  href={leadSubject.href}
+                  className="-my-3 inline-block py-3 text-md font-semibold text-go underline transition-colors hover:text-go-deep"
+                >
+                  {leadSubject.label}
+                </Link>
+                <MomentStatusDate date={lead.date} inline />
+              </p>
+              <MomentStatusLine line={lead} size="md" dateless />
+            </>
+          ) : (
+            <MomentStatusLine line={lead} size="md" className="mt-2" />
+          )}
           {explainer && <p className="mt-2 text-sm text-ink-2">{t('moments.status.explainer')}</p>}
         </section>
       )}

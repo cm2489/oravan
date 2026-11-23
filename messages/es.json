@@ -1171,7 +1171,7 @@
     },
     "glance": {
       "heading": "De un vistazo",
-      "billLabel": "El proyecto",
+      "lead": "{reason, select, only {El proyecto} onlyOpen {El único proyecto aquí aún abierto} scheduled {El proyecto abierto en el calendario del pleno de una cámara} floorAction {El proyecto abierto con la última acción en el pleno} action {El proyecto abierto con la última acción} other {Un proyecto abierto}}",
       "votesLabel": "Votaciones hasta ahora",
       "votesHouse": "{count} en la Cámara",
       "votesSenate": "{count} en el Senado",
