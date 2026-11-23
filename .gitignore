@@ -82,3 +82,6 @@ scaffold-corpus-report.md
 /data/short-titles.json.tmp
 /data/short-titles-retry.json.tmp
 /data/short-titles-trend.json.tmp
+
+# Pictures the UI-fixes spec writes in CI (tests/ui-fixes-shots.spec.ts)
+/ui-fixes-shots/

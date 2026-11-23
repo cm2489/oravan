@@ -29,7 +29,7 @@ import { checkMoments, lintForbidden, vehicleKind } from '../lib/moments-gate.mj
 // copy (lib/floor-text.mjs). The corpus totality sweep that also used the
 // claim-free reading from there moved to scripts/check-scaffold-corpus.mjs
 // (the 2026-09-27 audit, SY-47) — see the note where it used to be.
-import { FLOOR_SETTLED, statusBasisText } from '../lib/floor-text.mjs';
+import { FLOOR_SETTLED, procedureEndedConsideration, statusBasisText } from '../lib/floor-text.mjs';
 import { nominationSlug, type Nomination } from '../lib/core/nominations';
 import { buildReport } from '../scripts/moment-candidates.mjs';
 import { blankDraft, draftFor, groundFor } from '../scripts/moment-draft.mjs';
@@ -493,6 +493,29 @@ test.describe('the qualifying signal is the evidence the floor already tested', 
     // The matcher is handed the basis, and reads it.
     expect(floorActionInRecord({ status: 'floor_vote', floorCalendar: false }, HOUSE_DEFEAT)).toBe(false);
     expect(FLOOR_SETTLED.test(HOUSE_DEFEAT)).toBe(true);
+  });
+
+  /*
+   * ISSUE #398 (2026-11-23): S.J.Res. 98's last action, verbatim. The Senate
+   * upheld a point of order that took the resolution off its expedited track.
+   * That ended the measure's consideration; it is not the chamber MOVING on
+   * it, so the scaffold derives NOTHING (the claim-free route), and the
+   * nightly sweep counts it as a settled outcome
+   * (tests/scaffold-corpus.unit.spec.ts pins that side).
+   */
+  test('sjres-98-119: a point of order the Senate upheld against the measure derives nothing', () => {
+    const SJRES_98 =
+      'Point of order that the measure is not entitled to expedited procedures under 50 U.S.C. 1546(a) raised against the measure agreed to in Senate by Yea-Nay Vote. 50 - 50. Record Vote Number: 9.';
+    expect(floorActionInRecord({ status: 'floor_vote', floorCalendar: false }, SJRES_98)).toBe(false);
+    // Read, and read as the floor answering — never as a pending step.
+    expect(procedureEndedConsideration(SJRES_98)).toBe(true);
+    expect(FLOOR_SETTLED.test(SJRES_98)).toBe(false);
+    const { signal } = signalFor(
+      { ...FLOOR_ACTION, status: 'floor_vote' },
+      [],
+      { now: NOW_FLOOR, lastActionText: SJRES_98 },
+    );
+    expect(signal).toEqual({ type: '', refs: [] });
   });
 
   test('structureFor hands the matcher the stored basis, not the bare notice', () => {

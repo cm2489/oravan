@@ -168,8 +168,11 @@ export function BillsBrowser({
             placeholder={t('bills.searchPlaceholder')}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="min-h-12 w-full rounded-control border-2 border-line-strong bg-paper py-3 pr-12 pl-12 text-md text-ink transition-colors placeholder:text-ink-2 hover:border-ink focus:border-ink"
+            className="min-h-12 w-full rounded-control border-2 border-line-strong bg-paper py-3 pr-12 pl-12 text-md text-ink transition-colors placeholder:text-ink-2 hover:border-ink focus:border-ink [&::-webkit-search-cancel-button]:appearance-none"
           />
+          {/* The field has its own clear button (below, 44px, labelled), so
+              the browser's built-in one is hidden: two clear marks side by
+              side read as a fault (UI audit fixes, 2026-11-22). */}
           {query ? (
             <button
               type="button"

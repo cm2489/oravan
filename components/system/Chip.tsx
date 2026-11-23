@@ -7,7 +7,9 @@ import type { ReactNode } from 'react';
  *           ruling): the filled marker holding the AI mark plus a small
  *           tracked caption, no outline — the label is a caption on the
  *           content, not a component competing with it. Still always WITH
- *           the AI content it labels, never in a footnote.
+ *           the AI content it labels, never in a footnote. A short label
+ *           takes the tracked capitals; a whole sentence (`isAiSentence`)
+ *           keeps the mark as its label and reads in normal case.
  *   urgent  The lamp (#ffc933). Spent on TWO chips, both the dated floor
  *           fact: the floor notice on Today (components/TodayFloorCard.tsx;
  *           owner, 2026-09-29: a scheduled vote "needs to have a yellow
@@ -159,6 +161,19 @@ export function datedChipClass(tone: 'urgent' | 'floor', ground: ChipGround = 'p
   return `${SHELL} px-3 py-1 text-xs font-bold tracking-[0.04em] uppercase tabular-nums ${colour}`;
 }
 
+/**
+ * Whether an AI label's text is a sentence rather than a short label: it
+ * ends with a full stop (or ! or ?), or it runs past twelve words. Exported
+ * for tests/ai-chip.unit.spec.ts, which checks every AI label in both
+ * languages lands on the side it should.
+ */
+export function isAiSentence(children: ReactNode): boolean {
+  if (typeof children !== 'string') return false;
+  const text = children.trim();
+  if (/[.!?]$/.test(text)) return true;
+  return text.split(/\s+/).filter((w) => /[\p{L}\p{N}]/u.test(w)).length > 12;
+}
+
 export function Chip(props: ChipProps) {
   const { children, ground = 'paper', className = '' } = props;
 
@@ -169,23 +184,43 @@ export function Chip(props: ChipProps) {
     return (
       <span className={`${datedChipClass('floor', ground)} ${className}`}>
         <span>{children}</span>
-        <span className="font-extrabold">{props.dateLabel}</span>
+        <span className="font-extrabold whitespace-nowrap">{props.dateLabel}</span>
       </span>
     );
   }
 
   if (props.tone === 'urgent') {
     // The lamp is a fill, so it resolves the same on every ground: ink text,
-    // 11.20:1, with the date printed beside the claim.
+    // 11.20:1, with the date printed beside the claim. The date never breaks
+    // ("SEP 23, / 2026" on the floor panel at 390px, UI audit F14): when the
+    // chip is too narrow for both, the claim wraps instead. Same for `floor`.
     return (
       <span className={`${datedChipClass('urgent', ground)} ${className}`}>
         <span>{children}</span>
-        <span className="font-extrabold">{props.dateLabel}</span>
+        <span className="font-extrabold whitespace-nowrap">{props.dateLabel}</span>
       </span>
     );
   }
 
   if (props.tone === 'ai') {
+    // A disclosure SENTENCE is not a label. Fed to the tracked capitals
+    // below, the long notes on /bills, /questions and a question page's
+    // bill cards printed as four to eight lines of small capitals at 390px
+    // (the owner's UI audit, 2026-09-25, finding F1). So a sentence keeps
+    // the mark as its short label and reads in normal case, regular weight,
+    // at the caption size — quiet and readable. A label of a few words
+    // ("AI-decoded", "Headlines decoded by AI") keeps the capitals.
+    // Same colours as the label: ink-2 on paper 7.56 clears AA at any size.
+    if (isAiSentence(children)) {
+      return (
+        <span
+          className={`${SHELL} items-start text-xs text-pretty ${AI_TEXT[ground]} ${className}`}
+        >
+          {props.marker && <AiMark ground={ground}>{props.marker}</AiMark>}
+          <span className="min-w-0 pt-px">{children}</span>
+        </span>
+      );
+    }
     // Unboxed: marker + tracked caption. items-start keeps the mark on the
     // first line when a narrow column wraps the caption.
     return (

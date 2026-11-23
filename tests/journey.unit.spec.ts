@@ -23,6 +23,7 @@ import {
   type LiveCallKey,
 } from '../lib/journey';
 import type { BillStatus } from '../lib/types';
+import { floorReadWithoutChamber } from '../lib/floor-text.mjs';
 import { withSitePolicyForTest } from '../lib/ended-state.mjs';
 import type { NominationStatus } from '../lib/core/nominations';
 // The nomination vocabulary, from the ONE copy — see lib/nomination-status.mjs's
@@ -518,6 +519,48 @@ test.describe('floorMakesNoClaim', () => {
   test('both halves of the filing shape are required', () => {
     expect(floorMakesNoClaim('Motion to Discharge Committee filed by Mr. Kiley (CA).')).toBe(false);
     expect(floorMakesNoClaim('Petition No: 119-21.')).toBe(false);
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * 2b-iv · floorReadWithoutChamber — read, and in no chamber (2026-11-23,
+ *         issue #268). The nightly sweep's "no matcher places this
+ *         sentence in a chamber" bucket skips these; nothing renders
+ *         differently, and no chamber is ever guessed (hard rule 6).
+ * ------------------------------------------------------------------ */
+test.describe('floorReadWithoutChamber', () => {
+  const SJRES_124 = 'The motion to discharge fell when the point of order was well taken.';
+
+  test('sjres-124-119, verbatim: read, and it names no chamber', () => {
+    expect(floorReadWithoutChamber(SJRES_124)).toBe(true);
+    // Rule 6: the sentence names no chamber, so no matcher places it in one.
+    expect(floorActionChamber(SJRES_124)).toBeNull();
+    expect(floorCalendarChamber(SJRES_124)).toBeNull();
+    expect(floorPendingChamber(SJRES_124)).toBeNull();
+    // And it is not claim-free: the motion did fall.
+    expect(floorMakesNoClaim(SJRES_124)).toBe(false);
+  });
+
+  test('a sentence that names its chamber is floorActionChamber\'s to place, never excused here', () => {
+    const NAMED =
+      'Point of order that the measure is not entitled to expedited procedures under 50 U.S.C. 1546(a) raised against the measure agreed to in Senate by Yea-Nay Vote. 50 - 50. Record Vote Number: 9.';
+    expect(floorReadWithoutChamber(NAMED)).toBe(false);
+    expect(floorActionChamber(NAMED)).toBe('senate');
+  });
+
+  test('an unread or negated sentence stays unread', () => {
+    expect(floorReadWithoutChamber('The motion to discharge fell.')).toBe(false);
+    expect(floorReadWithoutChamber('Point of order raised against the measure not well taken.')).toBe(false);
+    expect(floorReadWithoutChamber('Considered as unfinished business.')).toBe(false);
+    expect(floorReadWithoutChamber(null)).toBe(false);
+    expect(floorReadWithoutChamber('')).toBe(false);
+  });
+
+  test('the nightly sweep uses it only to skip the unclassified bucket', () => {
+    const script = readFileSync(join(process.cwd(), 'scripts/check-journey-corpus.mjs'), 'utf8');
+    const sweep1 = script.slice(script.indexOf('const unclassified'), script.indexOf('.map(row);', script.indexOf('const unclassified')));
+    expect(sweep1).toContain('!floorReadWithoutChamber(text(b))');
+    expect(sweep1).toContain('floorActionChamber(text(b)) === null');
   });
 });
 

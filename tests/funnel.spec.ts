@@ -306,7 +306,7 @@ for (const { locale, prefix, messages } of LOCALES) {
       // Submit a ZIP code. The field is located page-wide by its label key,
       // so wherever the homepage puts it the budget is measured the same way.
       await page.getByLabel(messages.home.zipLabel).fill(ZIP);
-      await steps.click(page.getByRole('button', { name: messages.home.zipCta }));
+      await steps.click(page.getByRole('button', { name: messages.home.zipCtaShort, exact: true }));
       // The members page, with no ZIP in its address (owner, 2026-11-12).
       await expect(page).toHaveURL(/\/reps$/);
 
@@ -391,7 +391,7 @@ for (const { locale, prefix, messages } of LOCALES) {
 
       await page.goto(`${prefix}/`);
       await page.getByLabel(messages.home.zipLabel).fill(ZIP);
-      await page.getByRole('button', { name: messages.home.zipCta }).click();
+      await page.getByRole('button', { name: messages.home.zipCtaShort, exact: true }).click();
       await expect(page.getByRole('heading', { name: messages.reps.nextTitle })).toBeVisible();
       await expect(page.locator(SURFACE.repsContinuation).getByRole('status')).toBeVisible();
     });

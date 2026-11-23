@@ -12,7 +12,7 @@
  *
  * Built only from existing tokens: a 2px ink edge, the control radius, a paper
  * fill and ink type, which is the site's outlined-button idiom already
- * (components/ZipForm.tsx `submitTone="secondary"`, components/BillsBrowser.tsx).
+ * (components/BillsBrowser.tsx).
  * Hover inverts to an ink fill, the same idiom. Ink (#1c1b18) on paper
  * (#fcfaf4) computes to 16.50:1, and paper on ink is the same pair, so both
  * states clear AA with room (WCAG 2 relative luminance, recomputed 2026-09-30

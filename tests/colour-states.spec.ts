@@ -530,7 +530,7 @@ test('a floor label has the same box as a lamp label, to the pixel @reflow', asy
   // Chip's own markup: its shell (datedChipClass) around the two spans it
   // always renders, the claim and the bold printed date.
   const chip = (tone: 'urgent' | 'floor') =>
-    `<span class="${datedChipClass(tone)}"><span>On the House floor schedule</span><span class="font-extrabold">Nov 4, 2026</span></span>`;
+    `<span class="${datedChipClass(tone)}"><span>On the House floor schedule</span><span class="font-extrabold whitespace-nowrap">Nov 4, 2026</span></span>`;
   const urgent = chip('urgent');
   const floor = chip('floor');
   await page.goto('/about');
