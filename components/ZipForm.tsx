@@ -48,12 +48,17 @@ type ZipFormProps = {
    */
   formAction?: (form: FormData) => void;
   /**
-   * The submit's visual weight. 'primary' (default) is the filled green
-   * control every instance has always had. 'secondary' is the ink outline
-   * the home hero passes (2026-09-24, finding B3): the hero keeps exactly ONE
-   * filled control, and under "Truth-first, call-next" (CLAUDE.md) that is
-   * the jump to what is moving, not the field that asks for a ZIP. Keys,
-   * behaviour and the ZIP-first funnel path are untouched by the tone.
+   * The submit's visual weight. 'primary' (default) is the filled lamp
+   * every other instance has. 'secondary' is what the home hero passes
+   * (2026-09-24, finding B3): the hero keeps exactly ONE lamp, and under
+   * "Truth-first, call-next" (CLAUDE.md) that is the jump to what is moving,
+   * not the field that asks for a ZIP. Since the UI audit fixes of
+   * 2026-11-22 (finding F7) 'secondary' is the site's filled ink button
+   * (as on the error screen and Your record), not an ink outline on paper:
+   * the outline was the field's own treatment, so on a phone the pair read
+   * as two input boxes. Paper on ink 16.50, on ink-2 (hover) 7.56; the
+   * `ring-gap` stack is the one in docs/accessibility.md. Keys, behaviour
+   * and the ZIP-first funnel path are untouched by the tone.
    */
   submitTone?: 'primary' | 'secondary';
   /**
@@ -62,6 +67,12 @@ type ZipFormProps = {
    * submit beside it keeps the hero's lowest control clear of the phone
    * thumb bar on short screens (390×664 in tests/home-fold.spec.ts). Other
    * instances keep the container-query stacking below.
+   *
+   * The inline row is also too narrow for the full submit label ("Find my
+   * representatives" wrapped to two lines at 390px), so it prints
+   * `home.zipCtaShort` ("Find my reps" / "Buscar mis reps"), the header's
+   * own short word for the members page. Every stacked instance (/reps, the
+   * bill rail, the call dialog) keeps `home.zipCta`.
    */
   inline?: boolean;
   /**
@@ -287,12 +298,18 @@ function ZipFormBody({
           type="submit"
           className={
             submitTone === 'secondary'
-              ? 'ring-gap inline-flex min-h-12 items-center justify-center gap-2 rounded-control border-2 border-ink bg-paper px-6 py-3 font-bold text-ink hover:bg-ink hover:text-paper active:bg-ink active:text-paper'
+              ? 'ring-gap inline-flex min-h-12 items-center justify-center gap-2 rounded-control border-2 border-ink bg-ink px-4 py-2 font-bold text-paper hover:bg-ink-2 active:bg-ink-2'
               : 'ring-edge inline-flex min-h-12 items-center justify-center gap-2 rounded-control border-2 border-ink bg-urgent px-6 py-3 font-bold text-ink hover:bg-urgent-deep active:bg-urgent-deep'
           }
         >
-          {t('zipCta')}
-          <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
+          {inline ? t('zipCtaShort') : t('zipCta')}
+          {/* At 320px the inline row leaves the submit 144px, and the arrow
+              is what would push the short label onto a second line. It is
+              decoration, so under 360px it steps out. */}
+          <ArrowRight
+            className={`h-4 w-4 shrink-0 ${inline ? 'max-[22.5rem]:hidden' : ''}`}
+            aria-hidden
+          />
         </button>
       </div>
       {error ? (

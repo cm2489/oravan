@@ -76,7 +76,7 @@ for (const [prefix, m] of [
       const requests = recordRequests(page);
       await page.goto(`${prefix}/`);
       await page.getByLabel(m.home.zipLabel).fill(ZIP);
-      await page.getByRole('button', { name: m.home.zipCta }).click();
+      await page.getByRole('button', { name: m.home.zipCtaShort, exact: true }).click();
       await expect(page).toHaveURL(new RegExp(`${prefix}/reps$`));
       await expectMembers(page);
       // Let the page settle, so prefetches of its links are recorded too.
@@ -134,7 +134,7 @@ for (const [prefix, m] of [
         await page.goto(`${prefix}${start === '/' ? '' : start}` || '/');
         await page.getByLabel(m.home.zipLabel).fill(ZIP);
         const submit = page.waitForRequest((r) => r.isNavigationRequest() && r.method() === 'POST');
-        await page.getByRole('button', { name: m.home.zipCta }).click();
+        await page.getByRole('button', { name: start === '/' ? m.home.zipCtaShort : m.home.zipCta, exact: true }).click();
         const post = await submit;
         expect(new URL(post.url()).pathname).toBe(`${prefix}/reps`);
         expect(post.postData() ?? '').toContain(ZIP);
@@ -341,7 +341,7 @@ for (const [prefix, m] of [
         }
       })).toBe('blocked');
       await page.getByLabel(m.home.zipLabel).fill(ZIP);
-      await page.getByRole('button', { name: m.home.zipCta }).click();
+      await page.getByRole('button', { name: m.home.zipCtaShort, exact: true }).click();
       await expect(page).toHaveURL(new RegExp(`${prefix}/reps$`));
       await expectMembers(page);
       await page.reload();

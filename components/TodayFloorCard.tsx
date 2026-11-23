@@ -62,7 +62,7 @@ export function TodayFloorCard({
               {tagLabel}
               {tagDateText && (
                 <>
-                  <span aria-hidden> ·</span> <span className="tabular-nums">{tagDateText}</span>
+                  <span aria-hidden>&nbsp;·</span> <span className="tabular-nums">{tagDateText}</span>
                 </>
               )}
             </Chip>

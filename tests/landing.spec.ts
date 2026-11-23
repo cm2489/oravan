@@ -12,7 +12,7 @@ test('landing renders and ZIP search reaches reps', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1 })).toContainText(en.home.heroTitle);
   await page.getByLabel(en.home.zipLabel).fill(ZIP);
-  await page.getByRole('button', { name: en.home.zipCta }).click();
+  await page.getByRole('button', { name: en.home.zipCtaShort, exact: true }).click();
   // The members page, with no ZIP in its address (owner, 2026-11-12).
   await expect(page).toHaveURL(/\/reps$/);
   expect(ZIP_REPS.length, `the fixture ZIP ${ZIP} must resolve to members in data/`).toBeGreaterThan(0);
@@ -55,7 +55,7 @@ test('spanish landing is fully localized', async ({ page }) => {
   await page.goto('/es');
   await expect(page.getByRole('heading', { level: 1 })).toContainText(es.home.heroTitle);
   await expect(page.getByLabel(es.home.zipLabel)).toBeVisible();
-  await expect(page.getByRole('button', { name: es.home.zipCta })).toBeVisible();
+  await expect(page.getByRole('button', { name: es.home.zipCtaShort, exact: true })).toBeVisible();
 });
 
 test('footer privacy link is reachable and clickable on mobile', async ({ page, isMobile }) => {

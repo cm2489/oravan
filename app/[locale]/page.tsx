@@ -392,7 +392,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
             {/* ONE PRIMARY (fold pass 2026-09-24, finding B3): the filled
                 control is the jump to what is moving, and the ZIP submit is
-                the secondary outline. The fold is MEASURED at 390×844 and
+                the quieter ink button (ZipForm's `secondary`). The fold is MEASURED at 390×844 and
                 390×664 in both locales (tests/home-fold.spec.ts). */}
             <a
               href="#top-actions"

@@ -54,7 +54,7 @@ export function MomentRecordRow({
       <p className="flex flex-wrap items-center gap-x-2 text-xs leading-tight font-bold tracking-[0.06em] text-ink-2 uppercase">
         <span className="tabular-nums normal-case">
           {identifier}
-          <span aria-hidden> ·</span>
+          <span aria-hidden>&nbsp;·</span>
         </span>
         <span data-status-word={word} className="text-ink">
           {wordLabel}

@@ -138,7 +138,7 @@ export default function LocaleError({ error }: { error: Error & { digest?: strin
 
   return (
     <article className="mx-auto max-w-read px-4 py-16" role="alert">
-      <h1 className="text-h1 font-extrabold text-ink">{t('title')}</h1>
+      <h1 className="text-h2-loud font-extrabold text-ink">{t('title')}</h1>
       <p className="mt-4 text-lede text-ink-2">{t('body')}</p>
       <div className="mt-8 flex flex-wrap items-center gap-3">
         <button
