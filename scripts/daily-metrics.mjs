@@ -111,8 +111,8 @@
  * being able to cost the whole digest on its first morning.
  *
  * PEOPLE (ESTIMATE) joined 2026-11-23, on the owner's answer that day (card
- * `people`, option b): a floor (the larger of ZIP lookups that found members
- * and call scripts served), a ceiling (lib/ratelimit.ts's second daily
+ * `people`, option b): an actions row (ZIP lookups that found a district,
+ * and call scripts served — actions, not people, and no lower bound), a ceiling (lib/ratelimit.ts's second daily
  * sketch, of addresses whose page load looked like a browser's) and bots'
  * share of page loads, from lib/traffic-metrics.mjs's pure peopleEstimate.
  * ADDITIVE like the distinct-address line: these keys are new, so a failed
@@ -703,7 +703,7 @@ async function main() {
   const closedCount = hygiene ? closeStaleSpikeIssues(hygiene.closable, { digestIssue: issueNumber }) : 0;
 
   console.log(
-    `daily metrics digest posted for ${date} (mcp total ${mcpTotal.latest}${mcpTotal.spike ? ', SPIKE' : ''}; script ${script.latest}${script.spike ? ', SPIKE' : ''} (refused ${refusedYesterday}); 28d ${mcpDecline.recent} vs baseline ${mcpDecline.baseline}${mcpDecline.declining ? ', DECLINING' : ''}${dark.length ? `; dark tools: ${dark.map((d) => d.tool).join(', ')}` : ''}${hygiene ? `; hygiene: ${closedCount}/${hygiene.closable.length} stale spike issue(s) closed` : '; hygiene: SKIPPED'}; site page views ${siteTotal.latest}; distinct addresses ${siteDistinct.ok ? (siteDistinct.count ?? 'not recorded') : 'not read'}; people floor ${people ? people.floor : 'not read'}, ceiling ${people ? (people.ceiling ?? people.ceilingState) : 'not read'}${health ? `; health: ${health.report.alarms.length} ⛔${healthIssueUrl ? ` at ${healthIssueUrl}` : ' (issue not updated)'}` : '; health: SKIPPED'})`
+    `daily metrics digest posted for ${date} (mcp total ${mcpTotal.latest}${mcpTotal.spike ? ', SPIKE' : ''}; script ${script.latest}${script.spike ? ', SPIKE' : ''} (refused ${refusedYesterday}); 28d ${mcpDecline.recent} vs baseline ${mcpDecline.baseline}${mcpDecline.declining ? ', DECLINING' : ''}${dark.length ? `; dark tools: ${dark.map((d) => d.tool).join(', ')}` : ''}${hygiene ? `; hygiene: ${closedCount}/${hygiene.closable.length} stale spike issue(s) closed` : '; hygiene: SKIPPED'}; site page views ${siteTotal.latest}; distinct addresses ${siteDistinct.ok ? (siteDistinct.count ?? 'not recorded') : 'not read'}; people actions ${people ? `${people.repLookups}/${people.scriptsServed}` : 'not read'}, ceiling ${people ? (people.ceiling ?? people.ceilingState) : 'not read'}${health ? `; health: ${health.report.alarms.length} ⛔${healthIssueUrl ? ` at ${healthIssueUrl}` : ' (issue not updated)'}` : '; health: SKIPPED'})`
   );
 }
 

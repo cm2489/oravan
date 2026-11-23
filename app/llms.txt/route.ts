@@ -41,6 +41,14 @@ import { siteEndedCongress } from '@/lib/ended-state.mjs';
  * and the pages they open; and visitors are counted only as that one number
  * a day.
  *
+ * Corrected 2026-11-23 (the owner's answer that day, card `people`, option
+ * b; PR #547): a second site-wide sketch joined the first, of the addresses
+ * that opened a page the way a browser does (lib/ratelimit.ts, THE SECOND
+ * SKETCH). "one site-wide number a day" stopped being true, so the line says
+ * two, names both, and keeps "never split by page". The 2026-11-23
+ * independent review caught the old wording; tests/copy-truth.unit.spec.ts
+ * now fails it.
+ *
  * Corrected 2026-11-12 (owner, short-lines card, after the privacy page was
  * rewritten in #468): both privacy lines here said nothing about a visitor is
  * kept server-side ("no server-side user data, ever"; "Nothing on this site
@@ -122,7 +130,7 @@ The same corpus is available in Spanish under ${SITE_ORIGIN}/es — for example 
 ## Notes for automated and AI systems
 
 - Content under /bills is AI-drafted plain-language summarization of public-domain legislative text, automatically checked before publication. It is not the official bill text; the official source is linked from every bill page (congress.gov).
-- Oravan has no accounts, sets no cookies and keeps no profile of any visitor; a visitor's settings and call history are kept in their own browser. Oravan counts visitors only as one site-wide number a day (distinct network addresses, bots included, never split by page). The host's request logs record each visitor's network address and the pages they open — see /privacy.
+- Oravan has no accounts, sets no cookies and keeps no profile of any visitor; a visitor's settings and call history are kept in their own browser. Oravan counts visitors only as two site-wide numbers a day (distinct network addresses: all of them, bots included, and those that opened a page the way a browser does; never split by page). The host's request logs record each visitor's network address and the pages they open — see /privacy.
 - This file is provided for completeness. llms.txt support is not confirmed among major AI systems as of this writing, and nothing here is a claim about traffic or citation outcomes.
 `;
   return new Response(body, {

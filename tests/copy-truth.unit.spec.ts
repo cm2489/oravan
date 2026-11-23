@@ -439,6 +439,24 @@ test.describe('2026-11-12 no short privacy line says nothing about a visitor is 
   });
 });
 
+test.describe('2026-11-23 llms.txt counts visitors as the site-wide numbers that exist', () => {
+  // The 2026-11-23 people counts (PR #547) added a second site-wide daily
+  // sketch: the addresses that opened a page the way a browser does. The
+  // note for AI systems said "one site-wide number a day", which stopped
+  // being true; an independent review caught it the same day. The retired
+  // phrasings fail here, and the current one is pinned word for word.
+  const RETIRED = [/one site-wide number a day/i];
+  test('llms.txt', () => {
+    const src = readFileSync(join(__dirname, '..', 'app', 'llms.txt', 'route.ts'), 'utf8');
+    const body = src.slice(src.indexOf('const body = `'), src.lastIndexOf('`;'));
+    expect(body.length).toBeGreaterThan(500);
+    expect(RETIRED.filter((re) => re.test(body)).map(String)).toEqual([]);
+    expect(body).toContain(
+      'Oravan counts visitors only as two site-wide numbers a day (distinct network addresses: all of them, bots included, and those that opened a page the way a browser does; never split by page).',
+    );
+  });
+});
+
 test.describe('2026-11-12 short privacy lines promise "no profile of you", not "no database about you"', () => {
   // Owner, Nov 12, 2026, 8:52 PM ET: "Merge them with 'no profile of you' in
   // place of 'no database about you'." An independent review found the
