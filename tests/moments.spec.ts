@@ -106,7 +106,24 @@ test.describe('/questions index', () => {
 });
 
 test.describe('/questions/[id] detail page', () => {
-  const moments: MomentWithState[] = getMoments();
+  /* A retired question has no page (the route answers not-found for it), so the
+     page tests below visit every question that is not retired, and the retired
+     ones get their own test: the address must say "Page not found". */
+  const allMoments: MomentWithState[] = getMoments();
+  const moments = allMoments.filter((m) => m.state !== 'retired');
+  const retired = allMoments.filter((m) => m.state === 'retired');
+
+  for (const m of retired) {
+    for (const { locale, prefix, messages } of LOCALES) {
+      test(`${m.id}/${locale}: a retired question's address says page not found`, async ({
+        page,
+      }) => {
+        await page.goto(`${prefix}/questions/${m.id}`);
+        await expect(page.getByRole('heading', { level: 1 })).toHaveText(messages.notFound.title);
+        await expect(page.getByText(m.name[locale], { exact: true })).toHaveCount(0);
+      });
+    }
+  }
 
   for (const m of moments) {
     test(`${m.id}: AI chip, evidence, and every vehicle link resolves to its real page`, async ({
