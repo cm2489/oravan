@@ -335,7 +335,7 @@
     "officialTitle": "Título oficial",
     "statusLabel": "Estado",
     "lastAction": "Última acción",
-    "sponsorLine": "Presentado por <who>{name}</who>\u00a0· {role}\u00a0· {state}",
+    "sponsorLine": "Presentado por <who>{name}</who> · {role} · {state}",
     "introduced": "Presentado",
     "viewOfficial": "Lee el proyecto oficial en Congress.gov",
     "share": {
@@ -1170,6 +1170,28 @@
         "failed": "{chamber, select, house {Una votación en el pleno de la Cámara sobre este proyecto fracasó.} other {Una votación en el pleno del Senado sobre este proyecto fracasó.}}",
         "inCommittee": "En comité."
       }
+    },
+    "glance": {
+      "heading": "De un vistazo",
+      "lead": "{reason, select, only {El proyecto} onlyOpen {El único proyecto aquí aún abierto} scheduled {El proyecto abierto en el calendario del pleno de una cámara} floorAction {El proyecto abierto con la última acción en el pleno} action {El proyecto abierto con la última acción} other {Un proyecto abierto}}",
+      "votesLabel": "Votaciones hasta ahora",
+      "votesHouse": "{count} en la Cámara",
+      "votesSenate": "{count} en el Senado",
+      "votesNewest": "La más reciente, {date}, tal como consta (en inglés):",
+      "passageLabel": "Votación de aprobación",
+      "passageNotYet": "Todavía no",
+      "passageVote": "{chamber, select, house {Cámara} other {Senado}}, {date}, tal como consta (en inglés):",
+      "nextLabel": "Si se aprueba",
+      "next": {
+        "pass": "{chamber, select, house {Pasa al Senado.} other {Pasa a la Cámara.}}",
+        "sameForm": "{chamber, select, house {Si la Cámara aprueba la medida sin cambios} other {Si el Senado aprueba la medida sin cambios}}, {then, select, president {pasa al presidente.} adopted {ambas cámaras la habrán aprobado, y no pasa al presidente.} other {pasa a los estados para que la ratifiquen.}}",
+        "concur": "{chamber, select, house {Si la Cámara acepta los cambios del Senado} other {Si el Senado acepta los cambios de la Cámara}}, {then, select, president {pasa al presidente.} adopted {ambas cámaras la habrán aprobado, y no pasa al presidente.} other {pasa a los estados para que la ratifiquen.}}"
+      },
+      "call": "{chamber, select, senate {Llama a tus senadores} house {Llama a tu representante} other {Llama a tus miembros del Congreso}}",
+      "callAbout": "sobre {citation}",
+      "members": "Cómo votaron tus miembros del Congreso",
+      "membersAbout": "sobre {citation}",
+      "more": "{count, plural, one {Y # proyecto más en esta pregunta} other {Y # proyectos más en esta pregunta}}"
     }
   },
   "nominations": {
