@@ -79,9 +79,14 @@
  * And `statusBasisText` from the same module (2026-09-25): the sentence a
  * bill's status was READ from, which every other chamber/tense reader has used
  * since #286. See floorActionInRecord's header for why this one must too.
+ *
+ * And `procedureEndedConsideration` (2026-11-23, issue #268): the one reading
+ * of a procedure that ended the measure's consideration, imported for the same
+ * reason as floorMakesNoClaim — so the scaffold and the nightly scaffold sweep
+ * cannot disagree about a motion that fell.
  */
 import { CATEGORIES, SIGNAL_TYPES, lintForbidden } from '../lib/moments-gate.mjs';
-import { floorMakesNoClaim, statusBasisText } from '../lib/floor-text.mjs';
+import { floorMakesNoClaim, procedureEndedConsideration, statusBasisText } from '../lib/floor-text.mjs';
 
 const DAY_MS = 86_400_000;
 
@@ -332,6 +337,20 @@ export function floorActionInRecord(c, recordText = null) {
   // says "motion to discharge", which the pattern list reads as floor action,
   // but a filing is a signature drive and nothing has happened on the floor.
   if (floorMakesNoClaim(text)) return false;
+  // A procedure that ENDED the measure's consideration derives NOTHING
+  // (2026-11-23, issue #268). S.J.Res. 124's last action, verbatim:
+  //   "The motion to discharge fell when the point of order was well taken."
+  // It says "motion to discharge", which the pattern list reads as floor
+  // action, but the motion FELL: the chamber took the question up and the
+  // answer was no. `tier0_floor_action` would tell readers the chamber is
+  // still moving on the measure, a pending claim over a settled fact (hard
+  // rule 6). lib/floor-text.mjs's procedureEndedConsideration (#370) is the
+  // one reading of these shapes (a point of order upheld against the
+  // measure, an advancing motion that fell on a point of order, or one that
+  // was tabled); it is fail-closed, so a motion to discharge that was MADE,
+  // agreed to or rejected by recorded vote still reads as floor action. The
+  // nightly sweep counts what this refuses as a settled outcome.
+  if (procedureEndedConsideration(text)) return false;
   return text.trim().length > 0 && FLOOR_ACTION_PATTERNS.some((re) => re.test(text));
 }
 
