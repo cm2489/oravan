@@ -65,8 +65,8 @@
  *       newest action must be inside 45 days (the watcher's own floor, kept
  *       as it was). Or as a STANDING TOPIC (`qualifying_signal.type` is
  *       `standing_topic`), at any age, while at least one of its bills still
- *       has a decision open on the record. A topic with no open bill is
- *       refused either way: no Big Question without a legislative vehicle.
+ *       has a decision open on the record. A standing topic with no open
+ *       bill is refused: no Big Question without a legislative vehicle.
  *   all slots, no directive ...... the cap is the scarcity claim. Which one
  *       retires is an editorial decision, and it is his.
  *
@@ -95,6 +95,7 @@
  */
 import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { CONGRESS_POLICY, isEndedCongress } from '../lib/congress.mjs';
 import { decisionState } from '../lib/docket.mjs';
 import {
   ID_RE,
@@ -391,7 +392,7 @@ function ageInDays(isoDate, now) {
  * @returns {{ open: string[], closed: string[] }} slugs, with a short reason
  *   for each closed one
  */
-export function openBills(entry, { billBySlug } = {}) {
+export function openBills(entry, { billBySlug, congressPolicy = CONGRESS_POLICY } = {}) {
   const open = [];
   const closed = [];
   for (const v of Array.isArray(entry?.vehicles) ? entry.vehicles : []) {
@@ -399,6 +400,11 @@ export function openBills(entry, { billBySlug } = {}) {
     const row = billBySlug?.get(v.slug);
     if (!row) {
       closed.push(`\`${v.slug}\` is not in data/bills.json`);
+    } else if (isEndedCongress(row.congress_number, congressPolicy)) {
+      /* A bill of a Congress that has ended lapsed with it. Its stored status
+         can still read as pending, and with no age test on a standing topic
+         nothing else would stop a topic opening on it after the switch. */
+      closed.push(`\`${v.slug}\` belongs to a Congress that has ended`);
     } else if (TERMINAL_VEHICLE_STATUSES.has(row.status)) {
       closed.push(`\`${v.slug}\` is \`${row.status}\``);
     } else if (decisionState(row).state !== 'pending') {
@@ -448,10 +454,10 @@ export function openBills(entry, { billBySlug } = {}) {
  * treated as evidence of absence.
  *
  * @param {Record<string, any>} entry  the parsed scaffold entry
- * @param {{ billBySlug?: Map<string, any>, nominationBySlug?: Map<string, any>, now?: number }} [opts]
+ * @param {{ billBySlug?: Map<string, any>, nominationBySlug?: Map<string, any>, now?: number, congressPolicy?: import('../lib/congress.mjs').CongressPolicy }} [opts]
  * @returns {{ blocking: string[], notes: string[], opening: string[] }}
  */
-export function recordDrift(entry, { billBySlug, nominationBySlug, now = Date.now() } = {}) {
+export function recordDrift(entry, { billBySlug, nominationBySlug, now = Date.now(), congressPolicy = CONGRESS_POLICY } = {}) {
   const blocking = [];
   const notes = [];
   const rowFor = (v) =>
@@ -491,7 +497,25 @@ export function recordDrift(entry, { billBySlug, nominationBySlug, now = Date.no
 
   const opening = [];
   if (entry?.qualifying_signal?.type === STANDING_SIGNAL_TYPE) {
-    const { open, closed } = openBills(entry, { billBySlug });
+    const { open, closed } = openBills(entry, { billBySlug, congressPolicy });
+    /* The page prints a standing topic's refs as its Source links under "its
+       bills on the official record", so each must BE the record page of one of
+       this question's own vehicles. A bare congress.gov/bill/ address, or the
+       page of some other bill, is refused. */
+    const pageOf = (/** @type {unknown} */ u) => String(u ?? '').trim().replace(/[?#].*$/, '').replace(/\/+$/, '');
+    const ownPages = new Set(
+      (Array.isArray(entry?.vehicles) ? entry.vehicles : [])
+        .map((v) => pageOf(rowFor(v)?.congress_gov_url))
+        .filter(Boolean),
+    );
+    const strayRefs = (Array.isArray(entry?.qualifying_signal?.refs) ? entry.qualifying_signal.refs : []).filter(
+      (ref) => !ownPages.has(pageOf(ref)),
+    );
+    if (strayRefs.length) {
+      opening.push(
+        `a standing topic's refs must each be the congress.gov page of one of this question's own vehicles, because the page shows them as its sources. Not one of them: ${strayRefs.map((r) => `\`${r}\``).join(', ')}.`,
+      );
+    }
     if (open.length === 0) {
       opening.push(
         `this is a standing topic (\`qualifying_signal.type\` is \`${STANDING_SIGNAL_TYPE}\`), and a standing topic opens only while at least one of its bills still has a decision open on the official record. None does${closed.length ? `: ${closed.join('; ')}` : ' — it lists no bill at all'}. No Big Question without a legislative vehicle: add a bill that is still open, or decline the topic.`,
@@ -500,7 +524,7 @@ export function recordDrift(entry, { billBySlug, nominationBySlug, now = Date.no
   } else {
     const age = ageInDays(newest, now);
     if (age > SIGNAL_MAX_AGE_DAYS) {
-      const { open } = openBills(entry, { billBySlug });
+      const { open } = openBills(entry, { billBySlug, congressPolicy });
       opening.push(
         `the newest action across this question's vehicles is ${age === Infinity ? 'undated' : `${age} days old`} (${newest ?? 'no date on file'}), and a \`${entry?.qualifying_signal?.type || '(blank)'}\` signal opens a question only inside ${SIGNAL_MAX_AGE_DAYS} days.` +
           (open.length

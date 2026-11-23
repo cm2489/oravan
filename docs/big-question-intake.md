@@ -48,9 +48,10 @@ mechanism.
    does the record let it open. A question on a floor, scheduling or press
    signal opens only while its newest action is inside 45 days (the watcher's
    own floor). A standing topic (`standing_topic`) has no age test; it opens
-   only while at least one of its bills still has a decision open. A topic
-   with no open bill is refused either way: no Big Question without a
-   legislative vehicle.
+   only while at least one of its bills still has a decision open, in a
+   Congress that has not ended, and its refs must be the congress.gov pages of
+   its own bills. A standing topic with no open bill is refused: no Big
+   Question without a legislative vehicle.
 6. **A PR opens, carrying the byte-fidelity attestation and the gate
    transcript.** The workflow branches, commits, opens the PR, and *attempts*
    auto-merge. **As this repository is configured today that attempt fails and

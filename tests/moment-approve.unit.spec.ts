@@ -581,7 +581,19 @@ const driftEntry = (over: Partial<typeof ENTRY> = {}) => ({
   ...over,
 });
 const driftRow = (over: Partial<BillRow> = {}) =>
-  new Map([['s-1-119', { full_identifier: 's-1-119', status: 'floor_vote', last_action_date: '2026-08-01', ...over }]]);
+  new Map([
+    [
+      's-1-119',
+      {
+        full_identifier: 's-1-119',
+        status: 'floor_vote',
+        last_action_date: '2026-08-01',
+        congress_number: 119,
+        congress_gov_url: 'https://www.congress.gov/bill/119th-congress/senate-bill/1',
+        ...over,
+      },
+    ],
+  ]);
 const AT = Date.parse('2026-08-05T00:00:00Z');
 
 test.describe('record drift', () => {
@@ -696,7 +708,7 @@ test.describe('the opening rule for a standing topic', () => {
       ],
     } as never);
     const rows = new Map([
-      ['s-1-119', { full_identifier: 's-1-119', status: 'signed', last_action_date: '2025-01-03' }],
+      ['s-1-119', { full_identifier: 's-1-119', status: 'signed', last_action_date: '2025-01-03', congress_gov_url: STANDING.refs[0] }],
       ['s-2-119', { full_identifier: 's-2-119', status: 'committee', last_action_date: '2025-01-03' }],
     ]);
     const { opening } = recordDrift(entry, { billBySlug: rows, nominationBySlug: new Map(), now: YEARS_LATER });
@@ -720,6 +732,43 @@ test.describe('the opening rule for a standing topic', () => {
     expect(opening.join(' ')).toContain('`s-1-119` is `signed`');
     expect(opening.join(' ')).toContain('`s-2-119` is `vetoed`');
     expect(opening.join(' ')).toContain('No Big Question without a legislative vehicle');
+  });
+
+  test('a bill of a Congress that has ended does not hold a standing topic open', () => {
+    const ended = { tracked: 120, ended: [{ number: 119, ended: '2027-01-03' }] };
+    const { opening } = recordDrift(driftEntry({ qualifying_signal: STANDING } as never), {
+      billBySlug: driftRow({ status: 'committee' }),
+      nominationBySlug: new Map(),
+      now: YEARS_LATER,
+      congressPolicy: ended as never,
+    });
+    expect(opening.join(' ')).toContain('`s-1-119` belongs to a Congress that has ended');
+    // The same bill, same day, while its Congress is the tracked one: open.
+    const { opening: stillOpen } = recordDrift(driftEntry({ qualifying_signal: STANDING } as never), {
+      billBySlug: driftRow({ status: 'committee' }),
+      nominationBySlug: new Map(),
+      now: YEARS_LATER,
+    });
+    expect(stillOpen).toEqual([]);
+  });
+
+  test("a standing topic's refs must be its own bills' record pages", () => {
+    for (const ref of [
+      'https://www.congress.gov/bill/',
+      'https://www.congress.gov/bill/119th-congress/house-bill/1',
+    ]) {
+      const { opening } = recordDrift(
+        driftEntry({ qualifying_signal: { type: 'standing_topic', refs: [ref] } } as never),
+        { billBySlug: driftRow(), nominationBySlug: new Map(), now: AT },
+      );
+      expect(opening.join(' '), ref).toContain("one of this question's own vehicles");
+    }
+    // Its own page passes, with or without a trailing slash.
+    const { opening } = recordDrift(
+      driftEntry({ qualifying_signal: { type: 'standing_topic', refs: [`${STANDING.refs[0]}/`] } } as never),
+      { billBySlug: driftRow(), nominationBySlug: new Map(), now: AT },
+    );
+    expect(opening).toEqual([]);
   });
 
   test('a topic with no vehicle is refused', () => {

@@ -1077,7 +1077,7 @@
     "settledGroupHeading": "{count, plural, one {Resuelto · # · se conserva como registro} other {Resueltos · # · se conservan como registro}}",
     "partOf": "Parte de una pregunta más amplia: {name}",
     "whyHeading": "Por qué existe esta Gran pregunta",
-    "whyCriteria": "Una Gran pregunta es un tema de mayor alcance ante el Congreso. Se abre solo cuando incluye al menos un proyecto de ley, una resolución o una nominación ante el Senado en el registro oficial sobre los que una llamada todavía pueda influir. No tiene que haber una votación próxima. Cada uno de sus proyectos de ley muestra su último paso en el registro, con su fecha, así que cuando el registro lo coloca en el calendario del pleno de una cámara o muestra una acción en el pleno sobre él, esta página lo dice.",
+    "whyCriteria": "Una Gran pregunta es un tema de mayor alcance ante el Congreso. Se abre solo cuando incluye al menos un proyecto de ley, una resolución o una nominación ante el Senado en el registro oficial sobre los que una llamada todavía pueda influir. No tiene que haber una votación próxima. Cada uno de sus proyectos de ley muestra su último paso en el registro, con su fecha, así que cuando el registro coloca uno de ellos en el calendario del pleno de una cámara o muestra una acción en el pleno sobre él, esta página lo dice.",
     "signalLabel": "La señal que califica",
     "signalType": {
       "tier0_floor": "En el calendario del pleno",
