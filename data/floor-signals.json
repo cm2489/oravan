@@ -1,12 +1,12 @@
 {
   "_meta": {
     "schema": "floor-signals/v1",
-    "fetched_at": "2026-11-23T02:40:05.713Z",
+    "fetched_at": "2026-11-23T12:20:54.896Z",
     "sources": {
       "daily-digest": {
         "status": "error",
         "detail": "no Formatted Text URL in the Daily Digest section of 2026-11-20; fallback: no \"Next Meeting of the SENATE\" granule in CREC-2026-11-18",
-        "checked_at": "2026-11-23T02:40:05.713Z",
+        "checked_at": "2026-11-23T12:20:54.896Z",
         "url": null,
         "published": null,
         "covers": null,
@@ -14,12 +14,12 @@
         "via": null
       },
       "billsthisweek": {
-        "status": "ok",
-        "detail": "15 scheduled measure(s)",
-        "checked_at": "2026-11-23T02:40:05.713Z",
-        "url": "https://docs.house.gov/billsthisweek/20261116/20261116.xml",
-        "published": "2026-11-16",
-        "covers": "2026-11-16",
+        "status": "unknown",
+        "detail": "no schedule published for this week (404)",
+        "checked_at": "2026-11-23T12:20:54.896Z",
+        "url": "https://docs.house.gov/billsthisweek/20261123/20261123.xml",
+        "published": "2026-11-23",
+        "covers": "2026-11-23",
         "covers_label": null,
         "via": "docs.house.gov"
       }
@@ -53,7 +53,7 @@
       },
       "fetched_at": "2026-11-23T02:40:05.713Z",
       "first_seen": "2026-11-16T11:02:12.090Z",
-      "stale": false
+      "stale": true
     },
     "hr-2400-119": {
       "tier0": {
@@ -72,7 +72,7 @@
       },
       "fetched_at": "2026-11-23T02:40:05.713Z",
       "first_seen": "2026-11-16T11:02:12.090Z",
-      "stale": false
+      "stale": true
     },
     "hr-3495-119": {
       "tier0": {
@@ -91,7 +91,7 @@
       },
       "fetched_at": "2026-11-23T02:40:05.713Z",
       "first_seen": "2026-11-16T11:02:12.090Z",
-      "stale": false
+      "stale": true
     },
     "hr-4464-119": {
       "tier0": {
@@ -110,7 +110,7 @@
       },
       "fetched_at": "2026-11-23T02:40:05.713Z",
       "first_seen": "2026-11-16T11:02:12.090Z",
-      "stale": false
+      "stale": true
     },
     "hr-5267-119": {
       "tier0": {
@@ -129,7 +129,7 @@
       },
       "fetched_at": "2026-11-23T02:40:05.713Z",
       "first_seen": "2026-11-16T11:02:12.090Z",
-      "stale": false
+      "stale": true
     },
     "hr-5490-119": {
       "tier0": {
@@ -148,7 +148,7 @@
       },
       "fetched_at": "2026-11-23T02:40:05.713Z",
       "first_seen": "2026-11-16T11:02:12.090Z",
-      "stale": false
+      "stale": true
     },
     "hr-7254-119": {
       "tier0": {
@@ -167,7 +167,7 @@
       },
       "fetched_at": "2026-11-23T02:40:05.713Z",
       "first_seen": "2026-11-16T11:02:12.090Z",
-      "stale": false
+      "stale": true
     },
     "hr-7934-119": {
       "tier0": {
@@ -186,7 +186,7 @@
       },
       "fetched_at": "2026-11-23T02:40:05.713Z",
       "first_seen": "2026-11-16T11:02:12.090Z",
-      "stale": false
+      "stale": true
     },
     "hr-7954-119": {
       "tier0": {
@@ -205,7 +205,7 @@
       },
       "fetched_at": "2026-11-23T02:40:05.713Z",
       "first_seen": "2026-11-16T11:02:12.090Z",
-      "stale": false
+      "stale": true
     },
     "hr-8195-119": {
       "tier0": {
@@ -224,7 +224,7 @@
       },
       "fetched_at": "2026-11-23T02:40:05.713Z",
       "first_seen": "2026-11-16T11:02:12.090Z",
-      "stale": false
+      "stale": true
     },
     "hr-8483-119": {
       "tier0": {
@@ -243,7 +243,7 @@
       },
       "fetched_at": "2026-11-23T02:40:05.713Z",
       "first_seen": "2026-11-16T11:02:12.090Z",
-      "stale": false
+      "stale": true
     },
     "hr-9269-119": {
       "tier0": {
@@ -262,7 +262,7 @@
       },
       "fetched_at": "2026-11-23T02:40:05.713Z",
       "first_seen": "2026-11-16T11:02:12.090Z",
-      "stale": false
+      "stale": true
     },
     "hr-9600-119": {
       "tier0": {
@@ -281,7 +281,7 @@
       },
       "fetched_at": "2026-11-23T02:40:05.713Z",
       "first_seen": "2026-11-16T11:02:12.090Z",
-      "stale": false
+      "stale": true
     },
     "hr-9640-119": {
       "tier0": {
@@ -300,7 +300,7 @@
       },
       "fetched_at": "2026-11-23T02:40:05.713Z",
       "first_seen": "2026-11-16T11:02:12.090Z",
-      "stale": false
+      "stale": true
     },
     "hr-9785-119": {
       "tier0": {
@@ -319,7 +319,7 @@
       },
       "fetched_at": "2026-11-23T02:40:05.713Z",
       "first_seen": "2026-11-16T11:02:12.090Z",
-      "stale": false
+      "stale": true
     }
   },
   "nominations": {}

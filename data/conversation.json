@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-23T02:40:12.072Z",
+    "fetched_at": "2026-11-23T12:21:00.440Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-23T02:40:12.072Z"
+        "checked_at": "2026-11-23T12:21:00.440Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-15",
         "week_label": "Most-Viewed Bills - Week of November 15, 2026",
         "entries": 7,
-        "checked_at": "2026-11-23T02:40:12.072Z"
+        "checked_at": "2026-11-23T12:21:00.440Z"
       },
       "leans": {
         "center": {
@@ -1349,6 +1349,12 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "fireandsafetyjournalamericas.com",
+          "firstSeen": "2026-11-23",
+          "lastSeen": "2026-11-23",
+          "url": "https://news.google.com/rss/articles/CBMid0FVX3lxTE9kcEhvaGtxdFA1bXF5RXljVXJic2RnS2VqUm9ieW45Rng5ekYtOV9ZdWtwWU5EdmRsSEtpNlhXNWNoWnFYRkVNOGVZSXJvS0tYVm5XQS1aYVF1VXozQ3BlRWhxQWd5R2U0QjFVQUZMeVFNVm82M19R?oc=5"
+        },
+        {
           "domain": "5townscentral.com",
           "firstSeen": "2026-11-22",
           "lastSeen": "2026-11-22",
@@ -1892,8 +1898,27 @@
           "firstSeen": "2026-11-23",
           "lastSeen": "2026-11-23",
           "url": "https://news.google.com/rss/articles/CBMiowFBVV95cUxPWlFoY0VMNzM3VDhzWHRoaGJ6WXQ3eExKQzBlX3lnb21JZjVvR0xocEVpalhTYWlpT0czWUdkM3JxamY4SFdMZ3EwVmxra1RIbTQzMFZvYlVDSTJxeWh6UlRBT2lJTjkzSDViRlpCSEprQTR3eWhERFJBQlh2eTRqUWZsS2NvYWZ2MUNvYTRVTFZ2Mk10bHpMNTFIVGp1em4wTER30gGoAUFVX3lxTE8xM1o2cUNoMXNWU09ObUNNWjdUT1kyMDN0ZFM4REhoRnowVHBCOFIxcHRqTlF3MllwVnF0ZVpubWpUQnV5VWFrSGZCdUpnbW1jbGVNWXprQ1FkM1JIeG42NHFXM2drbWxWSGFtWkxwWXY5M3BhWXpobU50T09zbmxUVkc5YWhkaEJPTnJaUks5UzBXSldYblV5d042TjdLRkpPOGVCZjRocQ?oc=5"
+        },
+        {
+          "domain": "wsws.org",
+          "firstSeen": "2026-11-23",
+          "lastSeen": "2026-11-23",
+          "url": "https://news.google.com/rss/articles/CBMiaEFVX3lxTE51S3RMTXhhbFlhZGR5WDJkZkJORFZINWtxb21Ta2UyMndyS0ZvSXZsVEM2eThBdl9Hd0RIaktKRF9RTGY0WHFCNmJ6Um5NT1g4VmxibTVsY1pFUHBZbC1xRUN4NXNtcks2?oc=5"
         }
       ],
+      "mostViewed": null
+    },
+    "sjres-188-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-11-23",
+          "lastSeen": "2026-11-23",
+          "url": "https://thehill.com/homenews/house/6234454-house-funding-shutdown-risk/"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "sjres-204-119": {
