@@ -632,9 +632,12 @@ export function createTenantRateLimiter(opts: {
 // --- daily distinct-address count (owner ruling 2026-09-25; hardened 2026-09-27)
 
 /*
- * WHAT THIS IS, STATED PLAINLY: one number a day for the whole site — how
- * many different network addresses requested at least one HTML page during a
- * UTC day, bots included. It answers "how many daily users" more honestly
+ * WHAT THIS IS, STATED PLAINLY: site-wide numbers, one per sketch per UTC
+ * day, never split by page. The first: how many different network addresses
+ * requested at least one HTML page during a UTC day, bots included. Since
+ * 2026-11-23 a second (THE SECOND SKETCH, below): how many of those addresses
+ * opened a page the way a browser does. Everything this section says holds
+ * for both. It answers "how many daily users" more honestly
  * than page views can, and it is NOT a count of people: a household, office,
  * or carrier NAT shares one address (undercount), a phone that changes
  * networks shows several (overcount).
@@ -820,6 +823,19 @@ export async function noteDistinctAddress(ip: string, now: Date = new Date()): P
  * limit: until the day's salt dies, someone holding the counters database and
  * a candidate address could test whether that address opened a page the way
  * a browser does that day; after it dies, no one can.
+ *
+ * NEVER IN THE SAME KEY — AND WHAT THAT DOES NOT COVER. No stored key pairs
+ * an address-derived element with a page shape: this sketch has no page
+ * dimension, and the browser page-view count (lib/usage.ts) holds no
+ * address. But proxy.ts sends the per-page INCR and this PFADD for the same
+ * load milliseconds apart, to the same counters database, which also holds
+ * the day's salt. So while that salt lives, someone who could watch the
+ * database's commands as they arrive (its operator, or someone holding its
+ * credentials) could compute a candidate address's element and match it, by
+ * arrival time, to the page-shape increment beside it. The first sketch and
+ * the all-loads page-view count have carried the same exposure since
+ * 2026-09-27. The stored data alone cannot be paired, and once the salt is
+ * deleted the element can no longer be computed for anyone.
  */
 export async function noteBrowserAddress(ip: string, now: Date = new Date()): Promise<void> {
   await addToDaySketch(browserAddressKey, ip, now);

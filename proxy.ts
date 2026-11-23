@@ -153,7 +153,9 @@ export default function proxy(req: NextRequest, event: NextFetchEvent) {
     // headers are dropped here like every other. A "browser" load ALSO
     // increments the browser page-view count for the same template and adds
     // the address to the second daily sketch — two more separate calls, so
-    // the address still never travels beside the page label.
+    // the address and the page label are never in the same key. They do
+    // reach the counters database milliseconds apart; lib/ratelimit.ts (THE
+    // SECOND SKETCH) states what someone watching it live could pair.
     if (isBrowserPageLoad(req.headers)) {
       try {
         event.waitUntil(noteBrowserPageview(surface).catch(() => {}));

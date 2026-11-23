@@ -308,7 +308,7 @@ test('readPeopleSignalsWindow: one MGET, day order kept, fail-closed without a d
 // --- the estimate and the digest ----------------------------------------------------
 
 test.describe('People (estimate)', () => {
-  test('floor is the LARGER of lookups and scripts, never their sum; ceiling is the browser sketch; bots share of loads', () => {
+  test('actions are the two totals side by side, never a floor; ceiling is the browser sketch; bots share of loads', () => {
     const e = peopleEstimate({
       pageLoads: 4410,
       browserPageLoads: 441,
@@ -316,12 +316,15 @@ test.describe('People (estimate)', () => {
       scriptsServed: 12,
       browserAddresses: { ok: true, count: 150, noExpiry: false },
     });
-    expect(e.floor).toBe(30);
-    expect(e.floorSource).toBe('lookups');
+    expect(e).not.toHaveProperty('floor');
+    expect(e.repLookups).toBe(30);
+    expect(e.scriptsServed).toBe(12);
     expect(e.ceiling).toBe(150);
     expect(e.ceilingState).toBe('read');
     expect(e.botShare).toBeCloseTo(0.9, 5);
-    expect(e.floorAboveCeiling).toBe(false);
+    const lines = formatPeopleLines(e).join('\n');
+    expect(lines).toContain('actions   30 / 12');
+    expect(lines).toContain('ZIP lookups that found a district / call scripts shown (actions, not people)');
   });
 
   test('every unread or empty state is said, never invented', () => {
@@ -340,10 +343,14 @@ test.describe('People (estimate)', () => {
     expect(formatPeopleLines(null)[0]).toMatch(/^People \(estimate\): not read/);
   });
 
-  test('a floor above the ceiling is flagged as repeats, not more people', () => {
+  test('no line, caveat or field calls the actions a floor or a lower bound', () => {
     const e = peopleEstimate({ pageLoads: 100, browserPageLoads: 50, repLookups: 80, scriptsServed: 3, browserAddresses: { ok: true, count: 20, noExpiry: false } });
-    expect(e.floorAboveCeiling).toBe(true);
-    expect(formatPeopleLines(e).join('\n')).toContain('repeat lookups or scripts by the same people');
+    const text = [...formatPeopleLines(e), PEOPLE_CAVEAT].join('\n');
+    expect(text).not.toMatch(/\bfloor\b/i);
+    // "lower bound" appears only in its denial.
+    expect(text.match(/lower bound/gi) ?? []).toHaveLength(1);
+    expect(Object.keys(e).join(' ')).not.toMatch(/floor/i);
+    expect(PEOPLE_CAVEAT).toContain('not a lower bound on people');
   });
 
   test('the digest prints the block and its caveat only when supplied; old callers are unchanged', () => {

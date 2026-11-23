@@ -73,8 +73,8 @@ import { countersClient, keyPrefix, noteUpstashError, type UpstashClient } from 
  *                                                page views isBrowserPageLoad
  *                                                labels "browser" (2026-11-23)
  *   <env>:usage:rep-lookup:<YYYY-MM-DD>          an INCR'd daily counter of
- *                                                ZIP lookups that found
- *                                                members (2026-11-23)
+ *                                                ZIP lookups that found a
+ *                                                district (2026-11-23)
  *   <env>:usage:script-served:<YYYY-MM-DD>       an INCR'd daily counter of
  *                                                call scripts served, cache
  *                                                hits included (2026-11-23)
@@ -834,8 +834,9 @@ export async function noteBrowserPageview(surface: PageviewSurface): Promise<voi
 }
 
 /**
- * Record one ZIP lookup that found members of Congress. No parameter: the ZIP,
- * the districts and the members stay in app/api/reps. Never throws.
+ * Record one ZIP lookup that found a district (a vacant seat included). No
+ * parameter: the ZIP, the districts and the members stay in app/api/reps.
+ * Never throws.
  */
 export async function noteRepLookup(): Promise<void> {
   await noteUsage(repLookupUsageKey(usageDayKey()));
@@ -983,7 +984,7 @@ export type PeopleSignalsWindowResult =
       ok: true;
       /** Browser page views per route template (browserPageviewUsageKey). */
       browserSurfaces: Record<PageviewSurface, number[]>;
-      /** ZIP lookups that found members (repLookupUsageKey). */
+      /** ZIP lookups that found a district (repLookupUsageKey). */
       repLookups: number[];
       /** Call scripts served, cache hits included (scriptServedUsageKey). */
       scriptsServed: number[];
@@ -1002,7 +1003,7 @@ export type PeopleSignalsWindowResult =
  * Exported for the weekly owner note as well as the daily digest:
  * lib/traffic-metrics.mjs's peopleEstimate turns one day of this (plus the
  * page-view window and lib/ratelimit.ts's two sketch readings) into the
- * floor / ceiling / bots' share the digest prints.
+ * actions / ceiling / bots' share the digest prints.
  */
 export async function readPeopleSignalsWindow(days: string[]): Promise<PeopleSignalsWindowResult> {
   const client = countersClient();
