@@ -69,7 +69,7 @@ const BAR_TOP = 780;
    record says tonight. Where its call button (or outcome line) ENDS depends on
    the night's data: how many rows the lead bill has, how long its title is,
    and the language (the first CI run, 2026-11-23: English 537 to 827px,
-   Spanish 659 to 917px, with seven of twelve at or above the 780px bar line).
+   Spanish 659 to 917px, with five of twelve past the 780px bar line).
    A hard pixel ceiling on that would fail CI on a nightly data commit, so it
    is measured, written to first-screen-<lang>-<id>.json for a reviewer, and
    not asserted. */
