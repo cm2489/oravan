@@ -1,5 +1,5 @@
 {
-  "schema": "oravan.reader-questions/bank-v1",
+  "schema": "reader-questions/bank-v1",
   "status": "DRAFT, needs one-time owner approval; Spanish pending native review",
   "types": {
     "war_powers": {

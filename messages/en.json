@@ -759,7 +759,7 @@
     "whenConfirmedTitle": "What happens when a correction is confirmed",
     "whenConfirmedBody": "A confirmed error is fixed at the source: the data that both languages’ plain-language versions are built from. From there, every surface that reads that data updates together on Oravan’s next deploy. The bill page, its statically generated share-card image and the MCP server’s tool responses all read the same file, so there is no separate cache to clear. The one thing that doesn’t move on its own is the freshness stamp. The site-wide \"as of\" date and the MCP envelope’s {asOfField} field both track Oravan’s last successful nightly sync, so they advance at the next scheduled sync after the fix ships, as they do every night. The embeddable bill card reads the same file too, so it needs no correction step of its own.",
     "backlogNote": "A correction that points to a broader pattern, not a one-off slip, is tracked as a pattern instead of being patched quietly and forgotten.",
-    "aiReaderQuestions": "Reader questions on a Big Question page are picked from a fixed list of common questions; AI never writes a question. Each answer is written by AI once, on the date printed under it, and is not rewritten each night. Every sentence either quotes an official source linked under the answer or says plainly what we couldn't check. Nothing publishes unless automated checks pass: both languages, and a quote and a source on every sentence."
+    "aiReaderQuestions": "Reader questions on a Big Question page are picked by AI from a fixed list of questions, itself drafted with AI, and are shown in that list’s exact words; no question is written for one page. Each answer is written by AI once, on the date printed under it, and is not rewritten each night. Each sentence does one of three things: it rests on a passage from an official source linked under the answer; it says which official records we searched and what we did not find there; or it says plainly what we couldn’t check. Nothing publishes unless automated checks pass: every sentence in both languages, with the same numbers; a stored quote and a listed source on every sentence of the first kind; and the sources searched named on every sentence of the other two. The checks do not re-read the sources."
   },
   "notFound": {
     "title": "Page not found",
@@ -1877,9 +1877,9 @@
   },
   "readerQuestions": {
     "heading": "Reader questions",
-    "aiLabel": "Answers written by AI from the official record.",
+    "aiLabel": "AI picked these questions from a fixed list and wrote the answers from the official record.",
     "howMade": "How this is made",
-    "intro": "Picked from our fixed list of common questions and answered only from the official sources listed under each answer.",
+    "intro": "Picked from our fixed list of questions and answered only from the official sources listed under each answer.",
     "couldntCheck": "We couldn't check this.",
     "sources": "Sources",
     "written": "Written on {date}. It is not rewritten each night.",

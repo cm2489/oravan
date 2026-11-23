@@ -20,7 +20,12 @@ const LOCALES = [
   { lang: 'en', prefix: '' },
   { lang: 'es', prefix: '/es' },
 ] as const;
-const ABSENCE_PICK: string = ENTRY.picks.find((p) => p.claims.some((c) => c.kind === 'absence'))!.bank_id;
+const ABSENCE_PICK: string = ENTRY.picks.find((p) =>
+  p.claims.some((c) => c.kind === 'absence' && c.absence_kind === 'not_checked'),
+)!.bank_id;
+const NOT_FOUND_PICK: string = ENTRY.picks.find((p) =>
+  p.claims.some((c) => c.kind === 'absence' && c.absence_kind === 'not_found'),
+)!.bank_id;
 const FIRST_PICK: string = ENTRY.picks[0].bank_id;
 
 /** Keyboard focus, the way tests/colour-states.spec.ts gets it in WebKit:
@@ -67,6 +72,11 @@ for (const { lang, prefix } of LOCALES) {
       await expect(r.locator('[data-rq-answer] a[href^="https://"]').first()).toBeVisible();
       await r.locator('summary').click();
       await expect(r.locator('[data-rq-answer]')).toBeHidden();
+      // A searched-and-not-found line is a checked finding: a plain sentence, never "We couldn't check this."
+      const nf = row(page, NOT_FOUND_PICK);
+      await nf.locator('summary').click();
+      await expect(nf.locator('[data-rq-not-found]').first()).toBeVisible();
+      await expect(nf.locator('[data-rq-not-found] strong')).toHaveCount(0);
     });
 
     test('a row takes visible keyboard focus @reflow', async ({ page }) => {

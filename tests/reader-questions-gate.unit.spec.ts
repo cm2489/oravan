@@ -45,9 +45,17 @@ test.describe('the committed answers', () => {
     }
   });
 
-  test('at least one answer shows the "We couldn’t check this" state', () => {
-    const kinds = FILE.questions[MID].picks.flatMap((p: { claims: { kind: string }[] }) => p.claims.map((c) => c.kind));
-    expect(kinds).toContain('absence');
+  test('absence lines come in both kinds: searched and not found, and "We couldn’t check this"', () => {
+    const kinds = FILE.questions[MID].picks.flatMap((p: { claims: { kind: string; absence_kind?: string }[] }) =>
+      p.claims.filter((c) => c.kind === 'absence').map((c) => c.absence_kind),
+    );
+    expect(kinds).toContain('not_found');
+    expect(kinds).toContain('not_checked');
+  });
+
+  test('schema ids are not storage keys (no site key prefix)', () => {
+    expect(FILE.schema).toBe('reader-questions/v1');
+    expect(BANK.schema).toBe('reader-questions/bank-v1');
   });
 
   test('the CLI passes, and its self-test catches every seeded fault', () => {
@@ -58,6 +66,12 @@ test.describe('the committed answers', () => {
 
 test.describe('the gate catches', () => {
   const firstQuoting = (f: any) => f.questions[MID].picks[0].claims.find((c: any) => c.kind !== 'absence');
+  const absence = (f: any, kind: string) =>
+    f.questions[MID].picks.flatMap((p: any) => p.claims).find((c: any) => c.kind === 'absence' && c.absence_kind === kind);
+  const notChecked = (f: any) => absence(f, 'not_checked');
+  const notFound = (f: any) => absence(f, 'not_found');
+  const stopgapLine = (f: any) =>
+    f.questions[MID].picks.find((p: any) => p.bank_id === 'core.alternatives').claims.find((c: any) => c.kind === 'absence');
   const cases: [string, (f: any) => void][] = [
     ['a question not in the bank', (f) => { f.questions[MID].picks[0].bank_id = 'sp.invented'; }],
     ['a reworded question', (f) => { f.questions[MID].picks[0].q.es = '¿Cuándo?'; }],
@@ -75,6 +89,16 @@ test.describe('the gate catches', () => {
     ['a future written date', (f) => { f.questions[MID].written = '2999-01-01'; }],
     ['too many sentences', (f) => { const c = f.questions[MID].picks[0].claims; while (c.length < 5) c.push({ ...c[0] }); }],
     ['an answer for a question that does not exist', (f) => { f.questions['no-such-question'] = f.questions[MID]; }],
+    // Review of #544 (2026-11-23), defect 7.
+    ['a fact passed off as a couldn’t-check line', (f) => { Object.assign(notChecked(f), { en: 'The House passed it 400–15 on May 15.', es: 'La Cámara la aprobó 400–15 el 15 de mayo.' }); }],
+    ['a number on a couldn’t-check line', (f) => { Object.assign(notChecked(f), { en: 'We did not check the 400–15 vote.', es: 'No comprobamos la votación de 400–15.' }); }],
+    ['a fact riding in on a not-found line', (f) => { const c = stopgapLine(f); c.en = c.en.replace('we found no new stopgap', 'we found no new stopgap, and the House passed H.R. 8469 400–15'); c.es = c.es.replace('no encontramos', 'la Cámara aprobó la H.R. 8469 400–15 y no encontramos'); }],
+    ['a not-found line that names no terms looked for', (f) => { notFound(f).absent = []; }],
+    ['an absence line with no kind', (f) => { delete notChecked(f).absence_kind; }],
+    ['a Spanish sentence left as the English', (f) => { const c = firstQuoting(f); c.es = c.en.replace(/“/g, '«').replace(/”/g, '»'); }],
+    ['a Spanish sentence identical to the English', (f) => { const c = notChecked(f); c.es = c.en; }],
+    ['a question tagged for another type of Big Question', (f) => { const q = BANK.questions.find((x: any) => x.id === 'wp.binding'); Object.assign(f.questions[MID].picks[0], { bank_id: q.id, q: { ...q.q } }); }],
+    ['an entry with no question type', (f) => { delete f.questions[MID].type; }],
   ];
   for (const [name, mutate] of cases) {
     test(name, () => {

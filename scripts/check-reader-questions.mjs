@@ -30,24 +30,26 @@ if (process.argv.includes('--self-test')) {
   const bank = read('data/reader-questions-bank.json');
   const moments = read('data/moments.json');
   const mid = Object.keys(moments)[0];
-  const b = bank.questions.find((q) => !q.deterministic);
+  const b = bank.questions.find((q) => !q.deterministic && q.types.includes('spending_deadline'));
+  const other = bank.questions.find((q) => !q.deterministic && !q.types.includes('spending_deadline'));
   const good = () => ({
-    schema: 'oravan.reader-questions/v1',
+    schema: 'reader-questions/v1',
     bank: bank.schema,
     questions: {
       [mid]: {
         written: '2026-11-22',
         record_as_of: '2026-11-22',
         model: 'test-model',
+        type: 'spending_deadline',
         rewritten_nightly: false,
-        sources: { s: { kind: 'record', url: 'https://www.govinfo.gov/x', title: { en: 'A', es: 'A' } } },
+        sources: { s: { kind: 'record', url: 'https://www.govinfo.gov/x', title: { en: 'A source', es: 'Una fuente' } } },
         picks: [
           {
             bank_id: b.id,
             q: { ...b.q },
             claims: [
               { kind: 'record', en: 'It runs to “December 11, 2026.”', es: 'Dura hasta el «11 de diciembre de 2026».', cites: [{ src: 's', quote: 'December 11, 2026.' }] },
-              { kind: 'absence', en: 'We found no estimate.', es: 'No encontramos ninguna estimación.', searched: ['s'] },
+              { kind: 'absence', absence_kind: 'not_checked', en: 'We did not check for an estimate.', es: 'No buscamos ninguna estimación.', searched: ['s'] },
             ],
           },
         ],
@@ -67,6 +69,13 @@ if (process.argv.includes('--self-test')) {
     ['a nightly rewrite', (f) => { f.questions[mid].rewritten_nightly = true; }],
     ['an absence line with no sources searched', (f) => { f.questions[mid].picks[0].claims[1].searched = []; }],
     ['a cite to an unlisted source', (f) => { f.questions[mid].picks[0].claims[0].cites[0].src = 'nope'; }],
+    // 2026-11-23 review of #544, defect 7.
+    ['a fact passed off as a couldn’t-check line', (f) => { Object.assign(f.questions[mid].picks[0].claims[1], { en: 'The House passed it 400–15 on May 15.', es: 'La Cámara la aprobó 400–15 el 15 de mayo.' }); }],
+    ['a fact riding in on a not-found line', (f) => { Object.assign(f.questions[mid].picks[0].claims[1], { absence_kind: 'not_found', absent: ['delay'], en: 'We found no delay: the House passed it 400–15 on May 15.', es: 'No encontramos ningún retraso: la Cámara la aprobó 400–15 el 15 de mayo.' }); }],
+    ['an absence line with no kind', (f) => { delete f.questions[mid].picks[0].claims[1].absence_kind; }],
+    ['a Spanish sentence left as the English', (f) => { const c = f.questions[mid].picks[0].claims[1]; c.es = c.en; }],
+    ['a Spanish sentence written in English', (f) => { Object.assign(f.questions[mid].picks[0].claims[0], { en: 'It runs to “December 11, 2026.” under the law that is now in force for the agencies.', es: 'It runs to «December 11, 2026.» under the law that is now in force for the agencies.' }); }],
+    ['a bank question for another type of Big Question', (f) => { Object.assign(f.questions[mid].picks[0], { bank_id: other.id, q: { ...other.q } }); }],
   ];
   const clean = checkReaderQuestions(good(), bank, moments);
   let failed = clean.violations.length > 0;

@@ -10,12 +10,16 @@ import { readerQuestionsFor, type ReaderClaim } from '@/lib/reader-questions';
  * as native <details> rows: they open and close with no JavaScript.
  *
  * Provenance, which the block states once at its top and once at its foot:
- * the questions are the bank's own words (AI never writes one); the answers
- * are written by AI once, on the date printed, from quoted official sources,
- * and no nightly job rewrites them (data/reader-questions.json,
+ * AI picks the questions from the fixed bank and they are shown in the bank's
+ * own words (the bank was drafted with AI; no question is written for one
+ * page); the answers are written by AI once, on the date printed, from quoted
+ * official sources, and no nightly job rewrites them (data/reader-questions.json,
  * `rewritten_nightly: false`, enforced by scripts/check-reader-questions.mjs).
- * An "absence" sentence is printed after "We couldn't check this." so a gap
- * in the record never reads as a finding.
+ * Absence lines come in two kinds: a `not_found` line (we searched the named
+ * records and found none) is a checked finding and prints as a plain
+ * sentence, its searched sources listed with the others; a `not_checked` line
+ * is printed after "We couldn't check this." so a gap in what we checked never
+ * reads as a finding.
  *
  * Renders nothing for a Big Question with no entry in the file.
  */
@@ -34,12 +38,12 @@ export async function ReaderQuestions({ id, locale }: { id: string; locale: stri
   });
 
   const sentence = (c: ReaderClaim, i: number) =>
-    c.kind === 'absence' ? (
+    c.kind === 'absence' && c.absence_kind === 'not_checked' ? (
       <p key={i} className="max-w-read text-sm text-ink" data-rq-silent="">
         <strong className="font-bold">{t('couldntCheck')}</strong> {c[lang]}
       </p>
     ) : (
-      <p key={i} className="max-w-read font-reading text-md text-ink">
+      <p key={i} className="max-w-read font-reading text-md text-ink" data-rq-not-found={c.kind === 'absence' ? '' : undefined}>
         {c[lang]}
       </p>
     );

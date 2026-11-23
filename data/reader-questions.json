@@ -1,11 +1,12 @@
 {
-  "schema": "oravan.reader-questions/v1",
-  "bank": "oravan.reader-questions/bank-v1",
+  "schema": "reader-questions/v1",
+  "bank": "reader-questions/bank-v1",
   "questions": {
     "government-funding-deadline": {
       "written": "2026-11-22",
       "record_as_of": "2026-11-22",
       "model": "claude-opus-5-5",
+      "type": "spending_deadline",
       "rewritten_nightly": false,
       "sources": {
         "plaw-119-103": {
@@ -168,12 +169,28 @@
             "es": "Congress.gov: proyectos de gasto del año fiscal 2027 de la Cámara, últimas acciones (en inglés)"
           }
         },
-        "cg-search-stopgaps": {
+        "hr8469-pcs": {
           "kind": "record",
-          "url": "https://www.congress.gov/search?q=%7B%22congress%22%3A%5B%22119%22%5D%2C%22source%22%3A%22legislation%22%2C%22search%22%3A%22continuing+appropriations%22%7D",
+          "url": "https://www.govinfo.gov/content/pkg/BILLS-119hr8469pcs/html/BILLS-119hr8469pcs.htm",
           "title": {
-            "en": "Congress.gov: bills of the 119th Congress, searched",
-            "es": "Congress.gov: proyectos del 119.º Congreso consultados (en inglés)"
+            "en": "H.R. 8469 as placed on the Senate calendar, text",
+            "es": "Texto de la H.R. 8469 tal como se incluyó en el calendario del Senado (en inglés)"
+          }
+        },
+        "hrpt-119-622": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/CRPT-119hrpt622/html/CRPT-119hrpt622.htm",
+          "title": {
+            "en": "H. Rept. 119-622, the House Appropriations Committee’s report on H.R. 8469",
+            "es": "Informe de la Cámara 119-622, de la Comisión de Asignaciones, sobre la H.R. 8469 (en inglés)"
+          }
+        },
+        "bill-scan": {
+          "kind": "record",
+          "url": "https://api.congress.gov/v3/bill/119?fromDateTime=2026-07-18T00:00:00Z&toDateTime=2026-11-23T01:39:30Z&sort=updateDate+desc",
+          "title": {
+            "en": "Congress.gov data service: every 119th-Congress bill updated from July 18, 2026, through November 22, 2026, searched for bills introduced after H.R. 9770 (needs a free api.data.gov key)",
+            "es": "Servicio de datos de Congress.gov: todos los proyectos del 119.º Congreso actualizados del 18 de julio de 2026 al 22 de noviembre de 2026, revisados en busca de proyectos presentados después de la H.R. 9770 (requiere una clave gratuita de api.data.gov; en inglés)"
           }
         }
       },
@@ -334,7 +351,7 @@
             {
               "kind": "analysis",
               "en": "The same report says programs funded outside yearly spending laws, “such as entitlements like Social Security and other mandatory spending,” “also may be affected by a funding gap, if program execution relies on activities that receive annually appropriated funding.”",
-              "es": "El mismo informe dice que los programas financiados fuera de leyes anuales de gasto, «como los derechos adquiridos, por ejemplo el Seguro Social, y otros gastos obligatorios», «también pueden verse afectados por una interrupción de fondos si su ejecución depende de actividades que reciben fondos asignados cada año».",
+              "es": "El mismo informe dice que los programas financiados fuera de leyes anuales de gasto, «como los programas de prestaciones, por ejemplo el Seguro Social, y otros gastos obligatorios», «también pueden verse afectados por una interrupción de fondos si su ejecución depende de actividades que reciben fondos asignados cada año».",
               "cites": [
                 {
                   "src": "crs-rl34680",
@@ -344,6 +361,7 @@
             },
             {
               "kind": "absence",
+              "absence_kind": "not_checked",
               "en": "We did not retrieve agencies' own plans for a lapse, so this answer does not say which programs at any one agency keep running.",
               "es": "No consultamos los planes de cada agencia para una interrupción de fondos, así que esta respuesta no dice qué programas de una agencia concreta siguen funcionando.",
               "searched": [
@@ -400,6 +418,29 @@
                   "quote": "If after such Reconsideration two thirds of that House shall agree to pass the Bill"
                 }
               ]
+            },
+            {
+              "kind": "record",
+              "en": "H.R. 8469 covers only military construction, the Department of Veterans Affairs and related agencies; under the law in force, funding for everything else lasts until a full-year law for it is enacted or “December 11, 2026,” whichever comes first.",
+              "es": "La H.R. 8469 abarca solo la construcción militar, el Departamento de Asuntos de Veteranos y agencias relacionadas; según la ley vigente, los fondos de todo lo demás duran hasta que se promulgue una ley para todo el año que lo cubra o hasta el «11 de diciembre de 2026», lo que ocurra primero.",
+              "cites": [
+                {
+                  "src": "bill-hr8469",
+                  "quote": "Making appropriations for military construction, the Department of Veterans Affairs, and related agencies for the fiscal year ending September 30, 2027"
+                },
+                {
+                  "src": "hr8469-pcs",
+                  "quote": "This division may be cited as the ``Military Construction, Veterans Affairs, and Related Agencies Appropriations Act, 2027''."
+                },
+                {
+                  "src": "plaw-119-103",
+                  "quote": "shall be available until whichever of the following first occurs"
+                },
+                {
+                  "src": "plaw-119-103",
+                  "quote": "December 11, 2026."
+                }
+              ]
             }
           ]
         },
@@ -412,14 +453,38 @@
           "claims": [
             {
               "kind": "absence",
-              "en": "The official bill records list no Congressional Budget Office cost estimate for H.R. 9770 or for H.R. 8469.",
-              "es": "Los registros oficiales de los proyectos no incluyen ninguna estimación de costos de la Oficina de Presupuesto del Congreso para la H.R. 9770 ni para la H.R. 8469.",
+              "absence_kind": "not_found",
+              "en": "The official bill records list no Congressional Budget Office cost estimate for H.R. 9770 or for H.R. 8469; cbo.gov itself was not searched.",
+              "es": "Los registros oficiales de los proyectos no incluyen ninguna estimación de costos de la Oficina de Presupuesto del Congreso para la H.R. 9770 ni para la H.R. 8469; no se buscó en cbo.gov.",
               "searched": [
                 "bill-hr9770",
                 "bill-hr8469"
               ],
               "absent": [
                 "cboCostEstimate"
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "For H.R. 8469 alone, not for the rest of federal funding, the House Appropriations Committee’s report on the bill as the committee reported it (April 23, 2026) says “The bill includes $323,972,953,000 for mandatory programs and $157,000,000,000 for discretionary programs,” and prints five-year outlay projections “as provided to the Committee by the Congressional Budget Office.”",
+              "es": "Solo para la H.R. 8469, no para el resto de los fondos federales, el informe de la Comisión de Asignaciones de la Cámara sobre el proyecto tal como lo presentó la comisión (23 de abril de 2026) dice: «El proyecto incluye 323.972.953.000 dólares para programas obligatorios y 157.000.000.000 de dólares para programas discrecionales», e incluye proyecciones de desembolsos a cinco años «según las proporcionó a la Comisión la Oficina de Presupuesto del Congreso».",
+              "cites": [
+                {
+                  "src": "hrpt-119-622",
+                  "quote": "[To accompany H.R. 8469]"
+                },
+                {
+                  "src": "hrpt-119-622",
+                  "quote": "April 23, 2026.--Committed to the Committee of the Whole House on the State of the Union and ordered to be printed"
+                },
+                {
+                  "src": "hrpt-119-622",
+                  "quote": "The bill includes $323,972,953,000 for mandatory programs and $157,000,000,000 for discretionary programs."
+                },
+                {
+                  "src": "hrpt-119-622",
+                  "quote": "the following table contains five-year projections associated with the budget authority provided in the accompanying bill as provided to the Committee by the Congressional Budget Office"
+                }
               ]
             },
             {
@@ -541,10 +606,15 @@
             },
             {
               "kind": "absence",
-              "en": "We found no stopgap bill introduced after H.R. 9770 in the Congress.gov records we searched, which cover every bill whose record changed from July 18 to November 22, 2026.",
-              "es": "No encontramos ninguna medida temporal presentada después de la H.R. 9770 en los registros de Congress.gov que consultamos, que abarcan todos los proyectos cuyo registro cambió entre el 18 de julio y el 22 de noviembre de 2026.",
+              "absence_kind": "not_found",
+              "en": "Searching the titles of every bill and joint resolution introduced after H.R. 9770 (July 18, 2026) through November 22, 2026, we found no new stopgap: none is titled for continuing appropriations. The bills’ full texts and amendments to bills were not searched.",
+              "es": "Al buscar en los títulos de todos los proyectos de ley y resoluciones conjuntas presentados después de la H.R. 9770 (18 de julio de 2026) hasta el 22 de noviembre de 2026, no encontramos ninguna nueva medida temporal: ninguno lleva en su título asignaciones continuas (continuing appropriations). No se buscó en el texto completo de los proyectos ni en las enmiendas a los proyectos.",
               "searched": [
-                "cg-search-stopgaps"
+                "bill-scan"
+              ],
+              "absent": [
+                "continuing appropriations",
+                "Continuing Appropriations"
               ]
             }
           ]

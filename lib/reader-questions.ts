@@ -9,6 +9,8 @@ import readerQuestionsJson from '@/data/reader-questions.json';
 export type ReaderCite = { src: string; quote: string };
 export type ReaderClaim = {
   kind: 'record' | 'analysis' | 'absence';
+  /** Absence lines only: searched and found none, or not checked. */
+  absence_kind?: 'not_found' | 'not_checked';
   en: string;
   es: string;
   cites?: ReaderCite[];
@@ -29,6 +31,8 @@ export type ReaderQuestionsEntry = {
   written: string;
   record_as_of: string;
   model: string;
+  /** The question type the bank tags its questions with, e.g. "spending_deadline". */
+  type: string;
   rewritten_nightly: false;
   sources: Record<string, ReaderSource>;
   picks: ReaderPick[];
