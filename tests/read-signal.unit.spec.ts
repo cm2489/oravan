@@ -13,7 +13,8 @@ import {
   readerAddressKey,
 } from '../lib/ratelimit';
 import { READ_SIGNAL_EVENTS, READ_SIGNAL_PATH, armReadSignal, sendReadSignal, type ReadSignalEnv } from '../lib/read-signal';
-import { PAGEVIEW_SURFACES, __memoryUsageCountForTests, pageviewSurfaceForPath, readUsageKey, usageDayKey } from '../lib/usage';
+import { readCappedBody } from '../lib/capped-body';
+import { PAGEVIEW_SURFACES, __memoryUsageCountForTests, noteRead, pageviewSurfaceForPath, readUsageKey, usageDayKey } from '../lib/usage';
 import { formatPeopleLines, peopleEstimate } from '../lib/traffic-metrics.mjs';
 import { scanText } from '../scripts/check-key-namespaces.mjs';
 import { COUNTERS_URL, MockUpstash, installUpstashFetch, setUpstashEnv } from './upstash-mock';
@@ -259,6 +260,13 @@ test('mounted once, by the main-site layout only — never by anything under /em
   // The devtools note no longer claims a silent Network tab.
   expect(layout).not.toContain("it's quiet in here");
   expect(layout).not.toContain('No analytics');
+  // 2026-11-23 review: no claim no gate checks, and nothing that reads as
+  // "the Network tab shows one request"; a mouse click is named.
+  expect(layout).not.toContain('No third-party requests');
+  expect(layout).not.toContain('Check the Network tab');
+  expect(layout).toContain(
+    'After your first scroll, click, tap or key press on a page, our own script sends one request to /api/seen that names the kind of page (a bill page, never which bill) and nothing else.',
+  );
 });
 
 // --- the receiver -----------------------------------------------------------------
@@ -284,7 +292,7 @@ function seen(body: string, ip: string, headers: Record<string, string> = {}) {
 
 test.describe('POST /api/seen', () => {
   test('a valid signal: 204, no body, one count for that page shape', async () => {
-    const key = readUsageKey('bill', usageDayKey());
+    const key = readUsageKey(usageDayKey());
     const before = __memoryUsageCountForTests(key);
     const res = await seen('bill', nextIp());
     expect(res.status).toBe(204);
@@ -295,7 +303,7 @@ test.describe('POST /api/seen', () => {
 
   test('refused silently, with the same 204: another site, a crawler, a made-up or oversized value, "short"', async () => {
     const day = usageDayKey();
-    const total = () => PAGEVIEW_SURFACES.reduce((n, s) => n + __memoryUsageCountForTests(readUsageKey(s, day)), 0);
+    const total = () => __memoryUsageCountForTests(readUsageKey(day));
     const before = total();
     const refused = [
       await seen('bill', nextIp(), { 'sec-fetch-site': 'cross-site' }),
@@ -320,13 +328,13 @@ test.describe('POST /api/seen', () => {
 
   test('one address cannot inflate the count past its limit', async () => {
     const ip = '203.0.113.200';
-    const key = readUsageKey('today', usageDayKey());
+    const key = readUsageKey(usageDayKey());
     const before = __memoryUsageCountForTests(key);
     for (let i = 0; i < 75; i += 1) await seen('today', ip);
     expect(__memoryUsageCountForTests(key) - before).toBe(60);
   });
 
-  test('with the counters database: the shape and the address land in two separate structures, the raw address nowhere', async () => {
+  test('with the counters database: one dimensionless total and the address sketch; no key or command carries a page shape or the raw address', async () => {
     restoreEnv = setUpstashEnv();
     const mock = new MockUpstash();
     restoreFetch = installUpstashFetch({ [COUNTERS_URL]: mock });
@@ -337,8 +345,8 @@ test.describe('POST /api/seen', () => {
     const day = distinctAddressDay();
     const sketch = readerAddressKey(day);
     expect(mock.exec(['PFCOUNT', sketch])).toBe(2);
-    expect(mock.exec(['GET', readUsageKey('bill', usageDayKey())])).toBe('2');
-    expect(mock.exec(['GET', readUsageKey('question', usageDayKey())])).toBe('1');
+    // One total, no dimension: three signals from two kinds of page.
+    expect(mock.exec(['GET', readUsageKey(usageDayKey())])).toBe('3');
     // The sketch key carries no page shape; no counter key carries an address.
     for (const key of mock.keys()) {
       if (key.includes('uniques')) expect(key, key).not.toMatch(/bill|question/);
@@ -347,6 +355,8 @@ test.describe('POST /api/seen', () => {
     expect(mock.keys()).toContain(distinctSaltKey(day));
     const wire = mock.commands.map((c) => c.join(' ')).join('\n');
     expect(wire).not.toContain('192.0.2');
+    // The shape was a validity check only: it reaches no key and no command.
+    expect(wire).not.toMatch(/\bbill\b|question/);
     // Each PFADD names only the sketch and one hashed element.
     for (const c of mock.commands.filter((c) => c[0] === 'PFADD')) {
       expect(c).toHaveLength(3);
@@ -354,6 +364,70 @@ test.describe('POST /api/seen', () => {
       expect(c[2]).toMatch(/^[0-9a-f]{64}$/);
     }
     expect(await readReaderAddressCount(day)).toEqual({ ok: true, count: 2, noExpiry: false });
+  });
+});
+
+// --- the read total and the capped body (2026-11-23 independent review) ----------
+
+test('the read count is one daily total: no argument, no dimension in the key', () => {
+  expect(noteRead.length).toBe(0);
+  expect(readUsageKey.length).toBe(1);
+  expect(readUsageKey('2026-11-23')).toBe('dev:usage:read:2026-11-23');
+});
+
+function streamOf(chunks: Uint8Array[], pulled: { n: number }): ReadableStream<Uint8Array> {
+  let i = 0;
+  return new ReadableStream<Uint8Array>({
+    pull(controller) {
+      if (i >= chunks.length) return controller.close();
+      pulled.n += 1;
+      controller.enqueue(chunks[i++]);
+    },
+  });
+}
+
+test.describe('the capped body read', () => {
+  test('a short body is read whole; an empty or absent one is the empty string', async () => {
+    const pulled = { n: 0 };
+    expect(await readCappedBody(streamOf([new TextEncoder().encode('bi'), new TextEncoder().encode('ll')], pulled), 64)).toBe('bill');
+    expect(await readCappedBody(streamOf([], pulled), 64)).toBe('');
+    expect(await readCappedBody(null, 64)).toBe('');
+  });
+
+  test('a long chunked body stops one chunk past the cap and is never read whole', async () => {
+    const pulled = { n: 0 };
+    const chunk = new Uint8Array(40).fill(97);
+    const chunks = Array.from({ length: 1000 }, () => chunk); // 40 KB
+    expect(await readCappedBody(streamOf(chunks, pulled), 64)).toBeNull();
+    expect(pulled.n).toBeLessThanOrEqual(3);
+  });
+
+  test('bytes that are not UTF-8 are refused', async () => {
+    expect(await readCappedBody(streamOf([new Uint8Array([0xff, 0xfe])], { n: 0 }), 64)).toBeNull();
+  });
+
+  test('POST: a chunked body with no Content-Length past the cap is refused with the same 204, and not counted', async () => {
+    const day = usageDayKey();
+    const before = __memoryUsageCountForTests(readUsageKey(day));
+    const pulled = { n: 0 };
+    const big = Array.from({ length: 1000 }, () => new TextEncoder().encode('home'));
+    const req = new NextRequest('http://localhost/api/seen', {
+      method: 'POST',
+      headers: {
+        'content-type': 'text/plain',
+        'sec-fetch-site': 'same-origin',
+        'user-agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 Mobile/15E148 Safari/604.1',
+        'x-forwarded-for': nextIp(),
+      },
+      body: streamOf(big, pulled),
+      duplex: 'half',
+    } as unknown as ConstructorParameters<typeof NextRequest>[1]);
+    expect(req.headers.get('content-length')).toBeNull();
+    const res = await POST(req);
+    expect(res.status).toBe(204);
+    expect(await res.text()).toBe('');
+    expect(pulled.n).toBeLessThan(big.length);
+    expect(__memoryUsageCountForTests(readUsageKey(day))).toBe(before);
   });
 });
 
@@ -370,11 +444,12 @@ test('the People block gains a "read" row only when the reader sketch is supplie
 });
 
 test('the gate passes the real files and catches the read family going wrong', () => {
-  for (const file of ['lib/usage.ts', 'lib/ratelimit.ts', 'lib/page-shape.ts', 'lib/read-signal.ts', 'app/api/seen/route.ts', 'components/ReadSignal.tsx']) {
+  for (const file of ['lib/usage.ts', 'lib/ratelimit.ts', 'lib/page-shape.ts', 'lib/read-signal.ts', 'lib/capped-body.ts', 'app/api/seen/route.ts', 'components/ReadSignal.tsx']) {
     expect(scanText(file, readFileSync(join(process.cwd(), file), 'utf8')), file).toEqual([]);
   }
   const rules = (file: string, text: string) => scanText(file, text).map((v: { rule: string }) => v.rule);
   expect(rules('lib/usage.ts', 'const k = `${keyPrefix()}:usage:read:${pathname}:${day}`;')).toContain('usage-raw-path');
+  expect(rules('lib/usage.ts', 'const k = `${keyPrefix()}:usage:read:${asPageviewSurface(surface)}:${day}`;')).toContain('usage-shape');
   expect(rules('lib/ratelimit.ts', 'const k = `${keyPrefix()}:uniques-read:${surface}:${day}`;')).toContain('distinct-shape');
   expect(rules('app/api/seen/route.ts', "await c.cmd(['PFCOUNT', `${keyPrefix()}:uniques-read:${day}`]);")).toContain('distinct-confinement');
 });

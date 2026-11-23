@@ -109,11 +109,13 @@ export default async function LocaleLayout({
       <body className="min-h-dvh flex flex-col">
         {/* For the curious who open devtools: the no-trackers claim, verifiable.
             Reworded 2026-11-23 with the reading signal: the Network tab is no
-            longer silent after a first scroll or tap, so it says what the one
-            first-party request is (lib/read-signal.ts). */}
+            longer silent after a first scroll, click, tap or key press, so it
+            says what the reading signal's request is (lib/read-signal.ts). It
+            claims nothing about the page's other requests: no gate checks
+            those for third-party origins yet (CLAUDE.md rule 1). */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `console.log("%cOravan","font-size:16px;font-weight:bold","— your voice, carried. No third-party requests, no cookies, no trackers, no account. Check the Network tab: after your first scroll, tap or key press, one request to /api/seen sends the kind of page (a bill page, never which bill) and nothing else. Code: https://github.com/cm2489/oravan");`,
+            __html: `console.log("%cOravan","font-size:16px;font-weight:bold","— your voice, carried. No cookies, no trackers, no account. After your first scroll, click, tap or key press on a page, our own script sends one request to /api/seen that names the kind of page (a bill page, never which bill) and nothing else. Code: https://github.com/cm2489/oravan");`,
           }}
         />
         <a
@@ -126,7 +128,7 @@ export default async function LocaleLayout({
           <Header />
           {/* The reading signal (step 2 of the owner's answer of 2026-11-23,
               card `people`): renders nothing, sends at most one first-party
-              request per page load after a first scroll, tap or key press. */}
+              request per page load after a first scroll, click, tap or key press. */}
           <ReadSignal />
           {/* Client-side language suggestion for Spanish-preferring browsers
               on the EN locale — see the component for why this is not a

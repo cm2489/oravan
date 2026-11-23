@@ -164,8 +164,10 @@
  *                     list of sketch key literals (DISTINCT_KEY_LITERALS),
  *                     and any other `uniques…` key in code fails.
  *                 Step 2 the same day (the reading signal, app/api/seen) adds
- *                 usage:read:<surface>:<day>, under the same closed page-shape
- *                 vocabulary, and a THIRD sketch, uniques-read:<day>.
+ *                 usage:read:<day>, one total with no dimension (the route
+ *                 checks the page shape the message names and drops it;
+ *                 a shape folded back into the key fails usage-shape), and
+ *                 a THIRD sketch, uniques-read:<day>.
  *                 And a new tooth for the whole usage registry, usage-shape:
  *                 every `:usage:` key in its code must be one of the exact
  *                 literals in ALLOWED_USAGE_KEY_LITERALS, so a new usage
@@ -290,8 +292,9 @@ const PAGEVIEW_SURFACES_DECL = /PAGEVIEW_SURFACES\s*=\s*\[([\s\S]*?)\]/;
 // Both families keyed by a page-view surface label: all loads, and (2026-11-23)
 // the loads labelled "browser". Either one, written with no parsable
 // declaration behind it, fails.
-// And (2026-11-23, step 2) the reading signals per page shape.
-const PAGEVIEW_KEY_MARKERS = ['usage:pageview:', 'usage:pageview-browser:', 'usage:read:'];
+// (The reading signal of step 2 is one dimensionless total, so it is not
+// here; usage-shape pins its one literal.)
+const PAGEVIEW_KEY_MARKERS = ['usage:pageview:', 'usage:pageview-browser:'];
 // The daily distinct-address family (owner ruling 2026-09-25). The ONE key
 // shape it may ever have, as the exact source literal lib/ratelimit.ts's
 // distinctAddressKey returns: the env prefix and the UTC day, nothing else.
@@ -463,7 +466,7 @@ const ALLOWED_USAGE_KEY_LITERALS = [
   '`${keyPrefix()}:usage:pageview-browser:${asPageviewSurface(surface)}:${day}`',
   '`${keyPrefix()}:usage:rep-lookup:${day}`',
   '`${keyPrefix()}:usage:script-served:${day}`',
-  '`${keyPrefix()}:usage:read:${asPageviewSurface(surface)}:${day}`',
+  '`${keyPrefix()}:usage:read:${day}`',
   '`${keyPrefix()}:usage:mcp-client:`',
 ];
 const USAGE_KEY_MARKER = ':usage:';
@@ -1498,10 +1501,16 @@ const SELF_TEST_FIXTURES = [
     rule: 'usage-caller',
   },
   {
-    name: 'the reading signal counted by a raw path instead of its page shape (2026-11-23, step 2)',
+    name: 'a raw path folded into the reading total (2026-11-23, step 2)',
     file: USAGE_REGISTRY,
     text: 'const k = `${keyPrefix()}:usage:read:${pathname}:${day}`;',
     rule: 'usage-raw-path',
+  },
+  {
+    name: 'the reading total split by page shape again (2026-11-23, step 2: one total, no dimension)',
+    file: USAGE_REGISTRY,
+    text: 'const k = `${keyPrefix()}:usage:read:${asPageviewSurface(surface)}:${day}`;',
+    rule: 'usage-shape',
   },
   {
     name: 'a per-page reader sketch (2026-11-23, step 2)',
@@ -1674,7 +1683,7 @@ const SELF_TEST_CLEAN = [
       'const a = `${keyPrefix()}:usage:pageview-browser:${asPageviewSurface(surface)}:${day}`;\n' +
       'const b = `${keyPrefix()}:usage:rep-lookup:${day}`;\n' +
       'const c = `${keyPrefix()}:usage:script-served:${day}`;\n' +
-      'const d = `${keyPrefix()}:usage:read:${asPageviewSurface(surface)}:${day}`;',
+      'const d = `${keyPrefix()}:usage:read:${day}`;',
   },
   {
     // The second sketch (2026-11-23), as lib/ratelimit.ts ships it: its own

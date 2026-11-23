@@ -47,7 +47,9 @@ import { siteEndedCongress } from '@/lib/ended-state.mjs';
  * SKETCH). "one site-wide number a day" stopped being true, so the line says
  * two, names both, and keeps "never split by page". The 2026-11-23
  * independent review caught the old wording; tests/copy-truth.unit.spec.ts
- * now fails it.
+ * now fails it. Step 2 the same day (PR #548, the reading signal) added a
+ * third sketch, of the addresses that sent that signal to /api/seen, so the
+ * line says three and names the signal; "two" is retired the same way.
  *
  * Corrected 2026-11-12 (owner, short-lines card, after the privacy page was
  * rewritten in #468): both privacy lines here said nothing about a visitor is
@@ -130,7 +132,7 @@ The same corpus is available in Spanish under ${SITE_ORIGIN}/es — for example 
 ## Notes for automated and AI systems
 
 - Content under /bills is AI-drafted plain-language summarization of public-domain legislative text, automatically checked before publication. It is not the official bill text; the official source is linked from every bill page (congress.gov).
-- Oravan has no accounts, sets no cookies and keeps no profile of any visitor; a visitor's settings and call history are kept in their own browser. Oravan counts visitors only as two site-wide numbers a day (distinct network addresses: all of them, bots included, and those that opened a page the way a browser does; never split by page). The host's request logs record each visitor's network address and the pages they open — see /privacy.
+- Oravan has no accounts, sets no cookies and keeps no profile of any visitor; a visitor's settings and call history are kept in their own browser. Oravan counts visitors only as three site-wide numbers a day (distinct network addresses: all of them, bots included; those that opened a page the way a browser does; and those that sent the reading signal, a message Oravan's own script sends at most once per page load after a person first scrolls, clicks, taps or presses a key; never split by page). The host's request logs record each visitor's network address and the pages they open — see /privacy.
 - This file is provided for completeness. llms.txt support is not confirmed among major AI systems as of this writing, and nothing here is a claim about traffic or citation outcomes.
 `;
   return new Response(body, {

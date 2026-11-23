@@ -38,7 +38,7 @@
  * Step 2 the same day (the reading signal, app/api/seen) made it "three
  * numbers a day", and changed p4's bold phrase: it said "No analytics
  * trackers", and Oravan's own script now reports, once per page load, the
- * kind of page a person scrolled or tapped on. That is first-party analytics
+ * kind of page a person scrolled, clicked, tapped or typed on. That is first-party analytics
  * with no identifier, so the phrase now promises exactly what holds: "No
  * third-party analytics, no advertising pixels, no cookies at all."
  */

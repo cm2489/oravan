@@ -78,10 +78,11 @@ import { countersClient, keyPrefix, noteUpstashError, type UpstashClient } from 
  *   <env>:usage:script-served:<YYYY-MM-DD>       an INCR'd daily counter of
  *                                                call scripts served, cache
  *                                                hits included (2026-11-23)
- *   <env>:usage:read:<surface>:<YYYY-MM-DD>      an INCR'd daily counter per
- *                                                route-TEMPLATE label, of the
- *                                                reading signals app/api/seen
- *                                                accepted (2026-11-23, step 2)
+ *   <env>:usage:read:<YYYY-MM-DD>                an INCR'd daily counter of
+ *                                                the reading signals
+ *                                                app/api/seen accepted, one
+ *                                                total with no dimension
+ *                                                (2026-11-23, step 2)
  *
  * scripts/check-key-namespaces.mjs (usage-shape) holds this list as exact
  * key literals: a usage key built any other way fails CI.
@@ -602,19 +603,21 @@ export function scriptServedUsageKey(day: string): string {
 // --- the reading signal (owner, 2026-11-23, card `people`, option b, step 2)
 
 /*
- * WHAT THIS IS, STATED PLAINLY: one integer per ROUTE TEMPLATE per UTC day —
+ * WHAT THIS IS, STATED PLAINLY: one integer per UTC day, with NO dimension —
  * how many times Oravan's own browser script (lib/read-signal.ts) reported
- * that someone, on a page of that shape, first scrolled, tapped or pressed a
- * key while the page was visible. app/api/seen is the one writer. The value
- * the browser sends is accepted only if it is EXACTLY one of
- * PAGEVIEW_SURFACES (anything else is answered 204 and counted nowhere), and
- * the key builder narrows it again, so a request can never write a label of
- * its own. No path, bill, query, locale, header, address or timing reaches
- * the key.
+ * that someone first scrolled, clicked, tapped or pressed a key on a visible
+ * page. app/api/seen is the one writer. The browser's message names the
+ * page's shape, and the route accepts it only if it is EXACTLY one of
+ * PAGEVIEW_SURFACES (anything else is answered 204 and counted nowhere) —
+ * then drops it: the shape is a validity check, never a key segment. The
+ * first draft kept one count per shape; the 2026-11-23 independent review
+ * noted the digest only ever printed their sum, so it became one total
+ * before merge. No shape, path, bill, query, locale, header, address or
+ * timing reaches the key, and noteRead takes no argument through which one
+ * could.
  */
-export function readUsageKey(surface: PageviewSurface, day: string): string {
-  // Narrowing applied HERE as well — same structural rule as pageviewUsageKey.
-  return `${keyPrefix()}:usage:read:${asPageviewSurface(surface)}:${day}`;
+export function readUsageKey(day: string): string {
+  return `${keyPrefix()}:usage:read:${day}`;
 }
 
 /**
@@ -852,11 +855,12 @@ export async function noteScriptServed(): Promise<void> {
 }
 
 /**
- * Record one reading signal against a route-template label. Called by
- * app/api/seen only after the value passed isPageviewSurface. Never throws.
+ * Record one reading signal in the day's total. Called by app/api/seen only
+ * after the message passed isPageviewSurface. No parameter: the shape it
+ * named stays in the route and is dropped there. Never throws.
  */
-export async function noteRead(surface: PageviewSurface): Promise<void> {
-  await noteUsage(readUsageKey(surface, usageDayKey()));
+export async function noteRead(): Promise<void> {
+  await noteUsage(readUsageKey(usageDayKey()));
 }
 
 // --- the digest read path (scripts/daily-metrics.mjs, via tsx) --------------
@@ -988,8 +992,8 @@ export type PeopleSignalsWindowResult =
       repLookups: number[];
       /** Call scripts served, cache hits included (scriptServedUsageKey). */
       scriptsServed: number[];
-      /** Reading signals per route template (readUsageKey, step 2). */
-      readSurfaces: Record<PageviewSurface, number[]>;
+      /** Reading signals, one daily total (readUsageKey, step 2). */
+      reads: number[];
     }
   | { ok: false };
 
@@ -1015,14 +1019,14 @@ export async function readPeopleSignalsWindow(days: string[]): Promise<PeopleSig
     return out;
   };
   if (days.length === 0) {
-    return { ok: true, browserSurfaces: emptySurfaces(), repLookups: [], scriptsServed: [], readSurfaces: emptySurfaces() };
+    return { ok: true, browserSurfaces: emptySurfaces(), repLookups: [], scriptsServed: [], reads: [] };
   }
 
   const allKeys = [
     ...PAGEVIEW_SURFACES.flatMap((surface) => days.map((day) => browserPageviewUsageKey(surface, day))),
     ...days.map((day) => repLookupUsageKey(day)),
     ...days.map((day) => scriptServedUsageKey(day)),
-    ...PAGEVIEW_SURFACES.flatMap((surface) => days.map((day) => readUsageKey(surface, day))),
+    ...days.map((day) => readUsageKey(day)),
   ];
 
   let raw: unknown;
@@ -1045,13 +1049,9 @@ export async function readPeopleSignalsWindow(days: string[]): Promise<PeopleSig
   cursor += days.length;
   const scriptsServed = raw.slice(cursor, cursor + days.length).map(toNum);
   cursor += days.length;
-  const readSurfaces = emptySurfaces();
-  for (const surface of PAGEVIEW_SURFACES) {
-    readSurfaces[surface] = raw.slice(cursor, cursor + days.length).map(toNum);
-    cursor += days.length;
-  }
+  const reads = raw.slice(cursor, cursor + days.length).map(toNum);
 
-  return { ok: true, browserSurfaces, repLookups, scriptsServed, readSurfaces };
+  return { ok: true, browserSurfaces, repLookups, scriptsServed, reads };
 }
 
 export type McpClientDayResult =

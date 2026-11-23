@@ -581,7 +581,7 @@ async function main() {
         repLookups: peopleSignals.repLookups[0] ?? 0,
         scriptsServed: peopleSignals.scriptsServed[0] ?? 0,
         browserAddresses,
-        reads: PAGEVIEW_SURFACES.reduce((n, surface) => n + (peopleSignals.readSurfaces[surface][0] ?? 0), 0),
+        reads: peopleSignals.reads[0] ?? 0,
         readerAddresses,
       })
     : null;

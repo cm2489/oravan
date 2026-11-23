@@ -139,7 +139,7 @@ export type RouteName =
   | 'script-day'
   // /api/seen (2026-11-23, the reading signal, owner's answer card `people`,
   // option b): the per-IP limiter that stops one caller from inflating the
-  // per-template read count. A real page sends at most one signal per load.
+  // daily read total. A real page sends at most one signal per load.
   | 'seen';
 
 const SALT_TTL_SECONDS = 24 * 60 * 60;
@@ -845,21 +845,26 @@ export async function noteBrowserAddress(ip: string, now: Date = new Date()): Pr
  * THE THIRD SKETCH (2026-11-23, step 2 of the owner's answer, card `people`):
  * the addresses that sent the reading signal app/api/seen accepted. The
  * same construction, the same day salt and element, the same deadline, no
- * other dimension — in particular, NOT the page shape the signal named: the
- * route counts the shape in lib/usage.ts and the address here, in two
- * separate calls, so nothing ever pairs an address-derived element with a
- * page. The same honest limit: until the day's salt dies, someone holding
- * the counters database and a candidate address could test whether that
- * address sent the signal that day; after, no one can.
+ * other dimension — in particular, NOT the page shape the signal named. The
+ * route checks that shape and drops it: what reaches the counters database
+ * is a dimensionless daily total (lib/usage.ts noteRead) and, in a separate
+ * call, this address element. Neither key, and neither command, carries a
+ * page shape, so even someone watching the database's commands as they
+ * arrive sees "a signal, from this element", never which kind of page. (The
+ * page-view counts in proxy.ts are a different story: see THE SECOND SKETCH
+ * above for what live watching could pair there.) The same honest limit:
+ * until the day's salt dies, someone holding the counters database and a
+ * candidate address could test whether that address sent the signal that
+ * day; after, no one can.
  */
 export async function noteReaderAddress(ip: string, now: Date = new Date()): Promise<void> {
   await addToDaySketch(readerAddressKey, ip, now);
 }
 
 /**
- * Count one address into `sketchKey(day)`'s sketch. Shared by the two daily
- * sketches; scripts/check-key-namespaces.mjs (distinct-shape) pins the only
- * two key literals that can be passed in. Never throws.
+ * Count one address into `sketchKey(day)`'s sketch. Shared by the daily
+ * sketches; scripts/check-key-namespaces.mjs (distinct-shape) pins the
+ * key literals that can be passed in. Never throws.
  */
 async function addToDaySketch(sketchKey: (day: string) => string, ip: string, now: Date): Promise<void> {
   const address = ip.trim();
