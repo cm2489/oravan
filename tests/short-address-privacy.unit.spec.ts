@@ -103,7 +103,7 @@ test('source: proxy.ts counts a short address as the literal label and builds th
   expect(tables).toContain('decodeNameTables(process.env.SHORT_ADDRESS_NAMES)');
   // The redirect is the target path on this site's own origin. The query,
   // search params and headers of the request are never read for it.
-  const redirect = codeOf(proxySource.slice(proxySource.indexOf('function shortAddressRedirect'), proxySource.indexOf('/*\n * The two things')));
+  const redirect = codeOf(proxySource.slice(proxySource.indexOf('function shortAddressRedirect'), proxySource.indexOf('/*\n * The three things')));
   expect(redirect).toContain('new URL(target, req.nextUrl.origin)');
   expect(redirect).not.toMatch(/search|query|headers\.get|cookies|ip\b/i);
   expect(redirect).toContain("res.headers.set('Cache-Control', 'no-store')");

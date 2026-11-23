@@ -25,7 +25,14 @@ import { countersClient, keyPrefix, noteUpstashError, type UpstashClient } from 
  *                                      other dimension, ever. See the
  *                                      DAILY DISTINCT-ADDRESS COUNT section
  *                                      below for the full argument.
- *   <env>:uniques-salt:<YYYY-MM-DD>   that sketch's OWN salt, one per UTC
+ *   <env>:uniques-browser:<YYYY-MM-DD>
+ *                                      a SECOND sketch per UTC day, built
+ *                                      the same way, of the addresses whose
+ *                                      page load looked like a browser's
+ *                                      (owner, 2026-11-23, card `people`,
+ *                                      option b). Same day salt, same
+ *                                      deadline, no other dimension.
+ *   <env>:uniques-salt:<YYYY-MM-DD>   the sketches' OWN salt, one per UTC
  *                                      day, used by nothing else (hardened
  *                                      2026-09-27, owner decision "2. b").
  *                                      Created SET NX with an absolute
@@ -235,6 +242,17 @@ export function counterKey(route: RouteName, callerHash: string): string {
  */
 export function distinctAddressKey(day: string): string {
   return `${keyPrefix()}:uniques:${day}`;
+}
+
+/**
+ * The SECOND daily sketch's key (owner, 2026-11-23, card `people`, option
+ * b): the addresses whose page load lib/usage.ts's isBrowserPageLoad
+ * labelled "browser". The same one-argument discipline as distinctAddressKey
+ * — the day and nothing else — and scripts/check-key-namespaces.mjs pins this
+ * literal beside that one (distinct-shape).
+ */
+export function browserAddressKey(day: string): string {
+  return `${keyPrefix()}:uniques-browser:${day}`;
 }
 
 /**
@@ -765,12 +783,43 @@ async function distinctDaySalt(client: UpstashClient, day: string, nowMs: number
  * Never throws; see the section comment above for everything else.
  */
 export async function noteDistinctAddress(ip: string, now: Date = new Date()): Promise<void> {
+  await addToDaySketch(distinctAddressKey, ip, now);
+}
+
+/*
+ * THE SECOND SKETCH (owner, 2026-11-23, card `people`, option b): the same
+ * construction, for the addresses whose page load lib/usage.ts's
+ * isBrowserPageLoad labelled "browser". proxy.ts calls this, in its own
+ * waitUntil, only for such a load, so this sketch holds a subset of the
+ * addresses in the first.
+ *
+ * Everything said in the section comment above holds for it word for word:
+ * one key per UTC day and no other dimension; the SAME day salt, so the same
+ * element (an address in both sketches is the same 64 hex characters in
+ * both — a second salt would add a second thing to delete and protect
+ * nothing, since the only extra fact here is "came from a browser", which is
+ * not a political position); register maxima only; the same 48h deadline;
+ * nothing in memory when the database is unconfigured. And the same honest
+ * limit: until the day's salt dies, someone holding the counters database and
+ * a candidate address could test whether that address opened a page the way
+ * a browser does that day; after it dies, no one can.
+ */
+export async function noteBrowserAddress(ip: string, now: Date = new Date()): Promise<void> {
+  await addToDaySketch(browserAddressKey, ip, now);
+}
+
+/**
+ * Count one address into `sketchKey(day)`'s sketch. Shared by the two daily
+ * sketches; scripts/check-key-namespaces.mjs (distinct-shape) pins the only
+ * two key literals that can be passed in. Never throws.
+ */
+async function addToDaySketch(sketchKey: (day: string) => string, ip: string, now: Date): Promise<void> {
   const address = ip.trim();
   if (address === '' || address === 'unknown') return;
   const client = countersClient();
   if (!client) return; // unconfigured: nothing at all, not even in memory
   const day = distinctAddressDay(now);
-  const key = distinctAddressKey(day);
+  const key = sketchKey(day);
   try {
     const element = distinctAddressElement(address, await distinctDaySalt(client, day, now.getTime()));
     const altered = await client.cmd(['PFADD', key, element]);
@@ -810,9 +859,21 @@ export type DistinctAddressCountResult =
  * caller can say "not read" instead of printing an invented number.
  */
 export async function readDistinctAddressCount(day: string): Promise<DistinctAddressCountResult> {
+  return readDaySketch(distinctAddressKey(day));
+}
+
+/**
+ * Read ONE day's BROWSER-address estimate (the second sketch), exactly as
+ * readDistinctAddressCount reads the first. Exported for the daily digest and
+ * the weekly owner note.
+ */
+export async function readBrowserAddressCount(day: string): Promise<DistinctAddressCountResult> {
+  return readDaySketch(browserAddressKey(day));
+}
+
+async function readDaySketch(key: string): Promise<DistinctAddressCountResult> {
   const client = countersClient();
   if (!client) return { ok: false };
-  const key = distinctAddressKey(day);
   let ttl: unknown;
   let count: unknown;
   try {
