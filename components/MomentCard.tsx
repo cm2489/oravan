@@ -98,7 +98,7 @@ export function MomentCard({ moment }: { moment: MomentTeaser }) {
       <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-ink-2">
         <span>
           {countLine}
-          {updatedDate && <span aria-hidden> ·</span>}
+          {updatedDate && <span aria-hidden>&nbsp;·</span>}
         </span>
         {updatedDate && (
           <span>

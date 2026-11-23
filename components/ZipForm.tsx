@@ -48,12 +48,17 @@ type ZipFormProps = {
    */
   formAction?: (form: FormData) => void;
   /**
-   * The submit's visual weight. 'primary' (default) is the filled green
-   * control every instance has always had. 'secondary' is the ink outline
-   * the home hero passes (2026-09-24, finding B3): the hero keeps exactly ONE
-   * filled control, and under "Truth-first, call-next" (CLAUDE.md) that is
-   * the jump to what is moving, not the field that asks for a ZIP. Keys,
-   * behaviour and the ZIP-first funnel path are untouched by the tone.
+   * The submit's visual weight. 'primary' (default) is the filled lamp
+   * every other instance has. 'secondary' is what the home hero passes
+   * (2026-09-24, finding B3): the hero keeps exactly ONE lamp, and under
+   * "Truth-first, call-next" (CLAUDE.md) that is the jump to what is moving,
+   * not the field that asks for a ZIP. Since the UI audit fixes of
+   * 2026-11-22 (finding F7) 'secondary' is the site's filled ink button
+   * (as on the error screen and Your record), not an ink outline on paper:
+   * the outline was the field's own treatment, so on a phone the pair read
+   * as two input boxes. Paper on ink 16.50, on ink-2 (hover) 7.56; the
+   * `ring-gap` stack is the one in docs/accessibility.md. Keys, behaviour
+   * and the ZIP-first funnel path are untouched by the tone.
    */
   submitTone?: 'primary' | 'secondary';
   /**
@@ -62,6 +67,29 @@ type ZipFormProps = {
    * submit beside it keeps the hero's lowest control clear of the phone
    * thumb bar on short screens (390×664 in tests/home-fold.spec.ts). Other
    * instances keep the container-query stacking below.
+   *
+   * The inline row is also too narrow for the full submit label ("Find my
+   * representatives" wrapped to two lines at 390px), so it prints
+   * `home.zipCtaShort` ("Find my reps" / "Buscar mis reps"), the header's
+   * own short word for the members page. Every stacked instance (/reps, the
+   * bill rail, the call dialog) keeps `home.zipCta`.
+   *
+   * THE FORM KEEPS ITS OLD HEIGHT ON A PHONE (2026-11-22). The hero's first
+   * screen is budgeted around this form (app/[locale]/page.tsx, the language
+   * link; components/HeroSavedZip.tsx, whose block is never shorter than
+   * the form). At 390 wide the long label wrapped to two 25.6px lines, so
+   * the row was 79.2px (12 + 51.2 + 12 + 4) and the form 166.4px: label
+   * 22.4, mt-2 8, row 79.2, mt-3 12, help line 44.8. On one line the row is
+   * the field's own 56.8px (12 + 28.8 + 12 + 4), 22.4px shorter, and
+   * "Ver en español" rose from 676 to 654 on a 390×664 screen, into the
+   * first screen and under the thumb bar. So below md the inline form pads
+   * its foot by exactly that line, 1.4rem: the field and the button stay
+   * one height, and nothing below the form moves.
+   *
+   * At 320 wide the 8.5rem field left the button 108px of text, and
+   * "Buscar mis reps" wrapped. Under 360px the button therefore takes its
+   * label's own width on one line (an `auto` track, nowrap, px-3) and the
+   * field the rest: 5 digits need about 91px, and the field keeps more.
    */
   inline?: boolean;
   /**
@@ -250,7 +278,12 @@ function ZipFormBody({
     // current page, which reads no ZIP, and the funnel's front door would be
     // a dead end. `submit` calls preventDefault(), so a hydrated visitor's
     // submit never reaches the action here.
-    <form onSubmit={submit} action={formAction} className="@container max-w-[30rem]" noValidate>
+    <form
+      onSubmit={submit}
+      action={formAction}
+      className={`@container max-w-[30rem] ${inline ? 'max-md:pb-[1.4rem]' : ''}`}
+      noValidate
+    >
       <label htmlFor={fieldId} className="block text-sm font-bold">
         {t('zipLabel')}
       </label>
@@ -259,7 +292,7 @@ function ZipFormBody({
       <div
         className={
           inline
-            ? 'mt-2 grid grid-cols-[8.5rem_minmax(0,1fr)] gap-2'
+            ? 'mt-2 grid grid-cols-[8.5rem_minmax(0,1fr)] gap-2 max-[22.5rem]:grid-cols-[minmax(0,1fr)_auto]'
             : 'mt-2 grid gap-2 @min-[26rem]:grid-cols-[9.5rem_minmax(0,1fr)]'
         }
       >
@@ -285,14 +318,19 @@ function ZipFormBody({
         />
         <button
           type="submit"
-          className={
+          className={`${
             submitTone === 'secondary'
-              ? 'ring-gap inline-flex min-h-12 items-center justify-center gap-2 rounded-control border-2 border-ink bg-paper px-6 py-3 font-bold text-ink hover:bg-ink hover:text-paper active:bg-ink active:text-paper'
+              ? 'ring-gap inline-flex min-h-12 items-center justify-center gap-2 rounded-control border-2 border-ink bg-ink px-4 py-2 font-bold text-paper hover:bg-ink-2 active:bg-ink-2'
               : 'ring-edge inline-flex min-h-12 items-center justify-center gap-2 rounded-control border-2 border-ink bg-urgent px-6 py-3 font-bold text-ink hover:bg-urgent-deep active:bg-urgent-deep'
-          }
+          }${inline ? ' max-[22.5rem]:px-3 max-[22.5rem]:whitespace-nowrap' : ''}`}
         >
-          {t('zipCta')}
-          <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
+          {inline ? t('zipCtaShort') : t('zipCta')}
+          {/* Under 360px the arrow steps out: it is decoration, and the
+              row has no room to spare for it (see `inline` above). */}
+          <ArrowRight
+            className={`h-4 w-4 shrink-0 ${inline ? 'max-[22.5rem]:hidden' : ''}`}
+            aria-hidden
+          />
         </button>
       </div>
       {error ? (

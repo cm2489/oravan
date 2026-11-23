@@ -15,7 +15,7 @@ export default function NotFound() {
 
   return (
     <article className="mx-auto max-w-read px-4 py-16">
-      <h1 className="text-h1 font-extrabold text-ink">{t('title')}</h1>
+      <h1 className="text-h2-loud font-extrabold text-ink">{t('title')}</h1>
       <p className="mt-4 text-lede text-ink-2">{t('body')}</p>
       <p className="mt-8">
         <Link

@@ -132,7 +132,7 @@ for (const [prefix, m] of [
       const requests = recordRequests(page);
       await page.goto(`${prefix}/`);
       await page.getByLabel(m.home.zipLabel).fill(ZIP);
-      await page.getByRole('button', { name: m.home.zipCta }).click();
+      await page.getByRole('button', { name: m.home.zipCtaShort, exact: true }).click();
       await expect(page).toHaveURL(new RegExp(`${prefix}/reps$`));
       await expect(page.locator('[data-rep-name-link]').first()).toBeVisible();
       expect(await reachMemberLinks(page), 'member links on the page').toBeGreaterThan(0);

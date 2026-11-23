@@ -50,7 +50,9 @@ import { lookupReps } from '@/lib/reps-lookup';
  *      vacant-seat link follow. The ZIP line has no control, so it goes last,
  *      and it may run past the bar.
  *   2. Below md the block keeps at least the form's height (166px, 10.375rem:
- *      label, field row and help line). "Ver en español" / "View in English"
+ *      label, field row and help line; since 2026-11-22 the field row is one
+ *      line shorter and the form pads its foot by that line instead,
+ *      components/ZipForm.tsx). "Ver en español" / "View in English"
  *      then starts where it does with no ZIP saved (676px EN, 696px ES):
  *      below the 664 fold and above the 844 bar. A taller block pushes it
  *      lower. The tallest blocks measured, in Spanish, end at 652px, which

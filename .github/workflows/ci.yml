@@ -458,6 +458,16 @@ jobs:
           path: glance-shots/
           if-no-files-found: ignore
           retention-days: 14
+      - name: The UI-fix pictures this shard took, for a reviewer
+        # tests/ui-fixes-shots.spec.ts writes them; a shard that ran none of
+        # its tests uploads nothing.
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: ui-fixes-shots-${{ matrix.shard }}
+          path: ui-fixes-shots/
+          if-no-files-found: ignore
+          retention-days: 14
       - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:

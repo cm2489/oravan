@@ -85,3 +85,5 @@ scaffold-corpus-report.md
 
 # Pictures the "At a glance" spec writes in CI (tests/question-glance-shots.spec.ts)
 /glance-shots/
+# Pictures the UI-fixes spec writes in CI (tests/ui-fixes-shots.spec.ts)
+/ui-fixes-shots/
