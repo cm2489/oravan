@@ -83,7 +83,7 @@ for (const { locale, prefix, messages } of LOCALES) {
             messages.common.navShort.home,
             messages.common.navShort.bills,
             messages.common.navShort.call,
-            messages.common.nav.tabQuestions,
+            messages.common.tab.moments,
             messages.common.navShort.reps,
           ]
         : [messages.common.nav.today, messages.common.nav.bills, messages.common.nav.moments, messages.common.nav.reps];

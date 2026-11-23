@@ -49,10 +49,9 @@ import { LocaleSwitcher } from './LocaleSwitcher';
  * only"). The row nav is Today in Congress · Bills · Big Questions · My reps,
  * with the lockup as Home and the language switch last. The thumb bar keeps
  * the "nav 1" order of the same day — Home · Bills · Call · Big Questions ·
- * Reps — and its Questions cell read "Big Questions" (his typed note: "I'd
+ * Reps — and its Questions cell reads "Big Questions" (his typed note: "I'd
  * like the phone to say Big Questions instead of just questions if
- * possible") until 2026-11-22, when it went back to one line, "Questions"
- * (`common.nav.tabQuestions`, the thumb bar only). On a desktop the Call
+ * possible"; `common.tab.moments`, the thumb bar only). On a desktop the Call
  * hub is the footer's first Site link ("Make a call"). Today stays off the
  * thumb bar — one tap from Home — and the owner's look at /today visits
  * around 2026-10-29 now applies to the phone only. "My record" left both
@@ -120,10 +119,8 @@ const LINKS = [
 ] as const;
 
 /** A thumb-bar cell's label: `navShort`, except where the thumb bar has its
- *  own word. Only the Big Questions cell does: `common.nav.tabQuestions`
- *  ("Questions" / "Preguntas") since 2026-11-22, on one line, because the
- *  two-word "Big Questions" (owner, 2026-09-29) wrapped onto two (UI audit
- *  fixes, 2026-11-22); the row nav keeps `navShort.moments` below 64rem. */
+ *  own longer word (`common.tab`). Only the Big Questions cell does (owner,
+ *  2026-09-29); the row nav keeps `navShort.moments` below 64rem. */
 const TAB_OWN_LABEL: ReadonlySet<string> = new Set(['moments']);
 
 /** Segment-exact for everything but Home: '/reps' is current on a member page
@@ -190,7 +187,7 @@ export function Header() {
   const callHref = callTarget ?? CALL_HUB_PATH;
   const onHub = isActive(pathname, CALL_HUB_PATH);
   const tabLabel = (key: (typeof TABS)[number]['key']) =>
-    TAB_OWN_LABEL.has(key) ? t('nav.tabQuestions') : t(`navShort.${key}`);
+    TAB_OWN_LABEL.has(key) ? t(`tab.${key as 'moments'}`) : t(`navShort.${key}`);
 
   return (
     <>

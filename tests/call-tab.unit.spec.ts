@@ -156,10 +156,8 @@ test.describe('the bar (components/Header.tsx)', () => {
     // The desktop door to the Call hub, matching the hub's own title.
     expect(en.common.footer.callHub).toBe(en.call.title);
     expect(es.common.footer.callHub).toBe(es.call.title);
-    // The thumb bar's own label for the Big Questions cell, one word on one
-    // line since 2026-11-22; the row nav's short label stays.
-    expect(en.common.nav.tabQuestions).toBe('Questions');
-    expect(es.common.nav.tabQuestions).toBe('Preguntas');
+    // The thumb bar's own Big Questions label; the row nav's short label stays.
+    expect(en.common.tab.moments).toBe('Big Questions');
     expect(en.common.navShort.moments).toBe('Questions');
     expect(es.common.navShort.moments).toBe('Preguntas');
     expect(header).toContain('tabLabel(key)');
