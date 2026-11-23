@@ -364,11 +364,17 @@ jobs:
           exit 1
       - name: Open a journey-corpus issue for the novel floor text
         # Search-first, exactly like refresh-legislators.yml's vacancy and
-        # redistricting issues: one open issue per novel-shape event, and a run
-        # that finds the same unread sentence again comments on it rather than
-        # opening a second. The body carries the sentence itself, so the fix
-        # (extend floorPendingChamber / FLOOR_SETTLED, or floorActionChamber)
-        # starts from the record rather than from a re-run.
+        # redistricting issues: one open issue per novel-shape event. The body
+        # carries the sentence itself, so the fix (extend floorPendingChamber /
+        # FLOOR_SETTLED, or floorActionChamber) starts from the record rather
+        # than from a re-run.
+        #
+        # QUIET ON A REPEAT NIGHT (2026-11-23, the owner's answer on card
+        # `emails`: "the robot threads go quiet"). On an open issue, tonight's
+        # report is posted only when it holds a sentence that issue does not
+        # already hold (scripts/corpus-issue-comment.mjs; lib/corpus-issue.mjs
+        # says what counts as already held). The same unread sentence used to
+        # cost one comment, and one email, every night it stood.
         if: steps.journey.outputs.verdict == 'novel'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -386,8 +392,23 @@ jobs:
               --title "Journey corpus: a floor sentence nothing reads yet" \
               --body-file "${RUNNER_TEMP}/journey-corpus-report.md"
           else
-            gh issue comment --repo cm2489/oravan "$NUM" \
+            node scripts/corpus-issue-comment.mjs --issue "$NUM" \
               --body-file "${RUNNER_TEMP}/journey-corpus-report.md"
+          fi
+      - name: Say so on the open journey-corpus issue when tonight's sweep is clean
+        # Once per clean-up, never once a night: the script posts only when the
+        # issue's newest text is not already its "can be closed" note. It does
+        # not close the issue; a person does. continue-on-error, because a
+        # GitHub API hiccup on a clean night must never cost the night.
+        if: steps.journey.outputs.verdict == 'clean'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          NUM=$(gh issue list --repo cm2489/oravan --state open --label journey-corpus \
+                --json number --jq '.[].number' | head -1)
+          if [ -n "$NUM" ]; then
+            node scripts/corpus-issue-comment.mjs --issue "$NUM" --clean
           fi
       - name: Scaffold-corpus tripwire (a sentence the Moment scaffold misreads opens an issue, never costs the night)
         id: scaffold
@@ -413,7 +434,9 @@ jobs:
         # An ALLOW-LIST like the journey gate's: only `clean` is quiet. An
         # empty verdict (the script died before writing one) files too, with
         # a fallback body, because silence would read as clean. Search-first:
-        # one open issue, and a repeat finding comments on it.
+        # one open issue, and a finding that issue does not already hold
+        # comments on it; a repeat night posts nothing (2026-11-23, the same
+        # rule as the journey-corpus step, scripts/corpus-issue-comment.mjs).
         # continue-on-error: a GitHub API hiccup filing the issue must never
         # skip the commit below and cost the night's data.
         if: steps.scaffold.outputs.verdict != 'clean'
@@ -437,7 +460,20 @@ jobs:
               --title "Scaffold corpus: a floor sentence the Moment scaffold misreads" \
               --body-file "$BODY"
           else
-            gh issue comment --repo cm2489/oravan "$NUM" --body-file "$BODY"
+            node scripts/corpus-issue-comment.mjs --issue "$NUM" --body-file "$BODY"
+          fi
+      - name: Say so on the open scaffold-corpus issue when tonight's sweep is clean
+        # Same rule as the journey-corpus clean step above: once per clean-up,
+        # it never closes the issue, and it can never cost the night.
+        if: steps.scaffold.outputs.verdict == 'clean'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          NUM=$(gh issue list --repo cm2489/oravan --state open --label scaffold-corpus \
+                --json number --jq '.[].number' | head -1)
+          if [ -n "$NUM" ]; then
+            node scripts/corpus-issue-comment.mjs --issue "$NUM" --clean
           fi
       - name: Sync Senate nominations
         # A SEPARATE script and a SEPARATE step, on the sync-coverage.mjs

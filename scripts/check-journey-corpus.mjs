@@ -48,6 +48,7 @@ const MD_PATH = join(OUT_DIR, 'journey-corpus-report.md');
 const driver = `
 import { readFileSync, writeFileSync } from 'node:fs';
 import { floorCalendarChamber, floorActionChamber, floorMakesNoClaim, floorPendingChamber, floorSettledChamber, pointOfOrderUpheldChamber, statusBasisText } from './lib/journey';
+import { floorReadWithoutChamber } from './lib/floor-text.mjs';
 const bills = JSON.parse(readFileSync('data/bills.json', 'utf8'));
 const floorVote = bills.filter((b) => b.status === 'floor_vote');
 // Every sweep reads the sentence the journey itself reads (statusBasisText):
@@ -60,9 +61,18 @@ const row = (b) => ({ slug: \`\${b.bill_type}-\${b.bill_number}-\${b.congress_nu
 /*
  * SWEEP 1 — UNCLASSIFIED: no matcher can even place the sentence in a chamber.
  * Renders nowFloorActivityNeutral (chamber-free) today.
+ *
+ * floorReadWithoutChamber (2026-11-23, issue #268) is the shape that HAS been
+ * read and still names no chamber: S.J.Res. 124's "The motion to discharge
+ * fell when the point of order was well taken." Rule 6 keeps it out of every
+ * chamber, so it keeps the chamber-free sentence; the sweep only stops
+ * calling it unread.
  */
 const unclassified = floorVote.filter(
-  (b) => floorCalendarChamber(text(b)) === null && floorActionChamber(text(b)) === null
+  (b) =>
+    floorCalendarChamber(text(b)) === null &&
+    floorActionChamber(text(b)) === null &&
+    !floorReadWithoutChamber(text(b))
 ).map(row);
 
 /*
