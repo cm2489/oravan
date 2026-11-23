@@ -120,7 +120,7 @@ test.describe('home fold (phone)', () => {
         await page.goto(`${prefix}/`);
         // The ZIP submit is the control that failed on 2026-09-10; waiting on
         // it (by key) also means the hero has rendered before we measure.
-        await expect(page.getByRole('button', { name: messages.home.zipCta })).toBeVisible();
+        await expect(page.getByRole('button', { name: messages.home.zipCtaShort, exact: true })).toBeVisible();
         expect(
           await heroControlsUnderBars(page, height),
           'hero controls partly or wholly under a fixed bar at scroll 0'
@@ -208,7 +208,7 @@ test.describe('home hero: the first action leads to understanding', () => {
 
       // The ZIP path is still in the hero — demoted, never buried.
       await expect(
-        page.locator('[data-hero]').getByRole('button', { name: messages.home.zipCta })
+        page.locator('[data-hero]').getByRole('button', { name: messages.home.zipCtaShort, exact: true })
       ).toBeVisible();
     });
   }

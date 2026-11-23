@@ -83,7 +83,10 @@ export function BillCard({
           status labels ("APROBADO POR UNA CÁMARA") used to shatter this row
           mid-identifier with orphaned middots leading lines (2026-07 critique,
           verified on live /es). Separators ride at the END of the preceding
-          chunk so a wrapped line can never start with a floating "·".
+          chunk so a wrapped line can never start with a floating "·", tied
+          to the word before it by a no-break space (UI audit fixes,
+          2026-11-22: a chunk that wraps inside itself could still break at
+          an ordinary space and start a line with "·").
           Below 22.5rem the footnote chunk may wrap inside itself (the status
           chunk may at every width, see below): at 320px a card's text column
           is about 246px, and
@@ -94,7 +97,7 @@ export function BillCard({
             and `font-mono` was neither */}
         <span className="whitespace-nowrap tabular-nums normal-case">
           {bill.identifier}
-          {(showStatus || annotation || coverageCount != null) && <span aria-hidden> ·</span>}
+          {(showStatus || annotation || coverageCount != null) && <span aria-hidden>&nbsp;·</span>}
         </span>
         {/* The STATUS chunk may wrap inside itself at every width (re-check of
             #523, round 5): "De vuelta en la Cámara para resolver los cambios"
@@ -106,7 +109,7 @@ export function BillCard({
         {showStatus && (
           <span className="whitespace-normal">
             {t(`bills.status.${bill.statusKey}`)}
-            {(annotation || coverageCount != null) && <span aria-hidden> ·</span>}
+            {(annotation || coverageCount != null) && <span aria-hidden>&nbsp;·</span>}
           </span>
         )}
         {/* THE RUNG'S FOOTNOTE, in ink like everything else in this row.
@@ -119,7 +122,7 @@ export function BillCard({
         {annotation && (
           <span className="whitespace-nowrap max-[22.5rem]:whitespace-normal">
             {t(`bills.annotation.${ANNOTATION_KEYS[annotation]}`)}
-            {coverageCount != null && <span aria-hidden> ·</span>}
+            {coverageCount != null && <span aria-hidden>&nbsp;·</span>}
           </span>
         )}
         {coverageCount != null && (
