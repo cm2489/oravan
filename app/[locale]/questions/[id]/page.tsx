@@ -21,6 +21,8 @@ import { MomentNominationCard } from '@/components/MomentNominationCard';
 import { MomentVehicleCard } from '@/components/MomentVehicleCard';
 import { ConcurrentExplainer } from '@/components/ConcurrentExplainer';
 import { StalenessNote } from '@/components/StalenessNote';
+import { QuestionGlance } from '@/components/QuestionGlance';
+import { questionGlance } from '@/lib/question-glance';
 import { Chip } from '@/components/system';
 import { getBill, localizeBill } from '@/lib/core';
 // Imported DIRECTLY, never through the lib/core barrel — that module's header
@@ -216,6 +218,10 @@ export default async function MomentPage({
   const vehicles = questionVehicles(moment);
   const { mode: statusMode, lead } = questionStatus(vehicles.map((s) => s.line));
   const explainer = statusMode === 'explainer';
+  // "At a glance" (components/QuestionGlance.tsx): one lead bill, read from
+  // the record. It carries the page's data date, and it stands in for the
+  // question's status line below whenever both would print the same line.
+  const glance = questionGlance(vehicles, lead);
 
   // ── The live layer (v2 spec §7) ────────────────────────────────────────
   const summaryRevision = getCurrentSummary(id);
@@ -537,10 +543,12 @@ export default async function MomentPage({
           bill page's h1 carries — an unbounded display line across a 5xl rail
           is not a heading, it is a banner. Same utility, same value. */}
       <h1 className="mt-4 max-w-[24ch] text-h1-bill font-extrabold text-ink">{name}</h1>
-      <p className="mt-5 max-w-read text-xs text-ink-2">
-        {dataAsOf}
-        <StalenessNote checkedAt={freshness.checkedAt} />
-      </p>
+      {!glance && (
+        <p className="mt-5 max-w-read text-xs text-ink-2">
+          {dataAsOf}
+          <StalenessNote checkedAt={freshness.checkedAt} />
+        </p>
+      )}
 
       {/* The record's own status for the whole question. The staleBanner that
           stood here ("scheduled review passed…") is gone: a lapsed review date
@@ -548,7 +556,7 @@ export default async function MomentPage({
           the currency a reader needs is this line — re-derived from the
           record on every build — plus the "Summary updated" date printed
           under the summary it describes. */}
-      {lead && (
+      {lead && glance?.line !== lead && (
         <section aria-labelledby="record-status" className="mt-6 max-w-read">
           <h2
             id="record-status"
@@ -559,6 +567,14 @@ export default async function MomentPage({
           <MomentStatusLine line={lead} size="md" className="mt-2" />
           {explainer && <p className="mt-2 text-sm text-ink-2">{t('moments.status.explainer')}</p>}
         </section>
+      )}
+      {glance && (
+        <QuestionGlance
+          glance={glance}
+          panelSlug={panel?.slug ?? null}
+          dataAsOf={dataAsOf}
+          checkedAt={freshness.checkedAt}
+        />
       )}
 
       {/* THE DESK — three children in reading order (see DESK): the LEAD

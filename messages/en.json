@@ -334,7 +334,7 @@
     "officialTitle": "Official title",
     "statusLabel": "Status",
     "lastAction": "Latest action",
-    "sponsorLine": "Sponsor: <who>{name}</who>\u00a0· {role}\u00a0· {state}",
+    "sponsorLine": "Sponsor: <who>{name}</who> · {role} · {state}",
     "introduced": "Introduced",
     "viewOfficial": "Read the official bill on Congress.gov",
     "share": {
@@ -1168,6 +1168,28 @@
         "failed": "{chamber, select, house {A House floor vote on it failed.} other {A Senate floor vote on it failed.}}",
         "inCommittee": "In committee."
       }
+    },
+    "glance": {
+      "heading": "At a glance",
+      "billLabel": "The bill",
+      "votesLabel": "Votes so far",
+      "votesHouse": "{count} in the House",
+      "votesSenate": "{count} in the Senate",
+      "votesNewest": "Newest, {date}, as recorded:",
+      "passageLabel": "Vote on passage",
+      "passageNotYet": "Not yet",
+      "passageVote": "{chamber, select, house {House} other {Senate}}, {date}, as recorded:",
+      "nextLabel": "If it passes",
+      "next": {
+        "pass": "{chamber, select, house {It goes to the Senate.} other {It goes to the House.}}",
+        "sameForm": "{chamber, select, house {If the House passes it unchanged} other {If the Senate passes it unchanged}}, {then, select, president {it goes to the president.} adopted {both chambers have agreed to it, and it does not go to the president.} other {it goes to the states to ratify.}}",
+        "concur": "{chamber, select, house {If the House agrees to the Senate’s changes} other {If the Senate agrees to the House’s changes}}, {then, select, president {it goes to the president.} adopted {both chambers have agreed to it, and it does not go to the president.} other {it goes to the states to ratify.}}"
+      },
+      "call": "{chamber, select, senate {Call your senators} house {Call your representative} other {Call your members of Congress}}",
+      "callAbout": "about {citation}",
+      "members": "How your members voted",
+      "membersAbout": "on {citation}",
+      "more": "{count, plural, one {And # more bill on this question} other {And # more bills on this question}}"
     }
   },
   "nominations": {
