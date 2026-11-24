@@ -17,7 +17,7 @@ import { contentVersion, createScriptCache, nominationContentVersion } from '@/l
 import { buildScriptPrompt, finishScript, SCRIPT_MAX_TOKENS, SCRIPT_MODEL, STANCES } from '@/lib/scriptprompt';
 import { resolveTenantAccess } from '@/lib/tenancy';
 import type { Stance } from '@/lib/types';
-import { noteScriptGeneration, noteScriptRefusal } from '@/lib/usage';
+import { noteScriptGeneration, noteScriptRefusal, noteScriptServed } from '@/lib/usage';
 
 /*
  * The only Anthropic-calling endpoint in Oravan. Stateless by design:
@@ -439,7 +439,14 @@ async function serveScript(
   tokenPath: boolean
 ): Promise<NextResponse> {
   const cached = await cache.get(key);
-  if (cached) return NextResponse.json({ script: cached, cached: true });
+  if (cached) {
+    // People count (owner, 2026-11-23, card `people`): one script served,
+    // cache hit included. No argument, so nothing about the bill, stance,
+    // language or caller reaches the key (lib/usage.ts). after() so the
+    // counter never delays the answer.
+    after(() => noteScriptServed());
+    return NextResponse.json({ script: cached, cached: true });
+  }
 
   /*
    * THE GLOBAL DAILY SPEND BREAKER, and the reason it sits exactly HERE.
@@ -506,6 +513,8 @@ async function serveScript(
     // actual Anthropic spend), not cache hits — see lib/usage.ts. after()
     // so a slow/failed counter write never delays this response.
     after(() => noteScriptGeneration());
+    // And the people count above, for a script drafted now.
+    after(() => noteScriptServed());
     return NextResponse.json({ script, cached: false });
   } catch (err) {
     console.error('script generation failed', err);

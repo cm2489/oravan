@@ -1,10 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { after, NextRequest, NextResponse } from 'next/server';
 import { districtsForZip, repsForDistrict, vacancyForDistrict } from '@/lib/core';
 import { callerIp, createRateLimiter, readOravanKey } from '@/lib/ratelimit';
+import { noteRepLookup } from '@/lib/usage';
 
 /*
  * ZIP -> representatives. Pure lookup over static data; nothing logged,
- * nothing stored.
+ * nothing stored about the request. One daily total is incremented for a
+ * lookup that found a district (lib/usage.ts noteRepLookup, 2026-11-23): an
+ * integer per UTC day, with no ZIP, district, member or caller in it.
  *
  * POST, not GET (2026-10-06), for the reason app/api/district/route.ts gives
  * for the street address: the host's request logs keep each request's path
@@ -110,6 +113,19 @@ export async function POST(req: NextRequest) {
     .map((d) => vacancyForDistrict(d))
     .filter((v): v is NonNullable<typeof v> => Boolean(v))
     .map((v) => ({ state: v.state, district: v.district }));
+  // People count (owner, 2026-11-23, card `people`): one lookup that found a
+  // district. noteRepLookup takes no argument, so the ZIP, the districts and
+  // the members never reach the key (lib/usage.ts). after() so the counter
+  // never delays the answer. An unmatched ZIP is not counted. after() throws
+  // when there is no request scope (a unit test driving this handler
+  // directly); that drops the count, never the answer.
+  if (districts.length > 0) {
+    try {
+      after(() => noteRepLookup());
+    } catch {
+      // No request scope: drop the count, never the answer.
+    }
+  }
   return NextResponse.json({ reps, multiDistrict: districts.length > 1, vacancies });
 }
 

@@ -106,7 +106,7 @@
  *                 content-free usage registry, and it gets three teeth of
  *                 its own:
  *                   - distinct-shape: inside lib/ratelimit.ts the family's
- *                     key is exactly the literal DISTINCT_KEY_LITERAL below
+ *                     key is exactly one of DISTINCT_KEY_LITERALS below
  *                     (env prefix + day, nothing else) — a route, page,
  *                     surface, bill, or locale folded into it is a failure,
  *                     because a per-page sketch would pair an address-derived
@@ -147,6 +147,26 @@
  *                     never appear in a function that feeds the sketch or
  *                     makes its salt or element — the limiter's salt lives
  *                     24h from creation, not to the end of a UTC day.
+ *
+ * PEOPLE COUNTS (owner's answer of 2026-11-23, 12:23 PM ET, card `people`,
+ *                 option b: "count real people"). Four new shapes, each
+ *                 registered here:
+ *                   - usage:pageview-browser:<surface>:<day> — the page-view
+ *                     count again, for the loads lib/usage.ts's
+ *                     isBrowserPageLoad labels "browser". Same closed
+ *                     PAGEVIEW_SURFACES vocabulary (pageview-surface now
+ *                     guards both markers).
+ *                   - usage:rep-lookup:<day> and usage:script-served:<day> —
+ *                     two totals with no dimension at all.
+ *                   - uniques-browser:<day> — a SECOND daily sketch in
+ *                     lib/ratelimit.ts, built exactly like the first and
+ *                     pinned the same way: distinct-shape now holds a closed
+ *                     list of sketch key literals (DISTINCT_KEY_LITERALS),
+ *                     and any other `uniques…` key in code fails.
+ *                 And a new tooth for the whole usage registry, usage-shape:
+ *                 every `:usage:` key in its code must be one of the exact
+ *                 literals in ALLOWED_USAGE_KEY_LITERALS, so a new usage
+ *                 family is an edit to this gate, reviewed as such.
  *
  * Also enforces:
  *   - env/client confinement: only the registry modules may touch their
@@ -264,14 +284,26 @@ const ALLOWED_PAGEVIEW_SURFACES = new Set([
 // rename or a computed list stops matching, which the missing-declaration
 // check below turns into a failure rather than a silent pass.
 const PAGEVIEW_SURFACES_DECL = /PAGEVIEW_SURFACES\s*=\s*\[([\s\S]*?)\]/;
-const PAGEVIEW_KEY_MARKER = 'usage:pageview:';
+// Both families keyed by a page-view surface label: all loads, and (2026-11-23)
+// the loads labelled "browser". Either one, written with no parsable
+// declaration behind it, fails.
+const PAGEVIEW_KEY_MARKERS = ['usage:pageview:', 'usage:pageview-browser:'];
 // The daily distinct-address family (owner ruling 2026-09-25). The ONE key
 // shape it may ever have, as the exact source literal lib/ratelimit.ts's
 // distinctAddressKey returns: the env prefix and the UTC day, nothing else.
 // Deliberately literal, like PAGEVIEW_SURFACES_DECL — a rename of `day` or
 // any extra segment stops matching, which is a failure rather than a pass.
-const DISTINCT_KEY_LITERAL = '`${keyPrefix()}:uniques:${day}`';
-const DISTINCT_KEY_MARKER = 'uniques:';
+// A SECOND sketch joined on 2026-11-23 (owner's answer, card `people`,
+// option b): the addresses whose page load looked like a browser's. It is
+// built exactly like the first and pinned exactly like it, so the one literal
+// became a closed list. Every literal here is env prefix + a fixed sketch
+// name + the UTC day; a new sketch is an edit to this list, on purpose.
+const DISTINCT_KEY_LITERALS = ['`${keyPrefix()}:uniques:${day}`', '`${keyPrefix()}:uniques-browser:${day}`'];
+// Any `uniques` key that is not the day salt (the salt has its own rules
+// below). Matching the bare family name, not `uniques:`, is what catches a
+// new sketch under a new suffix (`uniques-bills:`) as well as an extra
+// segment on an existing one.
+const DISTINCT_KEY_MARKER_RE = /uniques(?!-salt)[-:]/g;
 // HyperLogLog commands, as quoted command names in a command array.
 const HLL_COMMAND = /['"`]PF(ADD|COUNT|MERGE)['"`]/i;
 const HLL_MERGE = /['"`]PFMERGE['"`]/i;
@@ -405,6 +437,25 @@ function codeOnly(text) {
 const ALLOWED_SCRIPT_REFUSAL_SCOPES = new Set(['daily', 'burst', 'tenant']);
 const SCRIPT_REFUSAL_SCOPES_DECL = /SCRIPT_REFUSAL_SCOPES\s*=\s*\[([\s\S]*?)\]/;
 const SCRIPT_REFUSAL_KEY_MARKER = 'usage:script-refusal:';
+// Every usage-database key shape, as the exact source literal lib/usage.ts
+// builds it (2026-11-23, with the people counts). The registry's other rules
+// police what an interpolation may contain; this one polices which families
+// exist at all, so a new family is an edit to this privacy gate rather than
+// one more key builder appended in passing. The last entry is the SCAN
+// prefix readMcpClientDay matches against, not a key that is written.
+const ALLOWED_USAGE_KEY_LITERALS = [
+  '`${keyPrefix()}:usage:mcp:${tool}:${day}`',
+  '`${keyPrefix()}:usage:script:${day}`',
+  '`${keyPrefix()}:usage:brand:${day}`',
+  '`${keyPrefix()}:usage:mcp-client:${sanitizeMcpClientName(client)}:${day}`',
+  '`${keyPrefix()}:usage:pageview:${asPageviewSurface(surface)}:${day}`',
+  '`${keyPrefix()}:usage:script-refusal:${asScriptRefusalScope(scope)}:${day}`',
+  '`${keyPrefix()}:usage:pageview-browser:${asPageviewSurface(surface)}:${day}`',
+  '`${keyPrefix()}:usage:rep-lookup:${day}`',
+  '`${keyPrefix()}:usage:script-served:${day}`',
+  '`${keyPrefix()}:usage:mcp-client:`',
+];
+const USAGE_KEY_MARKER = ':usage:';
 
 /** Every ${...} interpolation inside template literals of a source text. */
 function templateInterpolations(text) {
@@ -449,7 +500,7 @@ function templateLiterals(text) {
  * and a registry that writes the family's keys must carry a parsable
  * declaration (renaming the constant is a failure, not an escape).
  */
-function checkClosedVocabulary(text, add, { rule, constName, decl: declRe, allowed, marker, offLabel }) {
+function checkClosedVocabulary(text, add, { rule, constName, decl: declRe, allowed, markers, offLabel }) {
   const decl = declRe.exec(text);
   const line = decl ? text.slice(0, decl.index).split('\n').length : 0;
   if (decl) {
@@ -460,12 +511,15 @@ function checkClosedVocabulary(text, add, { rule, constName, decl: declRe, allow
     for (const label of labels) {
       if (!allowed.has(label)) add(rule, line, offLabel(label));
     }
-  } else if (text.includes(marker)) {
-    add(
-      rule,
-      0,
-      `the usage registry writes ${marker} keys but declares no parsable ${constName} list — the closed vocabulary cannot be checked`
-    );
+  } else {
+    const marker = markers.find((m) => text.includes(m));
+    if (marker) {
+      add(
+        rule,
+        0,
+        `the usage registry writes ${marker} keys but declares no parsable ${constName} list — the closed vocabulary cannot be checked`
+      );
+    }
   }
 }
 
@@ -667,7 +721,7 @@ export function scanText(file, text) {
       constName: 'PAGEVIEW_SURFACES',
       decl: PAGEVIEW_SURFACES_DECL,
       allowed: ALLOWED_PAGEVIEW_SURFACES,
-      marker: PAGEVIEW_KEY_MARKER,
+      markers: PAGEVIEW_KEY_MARKERS,
       offLabel: (label) =>
         `page-view surface "${label}" is not in the gate's allowlist — a surface label is a route TEMPLATE, never a path, slug, query, or locale`,
     });
@@ -683,10 +737,28 @@ export function scanText(file, text) {
       constName: 'SCRIPT_REFUSAL_SCOPES',
       decl: SCRIPT_REFUSAL_SCOPES_DECL,
       allowed: ALLOWED_SCRIPT_REFUSAL_SCOPES,
-      marker: SCRIPT_REFUSAL_KEY_MARKER,
+      markers: [SCRIPT_REFUSAL_KEY_MARKER],
       offLabel: (label) =>
         `script-refusal scope "${label}" is not in the gate's allowlist — a scope names one of /api/script's 429 guards, never a caller, tenant, or request content`,
     });
+  }
+
+  // 4f-bis. usage-shape (2026-11-23): every `:usage:` key in the usage
+  //     registry's CODE is one of ALLOWED_USAGE_KEY_LITERALS, character for
+  //     character. Code-only, like the distinct-address rules: the header
+  //     comment lists the shapes in prose.
+  if (file === USAGE_REGISTRY) {
+    const code = codeOnly(text);
+    for (let at = code.indexOf(USAGE_KEY_MARKER); at !== -1; at = code.indexOf(USAGE_KEY_MARKER, at + 1)) {
+      const ok = ALLOWED_USAGE_KEY_LITERALS.some((lit) => code.startsWith(lit, at - lit.indexOf(USAGE_KEY_MARKER)));
+      if (!ok) {
+        add(
+          'usage-shape',
+          code.slice(0, at).split('\n').length,
+          'a usage key is built as something other than one of the registered literals (ALLOWED_USAGE_KEY_LITERALS) — a new usage family is an edit to this gate'
+        );
+      }
+    }
   }
 
   // 4g. the daily distinct-address sketch (owner ruling 2026-09-25): one
@@ -697,16 +769,16 @@ export function scanText(file, text) {
     const code = codeOnly(text);
     const lineOf = (index) => code.slice(0, index).split('\n').length;
     if (file === COUNTERS_REGISTRY) {
-      // Every appearance of the family marker must sit inside the canonical
-      // literal — anything else (an extra segment, a concatenated string, a
-      // second builder) is a stray.
-      const markerOffset = DISTINCT_KEY_LITERAL.indexOf(DISTINCT_KEY_MARKER);
-      for (let at = code.indexOf(DISTINCT_KEY_MARKER); at !== -1; at = code.indexOf(DISTINCT_KEY_MARKER, at + 1)) {
-        if (code.startsWith(DISTINCT_KEY_LITERAL, at - markerOffset)) continue;
+      // Every appearance of the family marker must sit inside one of the
+      // canonical literals — anything else (an extra segment, a concatenated
+      // string, a second builder, a new sketch name) is a stray.
+      for (const m of code.matchAll(DISTINCT_KEY_MARKER_RE)) {
+        const at = m.index;
+        if (DISTINCT_KEY_LITERALS.some((lit) => code.startsWith(lit, at - lit.indexOf('uniques')))) continue;
         add(
           'distinct-shape',
           lineOf(at),
-          `the daily distinct-address key is built as something other than ${DISTINCT_KEY_LITERAL} — one key per UTC day, never a route, page, surface, bill, or locale dimension`
+          `a daily sketch key is built as something other than ${DISTINCT_KEY_LITERALS.join(' or ')} — one key per sketch per UTC day, never a route, page, surface, bill, or locale dimension, and no sketch this gate does not list`
         );
       }
       const merge = HLL_MERGE.exec(code);
@@ -729,7 +801,7 @@ export function scanText(file, text) {
         }
       }
     } else {
-      const marker = code.indexOf(DISTINCT_KEY_MARKER);
+      const marker = code.search(DISTINCT_KEY_MARKER_RE);
       if (marker !== -1) {
         add(
           'distinct-confinement',
@@ -1377,6 +1449,49 @@ const SELF_TEST_FIXTURES = [
     text: 'const k = `${keyPrefix()}:usage:script-refusal:${asScriptRefusalScope(scope)}:${callerHash}:${day}`;',
     rule: 'usage-caller',
   },
+  // --- the people counts (owner's answer, 2026-11-23, card `people`) ---
+  {
+    name: 'a per-page browser-address sketch (2026-11-23)',
+    file: COUNTERS_REGISTRY,
+    text: 'const k = `${keyPrefix()}:uniques-browser:${surface}:${day}`;',
+    rule: 'distinct-shape',
+  },
+  {
+    name: 'a third sketch under a name the gate does not list (2026-11-23)',
+    file: COUNTERS_REGISTRY,
+    text: 'const k = `${keyPrefix()}:uniques-bills:${day}`;',
+    rule: 'distinct-shape',
+  },
+  {
+    name: 'the browser-address sketch built outside the counters registry (2026-11-23)',
+    file: USAGE_REGISTRY,
+    text: 'const k = `${keyPrefix()}:uniques-browser:${day}`;',
+    rule: 'distinct-confinement',
+  },
+  {
+    name: 'a usage family the gate does not register (2026-11-23)',
+    file: USAGE_REGISTRY,
+    text: 'const k = `${keyPrefix()}:usage:visitor:${day}`;',
+    rule: 'usage-shape',
+  },
+  {
+    name: 'a registered usage family assembled by concatenation, dodging the literal (2026-11-23)',
+    file: USAGE_REGISTRY,
+    text: "const k = keyPrefix() + ':usage:rep-lookup:' + day;",
+    rule: 'usage-shape',
+  },
+  {
+    name: 'a ZIP folded into the lookup count (2026-11-23)',
+    file: USAGE_REGISTRY,
+    text: 'const k = `${keyPrefix()}:usage:rep-lookup:${zip}:${day}`;',
+    rule: 'usage-caller',
+  },
+  {
+    name: 'browser page-view keys written with no parsable surface declaration (2026-11-23)',
+    file: USAGE_REGISTRY,
+    text: 'const k = `${keyPrefix()}:usage:pageview-browser:${asPageviewSurface(surface)}:${day}`;',
+    rule: 'pageview-surface',
+  },
 ];
 
 // A clean sample must produce zero violations (guards against a gate that
@@ -1519,6 +1634,31 @@ const SELF_TEST_CLEAN = [
     text:
       "const SCRIPT_REFUSAL_SCOPES = ['daily', 'burst', 'tenant'] as const;\n" +
       'const k = `${keyPrefix()}:usage:script-refusal:${asScriptRefusalScope(scope)}:${day}`;',
+  },
+  {
+    // The people counts (2026-11-23), exactly as lib/usage.ts ships them:
+    // the browser page-view builder beside its vocabulary, and the two
+    // dimensionless totals.
+    file: USAGE_REGISTRY,
+    text:
+      "const PAGEVIEW_SURFACES = ['home', 'bills-index', 'bill', 'questions-index', 'question', 'reps', 'member', 'record', 'nominations', 'today', 'short', 'other'] as const;\n" +
+      'const a = `${keyPrefix()}:usage:pageview-browser:${asPageviewSurface(surface)}:${day}`;\n' +
+      'const b = `${keyPrefix()}:usage:rep-lookup:${day}`;\n' +
+      'const c = `${keyPrefix()}:usage:script-served:${day}`;',
+  },
+  {
+    // The second sketch (2026-11-23), as lib/ratelimit.ts ships it: its own
+    // canonical literal and the shared helper that feeds either sketch.
+    file: COUNTERS_REGISTRY,
+    text:
+      'export function browserAddressKey(day: string): string {\n' +
+      '  return `${keyPrefix()}:uniques-browser:${day}`;\n' +
+      '}\n' +
+      'async function addToDaySketch(sketchKey: (day: string) => string, ip: string, now: Date): Promise<void> {\n' +
+      '  const key = sketchKey(day);\n' +
+      '  const element = distinctAddressElement(address, await distinctDaySalt(client, day, now.getTime()));\n' +
+      "  const altered = await client.cmd(['PFADD', key, element]);\n" +
+      '}',
   },
 ];
 
