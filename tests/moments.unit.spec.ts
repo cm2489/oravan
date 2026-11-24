@@ -85,7 +85,9 @@ test.describe('real data/moments.json passes the CI gate', () => {
   test('every curated moment resolves and computes a valid lifecycle state', () => {
     const moments = getMoments();
     expect(moments.length).toBeGreaterThan(0);
-    expect(moments.length).toBeLessThanOrEqual(8); // the live cap (lib/moments-gate.mjs), 6 until 2026-09-24
+    // The live cap (lib/moments-gate.mjs LIVE_CAP; 6 until 2026-09-24) counts
+    // stored-live entries only: retired ones stay in the file and do not count.
+    expect(moments.filter((m) => m.status === 'live').length).toBeLessThanOrEqual(8);
     for (const m of moments) {
       expect(['live', 'settled', 'stale', 'retired']).toContain(m.state);
       expect(m.vehicles.length).toBeGreaterThan(0);
