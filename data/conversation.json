@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-24T06:30:05.533Z",
+    "fetched_at": "2026-11-24T10:52:33.635Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-24T06:30:05.533Z"
+        "checked_at": "2026-11-24T10:52:33.635Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-22",
         "week_label": "Most-Viewed Bills - Week of November 22, 2026",
         "entries": 8,
-        "checked_at": "2026-11-24T06:30:05.533Z"
+        "checked_at": "2026-11-24T10:52:33.635Z"
       },
       "leans": {
         "center": {
@@ -472,6 +472,18 @@
       "unratedOutlets7d": [],
       "mostViewed": null
     },
+    "hr-3633-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "coinmarketcap.com",
+          "firstSeen": "2026-11-24",
+          "lastSeen": "2026-11-24",
+          "url": "https://news.google.com/rss/articles/CBMihwFBVV95cUxQT2lXdXZQSWRCcVlfX1R6SEwtNUVScFZRVk1kWHJ1TTFrT3JVYkpoTi0ySWFldlhEVTAzZVBLQlhmd1ktc1k2VkNKeW1jS04tNHlrRlVjTV9ld2lQRmVZYkV1elV2OVhUZGRIY1NSMWN6TkIzWFdVVDFiQXc4ZFhSWGk1S0Rxc28?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-3724-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -704,6 +716,12 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "beefmagazine.com",
+          "firstSeen": "2026-11-24",
+          "lastSeen": "2026-11-24",
+          "url": "https://news.google.com/rss/articles/CBMirgFBVV95cUxNZmR3V21JQ2l2Um5abmlHbzZCall0WXlXZ2xKV3NtWG9ERW9zZEV5a3l3bnMtbl90eXBHOXc1OS04dmNZdU1VRkxSRmRrTzY0eGpaSnQyTDV6SXBWRDVncWVMNnJmVHVLdng5anV2TkZ2M2FERnpJZDdOdWtvYTExQzRVVDd4NXEtajI2LU9fTWczT0JDTDhFQjNwRU1LYkRwdVJDeXl1ckRTaDc5TWc?oc=5"
+        },
+        {
           "domain": "meatpoultry.com",
           "firstSeen": "2026-11-24",
           "lastSeen": "2026-11-24",
@@ -931,6 +949,13 @@
     "hr-7008-119": {
       "outlets7d": [
         {
+          "domain": "politico.com",
+          "lean": "left",
+          "firstSeen": "2026-11-24",
+          "lastSeen": "2026-11-24",
+          "url": "https://www.politico.com/news/2026/11/24/house-democrats-stock-trading-prediction-markets-01181346"
+        },
+        {
           "domain": "thehill.com",
           "lean": "center",
           "firstSeen": "2026-11-22",
@@ -1107,6 +1132,18 @@
       "unratedOutlets7d": [],
       "mostViewed": null
     },
+    "hr-7975-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "thechronicle.com.ph",
+          "firstSeen": "2026-11-24",
+          "lastSeen": "2026-11-24",
+          "url": "https://news.google.com/rss/articles/CBMiowFBVV95cUxQREpGdUVneEhJd0w2OXNtRl9QOGJZUnVCcUxTZEVZREdkZW9rQURtS2x1WXg0eXd4RVRkRGJldGYzZTFodjBMWndNX3RyeXZrV2xIaE5wWXU0S1d6dGdZNDdQd0pPT3Z4Q3EwRzRHTGhGYXZqajYwdG5CZ3BmNFFsV2FCRGhqUGJOT2xPbjduSnVpMUtTMko4eE1EZ3otZ2dlVGtz?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-8454-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1162,6 +1199,12 @@
     "hr-8646-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "farmersadvance.com",
+          "firstSeen": "2026-11-24",
+          "lastSeen": "2026-11-24",
+          "url": "https://news.google.com/rss/articles/CBMi7gFBVV95cUxOMFVLM0JOQWVuNGxJTVlkN29OaldpMHFmVW5NbjFVYXZpWW1xOGVFNUpfMmFMazlmbzNHa1lOMVVEMVRkRWd3bWtLQjdVVXFWN1p0bVV2VFZOdDhhRXVPY1hERGJqMzRnWHFkeGVvMnVoeW5GUldsRExXa3hZeEZWajFONXZjLXNtX2dTemNUTWxYaUR6RXEtTmlxeTZQVkducW1LSkFsYnh0X0hWeTlERWNVZWExRUlCSGtzX0ZOMTFQVFJxYTJ1dmtFWWV6RWtBTFlCbGYyQ3dTbEtvMnVKMGI0cjFYdDEteDN0U0t3?oc=5"
+        },
         {
           "domain": "yahoo.com",
           "firstSeen": "2026-11-24",
@@ -1628,6 +1671,18 @@
         "lastSeen": "2026-11-24",
         "lastWeek": "2026-11-22"
       }
+    },
+    "s-2667-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "wisevoter.com",
+          "firstSeen": "2026-11-24",
+          "lastSeen": "2026-11-24",
+          "url": "https://news.google.com/rss/articles/CBMiigFBVV95cUxQY0hvVXBudjk5TUVDVk5PbnN0OW1SaXk5LVhyLXNLMC1TX2p5RXE5bzAzaGxtYkpuazNQVzhtT1VfM05yaVlrR3FpRUszcnV4Wm56LTFfakVEWDJmYmZuMXlqb2FFbzBfRVNuaUxQbWd6bDJTNnFLTS1JdWw2YVZNWUhvbk5xblhQRXc?oc=5"
+        }
+      ],
+      "mostViewed": null
     },
     "s-2767-119": {
       "outlets7d": [
