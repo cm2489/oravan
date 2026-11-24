@@ -115,8 +115,10 @@ import { noteScriptGeneration, noteScriptRefusal, noteScriptServed } from '@/lib
  * HALF-warm bill is different since 2026-11-24: to stay stance-blind it
  * starts (or joins) the drafting of the stances still missing, and that
  * drafting takes units like any other. What keeps those hits from draining
- * the cap: one fill per bill at a time on an instance (later requests join
- * it), a ten-minute pause for a bill after a fill in which a draft failed, at
+ * the cap: one fill per bill at a time on an instance (later requests, and
+ * requests arriving within five seconds of its end, join it), a pause for a
+ * bill after a fill in which a draft failed (1, 2, 4, then 10 minutes for
+ * failed fills of that bill in a row, back to 1 after one that succeeds), at
  * most 16 bills filling at once per instance (`routeFills`,
  * lib/script-serve.ts step 5), and this breaker itself.
  *
@@ -140,9 +142,9 @@ import { noteScriptGeneration, noteScriptRefusal, noteScriptServed } from '@/lib
  *   429 rate_limited       — any limiter or the daily breaker tripped
  *   502 generation_failed  — the model call failed or came back empty, or
  *                            no draft could start for a missing script (a
- *                            failed draft of that bill in the last ten
- *                            minutes, or 16 bills already filling on this
- *                            instance: lib/script-serve.ts, step 5)
+ *                            failed draft of that bill within its cooldown,
+ *                            1 to 10 minutes, or 16 bills already filling on
+ *                            this instance: lib/script-serve.ts, step 5)
  */
 
 // 60s: the largest function duration valid on every Vercel plan tier, and
@@ -488,10 +490,11 @@ async function serveScript(
     // caller did not ask for, never delays the answer, and nothing sent
     // anywhere waits for the answer either.
     defer: (task) => after(task),
-    // One fill per bill at a time, a ten-minute pause for a bill after a
-    // failed draft, at most 16 bills filling at once: per instance, keyed by
-    // the bill, never the stance. What keeps a cache hit on a half-warm bill,
-    // which still starts the fill of the other stances, from draining the cap.
+    // One fill per bill at a time, a pause for a bill after a failed draft
+    // that backs off from 1 to 10 minutes, at most 16 bills filling at once:
+    // per instance, keyed by the bill, never the stance. What keeps a cache
+    // hit on a half-warm bill, which still starts the fill of the other
+    // stances, from draining the cap.
     fills: routeFills,
     note: {
       // traffic-watch (2026-07): one per real generation (an actual

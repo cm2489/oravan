@@ -432,8 +432,8 @@ test('the routes: one argument-free count each, after the answer is built; the Z
 
   // Since 2026-11-24 the route hands the count to lib/script-serve.ts, which
   // runs it deferred (after()) once the request has every stance of the bill
-  // available: a full cache hit, or a fill whose drafts all came back and were
-  // stored. Behaviour, including the partial-failure undercount, is pinned in
+  // available, as its own read saw the bill: a full cache hit, or a fill in
+  // which every stance it found missing came back and was stored. Behaviour, including the partial-failure undercount, is pinned in
   // tests/script-stance-blind.unit.spec.ts.
   const script = read('app/api/script/route.ts');
   expect(script.match(/noteScriptServed\(([^)]*)\)/g)).toEqual(['noteScriptServed()']);
@@ -441,11 +441,14 @@ test('the routes: one argument-free count each, after the answer is built; the Z
   expect(script).toContain('defer: (task) => after(task),');
   const serve = read('lib/script-serve.ts');
   const record = serve.slice(serve.indexOf('async function recordCounts('), serve.indexOf('export async function serveStanceBlind('));
-  expect(record).toContain('if (fill === null || fill.complete) await deps.note.served();');
+  expect(record).toContain(
+    'const allAvailable = fill === null ? missing.length === 0 : !fill.refused && missing.every((s) => fill.drafted[s]);'
+  );
+  expect(record).toContain('if (allAvailable) await deps.note.served();');
   // The count is taken after the write it depends on.
   const fill = serve.slice(serve.indexOf('async function fillMissing('), serve.indexOf('async function recordCounts('));
   expect(fill).toContain('await deps.cache.setStances(set, drafted);');
-  expect(serve).toContain('deps.defer(() => recordCounts(null, deps));');
+  expect(serve).toContain('deps.defer(() => recordCounts(null, missing, deps));');
 });
 
 // --- the gate's new teeth, on the real files ----------------------------------------

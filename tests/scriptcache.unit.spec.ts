@@ -274,6 +274,22 @@ test('setStances: one transaction of SET … EX 86400 in the fixed order, whatev
   expect(await createScriptCache().get({ ...SET_PARTS, version, stance: 'undecided' })).toBe('U');
 });
 
+test('setStances: a database URL set with a trailing "/" still reaches /multi-exec (second check of #554, D6)', async () => {
+  restoreEnv = setUpstashEnv();
+  process.env.UPSTASH_CACHE_REST_URL = `${CACHE_URL}//`;
+  const mock = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [CACHE_URL]: mock });
+  const version = contentVersion(makeBill());
+  const cache = createScriptCache();
+
+  expect(await cache.setStances({ ...SET_PARTS, version }, { oppose: 'O' })).toBe(true);
+  // Never "//multi-exec", which Upstash would not treat as the transaction endpoint.
+  expect(mock.requests.map((r) => r.path)).toEqual(['/multi-exec']);
+  expect(mock.commands).toEqual([['SET', scriptKey({ ...SET_PARTS, version, stance: 'oppose' }), 'O', 'EX', '86400']]);
+  // Reads through the same URL keep working too.
+  expect((await cache.getStances({ ...SET_PARTS, version })).oppose).toBe('O');
+});
+
 test('setStances with nothing to store sends nothing', async () => {
   restoreEnv = setUpstashEnv();
   const mock = new MockUpstash();

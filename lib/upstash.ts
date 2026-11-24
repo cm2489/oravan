@@ -282,6 +282,10 @@ function readTokenEnv(name: string): string | null {
 }
 
 function restClient(url: string, token: string): UpstashClient {
+  // The transaction endpoint is a path under the database URL, so a URL set
+  // with a trailing "/" must not become "…//multi-exec" (second check of
+  // #554, D6). cmd() posts to the URL itself, where a trailing "/" is fine.
+  const multiExecUrl = `${url.replace(/\/+$/, '')}/multi-exec`;
   return {
     async cmd(command: string[]): Promise<unknown> {
       let res: Response;
@@ -314,7 +318,7 @@ function restClient(url: string, token: string): UpstashClient {
     async multi(commands: string[][]): Promise<unknown[]> {
       let res: Response;
       try {
-        res = await fetch(`${url}/multi-exec`, {
+        res = await fetch(multiExecUrl, {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${token}`,

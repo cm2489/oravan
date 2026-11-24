@@ -6,7 +6,8 @@ import { expect, test } from '@playwright/test';
 import { counterKey, createTenantRateLimiter } from '../lib/ratelimit';
 import {
   createFillCoordinator,
-  FILL_COOLDOWN_MS,
+  FILL_COOLDOWNS_MS,
+  RECENT_FILL_MS,
   serveStanceBlind,
   type FillCoordinator,
   type ServeDeps,
@@ -462,7 +463,7 @@ test('concurrent requests on a cold bill share ONE fill: each stance drafted onc
   }
 });
 
-test('after a fill with a failed draft, the bill cools down: no breaker unit, no draft, for ANY stance, until the cooldown ends', async () => {
+test('after a fill with a failed draft, the bill cools down: no breaker unit, no draft, for ANY stance, until the (first, one-minute) cooldown ends', async () => {
   let now = 1_000_000;
   let failing: Stance[] = ['oppose'];
   const w = sharedWorld({ fail: () => failing, fills: createFillCoordinator({ now: () => now }) });
@@ -473,9 +474,10 @@ test('after a fill with a failed draft, the bill cools down: no breaker unit, no
     const unitsAfterFirst = count(w.countersDb, counterKey('script-day', 'script-global'));
     expect(unitsAfterFirst).toBe(3);
 
-    // A minute later, a popular bill: callers of every stance. None of them
-    // spends; the one whose script is missing gets the 502.
-    now += 60_000;
+    // Thirty seconds later (past the five seconds a finished fill stays
+    // joinable, inside the first cooldown), a popular bill: callers of every
+    // stance. None of them spends; the one whose script is missing gets the 502.
+    now += 30_000;
     const wireBefore = w.countersDb.requests.length;
     const cachedCaller = await serveStanceBlind(SET, 'support', w.deps());
     const missingCaller = await serveStanceBlind(SET, 'oppose', w.deps());
@@ -487,7 +489,7 @@ test('after a fill with a failed draft, the bill cools down: no breaker unit, no
     expect(w.countersDb.requests.length, 'nothing at all reaches the counters database while cooling').toBe(wireBefore);
 
     // Once the cooldown has passed, the next request drafts the missing stance.
-    now += FILL_COOLDOWN_MS;
+    now += FILL_COOLDOWNS_MS[0];
     failing = [];
     const later = await serveStanceBlind(SET, 'support', w.deps());
     await w.flush();
@@ -513,6 +515,120 @@ test('a breaker refusal does not start a cooldown (it spent nothing, and the bre
   expect(b.kind).toBe('started');
   if (b.kind === 'started') await b.fill;
   expect(calls).toBe(2);
+});
+
+test('the cooldown backs off per bill — 1, 2, 4, then 10 minutes — and a fill that succeeds starts the bill over (second check of #554, D5)', async () => {
+  expect(FILL_COOLDOWNS_MS).toEqual([60_000, 120_000, 240_000, 600_000]);
+  let now = 0;
+  let succeed = false;
+  const fills = createFillCoordinator({ now: () => now });
+  const run = async () =>
+    succeed
+      ? { refused: false, drafted: { support: 'S', oppose: 'O', undecided: 'U' }, complete: true }
+      : { refused: false, drafted: {}, complete: false };
+  const other = { ...SET, slug: 's-9-119' };
+  /** Start a fill at `now`; return its kind, awaiting it when it started. */
+  const attempt = async (set = SET) => {
+    const r = fills.start(set, run);
+    if (r.kind === 'started') await r.fill;
+    return r.kind;
+  };
+
+  // Each failed fill in a row waits longer; the cooldown never passes 10 minutes.
+  for (const wait of [60_000, 120_000, 240_000, 600_000, 600_000]) {
+    expect(await attempt(), `a new fill when the last cooldown ended (t=${now})`).toBe('started');
+    now += wait - 1;
+    expect(await attempt(), `still cooling 1 ms before ${wait / 60_000} min`).toBe('cooling');
+    // The backoff is the BILL's, never shared: another bill starts at once.
+    expect(await attempt(other)).toBe('started');
+    now += 1;
+  }
+
+  // A fill in which every draft comes back starts the bill over at one minute.
+  succeed = true;
+  expect(await attempt()).toBe('started');
+  succeed = false;
+  now += RECENT_FILL_MS;
+  expect(await attempt(), 'the first failure after a success').toBe('started');
+  now += 60_000 - 1;
+  expect(await attempt()).toBe('cooling');
+  now += 1;
+  expect(await attempt(), 'one minute, not the ten it had reached before').toBe('started');
+});
+
+test('a request whose read lands as a fill finishes joins that fill instead of drafting every stance again (second check of #554, D4)', async () => {
+  let now = 1_000_000;
+  const w = sharedWorld({ fills: createFillCoordinator({ now: () => now }) });
+  try {
+    // B's read is answered while the bill is still cold, but B reaches the
+    // coordinator only after A's fill has finished and been written.
+    let releaseB!: () => void;
+    const bGate = new Promise<void>((resolve) => {
+      releaseB = resolve;
+    });
+    const real = w.deps();
+    const lateRead: ServeDeps = {
+      ...real,
+      cache: {
+        ...real.cache,
+        getStances: async (set) => {
+          const read = await real.cache.getStances(set);
+          await bGate;
+          return read;
+        },
+      },
+    };
+    const b = serveStanceBlind(SET, 'oppose', lateRead);
+    const a = await serveStanceBlind(SET, 'support', w.deps());
+    expect(a).toEqual({ kind: 'script', script: 'DRAFT support', cached: false });
+    expect(w.drafted).toHaveLength(3);
+    now += RECENT_FILL_MS - 1; // still inside the window a finished fill stays joinable
+    releaseB();
+    expect(await b, 'B gets the draft A paid for').toEqual({ kind: 'script', script: 'DRAFT oppose', cached: false });
+    await w.flush();
+    expect(w.drafted, 'each stance drafted once, not twice').toEqual(STANCES.map((s) => `${SET.slug} ${s}`));
+    expect(count(w.countersDb, counterKey('script-day', 'script-global')), 'three breaker units, not six').toBe(3);
+    expect(count(w.countersDb, scriptUsageKey(DAY)), 'spend counted once, by A').toBe(3);
+    expect(count(w.countersDb, scriptServedUsageKey(DAY)), 'both requests were served').toBe(2);
+    expect(w.cacheDb.requests.filter((r) => r.path === '/multi-exec')).toHaveLength(1);
+  } finally {
+    w.restoreFetch();
+  }
+});
+
+test('the served count is judged by each request\'s OWN read: a joiner that found a stance the starter did not is not counted when it stays missing, whatever its stance (second check of #554, D3)', async () => {
+  for (const joinerStance of STANCES) {
+    let release!: () => void;
+    const hold = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const w = sharedWorld({ hold });
+    try {
+      // The starter sees support cached and drafts oppose and undecided.
+      const supportKey = scriptKey({ ...SET, stance: 'support' });
+      w.cacheDb.store.set(supportKey, { value: 'CACHED support', expiresAt: null });
+      const starter = serveStanceBlind(SET, 'undecided', w.deps());
+      await new Promise((resolve) => setTimeout(resolve, 20)); // the starter's drafts are held
+      // Support's key expires mid-fill; the joiner finds all three missing and joins.
+      w.cacheDb.store.delete(supportKey);
+      const joiner = serveStanceBlind(SET, joinerStance, w.deps());
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      release();
+      expect(await starter).toEqual({ kind: 'script', script: 'DRAFT undecided', cached: false });
+      const outcome = await joiner;
+      await w.flush();
+      expect(w.drafted, 'one fill: the starter\'s two drafts').toEqual([`${SET.slug} oppose`, `${SET.slug} undecided`]);
+      if (joinerStance === 'support') expect(outcome).toEqual({ kind: 'generation-failed' });
+      else expect(outcome).toEqual({ kind: 'script', script: `DRAFT ${joinerStance}`, cached: false });
+      // The starter's read found only what the fill drafted: counted. The
+      // joiner's found support too, which stayed missing: not counted, for
+      // a joiner of ANY stance, so the count says nothing about whose it was.
+      expect(count(w.countersDb, scriptServedUsageKey(DAY)), `served, joiner=${joinerStance}`).toBe(1);
+    } finally {
+      release();
+      w.restoreFetch();
+    }
+  }
 });
 
 test('at most MAX_FILLS_IN_FLIGHT bills fill at once on an instance; past it, a missing script is a 502 and nothing is spent', async () => {

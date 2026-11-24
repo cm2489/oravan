@@ -92,8 +92,9 @@
  * conflict, not a detail (CLAUDE.md, "Constitutional conflicts").
  *
  * SCRIPT REFUSALS joined the digest 2026-09-27 (the 2026-09-27 audit, SY-48):
- * one line under "Script generations", the 429s /api/script returned, by the
- * guard that returned them (lib/usage.ts SCRIPT_REFUSAL_SCOPES). They ride in
+ * one line under "Script generations", the requests /api/script turned away
+ * (429s, and since #554 the daily breaker's held-back drafts), by the
+ * guard that turned them away (lib/usage.ts SCRIPT_REFUSAL_SCOPES). They ride in
  * the SAME MGET as the generations (readUsageWindow), so there is no new read
  * and no new failure mode — a counters read error still refuses the whole
  * digest rather than print an invented zero. Descriptive only, like the site
