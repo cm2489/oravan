@@ -488,10 +488,12 @@ async function serveScript(
     // async, so a buildPrompt that throws is one failed draft (a 502 if it
     // was the caller's), not a bare 500 (first check of #554, N6).
     generate: async (draftStance) => generateScript(buildPrompt(draftStance), set.lang),
-    // after() only keeps the already-running fill and counts alive past the
-    // response: a slow or failed counter write, or drafting the stances this
-    // caller did not ask for, never delays the answer, and nothing sent
-    // anywhere waits for the answer either.
+    // after() only keeps the day counts alive past the response: a slow or
+    // failed counter write never delays the answer. The answer itself waits
+    // for the fill (its drafts and its write), whichever stance this caller
+    // picked, so when it leaves says nothing about whose script was cached
+    // (lib/script-serve.ts step 3). Nothing sent anywhere waits for the
+    // answer.
     defer: (task) => after(task),
     // One fill per bill at a time, a pause for a bill after a failed draft
     // (or a cache write that did not land)

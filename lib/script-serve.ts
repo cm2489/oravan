@@ -158,8 +158,9 @@ import type { Stance } from './types';
  *       - the in-flight cap (step 5): MAX_FILLS_IN_FLIGHT bills already
  *         filling on this instance, so no fill starts, and the 502;
  *       - a stance key that expired during a fill this request joined
- *         (running, or finished less than RECENT_FILL_MS ago), so that fill
- *         never drafted it, and the 502;
+ *         (running, or finished less than RECENT_FILL_MS ago, or, when its
+ *         write failed, until its cooldown ends), so that fill never drafted
+ *         it, and the 502;
  *       - the daily breaker refusing the fill (step 3a): a 429. The panel
  *         shows no Retry button for it, but pressing the same stance again
  *         sends a new request.
@@ -190,7 +191,8 @@ export interface ServeDeps {
   /**
    * Keeps an already-running task alive past the response (next/server
    * after() in the route). Nothing passed here waits for the response to
-   * START: the fill and its counts are running before it is called.
+   * START: the counts are already running when it is called (the fill has
+   * already settled, since every answer waits for it).
    */
   defer: (task: () => Promise<void>) => void;
   /** The content-free, caller-free day counts (lib/usage.ts). Never throw. */
@@ -336,6 +338,11 @@ export function createFillCoordinator(
       if (cool && t < cool.until) return { kind: 'cooling' };
       if (inFlight.size >= maxInFlight) return { kind: 'busy' };
       const fill = (async (): Promise<Fill> => {
+        // Yield once first, so inFlight.set below always runs before this
+        // body can finish: a run() that throws synchronously would otherwise
+        // delete the key here, then have it re-added for good (fifth check
+        // of #554, N4).
+        await null;
         let result: Fill;
         try {
           result = await run();

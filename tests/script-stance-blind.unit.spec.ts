@@ -628,6 +628,24 @@ test('a breaker refusal does not start a cooldown (it spent nothing, and the bre
   expect(calls).toBe(2);
 });
 
+test('a run() that throws before returning a promise is a failed fill and frees its in-flight slot (fifth check of #554, N4)', async () => {
+  const fills = createFillCoordinator({ now: () => 0, maxInFlight: 1 });
+  const a = fills.start(SET, () => {
+    throw new Error('sync throw');
+  });
+  expect(a.kind).toBe('started');
+  if (a.kind === 'started') expect((await a.fill).complete).toBe(false);
+  // The slot is free again: another bill can start with maxInFlight 1.
+  const other = { ...SET, slug: 's-9-119' };
+  const b = fills.start(other, async () => ({ refused: false, drafted: {}, complete: true, stored: true }));
+  expect(b.kind).toBe('started');
+  if (b.kind === 'started') await b.fill;
+  // And the throwing bill cools down like any failed fill, instead of staying joined for good.
+  fills.reset();
+  const c = fills.start(SET, async () => ({ refused: false, drafted: {}, complete: true, stored: true }));
+  expect(c.kind).toBe('started');
+});
+
 test('the cooldown backs off per bill — 1, 2, 4, then 10 minutes — and a fill that succeeds starts the bill over (second check of #554, D5)', async () => {
   expect(FILL_COOLDOWNS_MS).toEqual([60_000, 120_000, 240_000, 600_000]);
   let now = 0;
