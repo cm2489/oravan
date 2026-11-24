@@ -775,8 +775,9 @@ export async function noteMcpToolCall(tool: McpToolName): Promise<void> {
 
 /**
  * Record one real (cache-miss) script generation. Called via `after()` from
- * app/api/script/route.ts immediately after a successful cache.set, so a
- * slow or failed write can never delay the response. Never throws.
+ * app/api/script/route.ts (through lib/script-serve.ts), once per draft that
+ * came back, after the cache write, so a slow or failed write can never
+ * delay the response. Never throws.
  */
 export async function noteScriptGeneration(): Promise<void> {
   await noteUsage(scriptUsageKey(usageDayKey()));

@@ -167,7 +167,10 @@ test('an open bill proceeds past the gate to the model call (502 here only becau
   const res = await post(billSlug(open!));
   expect(res.status).toBe(502);
   expect(await res.json()).toEqual({ error: 'generation_failed' });
-  expect(modelCalls, 'the request reached the model exactly once').toBe(1);
+  // Once per stance: a missing stance is drafted together with every other
+  // missing stance, so the model never learns which one was asked for
+  // (lib/script-serve.ts, 2026-11-24).
+  expect(modelCalls, 'the request reached the model once per stance').toBe(STANCES.length);
   expect(fetchCalls, 'and nothing else touched the network').toEqual([]);
 });
 
@@ -180,7 +183,7 @@ test("S.J.Res. 185 (a failed motion to proceed) proceeds — owner's pick (a) ke
   const res = await post('sjres-185-119', 'undecided', 'es');
   expect(res.status).toBe(502);
   expect(await res.json()).toEqual({ error: 'generation_failed' });
-  expect(modelCalls).toBe(1);
+  expect(modelCalls).toBe(STANCES.length);
 });
 
 /* ------------------------------------------------------------------ *
@@ -218,7 +221,9 @@ test('the settled gate is the first thing in the bill path: after validation, be
   const refusal = src.indexOf("return NextResponse.json({ error: 'settled' }, { status: 409 });");
   const version = src.indexOf('const version = contentVersion(bill);');
   const serve = src.indexOf('return serveScript(', billPath);
-  const cacheRead = src.indexOf('const cached = await cache.get(key);');
+  // The cache read now lives in serveStanceBlind (lib/script-serve.ts), which
+  // serveScript calls; serveScript's own call is the anchor.
+  const cacheRead = src.indexOf('const outcome = await serveStanceBlind(set, stance, {');
   for (const [name, at] of Object.entries({ validation, billPath, gate, refusal, version, serve, cacheRead })) {
     expect(at, `anchor: ${name}`).toBeGreaterThan(-1);
   }

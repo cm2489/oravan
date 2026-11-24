@@ -562,6 +562,7 @@ test.describe('item 3: app/api/script', () => {
     const open = getAllBills().find((b) => b.status === 'committee' && b.ai_summary && settledDecision(b) === null)!;
     const res = await post(billSlug(open));
     expect(res.status).toBe(502);
-    expect(modelCalls).toBe(1);
+    // Once per stance: every missing stance is drafted together (lib/script-serve.ts).
+    expect(modelCalls).toBe(3);
   });
 });

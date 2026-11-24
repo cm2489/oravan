@@ -5,10 +5,10 @@ import { createHash } from 'node:crypto';
 // same constraint lib/nomination-script.ts's header names.
 import type { Nomination } from './core/nominations';
 import { NOMINATION_PROMPT_VERSION } from './nomination-script';
-import { PROMPT_VERSION } from './scriptprompt';
+import { PROMPT_VERSION, STANCES } from './scriptprompt';
 // TYPE-ONLY import — erased at compile time, so this module still pulls zero
 // bytes of the corpus (the constraint lib/nomination-script.ts's header names).
-import type { Bill } from './types';
+import type { Bill, Stance } from './types';
 import { cacheClient, keyPrefix, noteUpstashError, UpstashRequestError } from './upstash';
 
 /*
@@ -50,6 +50,20 @@ import { cacheClient, keyPrefix, noteUpstashError, UpstashRequestError } from '.
  * Nothing caller-derived — IPs, caller hashes, addresses, the salt — may
  * ever appear in a cache key or value. Scripts are shared across all
  * visitors by design; that is what makes this database privacy-clean.
+ *
+ * STANCE-BLIND ON THE WIRE (owner's pick, 2026-11-24, "Option 1"). The key
+ * names a stance, so a single-key GET would tell the cache database which
+ * stance a visitor asked for, milliseconds after the counters database saw
+ * that visitor's salted hash — and one company runs both. So the live route
+ * never reads or writes one stance: getStances() asks for every stance of a
+ * (bill, language, version) in ONE MGET, always in STANCES order, and
+ * setStances() stores whatever was drafted in ONE transaction, also in
+ * STANCES order. What the route asks the cache is then the same bytes
+ * whichever stance the visitor picked (tests/script-stance-blind.unit.spec.ts
+ * pins it). get()/set() stay for the nightly pregen job, which runs in GitHub
+ * Actions with no visitor behind it, and for the reachability probe.
+ * The key shape does not change, so pregen's entries and the live route's
+ * are the same entries.
  *
  * GRACEFUL DEGRADATION: unconfigured → the same per-instance in-memory Map
  * the route shipped with; a failed Upstash request → treated as a miss (get)
@@ -236,6 +250,34 @@ export function scriptKey(parts: ScriptKeyParts): string {
 
 // --- the cache ----------------------------------------------------------------
 
+/** One (bill or nomination, language, version): every key part but the stance. */
+export type StanceSetParts = Omit<ScriptKeyParts, 'stance'>;
+
+/** What getStances returns: every stance, a script or null. */
+export type StanceScripts = Record<Stance, string | null>;
+
+/**
+ * The two calls the LIVE route makes (lib/script-serve.ts). Neither takes a
+ * stance: that is the point.
+ */
+export interface StanceSetCache {
+  /**
+   * Every stance's script for one (slug, lang, version), read with ONE MGET of
+   * the keys in STANCES order. Fails open exactly like get(): unconfigured or
+   * unreachable means this instance's in-memory copies (usually nulls).
+   */
+  getStances(parts: StanceSetParts): Promise<StanceScripts>;
+  /**
+   * Stores every script in `scripts` with ONE request — a transaction of
+   * `SET key value EX 86400`, in STANCES order — and keeps the warm-instance
+   * copies. Never throws. TRUE only when the transaction reached the cache
+   * database. Called with whatever was drafted for the stances that were
+   * missing, which depends on what the cache held and on which drafts came
+   * back, never on the stance the visitor picked.
+   */
+  setStances(parts: StanceSetParts, scripts: Partial<Record<Stance, string>>): Promise<boolean>;
+}
+
 export interface ScriptCache {
   get(parts: ScriptKeyParts): Promise<string | null>;
   /**
@@ -349,7 +391,7 @@ function logFallbackOnce(): void {
   );
 }
 
-export function createScriptCache(): ScriptCache {
+export function createScriptCache(): ScriptCache & StanceSetCache {
   // In-memory fallback (and per-request fail-open target): same semantics
   // the route shipped with, now with the versioned key and a bounded size.
   const memory = new Map<string, string>();
@@ -391,6 +433,51 @@ export function createScriptCache(): ScriptCache {
       }
       try {
         await client.cmd(['SET', key, script, 'EX', String(SCRIPT_TTL_SECONDS)]);
+        return true;
+      } catch (err) {
+        noteUpstashError('cache', err); // never fails the response
+        return false;
+      }
+    },
+
+    async getStances(parts: StanceSetParts): Promise<StanceScripts> {
+      const keys = STANCES.map((stance) => scriptKey({ ...parts, stance }));
+      const fromMemory = (): StanceScripts =>
+        Object.fromEntries(STANCES.map((stance, i) => [stance, memoryGet(keys[i])])) as StanceScripts;
+      const client = cacheClient();
+      if (!client) {
+        logFallbackOnce();
+        return fromMemory();
+      }
+      try {
+        const values = await client.cmd(['MGET', ...keys]);
+        if (!Array.isArray(values) || values.length !== keys.length) return fromMemory();
+        return Object.fromEntries(
+          STANCES.map((stance, i) => [stance, typeof values[i] === 'string' && values[i] ? values[i] : null])
+        ) as StanceScripts;
+      } catch (err) {
+        noteUpstashError('cache', err);
+        return fromMemory(); // fail open, as get() does
+      }
+    },
+
+    async setStances(parts: StanceSetParts, scripts: Partial<Record<Stance, string>>): Promise<boolean> {
+      // STANCES order, not the object's insertion order: the write must not
+      // carry any trace of which draft finished first or was asked for.
+      const entries = STANCES.filter((stance) => scripts[stance]).map(
+        (stance) => [scriptKey({ ...parts, stance }), scripts[stance] as string] as const
+      );
+      if (entries.length === 0) return true; // nothing to store
+      for (const [key, script] of entries) memorySet(key, script);
+      const client = cacheClient();
+      if (!client) {
+        logFallbackOnce();
+        return false; // in this process's memory only — not durable
+      }
+      try {
+        await client.multi(
+          entries.map(([key, script]) => ['SET', key, script, 'EX', String(SCRIPT_TTL_SECONDS)])
+        );
         return true;
       } catch (err) {
         noteUpstashError('cache', err); // never fails the response

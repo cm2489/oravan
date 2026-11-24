@@ -9,7 +9,10 @@
  * (Since grown, one command per caller, each still a single REST POST: MGET
  * and SCAN for the digest/tenant reads, and PFADD / EXPIREAT / PFCOUNT for
  * the one daily distinct-address sketch in lib/ratelimit.ts, 2026-09-25,
- * whose own day salt is written with SET's EXAT option, 2026-09-27.)
+ * whose own day salt is written with SET's EXAT option, 2026-09-27. And one
+ * transaction, 2026-11-24: lib/scriptcache.ts reads every stance of a bill
+ * with one MGET and stores them with one `/multi-exec` request of SET EX
+ * commands, so the cache never sees which stance a caller asked for.)
  *
  * THREE PHYSICALLY SEPARATE DATABASES — this is the load-bearing design rule
  * (KTD-3, strategy §9.1(c); tenancy added S18), and this file is where all
@@ -21,9 +24,22 @@
  *   database's command/REST log would temporally re-pair caller and content
  *   even when the key design keeps them apart. A "who" entry and a "what"
  *   entry milliseconds apart in one log is a link; in two databases' logs it
- *   is not. The counters database only ever sees hashed callers; the cache
- *   database only ever sees bill content keys. CI enforces the separation
- *   (scripts/check-key-namespaces.mjs).
+ *   is harder to make one. The counters database only ever sees hashed
+ *   callers; the cache database only ever sees bill content keys. CI
+ *   enforces the separation (scripts/check-key-namespaces.mjs).
+ *
+ *   WHAT TWO DATABASES DO NOT PROTECT AGAINST (corrected 2026-11-24). One
+ *   company runs both, and a script request reaches the counters database
+ *   (the caller's salted hash, whose salt also lives there) and the cache
+ *   database (the bill) from the same function within milliseconds. So the
+ *   split guards against someone reading ONE database's log, not against the
+ *   provider pairing the two by timing. What keeps the STANCE out of that
+ *   pairing is the cache's own read and write pattern: every request reads
+ *   all of a bill's stances in one MGET, and writes whatever was drafted in
+ *   one transaction that does not depend on the caller's pick
+ *   (lib/scriptcache.ts getStances/setStances, lib/script-serve.ts). The
+ *   provider can still see that SOMEONE asked about a bill — the interest
+ *   level KTD-3 accepts — never which side they asked for.
  *
  *   The tenancy database (lib/tenancy.ts, S18) holds durable institutional
  *   tenant records (domain, org name, tier, logo — Stripe-webhook-issued
@@ -70,6 +86,17 @@ export class UpstashRequestError extends Error {
 export interface UpstashClient {
   /** Run one Redis command, e.g. ['SET', key, value, 'NX', 'EX', '600']. */
   cmd(command: string[]): Promise<unknown>;
+  /**
+   * Run several commands as ONE atomic transaction in ONE REST request
+   * (Upstash's `/multi-exec` endpoint: a two-dimensional JSON array in, one
+   * `{result}` or `{error}` per command out, or a single `{error}` when the
+   * whole transaction is discarded). Throws UpstashRequestError when the
+   * request fails or ANY command in it errored, so a caller never mistakes a
+   * half-applied write for a stored one. Used by lib/scriptcache.ts to store
+   * every stance of a bill in one request (the stance-blind cache,
+   * 2026-11-24).
+   */
+  multi(commands: string[][]): Promise<unknown[]>;
 }
 
 const REQUEST_TIMEOUT_MS = 2000;
@@ -277,6 +304,38 @@ function restClient(url: string, token: string): UpstashClient {
       }
       if (data.error) throw new UpstashRequestError(res.status);
       return data.result;
+    },
+    async multi(commands: string[][]): Promise<unknown[]> {
+      let res: Response;
+      try {
+        res = await fetch(`${url}/multi-exec`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'content-type': 'application/json',
+          },
+          body: JSON.stringify(commands),
+          signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+          cache: 'no-store',
+        });
+      } catch {
+        // Same discipline as cmd(): nothing logged here, the caller notes it.
+        throw new UpstashRequestError(0);
+      }
+      if (!res.ok) throw new UpstashRequestError(res.status);
+      let data: unknown;
+      try {
+        data = await res.json();
+      } catch {
+        throw new UpstashRequestError(res.status);
+      }
+      // A discarded transaction answers one `{error}` object, not an array.
+      if (!Array.isArray(data)) throw new UpstashRequestError(res.status);
+      const rows = data as Array<{ result?: unknown; error?: string }>;
+      if (rows.length !== commands.length || rows.some((row) => !row || row.error)) {
+        throw new UpstashRequestError(res.status);
+      }
+      return rows.map((row) => row.result);
     },
   };
 }

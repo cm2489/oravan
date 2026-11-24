@@ -217,3 +217,111 @@ test('graceful degradation: request errors are a counted miss (get) / skipped wr
     expect(line).not.toContain('STILL SERVED'); // and never a script
   }
 });
+
+/* ------------------------------------------------------------------ *
+ * The stance-blind pair the live route uses (owner's pick, 2026-11-24).
+ *
+ * getStances reads every stance with ONE MGET in STANCES order; setStances
+ * stores whatever it is given with ONE /multi-exec transaction, also in
+ * STANCES order. Neither takes the caller's stance, so neither can send it.
+ * ------------------------------------------------------------------ */
+
+const SET_PARTS = { slug: 'hr-1234-119', lang: 'en' as const };
+
+test('getStances: one MGET of all three stance keys, in the fixed order, and nothing else on the wire', async () => {
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [CACHE_URL]: mock });
+  const version = contentVersion(makeBill());
+  const cache = createScriptCache();
+
+  const empty = await cache.getStances({ ...SET_PARTS, version });
+  expect(empty).toEqual({ support: null, oppose: null, undecided: null });
+  expect(mock.requests).toHaveLength(1);
+  expect(mock.commands).toEqual([
+    [
+      'MGET',
+      scriptKey({ ...SET_PARTS, version, stance: 'support' }),
+      scriptKey({ ...SET_PARTS, version, stance: 'oppose' }),
+      scriptKey({ ...SET_PARTS, version, stance: 'undecided' }),
+    ],
+  ]);
+});
+
+test('setStances: one transaction of SET … EX 86400 in the fixed order, whatever order the scripts arrive in', async () => {
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [CACHE_URL]: mock });
+  const version = contentVersion(makeBill());
+  const cache = createScriptCache();
+
+  // Insertion order deliberately reversed: the wire must not follow it.
+  const stored = await cache.setStances({ ...SET_PARTS, version }, { undecided: 'U', support: 'S' });
+  expect(stored, 'a write that reached the database says so').toBe(true);
+  expect(mock.requests.map((r) => r.path)).toEqual(['/multi-exec']);
+  expect(mock.commands).toEqual([
+    ['SET', scriptKey({ ...SET_PARTS, version, stance: 'support' }), 'S', 'EX', '86400'],
+    ['SET', scriptKey({ ...SET_PARTS, version, stance: 'undecided' }), 'U', 'EX', '86400'],
+  ]);
+
+  // And the pair round-trips, through a DIFFERENT instance (another server).
+  expect(await createScriptCache().getStances({ ...SET_PARTS, version })).toEqual({
+    support: 'S',
+    oppose: null,
+    undecided: 'U',
+  });
+  // The single-key reader the nightly job uses sees the same entries: one key shape.
+  expect(await createScriptCache().get({ ...SET_PARTS, version, stance: 'undecided' })).toBe('U');
+});
+
+test('setStances with nothing to store sends nothing', async () => {
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  restoreFetch = installUpstashFetch({ [CACHE_URL]: mock });
+  expect(await createScriptCache().setStances({ ...SET_PARTS, version: 'v' }, {})).toBe(true);
+  expect(mock.requests).toHaveLength(0);
+});
+
+test('getStances/setStances degrade like get/set: an unreachable cache is a counted miss and a skipped write, never a throw', async () => {
+  restoreEnv = setUpstashEnv();
+  const mock = new MockUpstash();
+  mock.failWithStatus = 503;
+  restoreFetch = installUpstashFetch({ [CACHE_URL]: mock });
+  const errorsBefore = getUpstashErrorCounts().cache;
+  const realError = console.error;
+  console.error = () => {};
+  try {
+    const cache = createScriptCache();
+    const version = contentVersion(makeBill({ ai_summary: 'stance-set outage' }));
+    expect(await cache.setStances({ ...SET_PARTS, version }, { oppose: 'KEPT IN MEMORY' })).toBe(false);
+    expect(await cache.getStances({ ...SET_PARTS, version })).toEqual({
+      support: null,
+      oppose: 'KEPT IN MEMORY',
+      undecided: null,
+    });
+  } finally {
+    console.error = realError;
+  }
+  expect(getUpstashErrorCounts().cache).toBeGreaterThan(errorsBefore + 1);
+});
+
+test('a transaction answered with an error row counts as a failed write, never a stored one', async () => {
+  restoreEnv = setUpstashEnv();
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = (async () =>
+    new Response(JSON.stringify([{ result: 'OK' }, { error: 'ERR wrong' }]), { status: 200 })) as typeof fetch;
+  restoreFetch = () => {
+    globalThis.fetch = realFetch;
+  };
+  const realError = console.error;
+  console.error = () => {};
+  try {
+    const stored = await createScriptCache().setStances(
+      { ...SET_PARTS, version: 'half' },
+      { support: 'S', oppose: 'O' }
+    );
+    expect(stored).toBe(false);
+  } finally {
+    console.error = realError;
+  }
+});

@@ -430,15 +430,22 @@ test('the routes: one argument-free count each, after the answer is built; the Z
   expect(reps).toContain('after(() => noteRepLookup());');
   expect(reps.indexOf('noteRepLookup()')).toBeGreaterThan(reps.indexOf('const districts = districtsForZip(zip);'));
 
+  // Since 2026-11-24 the route hands the count to lib/script-serve.ts, which
+  // runs it deferred (after()) once the request has every stance of the bill
+  // available: a full cache hit, or a fill whose drafts all came back and were
+  // stored. Behaviour, including the partial-failure undercount, is pinned in
+  // tests/script-stance-blind.unit.spec.ts.
   const script = read('app/api/script/route.ts');
-  expect(script.match(/noteScriptServed\(([^)]*)\)/g)).toEqual(['noteScriptServed()', 'noteScriptServed()']);
-  const hit = script.indexOf('return NextResponse.json({ script: cached, cached: true });');
-  const miss = script.indexOf('return NextResponse.json({ script, cached: false });');
-  const counts = [...script.matchAll(/after\(\(\) => noteScriptServed\(\)\);/g)].map((m) => m.index ?? -1);
-  expect(counts).toHaveLength(2);
-  expect(counts[0]).toBeLessThan(hit); // counted on the cache hit
-  expect(counts[1]).toBeLessThan(miss); // and on a fresh draft
-  expect(counts[1]).toBeGreaterThan(script.indexOf('await cache.set(key, script);'));
+  expect(script.match(/noteScriptServed\(([^)]*)\)/g)).toEqual(['noteScriptServed()']);
+  expect(script).toContain('served: () => noteScriptServed(),');
+  expect(script).toContain('defer: (task) => after(task),');
+  const serve = read('lib/script-serve.ts');
+  const record = serve.slice(serve.indexOf('async function recordCounts('), serve.indexOf('export async function serveStanceBlind('));
+  expect(record).toContain('if (fill === null || fill.complete) await deps.note.served();');
+  // The count is taken after the write it depends on.
+  const fill = serve.slice(serve.indexOf('async function fillMissing('), serve.indexOf('async function recordCounts('));
+  expect(fill).toContain('await deps.cache.setStances(set, drafted);');
+  expect(serve).toContain('deps.defer(() => recordCounts(null, deps));');
 });
 
 // --- the gate's new teeth, on the real files ----------------------------------------
