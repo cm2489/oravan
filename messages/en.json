@@ -1908,5 +1908,8 @@
     "sources": "Sources",
     "written": "Written on {date}. It is not rewritten each night.",
     "esQuotesNote": "Quotes in the Spanish version are unofficial translations of the English originals."
+  },
+  "devConsole": {
+    "note": "— your voice, carried. No cookies, no trackers, no account. At most once per page load (opening or reloading Oravan in a tab; most moves between its pages are not a new load), after your first scroll, click, tap or key press, our own script sends one request to /api/seen that names the kind of page you are on (a bill page, never which bill) and nothing else. Code: https://github.com/cm2489/oravan"
   }
 }

@@ -296,6 +296,69 @@ export function callerHash(ip: string, salt: string): string {
   return createHash('sha256').update(ip + salt).digest('hex');
 }
 
+/*
+ * WHAT A PER-ADDRESS LIMIT KEYS ON, for a limiter that must not be dodged by
+ * changing address (2026-11-24, the third independent check of #548). An ISP
+ * hands one IPv6 customer a whole /64 (2^64 addresses), and a program on it
+ * can send each request from a new one, so a limit keyed on the full IPv6
+ * address limits nothing. This returns:
+ *   - an IPv6 address's /64 prefix, written canonically ("2001:db8:1:2::/64"),
+ *     so every spelling of every address in one /64 is ONE key;
+ *   - an IPv4-mapped IPv6 address ("::ffff:192.0.2.1") as its IPv4 address;
+ *   - anything else unchanged: an IPv4 address, 'unknown' (callerIp's
+ *     default), or a string that does not parse as IPv6.
+ * The result goes to createRateLimiter's check() like any address: hashed
+ * with the rotating salt before it reaches the counters database, never
+ * stored or logged as it is (same rules as every limiter in this module).
+ * Used only by app/api/seen; the daily sketches keep the full address (that
+ * route's header says why).
+ */
+export function limiterAddress(ip: string): string {
+  const raw = ip.trim();
+  if (!raw.includes(':')) return raw;
+  const hextets = ipv6Hextets(raw.replace(/^\[(.*)\]$/, '$1').split('%')[0].toLowerCase());
+  if (!hextets) return raw;
+  const mapped = hextets.slice(0, 5).every((h) => h === 0) && hextets[5] === 0xffff;
+  if (mapped) {
+    return [hextets[6] >> 8, hextets[6] & 0xff, hextets[7] >> 8, hextets[7] & 0xff].join('.');
+  }
+  return `${hextets
+    .slice(0, 4)
+    .map((h) => h.toString(16))
+    .join(':')}::/64`;
+}
+
+/** Parse an IPv6 address (with an optional dotted IPv4 tail) into its 8 hextets, or null. */
+function ipv6Hextets(text: string): number[] | null {
+  let s = text;
+  const tail: number[] = [];
+  const dotted = /^(.*:)(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(s);
+  if (dotted) {
+    const bytes = dotted.slice(2, 6).map(Number);
+    if (bytes.some((b) => b > 255)) return null;
+    tail.push((bytes[0] << 8) | bytes[1], (bytes[2] << 8) | bytes[3]);
+    s = dotted[1].endsWith('::') ? dotted[1] : dotted[1].slice(0, -1);
+  }
+  const halves = s.split('::');
+  if (halves.length > 2) return null;
+  const parse = (part: string): number[] | null => {
+    if (part === '') return [];
+    const out: number[] = [];
+    for (const h of part.split(':')) {
+      if (!/^[0-9a-f]{1,4}$/.test(h)) return null;
+      out.push(parseInt(h, 16));
+    }
+    return out;
+  };
+  const head = parse(halves[0]);
+  const rest = halves.length === 2 ? parse(halves[1]) : [];
+  if (!head || !rest) return null;
+  const given = head.length + rest.length + tail.length;
+  if (halves.length === 1) return given === 8 ? [...head, ...tail] : null;
+  if (given > 7) return null;
+  return [...head, ...new Array<number>(8 - given).fill(0), ...rest, ...tail];
+}
+
 /**
  * Dormant tenancy hook (S18/S19): the X-Oravan-Key header is recognized as
  * of S11 so embed/tenant callers can begin sending it, but NOTHING reads the

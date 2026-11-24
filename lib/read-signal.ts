@@ -8,7 +8,14 @@ import { pageShapeForPath } from './page-shape';
  * layout and never loads it (hard rule 12).
  *
  * WHAT IT SENDS, AND WHEN — the whole of it:
- *   - at most ONE request per page load, to this site's own /api/seen;
+ *   - at most ONE request per page load, to this site's own /api/seen. A
+ *     "page load" is the browser loading Oravan's document: opening the site
+ *     in a tab, or reloading it. Moving between pages by Oravan's own links
+ *     is a client-side navigation and loads nothing, and a language switch,
+ *     which remounts the layout and so this component, does not send again
+ *     either: the once-only flag below lives at module scope, which lasts
+ *     exactly as long as the loaded document (third independent check,
+ *     2026-11-24);
  *   - only once the page is visible AND the person first acts on it: a
  *     mouse-wheel or touch scroll, a tap or click, or a key press. These are
  *     input events a person makes; a programmatic scroll (restoring the
@@ -24,6 +31,13 @@ import { pageShapeForPath } from './page-shape';
  * keepalive, the same fire-and-forget delivery); contact any other origin.
  * credentials 'omit' means the browser attaches no cookie even if one ever
  * existed.
+ *
+ * OLDER BROWSERS: /api/seen counts a signal only when the request carries
+ * `Sec-Fetch-Site: same-origin`, and Safari before 16.4 sends no
+ * `Sec-Fetch-*` headers, so its signals arrive and are dropped. A browser
+ * that ignores `keepalive` sends an ordinary fetch, which can be cancelled
+ * if the page is closed at that instant. Both lose a signal; neither adds
+ * one, so the count can only undercount them.
  */
 
 export const READ_SIGNAL_PATH = '/api/seen';
@@ -43,19 +57,36 @@ export interface ReadSignalEnv {
   send: (path: string, body: string) => void;
 }
 
+/** Whether this page load has sent its one signal. */
+export interface ReadSignalOnce {
+  sent: boolean;
+}
+
+/**
+ * THIS page load's flag: module scope, so it outlives an unmount and
+ * remount of the component (a language switch remounts the layout) and
+ * resets only when the browser loads the document again. Never persisted.
+ */
+const thisPageLoad: ReadSignalOnce = { sent: false };
+
 /**
  * Arm the signal. Returns a function that disarms it (React's effect
- * cleanup). After the one send, every listener is removed.
+ * cleanup). After the one send, every listener is removed. `once` defaults
+ * to this page load's flag; tests pass their own.
  */
-export function armReadSignal(env: ReadSignalEnv, locales: readonly string[]): () => void {
-  let sent = false;
+export function armReadSignal(
+  env: ReadSignalEnv,
+  locales: readonly string[],
+  once: ReadSignalOnce = thisPageLoad,
+): () => void {
   let listening = false;
   const options: AddEventListenerOptions = { passive: true, capture: true };
+  if (once.sent) return () => {};
 
   const onAct: Listener = (event) => {
-    if (sent || event.isTrusted === false) return;
+    if (once.sent || event.isTrusted === false) return;
     if (env.document.visibilityState !== 'visible') return;
-    sent = true;
+    once.sent = true;
     disarm();
     env.send(READ_SIGNAL_PATH, pageShapeForPath(env.window.location.pathname, locales));
   };
@@ -63,7 +94,7 @@ export function armReadSignal(env: ReadSignalEnv, locales: readonly string[]): (
     if (env.document.visibilityState === 'visible') listen();
   };
   function listen(): void {
-    if (listening || sent) return;
+    if (listening || once.sent) return;
     listening = true;
     for (const type of READ_SIGNAL_EVENTS) env.window.addEventListener(type, onAct, options);
   }

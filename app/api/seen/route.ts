@@ -1,6 +1,6 @@
 import type { NextRequest } from 'next/server';
 import { readCappedBody } from '@/lib/capped-body';
-import { callerIp, createRateLimiter, noteReaderAddress } from '@/lib/ratelimit';
+import { callerIp, createRateLimiter, limiterAddress, noteReaderAddress } from '@/lib/ratelimit';
 import { isPageviewSurface, isSelfDeclaredCrawler, noteRead } from '@/lib/usage';
 
 /*
@@ -22,7 +22,11 @@ import { isPageviewSurface, isSelfDeclaredCrawler, noteRead } from '@/lib/usage'
  *   2. Counts it only if ALL of these hold; otherwise drops it silently:
  *        - `Sec-Fetch-Site: same-origin`, which a browser sets itself and a
  *          page on another site cannot forge, so no other site can make its
- *          visitors' browsers inflate this count;
+ *          visitors' browsers inflate this count. Safari before 16.4 sends
+ *          no `Sec-Fetch-*` headers at all, so a signal from it is dropped
+ *          here: this count UNDERcounts those browsers, never overcounts
+ *          them (the same browsers step 1's browser test counts as not a
+ *          browser, lib/usage.ts);
  *        - the User-Agent does not name a crawler (lib/usage.ts's list);
  *        - the body is at most MAX_BODY_BYTES and is EXACTLY one of
  *          PAGEVIEW_SURFACES, minus 'short' (a redirect, never a page a
@@ -30,14 +34,18 @@ import { isPageviewSurface, isSelfDeclaredCrawler, noteRead } from '@/lib/usage'
  *          counted. The body is read through lib/capped-body.ts, which stops
  *          past the cap, so a chunked body with no Content-Length is never
  *          read whole;
- *        - the caller is under this route's own per-IP limit (SEEN_MAX = 5
- *          per SEEN_WINDOW_SEC = 10 minutes, keyed like every limiter here
- *          on a salted hash that rotates daily, lib/ratelimit.ts). A real
- *          page sends one signal per load, so 5 covers a person reading
- *          five pages in ten minutes; a sixth in that window is not added
- *          to the total (the address is already in the day's sketch). The
- *          limit was 60 in the first draft; the second 2026-11-23 review
- *          showed that let one address add ~8,640 a day to the total.
+ *        - the caller is under this route's own per-address limit
+ *          (SEEN_MAX = 5 per SEEN_WINDOW_SEC = 10 minutes, keyed like every
+ *          limiter here on a salted hash that rotates daily,
+ *          lib/ratelimit.ts). For IPv6 the limit keys on the address's /64
+ *          (lib/ratelimit.ts limiterAddress), because one IPv6 customer
+ *          holds a whole /64 and could otherwise send each signal from a
+ *          new address (the third independent check, 2026-11-24); IPv4 keys on the
+ *          full address. A real page load sends one signal, so 5 covers a
+ *          person reading five pages in ten minutes; a sixth in that window
+ *          is not added to the total or the sketch. The limit was 60 in the
+ *          first draft; the second 2026-11-23 review showed that let one
+ *          address add ~8,640 a day to the total.
  *   3. DROPS the shape — it was only a validity check — and increments ONE
  *      daily total with no dimension (lib/usage.ts noteRead, no argument),
  *      then, in a SEPARATE call, adds the address to the day's third sketch
@@ -47,12 +55,20 @@ import { isPageviewSurface, isSelfDeclaredCrawler, noteRead } from '@/lib/usage'
  *      printed their sum, so it became one total before merge.)
  *
  * WHAT REMAINS SPOOFABLE, said plainly as the digest says it: a program can
- * send these headers and this body directly. The per-IP limit bounds what
- * one address can add to the total: at most 5 per 10 minutes, so about 720
- * a UTC day (a window that straddles the daily salt rotation can add 5
- * more). The total can therefore rise by that bounded amount per address;
- * the sketch counts each address once a day however often it sends, so
- * moving the sketch takes many addresses.
+ * send these headers and this body directly. The limit bounds what one IPv4
+ * address, or one IPv6 /64, can add to the total: at most 5 per 10
+ * minutes, so about 720 a UTC day (a window that straddles the daily salt
+ * rotation can add 5 more). The sketch counts each address once a day
+ * however often it sends, so one IPv4 address moves it by one; a program
+ * rotating addresses inside one IPv6 /64 can add each accepted signal as a
+ * new address, so at most the same ~720 a day.
+ *
+ * WHY THE SKETCH KEEPS THE FULL ADDRESS (not the /64), decided 2026-11-24:
+ * the limit already caps a rotating /64 at the bound above; the three daily
+ * sketches must count the same unit, or the digest's "read" row cannot be
+ * compared with its "browser" row (step 1's two sketches count full
+ * addresses); and /privacy and /llms.txt say each sketch counts
+ * "addresses", which a /64 is not.
  * Like every count here it is an operating signal, never audited.
  *
  * Nothing is logged. Static pages stay static: this is a route handler, the
@@ -86,7 +102,9 @@ export async function POST(req: NextRequest): Promise<Response> {
   // The shape has done its one job (a validity check) and goes no further.
 
   const ip = callerIp(req.headers);
-  if (await limiter.isLimited(ip)) return nothing();
+  // The limit keys on the /64 for IPv6 (see the header); the sketch below
+  // keeps the full address.
+  if (await limiter.isLimited(limiterAddress(ip))) return nothing();
 
   // Two calls, never one key: a dimensionless total, then the address into
   // the sketch. Both never throw.

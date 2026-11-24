@@ -85,6 +85,10 @@ export default async function LocaleLayout({
   if (!hasLocale(routing.locales, locale)) notFound();
   setRequestLocale(locale);
   const t = await getTranslations({ locale, namespace: 'common' });
+  const tConsole = await getTranslations({ locale, namespace: 'devConsole' });
+  // The console note as a JS string literal, with every '<' escaped so no
+  // message text can ever close the inline script early.
+  const consoleNote = JSON.stringify(tConsole('note')).replace(/</g, '\\u003c');
   // Every message the browser needs, minus the glossary's definitions, which
   // are resolved on the server — see i18n/client-messages.ts.
   const messages = clientMessages(await getMessages({ locale }));
@@ -110,12 +114,16 @@ export default async function LocaleLayout({
         {/* For the curious who open devtools: the no-trackers claim, verifiable.
             Reworded 2026-11-23 with the reading signal: the Network tab is no
             longer silent after a first scroll, click, tap or key press, so it
-            says what the reading signal's request is (lib/read-signal.ts). It
-            claims nothing about the page's other requests: no gate checks
-            those for third-party origins yet (CLAUDE.md rule 1). */}
+            says what the reading signal's request is (lib/read-signal.ts),
+            and how often: at most once per page load, not once per page
+            (the third independent check, 2026-11-24). It is in the page's own
+            language (`devConsole.note`, rule 5; server-only, see
+            i18n/client-messages.ts). It claims nothing about the page's other
+            requests: no gate checks those for third-party origins yet
+            (CLAUDE.md rule 1). */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `console.log("%cOravan","font-size:16px;font-weight:bold","— your voice, carried. No cookies, no trackers, no account. After your first scroll, click, tap or key press on a page, our own script sends one request to /api/seen that names the kind of page (a bill page, never which bill) and nothing else. Code: https://github.com/cm2489/oravan");`,
+            __html: `console.log("%cOravan","font-size:16px;font-weight:bold",${consoleNote});`,
           }}
         />
         <a

@@ -9,6 +9,7 @@ import {
   __resetSaltMemoForTests,
   distinctAddressDay,
   distinctSaltKey,
+  limiterAddress,
   readReaderAddressCount,
   readerAddressKey,
 } from '../lib/ratelimit';
@@ -18,6 +19,9 @@ import { PAGEVIEW_SURFACES, __memoryUsageCountForTests, noteRead, pageviewSurfac
 import { PEOPLE_READ_CAVEAT, formatPeopleLines, peopleEstimate } from '../lib/traffic-metrics.mjs';
 import { scanText } from '../scripts/check-key-namespaces.mjs';
 import { COUNTERS_URL, MockUpstash, installUpstashFetch, setUpstashEnv } from './upstash-mock';
+import { clientMessages } from '../i18n/client-messages';
+import en from '../messages/en.json';
+import es from '../messages/es.json';
 
 /*
  * Counting real people, step 2: the reading signal (owner's answer of
@@ -91,7 +95,7 @@ function fakeEnv(pathname: string, visibility: 'visible' | 'hidden' = 'visible')
 test.describe('the browser half', () => {
   test('nothing is sent on load; the first trusted input on a visible page sends the page shape, once', () => {
     const b = fakeEnv('/es/bills/hr-1234-119');
-    armReadSignal(b.env, LOCALES);
+    armReadSignal(b.env, LOCALES, { sent: false });
     expect(b.sent).toEqual([]);
     b.act('pointerdown');
     b.act('keydown');
@@ -103,7 +107,7 @@ test.describe('the browser half', () => {
   test('each of the four person-made inputs triggers it; a script-fabricated event never does', () => {
     for (const type of READ_SIGNAL_EVENTS) {
       const b = fakeEnv('/');
-      armReadSignal(b.env, LOCALES);
+      armReadSignal(b.env, LOCALES, { sent: false });
       b.act(type, false);
       expect(b.sent, `${type} untrusted`).toEqual([]);
       b.act(type, true);
@@ -116,7 +120,7 @@ test.describe('the browser half', () => {
 
   test('a page opened in the background waits until it is visible, and only then listens', () => {
     const b = fakeEnv('/questions/iran', 'hidden');
-    armReadSignal(b.env, LOCALES);
+    armReadSignal(b.env, LOCALES, { sent: false });
     b.act('pointerdown');
     expect(b.sent).toEqual([]);
     b.becomeVisible();
@@ -128,7 +132,7 @@ test.describe('the browser half', () => {
 
   test('an input while the page is hidden again is ignored', () => {
     const b = fakeEnv('/bills');
-    armReadSignal(b.env, LOCALES);
+    armReadSignal(b.env, LOCALES, { sent: false });
     b.doc.visibilityState = 'hidden';
     b.act('pointerdown');
     expect(b.sent).toEqual([]);
@@ -139,14 +143,55 @@ test.describe('the browser half', () => {
 
   test('disarmed before any input (unmount): nothing is ever sent, no listener left', () => {
     const b = fakeEnv('/reps/A000360');
-    const disarm = armReadSignal(b.env, LOCALES);
+    const disarm = armReadSignal(b.env, LOCALES, { sent: false });
     disarm();
     b.act('pointerdown');
     expect(b.sent).toEqual([]);
     expect(b.listenerCount()).toBe(0);
     const hidden = fakeEnv('/', 'hidden');
-    armReadSignal(hidden.env, LOCALES)();
+    armReadSignal(hidden.env, LOCALES, { sent: false })();
     expect(hidden.listenerCount()).toBe(0);
+  });
+
+  test('one page load sends at most once, even when the component remounts (a language switch)', () => {
+    // Third independent check, 2026-11-24: a language switch is a client-side
+    // navigation that remounts app/[locale]/layout.tsx and so ReadSignal.
+    const once = { sent: false };
+    const en = fakeEnv('/bills/hr-1234-119');
+    const disarmEn = armReadSignal(en.env, LOCALES, once);
+    en.act('pointerdown');
+    expect(en.sent).toHaveLength(1);
+    disarmEn(); // the unmount
+    const es = fakeEnv('/es/bills/hr-1234-119');
+    armReadSignal(es.env, LOCALES, once); // the remount, same page load
+    expect(es.listenerCount(), 'nothing armed once this load has sent').toBe(0);
+    es.act('pointerdown');
+    es.act('keydown');
+    expect(es.sent).toEqual([]);
+
+    // Unmounted BEFORE any input: the remount still arms, and sends once.
+    const fresh = { sent: false };
+    const a = fakeEnv('/');
+    armReadSignal(a.env, LOCALES, fresh)();
+    const b = fakeEnv('/es');
+    armReadSignal(b.env, LOCALES, fresh);
+    b.act('wheel');
+    b.act('wheel');
+    expect(a.sent).toEqual([]);
+    expect(b.sent).toEqual([{ path: '/api/seen', body: 'home' }]);
+  });
+
+  test('the default flag lives at module scope: a second arm in the same load sends nothing', () => {
+    const first = fakeEnv('/today');
+    armReadSignal(first.env, LOCALES);
+    first.act('pointerdown');
+    const second = fakeEnv('/es/today');
+    armReadSignal(second.env, LOCALES);
+    second.act('pointerdown');
+    expect(first.sent).toHaveLength(1);
+    expect(second.sent).toEqual([]);
+    const src = readFileSync(join(process.cwd(), 'lib/read-signal.ts'), 'utf8');
+    expect(src).toMatch(/^const thisPageLoad: ReadSignalOnce = \{ sent: false \};$/m);
   });
 
   test('the body is only ever a page shape: the path, ids, query and locale never leave', () => {
@@ -161,7 +206,7 @@ test.describe('the browser half', () => {
     ];
     for (const [path, shape] of cases) {
       const b = fakeEnv(path);
-      armReadSignal(b.env, LOCALES);
+      armReadSignal(b.env, LOCALES, { sent: false });
       b.act('pointerdown');
       expect(b.sent[0]?.body, path).toBe(shape);
       expect(PAGEVIEW_SURFACES as readonly string[]).toContain(shape);
@@ -264,9 +309,27 @@ test('mounted once, by the main-site layout only — never by anything under /em
   // "the Network tab shows one request"; a mouse click is named.
   expect(layout).not.toContain('No third-party requests');
   expect(layout).not.toContain('Check the Network tab');
-  expect(layout).toContain(
-    'After your first scroll, click, tap or key press on a page, our own script sends one request to /api/seen that names the kind of page (a bill page, never which bill) and nothing else.',
-  );
+  // Third independent check, 2026-11-24: the note says how often (once per
+  // page load, not once per page), and it is in the page's language, from
+  // `devConsole.note` (rule 5), escaped so no message can close the script.
+  expect(layout).toContain("getTranslations({ locale, namespace: 'devConsole' })");
+  expect(layout).toContain(String.raw`JSON.stringify(tConsole('note')).replace(/</g, '\\u003c')`);
+  expect(layout).toContain('console.log("%cOravan","font-size:16px;font-weight:bold",${consoleNote});');
+  expect(layout).not.toMatch(/console\.log\([^)]*No cookies/);
+  for (const [lang, msgs] of [['en', en], ['es', es]] as const) {
+    const note = (msgs as { devConsole: { note: string } }).devConsole.note;
+    expect(note, lang).not.toMatch(/[<{}]/);
+    expect(note, lang).toContain('/api/seen');
+    expect(note, lang).not.toMatch(/No analytics|Sin analítica\b(?! de terceros)|quiet in here|Network tab|third-party requests/i);
+  }
+  expect(en.devConsole.note).toContain('At most once per page load (opening or reloading Oravan in a tab; most moves between its pages are not a new load)');
+  expect(en.devConsole.note).toContain('names the kind of page you are on (a bill page, never which bill) and nothing else.');
+  expect(en.devConsole.note).not.toContain('on a page,');
+  expect(es.devConsole.note).toContain('Como máximo una vez por cada carga de página');
+  expect(es.devConsole.note).toContain('indica el tipo de página en la que estás (la de un proyecto de ley, nunca cuál) y nada más.');
+  // Server-only: the client provider never carries it.
+  expect((clientMessages(en) as Record<string, unknown>).devConsole).toBeUndefined();
+  expect((clientMessages(es) as Record<string, unknown>).devConsole).toBeUndefined();
 });
 
 // --- the receiver -----------------------------------------------------------------
@@ -342,6 +405,37 @@ test.describe('POST /api/seen', () => {
     expect(route).toContain("createRateLimiter({ route: 'seen', max: SEEN_MAX, windowSec: SEEN_WINDOW_SEC })");
     expect(PEOPLE_READ_CAVEAT).toContain('5 per 10 minutes');
     expect(PEOPLE_READ_CAVEAT).not.toContain('60 per 10 minutes');
+  });
+
+  test('IPv6: the limit is per /64, so rotating addresses inside one /64 cannot dodge it; IPv4 stays per address', async () => {
+    const key = readUsageKey(usageDayKey());
+    const before = __memoryUsageCountForTests(key);
+    // Fifteen different addresses, all inside 2001:db8:a:b::/64.
+    for (let i = 1; i <= 15; i += 1) await seen('bill', `2001:db8:a:b:${i.toString(16)}:0:0:${i}`);
+    expect(__memoryUsageCountForTests(key) - before).toBe(5);
+    // Another /64 has its own allowance.
+    await seen('bill', '2001:db8:a:c::1');
+    expect(__memoryUsageCountForTests(key) - before).toBe(6);
+    // Two IPv4 addresses in one /24 are two callers.
+    for (let i = 0; i < 5; i += 1) await seen('bill', '203.0.113.10');
+    for (let i = 0; i < 5; i += 1) await seen('bill', '203.0.113.11');
+    expect(__memoryUsageCountForTests(key) - before).toBe(16);
+  });
+
+  test('with the counters database, the /64 is hashed with the salt like any address; the sketch keeps each full address', async () => {
+    restoreEnv = setUpstashEnv();
+    const mock = new MockUpstash();
+    restoreFetch = installUpstashFetch({ [COUNTERS_URL]: mock });
+    for (let i = 1; i <= 7; i += 1) await seen('bill', `2001:db8:5:6::${i}`);
+    const limiterKeys = mock.keys().filter((k) => k.includes(':rl:seen:'));
+    expect(limiterKeys, 'one limiter counter for the whole /64').toHaveLength(1);
+    expect(limiterKeys[0]).toMatch(/:rl:seen:[0-9a-f]{64}$/);
+    const wire = mock.commands.map((c) => c.join(' ')).join('\n');
+    expect(wire).not.toContain('2001:db8');
+    expect(wire).not.toContain('/64');
+    expect(mock.exec(['GET', readUsageKey(usageDayKey())])).toBe('5');
+    // Five accepted signals from five different addresses: five elements.
+    expect(await readReaderAddressCount(distinctAddressDay())).toEqual({ ok: true, count: 5, noExpiry: false });
   });
 
   test('with the counters database: one dimensionless total and the address sketch; no key or command carries a page shape or the raw address', async () => {
@@ -462,4 +556,34 @@ test('the gate passes the real files and catches the read family going wrong', (
   expect(rules('lib/usage.ts', 'const k = `${keyPrefix()}:usage:read:${asPageviewSurface(surface)}:${day}`;')).toContain('usage-shape');
   expect(rules('lib/ratelimit.ts', 'const k = `${keyPrefix()}:uniques-read:${surface}:${day}`;')).toContain('distinct-shape');
   expect(rules('app/api/seen/route.ts', "await c.cmd(['PFCOUNT', `${keyPrefix()}:uniques-read:${day}`]);")).toContain('distinct-confinement');
+});
+
+// --- the limiter's address (third independent check, 2026-11-24) ---------------
+
+test('limiterAddress: one key per IPv6 /64 in any spelling; IPv4 and the rest unchanged', () => {
+  const same64 = [
+    '2001:db8:a:b::1',
+    '2001:0db8:000a:000b:0000:0000:0000:0001',
+    '2001:DB8:A:B:ffff:ffff:ffff:ffff',
+    '2001:db8:a:b:1:2:3:4',
+    '[2001:db8:a:b::9]',
+    '2001:db8:a:b::1%en0',
+    ' 2001:db8:a:b:0:0:192.0.2.1 ',
+  ];
+  for (const a of same64) expect(limiterAddress(a), a).toBe('2001:db8:a:b::/64');
+  expect(limiterAddress('2001:db8:a:c::1')).toBe('2001:db8:a:c::/64');
+  expect(limiterAddress('::1')).toBe('0:0:0:0::/64');
+  expect(limiterAddress('2001:db8::')).toBe('2001:db8:0:0::/64');
+  // IPv4, and IPv4 written as IPv6, key on the full IPv4 address.
+  expect(limiterAddress('198.51.100.7')).toBe('198.51.100.7');
+  expect(limiterAddress('::ffff:198.51.100.7')).toBe('198.51.100.7');
+  expect(limiterAddress('::ffff:c633:6407')).toBe('198.51.100.7');
+  // Not an address: unchanged, so nothing new is merged or split.
+  for (const odd of ['unknown', '', '2001:db8::a::1', '2001:db8:a:b:c:d:e:f:1', '12345::1', '1::2:', ':1::', '::ffff:300.1.1.1']) {
+    expect(limiterAddress(odd), odd).toBe(odd.trim());
+  }
+  // The route keys its limiter on it, and its sketch on the full address.
+  const route = readFileSync(join(process.cwd(), 'app/api/seen/route.ts'), 'utf8');
+  expect(route).toContain('limiter.isLimited(limiterAddress(ip))');
+  expect(route).toContain('noteReaderAddress(ip)');
 });
