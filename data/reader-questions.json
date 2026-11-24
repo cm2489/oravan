@@ -564,6 +564,21 @@
             },
             {
               "kind": "record",
+              "en": "The same report says the committee’s version also includes “$138,240,000,000 in advance appropriations for the four veterans' medical care accounts and $307,463,397,000 in advance appropriations for mandatory benefits programs”; in the bill’s text, those amounts “shall become available on October 1, 2027.”",
+              "es": "El mismo informe dice que la versión de la comisión también incluye «138.240.000.000 de dólares en asignaciones anticipadas para las cuatro cuentas de atención médica de los veteranos y 307.463.397.000 dólares en asignaciones anticipadas para programas de prestaciones obligatorias»; en el texto del proyecto, esas sumas «quedarán disponibles el 1 de octubre de 2027».",
+              "cites": [
+                {
+                  "src": "hrpt-119-622",
+                  "quote": "$138,240,000,000 in advance appropriations for the four veterans' medical care accounts and $307,463,397,000 in advance appropriations for mandatory benefits programs"
+                },
+                {
+                  "src": "hr8469-pcs",
+                  "quote": "shall become available on October 1, 2027"
+                }
+              ]
+            },
+            {
+              "kind": "record",
               "en": "Public Law 119-103 funds the projects and activities it continues “at a rate for operations as provided in the applicable appropriations Acts for fiscal year 2026,” unless that law provides otherwise.",
               "es": "La Ley Pública 119-103 financia los proyectos y actividades que mantiene «al ritmo de operaciones previsto en las leyes de asignaciones aplicables del año fiscal 2026», salvo que esa ley disponga otra cosa.",
               "cites": [
