@@ -703,6 +703,2276 @@
           ]
         }
       ]
+    },
+    "iran-war-powers": {
+      "written": "2026-11-24",
+      "record_as_of": "2026-11-24",
+      "model": "claude-opus-5-5",
+      "type": "war_powers",
+      "rewritten_nightly": false,
+      "sources": {
+        "usc-50-1544": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/USCODE-2024-title50/html/USCODE-2024-title50-chap33-sec1544.htm",
+          "title": {
+            "en": "50 U.S.C. 1544 (War Powers Resolution, section 5)",
+            "es": "50 U.S.C. 1544 (Resolución de Poderes de Guerra, sección 5; en inglés)"
+          }
+        },
+        "usc-50-1546a": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/USCODE-2024-title50/html/USCODE-2024-title50-chap33-sec1546a.htm",
+          "title": {
+            "en": "50 U.S.C. 1546a",
+            "es": "50 U.S.C. 1546a (en inglés)"
+          }
+        },
+        "usc-50-1547": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/USCODE-2024-title50/html/USCODE-2024-title50-chap33-sec1547.htm",
+          "title": {
+            "en": "50 U.S.C. 1547 (War Powers Resolution, section 8)",
+            "es": "50 U.S.C. 1547 (Resolución de Poderes de Guerra, sección 8; en inglés)"
+          }
+        },
+        "constitution": {
+          "kind": "record",
+          "url": "https://www.archives.gov/founding-docs/constitution-transcript",
+          "title": {
+            "en": "U.S. Constitution, Article I, Section 7",
+            "es": "Constitución de EE. UU., artículo I, sección 7 (en inglés)"
+          }
+        },
+        "crs-r42699": {
+          "kind": "analysis",
+          "url": "https://www.congress.gov/crs_external_products/R/HTML/R42699.html",
+          "title": {
+            "en": "Congressional Research Service, report R42699 (updated March 8, 2019)",
+            "es": "Servicio de Investigación del Congreso, informe R42699 (actualizado el 8 de marzo de 2019, en inglés)"
+          }
+        },
+        "dcpd-202600299": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/DCPD-202600299/html/DCPD-202600299.htm",
+          "title": {
+            "en": "Daily Compilation of Presidential Documents: the President’s remarks to reporters, May 1, 2026",
+            "es": "Compilación diaria de documentos presidenciales: declaraciones del presidente a la prensa, 1 de mayo de 2026 (en inglés)"
+          }
+        },
+        "hdoc-119-139": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/CDOC-119hdoc139/pdf/CDOC-119hdoc139.pdf",
+          "title": {
+            "en": "House Document 119-139: the President’s letter of March 2, 2026",
+            "es": "Documento de la Cámara 119-139: carta del presidente del 2 de marzo de 2026 (en inglés)"
+          }
+        },
+        "hdoc-119-162": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/CDOC-119hdoc162/html/CDOC-119hdoc162.htm",
+          "title": {
+            "en": "House Document 119-162: the President’s letter of June 12, 2026",
+            "es": "Documento de la Cámara 119-162: carta del presidente del 12 de junio de 2026 (en inglés)"
+          }
+        },
+        "hdoc-119-167": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/CDOC-119hdoc167/html/CDOC-119hdoc167.htm",
+          "title": {
+            "en": "House Document 119-167: the President’s letter of June 29, 2026",
+            "es": "Documento de la Cámara 119-167: carta del presidente del 29 de junio de 2026 (en inglés)"
+          }
+        },
+        "hdoc-119-169": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/CDOC-119hdoc169/html/CDOC-119hdoc169.htm",
+          "title": {
+            "en": "House Document 119-169: the President’s letter of July 10, 2026",
+            "es": "Documento de la Cámara 119-169: carta del presidente del 10 de julio de 2026 (en inglés)"
+          }
+        },
+        "hdoc-119-193": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/CDOC-119hdoc193/html/CDOC-119hdoc193.htm",
+          "title": {
+            "en": "House Document 119-193: the President’s letter of September 3, 2026",
+            "es": "Documento de la Cámara 119-193: carta del presidente del 3 de septiembre de 2026 (en inglés)"
+          }
+        },
+        "hconres86-enr": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/BILLS-119hconres86enr/html/BILLS-119hconres86enr.htm",
+          "title": {
+            "en": "H.Con.Res. 86 as agreed to by both chambers (enrolled), text",
+            "es": "H.Con.Res. 86 tal como la aprobaron las dos cámaras (versión final), texto (en inglés)"
+          }
+        },
+        "hconres93-eh": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/BILLS-119hconres93eh/html/BILLS-119hconres93eh.htm",
+          "title": {
+            "en": "H.Con.Res. 93 as agreed to by the House, text",
+            "es": "H.Con.Res. 93 tal como la aprobó la Cámara, texto (en inglés)"
+          }
+        },
+        "hconres89-eh": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/BILLS-119hconres89eh/html/BILLS-119hconres89eh.htm",
+          "title": {
+            "en": "H.Con.Res. 89 as agreed to by the House, text",
+            "es": "H.Con.Res. 89 tal como la aprobó la Cámara, texto (en inglés)"
+          }
+        },
+        "hconres38-ih": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/BILLS-119hconres38ih/html/BILLS-119hconres38ih.htm",
+          "title": {
+            "en": "H.Con.Res. 38 as introduced, text",
+            "es": "H.Con.Res. 38 tal como se presentó, texto (en inglés)"
+          }
+        },
+        "sjres185-pcs": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/BILLS-119sjres185pcs/html/BILLS-119sjres185pcs.htm",
+          "title": {
+            "en": "S.J.Res. 185 as placed on the Senate calendar, text",
+            "es": "S.J.Res. 185 tal como se incluyó en el calendario del Senado, texto (en inglés)"
+          }
+        },
+        "sjres172-is": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/BILLS-119sjres172is/html/BILLS-119sjres172is.htm",
+          "title": {
+            "en": "S.J.Res. 172 as introduced, text",
+            "es": "S.J.Res. 172 tal como se presentó, texto (en inglés)"
+          }
+        },
+        "sjres180-is": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/BILLS-119sjres180is/html/BILLS-119sjres180is.htm",
+          "title": {
+            "en": "S.J.Res. 180 as introduced, text",
+            "es": "S.J.Res. 180 tal como se presentó, texto (en inglés)"
+          }
+        },
+        "sjres181-is": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/BILLS-119sjres181is/html/BILLS-119sjres181is.htm",
+          "title": {
+            "en": "S.J.Res. 181 as introduced, text",
+            "es": "S.J.Res. 181 tal como se presentó, texto (en inglés)"
+          }
+        },
+        "sjres200-is": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/BILLS-119sjres200is/html/BILLS-119sjres200is.htm",
+          "title": {
+            "en": "S.J.Res. 200 as introduced, text",
+            "es": "S.J.Res. 200 tal como se presentó, texto (en inglés)"
+          }
+        },
+        "sjres211-is": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/BILLS-119sjres211is/html/BILLS-119sjres211is.htm",
+          "title": {
+            "en": "S.J.Res. 211 as introduced, text",
+            "es": "S.J.Res. 211 tal como se presentó, texto (en inglés)"
+          }
+        },
+        "hjres176-ih": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/BILLS-119hjres176ih/html/BILLS-119hjres176ih.htm",
+          "title": {
+            "en": "H.J.Res. 176 as introduced, text",
+            "es": "H.J.Res. 176 tal como se presentó, texto (en inglés)"
+          }
+        },
+        "actions-hconres86": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/86/all-actions",
+          "title": {
+            "en": "H.Con.Res. 86, official actions",
+            "es": "H.Con.Res. 86, acciones oficiales (en inglés)"
+          }
+        },
+        "bill-hconres86": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/86",
+          "title": {
+            "en": "H.Con.Res. 86, official record of the measure",
+            "es": "H.Con.Res. 86, registro oficial de la medida (en inglés)"
+          }
+        },
+        "bill-hconres89": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/89",
+          "title": {
+            "en": "H.Con.Res. 89, official record of the measure",
+            "es": "H.Con.Res. 89, registro oficial de la medida (en inglés)"
+          }
+        },
+        "bill-hconres93": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/93",
+          "title": {
+            "en": "H.Con.Res. 93, official record of the measure",
+            "es": "H.Con.Res. 93, registro oficial de la medida (en inglés)"
+          }
+        },
+        "bill-sjres172": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/172",
+          "title": {
+            "en": "S.J.Res. 172, official record of the measure",
+            "es": "S.J.Res. 172, registro oficial de la medida (en inglés)"
+          }
+        },
+        "bill-sjres180": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/180",
+          "title": {
+            "en": "S.J.Res. 180, official record of the measure",
+            "es": "S.J.Res. 180, registro oficial de la medida (en inglés)"
+          }
+        },
+        "bill-sjres181": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/181",
+          "title": {
+            "en": "S.J.Res. 181, official record of the measure",
+            "es": "S.J.Res. 181, registro oficial de la medida (en inglés)"
+          }
+        },
+        "bill-sjres185": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/185",
+          "title": {
+            "en": "S.J.Res. 185, official record of the measure",
+            "es": "S.J.Res. 185, registro oficial de la medida (en inglés)"
+          }
+        },
+        "bill-sjres200": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/200",
+          "title": {
+            "en": "S.J.Res. 200, official record of the measure",
+            "es": "S.J.Res. 200, registro oficial de la medida (en inglés)"
+          }
+        },
+        "bill-sjres211": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/211",
+          "title": {
+            "en": "S.J.Res. 211, official record of the measure",
+            "es": "S.J.Res. 211, registro oficial de la medida (en inglés)"
+          }
+        },
+        "bill-hjres176": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/house-joint-resolution/176",
+          "title": {
+            "en": "H.J.Res. 176, official record of the measure",
+            "es": "H.J.Res. 176, registro oficial de la medida (en inglés)"
+          }
+        },
+        "law-scan": {
+          "kind": "record",
+          "url": "https://api.congress.gov/v3/law/119",
+          "title": {
+            "en": "Congress.gov data service: the 148 measures listed as laws of the 119th Congress on November 24, 2026 (needs a free api.data.gov key)",
+            "es": "Servicio de datos de Congress.gov: las 148 medidas que figuraban como leyes del 119.º Congreso el 24 de noviembre de 2026 (requiere una clave gratuita de api.data.gov; en inglés)"
+          }
+        }
+      },
+      "picks": [
+        {
+          "bank_id": "core.veto",
+          "q": {
+            "en": "Would it go to the President, and what happens if it is vetoed?",
+            "es": "¿Llegaría al Presidente y qué pasa si lo veta?"
+          },
+          "claims": [
+            {
+              "kind": "record",
+              "en": "The four House measures, H.Con.Res. 38, 86, 89 and 93, are concurrent resolutions under section 5(c) of the War Powers Resolution, which says forces in hostilities abroad without a declaration of war or specific statutory authorization “shall be removed by the President if the Congress so directs by concurrent resolution.”",
+              "es": "Las cuatro medidas de la Cámara, las H.Con.Res. 38, 86, 89 y 93, son resoluciones concurrentes conforme a la sección 5(c) de la Resolución de Poderes de Guerra, según la cual las fuerzas en hostilidades en el exterior sin una declaración de guerra ni una autorización legal específica «serán retiradas por el Presidente si el Congreso así lo ordena mediante una resolución concurrente».",
+              "cites": [
+                {
+                  "src": "usc-50-1544",
+                  "quote": "at any time that United States Armed Forces are engaged in hostilities outside the territory of the United States, its possessions and territories without a declaration of war or specific statutory authorization, such forces shall be removed by the President if the Congress so directs by concurrent resolution."
+                },
+                {
+                  "src": "hconres38-ih",
+                  "quote": "Pursuant to section 5(c) of the War Powers Resolution (50 U.S.C. 1544(c)), Congress hereby directs the President"
+                },
+                {
+                  "src": "hconres86-enr",
+                  "quote": "Resolved by the House of Representatives (the Senate concurring), That, pursuant to section 5(c) of the War Powers Resolution (50 U.S.C. 1544(c))"
+                },
+                {
+                  "src": "hconres89-eh",
+                  "quote": "Pursuant to section 5(c) of the War Powers Resolution (50 U.S.C. 1544(c)), Congress hereby directs the President"
+                },
+                {
+                  "src": "hconres93-eh",
+                  "quote": "Resolved by the House of Representatives (the Senate concurring), That, pursuant to section 5(c) of the War Powers Resolution (50 U.S.C. 1544(c))"
+                }
+              ]
+            },
+            {
+              "kind": "analysis",
+              "en": "A Congressional Research Service report, updated March 8, 2019, says a concurrent resolution “does not require presentment to the President for signature or veto,” while a joint resolution is one “which requires presentment to the President.”",
+              "es": "Un informe del Servicio de Investigación del Congreso, actualizado el 8 de marzo de 2019, dice que una resolución concurrente «no requiere que se presente al Presidente para su firma o veto», mientras que una resolución conjunta es una «que requiere su presentación al Presidente».",
+              "cites": [
+                {
+                  "src": "crs-r42699",
+                  "quote": "A concurrent resolution is adopted by both chambers, but it does not require presentment to the President for signature or veto."
+                },
+                {
+                  "src": "crs-r42699",
+                  "quote": "the Senate voted to amend the War Powers Resolution by substituting a joint resolution, which requires presentment to the President, for the concurrent resolution in Section 5(c)"
+                },
+                {
+                  "src": "crs-r42699",
+                  "quote": "Updated March 8, 2019"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "H.Con.Res. 86, which both chambers agreed to, has as its latest action, as of November 24, “Message on Senate action sent to the House” (June 24).",
+              "es": "La H.Con.Res. 86, que aprobaron las dos cámaras, tiene como última acción, al 24 de noviembre, «Mensaje sobre la acción del Senado enviado a la Cámara» (24 de junio).",
+              "cites": [
+                {
+                  "src": "actions-hconres86",
+                  "quote": "2026-06-03 | On agreeing to the resolution Agreed to by the Yeas and Nays: 215 - 208 (Roll no. 199)."
+                },
+                {
+                  "src": "actions-hconres86",
+                  "quote": "2026-06-23 | Resolution agreed to in Senate without amendment by Yea-Nay Vote. 50 - 48. Record Vote Number: 184. (consideration: CR S3039-3040)"
+                },
+                {
+                  "src": "bill-hconres86",
+                  "quote": "latestAction | 2026-06-24 | Message on Senate action sent to the House."
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "The six Senate measures, S.J.Res. 172, 180, 181, 185, 200 and 211, are joint resolutions under 50 U.S.C. 1546a, which limits Senate debate on a veto of such a measure to twenty hours; as of November 24, none of the six has passed the Senate.",
+              "es": "Las seis medidas del Senado, las S.J.Res. 172, 180, 181, 185, 200 y 211, son resoluciones conjuntas según el 50 U.S.C. 1546a, que limita a veinte horas el debate del Senado sobre el veto de una de esas medidas; al 24 de noviembre, ninguna de las seis ha sido aprobada por el Senado.",
+              "cites": [
+                {
+                  "src": "usc-50-1546a",
+                  "quote": "If such a joint resolution or bill should be vetoed by the President, the time for debate in consideration of the veto message on such measure shall be limited to twenty hours in the Senate"
+                },
+                {
+                  "src": "sjres172-is",
+                  "quote": "Pursuant to section 1013 of the Department of State Authorization Act, Fiscal Years 1984 and 1985 (50 U.S.C. 1546a)"
+                },
+                {
+                  "src": "sjres180-is",
+                  "quote": "Pursuant to section 1013 of the Department of State Authorization Act, Fiscal Years 1984 and 1985 (50 U.S.C. 1546a)"
+                },
+                {
+                  "src": "sjres181-is",
+                  "quote": "Pursuant to section 1013 of the Department of State Authorization Act, Fiscal Years 1984 and 1985 (50 U.S.C. 1546a)"
+                },
+                {
+                  "src": "sjres185-pcs",
+                  "quote": "Pursuant to section 1013 of the Department of State Authorization Act, Fiscal Years 1984 and 1985 (50 U.S.C. 1546a)"
+                },
+                {
+                  "src": "sjres200-is",
+                  "quote": "Pursuant to section 1013 of the Department of State Authorization Act, Fiscal Years 1984 and 1985 (50 U.S.C. 1546a)"
+                },
+                {
+                  "src": "sjres211-is",
+                  "quote": "Pursuant to section 1013 of the Department of State Authorization Act, Fiscal Years 1984 and 1985 (50 U.S.C. 1546a)"
+                },
+                {
+                  "src": "bill-sjres172",
+                  "quote": "latestAction | 2026-06-16 | Motion to discharge Senate Committee on Foreign Relations rejected by Yea-Nay Vote. 47 - 48. Record Vote Number: 174."
+                },
+                {
+                  "src": "bill-sjres180",
+                  "quote": "latestAction | 2026-07-23 | Motion to discharge Senate Committee on Foreign Relations rejected by Yea-Nay Vote. 47 - 49. Record Vote Number: 207."
+                },
+                {
+                  "src": "bill-sjres181",
+                  "quote": "latestAction | 2026-07-30 | Motion to discharge Senate Committee on Foreign Relations rejected by Yea-Nay Vote. 49 - 50. Record Vote Number: 216. (consideration: CR S4357)"
+                },
+                {
+                  "src": "bill-sjres185",
+                  "quote": "latestAction | 2026-06-24 | Motion to proceed to consideration of measure rejected in Senate by Yea-Nay Vote. 47 - 50. Record Vote Number: 192. (CR S3194)"
+                },
+                {
+                  "src": "bill-sjres200",
+                  "quote": "latestAction | 2026-07-13 | Read twice and referred to the Committee on Foreign Relations."
+                },
+                {
+                  "src": "bill-sjres211",
+                  "quote": "latestAction | 2026-08-06 | Read twice and referred to the Committee on Foreign Relations."
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "Under the Constitution, a bill that has “passed the House of Representatives and the Senate” is presented to the President; one he returns with objections becomes law only if “two thirds” of each chamber pass it again, and one not returned “within ten Days (Sundays excepted)” becomes law unless Congress’s adjournment prevents its return.",
+              "es": "Según la Constitución, un proyecto «aprobado por la Cámara de Representantes y el Senado» se presenta al Presidente; si él lo devuelve con objeciones, solo se convierte en ley si «dos tercios» de cada cámara vuelven a aprobarlo, y uno no devuelto «dentro de diez días (sin contar los domingos)» se convierte en ley, salvo que el aplazamiento del Congreso impida su devolución.",
+              "cites": [
+                {
+                  "src": "constitution",
+                  "quote": "Every Bill which shall have passed the House of Representatives and the Senate, shall, before it become a Law, be presented to the President of the United States; If he approve he shall sign it, but if not he shall return it, with his Objections"
+                },
+                {
+                  "src": "constitution",
+                  "quote": "If after such Reconsideration two thirds of that House shall agree to pass the Bill"
+                },
+                {
+                  "src": "constitution",
+                  "quote": "If any Bill shall not be returned by the President within ten Days (Sundays excepted) after it shall have been presented to him, the Same shall be a Law, in like Manner as if he had signed it, unless the Congress by their Adjournment prevent its Return, in which Case it shall not be a Law."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "bank_id": "wp.binding",
+          "q": {
+            "en": "If it passes, does the President have to follow it?",
+            "es": "Si se aprueba, ¿está obligado el Presidente a cumplirla?"
+          },
+          "claims": [
+            {
+              "kind": "record",
+              "en": "H.Con.Res. 86, agreed to by the House 215–208 on June 3, 2026, and by the Senate 50–48 on June 23, invokes section 5(c) and says “Congress directs the President to remove United States Armed Forces from hostilities against the Islamic Republic of Iran,” except forces needed “to defend the United States or an ally or partner of the United States from imminent attack” if the President complies with section 5(b), unless war is declared or force is specifically authorized.",
+              "es": "La H.Con.Res. 86, aprobada por la Cámara 215–208 el 3 de junio de 2026 y por el Senado 50–48 el 23 de junio, invoca la sección 5(c) y dice que «el Congreso ordena al Presidente retirar a las Fuerzas Armadas de Estados Unidos de las hostilidades contra la República Islámica de Irán», salvo las fuerzas necesarias «para defender a Estados Unidos o a un aliado o socio de Estados Unidos de un ataque inminente» si el Presidente cumple la sección 5(b), a menos que se declare la guerra o se autorice específicamente el uso de la fuerza.",
+              "cites": [
+                {
+                  "src": "actions-hconres86",
+                  "quote": "2026-06-03 | On agreeing to the resolution Agreed to by the Yeas and Nays: 215 - 208 (Roll no. 199)."
+                },
+                {
+                  "src": "actions-hconres86",
+                  "quote": "2026-06-23 | Resolution agreed to in Senate without amendment by Yea-Nay Vote. 50 - 48. Record Vote Number: 184. (consideration: CR S3039-3040)"
+                },
+                {
+                  "src": "hconres86-enr",
+                  "quote": "Congress directs the President to remove United States Armed Forces from hostilities against the Islamic Republic of Iran"
+                },
+                {
+                  "src": "hconres86-enr",
+                  "quote": "pursuant to section 5(c) of the War Powers Resolution (50 U.S.C. 1544(c))"
+                },
+                {
+                  "src": "hconres86-enr",
+                  "quote": "other than those elements of the Armed Forces that may be necessary to defend the United States or an ally or partner of the United States from imminent attack provided that the President complies fully with the requirements of section 5(b) the War Powers Resolution (50 U.S.C. 1544(b))"
+                },
+                {
+                  "src": "hconres86-enr",
+                  "quote": "unless explicitly authorized by a declaration of war or a specific congressional authorization for use of military force against Iran."
+                }
+              ]
+            },
+            {
+              "kind": "analysis",
+              "en": "A Congressional Research Service report, updated March 8, 2019, says section 5(c) “is constitutionally suspect” under the reasoning of the Supreme Court’s 1983 decision in INS v. Chadha, and that some legal analysts contend the War Powers Resolution “is in a unique category.”",
+              "es": "Un informe del Servicio de Investigación del Congreso, actualizado el 8 de marzo de 2019, dice que la sección 5(c) «es de dudosa constitucionalidad» según el razonamiento de la decisión de 1983 de la Corte Suprema en INS v. Chadha, y que algunos analistas jurídicos sostienen que la Resolución de Poderes de Guerra «está en una categoría única».",
+              "cites": [
+                {
+                  "src": "crs-r42699",
+                  "quote": "Since Section 5(c) requires forces to be removed by the President if Congress so directs by a concurrent resolution, it is constitutionally suspect under the reasoning applied by the Court."
+                },
+                {
+                  "src": "crs-r42699",
+                  "quote": "On June 23, 1983, the Supreme Court in INS v. Chadha"
+                },
+                {
+                  "src": "crs-r42699",
+                  "quote": "Some legal analysts contend, nevertheless, that the War Powers Resolution is in a unique category which differs from statutes containing a legislative veto over delegated authorities."
+                },
+                {
+                  "src": "crs-r42699",
+                  "quote": "Updated March 8, 2019"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "On May 1, 2026, the President said, “on the war powers,” that “every other President considered it totally unconstitutional. And we agree with that.”",
+              "es": "El 1 de mayo de 2026, el presidente dijo, «sobre los poderes de guerra», que «todos los demás presidentes lo consideraron totalmente inconstitucional. Y estamos de acuerdo con eso».",
+              "cites": [
+                {
+                  "src": "dcpd-202600299",
+                  "quote": "May 1, 2026"
+                },
+                {
+                  "src": "dcpd-202600299",
+                  "quote": "Just let me just tell you, on the war powers."
+                },
+                {
+                  "src": "dcpd-202600299",
+                  "quote": "And every other President considered it totally unconstitutional. And we agree with that."
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "In letters dated June 29, July 10 and September 3, 2026, the President reported further “strikes against targets within Iran,” described in whole or in part as “defensive strikes,” and cited his “constitutional authority as Commander in Chief.”",
+              "es": "En cartas fechadas el 29 de junio, el 10 de julio y el 3 de septiembre de 2026, el presidente informó de nuevos «ataques contra objetivos dentro de Irán», descritos total o parcialmente como «ataques defensivos», y citó su «autoridad constitucional como Comandante en Jefe».",
+              "cites": [
+                {
+                  "src": "hdoc-119-167",
+                  "quote": "Washington, June 29, 2026."
+                },
+                {
+                  "src": "hdoc-119-167",
+                  "quote": "with defensive strikes against targets within Iran"
+                },
+                {
+                  "src": "hdoc-119-167",
+                  "quote": "I acted pursuant to my constitutional authority as Commander in Chief and as Chief Executive to conduct United States foreign relations."
+                },
+                {
+                  "src": "hdoc-119-167",
+                  "quote": "with precision strikes against targets within Iran"
+                },
+                {
+                  "src": "hdoc-119-169",
+                  "quote": "Washington, July 10, 2026."
+                },
+                {
+                  "src": "hdoc-119-169",
+                  "quote": "with defensive strikes against targets within Iran"
+                },
+                {
+                  "src": "hdoc-119-169",
+                  "quote": "I acted pursuant to my constitutional authority as Commander in Chief and as Chief Executive to conduct United States foreign relations."
+                },
+                {
+                  "src": "hdoc-119-193",
+                  "quote": "Washington, September 3, 2026."
+                },
+                {
+                  "src": "hdoc-119-193",
+                  "quote": "with defensive strikes against targets within Iran"
+                },
+                {
+                  "src": "hdoc-119-193",
+                  "quote": "I acted pursuant to my constitutional authority as Commander in Chief and as Chief Executive to conduct United States foreign relations."
+                }
+              ]
+            },
+            {
+              "kind": "absence",
+              "absence_kind": "not_checked",
+              "en": "We did not search court records, so this answer does not say whether any court has ruled on the concurrent resolution both chambers agreed to.",
+              "es": "No buscamos en los registros judiciales, así que esta respuesta no dice si algún tribunal se ha pronunciado sobre la resolución concurrente que aprobaron las dos cámaras.",
+              "searched": [
+                "crs-r42699",
+                "actions-hconres86"
+              ]
+            }
+          ]
+        },
+        {
+          "bank_id": "wp.sixty_day",
+          "q": {
+            "en": "What is the War Powers Resolution's 60-day limit, and how does it apply here?",
+            "es": "¿Qué es el límite de 60 días de la Resolución de Poderes de Guerra y cómo se aplica aquí?"
+          },
+          "claims": [
+            {
+              "kind": "record",
+              "en": "Section 5(b) of the War Powers Resolution (50 U.S.C. 1544(b)) says the President “shall terminate any use of United States Armed Forces” within sixty calendar days after a report under 50 U.S.C. 1543(a)(1) “is submitted or is required to be submitted,” whichever is earlier, unless Congress has declared war, enacted a specific authorization, extended the period by law, or “is physically unable to meet as a result of an armed attack upon the United States.”",
+              "es": "La sección 5(b) de la Resolución de Poderes de Guerra (50 U.S.C. 1544(b)) dice que el Presidente «pondrá fin a todo uso de las Fuerzas Armadas de Estados Unidos» dentro de los sesenta días naturales siguientes a que un informe conforme al 50 U.S.C. 1543(a)(1) «se presente o deba presentarse», lo que ocurra primero, salvo que el Congreso haya declarado la guerra, promulgado una autorización específica, prorrogado el plazo por ley o «no pueda reunirse físicamente a causa de un ataque armado contra Estados Unidos».",
+              "cites": [
+                {
+                  "src": "usc-50-1544",
+                  "quote": "Within sixty calendar days after a report is submitted or is required to be submitted pursuant to section 1543(a)(1) of this title, whichever is earlier, the President shall terminate any use of United States Armed Forces with respect to which such report was submitted (or required to be submitted), unless the Congress (1) has declared war or has enacted a specific authorization for such use of United States Armed Forces, (2) has extended by law such sixty-day period, or (3) is physically unable to meet as a result of an armed attack upon the United States."
+                },
+                {
+                  "src": "hconres86-enr",
+                  "quote": "section 5(b) the War Powers Resolution (50 U.S.C. 1544(b))"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "That period “shall be extended for not more than an additional thirty days” if the President certifies in writing that “unavoidable military necessity” for the forces’ safety requires it during their removal.",
+              "es": "Ese plazo «se prorrogará por no más de treinta días adicionales» si el Presidente certifica por escrito que «una necesidad militar ineludible» relativa a la seguridad de las fuerzas lo exige durante su retiro.",
+              "cites": [
+                {
+                  "src": "usc-50-1544",
+                  "quote": "Such sixty-day period shall be extended for not more than an additional thirty days if the President determines and certifies to the Congress in writing that unavoidable military necessity respecting the safety of United States Armed Forces requires the continued use of such armed forces in the course of bringing about a prompt removal of such forces."
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "The President’s letter dated March 2, 2026 (House Document 119-139), reports “military action taken on February 28, 2026, against the Government of the Islamic Republic of Iran.”",
+              "es": "La carta del presidente fechada el 2 de marzo de 2026 (Documento de la Cámara 119-139) informa de «una acción militar tomada el 28 de febrero de 2026 contra el Gobierno de la República Islámica de Irán».",
+              "cites": [
+                {
+                  "src": "hdoc-119-139",
+                  "quote": "Washington, March 2, 2026."
+                },
+                {
+                  "src": "hdoc-119-139",
+                  "quote": "I write to apprise you of military action taken on February 28, 2026, against the Government of the Islamic Republic of Iran."
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "H.J.Res. 176, a proposed authorization of force introduced May 7, 2026, says the sixty-day period “has expired”; S.J.Res. 211, introduced August 6, 2026, to remove the forces, says the President did not end their use “following 60 days as required under section 5(b).”",
+              "es": "La H.J.Res. 176, una propuesta de autorización del uso de la fuerza presentada el 7 de mayo de 2026, dice que el plazo de sesenta días «ha vencido»; la S.J.Res. 211, presentada el 6 de agosto de 2026 para retirar las fuerzas, dice que el presidente no puso fin a su uso «tras 60 días, como exige la sección 5(b)».",
+              "cites": [
+                {
+                  "src": "hjres176-ih",
+                  "quote": "Whereas the sixty-calendar-day period specified in section 5(b) of the War Powers Resolution (50 U.S.C. 1544(b)) has expired"
+                },
+                {
+                  "src": "bill-hjres176",
+                  "quote": "introducedDate | 2026-05-07"
+                },
+                {
+                  "src": "sjres211-is",
+                  "quote": "The President did not terminate the use of United States Armed Forces following 60 days as required under section 5(b) of the War Powers Resolution (50 U.S.C. 1544(b))"
+                },
+                {
+                  "src": "bill-sjres211",
+                  "quote": "introducedDate | 2026-08-06"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "On May 1, 2026, asked by a reporter, on what the reporter called “day 60,” whether he would seek congressional authorization, the President said, “we had a cease-fire, so that gives you additional time,” and, “on the war powers,” that “every other President considered it totally unconstitutional. And we agree with that.”",
+              "es": "El 1 de mayo de 2026, cuando un periodista le preguntó, en lo que llamó «el día 60», si pediría autorización al Congreso, el presidente dijo que «tuvimos un alto el fuego, así que eso da tiempo adicional» y, «sobre los poderes de guerra», que «todos los demás presidentes lo consideraron totalmente inconstitucional. Y estamos de acuerdo con eso».",
+              "cites": [
+                {
+                  "src": "dcpd-202600299",
+                  "quote": "May 1, 2026"
+                },
+                {
+                  "src": "dcpd-202600299",
+                  "quote": "Mr. President, it's day 60. Are you going to seek congressional authorization for"
+                },
+                {
+                  "src": "dcpd-202600299",
+                  "quote": "Also, we had a cease-fire, so that gives you additional time."
+                },
+                {
+                  "src": "dcpd-202600299",
+                  "quote": "Just let me just tell you, on the war powers."
+                },
+                {
+                  "src": "dcpd-202600299",
+                  "quote": "And every other President considered it totally unconstitutional. And we agree with that."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "bank_id": "wp.admin_basis",
+          "q": {
+            "en": "What legal authority and goals has the Administration stated?",
+            "es": "¿Qué autoridad legal y qué objetivos ha declarado el Gobierno?"
+          },
+          "claims": [
+            {
+              "kind": "record",
+              "en": "In a letter dated March 2, 2026 (House Document 119-139), the President wrote that strikes on February 28 “were undertaken to protect United States forces in the region, protect the United States homeland, advance vital United States national interests, including ensuring the free flow of maritime commerce through the Strait of Hormuz, and in collective self-defense of our regional allies, including Israel.”",
+              "es": "En una carta fechada el 2 de marzo de 2026 (Documento de la Cámara 119-139), el presidente escribió que los bombardeos del 28 de febrero «se llevaron a cabo para proteger a las fuerzas de Estados Unidos en la región, proteger el territorio nacional de Estados Unidos, promover intereses nacionales vitales de Estados Unidos, entre ellos garantizar la libre circulación del comercio marítimo por el estrecho de Ormuz, y en legítima defensa colectiva de nuestros aliados regionales, entre ellos Israel».",
+              "cites": [
+                {
+                  "src": "hdoc-119-139",
+                  "quote": "Washington, March 2, 2026."
+                },
+                {
+                  "src": "hdoc-119-139",
+                  "quote": "on February 28, 2026, United States forces conducted precision strikes against numerous targets within Iran"
+                },
+                {
+                  "src": "hdoc-119-139",
+                  "quote": "These strikes were undertaken to protect United States forces in the region, protect the United States homeland, advance vital United States national interests, including ensuring the free flow of maritime commerce through the Strait of Hormuz, and in collective self-defense of our regional allies, including Israel."
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "In that letter and in four more printed as House Documents on strikes within Iran, dated June 12, June 29, July 10 and September 3, 2026, he wrote that he acted under his constitutional authority “as Commander in Chief” and as Chief Executive “to conduct United States foreign relations,” and that each report was provided “consistent with the War Powers Resolution.”",
+              "es": "En esa carta y en otras cuatro publicadas como Documentos de la Cámara sobre bombardeos dentro de Irán, fechadas el 12 de junio, el 29 de junio, el 10 de julio y el 3 de septiembre de 2026, escribió que actuó en virtud de su autoridad constitucional «como Comandante en Jefe» y como Jefe del Ejecutivo «para conducir las relaciones exteriores de Estados Unidos», y que cada informe se enviaba «de conformidad con la Resolución de Poderes de Guerra».",
+              "cites": [
+                {
+                  "src": "hdoc-119-139",
+                  "quote": "as Commander in Chief and Chief Executive to conduct United States foreign relations."
+                },
+                {
+                  "src": "hdoc-119-139",
+                  "quote": "consistent with the War Powers Resolution"
+                },
+                {
+                  "src": "hdoc-119-162",
+                  "quote": "Washington, June 12, 2026."
+                },
+                {
+                  "src": "hdoc-119-162",
+                  "quote": "precision strikes against numerous targets within Iran"
+                },
+                {
+                  "src": "hdoc-119-162",
+                  "quote": "I acted pursuant to my constitutional authority as Commander in Chief and as Chief Executive to conduct United States foreign relations."
+                },
+                {
+                  "src": "hdoc-119-162",
+                  "quote": "consistent with the War Powers Resolution (Public Law 93-148)"
+                },
+                {
+                  "src": "hdoc-119-167",
+                  "quote": "Washington, June 29, 2026."
+                },
+                {
+                  "src": "hdoc-119-167",
+                  "quote": "I acted pursuant to my constitutional authority as Commander in Chief and as Chief Executive to conduct United States foreign relations."
+                },
+                {
+                  "src": "hdoc-119-167",
+                  "quote": "consistent with the War Powers Resolution (Public Law 93-148)"
+                },
+                {
+                  "src": "hdoc-119-169",
+                  "quote": "Washington, July 10, 2026."
+                },
+                {
+                  "src": "hdoc-119-169",
+                  "quote": "I acted pursuant to my constitutional authority as Commander in Chief and as Chief Executive to conduct United States foreign relations."
+                },
+                {
+                  "src": "hdoc-119-169",
+                  "quote": "consistent with the War Powers Resolution (Public Law 93-148)"
+                },
+                {
+                  "src": "hdoc-119-193",
+                  "quote": "Washington, September 3, 2026."
+                },
+                {
+                  "src": "hdoc-119-193",
+                  "quote": "I acted pursuant to my constitutional authority as Commander in Chief and as Chief Executive to conduct United States foreign relations."
+                },
+                {
+                  "src": "hdoc-119-193",
+                  "quote": "consistent with the War Powers Resolution (Public Law 93-148)"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "The latest of those letters, dated September 3, 2026, says U.S. forces “remain postured to take further military action, as necessary and appropriate,” including “to ensure the Government of the Islamic Republic of Iran and Iranian aligned militia groups cease being a threat to the United States and to our allies and partners.”",
+              "es": "La última de esas cartas, fechada el 3 de septiembre de 2026, dice que las fuerzas de EE. UU. «siguen preparadas para tomar nuevas medidas militares, según sea necesario y apropiado», incluso «para garantizar que el Gobierno de la República Islámica de Irán y los grupos de milicias alineados con Irán dejen de ser una amenaza para Estados Unidos y para nuestros aliados y socios».",
+              "cites": [
+                {
+                  "src": "hdoc-119-193",
+                  "quote": "Washington, September 3, 2026."
+                },
+                {
+                  "src": "hdoc-119-193",
+                  "quote": "United States Armed Forces remain postured to take further military action, as necessary and appropriate, to address further attacks against the United States or its allies and partners and to ensure the Government of the Islamic Republic of Iran and Iranian aligned militia groups cease being a threat to the United States and to our allies and partners."
+                }
+              ]
+            },
+            {
+              "kind": "absence",
+              "absence_kind": "not_found",
+              "en": "Searching those five letters, we found no mention of an authorization for use of military force; we did not search the Administration’s other statements.",
+              "es": "Al buscar en esas cinco cartas, no encontramos ninguna mención de una autorización para el uso de la fuerza militar; no buscamos en otras declaraciones del Gobierno.",
+              "searched": [
+                "hdoc-119-139",
+                "hdoc-119-162",
+                "hdoc-119-167",
+                "hdoc-119-169",
+                "hdoc-119-193"
+              ],
+              "absent": [
+                "authorization for use of military force",
+                "Authorization for Use of Military Force",
+                "AUMF"
+              ]
+            }
+          ]
+        },
+        {
+          "bank_id": "wp.authorized",
+          "q": {
+            "en": "Has Congress authorized the use of military force here?",
+            "es": "¿Ha autorizado el Congreso el uso de la fuerza militar en este caso?"
+          },
+          "claims": [
+            {
+              "kind": "record",
+              "en": "Under 50 U.S.C. 1547(a)(1), authority to put U.S. forces into hostilities “shall not be inferred” from any provision of law unless it “specifically authorizes the introduction of United States Armed Forces into hostilities” and “states that it is intended to constitute specific statutory authorization.”",
+              "es": "Según el 50 U.S.C. 1547(a)(1), la autoridad para llevar fuerzas de EE. UU. a hostilidades «no se deducirá» de ninguna disposición legal, salvo que esta «autorice específicamente la introducción de las Fuerzas Armadas de Estados Unidos en hostilidades» y «declare que su intención es constituir una autorización legal específica».",
+              "cites": [
+                {
+                  "src": "usc-50-1547",
+                  "quote": "Authority to introduce United States Armed Forces into hostilities or into situations wherein involvement in hostilities is clearly indicated by the circumstances shall not be inferred"
+                },
+                {
+                  "src": "usc-50-1547",
+                  "quote": "from any provision of law (whether or not in effect before November 7, 1973), including any provision contained in any appropriation Act, unless such provision specifically authorizes the introduction of United States Armed Forces into hostilities or into such situations and states that it is intended to constitute specific statutory authorization within the meaning of this chapter"
+                }
+              ]
+            },
+            {
+              "kind": "absence",
+              "absence_kind": "not_found",
+              "en": "Searching the titles of the 148 measures that Congress.gov listed as laws of the 119th Congress on November 24, 2026, we found none titled as an authorization for use of military force; we did not search those laws’ full texts or the laws of earlier Congresses.",
+              "es": "Al buscar en los títulos de las 148 medidas que Congress.gov registraba como leyes del 119.º Congreso el 24 de noviembre de 2026, no encontramos ninguna titulada como autorización para el uso de la fuerza militar; no buscamos en el texto completo de esas leyes ni en las leyes de Congresos anteriores.",
+              "searched": [
+                "law-scan"
+              ],
+              "absent": [
+                "military force",
+                "Military Force",
+                "use of force",
+                "Use of Force"
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "H.J.Res. 176, the “2026 Authorization for Use of Military Force Against Iran,” introduced in the House on May 7, 2026, would authorize force for four listed purposes, but as written that authority “shall terminate on July 30, 2026,” apart from up to 30 more days used only to end the deployment; as of November 24, its latest action is its referral that day to the House Committee on Foreign Affairs.",
+              "es": "La H.J.Res. 176, la «Autorización para el Uso de la Fuerza Militar contra Irán de 2026», presentada en la Cámara el 7 de mayo de 2026, autorizaría el uso de la fuerza para cuatro fines enumerados, pero según su texto esa autoridad «terminará el 30 de julio de 2026», salvo hasta 30 días más que solo pueden usarse para poner fin al despliegue; al 24 de noviembre, su última acción es su remisión ese mismo día al Comité de Asuntos Exteriores de la Cámara.",
+              "cites": [
+                {
+                  "src": "bill-hjres176",
+                  "quote": "title | 2026 Authorization for Use of Military Force Against Iran"
+                },
+                {
+                  "src": "bill-hjres176",
+                  "quote": "introducedDate | 2026-05-07"
+                },
+                {
+                  "src": "hjres176-ih",
+                  "quote": "The President is authorized to use the Armed Forces of the United States as the President determines to be necessary and appropriate in order to"
+                },
+                {
+                  "src": "bill-hjres176",
+                  "quote": "latestAction | 2026-05-07 | Referred to the House Committee on Foreign Affairs."
+                },
+                {
+                  "src": "hjres176-ih",
+                  "quote": "Except as provided in subsection (b), the authority provided in section 2 shall terminate on July 30, 2026."
+                },
+                {
+                  "src": "hjres176-ih",
+                  "quote": "For an additional period of not more than 30 days after the date described in subsection (a), the authority provided in section 2 may be exercised only as necessary to end the deployment or engagement of the Armed Forces."
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "That measure’s preamble says Congress has not “provided any specific statutory authorization for, hostilities involving United States Armed Forces against the Islamic Republic of Iran,” and the findings of the six Senate joint resolutions listed for this question say Congress has not enacted “a specific statutory authorization for the use of military force within or against Iran.”",
+              "es": "El preámbulo de esa medida dice que el Congreso no ha «otorgado ninguna autorización legal específica para las hostilidades de las Fuerzas Armadas de Estados Unidos contra la República Islámica de Irán», y las conclusiones de las seis resoluciones conjuntas del Senado de esta pregunta dicen que el Congreso no ha promulgado «una autorización legal específica para el uso de la fuerza militar dentro de Irán o contra Irán».",
+              "cites": [
+                {
+                  "src": "hjres176-ih",
+                  "quote": "Whereas Congress has not declared war with respect to, or provided any specific statutory authorization for, hostilities involving United States Armed Forces against the Islamic Republic of Iran"
+                },
+                {
+                  "src": "sjres172-is",
+                  "quote": "nor enacted a specific statutory authorization for the use of military force within or against Iran."
+                },
+                {
+                  "src": "sjres180-is",
+                  "quote": "nor enacted a specific statutory authorization for the use of military force within or against Iran."
+                },
+                {
+                  "src": "sjres181-is",
+                  "quote": "nor enacted a specific statutory authorization for the use of military force within or against Iran."
+                },
+                {
+                  "src": "sjres185-pcs",
+                  "quote": "nor enacted a specific statutory authorization for the use of military force within or against Iran."
+                },
+                {
+                  "src": "sjres200-is",
+                  "quote": "nor enacted a specific statutory authorization for the use of military force within or against Iran."
+                },
+                {
+                  "src": "sjres211-is",
+                  "quote": "nor enacted a specific statutory authorization for the use of military force within or against Iran."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "bank_id": "wp.still_allowed",
+          "q": {
+            "en": "What would U.S. forces still be allowed to do?",
+            "es": "¿Qué seguirían teniendo permitido hacer las fuerzas de EE. UU.?"
+          },
+          "claims": [
+            {
+              "kind": "record",
+              "en": "H.Con.Res. 86 (agreed to by both chambers) and H.Con.Res. 93 (rejected by the Senate 48–51 on November 19, 2026) except forces “that may be necessary to defend the United States or an ally or partner of the United States from imminent attack,” if the President complies fully with section 5(b) of the War Powers Resolution.",
+              "es": "La H.Con.Res. 86 (aprobada por las dos cámaras) y la H.Con.Res. 93 (rechazada por el Senado 48–51 el 19 de noviembre de 2026) exceptúan a las fuerzas «que puedan ser necesarias para defender a Estados Unidos o a un aliado o socio de Estados Unidos de un ataque inminente», si el Presidente cumple plenamente la sección 5(b) de la Resolución de Poderes de Guerra.",
+              "cites": [
+                {
+                  "src": "actions-hconres86",
+                  "quote": "2026-06-03 | On agreeing to the resolution Agreed to by the Yeas and Nays: 215 - 208 (Roll no. 199)."
+                },
+                {
+                  "src": "actions-hconres86",
+                  "quote": "2026-06-23 | Resolution agreed to in Senate without amendment by Yea-Nay Vote. 50 - 48. Record Vote Number: 184. (consideration: CR S3039-3040)"
+                },
+                {
+                  "src": "hconres86-enr",
+                  "quote": "other than those elements of the Armed Forces that may be necessary to defend the United States or an ally or partner of the United States from imminent attack provided that the President complies fully with the requirements of section 5(b) the War Powers Resolution (50 U.S.C. 1544(b))"
+                },
+                {
+                  "src": "hconres93-eh",
+                  "quote": "other than those elements of the Armed Forces that may be necessary to defend the United States or an ally or partner of the United States from imminent attack provided that the President complies fully with the requirements of section 5(b) the War Powers Resolution (50 U.S.C. 1544(b))"
+                },
+                {
+                  "src": "bill-hconres93",
+                  "quote": "latestAction | 2026-11-19 | Failed of passage in Senate by Yea-Nay Vote. 48 - 51. Record Vote Number: 269."
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "H.Con.Res. 89, rejected by the Senate 49–50 on September 24, 2026, may not be construed to prevent the United States from “defending itself, its Armed Forces, its diplomatic facilities, or allied states from imminent attack,” to prevent a troop presence in the region “for defensive purposes,” to force the removal of forces “not engaged in hostilities against Iran,” or to disrupt intelligence sharing with coalition partners that the President determines is appropriate and in the national security interests of the United States.",
+              "es": "La H.Con.Res. 89, rechazada por el Senado 49–50 el 24 de septiembre de 2026, no puede interpretarse como impedimento para que Estados Unidos pueda «defenderse a sí mismo, a sus Fuerzas Armadas, a sus instalaciones diplomáticas o a Estados aliados de un ataque inminente», ni para una presencia de tropas en la región «con fines defensivos», ni como obligación de retirar a las fuerzas «que no participan en hostilidades contra Irán», ni como obstáculo al intercambio de inteligencia con socios de la coalición que el Presidente considere apropiado y en interés de la seguridad nacional de Estados Unidos.",
+              "cites": [
+                {
+                  "src": "bill-hconres89",
+                  "quote": "latestAction | 2026-09-24 | Failed of passage in Senate by Yea-Nay Vote. 49 - 50. Record Vote Number: 244."
+                },
+                {
+                  "src": "hconres89-eh",
+                  "quote": "Nothing in this section may be construed to-- (1) prevent the United States from defending itself, its Armed Forces, its diplomatic facilities, or allied states from imminent attack; (2) prevent the United States Armed Forces from maintaining a troop presence in the region for defensive purposes; or (3) force the removal of United States Armed Forces in the region who are not engaged in hostilities against Iran."
+                },
+                {
+                  "src": "hconres89-eh",
+                  "quote": "Nothing in this resolution may be construed to influence or disrupt any intelligence, counterintelligence, or investigative activities"
+                },
+                {
+                  "src": "hconres89-eh",
+                  "quote": "the sharing of intelligence between the United States and any coalition partner, if the President determines such sharing is appropriate and in the national security interests of the United States."
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "S.J.Res. 185 may not be construed to prevent “defending against an attack on the United States or its personnel or facilities in other nations,” intelligence sharing, or assisting partner countries “who have been attacked by Iran since February 28, 2026, and other nations” “in intercepting retaliatory attacks by Iran or its proxies” or with defensive materiel.",
+              "es": "La S.J.Res. 185 no puede interpretarse como impedimento para «defenderse de un ataque contra Estados Unidos o contra su personal o sus instalaciones en otros países», el intercambio de inteligencia, o ayudar a países socios «que han sido atacados por Irán desde el 28 de febrero de 2026, y a otros países» «a interceptar ataques de represalia de Irán o de sus grupos afines» o con material defensivo.",
+              "cites": [
+                {
+                  "src": "sjres185-pcs",
+                  "quote": "Nothing in this resolution may be construed to prevent the United States from-- (1) defending against an attack on the United States or its personnel or facilities in other nations;"
+                },
+                {
+                  "src": "sjres185-pcs",
+                  "quote": "(2) collecting, analyzing, or sharing intelligence with partner countries who have been attacked by Iran since February 28, 2026, and other nations and international organizations as appropriate, related to threats from Iran or its proxies; and"
+                },
+                {
+                  "src": "sjres185-pcs",
+                  "quote": "(3) assisting partner countries who have been attacked by Iran since February 28, 2026, and other nations-- (A) in intercepting retaliatory attacks by Iran or its proxies; or (B) by providing defensive materiel support for such defensive measures."
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "The Senate measures differ: S.J.Res. 172, 180 and 200 also except “providing assistance for the security, departure, and evacuation” of U.S. citizens; S.J.Res. 181, 185 and 211 do not.",
+              "es": "Las medidas del Senado difieren: las S.J.Res. 172, 180 y 200 también exceptúan «prestar asistencia para la seguridad, la salida y la evacuación» de ciudadanos estadounidenses; las S.J.Res. 181, 185 y 211 no lo hacen.",
+              "cites": [
+                {
+                  "src": "sjres172-is",
+                  "quote": "providing assistance for the security, departure, and evacuation to United States citizens affected by the hostilities."
+                },
+                {
+                  "src": "sjres180-is",
+                  "quote": "providing assistance for the security, departure, and evacuation of United States citizens affected by the hostilities."
+                },
+                {
+                  "src": "sjres200-is",
+                  "quote": "providing assistance for the security, departure, and evacuation to United States citizens affected by the hostilities."
+                },
+                {
+                  "src": "sjres181-is",
+                  "quote": "(B) by providing defensive materiel support for such defensive measures."
+                },
+                {
+                  "src": "sjres185-pcs",
+                  "quote": "(B) by providing defensive materiel support for such defensive measures."
+                },
+                {
+                  "src": "sjres211-is",
+                  "quote": "(B) by providing defensive materiel support for such defensive measures."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "paying-college-athletes": {
+      "written": "2026-11-24",
+      "record_as_of": "2026-11-24",
+      "model": "claude-opus-5-5",
+      "type": "industry_regulation",
+      "rewritten_nightly": false,
+      "sources": {
+        "s4668-es": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/BILLS-119s4668es/html/BILLS-119s4668es.htm",
+          "title": {
+            "en": "S. 4668 as passed by the Senate, text",
+            "es": "Texto del S. 4668 tal como lo aprobó el Senado (en inglés)"
+          }
+        },
+        "actions-s4668": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/senate-bill/4668/all-actions",
+          "title": {
+            "en": "S. 4668, official actions",
+            "es": "S. 4668, acciones oficiales (en inglés)"
+          }
+        },
+        "bill-s4668": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/senate-bill/4668",
+          "title": {
+            "en": "S. 4668, official bill record",
+            "es": "S. 4668, registro oficial del proyecto (en inglés)"
+          }
+        },
+        "vote-s-119-2-250": {
+          "kind": "record",
+          "url": "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00250.xml",
+          "title": {
+            "en": "Senate roll call vote 250 of the 119th Congress, 2nd session (S. 4668, passage)",
+            "es": "Votación nominal 250 del Senado, 119.º Congreso, 2.ª sesión (S. 4668, aprobación; en inglés)"
+          }
+        },
+        "usc-15-7801": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/USCODE-2024-title15/html/USCODE-2024-title15-chap104-sec7801.htm",
+          "title": {
+            "en": "15 U.S.C. 7801, Sports Agent Responsibility and Trust Act definitions (U.S. Code, 2024 edition)",
+            "es": "15 U.S.C. 7801, definiciones de la Ley de Responsabilidad y Confianza de los Agentes Deportivos (Código de EE. UU., edición de 2024; en inglés)"
+          }
+        },
+        "usc-15-7803": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/USCODE-2024-title15/html/USCODE-2024-title15-chap104-sec7803.htm",
+          "title": {
+            "en": "15 U.S.C. 7803, enforcement (U.S. Code, 2024 edition)",
+            "es": "15 U.S.C. 7803, cumplimiento (Código de EE. UU., edición de 2024; en inglés)"
+          }
+        },
+        "usc-15-7804": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/USCODE-2024-title15/html/USCODE-2024-title15-chap104-sec7804.htm",
+          "title": {
+            "en": "15 U.S.C. 7804, actions by states (U.S. Code, 2024 edition)",
+            "es": "15 U.S.C. 7804, demandas de los estados (Código de EE. UU., edición de 2024; en inglés)"
+          }
+        },
+        "constitution": {
+          "kind": "record",
+          "url": "https://www.archives.gov/founding-docs/constitution-transcript",
+          "title": {
+            "en": "U.S. Constitution, transcript (National Archives)",
+            "es": "Constitución de EE. UU., transcripción (Archivos Nacionales; en inglés)"
+          }
+        },
+        "crs-r42843": {
+          "kind": "analysis",
+          "url": "https://www.congress.gov/crs_external_products/R/HTML/R42843.html",
+          "title": {
+            "en": "Congressional Research Service, Introduction to the Legislative Process in the U.S. Congress (R42843), updated November 19, 2025",
+            "es": "Servicio de Investigación del Congreso, introducción al proceso legislativo en el Congreso de EE. UU. (R42843), actualizado el 19 de noviembre de 2025 (en inglés)"
+          }
+        },
+        "holam-2007": {
+          "kind": "analysis",
+          "url": "https://www.govinfo.gov/content/pkg/CDOC-110hdoc49/html/CDOC-110hdoc49.htm",
+          "title": {
+            "en": "How Our Laws Are Made, House Document 110-49, by the Parliamentarian of the House (2007)",
+            "es": "Cómo se hacen nuestras leyes, Documento de la Cámara 110-49, del Parlamentario de la Cámara (2007; en inglés)"
+          }
+        }
+      },
+      "picks": [
+        {
+          "bank_id": "reg.state_law",
+          "q": {
+            "en": "Would it override state laws?",
+            "es": "¿Prevalecería sobre las leyes estatales?"
+          },
+          "claims": [
+            {
+              "kind": "record",
+              "en": "S. 4668, as the Senate passed it, says in section 121(a) that no state or political subdivision may “adopt, maintain, enforce, or continue in effect” a law or rule that “conflicts with any provision of this title that would prevent compliance with this title” (title I of the bill).",
+              "es": "El S. 4668, tal como lo aprobó el Senado, dice en su sección 121(a) que ningún estado ni subdivisión política puede «adoptar, mantener, hacer cumplir o seguir aplicando» una ley o norma que «entre en conflicto con alguna disposición de este título de modo que impida cumplir este título» (el título I del proyecto).",
+              "cites": [
+                {
+                  "src": "s4668-es",
+                  "quote": "No State or political subdivision of a State may adopt, maintain, enforce, or continue in effect any law, regulation, rule, requirement, or standard that"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "conflicts with any provision of this title that would prevent compliance with this title"
+                },
+                {
+                  "src": "actions-s4668",
+                  "quote": "2026-09-28 | Passed Senate with an amendment by Yea-Nay Vote. 77 - 22. Record Vote Number: 250. (text: CR S5044-5063)"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "Section 121(a) also bars state laws that govern, regulate or invalidate the rules of schools, conferences or athletic associations on paying athletes for their name, image or likeness “except as necessary to comply with this title,” on transfers between schools, or on the eligibility rules in section 113(a)(1)–(3) or (b).",
+              "es": "La sección 121(a) también prohíbe las leyes estatales que rijan, regulen o invaliden las normas de universidades, conferencias o asociaciones deportivas sobre el pago a los atletas por su nombre, imagen o semejanza «salvo en lo necesario para cumplir este título», sobre los traslados entre universidades o sobre las reglas de elegibilidad de la sección 113(a)(1)–(3) o (b).",
+              "cites": [
+                {
+                  "src": "s4668-es",
+                  "quote": "governs, regulates, or invalidates policies or rules of an institution, a conference, or an intercollegiate athletic association that regulates"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "the compensation to a student athlete or prospective student athlete for the use of their name, image, or likeness, except as necessary to comply with this title"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "transfers of student athletes between institutions"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "any provision described in subsection (a)(1)- (3) or (b) of section 113 relating to the eligibility of a student athlete to participate in intercollegiate athletics"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "Section 121(b) says listed state laws “shall not be preempted, displaced, or supplanted”: except where they conflict with subsection (a), athlete agent acts and civil rights, tort, criminal, privacy, contract, trademark, copyright and consumer protection laws; and, unless they conflict with subsection (a)(2), laws giving rise to claims it lists, among them personal injury, wrongful death, sexual assault, harassment, fraud, and abuse or hazing.",
+              "es": "La sección 121(b) dice que las leyes estatales que enumera «no quedarán sin efecto por primacía federal, ni desplazadas ni sustituidas»: salvo cuando entren en conflicto con el apartado (a), las leyes sobre agentes de atletas y las de derechos civiles, responsabilidad civil, derecho penal, privacidad, contratos, marcas, derechos de autor y protección del consumidor; y, salvo que entren en conflicto con el apartado (a)(2), las leyes que dan lugar a las demandas que enumera, entre ellas por lesiones personales, muerte por negligencia, agresión sexual, acoso, fraude y abuso o novatadas.",
+              "cites": [
+                {
+                  "src": "s4668-es",
+                  "quote": "shall not be preempted, displaced, or supplanted"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "Except to the extent that such law, rule, regulation, requirement, or common law right or remedy conflicts with subsection (a), the following: (A) Uniform Athlete Agent Acts. (B) Civil rights laws. (C) Tort law, unless otherwise specified in paragraph (2). (D) Criminal law, unless otherwise specified in paragraph (2). (E) Laws that relate to privacy or data breach. (F) Contract law. (G) Trademark law. (H) Copyright law. (I) Consumer protection law, unless otherwise specified in paragraph (2)."
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "Except to the extent that such law, rule, regulation, or requirement, or common law right or remedy conflicts with subsection (a)(2)"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "(A) Personal injury, including psychological injury. (B) Wrongful death. (C) Property damage. (D) Sexual assault. (E) Harassment. (F) Fraud. (G) Injury resulting from abuse or hazing of a student athlete, including physical or sexual abuse."
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "Section 121(c) says subsection (a) “shall not be construed to preempt, displace, or supplant the antitrust laws” where liability under them “is not limited by this title,” and section 100 includes “any similar State antitrust law.”",
+              "es": "La sección 121(c) dice que el apartado (a) «no se interpretará en el sentido de dejar sin efecto, desplazar ni sustituir las leyes antimonopolio» cuando la responsabilidad según ellas «no esté limitada por este título», y la sección 100 incluye «cualquier ley antimonopolio estatal similar».",
+              "cites": [
+                {
+                  "src": "s4668-es",
+                  "quote": "To the extent liability for violations of the antitrust laws is not limited by this title, subsection (a) shall not be construed to preempt, displace, or supplant the antitrust laws."
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "any similar State antitrust law"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "bank_id": "reg.antitrust",
+          "q": {
+            "en": "Does it change how antitrust law applies?",
+            "es": "¿Cambia cómo se aplican las leyes antimonopolio?"
+          },
+          "claims": [
+            {
+              "kind": "record",
+              "en": "Section 118(a) of S. 4668, as the Senate passed it, says it “shall not be unlawful under the antitrust laws” for an association, conference or school to enforce or comply with listed sections, among them its pay limits (sections 114 and 115) and eligibility, transfer, recruiting and agent registry rules.",
+              "es": "La sección 118(a) del S. 4668, tal como lo aprobó el Senado, dice que «no será ilegal según las leyes antimonopolio» que una asociación deportiva, una conferencia o una universidad haga cumplir o cumpla las secciones enumeradas, entre ellas sus límites de pago (secciones 114 y 115) y sus reglas de elegibilidad, traslados, reclutamiento y registro de agentes.",
+              "cites": [
+                {
+                  "src": "s4668-es",
+                  "quote": "It shall not be unlawful under the antitrust laws for an intercollegiate athletic association, a conference, or an institution to enforce or comply with, including through rules or bylaws-- (1) section 114; (2) section 115; (3) section 113;"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "(5) section 117; (6) section 112;"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "(8) section 103; and"
+                },
+                {
+                  "src": "actions-s4668",
+                  "quote": "2026-09-28 | Passed Senate with an amendment by Yea-Nay Vote. 77 - 22. Record Vote Number: 250. (text: CR S5044-5063)"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "Section 118(b) covers some fines, eligibility limits and agent decertifications; under section 118(c), an athletic association gets neither unless it “has established rules, bylaws, or other regulations implementing” them, and section 100 includes “any similar State antitrust law.”",
+              "es": "La sección 118(b) abarca ciertas multas, límites de elegibilidad y retiros de certificación de agentes; según la sección 118(c), una asociación deportiva no obtiene ninguna de las dos protecciones salvo que «haya establecido reglas, estatutos u otras normas que las apliquen», y la sección 100 incluye «cualquier ley antimonopolio estatal similar».",
+              "cites": [
+                {
+                  "src": "s4668-es",
+                  "quote": "decertify an athlete agent for violations of section 103 or the amendments made by section 102"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "An intercollegiate athletic association shall not be entitled to the antitrust exemptions set forth in subsections (a) and (b) unless the intercollegiate athletic association has established rules, bylaws, or other regulations implementing paragraphs (1) through (9) of subsection (a) and paragraphs (1) through (4) of subsection (b)."
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "any similar State antitrust law"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "Section 202 amends the Sports Broadcasting Act of 1961 so the antitrust laws “shall not apply to any joint agreement” of schools or conferences forming one entity to sell their telecast rights, if it “complies with and enforces the requirements of section 5,” among them starting with “not less than 75 percent” of Football Bowl Subdivision schools.",
+              "es": "La sección 202 modifica la Ley de Transmisiones Deportivas de 1961 para que las leyes antimonopolio «no se apliquen a ningún acuerdo conjunto» de universidades o conferencias que formen una sola entidad para vender sus derechos de transmisión, si esa entidad «cumple y hace cumplir los requisitos de la sección 5», entre ellos empezar con «no menos del 75 por ciento» de las universidades de la Football Bowl Subdivision.",
+              "cites": [
+                {
+                  "src": "s4668-es",
+                  "quote": "The antitrust laws, as defined in subsection (a), shall not apply to any joint agreement, by or among institutions engaging in or conducting organized intercollegiate sports, or conferences that have such institutions as members, to form and operate a covered entity that complies with and enforces the requirements of section 5 and sells or otherwise transfers to a third party all or any part of the rights of the institutions or conferences in the sponsored telecasting"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "includes, at a minimum, as of the date on which the joint agreement is entered into, not less than 75 percent of the institutions participating in the Football Bowl Subdivision"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "Section 205 makes it “unlawful under the antitrust laws” for a conference whose main athletic revenue comes from football media rights and that reported over $700,000,000 in revenue on its fiscal year 2025 or later tax return to make certain mergers or acquisitions, which “may not be justified by efficiencies, procompetitive effects, or any other defense.”",
+              "es": "La sección 205 declara «ilegal según las leyes antimonopolio» que una conferencia cuyos principales ingresos deportivos provengan de los derechos de medios del fútbol americano y que haya declarado más de 700.000.000 de dólares de ingresos en su declaración de impuestos del año fiscal 2025 o en una posterior haga ciertas fusiones o adquisiciones, que «no pueden justificarse por eficiencias, efectos procompetitivos ni ninguna otra defensa».",
+              "cites": [
+                {
+                  "src": "s4668-es",
+                  "quote": "It shall be unlawful under the antitrust laws, as defined in section 1(a), for--"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "any covered conference that reported more than $700,000,000 in revenue on its fiscal year 2025 tax return or any subsequent tax return to--"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "may not be justified by efficiencies, procompetitive effects, or any other defense under the antitrust laws"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "means a conference, the primary athletic revenue of which is derived from the sale or transfer of media rights relating to intercollegiate football"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "bank_id": "reg.enforcement",
+          "q": {
+            "en": "Who would enforce it, and how?",
+            "es": "¿Quién la haría cumplir y cómo?"
+          },
+          "claims": [
+            {
+              "kind": "record",
+              "en": "Section 119 of S. 4668, as the Senate passed it, lets a person sue in federal or state court “only for a violation of” sections it lists, among them the name, image and likeness rights (section 101(a) and (c)) and the disclosure, academic, medical, health and safety, transfer and eligibility sections (the last two only in federal court, with limits on who can be sued).",
+              "es": "La sección 119 del S. 4668, tal como lo aprobó el Senado, permite demandar ante un tribunal federal o estatal «solo por una infracción de» las secciones que enumera, entre ellas los derechos de nombre, imagen y semejanza (sección 101(a) y (c)) y las secciones de divulgación, protección académica, cobertura médica, salud y seguridad, traslados y elegibilidad (las dos últimas, solo ante un tribunal federal y con límites sobre a quién se puede demandar).",
+              "cites": [
+                {
+                  "src": "s4668-es",
+                  "quote": "A person may file a civil action in an appropriate district court of the United States or in an appropriate State court only for a violation of the following"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "(1) Subsections (a) and (c) of section 101. (2) Section 104. (3) Section 105. (4) Section 106. (5) Section 107."
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "is filed in an appropriate district court of the United States"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "is filed against a Division I or Division II institution, as defined by bylaw 20 of the National Collegiate Athletic Association as of the date of the enactment of this Act, or an intercollegiate athletic association or a conference comprised of any such institutions"
+                },
+                {
+                  "src": "actions-s4668",
+                  "quote": "2026-09-28 | Passed Senate with an amendment by Yea-Nay Vote. 77 - 22. Record Vote Number: 250. (text: CR S5044-5063)"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "A plaintiff must first give 30 days’ written notice and may not sue if the defendant cures it in that time and says so in writing, except over “physical injury, death, or sexual abuse or misconduct”; under section 119(b), such suits do not limit the bill’s antitrust shield.",
+              "es": "Antes, el demandante debe avisar por escrito con 30 días de anticipación, y no puede demandar si en ese plazo el demandado la corrige y lo declara por escrito, salvo por «lesiones físicas, muerte o abuso o conducta sexual indebida»; según la sección 119(b), esas demandas no limitan la protección antimonopolio del proyecto.",
+              "cites": [
+                {
+                  "src": "s4668-es",
+                  "quote": "the plaintiff provides to the defendant 30 days written notice identifying the specific provisions set forth in subsection (a) that the plaintiff alleges have been or are being violated"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "the defendant cures the violation and provides the plaintiff with an express written statement that the violation has been cured and no such further violation shall occur, an action shall not be permitted"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "Paragraphs (1) and (2) shall not apply to any civil action that is based in whole or in part on allegations of physical injury, death, or sexual abuse or misconduct."
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "The protection from antitrust liability set forth in section 118 shall not be limited by a private right of action filed under subsection (a)."
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "Section 102 adds agent rules to section 3 of the Sports Agent Responsibility and Trust Act, among them a fee cap of “5 percent of the value of the endorsement contract,” and lets athletes sue over them; under that law (2024 U.S. Code), the Federal Trade Commission “shall enforce this chapter,” and a state may sue over a section 3 violation.",
+              "es": "La sección 102 añade reglas para los agentes a la sección 3 de la Ley de Responsabilidad y Confianza de los Agentes Deportivos, entre ellas un límite de honorarios del «5 por ciento del valor del contrato de patrocinio», y permite que los atletas demanden por ellas; según esa ley (Código de EE. UU., edición de 2024), la Comisión Federal de Comercio «hará cumplir este capítulo», y un estado puede demandar por una infracción de la sección 3.",
+              "cites": [
+                {
+                  "src": "s4668-es",
+                  "quote": "in section 3 (15 U.S.C. 7802)"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "charge a student athlete a fee in connection with an endorsement contract that exceeds 5 percent of the value of the endorsement contract"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "Any current or former student athlete alleging a violation of paragraphs (4) through (8) of section 3(a), section 9, or section 10 may bring a civil action"
+                },
+                {
+                  "src": "usc-15-7803",
+                  "quote": "The Commission shall enforce this chapter in the same manner, by the same means, and with the same jurisdiction, powers, and duties as though all applicable terms and provisions of the Federal Trade Commission Act"
+                },
+                {
+                  "src": "usc-15-7801",
+                  "quote": "The term \"Commission\" means the Federal Trade Commission."
+                },
+                {
+                  "src": "usc-15-7804",
+                  "quote": "In any case in which the attorney general of a State has reason to believe that an interest of the residents of that State has been or is threatened or adversely affected by the engagement of any athlete agent in a practice that violates section 7802 of this title, the State may bring a civil action"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "Section 118(b) shields associations and conferences from antitrust liability when they fine schools or restrict eligibility for some violations; section 204 gives the Federal Communications Commission “jurisdiction over complaints” of bad-faith negotiation over local football and basketball broadcasts.",
+              "es": "La sección 118(b) protege a asociaciones y conferencias de la responsabilidad antimonopolio cuando multan a universidades o restringen la elegibilidad por ciertas infracciones; la sección 204 da a la Comisión Federal de Comunicaciones «competencia sobre las denuncias» de negociación de mala fe sobre transmisiones locales de fútbol americano y baloncesto.",
+              "cites": [
+                {
+                  "src": "s4668-es",
+                  "quote": "It shall not be unlawful under the antitrust laws for an intercollegiate athletic association or conference to, including through rules or bylaws-- (1) impose a fine against an institution"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "restrict the eligibility of a student athlete who"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "shall negotiate in good faith to fulfill the requirement of that subsection"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "The Federal Communications Commission shall have jurisdiction over complaints alleging a violation of paragraph (1)."
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "MARKET LEVEL BROADCAST ACCESS FOR COLLEGE FOOTBALL AND BASKETBALL"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "bank_id": "elig.who_qualifies",
+          "q": {
+            "en": "Who qualifies, and what would they get?",
+            "es": "¿Quién cumpliría los requisitos y qué recibiría?"
+          },
+          "claims": [
+            {
+              "kind": "record",
+              "en": "S. 4668, as the Senate passed it, defines a “student athlete” (section 100) as a full-time college student making satisfactory academic progress toward a degree who competes in intercollegiate competition or on a varsity team; some rules cover only Division I, or Divisions I and II.",
+              "es": "El S. 4668, tal como lo aprobó el Senado, define en su sección 100 al «atleta estudiante» como un estudiante universitario de tiempo completo que avanza satisfactoriamente hacia un título y participa en competencias interuniversitarias o en un equipo universitario; algunas reglas solo abarcan la División I, o las Divisiones I y II.",
+              "cites": [
+                {
+                  "src": "s4668-es",
+                  "quote": "The term \"student athlete\" means an individual who is enrolled as a full-time student"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "makes satisfactory academic progress"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "toward completing a degree; and (ii) participates in intercollegiate athletic competition or competes for a varsity sports team"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "This subsection shall apply only to student athletes and prospective student athletes of institutions whose primary membership is in Division I"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "An individual is eligible to participate on a Division I or Division II"
+                },
+                {
+                  "src": "actions-s4668",
+                  "quote": "2026-09-28 | Passed Senate with an amendment by Yea-Nay Vote. 77 - 22. Record Vote Number: 250. (text: CR S5044-5063)"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "Within the bill’s limits, section 101 bars schools, conferences and associations like the NCAA from restricting an athlete’s ability “to market or earn compensation for the value of their name, image, or likeness rights,” and lets schools, collectives and others pay athletes for that use.",
+              "es": "Dentro de los límites del proyecto, la sección 101 prohíbe a universidades, conferencias y asociaciones como la NCAA restringir la capacidad de un atleta «de comercializar u obtener compensación por el valor de sus derechos de nombre, imagen o semejanza», y permite que universidades, colectivos y otros paguen a los atletas por ese uso.",
+              "cites": [
+                {
+                  "src": "s4668-es",
+                  "quote": "Except as provided in this title, an institution, conference, intercollegiate athletic association, or any representative of such an entity may not-- (A) restrict the ability of a student athlete, group of student athletes, or prospective student athlete-- (i) to market or earn compensation for the value of their name, image, or likeness rights"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "the National Collegiate Athletic Association"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "Subject to the requirements of this title, an institution, intercollegiate athletic association, conference, collective, associated entity, or third party, may pay, provide, or facilitate compensation to a student athlete for the use of the name, image, or likeness of the student athlete."
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "Section 114 bars schools in a court-approved settlement, and related entities, from pay that would exceed its “revenue share cap,” though a school meeting academic benchmarks may exceed it, for nine years, by up to $22,500,000 a year to keep athletes after a full season there, plus up to $5,000,000 tied to pay in non-revenue sports; non-school deals need a “valid business purpose.”",
+              "es": "La sección 114 prohíbe a las universidades incluidas en un acuerdo aprobado por un tribunal, y a entidades vinculadas, pagar montos que superen su «tope de reparto de ingresos», aunque una universidad que cumpla ciertos parámetros académicos puede superarlo, durante nueve años, hasta en 22.500.000 de dólares al año para retener a atletas que ya jugaron allí una temporada completa, más hasta 5.000.000 de dólares ligados a pagos en deportes que no generan ingresos; los acuerdos que no sean con una universidad necesitan un «fin comercial válido».",
+              "cites": [
+                {
+                  "src": "s4668-es",
+                  "quote": "compensation in an amount that would circumvent or result in the institution exceeding the revenue share cap"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "means the Benefits Pool Limit set forth in the Injunctive Relief Settlement Agreement approved by the court"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "an institution may exceed the revenue share cap by not more than $22,500,000 per academic year for the purpose of retaining a student athlete or group of student athletes who have spent at least one full competitive season at the institution"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "The exception described in subparagraph (A) shall apply only during the nine-year period beginning on the date of the enactment of this Act."
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "by up to an additional $5,000,000 per academic year in proportion to the amount of name, image, and likeness compensation provided by the institution"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "Except for a name, image, and likeness agreement with an institution, a name, image, and likeness agreement with a student athlete shall be for a valid business purpose."
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "an institution that is a party to, through membership in a conference or otherwise, \"In Re College Athlete NIL Litigation\", No. 20-cv-03919 (N.D. Cal. June 6, 2025), or has opted in to the Injunctive Relief Settlement in that case"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "An institution shall not be eligible for the exception described in subparagraph (A) if the institution fails to meet uniform benchmarks established by the relevant intercollegiate athletic association or conference related to graduation rates and the academic progress of its student athletes"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "Section 106 has Division I schools, among others, pay athletes’ out-of-pocket medical costs for sports injuries while competing and, for those enrolled in their last year of eligibility, for five years after their last competition; section 112 lets an athlete transfer once between four-year schools “without losing or delaying eligibility.”",
+              "es": "La sección 106 obliga a las universidades de la División I, entre otras, a pagar los gastos médicos de bolsillo de los atletas por lesiones deportivas mientras compiten y, para quienes estén inscritos en su último año de elegibilidad, durante cinco años después de su última competencia; la sección 112 permite a un atleta trasladarse una vez entre universidades de cuatro años «sin perder ni retrasar la elegibilidad».",
+              "cites": [
+                {
+                  "src": "s4668-es",
+                  "quote": "all out-of-pocket medical expenses, such as copayments or deductibles, for the health care coverage of a student athlete for any injury or disease incurred through participation in an intercollegiate sport"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "Each Division I institution"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "with respect to a student athlete enrolled at the institution during their last year of eligibility to participate in intercollegiate athletic competition, for the 5- year period beginning on the day after the last intercollegiate competition for the student athlete"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "to transfer from one four-year institution to another four-year institution-- (1) once without losing or delaying eligibility to participate in intercollegiate sports"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "bank_id": "elig.legal_status",
+          "q": {
+            "en": "Would it change anyone's legal status?",
+            "es": "¿Cambiaría la situación legal de alguien?"
+          },
+          "claims": [
+            {
+              "kind": "record",
+              "en": "S. 4668, as the Senate passed it, says in section 122: “This title is neutral on, and does nothing to alter, employee or non-employee status for student athletes”; that section is in title I, which holds the bill’s rules on athletes’ pay, eligibility and transfers.",
+              "es": "El S. 4668, tal como lo aprobó el Senado, dice en su sección 122: «Este título es neutral respecto de la condición de empleado o no empleado de los atletas estudiantes y no la altera en nada»; esa sección está en el título I, que contiene las reglas del proyecto sobre el pago, la elegibilidad y los traslados de los atletas.",
+              "cites": [
+                {
+                  "src": "s4668-es",
+                  "quote": "This title is neutral on, and does nothing to alter, employee or non-employee status for student athletes."
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "TITLE I--PROTECTIONS OF STUDENT ATHLETES AND FAIR COMPETITION"
+                },
+                {
+                  "src": "actions-s4668",
+                  "quote": "2026-09-28 | Passed Senate with an amendment by Yea-Nay Vote. 77 - 22. Record Vote Number: 250. (text: CR S5044-5063)"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "Section 113 makes eligibility for Division I or II teams depend in part on being a “student athlete” who “is not a professional athlete,” and says a basketball player is not a professional because of competing before turning 19 or first enrolling full time, whichever comes first, with a similar rule for some prize money in sports other than football and basketball.",
+              "es": "La sección 113 hace depender la elegibilidad para equipos de las Divisiones I o II, en parte, de ser un «atleta estudiante» que «no es un atleta profesional», y dice que un jugador de baloncesto no es profesional por haber competido antes de cumplir 19 años o de inscribirse por primera vez a tiempo completo, lo que ocurra primero, con una regla parecida para ciertos premios en dinero en deportes distintos del fútbol americano y el baloncesto.",
+              "cites": [
+                {
+                  "src": "s4668-es",
+                  "quote": "An individual is eligible to participate on a Division I or Division II"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "(1) is a student athlete;"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "(3) is not a professional athlete; and"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "a student athlete who competes in basketball shall not be considered a professional athlete based on their participation in athletic competitions prior to, whichever occurs first-- (A) the 19th birthday of the student athlete; or (B) the date the student athlete initially enrolls full time at an institution"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "a student athlete who competes in a sport other than football or basketball shall not be considered a professional athlete based solely on the amount of prize money"
+                }
+              ]
+            },
+            {
+              "kind": "absence",
+              "absence_kind": "not_checked",
+              "en": "We did not check other laws or court rulings on whether college athletes are employees, or on their tax or immigration status; this answer reads only the bill’s text.",
+              "es": "No revisamos otras leyes ni fallos judiciales sobre si los atletas universitarios son empleados, ni sobre su situación fiscal o migratoria; esta respuesta solo lee el texto del proyecto.",
+              "searched": [
+                "s4668-es"
+              ]
+            }
+          ]
+        },
+        {
+          "bank_id": "core.next_step",
+          "q": {
+            "en": "What has to happen next for this to take effect?",
+            "es": "¿Qué tiene que pasar para que esto entre en vigor?"
+          },
+          "claims": [
+            {
+              "kind": "record",
+              "en": "The Senate passed S. 4668, as amended on its floor, 77–22 on September 28, 2026, and the House received it on October 5; as of November 24, 2026, its latest action is “Held at the desk,” and the record shows no House vote on it.",
+              "es": "El Senado aprobó el S. 4668, con las enmiendas hechas en el pleno, por 77–22 el 28 de septiembre de 2026, y la Cámara lo recibió el 5 de octubre; al 24 de noviembre de 2026, su última acción es «Retenido en la mesa», y el expediente no muestra ninguna votación de la Cámara sobre él.",
+              "cites": [
+                {
+                  "src": "actions-s4668",
+                  "quote": "2026-09-28 | Passed Senate with an amendment by Yea-Nay Vote. 77 - 22. Record Vote Number: 250. (text: CR S5044-5063)"
+                },
+                {
+                  "src": "vote-s-119-2-250",
+                  "quote": "vote_result_text | Bill Passed (77-22)"
+                },
+                {
+                  "src": "actions-s4668",
+                  "quote": "2026-10-05 | Received in the House."
+                },
+                {
+                  "src": "bill-s4668",
+                  "quote": "latestAction | 2026-10-05 | Held at the desk."
+                }
+              ]
+            },
+            {
+              "kind": "analysis",
+              "en": "The Congressional Research Service, in a report updated November 19, 2025, says “A bill must be agreed to by both chambers in the same form before it can be presented to the President,” and the House Parliamentarian’s 2007 guide says that if the House passes an amended version of a Senate bill, “the bill is returned to the Senate for action on the House amendments.”",
+              "es": "El Servicio de Investigación del Congreso, en un informe actualizado el 19 de noviembre de 2025, dice que «un proyecto debe ser aprobado por ambas cámaras en la misma forma antes de poder presentarse al Presidente», y la guía de 2007 del Parlamentario de la Cámara dice que, si la Cámara aprueba una versión enmendada de un proyecto del Senado, «el proyecto se devuelve al Senado para que actúe sobre las enmiendas de la Cámara».",
+              "cites": [
+                {
+                  "src": "crs-r42843",
+                  "quote": "Updated November 19, 2025 (R42843)"
+                },
+                {
+                  "src": "crs-r42843",
+                  "quote": "A bill must be agreed to by both chambers in the same form before it can be presented to the President."
+                },
+                {
+                  "src": "holam-2007",
+                  "quote": "July 24, 2007"
+                },
+                {
+                  "src": "holam-2007",
+                  "quote": "If the House passes an amended version of the Senate bill, the bill is returned to the Senate for action on the House amendments."
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "Under the Constitution, a bill that has “passed the House of Representatives and the Senate” is “presented to the President,” who signs it or returns it with objections; a returned bill becomes law only if “two thirds” of each chamber pass it again, and a bill not returned “within ten Days (Sundays excepted)” becomes law unless Congress’s adjournment prevents its return.",
+              "es": "Según la Constitución, un proyecto «aprobado por la Cámara de Representantes y el Senado» se «presenta al Presidente», que lo firma o lo devuelve con sus objeciones; un proyecto devuelto solo se convierte en ley si «dos tercios» de cada cámara vuelven a aprobarlo, y un proyecto que no se devuelve «dentro de diez días (sin contar los domingos)» se convierte en ley, salvo que el aplazamiento del Congreso impida su devolución.",
+              "cites": [
+                {
+                  "src": "constitution",
+                  "quote": "Every Bill which shall have passed the House of Representatives and the Senate, shall, before it become a Law, be presented to the President of the United States; If he approve he shall sign it, but if not he shall return it, with his Objections"
+                },
+                {
+                  "src": "constitution",
+                  "quote": "If after such Reconsideration two thirds of that House shall agree to pass the Bill, it shall be sent, together with the Objections, to the other House, by which it shall likewise be reconsidered, and if approved by two thirds of that House, it shall become a Law."
+                },
+                {
+                  "src": "constitution",
+                  "quote": "If any Bill shall not be returned by the President within ten Days (Sundays excepted) after it shall have been presented to him, the Same shall be a Law, in like Manner as if he had signed it, unless the Congress by their Adjournment prevent its Return, in which Case it shall not be a Law."
+                }
+              ]
+            },
+            {
+              "kind": "analysis",
+              "en": "The same report says bills “may become law if enacted during the two-year Congress in which they were introduced”; S. 4668 was introduced on June 2, 2026, in the 119th Congress, whose Senate passage vote is recorded in session 2, and the House guide says a Congress “is divided into two regular sessions.”",
+              "es": "El mismo informe dice que los proyectos «pueden convertirse en ley si se promulgan durante el Congreso de dos años en que se presentaron»; el S. 4668 se presentó el 2 de junio de 2026, en el 119.º Congreso, cuya votación de aprobación en el Senado consta en la sesión 2, y la guía de la Cámara dice que un Congreso «se divide en dos sesiones ordinarias».",
+              "cites": [
+                {
+                  "src": "crs-r42843",
+                  "quote": "Bills and joint resolutions may become law if enacted during the two-year Congress in which they were introduced."
+                },
+                {
+                  "src": "actions-s4668",
+                  "quote": "2026-06-02 | Introduced in Senate"
+                },
+                {
+                  "src": "bill-s4668",
+                  "quote": "congress | 119"
+                },
+                {
+                  "src": "vote-s-119-2-250",
+                  "quote": "session | 2"
+                },
+                {
+                  "src": "holam-2007",
+                  "quote": "A Congress lasts for two years, commencing in January of the year following the biennial election of Members. A Congress is divided into two regular sessions."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "annual-defense-policy": {
+      "written": "2026-11-24",
+      "record_as_of": "2026-11-24",
+      "model": "claude-opus-5-5",
+      "type": "defense_authorization",
+      "rewritten_nightly": false,
+      "sources": {
+        "crs-if10515": {
+          "kind": "analysis",
+          "url": "https://www.congress.gov/crs_external_products/IF/HTML/IF10515.html",
+          "title": {
+            "en": "Congressional Research Service, In Focus IF10515, “Defense Primer: The NDAA Process” (updated Dec. 4, 2025)",
+            "es": "Servicio de Investigación del Congreso, In Focus IF10515, guía sobre el proceso de la NDAA (actualizada el 4 de diciembre de 2025, en inglés)"
+          }
+        },
+        "hrpt-119-698": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/CRPT-119hrpt698/html/CRPT-119hrpt698.htm",
+          "title": {
+            "en": "H. Rept. 119-698, the House Armed Services Committee’s report on H.R. 8800",
+            "es": "Informe de la Cámara 119-698, de la Comisión de Servicios Armados, sobre la H.R. 8800 (en inglés)"
+          }
+        },
+        "srpt-119-127": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/CRPT-119srpt127/html/CRPT-119srpt127.htm",
+          "title": {
+            "en": "S. Rept. 119-127, the Senate Armed Services Committee’s report on S. 4784",
+            "es": "Informe del Senado 119-127, de la Comisión de Servicios Armados, sobre el S. 4784 (en inglés)"
+          }
+        },
+        "hr8800-eh": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/BILLS-119hr8800eh/html/BILLS-119hr8800eh.htm",
+          "title": {
+            "en": "H.R. 8800 as passed by the House, text",
+            "es": "H.R. 8800 tal como la aprobó la Cámara, texto (en inglés)"
+          }
+        },
+        "s4784-rs": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/BILLS-119s4784rs/html/BILLS-119s4784rs.htm",
+          "title": {
+            "en": "S. 4784 as reported to the Senate, text",
+            "es": "S. 4784 tal como se presentó al Senado, texto (en inglés)"
+          }
+        },
+        "bill-hr9495": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/house-bill/9495",
+          "title": {
+            "en": "H.R. 9495, official bill record",
+            "es": "H.R. 9495, registro oficial del proyecto (en inglés)"
+          }
+        },
+        "actions-hr9495": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/house-bill/9495/all-actions",
+          "title": {
+            "en": "H.R. 9495, official actions",
+            "es": "H.R. 9495, acciones oficiales (en inglés)"
+          }
+        },
+        "actions-hr8800": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/house-bill/8800/all-actions",
+          "title": {
+            "en": "H.R. 8800, official actions",
+            "es": "H.R. 8800, acciones oficiales (en inglés)"
+          }
+        },
+        "bill-hr8800": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/house-bill/8800",
+          "title": {
+            "en": "H.R. 8800, official bill record",
+            "es": "H.R. 8800, registro oficial del proyecto (en inglés)"
+          }
+        },
+        "house-roll-278": {
+          "kind": "record",
+          "url": "https://clerk.house.gov/evs/2026/roll278.xml",
+          "title": {
+            "en": "Clerk of the House, roll call 278 of 2026",
+            "es": "Secretaría de la Cámara, votación nominal 278 de 2026 (en inglés)"
+          }
+        },
+        "actions-s4784": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/senate-bill/4784/all-actions",
+          "title": {
+            "en": "S. 4784, official actions",
+            "es": "S. 4784, acciones oficiales (en inglés)"
+          }
+        },
+        "bill-s4784": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/senate-bill/4784",
+          "title": {
+            "en": "S. 4784, official bill record",
+            "es": "S. 4784, registro oficial del proyecto (en inglés)"
+          }
+        },
+        "senate-vote-195": {
+          "kind": "record",
+          "url": "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00195.xml",
+          "title": {
+            "en": "U.S. Senate, roll call vote 195, 119th Congress, 2nd session",
+            "es": "Senado de EE. UU., votación nominal 195 del 119.º Congreso, 2.ª sesión (en inglés)"
+          }
+        },
+        "constitution": {
+          "kind": "record",
+          "url": "https://www.archives.gov/founding-docs/constitution-transcript",
+          "title": {
+            "en": "U.S. Constitution, Article I, Section 7",
+            "es": "Constitución de EE. UU., artículo I, sección 7 (en inglés)"
+          }
+        },
+        "sap-hr8800": {
+          "kind": "record",
+          "url": "https://www.whitehouse.gov/wp-content/uploads/2026/07/SAP-HR8800.pdf",
+          "title": {
+            "en": "Office of Management and Budget, Statement of Administration Policy on H.R. 8800 (July 21, 2026)",
+            "es": "Oficina de Administración y Presupuesto, declaración de política del Gobierno sobre la H.R. 8800 (21 de julio de 2026, en inglés)"
+          }
+        },
+        "sap-list": {
+          "kind": "record",
+          "url": "https://www.whitehouse.gov/omb/statements-of-administration-policy/",
+          "title": {
+            "en": "Office of Management and Budget, list of Statements of Administration Policy (as fetched November 24, 2026)",
+            "es": "Oficina de Administración y Presupuesto, lista de declaraciones de política del Gobierno (consultada el 24 de noviembre de 2026, en inglés)"
+          }
+        }
+      },
+      "picks": [
+        {
+          "bank_id": "def.topline",
+          "q": {
+            "en": "How much does it authorize, and for what?",
+            "es": "¿Cuánto autoriza y para qué?"
+          },
+          "claims": [
+            {
+              "kind": "analysis",
+              "en": "A Congressional Research Service primer, updated December 4, 2025, says the National Defense Authorization Act “provides authorization of appropriations for the Department of Defense (DOD), nuclear weapons programs of the Department of Energy, and other defense-related activities” and that, “Unlike an appropriations bill, the NDAA does not provide budget authority for government activities.”",
+              "es": "Una guía del Servicio de Investigación del Congreso, actualizada el 4 de diciembre de 2025, dice que la Ley de Autorización de Defensa Nacional «autoriza asignaciones para el Departamento de Defensa (DOD), los programas de armas nucleares del Departamento de Energía y otras actividades relacionadas con la defensa» y que, «a diferencia de un proyecto de asignaciones, la NDAA no otorga autoridad presupuestaria para las actividades del gobierno».",
+              "cites": [
+                {
+                  "src": "crs-if10515",
+                  "quote": "The National Defense Authorization Act (NDAA) provides authorization of appropriations for the Department of Defense (DOD), nuclear weapons programs of the Department of Energy, and other defense-related activities."
+                },
+                {
+                  "src": "crs-if10515",
+                  "quote": "Unlike an appropriations bill, the NDAA does not provide budget authority for government activities."
+                },
+                {
+                  "src": "crs-if10515",
+                  "quote": "Updated December 4, 2025"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "For H.R. 8800 as the House Armed Services Committee reported it on June 15, 2026, the committee’s report recommends “an overall discretionary authorization for national defense programs of $1.15 trillion for fiscal year 2027” and says the bill authorizes $1.14 trillion for programs within the committee’s jurisdiction.",
+              "es": "Para la H.R. 8800 tal como la presentó la Comisión de Servicios Armados de la Cámara el 15 de junio de 2026, el informe de la comisión recomienda «una autorización discrecional total para los programas de defensa nacional de 1,15 billones de dólares para el año fiscal 2027» y dice que el proyecto autoriza 1,14 billones de dólares para los programas bajo la jurisdicción de la comisión.",
+              "cites": [
+                {
+                  "src": "hrpt-119-698",
+                  "quote": "June 15, 2026.--Committed to the Committee of the Whole House on the State of the Union and ordered to be printed"
+                },
+                {
+                  "src": "hrpt-119-698",
+                  "quote": "The committee recommends an overall discretionary authorization for national defense programs of $1.15 trillion for fiscal year 2027 and authorizes $1.14 trillion for fiscal year for programs within its jurisdiction."
+                },
+                {
+                  "src": "hrpt-119-698",
+                  "quote": "The bill authorizes $1.14 trillion of discretionary funding to support national defense requirements."
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "For S. 4784 as the Senate Armed Services Committee reported it on June 15, 2026, that committee’s report “recommends an overall discretionary authorization of $1,140.1 billion in fiscal year 2027, including $1,099.0 billion for base DOD programs, $41.1 billion for national security programs in the DOE, and $11.9 billion for defense-related activities outside the jurisdiction of the NDAA.”",
+              "es": "Para el S. 4784 tal como lo presentó la Comisión de Servicios Armados del Senado el 15 de junio de 2026, el informe de esa comisión «recomienda una autorización discrecional total de 1.140,1 miles de millones de dólares en el año fiscal 2027, incluidos 1.099,0 miles de millones para los programas básicos del DOD, 41,1 miles de millones para los programas de seguridad nacional del DOE y 11,9 miles de millones para actividades relacionadas con la defensa fuera de la jurisdicción de la NDAA».",
+              "cites": [
+                {
+                  "src": "srpt-119-127",
+                  "quote": "June 15, 2026.--Ordered to be printed"
+                },
+                {
+                  "src": "srpt-119-127",
+                  "quote": "The committee recommends an overall discretionary authorization of $1,140.1 billion in fiscal year 2027, including $1,099.0 billion for base DOD programs, $41.1 billion for national security programs in the DOE, and $11.9 billion for defense-related activities outside the jurisdiction of the NDAA."
+                }
+              ]
+            },
+            {
+              "kind": "absence",
+              "absence_kind": "not_checked",
+              "en": "We did not add up the funding tables in the text the House passed, so this answer does not say whether the House’s floor amendments changed its committee’s figures.",
+              "es": "No revisamos ni sumamos las tablas de fondos del texto que aprobó la Cámara, así que esta respuesta no dice si las enmiendas aprobadas en el pleno de la Cámara cambiaron las cifras de su comisión.",
+              "searched": [
+                "hr8800-eh",
+                "hrpt-119-698"
+              ]
+            }
+          ]
+        },
+        {
+          "bank_id": "sp.duration",
+          "q": {
+            "en": "How long would the funding last?",
+            "es": "¿Cuánto tiempo duraría el financiamiento?"
+          },
+          "claims": [
+            {
+              "kind": "analysis",
+              "en": "A Congressional Research Service primer, updated December 4, 2025, says “Unlike an appropriations bill, the NDAA does not provide budget authority for government activities.”",
+              "es": "Una guía del Servicio de Investigación del Congreso, actualizada el 4 de diciembre de 2025, dice: «A diferencia de un proyecto de asignaciones, la NDAA no otorga autoridad presupuestaria para las actividades del gobierno».",
+              "cites": [
+                {
+                  "src": "crs-if10515",
+                  "quote": "Unlike an appropriations bill, the NDAA does not provide budget authority for government activities."
+                },
+                {
+                  "src": "crs-if10515",
+                  "quote": "Updated December 4, 2025"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "Section 101 of H.R. 8800 as the House passed it, and of S. 4784 as its committee reported it, says “Funds are hereby authorized to be appropriated for fiscal year 2027” for procurement, and section 421 of each says the same for military personnel.",
+              "es": "La sección 101 de la H.R. 8800, tal como la aprobó la Cámara, y del S. 4784, tal como lo presentó su comisión, dice «se autoriza la asignación de fondos para el año fiscal 2027» para adquisiciones, y la sección 421 de cada uno dice lo mismo para el personal militar.",
+              "cites": [
+                {
+                  "src": "hr8800-eh",
+                  "quote": "SEC. 101. AUTHORIZATION OF APPROPRIATIONS. Funds are hereby authorized to be appropriated for fiscal year 2027 for procurement for the Army"
+                },
+                {
+                  "src": "s4784-rs",
+                  "quote": "SEC. 101. AUTHORIZATION OF APPROPRIATIONS. Funds are hereby authorized to be appropriated for fiscal year 2027 for procurement for the Army"
+                },
+                {
+                  "src": "hr8800-eh",
+                  "quote": "SEC. 421. MILITARY PERSONNEL. (a) Authorization of Appropriations.--Funds are hereby authorized to be appropriated for fiscal year 2027 for the use of the Armed Forces"
+                },
+                {
+                  "src": "s4784-rs",
+                  "quote": "SEC. 421. MILITARY PERSONNEL. (a) Authorization of Appropriations.--Funds are hereby authorized to be appropriated for fiscal year 2027 for the use of the Armed Forces"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "Section 2002 of each bill says its authorizations in titles XXI through XXVII for military construction, land acquisition, family housing and related purposes “shall expire on the later of” October 1, 2029, or the enactment of a law authorizing military construction funds for fiscal year 2030, except those for which appropriated funds have been obligated before then.",
+              "es": "La sección 2002 de cada proyecto dice que sus autorizaciones de los títulos XXI a XXVII para construcción militar, adquisición de terrenos, viviendas familiares y fines relacionados «vencerán en la fecha más tardía» entre el 1 de octubre de 2029 y la promulgación de una ley que autorice fondos de construcción militar para el año fiscal 2030, salvo aquellas para las que se hayan comprometido fondos asignados antes de esa fecha.",
+              "cites": [
+                {
+                  "src": "hr8800-eh",
+                  "quote": "SEC. 2002. EXPIRATION OF AUTHORIZATIONS AND AMOUNTS REQUIRED TO BE SPECIFIED BY LAW. (a) Expiration of Authorizations After Three Years.--Except as provided in subsection (b), all authorizations contained in titles XXI through XXVII for military construction projects"
+                },
+                {
+                  "src": "hr8800-eh",
+                  "quote": "shall expire on the later of-- (1) October 1, 2029; or (2) the date of the enactment of an Act authorizing funds for military construction for fiscal year 2030."
+                },
+                {
+                  "src": "hr8800-eh",
+                  "quote": "for which appropriated funds have been obligated before the later of"
+                },
+                {
+                  "src": "s4784-rs",
+                  "quote": "SEC. 2002. EXPIRATION OF AUTHORIZATIONS AND AMOUNTS REQUIRED TO BE SPECIFIED BY LAW. (a) Expiration of Authorizations After Three Years.--Except as provided in subsection (b), all authorizations contained in titles XXI through XXVII for military construction projects"
+                },
+                {
+                  "src": "s4784-rs",
+                  "quote": "shall expire on the later of-- (1) October 1, 2029; or (2) the date of the enactment of an Act authorizing funds for military construction for fiscal year 2030."
+                },
+                {
+                  "src": "s4784-rs",
+                  "quote": "for which appropriated funds have been obligated before the later of"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "Defense appropriations come in separate bills; one, H.R. 9495, the “Department of Defense Appropriations Act, 2027,” was reported by the House Appropriations Committee and placed on the House calendar on June 26, 2026, and its record shows no later action as of November 24, 2026.",
+              "es": "Las asignaciones de defensa llegan en proyectos aparte; uno, la H.R. 9495, la «Ley de Asignaciones del Departamento de Defensa, 2027», fue presentada por la Comisión de Asignaciones de la Cámara e incluida en el calendario de la Cámara el 26 de junio de 2026, y, al 24 de noviembre de 2026, su expediente no muestra ninguna acción posterior.",
+              "cites": [
+                {
+                  "src": "bill-hr9495",
+                  "quote": "title | Department of Defense Appropriations Act, 2027"
+                },
+                {
+                  "src": "actions-hr9495",
+                  "quote": "2026-06-26 | Placed on the Union Calendar, Calendar No. 621."
+                },
+                {
+                  "src": "actions-hr9495",
+                  "quote": "2026-06-26 | The House Committee on Appropriations reported an original measure, H. Rept. 119-715"
+                },
+                {
+                  "src": "bill-hr9495",
+                  "quote": "latestAction | 2026-06-26 | Placed on the Union Calendar, Calendar No. 621."
+                }
+              ]
+            },
+            {
+              "kind": "absence",
+              "absence_kind": "not_checked",
+              "en": "We did not search either bill’s full text for other start or end dates, so this answer lists only the periods above.",
+              "es": "No buscamos otras fechas de inicio o de fin en el texto completo de ninguno de los dos proyectos, así que esta respuesta solo menciona los plazos anteriores.",
+              "searched": [
+                "hr8800-eh",
+                "s4784-rs"
+              ]
+            }
+          ]
+        },
+        {
+          "bank_id": "core.next_step",
+          "q": {
+            "en": "What has to happen next for this to take effect?",
+            "es": "¿Qué tiene que pasar para que esto entre en vigor?"
+          },
+          "claims": [
+            {
+              "kind": "record",
+              "en": "The House passed H.R. 8800 216–212 on July 22, 2026, and the Senate received it on September 14; as of November 24, 2026, its record shows no Senate action on it since.",
+              "es": "La Cámara aprobó la H.R. 8800 216–212 el 22 de julio de 2026, y el Senado la recibió el 14 de septiembre; al 24 de noviembre de 2026, su expediente no muestra ninguna acción del Senado sobre ella desde entonces.",
+              "cites": [
+                {
+                  "src": "actions-hr8800",
+                  "quote": "2026-07-22 | On passage Passed by the Yeas and Nays: 216 - 212 (Roll no. 278)."
+                },
+                {
+                  "src": "house-roll-278",
+                  "quote": "Totals 216 212 0 3"
+                },
+                {
+                  "src": "actions-hr8800",
+                  "quote": "2026-09-14 | Received in the Senate."
+                },
+                {
+                  "src": "bill-hr8800",
+                  "quote": "latestAction | 2026-09-14 | Received in the Senate."
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "For S. 4784, the Senate committee’s own bill, the cloture vote on the motion to take it up, which is not a vote on passing it, was “Rejected (50-46, 3/5 majority required)” on July 14, 2026; a motion to reconsider that vote was entered the same day, and as of November 24, 2026, the bill’s latest action is a motion to proceed made on July 27.",
+              "es": "En el caso del S. 4784, el proyecto propio de la comisión del Senado, la votación de cierre del debate sobre la moción para considerarlo, que no es una votación para aprobarlo, fue «rechazada (50-46, se requiere mayoría de 3/5)» el 14 de julio de 2026; ese mismo día se presentó una moción para reconsiderar esa votación, y al 24 de noviembre de 2026, la acción más reciente del proyecto es una moción para proceder presentada el 27 de julio.",
+              "cites": [
+                {
+                  "src": "senate-vote-195",
+                  "quote": "On Cloture on the Motion to Proceed S. 4784"
+                },
+                {
+                  "src": "senate-vote-195",
+                  "quote": "Cloture on the Motion to Proceed Rejected (50-46, 3/5 majority required)"
+                },
+                {
+                  "src": "senate-vote-195",
+                  "quote": "July 14, 2026"
+                },
+                {
+                  "src": "actions-s4784",
+                  "quote": "2026-07-14 | Motion by Senator Thune to reconsider the vote by which cloture on the motion to proceed to the measure was not invoked (Record Vote No. 195) entered in Senate."
+                },
+                {
+                  "src": "bill-s4784",
+                  "quote": "latestAction | 2026-07-27 | Motion to proceed to consideration of measure made in Senate. (CR S4276)"
+                }
+              ]
+            },
+            {
+              "kind": "analysis",
+              "en": "A Congressional Research Service primer, updated December 4, 2025, says reaching a final Senate vote may require “one or more cloture processes (by which three-fifths of the Senate, typically 60 Senators, votes to limit consideration),” and that “The Constitution requires that the House and Senate approve the same bill in precisely the same form before it is presented to the President,” so a change by either chamber needs the other’s agreement.",
+              "es": "Una guía del Servicio de Investigación del Congreso, actualizada el 4 de diciembre de 2025, dice que para llegar a una votación final en el Senado pueden hacer falta «uno o más procesos de cierre del debate (en los que tres quintos del Senado, por lo general 60 senadores, votan para limitar la consideración)», y que «la Constitución exige que la Cámara y el Senado aprueben el mismo proyecto exactamente en la misma forma antes de presentarlo al Presidente», así que un cambio de cualquiera de las dos cámaras necesita el acuerdo de la otra.",
+              "cites": [
+                {
+                  "src": "crs-if10515",
+                  "quote": "However, one or more cloture processes (by which three-fifths of the Senate, typically 60 Senators, votes to limit consideration) may be necessary to reach a final vote on certain amendments, and on the bill itself."
+                },
+                {
+                  "src": "crs-if10515",
+                  "quote": "The Constitution requires that the House and Senate approve the same bill in precisely the same form before it is presented to the President."
+                },
+                {
+                  "src": "crs-if10515",
+                  "quote": "Updated December 4, 2025"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "Under the Constitution, the President then signs the bill or returns it with objections; a returned bill becomes law only if “two thirds” of each chamber agree to pass it again, and one not returned “within ten Days (Sundays excepted)” becomes law unless Congress’s adjournment prevents its return.",
+              "es": "Según la Constitución, el Presidente luego firma el proyecto o lo devuelve con sus objeciones; un proyecto devuelto solo se convierte en ley si «dos tercios» de cada cámara vuelven a aprobarlo, y uno que no se devuelve «dentro de diez días (sin contar los domingos)» se convierte en ley, salvo que el aplazamiento del Congreso impida su devolución.",
+              "cites": [
+                {
+                  "src": "constitution",
+                  "quote": "If he approve he shall sign it, but if not he shall return it, with his Objections to that House in which it shall have originated"
+                },
+                {
+                  "src": "constitution",
+                  "quote": "If after such Reconsideration two thirds of that House shall agree to pass the Bill"
+                },
+                {
+                  "src": "constitution",
+                  "quote": "If any Bill shall not be returned by the President within ten Days (Sundays excepted) after it shall have been presented to him, the Same shall be a Law, in like Manner as if he had signed it, unless the Congress by their Adjournment prevent its Return, in which Case it shall not be a Law."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "bank_id": "core.veto",
+          "q": {
+            "en": "Would it go to the President, and what happens if it is vetoed?",
+            "es": "¿Llegaría al Presidente y qué pasa si lo veta?"
+          },
+          "claims": [
+            {
+              "kind": "record",
+              "en": "Both measures are bills: the House committee’s report calls H.R. 8800 “the bill (H.R. 8800),” and S. 4784 is “An original bill to authorize appropriations for fiscal year 2027,” so either one, once both chambers pass it in the same form, would be presented to the President.",
+              "es": "Las dos medidas son proyectos de ley: el informe de la comisión de la Cámara llama a la H.R. 8800 «el proyecto (H.R. 8800)», y el S. 4784 es «un proyecto original para autorizar asignaciones para el año fiscal 2027», así que cualquiera de los dos, una vez que ambas cámaras lo aprueben en la misma forma, se presentaría al Presidente.",
+              "cites": [
+                {
+                  "src": "hrpt-119-698",
+                  "quote": "The Committee on Armed Services, to whom was referred the bill (H.R. 8800) to authorize appropriations for fiscal year 2027"
+                },
+                {
+                  "src": "bill-s4784",
+                  "quote": "An original bill to authorize appropriations for fiscal year 2027 for military activities of the Department of Defense"
+                },
+                {
+                  "src": "constitution",
+                  "quote": "Every Bill which shall have passed the House of Representatives and the Senate, shall, before it become a Law, be presented to the President of the United States"
+                },
+                {
+                  "src": "crs-if10515",
+                  "quote": "The Constitution requires that the House and Senate approve the same bill in precisely the same form before it is presented to the President."
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "Under the Constitution, the President signs a bill or returns it with objections; a returned bill becomes law only if “two thirds” of each chamber agree to pass it again, and a bill not returned “within ten Days (Sundays excepted)” becomes law unless Congress’s adjournment prevents its return.",
+              "es": "Según la Constitución, el Presidente firma un proyecto o lo devuelve con sus objeciones; un proyecto devuelto solo se convierte en ley si «dos tercios» de cada cámara vuelven a aprobarlo, y un proyecto que no se devuelve «dentro de diez días (sin contar los domingos)» se convierte en ley, salvo que el aplazamiento del Congreso impida su devolución.",
+              "cites": [
+                {
+                  "src": "constitution",
+                  "quote": "If he approve he shall sign it, but if not he shall return it, with his Objections to that House in which it shall have originated"
+                },
+                {
+                  "src": "constitution",
+                  "quote": "If after such Reconsideration two thirds of that House shall agree to pass the Bill"
+                },
+                {
+                  "src": "constitution",
+                  "quote": "If any Bill shall not be returned by the President within ten Days (Sundays excepted) after it shall have been presented to him, the Same shall be a Law, in like Manner as if he had signed it, unless the Congress by their Adjournment prevent its Return, in which Case it shall not be a Law."
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "In a statement dated July 21, 2026, on H.R. 8800 in the House, the White House Office of Management and Budget said “The Administration appreciates the inclusion of numerous provisions that codify or support actions taken by the President and the Administration” and that it “has a number of concerns with certain provisions in H.R. 8800.”",
+              "es": "En una declaración fechada el 21 de julio de 2026 sobre la H.R. 8800 en la Cámara, la Oficina de Administración y Presupuesto de la Casa Blanca dijo que «el Gobierno valora la inclusión de numerosas disposiciones que codifican o respaldan medidas tomadas por el Presidente y el Gobierno» y que «tiene varias inquietudes sobre ciertas disposiciones de la H.R. 8800».",
+              "cites": [
+                {
+                  "src": "sap-hr8800",
+                  "quote": "July 21, 2026 (House) STATEMENT OF ADMINISTRATION POLICY H.R. 8800 – National Defense Authorization Act for Fiscal Year 2027"
+                },
+                {
+                  "src": "sap-hr8800",
+                  "quote": "The Administration appreciates the inclusion of numerous provisions that codify or support actions taken by the President and the Administration."
+                },
+                {
+                  "src": "sap-hr8800",
+                  "quote": "the Administration has a number of concerns with certain provisions in H.R. 8800, several of which are set out below."
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "It added “The Administration expects to work with Congress to ensure these concerns are addressed before the NDAA for FY 2027 is presented to the President.”",
+              "es": "Añadió: «El Gobierno espera trabajar con el Congreso para asegurar que estas inquietudes se atiendan antes de que la NDAA del año fiscal 2027 se presente al Presidente».",
+              "cites": [
+                {
+                  "src": "sap-hr8800",
+                  "quote": "The Administration expects to work with Congress to ensure these concerns are addressed before the NDAA for FY 2027 is presented to the President."
+                }
+              ]
+            },
+            {
+              "kind": "absence",
+              "absence_kind": "not_found",
+              "en": "We found no use of the word veto in that statement, and no statement on S. 4784 in the White House’s list of these statements as fetched on November 24, 2026.",
+              "es": "No encontramos la palabra veto en esa declaración, ni ninguna declaración sobre el S. 4784 en la lista de estas declaraciones de la Casa Blanca, consultada el 24 de noviembre de 2026.",
+              "searched": [
+                "sap-hr8800",
+                "sap-list"
+              ],
+              "absent": [
+                "veto",
+                "4784"
+              ]
+            }
+          ]
+        },
+        {
+          "bank_id": "core.cost",
+          "q": {
+            "en": "What would it cost, and who made that estimate?",
+            "es": "¿Cuánto costaría y quién hizo ese cálculo?"
+          },
+          "claims": [
+            {
+              "kind": "analysis",
+              "en": "A Congressional Research Service primer, updated December 4, 2025, says “Unlike an appropriations bill, the NDAA does not provide budget authority for government activities.”",
+              "es": "Una guía del Servicio de Investigación del Congreso, actualizada el 4 de diciembre de 2025, dice: «A diferencia de un proyecto de asignaciones, la NDAA no otorga autoridad presupuestaria para las actividades del gobierno».",
+              "cites": [
+                {
+                  "src": "crs-if10515",
+                  "quote": "Unlike an appropriations bill, the NDAA does not provide budget authority for government activities."
+                },
+                {
+                  "src": "crs-if10515",
+                  "quote": "Updated December 4, 2025"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "The official bill records list a Congressional Budget Office estimate of H.R. 8800 “As reported by the House Committee on Armed Services on June 15, 2026,” published June 26, 2026, and one of S. 4784 “As reported by the Senate Committee on Armed Services on June 15, 2026,” published September 28, 2026.",
+              "es": "Los registros oficiales de los proyectos incluyen una estimación de la Oficina de Presupuesto del Congreso de la H.R. 8800 «tal como la presentó la Comisión de Servicios Armados de la Cámara el 15 de junio de 2026», publicada el 26 de junio de 2026, y otra del S. 4784 «tal como lo presentó la Comisión de Servicios Armados del Senado el 15 de junio de 2026», publicada el 28 de septiembre de 2026.",
+              "cites": [
+                {
+                  "src": "bill-hr8800",
+                  "quote": "cboCostEstimate | 2026-06-26T15:34:00Z | H.R. 8800, the National Defense Authorization Act for Fiscal Year 2027 | As reported by the House Committee on Armed Services on June 15, 2026 | https://www.cbo.gov/publication/62540"
+                },
+                {
+                  "src": "bill-s4784",
+                  "quote": "cboCostEstimate | 2026-09-28T18:40:00Z | S. 4784, the National Defense Authorization Act for Fiscal Year 2027 | As reported by the Senate Committee on Armed Services on June 15, 2026 | https://www.cbo.gov/publication/62781"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "An earlier CBO letter dated June 11, 2026, printed in the House committee’s report, covers the version that committee ordered reported on June 4 and says “Enacting the bill would have an insignificant net effect on direct spending and revenues each year and in total over the 2027-2036 period, CBO estimates.”",
+              "es": "Una carta anterior de la CBO fechada el 11 de junio de 2026, publicada en el informe de la comisión de la Cámara, trata la versión que esa comisión ordenó presentar el 4 de junio y dice: «Aprobar el proyecto tendría un efecto neto insignificante en el gasto directo y en los ingresos cada año y en total durante el período 2027-2036, según estima la CBO».",
+              "cites": [
+                {
+                  "src": "hrpt-119-698",
+                  "quote": "June 11, 2026. Re: Direct Spending and Revenue Effects of H.R. 8800, the National Defense Authorization Act for Fiscal Year 2027"
+                },
+                {
+                  "src": "hrpt-119-698",
+                  "quote": "as ordered reported by the House Committee on Armed Services on June 4, 2026."
+                },
+                {
+                  "src": "hrpt-119-698",
+                  "quote": "Enacting the bill would have an insignificant net effect on direct spending and revenues each year and in total over the 2027-2036 period, CBO estimates."
+                }
+              ]
+            },
+            {
+              "kind": "absence",
+              "absence_kind": "not_checked",
+              "en": "We were unable to retrieve either full estimate, because cbo.gov refused our automated requests, so this answer gives no CBO figure for what the amounts these bills authorize would cost if appropriated.",
+              "es": "No pudimos consultar ninguna de las dos estimaciones completas, porque cbo.gov rechazó nuestras solicitudes automáticas, así que esta respuesta no da ninguna cifra de la CBO sobre lo que costarían, si se asignaran, las sumas que autorizan estos proyectos.",
+              "searched": [
+                "bill-hr8800",
+                "bill-s4784"
+              ]
+            }
+          ]
+        }
+      ]
     }
   }
 }

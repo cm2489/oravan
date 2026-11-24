@@ -23,19 +23,32 @@ const MOMENTS = read('data/moments.json');
 const MID = 'government-funding-deadline';
 const clone = () => JSON.parse(JSON.stringify(FILE));
 
+// A source that is a roll call's data file is linked as the chamber's readable
+// page, never as the raw file (tests/timeline-record-links.spec.ts holds every
+// Big Question page to that in a browser; this pins the one line that does it).
+test('the drop-downs link a roll call as its readable page', () => {
+  const src = readFileSync(join(process.cwd(), 'components/ReaderQuestions.tsx'), 'utf8');
+  expect(src).toContain('href={rollCallPage(s.url)}');
+  expect(src).not.toContain('href={s.url}');
+});
+
 test.describe('the committed answers', () => {
   test('pass the gate', () => {
     expect(checkReaderQuestions(FILE, BANK, MOMENTS).violations).toEqual([]);
   });
 
-  test('cover the funding question only, written once, dated, never rewritten nightly', () => {
-    expect(Object.keys(FILE.questions)).toEqual([MID]);
-    const e = FILE.questions[MID];
-    expect(e.rewritten_nightly).toBe(false);
-    expect(e.written).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-    expect(e.model).toBeTruthy();
-    expect(e.picks.length).toBeGreaterThanOrEqual(5);
-    expect(e.picks.length).toBeLessThanOrEqual(8);
+  // The funding question was the first to carry reader questions; the owner,
+  // 2026-11-24: "These need to be on all the big questions." So the file may
+  // hold any Big Question, and every entry meets the same terms.
+  test('cover the funding question, and every entry is written once, dated, never rewritten nightly', () => {
+    expect(Object.keys(FILE.questions)).toContain(MID);
+    for (const [id, e] of Object.entries(FILE.questions) as [string, any][]) {
+      expect(e.rewritten_nightly, id).toBe(false);
+      expect(e.written, id).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      expect(e.model, id).toBeTruthy();
+      expect(e.picks.length, id).toBeGreaterThanOrEqual(5);
+      expect(e.picks.length, id).toBeLessThanOrEqual(8);
+    }
   });
 
   test('every question is the bank’s own text, in both languages', () => {
