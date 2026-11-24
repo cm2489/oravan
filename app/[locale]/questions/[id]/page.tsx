@@ -12,6 +12,7 @@ import { billCallPanelProps } from '@/lib/bill-call-panel';
 import { settledDecisionDate } from '@/lib/settled-votes';
 import { settledOutcomeSentence, statusWord } from '@/lib/status-word';
 import { MomentQuietNote } from '@/components/MomentQuietNote';
+import { ReaderQuestions } from '@/components/ReaderQuestions';
 import { MomentRecordRow } from '@/components/MomentRecordRow';
 import { MomentStatusDate, MomentStatusLine } from '@/components/MomentStatusLine';
 import { MomentStillOpenRail } from '@/components/MomentStillOpenRail';
@@ -645,6 +646,9 @@ export default async function MomentPage({
               {t('moments.status.lastReviewed', { date: fmtDate(lastReviewedDay(moment)) })}
             </p>
           </section>
+
+          {/* Reader questions: bank questions answered once from quoted official sources (renders only where data/reader-questions.json has an entry). */}
+          <ReaderQuestions id={id} locale={locale} />
 
           {/* 3 · The bills — STILL OPEN, THEN KEPT AS THE RECORD (wireframes
               v2, 2026-09-29). Open vehicles are cards whose "Read + call"
