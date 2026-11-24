@@ -428,6 +428,7 @@ export const INTERNAL_ENUM_TOKENS = [
   // `tier0_floor`, for the same word-boundary reason `floor_vote_stale` is
   // listed above — it was missing from 2026-08-09 to 2026-08-12.
   'tier0_floor', 'tier0_floor_action', 'tier0_scheduled', 'tier0_most_viewed', 'tier0_exec_calendar', 'press',
+  'standing_topic',
   // stored moment status (lib/moments-gate.mjs MOMENT_STATUSES)
   'live', 'retired',
 ];
