@@ -3231,8 +3231,8 @@
             },
             {
               "kind": "record",
-              "en": "S. 1498 as reported to the Senate covers securities, commodities, futures and digital assets, including synthetic and indirect holdings, and lists twelve exclusions, among them a “diversified mutual fund,” a “diversified exchange-traded fund” and “a United States Treasury bill, note, or bond”; a legal guardian may hold or trade covered investments worth up to $10,000 in total for a dependent child.",
-              "es": "El S. 1498, en la versión que la comisión remitió al pleno del Senado, abarca valores, materias primas, futuros y activos digitales, incluidas las tenencias sintéticas e indirectas, y enumera doce exclusiones, entre ellas un «fondo mutuo diversificado», un «fondo cotizado diversificado» y «una letra, un pagaré o un bono del Tesoro de los Estados Unidos»; un tutor legal puede tener o negociar, en nombre de un hijo dependiente, inversiones cubiertas por un valor total de hasta 10,000 dólares.",
+              "en": "S. 1498 as reported bars buying and requires divesting covered investments (securities, commodities, futures and digital assets, held directly, indirectly or synthetically), though a guardian may hold or trade up to $10,000 of them for a dependent child; it lists twelve exclusions, among them a “diversified mutual fund,” a “diversified exchange-traded fund” and “a United States Treasury bill, note, or bond.”",
+              "es": "El S. 1498, en la versión que la comisión remitió al pleno del Senado, prohíbe comprar inversiones cubiertas (valores, materias primas, futuros y activos digitales, en tenencia directa, indirecta o sintética) y exige deshacerse de ellas, aunque un tutor puede tener o negociar hasta 10,000 dólares de ellas en nombre de un hijo dependiente; enumera doce exclusiones, entre ellas un «fondo mutuo diversificado», un «fondo cotizado diversificado» y «una letra, un pagaré o un bono del Tesoro de los Estados Unidos».",
               "cites": [
                 {
                   "src": "s1498-rs",
@@ -3253,6 +3253,14 @@
                 {
                   "src": "s1498-rs",
                   "quote": "An individual who is a dependent child of a covered person may have a legal guardian hold or trade on behalf of the dependent child 1 or more covered investments provided that the value of the covered investments in total does not exceed $10,000."
+                },
+                {
+                  "src": "s1498-rs",
+                  "quote": "effective on the date of enactment of the Halting Ownership and Non-Ethical Stock Transactions (HONEST) Act, a covered person shall not purchase any covered investment;"
+                },
+                {
+                  "src": "s1498-rs",
+                  "quote": "shall divest each covered investment owned or in the custody of"
                 }
               ]
             }
