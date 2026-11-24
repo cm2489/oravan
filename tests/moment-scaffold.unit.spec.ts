@@ -518,6 +518,61 @@ test.describe('the qualifying signal is the evidence the floor already tested', 
     expect(signal).toEqual({ type: '', refs: [] });
   });
 
+  /*
+   * ISSUE #268 (2026-11-23): S.J.Res. 124's last action, verbatim. It says
+   * "motion to discharge", which FLOOR_ACTION_PATTERNS reads, but the motion
+   * FELL on a point of order: the chamber took the question up and the answer
+   * was no. Until this fix the scaffold drafted `tier0_floor_action` for it,
+   * telling readers the chamber was still moving on a measure whose motion had
+   * fallen. It now derives NOTHING, like S.J.Res. 98 above, and the nightly
+   * sweep counts it as a settled outcome. H.J.Res. 117's tabled motion to
+   * discharge (procedureEndedConsideration's third shape, verbatim from
+   * tests/procedural-answer.unit.spec.ts) takes the same route.
+   */
+  test('sjres-124-119: a motion to discharge that fell on a point of order derives nothing', () => {
+    const SJRES_124 = 'The motion to discharge fell when the point of order was well taken.';
+    const HJRES_117 = 'Motion to discharge tabled.';
+    for (const text of [SJRES_124, HJRES_117]) {
+      expect(procedureEndedConsideration(text)).toBe(true);
+      expect(floorActionInRecord({ status: 'floor_vote', floorCalendar: false }, text)).toBe(false);
+      const { signal } = signalFor({ ...FLOOR_ACTION, status: 'floor_vote' }, [], {
+        now: NOW_FLOOR,
+        lastActionText: text,
+      });
+      expect(signal).toEqual({ type: '', refs: [] });
+    }
+  });
+
+  /*
+   * THE NEAR MISSES. procedureEndedConsideration is fail-closed, so the
+   * refusal above must not spread to floor sentences that share its words.
+   * Each is verbatim from the record (tests/procedural-answer.unit.spec.ts):
+   *   - H.R. 6500: a motion that "fell" with no point of order, because
+   *     cloture was invoked on an amendment, while the measure stayed before
+   *     the Senate. The chamber IS moving on it.
+   *   - S.J.Res. 172: a motion to discharge rejected by recorded vote, one of
+   *     the three measured "Motion to discharge … rejected" sentences this
+   *     list has read as floor action since 2026-08-09.
+   *   - a motion to discharge MADE, constructed from the measured shape: the
+   *     motion is pending, not fallen.
+   */
+  test('near misses: a motion that fell without a point of order, or was rejected or made, is still floor action', () => {
+    const NEAR_MISSES = [
+      'Motion by Senator Thune to commit to Senate Committee on Appropriations with instructions to report back forthwith with the following amendment SA 6740 fell when cloture on amendment SA 6732 was invoked in Senate.',
+      'Motion to discharge Senate Committee on Foreign Relations rejected by Yea-Nay Vote. 47 - 48. Record Vote Number: 174.',
+      'Motion to discharge Senate Committee on Foreign Relations made in Senate.',
+    ];
+    for (const text of NEAR_MISSES) {
+      expect(procedureEndedConsideration(text)).toBe(false);
+      expect(floorActionInRecord({ status: 'floor_vote', floorCalendar: false }, text)).toBe(true);
+      const { signal } = signalFor({ ...FLOOR_ACTION, status: 'floor_vote' }, [], {
+        now: NOW_FLOOR,
+        lastActionText: text,
+      });
+      expect(signal.type).toBe('tier0_floor_action');
+    }
+  });
+
   test('structureFor hands the matcher the stored basis, not the bare notice', () => {
     const bill = {
       full_identifier: 'hr-2262-119',

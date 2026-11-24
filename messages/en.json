@@ -335,7 +335,7 @@
     "officialTitle": "Official title",
     "statusLabel": "Status",
     "lastAction": "Latest action",
-    "sponsorLine": "Sponsor: <who>{name}</who>\u00a0· {role}\u00a0· {state}",
+    "sponsorLine": "Sponsor: <who>{name}</who> · {role} · {state}",
     "introduced": "Introduced",
     "viewOfficial": "Read the official bill on Congress.gov",
     "share": {
@@ -759,7 +759,8 @@
     "correctionLinkText": "Email hello@oravan.org",
     "whenConfirmedTitle": "What happens when a correction is confirmed",
     "whenConfirmedBody": "A confirmed error is fixed at the source: the data that both languages’ plain-language versions are built from. From there, every surface that reads that data updates together on Oravan’s next deploy. The bill page, its statically generated share-card image and the MCP server’s tool responses all read the same file, so there is no separate cache to clear. The one thing that doesn’t move on its own is the freshness stamp. The site-wide \"as of\" date and the MCP envelope’s {asOfField} field both track Oravan’s last successful nightly sync, so they advance at the next scheduled sync after the fix ships, as they do every night. The embeddable bill card reads the same file too, so it needs no correction step of its own.",
-    "backlogNote": "A correction that points to a broader pattern, not a one-off slip, is tracked as a pattern instead of being patched quietly and forgotten."
+    "backlogNote": "A correction that points to a broader pattern, not a one-off slip, is tracked as a pattern instead of being patched quietly and forgotten.",
+    "aiReaderQuestions": "Reader questions on a Big Question page are picked by AI from a fixed list of questions, itself drafted with AI, and are shown in that list’s exact words; no question is written for one page. Each answer is written by AI once, on the date printed under it, and is not rewritten each night. Each sentence does one of three things: it rests on a passage from an official source linked under the answer; it says which official records we searched and what we did not find there; or it says plainly what we couldn’t check. Nothing publishes unless automated checks pass: every sentence in both languages, with the same numbers; a stored quote and a listed source on every sentence of the first kind; and the sources searched named on every sentence of the other two. The checks do not re-read the sources."
   },
   "notFound": {
     "title": "Page not found",
@@ -1170,6 +1171,28 @@
         "failed": "{chamber, select, house {A House floor vote on it failed.} other {A Senate floor vote on it failed.}}",
         "inCommittee": "In committee."
       }
+    },
+    "glance": {
+      "heading": "At a glance",
+      "lead": "{reason, select, only {The bill} onlyOpen {The one bill here still open} scheduled {The open bill on a chamber’s floor schedule} floorAction {The open bill with the newest floor action} action {The open bill with the newest action} other {An open bill}}",
+      "votesLabel": "Votes so far",
+      "votesHouse": "{count} in the House",
+      "votesSenate": "{count} in the Senate",
+      "votesNewest": "Newest, {date}, as recorded:",
+      "passageLabel": "Vote on passage",
+      "passageNotYet": "Not yet",
+      "passageVote": "{chamber, select, house {House} other {Senate}}, {date}, as recorded:",
+      "nextLabel": "If it passes",
+      "next": {
+        "pass": "{chamber, select, house {It goes to the Senate.} other {It goes to the House.}}",
+        "sameForm": "{chamber, select, house {If the House passes it unchanged} other {If the Senate passes it unchanged}}, {then, select, president {it goes to the president.} adopted {both chambers have agreed to it, and it does not go to the president.} other {it goes to the states to ratify.}}",
+        "concur": "{chamber, select, house {If the House agrees to the Senate’s changes} other {If the Senate agrees to the House’s changes}}, {then, select, president {it goes to the president.} adopted {both chambers have agreed to it, and it does not go to the president.} other {it goes to the states to ratify.}}"
+      },
+      "call": "{chamber, select, senate {Call your senators} house {Call your representative} other {Call your members of Congress}}",
+      "callAbout": "about {citation}",
+      "members": "How your members voted",
+      "membersAbout": "on {citation}",
+      "more": "{count, plural, one {And # more bill on this question} other {And # more bills on this question}}"
     }
   },
   "nominations": {
@@ -1875,5 +1898,15 @@
     "titleOr": "or",
     "listLabel": "Bills with this short title",
     "metaTitle": "Bills titled “{title}”"
+  },
+  "readerQuestions": {
+    "heading": "Reader questions",
+    "aiLabel": "AI picked these questions from a fixed list and wrote the answers from the official record.",
+    "howMade": "How this is made",
+    "intro": "Picked from our fixed list of questions and answered only from the official sources listed under each answer.",
+    "couldntCheck": "We couldn't check this.",
+    "sources": "Sources",
+    "written": "Written on {date}. It is not rewritten each night.",
+    "esQuotesNote": "Quotes in the Spanish version are unofficial translations of the English originals."
   }
 }

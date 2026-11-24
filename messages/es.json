@@ -335,7 +335,7 @@
     "officialTitle": "Título oficial",
     "statusLabel": "Estado",
     "lastAction": "Última acción",
-    "sponsorLine": "Presentado por <who>{name}</who>\u00a0· {role}\u00a0· {state}",
+    "sponsorLine": "Presentado por <who>{name}</who> · {role} · {state}",
     "introduced": "Presentado",
     "viewOfficial": "Lee el proyecto oficial en Congress.gov",
     "share": {
@@ -759,7 +759,8 @@
     "correctionLinkText": "Escríbenos a hello@oravan.org",
     "whenConfirmedTitle": "Qué pasa cuando se confirma una corrección",
     "whenConfirmedBody": "Un error confirmado se corrige en la fuente: los datos con los que se construyen las versiones en lenguaje claro de los dos idiomas. A partir de ahí, cada superficie que lee esos datos se actualiza a la vez en el siguiente despliegue de Oravan. La página del proyecto, su imagen de tarjeta para compartir generada estáticamente y las respuestas del servidor MCP leen el mismo archivo, así que no hay una caché aparte que vaciar. Lo único que no se mueve por sí solo es el sello de fecha. La fecha de \"actualizado al\" del sitio y el campo {asOfField} del envoltorio del MCP siguen la última sincronización nocturna exitosa de Oravan, así que avanzan en la siguiente sincronización programada después de que se publique la corrección, igual que cada noche. La tarjeta de proyecto de ley para incrustar también lee ese mismo archivo, así que no necesita un paso de corrección aparte.",
-    "backlogNote": "Una corrección que señale un patrón más amplio, no un descuido puntual, se registra como un patrón en lugar de parchearse en silencio y olvidarse."
+    "backlogNote": "Una corrección que señale un patrón más amplio, no un descuido puntual, se registra como un patrón en lugar de parchearse en silencio y olvidarse.",
+    "aiReaderQuestions": "Las preguntas de los lectores en la página de una Gran pregunta las elige la IA de una lista fija de preguntas, redactada también con IA, y se muestran con las palabras exactas de esa lista; ninguna pregunta se escribe para una sola página. Cada respuesta la escribe la IA una sola vez, en la fecha que aparece debajo, y no se reescribe cada noche. Cada oración hace una de tres cosas: se apoya en un pasaje de una fuente oficial enlazada debajo de la respuesta; dice en qué registros oficiales buscamos y qué no encontramos en ellos; o dice con claridad lo que no pudimos comprobar. Nada se publica sin pasar controles automáticos: cada oración en los dos idiomas, con las mismas cifras; una cita guardada y una fuente de la lista en cada oración del primer tipo; y las fuentes consultadas en cada oración de los otros dos. Los controles no vuelven a leer las fuentes."
   },
   "notFound": {
     "title": "Página no encontrada",
@@ -1170,6 +1171,28 @@
         "failed": "{chamber, select, house {Una votación en el pleno de la Cámara sobre este proyecto fracasó.} other {Una votación en el pleno del Senado sobre este proyecto fracasó.}}",
         "inCommittee": "En comité."
       }
+    },
+    "glance": {
+      "heading": "De un vistazo",
+      "lead": "{reason, select, only {El proyecto} onlyOpen {El único proyecto aquí aún abierto} scheduled {El proyecto abierto en el calendario del pleno de una cámara} floorAction {El proyecto abierto con la última acción en el pleno} action {El proyecto abierto con la última acción} other {Un proyecto abierto}}",
+      "votesLabel": "Votaciones hasta ahora",
+      "votesHouse": "{count} en la Cámara",
+      "votesSenate": "{count} en el Senado",
+      "votesNewest": "La más reciente, {date}, tal como consta (en inglés):",
+      "passageLabel": "Votación de aprobación",
+      "passageNotYet": "Todavía no",
+      "passageVote": "{chamber, select, house {Cámara} other {Senado}}, {date}, tal como consta (en inglés):",
+      "nextLabel": "Si se aprueba",
+      "next": {
+        "pass": "{chamber, select, house {Pasa al Senado.} other {Pasa a la Cámara.}}",
+        "sameForm": "{chamber, select, house {Si la Cámara aprueba la medida sin cambios} other {Si el Senado aprueba la medida sin cambios}}, {then, select, president {pasa al presidente.} adopted {ambas cámaras la habrán aprobado, y no pasa al presidente.} other {pasa a los estados para que la ratifiquen.}}",
+        "concur": "{chamber, select, house {Si la Cámara acepta los cambios del Senado} other {Si el Senado acepta los cambios de la Cámara}}, {then, select, president {pasa al presidente.} adopted {ambas cámaras la habrán aprobado, y no pasa al presidente.} other {pasa a los estados para que la ratifiquen.}}"
+      },
+      "call": "{chamber, select, senate {Llama a tus senadores} house {Llama a tu representante} other {Llama a tus miembros del Congreso}}",
+      "callAbout": "sobre {citation}",
+      "members": "Cómo votaron tus miembros del Congreso",
+      "membersAbout": "sobre {citation}",
+      "more": "{count, plural, one {Y # proyecto más en esta pregunta} other {Y # proyectos más en esta pregunta}}"
     }
   },
   "nominations": {
@@ -1875,5 +1898,15 @@
     "titleOr": "o",
     "listLabel": "Proyectos de ley con este título corto",
     "metaTitle": "Proyectos de ley titulados “{title}”"
+  },
+  "readerQuestions": {
+    "heading": "Preguntas de los lectores",
+    "aiLabel": "La IA eligió estas preguntas de una lista fija y escribió las respuestas a partir del registro oficial.",
+    "howMade": "Cómo se hace",
+    "intro": "Elegidas de nuestra lista fija de preguntas y respondidas solo con las fuentes oficiales que aparecen debajo de cada respuesta.",
+    "couldntCheck": "No pudimos comprobarlo.",
+    "sources": "Fuentes",
+    "written": "Escrito el {date}. No se reescribe cada noche.",
+    "esQuotesNote": "Las citas de la versión en español son traducciones no oficiales de los originales en inglés."
   }
 }
