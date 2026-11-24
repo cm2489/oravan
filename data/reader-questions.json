@@ -1,0 +1,708 @@
+{
+  "schema": "reader-questions/v1",
+  "bank": "reader-questions/bank-v1",
+  "questions": {
+    "government-funding-deadline": {
+      "written": "2026-11-24",
+      "record_as_of": "2026-11-22",
+      "model": "claude-opus-5-5",
+      "type": "spending_deadline",
+      "rewritten_nightly": false,
+      "sources": {
+        "plaw-119-103": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/PLAW-119publ103/html/PLAW-119publ103.htm",
+          "title": {
+            "en": "Public Law 119-103, text",
+            "es": "Ley Pública 119-103, texto (en inglés)"
+          }
+        },
+        "hr9770-eh": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/BILLS-119hr9770eh/html/BILLS-119hr9770eh.htm",
+          "title": {
+            "en": "H.R. 9770 as passed by the House, text",
+            "es": "H.R. 9770 tal como la aprobó la Cámara, texto (en inglés)"
+          }
+        },
+        "actions-hr9770": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/house-bill/9770/all-actions",
+          "title": {
+            "en": "H.R. 9770, official actions",
+            "es": "H.R. 9770, acciones oficiales (en inglés)"
+          }
+        },
+        "bill-hr8469": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/house-bill/8469",
+          "title": {
+            "en": "H.R. 8469, official bill record",
+            "es": "H.R. 8469, registro oficial del proyecto (en inglés)"
+          }
+        },
+        "actions-hr8469": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/house-bill/8469/all-actions",
+          "title": {
+            "en": "H.R. 8469, official actions",
+            "es": "H.R. 8469, acciones oficiales (en inglés)"
+          }
+        },
+        "crec-2026-11-20-d1054": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/CREC-2026-11-20/html/CREC-2026-11-20-pt1-PgD1054.htm",
+          "title": {
+            "en": "Congressional Record, Daily Digest, Nov. 20, 2026",
+            "es": "Registro del Congreso, resumen diario, 20 de noviembre de 2026 (en inglés)"
+          }
+        },
+        "usc-31-1342": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/USCODE-2024-title31/html/USCODE-2024-title31-subtitleII-chap13-subchapIII-sec1342.htm",
+          "title": {
+            "en": "31 U.S.C. 1342",
+            "es": "31 U.S.C. 1342 (en inglés)"
+          }
+        },
+        "crs-rl34680": {
+          "kind": "analysis",
+          "url": "https://www.congress.gov/crs_external_products/RL/PDF/RL34680/RL34680.29.pdf",
+          "title": {
+            "en": "Congressional Research Service, report RL34680 (updated Dec. 10, 2018)",
+            "es": "Servicio de Investigación del Congreso, informe RL34680 (actualizado el 10 de diciembre de 2018, en inglés)"
+          }
+        },
+        "constitution": {
+          "kind": "record",
+          "url": "https://www.archives.gov/founding-docs/constitution-transcript",
+          "title": {
+            "en": "U.S. Constitution, Article I, Section 7",
+            "es": "Constitución de EE. UU., artículo I, sección 7 (en inglés)"
+          }
+        },
+        "bill-hr9770": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/house-bill/9770",
+          "title": {
+            "en": "H.R. 9770, official bill record",
+            "es": "H.R. 9770, registro oficial del proyecto (en inglés)"
+          }
+        },
+        "latest-hr8646": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/house-bill/8646/all-actions",
+          "title": {
+            "en": "H.R. 8646, official actions",
+            "es": "H.R. 8646, acciones oficiales (en inglés)"
+          }
+        },
+        "latest-hr8595": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/house-bill/8595/all-actions",
+          "title": {
+            "en": "H.R. 8595, official actions",
+            "es": "H.R. 8595, acciones oficiales (en inglés)"
+          }
+        },
+        "bill-hr8646": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/house-bill/8646",
+          "title": {
+            "en": "H.R. 8646, official bill record",
+            "es": "H.R. 8646, registro oficial del proyecto (en inglés)"
+          }
+        },
+        "bill-hr8595": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/house-bill/8595",
+          "title": {
+            "en": "H.R. 8595, official bill record",
+            "es": "H.R. 8595, registro oficial del proyecto (en inglés)"
+          }
+        },
+        "bill-hr9495": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/house-bill/9495",
+          "title": {
+            "en": "H.R. 9495, official bill record",
+            "es": "H.R. 9495, registro oficial del proyecto (en inglés)"
+          }
+        },
+        "bill-hr9310": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/house-bill/9310",
+          "title": {
+            "en": "H.R. 9310, official bill record",
+            "es": "H.R. 9310, registro oficial del proyecto (en inglés)"
+          }
+        },
+        "latest-house-fy2027": {
+          "kind": "record",
+          "url": "https://www.congress.gov/search?q=%7B%22congress%22%3A%5B%22119%22%5D%2C%22source%22%3A%22legislation%22%2C%22search%22%3A%22Appropriations+Act%2C+2027%22%7D",
+          "title": {
+            "en": "Congress.gov: the House's fiscal 2027 spending bills, latest actions",
+            "es": "Congress.gov: proyectos de gasto del año fiscal 2027 de la Cámara, últimas acciones (en inglés)"
+          }
+        },
+        "hr8469-pcs": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/BILLS-119hr8469pcs/html/BILLS-119hr8469pcs.htm",
+          "title": {
+            "en": "H.R. 8469 as placed on the Senate calendar, text",
+            "es": "Texto de la H.R. 8469 tal como se incluyó en el calendario del Senado (en inglés)"
+          }
+        },
+        "hrpt-119-622": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/CRPT-119hrpt622/html/CRPT-119hrpt622.htm",
+          "title": {
+            "en": "H. Rept. 119-622, the House Appropriations Committee’s report on H.R. 8469",
+            "es": "Informe de la Cámara 119-622, de la Comisión de Asignaciones, sobre la H.R. 8469 (en inglés)"
+          }
+        },
+        "bill-scan": {
+          "kind": "record",
+          "url": "https://api.congress.gov/v3/bill/119?fromDateTime=2026-07-18T00:00:00Z&toDateTime=2026-11-23T01:39:30Z&sort=updateDate+desc",
+          "title": {
+            "en": "Congress.gov data service: every 119th-Congress bill updated from July 18, 2026, through November 22, 2026, searched for bills introduced after H.R. 9770 (needs a free api.data.gov key)",
+            "es": "Servicio de datos de Congress.gov: todos los proyectos del 119.º Congreso actualizados del 18 de julio de 2026 al 22 de noviembre de 2026, revisados en busca de proyectos presentados después de la H.R. 9770 (requiere una clave gratuita de api.data.gov; en inglés)"
+          }
+        },
+        "actions-hr6500": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/house-bill/6500/all-actions",
+          "title": {
+            "en": "H.R. 6500, official actions",
+            "es": "H.R. 6500, acciones oficiales (en inglés)"
+          }
+        }
+      },
+      "picks": [
+        {
+          "bank_id": "sp.deadline",
+          "q": {
+            "en": "What is the deadline, and what happens when it arrives?",
+            "es": "¿Cuál es la fecha límite y qué pasa cuando llega?"
+          },
+          "claims": [
+            {
+              "kind": "record",
+              "en": "Public Law 119-103, the law now in force, makes its money available, unless that law or the applicable fiscal 2027 spending law provides otherwise, until “whichever of the following first occurs”: a later law appropriating money for a project or activity it covers, the applicable fiscal 2027 spending law if enacted without any provision for that project or activity, or “December 11, 2026.”",
+              "es": "La Ley Pública 119-103, la ley vigente, deja disponibles sus fondos, salvo que esa ley o la ley de gasto aplicable del año fiscal 2027 disponga otra cosa, hasta «lo primero que ocurra» de lo siguiente: una ley posterior que asigne fondos a un proyecto o actividad que ella cubre, la ley de gasto aplicable del año fiscal 2027 si se promulga sin ninguna disposición para ese proyecto o actividad, o el «11 de diciembre de 2026».",
+              "cites": [
+                {
+                  "src": "plaw-119-103",
+                  "quote": "Unless otherwise provided for in this Act or in the applicable appropriations Act for fiscal year 2027"
+                },
+                {
+                  "src": "plaw-119-103",
+                  "quote": "shall be available until whichever of the following first occurs"
+                },
+                {
+                  "src": "plaw-119-103",
+                  "quote": "The enactment into law of an appropriation for any project or activity provided for in this Act."
+                },
+                {
+                  "src": "plaw-119-103",
+                  "quote": "The enactment into law of the applicable appropriations Act for fiscal year 2027 without any provision for such project or activity."
+                },
+                {
+                  "src": "plaw-119-103",
+                  "quote": "December 11, 2026."
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "Section 111(b) of that law says “obligations for mandatory payments due on or about the first day of any month,” if that month begins after October 2026 and no later than 30 days after December 11, 2026, “may continue to be made.”",
+              "es": "La sección 111(b) de esa ley dice que «las obligaciones de pagos obligatorios que vencen el primer día de cualquier mes o alrededor de esa fecha», si ese mes empieza después de octubre de 2026 y a más tardar 30 días después del 11 de diciembre de 2026, «pueden seguir haciéndose».",
+              "cites": [
+                {
+                  "src": "plaw-119-103",
+                  "quote": "Notwithstanding section 106, obligations for mandatory payments due on or about the first day of any month that begins after October 2026 but not later than 30 days after the date specified in section 106(3) may continue to be made"
+                },
+                {
+                  "src": "plaw-119-103",
+                  "quote": "December 11, 2026."
+                }
+              ]
+            },
+            {
+              "kind": "analysis",
+              "en": "A Congressional Research Service report, last updated December 10, 2018, says that if funding does not resume in time, “under the Antideficiency Act, an agency must cease operations, except in certain situations when law authorizes continued activity.”",
+              "es": "Un informe del Servicio de Investigación del Congreso, actualizado por última vez el 10 de diciembre de 2018, dice que si los fondos no se reanudan a tiempo, «según la Ley Antideficiencia, una agencia debe cesar sus operaciones, salvo en ciertas situaciones en que la ley autoriza que la actividad continúe».",
+              "cites": [
+                {
+                  "src": "crs-rl34680",
+                  "quote": "under the Antideficiency Act, an agency must cease operations, except in certain situations when law authorizes continued activity."
+                },
+                {
+                  "src": "crs-rl34680",
+                  "quote": "Updated December 10, 2018"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "bank_id": "sp.duration",
+          "q": {
+            "en": "How long would the funding last?",
+            "es": "¿Cuánto tiempo duraría el financiamiento?"
+          },
+          "claims": [
+            {
+              "kind": "record",
+              "en": "The law in force makes its money available until December 11, 2026, unless that law or the applicable fiscal 2027 spending law provides otherwise, or a later spending law ends it sooner for a project or activity.",
+              "es": "La ley vigente deja disponibles sus fondos hasta el 11 de diciembre de 2026, salvo que esa ley o la ley de gasto aplicable del año fiscal 2027 disponga otra cosa, o que una ley de gasto posterior les ponga fin antes para un proyecto o actividad.",
+              "cites": [
+                {
+                  "src": "plaw-119-103",
+                  "quote": "Unless otherwise provided for in this Act or in the applicable appropriations Act for fiscal year 2027"
+                },
+                {
+                  "src": "plaw-119-103",
+                  "quote": "December 11, 2026."
+                },
+                {
+                  "src": "plaw-119-103",
+                  "quote": "The enactment into law of an appropriation for any project or activity provided for in this Act."
+                },
+                {
+                  "src": "plaw-119-103",
+                  "quote": "The enactment into law of the applicable appropriations Act for fiscal year 2027 without any provision for such project or activity."
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "H.R. 9770, a stopgap the House passed 220–205 on July 21, 2026, lists “December 4, 2026” where the law in force lists December 11, 2026; the Senate received it on July 22, and the record shows no Senate action on it since.",
+              "es": "La H.R. 9770, una medida temporal que la Cámara aprobó 220–205 el 21 de julio de 2026, indica el «4 de diciembre de 2026» donde la ley vigente indica el 11 de diciembre de 2026; el Senado la recibió el 22 de julio y el expediente no muestra ninguna acción del Senado sobre ella desde entonces.",
+              "cites": [
+                {
+                  "src": "actions-hr9770",
+                  "quote": "2026-07-21 | On passage Passed by the Yeas and Nays: 220 - 205 (Roll no. 272)."
+                },
+                {
+                  "src": "hr9770-eh",
+                  "quote": "(3) December 4, 2026."
+                },
+                {
+                  "src": "actions-hr9770",
+                  "quote": "2026-07-22 | Received in the Senate."
+                },
+                {
+                  "src": "bill-hr9770",
+                  "quote": "latestAction | 2026-07-22 | Received in the Senate."
+                },
+                {
+                  "src": "bill-hr9770",
+                  "quote": "Making continuing appropriations for fiscal year 2027, and for other purposes."
+                },
+                {
+                  "src": "plaw-119-103",
+                  "quote": "December 11, 2026."
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "H.R. 8469, as the House passed it, is titled “Making appropriations for military construction, the Department of Veterans Affairs, and related agencies for the fiscal year ending September 30, 2027, and for other purposes”; its text sets other periods for some accounts, among them money to “remain available until September 30, 2031,” money to “remain available until expended,” and money that “shall become available on October 1, 2027.”",
+              "es": "La H.R. 8469, tal como la aprobó la Cámara, lleva el título «Asignaciones para construcción militar, el Departamento de Asuntos de Veteranos y agencias relacionadas para el año fiscal que termina el 30 de septiembre de 2027, y para otros fines»; su texto fija otros plazos para algunas partidas, entre ellos fondos que «seguirán disponibles hasta el 30 de septiembre de 2031», fondos que «seguirán disponibles hasta agotarse» y fondos que «quedarán disponibles el 1 de octubre de 2027».",
+              "cites": [
+                {
+                  "src": "hr8469-pcs",
+                  "quote": "Making appropriations for military construction, the Department of Veterans Affairs, and related agencies for the fiscal year ending September 30, 2027, and for other purposes."
+                },
+                {
+                  "src": "actions-hr8469",
+                  "quote": "2026-05-15 | On passage Passed by the Yeas and Nays: 400 - 15 (Roll no. 175)."
+                },
+                {
+                  "src": "hr8469-pcs",
+                  "quote": "remain available until September 30, 2031"
+                },
+                {
+                  "src": "hr8469-pcs",
+                  "quote": "remain available until expended"
+                },
+                {
+                  "src": "hr8469-pcs",
+                  "quote": "shall become available on October 1, 2027"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "bank_id": "sp.lapse",
+          "q": {
+            "en": "If funding lapses, what keeps running and what pauses?",
+            "es": "Si se acaba el financiamiento, ¿qué sigue funcionando y qué se suspende?"
+          },
+          "claims": [
+            {
+              "kind": "analysis",
+              "en": "The Congressional Research Service, in a report updated December 10, 2018, says that in a shutdown an agency may obligate some funds in certain “excepted” areas, but “these obligations are highly restricted,” and it “must shut down nonexcepted activities.”",
+              "es": "El Servicio de Investigación del Congreso, en un informe actualizado el 10 de diciembre de 2018, dice que durante un cierre una agencia puede comprometer algunos fondos en ciertas áreas «exceptuadas», pero «estas obligaciones están muy restringidas», y «debe suspender las actividades no exceptuadas».",
+              "cites": [
+                {
+                  "src": "crs-rl34680",
+                  "quote": "the agency may obligate some funds in certain “excepted” areas, but these obligations are highly restricted."
+                },
+                {
+                  "src": "crs-rl34680",
+                  "quote": "the agency must shut down nonexcepted activities"
+                },
+                {
+                  "src": "crs-rl34680",
+                  "quote": "Updated December 10, 2018"
+                },
+                {
+                  "src": "crs-rl34680",
+                  "quote": "In a shutdown situation, Congress and the President have not enacted interim or full-year appropriations for an agency"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "Federal law (31 U.S.C. 1342) bars accepting unpaid work or employing people beyond what the law authorizes “except for emergencies involving the safety of human life or the protection of property,” and those emergencies do not include “ongoing, regular functions of government” whose suspension would not imminently threaten life or property.",
+              "es": "La ley federal (31 U.S.C. 1342) prohíbe aceptar trabajo no remunerado o emplear personal por encima de lo que autoriza la ley «salvo en emergencias que afecten la seguridad de la vida humana o la protección de la propiedad», y esas emergencias no incluyen «las funciones ordinarias y regulares del gobierno» cuya suspensión no amenazaría de forma inminente la vida ni la propiedad.",
+              "cites": [
+                {
+                  "src": "usc-31-1342",
+                  "quote": "may not accept voluntary services for either government or employ personal services exceeding that authorized by law except for emergencies involving the safety of human life or the protection of property."
+                },
+                {
+                  "src": "usc-31-1342",
+                  "quote": "ongoing, regular functions of government the suspension of which would not imminently threaten the safety of human life or the protection of property."
+                }
+              ]
+            },
+            {
+              "kind": "analysis",
+              "en": "The same report says programs funded outside yearly spending laws, “such as entitlements like Social Security and other mandatory spending,” “also may be affected by a funding gap, if program execution relies on activities that receive annually appropriated funding.”",
+              "es": "El mismo informe dice que los programas financiados fuera de leyes anuales de gasto, «como los programas de prestaciones, por ejemplo el Seguro Social, y otros gastos obligatorios», «también pueden verse afectados por una interrupción de fondos si su ejecución depende de actividades que reciben fondos asignados cada año».",
+              "cites": [
+                {
+                  "src": "crs-rl34680",
+                  "quote": "such as entitlements like Social Security and other mandatory spending—also may be affected by a funding gap, if program execution relies on activities that receive annually appropriated funding."
+                }
+              ]
+            },
+            {
+              "kind": "absence",
+              "absence_kind": "not_checked",
+              "en": "We did not retrieve agencies' own plans for a lapse, so this answer does not say which programs at any one agency keep running.",
+              "es": "No consultamos los planes de cada agencia para una interrupción de fondos, así que esta respuesta no dice qué programas de una agencia concreta siguen funcionando.",
+              "searched": [
+                "crs-rl34680",
+                "usc-31-1342"
+              ]
+            }
+          ]
+        },
+        {
+          "bank_id": "core.next_step",
+          "q": {
+            "en": "What has to happen next for this to take effect?",
+            "es": "¿Qué tiene que pasar para que esto entre en vigor?"
+          },
+          "claims": [
+            {
+              "kind": "record",
+              "en": "On November 20, 2026, the Senate “began consideration of the motion to proceed to consideration of H.R. 8469,” the House’s bill for military construction, the Department of Veterans Affairs and related agencies, passed 400–15 on May 15; the record shows no Senate vote on it as of November 22.",
+              "es": "El 20 de noviembre de 2026, el Senado «comenzó a considerar la moción para pasar a considerar la H.R. 8469», el proyecto de la Cámara para construcción militar, el Departamento de Asuntos de Veteranos y agencias relacionadas, aprobado 400–15 el 15 de mayo; el expediente no muestra ninguna votación del Senado sobre él al 22 de noviembre.",
+              "cites": [
+                {
+                  "src": "crec-2026-11-20-d1054",
+                  "quote": "Senate began consideration of the motion to proceed to consideration of H.R. 8469"
+                },
+                {
+                  "src": "actions-hr8469",
+                  "quote": "2026-05-15 | On passage Passed by the Yeas and Nays: 400 - 15 (Roll no. 175)."
+                },
+                {
+                  "src": "hr8469-pcs",
+                  "quote": "Making appropriations for military construction, the Department of Veterans Affairs, and related agencies for the fiscal year ending September 30, 2027, and for other purposes."
+                },
+                {
+                  "src": "bill-hr8469",
+                  "quote": "latestAction | 2026-11-20 | Motion to proceed to consideration of measure made in Senate. (consideration: CR S5847)"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "Under the Constitution, a bill that has “passed the House of Representatives and the Senate” is “presented to the President,” who signs or returns it with objections; a returned bill becomes law only if “two thirds” of each chamber agree to pass it again.",
+              "es": "Según la Constitución, un proyecto «aprobado por la Cámara de Representantes y el Senado» se «presenta al Presidente», que lo firma o lo devuelve con sus objeciones; un proyecto devuelto solo se convierte en ley si «dos tercios» de cada cámara vuelven a aprobarlo.",
+              "cites": [
+                {
+                  "src": "constitution",
+                  "quote": "Every Bill which shall have passed the House of Representatives and the Senate, shall, before it become a Law, be presented to the President of the United States; If he approve he shall sign it, but if not he shall return it, with his Objections"
+                },
+                {
+                  "src": "constitution",
+                  "quote": "If after such Reconsideration two thirds of that House shall agree to pass the Bill"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "For H.R. 6500, the law now in force, the Senate passed the House’s bill “with an amendment” on August 8, 2026, and it went to the president only after the House voted on September 1 to “agree to the Senate amendments.”",
+              "es": "En el caso de la H.R. 6500, la ley vigente, el Senado aprobó el proyecto de la Cámara «con una enmienda» el 8 de agosto de 2026, y se envió al presidente solo después de que la Cámara votó el 1 de septiembre para «aceptar las enmiendas del Senado».",
+              "cites": [
+                {
+                  "src": "actions-hr6500",
+                  "quote": "2026-08-08 | Passed Senate with an amendment and an amendment to the Title by Yea-Nay Vote. 90 - 6. Record Vote Number: 228."
+                },
+                {
+                  "src": "actions-hr6500",
+                  "quote": "2026-09-01 | On motion that the House suspend the rules and agree to the Senate amendments Agreed to by the Yeas and Nays: (2/3 required): 370 - 48 (Roll no. 286). (consideration: CR H5387; text: CR H5377-5383)"
+                },
+                {
+                  "src": "actions-hr6500",
+                  "quote": "2026-09-02 | Presented to President."
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "For the programs that law continues, its money is available until “December 11, 2026,” unless that law or the applicable fiscal 2027 spending law provides otherwise, or a later spending law ends it sooner for a project or activity.",
+              "es": "Para los programas que mantiene esa ley, sus fondos están disponibles hasta el «11 de diciembre de 2026», salvo que esa ley o la ley de gasto aplicable del año fiscal 2027 disponga otra cosa, o que una ley de gasto posterior les ponga fin antes para un proyecto o actividad.",
+              "cites": [
+                {
+                  "src": "plaw-119-103",
+                  "quote": "Unless otherwise provided for in this Act or in the applicable appropriations Act for fiscal year 2027"
+                },
+                {
+                  "src": "plaw-119-103",
+                  "quote": "December 11, 2026."
+                },
+                {
+                  "src": "plaw-119-103",
+                  "quote": "The enactment into law of an appropriation for any project or activity provided for in this Act."
+                },
+                {
+                  "src": "plaw-119-103",
+                  "quote": "The enactment into law of the applicable appropriations Act for fiscal year 2027 without any provision for such project or activity."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "bank_id": "core.cost",
+          "q": {
+            "en": "What would it cost, and who made that estimate?",
+            "es": "¿Cuánto costaría y quién hizo ese cálculo?"
+          },
+          "claims": [
+            {
+              "kind": "absence",
+              "absence_kind": "not_found",
+              "en": "The official bill records list no Congressional Budget Office cost estimate for H.R. 9770 or H.R. 8469; cbo.gov was not searched.",
+              "es": "Los registros oficiales de los proyectos no incluyen ninguna estimación de costos de la Oficina de Presupuesto del Congreso para la H.R. 9770 ni para la H.R. 8469; no se buscó en cbo.gov.",
+              "searched": [
+                "bill-hr9770",
+                "bill-hr8469"
+              ],
+              "absent": [
+                "cboCostEstimate"
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "For H.R. 8469 alone, not all federal funding, the House Appropriations Committee’s report on the committee’s version (April 23, 2026) says, for fiscal year 2027, “The bill includes $323,972,953,000 for mandatory programs and $157,000,000,000 for discretionary programs.”",
+              "es": "Solo para la H.R. 8469, no para todos los fondos federales, el informe de la Comisión de Asignaciones de la Cámara sobre la versión de la comisión (23 de abril de 2026) dice, para el año fiscal 2027: «El proyecto incluye 323.972.953.000 dólares para programas obligatorios y 157.000.000.000 de dólares para programas discrecionales».",
+              "cites": [
+                {
+                  "src": "hrpt-119-622",
+                  "quote": "[To accompany H.R. 8469]"
+                },
+                {
+                  "src": "hrpt-119-622",
+                  "quote": "April 23, 2026.--Committed to the Committee of the Whole House on the State of the Union and ordered to be printed"
+                },
+                {
+                  "src": "hrpt-119-622",
+                  "quote": "The Committee recommends $157,000,000,000 in total budget authority for the fiscal year 2027 programs and activities funded in the bill."
+                },
+                {
+                  "src": "hrpt-119-622",
+                  "quote": "The bill includes $323,972,953,000 for mandatory programs and $157,000,000,000 for discretionary programs."
+                },
+                {
+                  "src": "hrpt-119-622",
+                  "quote": "The bill provides $450,288,099,000 for fiscal year 2027 for the Department of Veterans Affairs"
+                },
+                {
+                  "src": "hrpt-119-622",
+                  "quote": "Of the total, $323,972,953,000 is provided for mandatory benefit programs"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "The same report says “Of the total for fiscal year 2027, $122,258,000,000 for veterans' healthcare was advanced in the fiscal year 2026” spending law; for veterans’ compensation and pensions, the bill’s text adds “$10,555,052,000, which shall be in addition to funds previously appropriated under this heading that became available on October 1, 2026.”",
+              "es": "El mismo informe dice: «Del total del año fiscal 2027, 122.258.000.000 de dólares para la atención médica de los veteranos se adelantaron en el año fiscal 2026» en la ley de gasto de ese año; para compensaciones y pensiones de veteranos, el texto del proyecto añade «10.555.052.000 dólares, que se sumarán a los fondos asignados previamente bajo este rubro que quedaron disponibles el 1 de octubre de 2026».",
+              "cites": [
+                {
+                  "src": "hrpt-119-622",
+                  "quote": "Of the total for fiscal year 2027, $122,258,000,000 for veterans' healthcare was advanced in the fiscal year 2026 \"Continuing Appropriations, Agriculture, Legislative Branch, Military Construction and Veterans Affairs, and Extensions Act, 2026\""
+                },
+                {
+                  "src": "hr8469-pcs",
+                  "quote": "compensation and pensions (including transfer of funds) For the payment of compensation benefits"
+                },
+                {
+                  "src": "hr8469-pcs",
+                  "quote": "$10,555,052,000, which shall be in addition to funds previously appropriated under this heading that became available on October 1, 2026"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "The same report says the committee’s version also includes “$138,240,000,000 in advance appropriations for the four veterans' medical care accounts and $307,463,397,000 in advance appropriations for mandatory benefits programs”; in the bill’s text, those amounts “shall become available on October 1, 2027.”",
+              "es": "El mismo informe dice que la versión de la comisión también incluye «138.240.000.000 de dólares en asignaciones anticipadas para las cuatro cuentas de atención médica de los veteranos y 307.463.397.000 dólares en asignaciones anticipadas para programas de prestaciones obligatorias»; en el texto del proyecto, esas sumas «quedarán disponibles el 1 de octubre de 2027».",
+              "cites": [
+                {
+                  "src": "hrpt-119-622",
+                  "quote": "$138,240,000,000 in advance appropriations for the four veterans' medical care accounts and $307,463,397,000 in advance appropriations for mandatory benefits programs"
+                },
+                {
+                  "src": "hr8469-pcs",
+                  "quote": "shall become available on October 1, 2027"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "Public Law 119-103 funds the projects and activities it continues “at a rate for operations as provided in the applicable appropriations Acts for fiscal year 2026,” unless that law provides otherwise.",
+              "es": "La Ley Pública 119-103 financia los proyectos y actividades que mantiene «al ritmo de operaciones previsto en las leyes de asignaciones aplicables del año fiscal 2026», salvo que esa ley disponga otra cosa.",
+              "cites": [
+                {
+                  "src": "plaw-119-103",
+                  "quote": "Such amounts as may be necessary, at a rate for operations as provided in the applicable appropriations Acts for fiscal year 2026"
+                },
+                {
+                  "src": "plaw-119-103",
+                  "quote": "for continuing projects or activities (including the costs of direct loans and loan guarantees) that are not otherwise specifically provided for in this Act"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "bank_id": "core.alternatives",
+          "q": {
+            "en": "Are there other proposals on the same question?",
+            "es": "¿Hay otras propuestas sobre el mismo tema?"
+          },
+          "claims": [
+            {
+              "kind": "record",
+              "en": "The Senate has received two other House-passed full-year fiscal 2027 spending bills, H.R. 8646 for agriculture and the Food and Drug Administration (passed 213–210 on June 4) and H.R. 8595 for national security and the Department of State (passed 217–209 on July 15); the record shows no Senate action on either since.",
+              "es": "El Senado ha recibido otros dos proyectos de gasto para todo el año fiscal 2027 aprobados por la Cámara, la H.R. 8646 para agricultura y la Administración de Alimentos y Medicamentos (aprobada 213–210 el 4 de junio) y la H.R. 8595 para la seguridad nacional y el Departamento de Estado (aprobada 217–209 el 15 de julio); el expediente no muestra ninguna acción del Senado sobre ninguna de las dos desde entonces.",
+              "cites": [
+                {
+                  "src": "bill-hr8646",
+                  "quote": "Agriculture, Rural Development, Food and Drug Administration, and Related Agency Appropriations Act, 2027"
+                },
+                {
+                  "src": "bill-hr8646",
+                  "quote": "Making appropriations for Agriculture, Rural Development, Food and Drug Administration, and Related Agencies programs for the fiscal year ending September 30, 2027"
+                },
+                {
+                  "src": "latest-hr8646",
+                  "quote": "2026-06-04 | On passage Passed by the Yeas and Nays: 213 - 210 (Roll no. 205)."
+                },
+                {
+                  "src": "bill-hr8646",
+                  "quote": "latestAction | 2026-06-08 | Received in the Senate."
+                },
+                {
+                  "src": "bill-hr8595",
+                  "quote": "Making appropriations for national security, Department of State, and related programs for the fiscal year ending September 30, 2027"
+                },
+                {
+                  "src": "latest-hr8595",
+                  "quote": "2026-07-15 | On passage Passed by the Yeas and Nays: 217 - 209 (Roll no. 247)."
+                },
+                {
+                  "src": "bill-hr8595",
+                  "quote": "latestAction | 2026-07-29 | Received in the Senate."
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "Nine more House fiscal 2027 spending bills, including those for the Department of Defense (H.R. 9495) and the Department of Homeland Security (H.R. 9310), have had no House vote on passage: the latest action on each, dated between April 24 and June 26, 2026, is a calendar placement or a rule for debate.",
+              "es": "Otros nueve proyectos de gasto del año fiscal 2027 de la Cámara, entre ellos los del Departamento de Defensa (H.R. 9495) y del Departamento de Seguridad Nacional (H.R. 9310), no han tenido una votación de aprobación en la Cámara: la última acción de cada uno, fechada entre el 24 de abril y el 26 de junio de 2026, es su inclusión en el calendario o una regla para el debate.",
+              "cites": [
+                {
+                  "src": "bill-hr9495",
+                  "quote": "Department of Defense Appropriations Act, 2027"
+                },
+                {
+                  "src": "bill-hr9310",
+                  "quote": "Department of Homeland Security Appropriations Act, 2027"
+                },
+                {
+                  "src": "latest-house-fy2027",
+                  "quote": "hr8495 | 2026-04-24 | Placed on the Union Calendar, Calendar No. 540."
+                },
+                {
+                  "src": "latest-house-fy2027",
+                  "quote": "hr8845 | 2026-05-15 | Placed on the Union Calendar, Calendar No. 567."
+                },
+                {
+                  "src": "latest-house-fy2027",
+                  "quote": "hr9010 | 2026-05-22 | Placed on the Union Calendar, Calendar No. 580."
+                },
+                {
+                  "src": "latest-house-fy2027",
+                  "quote": "hr9022 | 2026-06-23 | Rules Committee Resolution H. Res. 1377 Reported to House."
+                },
+                {
+                  "src": "latest-house-fy2027",
+                  "quote": "hr9170 | 2026-06-05 | Placed on the Union Calendar, Calendar No. 598."
+                },
+                {
+                  "src": "latest-house-fy2027",
+                  "quote": "hr9171 | 2026-06-05 | Placed on the Union Calendar, Calendar No. 599."
+                },
+                {
+                  "src": "latest-house-fy2027",
+                  "quote": "hr9260 | 2026-06-11 | Placed on the Union Calendar, Calendar No. 604."
+                },
+                {
+                  "src": "latest-house-fy2027",
+                  "quote": "hr9310 | 2026-06-12 | Placed on the Union Calendar, Calendar No. 605."
+                },
+                {
+                  "src": "latest-house-fy2027",
+                  "quote": "hr9495 | 2026-06-26 | Placed on the Union Calendar, Calendar No. 621."
+                }
+              ]
+            },
+            {
+              "kind": "absence",
+              "absence_kind": "not_found",
+              "en": "Searching the titles of every bill and joint resolution introduced after H.R. 9770 (July 18, 2026) through November 22, 2026, we found no new stopgap: none is titled for continuing appropriations. The bills’ full texts and amendments to bills were not searched.",
+              "es": "Al buscar en los títulos de todos los proyectos de ley y resoluciones conjuntas presentados después de la H.R. 9770 (18 de julio de 2026) hasta el 22 de noviembre de 2026, no encontramos ninguna nueva medida temporal: ninguno lleva en su título asignaciones continuas (continuing appropriations). No se buscó en el texto completo de los proyectos ni en las enmiendas a los proyectos.",
+              "searched": [
+                "bill-scan"
+              ],
+              "absent": [
+                "continuing appropriations",
+                "Continuing Appropriations"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

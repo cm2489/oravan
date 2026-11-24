@@ -143,6 +143,11 @@ export default async function CitationsPage({ params }: { params: Promise<{ loca
             langSpanish={t('langSpanish')}
           />
           <p className="mt-4">{t('aiCallScript')}</p>
+          {/* `reader-questions` is a public anchor: the AI label on a Big
+              Question's reader questions links here (components/ReaderQuestions.tsx). */}
+          <p id="reader-questions" className="mt-4 scroll-mt-8">
+            {t('aiReaderQuestions')}
+          </p>
         </section>
 
         <section className="mt-8 border-t border-line pt-6">
