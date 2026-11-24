@@ -703,6 +703,1006 @@
           ]
         }
       ]
+    },
+    "iran-war-powers": {
+      "written": "2026-11-24",
+      "record_as_of": "2026-11-24",
+      "model": "claude-opus-5-5",
+      "type": "war_powers",
+      "rewritten_nightly": false,
+      "sources": {
+        "usc-50-1544": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/USCODE-2024-title50/html/USCODE-2024-title50-chap33-sec1544.htm",
+          "title": {
+            "en": "50 U.S.C. 1544 (War Powers Resolution, section 5)",
+            "es": "50 U.S.C. 1544 (Resolución de Poderes de Guerra, sección 5; en inglés)"
+          }
+        },
+        "usc-50-1546a": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/USCODE-2024-title50/html/USCODE-2024-title50-chap33-sec1546a.htm",
+          "title": {
+            "en": "50 U.S.C. 1546a",
+            "es": "50 U.S.C. 1546a (en inglés)"
+          }
+        },
+        "usc-50-1547": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/USCODE-2024-title50/html/USCODE-2024-title50-chap33-sec1547.htm",
+          "title": {
+            "en": "50 U.S.C. 1547 (War Powers Resolution, section 8)",
+            "es": "50 U.S.C. 1547 (Resolución de Poderes de Guerra, sección 8; en inglés)"
+          }
+        },
+        "constitution": {
+          "kind": "record",
+          "url": "https://www.archives.gov/founding-docs/constitution-transcript",
+          "title": {
+            "en": "U.S. Constitution, Article I, Section 7",
+            "es": "Constitución de EE. UU., artículo I, sección 7 (en inglés)"
+          }
+        },
+        "crs-r42699": {
+          "kind": "analysis",
+          "url": "https://www.congress.gov/crs_external_products/R/HTML/R42699.html",
+          "title": {
+            "en": "Congressional Research Service, report R42699 (updated March 8, 2019)",
+            "es": "Servicio de Investigación del Congreso, informe R42699 (actualizado el 8 de marzo de 2019, en inglés)"
+          }
+        },
+        "dcpd-202600299": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/DCPD-202600299/html/DCPD-202600299.htm",
+          "title": {
+            "en": "Daily Compilation of Presidential Documents: the President’s remarks to reporters, May 1, 2026",
+            "es": "Compilación diaria de documentos presidenciales: declaraciones del presidente a la prensa, 1 de mayo de 2026 (en inglés)"
+          }
+        },
+        "hdoc-119-139": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/CDOC-119hdoc139/pdf/CDOC-119hdoc139.pdf",
+          "title": {
+            "en": "House Document 119-139: the President’s letter of March 2, 2026",
+            "es": "Documento de la Cámara 119-139: carta del presidente del 2 de marzo de 2026 (en inglés)"
+          }
+        },
+        "hdoc-119-162": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/CDOC-119hdoc162/html/CDOC-119hdoc162.htm",
+          "title": {
+            "en": "House Document 119-162: the President’s letter of June 12, 2026",
+            "es": "Documento de la Cámara 119-162: carta del presidente del 12 de junio de 2026 (en inglés)"
+          }
+        },
+        "hdoc-119-167": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/CDOC-119hdoc167/html/CDOC-119hdoc167.htm",
+          "title": {
+            "en": "House Document 119-167: the President’s letter of June 29, 2026",
+            "es": "Documento de la Cámara 119-167: carta del presidente del 29 de junio de 2026 (en inglés)"
+          }
+        },
+        "hdoc-119-169": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/CDOC-119hdoc169/html/CDOC-119hdoc169.htm",
+          "title": {
+            "en": "House Document 119-169: the President’s letter of July 10, 2026",
+            "es": "Documento de la Cámara 119-169: carta del presidente del 10 de julio de 2026 (en inglés)"
+          }
+        },
+        "hdoc-119-193": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/CDOC-119hdoc193/html/CDOC-119hdoc193.htm",
+          "title": {
+            "en": "House Document 119-193: the President’s letter of September 3, 2026",
+            "es": "Documento de la Cámara 119-193: carta del presidente del 3 de septiembre de 2026 (en inglés)"
+          }
+        },
+        "hconres86-enr": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/BILLS-119hconres86enr/html/BILLS-119hconres86enr.htm",
+          "title": {
+            "en": "H.Con.Res. 86 as agreed to by both chambers (enrolled), text",
+            "es": "H.Con.Res. 86 tal como la aprobaron las dos cámaras (versión final), texto (en inglés)"
+          }
+        },
+        "hconres93-eh": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/BILLS-119hconres93eh/html/BILLS-119hconres93eh.htm",
+          "title": {
+            "en": "H.Con.Res. 93 as agreed to by the House, text",
+            "es": "H.Con.Res. 93 tal como la aprobó la Cámara, texto (en inglés)"
+          }
+        },
+        "hconres89-eh": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/BILLS-119hconres89eh/html/BILLS-119hconres89eh.htm",
+          "title": {
+            "en": "H.Con.Res. 89 as agreed to by the House, text",
+            "es": "H.Con.Res. 89 tal como la aprobó la Cámara, texto (en inglés)"
+          }
+        },
+        "hconres38-ih": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/BILLS-119hconres38ih/html/BILLS-119hconres38ih.htm",
+          "title": {
+            "en": "H.Con.Res. 38 as introduced, text",
+            "es": "H.Con.Res. 38 tal como se presentó, texto (en inglés)"
+          }
+        },
+        "sjres185-pcs": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/BILLS-119sjres185pcs/html/BILLS-119sjres185pcs.htm",
+          "title": {
+            "en": "S.J.Res. 185 as placed on the Senate calendar, text",
+            "es": "S.J.Res. 185 tal como se incluyó en el calendario del Senado, texto (en inglés)"
+          }
+        },
+        "sjres172-is": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/BILLS-119sjres172is/html/BILLS-119sjres172is.htm",
+          "title": {
+            "en": "S.J.Res. 172 as introduced, text",
+            "es": "S.J.Res. 172 tal como se presentó, texto (en inglés)"
+          }
+        },
+        "sjres180-is": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/BILLS-119sjres180is/html/BILLS-119sjres180is.htm",
+          "title": {
+            "en": "S.J.Res. 180 as introduced, text",
+            "es": "S.J.Res. 180 tal como se presentó, texto (en inglés)"
+          }
+        },
+        "sjres181-is": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/BILLS-119sjres181is/html/BILLS-119sjres181is.htm",
+          "title": {
+            "en": "S.J.Res. 181 as introduced, text",
+            "es": "S.J.Res. 181 tal como se presentó, texto (en inglés)"
+          }
+        },
+        "sjres200-is": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/BILLS-119sjres200is/html/BILLS-119sjres200is.htm",
+          "title": {
+            "en": "S.J.Res. 200 as introduced, text",
+            "es": "S.J.Res. 200 tal como se presentó, texto (en inglés)"
+          }
+        },
+        "sjres211-is": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/BILLS-119sjres211is/html/BILLS-119sjres211is.htm",
+          "title": {
+            "en": "S.J.Res. 211 as introduced, text",
+            "es": "S.J.Res. 211 tal como se presentó, texto (en inglés)"
+          }
+        },
+        "hjres176-ih": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/BILLS-119hjres176ih/html/BILLS-119hjres176ih.htm",
+          "title": {
+            "en": "H.J.Res. 176 as introduced, text",
+            "es": "H.J.Res. 176 tal como se presentó, texto (en inglés)"
+          }
+        },
+        "actions-hconres86": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/86/all-actions",
+          "title": {
+            "en": "H.Con.Res. 86, official actions",
+            "es": "H.Con.Res. 86, acciones oficiales (en inglés)"
+          }
+        },
+        "bill-hconres86": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/86",
+          "title": {
+            "en": "H.Con.Res. 86, official record of the measure",
+            "es": "H.Con.Res. 86, registro oficial de la medida (en inglés)"
+          }
+        },
+        "bill-hconres89": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/89",
+          "title": {
+            "en": "H.Con.Res. 89, official record of the measure",
+            "es": "H.Con.Res. 89, registro oficial de la medida (en inglés)"
+          }
+        },
+        "bill-hconres93": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/93",
+          "title": {
+            "en": "H.Con.Res. 93, official record of the measure",
+            "es": "H.Con.Res. 93, registro oficial de la medida (en inglés)"
+          }
+        },
+        "bill-sjres172": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/172",
+          "title": {
+            "en": "S.J.Res. 172, official record of the measure",
+            "es": "S.J.Res. 172, registro oficial de la medida (en inglés)"
+          }
+        },
+        "bill-sjres180": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/180",
+          "title": {
+            "en": "S.J.Res. 180, official record of the measure",
+            "es": "S.J.Res. 180, registro oficial de la medida (en inglés)"
+          }
+        },
+        "bill-sjres181": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/181",
+          "title": {
+            "en": "S.J.Res. 181, official record of the measure",
+            "es": "S.J.Res. 181, registro oficial de la medida (en inglés)"
+          }
+        },
+        "bill-sjres185": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/185",
+          "title": {
+            "en": "S.J.Res. 185, official record of the measure",
+            "es": "S.J.Res. 185, registro oficial de la medida (en inglés)"
+          }
+        },
+        "bill-sjres200": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/200",
+          "title": {
+            "en": "S.J.Res. 200, official record of the measure",
+            "es": "S.J.Res. 200, registro oficial de la medida (en inglés)"
+          }
+        },
+        "bill-sjres211": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/senate-joint-resolution/211",
+          "title": {
+            "en": "S.J.Res. 211, official record of the measure",
+            "es": "S.J.Res. 211, registro oficial de la medida (en inglés)"
+          }
+        },
+        "bill-hjres176": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/house-joint-resolution/176",
+          "title": {
+            "en": "H.J.Res. 176, official record of the measure",
+            "es": "H.J.Res. 176, registro oficial de la medida (en inglés)"
+          }
+        },
+        "law-scan": {
+          "kind": "record",
+          "url": "https://api.congress.gov/v3/law/119",
+          "title": {
+            "en": "Congress.gov data service: the 148 measures listed as laws of the 119th Congress on November 24, 2026 (needs a free api.data.gov key)",
+            "es": "Servicio de datos de Congress.gov: las 148 medidas que figuraban como leyes del 119.º Congreso el 24 de noviembre de 2026 (requiere una clave gratuita de api.data.gov; en inglés)"
+          }
+        }
+      },
+      "picks": [
+        {
+          "bank_id": "core.veto",
+          "q": {
+            "en": "Would it go to the President, and what happens if it is vetoed?",
+            "es": "¿Llegaría al Presidente y qué pasa si lo veta?"
+          },
+          "claims": [
+            {
+              "kind": "record",
+              "en": "The four House measures, H.Con.Res. 38, 86, 89 and 93, are concurrent resolutions under section 5(c) of the War Powers Resolution, which says forces in hostilities abroad without a declaration of war or specific statutory authorization “shall be removed by the President if the Congress so directs by concurrent resolution.”",
+              "es": "Las cuatro medidas de la Cámara, las H.Con.Res. 38, 86, 89 y 93, son resoluciones concurrentes conforme a la sección 5(c) de la Resolución de Poderes de Guerra, según la cual las fuerzas en hostilidades en el exterior sin una declaración de guerra ni una autorización legal específica «serán retiradas por el Presidente si el Congreso así lo ordena mediante una resolución concurrente».",
+              "cites": [
+                {
+                  "src": "usc-50-1544",
+                  "quote": "at any time that United States Armed Forces are engaged in hostilities outside the territory of the United States, its possessions and territories without a declaration of war or specific statutory authorization, such forces shall be removed by the President if the Congress so directs by concurrent resolution."
+                },
+                {
+                  "src": "hconres38-ih",
+                  "quote": "Pursuant to section 5(c) of the War Powers Resolution (50 U.S.C. 1544(c)), Congress hereby directs the President"
+                },
+                {
+                  "src": "hconres86-enr",
+                  "quote": "Resolved by the House of Representatives (the Senate concurring), That, pursuant to section 5(c) of the War Powers Resolution (50 U.S.C. 1544(c))"
+                },
+                {
+                  "src": "hconres89-eh",
+                  "quote": "Pursuant to section 5(c) of the War Powers Resolution (50 U.S.C. 1544(c)), Congress hereby directs the President"
+                },
+                {
+                  "src": "hconres93-eh",
+                  "quote": "Resolved by the House of Representatives (the Senate concurring), That, pursuant to section 5(c) of the War Powers Resolution (50 U.S.C. 1544(c))"
+                }
+              ]
+            },
+            {
+              "kind": "analysis",
+              "en": "A Congressional Research Service report, updated March 8, 2019, says a concurrent resolution “does not require presentment to the President for signature or veto,” while a joint resolution is one “which requires presentment to the President.”",
+              "es": "Un informe del Servicio de Investigación del Congreso, actualizado el 8 de marzo de 2019, dice que una resolución concurrente «no requiere que se presente al Presidente para su firma o veto», mientras que una resolución conjunta es una «que requiere su presentación al Presidente».",
+              "cites": [
+                {
+                  "src": "crs-r42699",
+                  "quote": "A concurrent resolution is adopted by both chambers, but it does not require presentment to the President for signature or veto."
+                },
+                {
+                  "src": "crs-r42699",
+                  "quote": "the Senate voted to amend the War Powers Resolution by substituting a joint resolution, which requires presentment to the President, for the concurrent resolution in Section 5(c)"
+                },
+                {
+                  "src": "crs-r42699",
+                  "quote": "Updated March 8, 2019"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "H.Con.Res. 86, which both chambers agreed to, has as its latest action, as of November 24, “Message on Senate action sent to the House” (June 24).",
+              "es": "La H.Con.Res. 86, que aprobaron las dos cámaras, tiene como última acción, al 24 de noviembre, «Mensaje sobre la acción del Senado enviado a la Cámara» (24 de junio).",
+              "cites": [
+                {
+                  "src": "actions-hconres86",
+                  "quote": "2026-06-03 | On agreeing to the resolution Agreed to by the Yeas and Nays: 215 - 208 (Roll no. 199)."
+                },
+                {
+                  "src": "actions-hconres86",
+                  "quote": "2026-06-23 | Resolution agreed to in Senate without amendment by Yea-Nay Vote. 50 - 48. Record Vote Number: 184. (consideration: CR S3039-3040)"
+                },
+                {
+                  "src": "bill-hconres86",
+                  "quote": "latestAction | 2026-06-24 | Message on Senate action sent to the House."
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "The six Senate measures, S.J.Res. 172, 180, 181, 185, 200 and 211, are joint resolutions under 50 U.S.C. 1546a, which limits Senate debate on a veto of such a measure to twenty hours; as of November 24, none of the six has passed the Senate.",
+              "es": "Las seis medidas del Senado, las S.J.Res. 172, 180, 181, 185, 200 y 211, son resoluciones conjuntas según el 50 U.S.C. 1546a, que limita a veinte horas el debate del Senado sobre el veto de una de esas medidas; al 24 de noviembre, ninguna de las seis ha sido aprobada por el Senado.",
+              "cites": [
+                {
+                  "src": "usc-50-1546a",
+                  "quote": "If such a joint resolution or bill should be vetoed by the President, the time for debate in consideration of the veto message on such measure shall be limited to twenty hours in the Senate"
+                },
+                {
+                  "src": "sjres172-is",
+                  "quote": "Pursuant to section 1013 of the Department of State Authorization Act, Fiscal Years 1984 and 1985 (50 U.S.C. 1546a)"
+                },
+                {
+                  "src": "sjres180-is",
+                  "quote": "Pursuant to section 1013 of the Department of State Authorization Act, Fiscal Years 1984 and 1985 (50 U.S.C. 1546a)"
+                },
+                {
+                  "src": "sjres181-is",
+                  "quote": "Pursuant to section 1013 of the Department of State Authorization Act, Fiscal Years 1984 and 1985 (50 U.S.C. 1546a)"
+                },
+                {
+                  "src": "sjres185-pcs",
+                  "quote": "Pursuant to section 1013 of the Department of State Authorization Act, Fiscal Years 1984 and 1985 (50 U.S.C. 1546a)"
+                },
+                {
+                  "src": "sjres200-is",
+                  "quote": "Pursuant to section 1013 of the Department of State Authorization Act, Fiscal Years 1984 and 1985 (50 U.S.C. 1546a)"
+                },
+                {
+                  "src": "sjres211-is",
+                  "quote": "Pursuant to section 1013 of the Department of State Authorization Act, Fiscal Years 1984 and 1985 (50 U.S.C. 1546a)"
+                },
+                {
+                  "src": "bill-sjres172",
+                  "quote": "latestAction | 2026-06-16 | Motion to discharge Senate Committee on Foreign Relations rejected by Yea-Nay Vote. 47 - 48. Record Vote Number: 174."
+                },
+                {
+                  "src": "bill-sjres180",
+                  "quote": "latestAction | 2026-07-23 | Motion to discharge Senate Committee on Foreign Relations rejected by Yea-Nay Vote. 47 - 49. Record Vote Number: 207."
+                },
+                {
+                  "src": "bill-sjres181",
+                  "quote": "latestAction | 2026-07-30 | Motion to discharge Senate Committee on Foreign Relations rejected by Yea-Nay Vote. 49 - 50. Record Vote Number: 216. (consideration: CR S4357)"
+                },
+                {
+                  "src": "bill-sjres185",
+                  "quote": "latestAction | 2026-06-24 | Motion to proceed to consideration of measure rejected in Senate by Yea-Nay Vote. 47 - 50. Record Vote Number: 192. (CR S3194)"
+                },
+                {
+                  "src": "bill-sjres200",
+                  "quote": "latestAction | 2026-07-13 | Read twice and referred to the Committee on Foreign Relations."
+                },
+                {
+                  "src": "bill-sjres211",
+                  "quote": "latestAction | 2026-08-06 | Read twice and referred to the Committee on Foreign Relations."
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "Under the Constitution, a bill that has “passed the House of Representatives and the Senate” is presented to the President; one he returns with objections becomes law only if “two thirds” of each chamber pass it again, and one not returned “within ten Days (Sundays excepted)” becomes law unless Congress’s adjournment prevents its return.",
+              "es": "Según la Constitución, un proyecto «aprobado por la Cámara de Representantes y el Senado» se presenta al Presidente; si él lo devuelve con objeciones, solo se convierte en ley si «dos tercios» de cada cámara vuelven a aprobarlo, y uno no devuelto «dentro de diez días (sin contar los domingos)» se convierte en ley, salvo que el aplazamiento del Congreso impida su devolución.",
+              "cites": [
+                {
+                  "src": "constitution",
+                  "quote": "Every Bill which shall have passed the House of Representatives and the Senate, shall, before it become a Law, be presented to the President of the United States; If he approve he shall sign it, but if not he shall return it, with his Objections"
+                },
+                {
+                  "src": "constitution",
+                  "quote": "If after such Reconsideration two thirds of that House shall agree to pass the Bill"
+                },
+                {
+                  "src": "constitution",
+                  "quote": "If any Bill shall not be returned by the President within ten Days (Sundays excepted) after it shall have been presented to him, the Same shall be a Law, in like Manner as if he had signed it, unless the Congress by their Adjournment prevent its Return, in which Case it shall not be a Law."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "bank_id": "wp.binding",
+          "q": {
+            "en": "If it passes, does the President have to follow it?",
+            "es": "Si se aprueba, ¿está obligado el Presidente a cumplirla?"
+          },
+          "claims": [
+            {
+              "kind": "record",
+              "en": "H.Con.Res. 86, agreed to by the House 215–208 on June 3, 2026, and by the Senate 50–48 on June 23, invokes section 5(c) and says “Congress directs the President to remove United States Armed Forces from hostilities against the Islamic Republic of Iran,” except forces needed “to defend the United States or an ally or partner of the United States from imminent attack” if the President complies with section 5(b), unless war is declared or force is specifically authorized.",
+              "es": "La H.Con.Res. 86, aprobada por la Cámara 215–208 el 3 de junio de 2026 y por el Senado 50–48 el 23 de junio, invoca la sección 5(c) y dice que «el Congreso ordena al Presidente retirar a las Fuerzas Armadas de Estados Unidos de las hostilidades contra la República Islámica de Irán», salvo las fuerzas necesarias «para defender a Estados Unidos o a un aliado o socio de Estados Unidos de un ataque inminente» si el Presidente cumple la sección 5(b), a menos que se declare la guerra o se autorice específicamente el uso de la fuerza.",
+              "cites": [
+                {
+                  "src": "actions-hconres86",
+                  "quote": "2026-06-03 | On agreeing to the resolution Agreed to by the Yeas and Nays: 215 - 208 (Roll no. 199)."
+                },
+                {
+                  "src": "actions-hconres86",
+                  "quote": "2026-06-23 | Resolution agreed to in Senate without amendment by Yea-Nay Vote. 50 - 48. Record Vote Number: 184. (consideration: CR S3039-3040)"
+                },
+                {
+                  "src": "hconres86-enr",
+                  "quote": "Congress directs the President to remove United States Armed Forces from hostilities against the Islamic Republic of Iran"
+                },
+                {
+                  "src": "hconres86-enr",
+                  "quote": "pursuant to section 5(c) of the War Powers Resolution (50 U.S.C. 1544(c))"
+                },
+                {
+                  "src": "hconres86-enr",
+                  "quote": "other than those elements of the Armed Forces that may be necessary to defend the United States or an ally or partner of the United States from imminent attack provided that the President complies fully with the requirements of section 5(b) the War Powers Resolution (50 U.S.C. 1544(b))"
+                },
+                {
+                  "src": "hconres86-enr",
+                  "quote": "unless explicitly authorized by a declaration of war or a specific congressional authorization for use of military force against Iran."
+                }
+              ]
+            },
+            {
+              "kind": "analysis",
+              "en": "A Congressional Research Service report, updated March 8, 2019, says section 5(c) “is constitutionally suspect” under the reasoning of the Supreme Court’s 1983 decision in INS v. Chadha, and that some legal analysts contend the War Powers Resolution “is in a unique category.”",
+              "es": "Un informe del Servicio de Investigación del Congreso, actualizado el 8 de marzo de 2019, dice que la sección 5(c) «es de dudosa constitucionalidad» según el razonamiento de la decisión de 1983 de la Corte Suprema en INS v. Chadha, y que algunos analistas jurídicos sostienen que la Resolución de Poderes de Guerra «está en una categoría única».",
+              "cites": [
+                {
+                  "src": "crs-r42699",
+                  "quote": "Since Section 5(c) requires forces to be removed by the President if Congress so directs by a concurrent resolution, it is constitutionally suspect under the reasoning applied by the Court."
+                },
+                {
+                  "src": "crs-r42699",
+                  "quote": "On June 23, 1983, the Supreme Court in INS v. Chadha"
+                },
+                {
+                  "src": "crs-r42699",
+                  "quote": "Some legal analysts contend, nevertheless, that the War Powers Resolution is in a unique category which differs from statutes containing a legislative veto over delegated authorities."
+                },
+                {
+                  "src": "crs-r42699",
+                  "quote": "Updated March 8, 2019"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "On May 1, 2026, the President said, “on the war powers,” that “every other President considered it totally unconstitutional. And we agree with that.”",
+              "es": "El 1 de mayo de 2026, el presidente dijo, «sobre los poderes de guerra», que «todos los demás presidentes lo consideraron totalmente inconstitucional. Y estamos de acuerdo con eso».",
+              "cites": [
+                {
+                  "src": "dcpd-202600299",
+                  "quote": "May 1, 2026"
+                },
+                {
+                  "src": "dcpd-202600299",
+                  "quote": "Just let me just tell you, on the war powers."
+                },
+                {
+                  "src": "dcpd-202600299",
+                  "quote": "And every other President considered it totally unconstitutional. And we agree with that."
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "In letters dated June 29, July 10 and September 3, 2026, the President reported further “strikes against targets within Iran,” described in whole or in part as “defensive strikes,” and cited his “constitutional authority as Commander in Chief.”",
+              "es": "En cartas fechadas el 29 de junio, el 10 de julio y el 3 de septiembre de 2026, el presidente informó de nuevos «ataques contra objetivos dentro de Irán», descritos total o parcialmente como «ataques defensivos», y citó su «autoridad constitucional como Comandante en Jefe».",
+              "cites": [
+                {
+                  "src": "hdoc-119-167",
+                  "quote": "Washington, June 29, 2026."
+                },
+                {
+                  "src": "hdoc-119-167",
+                  "quote": "with defensive strikes against targets within Iran"
+                },
+                {
+                  "src": "hdoc-119-167",
+                  "quote": "I acted pursuant to my constitutional authority as Commander in Chief and as Chief Executive to conduct United States foreign relations."
+                },
+                {
+                  "src": "hdoc-119-167",
+                  "quote": "with precision strikes against targets within Iran"
+                },
+                {
+                  "src": "hdoc-119-169",
+                  "quote": "Washington, July 10, 2026."
+                },
+                {
+                  "src": "hdoc-119-169",
+                  "quote": "with defensive strikes against targets within Iran"
+                },
+                {
+                  "src": "hdoc-119-169",
+                  "quote": "I acted pursuant to my constitutional authority as Commander in Chief and as Chief Executive to conduct United States foreign relations."
+                },
+                {
+                  "src": "hdoc-119-193",
+                  "quote": "Washington, September 3, 2026."
+                },
+                {
+                  "src": "hdoc-119-193",
+                  "quote": "with defensive strikes against targets within Iran"
+                },
+                {
+                  "src": "hdoc-119-193",
+                  "quote": "I acted pursuant to my constitutional authority as Commander in Chief and as Chief Executive to conduct United States foreign relations."
+                }
+              ]
+            },
+            {
+              "kind": "absence",
+              "absence_kind": "not_checked",
+              "en": "We did not search court records, so this answer does not say whether any court has ruled on the concurrent resolution both chambers agreed to.",
+              "es": "No buscamos en los registros judiciales, así que esta respuesta no dice si algún tribunal se ha pronunciado sobre la resolución concurrente que aprobaron las dos cámaras.",
+              "searched": [
+                "crs-r42699",
+                "actions-hconres86"
+              ]
+            }
+          ]
+        },
+        {
+          "bank_id": "wp.sixty_day",
+          "q": {
+            "en": "What is the War Powers Resolution's 60-day limit, and how does it apply here?",
+            "es": "¿Qué es el límite de 60 días de la Resolución de Poderes de Guerra y cómo se aplica aquí?"
+          },
+          "claims": [
+            {
+              "kind": "record",
+              "en": "Section 5(b) of the War Powers Resolution (50 U.S.C. 1544(b)) says the President “shall terminate any use of United States Armed Forces” within sixty calendar days after a report under 50 U.S.C. 1543(a)(1) “is submitted or is required to be submitted,” whichever is earlier, unless Congress has declared war, enacted a specific authorization, extended the period by law, or “is physically unable to meet as a result of an armed attack upon the United States.”",
+              "es": "La sección 5(b) de la Resolución de Poderes de Guerra (50 U.S.C. 1544(b)) dice que el Presidente «pondrá fin a todo uso de las Fuerzas Armadas de Estados Unidos» dentro de los sesenta días naturales siguientes a que un informe conforme al 50 U.S.C. 1543(a)(1) «se presente o deba presentarse», lo que ocurra primero, salvo que el Congreso haya declarado la guerra, promulgado una autorización específica, prorrogado el plazo por ley o «no pueda reunirse físicamente a causa de un ataque armado contra Estados Unidos».",
+              "cites": [
+                {
+                  "src": "usc-50-1544",
+                  "quote": "Within sixty calendar days after a report is submitted or is required to be submitted pursuant to section 1543(a)(1) of this title, whichever is earlier, the President shall terminate any use of United States Armed Forces with respect to which such report was submitted (or required to be submitted), unless the Congress (1) has declared war or has enacted a specific authorization for such use of United States Armed Forces, (2) has extended by law such sixty-day period, or (3) is physically unable to meet as a result of an armed attack upon the United States."
+                },
+                {
+                  "src": "hconres86-enr",
+                  "quote": "section 5(b) the War Powers Resolution (50 U.S.C. 1544(b))"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "That period “shall be extended for not more than an additional thirty days” if the President certifies in writing that “unavoidable military necessity” for the forces’ safety requires it during their removal.",
+              "es": "Ese plazo «se prorrogará por no más de treinta días adicionales» si el Presidente certifica por escrito que «una necesidad militar ineludible» relativa a la seguridad de las fuerzas lo exige durante su retiro.",
+              "cites": [
+                {
+                  "src": "usc-50-1544",
+                  "quote": "Such sixty-day period shall be extended for not more than an additional thirty days if the President determines and certifies to the Congress in writing that unavoidable military necessity respecting the safety of United States Armed Forces requires the continued use of such armed forces in the course of bringing about a prompt removal of such forces."
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "The President’s letter dated March 2, 2026 (House Document 119-139), reports “military action taken on February 28, 2026, against the Government of the Islamic Republic of Iran.”",
+              "es": "La carta del presidente fechada el 2 de marzo de 2026 (Documento de la Cámara 119-139) informa de «una acción militar tomada el 28 de febrero de 2026 contra el Gobierno de la República Islámica de Irán».",
+              "cites": [
+                {
+                  "src": "hdoc-119-139",
+                  "quote": "Washington, March 2, 2026."
+                },
+                {
+                  "src": "hdoc-119-139",
+                  "quote": "I write to apprise you of military action taken on February 28, 2026, against the Government of the Islamic Republic of Iran."
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "H.J.Res. 176, a proposed authorization of force introduced May 7, 2026, says the sixty-day period “has expired”; S.J.Res. 211, introduced August 6, 2026, to remove the forces, says the President did not end their use “following 60 days as required under section 5(b).”",
+              "es": "La H.J.Res. 176, una propuesta de autorización del uso de la fuerza presentada el 7 de mayo de 2026, dice que el plazo de sesenta días «ha vencido»; la S.J.Res. 211, presentada el 6 de agosto de 2026 para retirar las fuerzas, dice que el presidente no puso fin a su uso «tras 60 días, como exige la sección 5(b)».",
+              "cites": [
+                {
+                  "src": "hjres176-ih",
+                  "quote": "Whereas the sixty-calendar-day period specified in section 5(b) of the War Powers Resolution (50 U.S.C. 1544(b)) has expired"
+                },
+                {
+                  "src": "bill-hjres176",
+                  "quote": "introducedDate | 2026-05-07"
+                },
+                {
+                  "src": "sjres211-is",
+                  "quote": "The President did not terminate the use of United States Armed Forces following 60 days as required under section 5(b) of the War Powers Resolution (50 U.S.C. 1544(b))"
+                },
+                {
+                  "src": "bill-sjres211",
+                  "quote": "introducedDate | 2026-08-06"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "On May 1, 2026, the President told reporters, “on the war powers,” that “every other President considered it totally unconstitutional. And we agree with that.”",
+              "es": "El 1 de mayo de 2026, el presidente dijo a la prensa, «sobre los poderes de guerra», que «todos los demás presidentes lo consideraron totalmente inconstitucional. Y estamos de acuerdo con eso».",
+              "cites": [
+                {
+                  "src": "dcpd-202600299",
+                  "quote": "May 1, 2026"
+                },
+                {
+                  "src": "dcpd-202600299",
+                  "quote": "Just let me just tell you, on the war powers."
+                },
+                {
+                  "src": "dcpd-202600299",
+                  "quote": "And every other President considered it totally unconstitutional. And we agree with that."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "bank_id": "wp.admin_basis",
+          "q": {
+            "en": "What legal authority and goals has the Administration stated?",
+            "es": "¿Qué autoridad legal y qué objetivos ha declarado el Gobierno?"
+          },
+          "claims": [
+            {
+              "kind": "record",
+              "en": "In a letter dated March 2, 2026 (House Document 119-139), the President wrote that strikes on February 28 “were undertaken to protect United States forces in the region, protect the United States homeland, advance vital United States national interests, including ensuring the free flow of maritime commerce through the Strait of Hormuz, and in collective self-defense of our regional allies, including Israel.”",
+              "es": "En una carta fechada el 2 de marzo de 2026 (Documento de la Cámara 119-139), el presidente escribió que los bombardeos del 28 de febrero «se llevaron a cabo para proteger a las fuerzas de Estados Unidos en la región, proteger el territorio nacional de Estados Unidos, promover intereses nacionales vitales de Estados Unidos, entre ellos garantizar la libre circulación del comercio marítimo por el estrecho de Ormuz, y en legítima defensa colectiva de nuestros aliados regionales, entre ellos Israel».",
+              "cites": [
+                {
+                  "src": "hdoc-119-139",
+                  "quote": "Washington, March 2, 2026."
+                },
+                {
+                  "src": "hdoc-119-139",
+                  "quote": "on February 28, 2026, United States forces conducted precision strikes against numerous targets within Iran"
+                },
+                {
+                  "src": "hdoc-119-139",
+                  "quote": "These strikes were undertaken to protect United States forces in the region, protect the United States homeland, advance vital United States national interests, including ensuring the free flow of maritime commerce through the Strait of Hormuz, and in collective self-defense of our regional allies, including Israel."
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "In that letter and in four more printed as House Documents on strikes within Iran, dated June 12, June 29, July 10 and September 3, 2026, he wrote that he acted under his constitutional authority “as Commander in Chief” and as Chief Executive “to conduct United States foreign relations,” and that each report was provided “consistent with the War Powers Resolution.”",
+              "es": "En esa carta y en otras cuatro publicadas como Documentos de la Cámara sobre bombardeos dentro de Irán, fechadas el 12 de junio, el 29 de junio, el 10 de julio y el 3 de septiembre de 2026, escribió que actuó en virtud de su autoridad constitucional «como Comandante en Jefe» y como Jefe del Ejecutivo «para conducir las relaciones exteriores de Estados Unidos», y que cada informe se enviaba «de conformidad con la Resolución de Poderes de Guerra».",
+              "cites": [
+                {
+                  "src": "hdoc-119-139",
+                  "quote": "as Commander in Chief and Chief Executive to conduct United States foreign relations."
+                },
+                {
+                  "src": "hdoc-119-139",
+                  "quote": "consistent with the War Powers Resolution"
+                },
+                {
+                  "src": "hdoc-119-162",
+                  "quote": "Washington, June 12, 2026."
+                },
+                {
+                  "src": "hdoc-119-162",
+                  "quote": "precision strikes against numerous targets within Iran"
+                },
+                {
+                  "src": "hdoc-119-162",
+                  "quote": "I acted pursuant to my constitutional authority as Commander in Chief and as Chief Executive to conduct United States foreign relations."
+                },
+                {
+                  "src": "hdoc-119-162",
+                  "quote": "consistent with the War Powers Resolution (Public Law 93-148)"
+                },
+                {
+                  "src": "hdoc-119-167",
+                  "quote": "Washington, June 29, 2026."
+                },
+                {
+                  "src": "hdoc-119-167",
+                  "quote": "I acted pursuant to my constitutional authority as Commander in Chief and as Chief Executive to conduct United States foreign relations."
+                },
+                {
+                  "src": "hdoc-119-167",
+                  "quote": "consistent with the War Powers Resolution (Public Law 93-148)"
+                },
+                {
+                  "src": "hdoc-119-169",
+                  "quote": "Washington, July 10, 2026."
+                },
+                {
+                  "src": "hdoc-119-169",
+                  "quote": "I acted pursuant to my constitutional authority as Commander in Chief and as Chief Executive to conduct United States foreign relations."
+                },
+                {
+                  "src": "hdoc-119-169",
+                  "quote": "consistent with the War Powers Resolution (Public Law 93-148)"
+                },
+                {
+                  "src": "hdoc-119-193",
+                  "quote": "Washington, September 3, 2026."
+                },
+                {
+                  "src": "hdoc-119-193",
+                  "quote": "I acted pursuant to my constitutional authority as Commander in Chief and as Chief Executive to conduct United States foreign relations."
+                },
+                {
+                  "src": "hdoc-119-193",
+                  "quote": "consistent with the War Powers Resolution (Public Law 93-148)"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "The latest of those letters, dated September 3, 2026, says U.S. forces “remain postured to take further military action, as necessary and appropriate,” including “to ensure the Government of the Islamic Republic of Iran and Iranian aligned militia groups cease being a threat to the United States and to our allies and partners.”",
+              "es": "La última de esas cartas, fechada el 3 de septiembre de 2026, dice que las fuerzas de EE. UU. «siguen preparadas para tomar nuevas medidas militares, según sea necesario y apropiado», incluso «para garantizar que el Gobierno de la República Islámica de Irán y los grupos de milicias alineados con Irán dejen de ser una amenaza para Estados Unidos y para nuestros aliados y socios».",
+              "cites": [
+                {
+                  "src": "hdoc-119-193",
+                  "quote": "Washington, September 3, 2026."
+                },
+                {
+                  "src": "hdoc-119-193",
+                  "quote": "United States Armed Forces remain postured to take further military action, as necessary and appropriate, to address further attacks against the United States or its allies and partners and to ensure the Government of the Islamic Republic of Iran and Iranian aligned militia groups cease being a threat to the United States and to our allies and partners."
+                }
+              ]
+            },
+            {
+              "kind": "absence",
+              "absence_kind": "not_found",
+              "en": "Searching those five letters, we found no mention of an authorization for use of military force; we did not search the Administration’s other statements.",
+              "es": "Al buscar en esas cinco cartas, no encontramos ninguna mención de una autorización para el uso de la fuerza militar; no buscamos en otras declaraciones del Gobierno.",
+              "searched": [
+                "hdoc-119-139",
+                "hdoc-119-162",
+                "hdoc-119-167",
+                "hdoc-119-169",
+                "hdoc-119-193"
+              ],
+              "absent": [
+                "authorization for use of military force",
+                "Authorization for Use of Military Force",
+                "AUMF"
+              ]
+            }
+          ]
+        },
+        {
+          "bank_id": "wp.authorized",
+          "q": {
+            "en": "Has Congress authorized the use of military force here?",
+            "es": "¿Ha autorizado el Congreso el uso de la fuerza militar en este caso?"
+          },
+          "claims": [
+            {
+              "kind": "record",
+              "en": "Under 50 U.S.C. 1547(a)(1), authority to put U.S. forces into hostilities “shall not be inferred” from any provision of law unless it “specifically authorizes the introduction of United States Armed Forces into hostilities” and “states that it is intended to constitute specific statutory authorization.”",
+              "es": "Según el 50 U.S.C. 1547(a)(1), la autoridad para llevar fuerzas de EE. UU. a hostilidades «no se deducirá» de ninguna disposición legal, salvo que esta «autorice específicamente la introducción de las Fuerzas Armadas de Estados Unidos en hostilidades» y «declare que su intención es constituir una autorización legal específica».",
+              "cites": [
+                {
+                  "src": "usc-50-1547",
+                  "quote": "Authority to introduce United States Armed Forces into hostilities or into situations wherein involvement in hostilities is clearly indicated by the circumstances shall not be inferred"
+                },
+                {
+                  "src": "usc-50-1547",
+                  "quote": "from any provision of law (whether or not in effect before November 7, 1973), including any provision contained in any appropriation Act, unless such provision specifically authorizes the introduction of United States Armed Forces into hostilities or into such situations and states that it is intended to constitute specific statutory authorization within the meaning of this chapter"
+                }
+              ]
+            },
+            {
+              "kind": "absence",
+              "absence_kind": "not_found",
+              "en": "Searching the titles of the 148 measures that Congress.gov listed as laws of the 119th Congress on November 24, 2026, we found none titled as an authorization for use of military force; we did not search those laws’ full texts or the laws of earlier Congresses.",
+              "es": "Al buscar en los títulos de las 148 medidas que Congress.gov registraba como leyes del 119.º Congreso el 24 de noviembre de 2026, no encontramos ninguna titulada como autorización para el uso de la fuerza militar; no buscamos en el texto completo de esas leyes ni en las leyes de Congresos anteriores.",
+              "searched": [
+                "law-scan"
+              ],
+              "absent": [
+                "military force",
+                "Military Force",
+                "use of force",
+                "Use of Force"
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "H.J.Res. 176, the “2026 Authorization for Use of Military Force Against Iran,” introduced in the House on May 7, 2026, would authorize force for four listed purposes; as of November 24, its latest action is its referral that day to the House Committee on Foreign Affairs.",
+              "es": "La H.J.Res. 176, la «Autorización para el Uso de la Fuerza Militar contra Irán de 2026», presentada en la Cámara el 7 de mayo de 2026, autorizaría el uso de la fuerza para cuatro fines enumerados; al 24 de noviembre, su última acción es su remisión ese mismo día al Comité de Asuntos Exteriores de la Cámara.",
+              "cites": [
+                {
+                  "src": "bill-hjres176",
+                  "quote": "title | 2026 Authorization for Use of Military Force Against Iran"
+                },
+                {
+                  "src": "bill-hjres176",
+                  "quote": "introducedDate | 2026-05-07"
+                },
+                {
+                  "src": "hjres176-ih",
+                  "quote": "The President is authorized to use the Armed Forces of the United States as the President determines to be necessary and appropriate in order to"
+                },
+                {
+                  "src": "bill-hjres176",
+                  "quote": "latestAction | 2026-05-07 | Referred to the House Committee on Foreign Affairs."
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "That measure’s preamble says Congress has not “provided any specific statutory authorization for, hostilities involving United States Armed Forces against the Islamic Republic of Iran,” and the findings of the six Senate joint resolutions listed for this question say Congress has not enacted “a specific statutory authorization for the use of military force within or against Iran.”",
+              "es": "El preámbulo de esa medida dice que el Congreso no ha «otorgado ninguna autorización legal específica para las hostilidades de las Fuerzas Armadas de Estados Unidos contra la República Islámica de Irán», y las conclusiones de las seis resoluciones conjuntas del Senado de esta pregunta dicen que el Congreso no ha promulgado «una autorización legal específica para el uso de la fuerza militar dentro de Irán o contra Irán».",
+              "cites": [
+                {
+                  "src": "hjres176-ih",
+                  "quote": "Whereas Congress has not declared war with respect to, or provided any specific statutory authorization for, hostilities involving United States Armed Forces against the Islamic Republic of Iran"
+                },
+                {
+                  "src": "sjres172-is",
+                  "quote": "nor enacted a specific statutory authorization for the use of military force within or against Iran."
+                },
+                {
+                  "src": "sjres180-is",
+                  "quote": "nor enacted a specific statutory authorization for the use of military force within or against Iran."
+                },
+                {
+                  "src": "sjres181-is",
+                  "quote": "nor enacted a specific statutory authorization for the use of military force within or against Iran."
+                },
+                {
+                  "src": "sjres185-pcs",
+                  "quote": "nor enacted a specific statutory authorization for the use of military force within or against Iran."
+                },
+                {
+                  "src": "sjres200-is",
+                  "quote": "nor enacted a specific statutory authorization for the use of military force within or against Iran."
+                },
+                {
+                  "src": "sjres211-is",
+                  "quote": "nor enacted a specific statutory authorization for the use of military force within or against Iran."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "bank_id": "wp.still_allowed",
+          "q": {
+            "en": "What would U.S. forces still be allowed to do?",
+            "es": "¿Qué seguirían teniendo permitido hacer las fuerzas de EE. UU.?"
+          },
+          "claims": [
+            {
+              "kind": "record",
+              "en": "H.Con.Res. 86 (agreed to by both chambers) and H.Con.Res. 93 (rejected by the Senate 48–51 on November 19, 2026) except forces “that may be necessary to defend the United States or an ally or partner of the United States from imminent attack,” if the President complies fully with section 5(b) of the War Powers Resolution.",
+              "es": "La H.Con.Res. 86 (aprobada por las dos cámaras) y la H.Con.Res. 93 (rechazada por el Senado 48–51 el 19 de noviembre de 2026) exceptúan a las fuerzas «que puedan ser necesarias para defender a Estados Unidos o a un aliado o socio de Estados Unidos de un ataque inminente», si el Presidente cumple plenamente la sección 5(b) de la Resolución de Poderes de Guerra.",
+              "cites": [
+                {
+                  "src": "actions-hconres86",
+                  "quote": "2026-06-03 | On agreeing to the resolution Agreed to by the Yeas and Nays: 215 - 208 (Roll no. 199)."
+                },
+                {
+                  "src": "actions-hconres86",
+                  "quote": "2026-06-23 | Resolution agreed to in Senate without amendment by Yea-Nay Vote. 50 - 48. Record Vote Number: 184. (consideration: CR S3039-3040)"
+                },
+                {
+                  "src": "hconres86-enr",
+                  "quote": "other than those elements of the Armed Forces that may be necessary to defend the United States or an ally or partner of the United States from imminent attack provided that the President complies fully with the requirements of section 5(b) the War Powers Resolution (50 U.S.C. 1544(b))"
+                },
+                {
+                  "src": "hconres93-eh",
+                  "quote": "other than those elements of the Armed Forces that may be necessary to defend the United States or an ally or partner of the United States from imminent attack provided that the President complies fully with the requirements of section 5(b) the War Powers Resolution (50 U.S.C. 1544(b))"
+                },
+                {
+                  "src": "bill-hconres93",
+                  "quote": "latestAction | 2026-11-19 | Failed of passage in Senate by Yea-Nay Vote. 48 - 51. Record Vote Number: 269."
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "H.Con.Res. 89, rejected by the Senate 49–50 on September 24, 2026, may not be construed to prevent the United States from “defending itself, its Armed Forces, its diplomatic facilities, or allied states from imminent attack,” to prevent a troop presence in the region “for defensive purposes,” to force the removal of forces “not engaged in hostilities against Iran,” or to disrupt intelligence sharing with coalition partners.",
+              "es": "La H.Con.Res. 89, rechazada por el Senado 49–50 el 24 de septiembre de 2026, no puede interpretarse como impedimento para que Estados Unidos pueda «defenderse a sí mismo, a sus Fuerzas Armadas, a sus instalaciones diplomáticas o a Estados aliados de un ataque inminente», ni para una presencia de tropas en la región «con fines defensivos», ni como obligación de retirar a las fuerzas «que no participan en hostilidades contra Irán», ni como obstáculo al intercambio de inteligencia con socios de la coalición.",
+              "cites": [
+                {
+                  "src": "bill-hconres89",
+                  "quote": "latestAction | 2026-09-24 | Failed of passage in Senate by Yea-Nay Vote. 49 - 50. Record Vote Number: 244."
+                },
+                {
+                  "src": "hconres89-eh",
+                  "quote": "Nothing in this section may be construed to-- (1) prevent the United States from defending itself, its Armed Forces, its diplomatic facilities, or allied states from imminent attack; (2) prevent the United States Armed Forces from maintaining a troop presence in the region for defensive purposes; or (3) force the removal of United States Armed Forces in the region who are not engaged in hostilities against Iran."
+                },
+                {
+                  "src": "hconres89-eh",
+                  "quote": "Nothing in this resolution may be construed to influence or disrupt any intelligence, counterintelligence, or investigative activities"
+                },
+                {
+                  "src": "hconres89-eh",
+                  "quote": "the sharing of intelligence between the United States and any coalition partner, if the President determines such sharing is appropriate and in the national security interests of the United States."
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "S.J.Res. 185 may not be construed to prevent “defending against an attack on the United States or its personnel or facilities in other nations,” intelligence sharing, or assisting partner countries “who have been attacked by Iran since February 28, 2026, and other nations” “in intercepting retaliatory attacks by Iran or its proxies” or with defensive materiel.",
+              "es": "La S.J.Res. 185 no puede interpretarse como impedimento para «defenderse de un ataque contra Estados Unidos o contra su personal o sus instalaciones en otros países», el intercambio de inteligencia, o ayudar a países socios «que han sido atacados por Irán desde el 28 de febrero de 2026, y a otros países» «a interceptar ataques de represalia de Irán o de sus aliados» o con material defensivo.",
+              "cites": [
+                {
+                  "src": "sjres185-pcs",
+                  "quote": "Nothing in this resolution may be construed to prevent the United States from-- (1) defending against an attack on the United States or its personnel or facilities in other nations;"
+                },
+                {
+                  "src": "sjres185-pcs",
+                  "quote": "(2) collecting, analyzing, or sharing intelligence with partner countries who have been attacked by Iran since February 28, 2026, and other nations and international organizations as appropriate, related to threats from Iran or its proxies; and"
+                },
+                {
+                  "src": "sjres185-pcs",
+                  "quote": "(3) assisting partner countries who have been attacked by Iran since February 28, 2026, and other nations-- (A) in intercepting retaliatory attacks by Iran or its proxies; or (B) by providing defensive materiel support for such defensive measures."
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "The Senate measures differ: S.J.Res. 172, 180 and 200 also except “providing assistance for the security, departure, and evacuation” of U.S. citizens; S.J.Res. 181, 185 and 211 do not.",
+              "es": "Las medidas del Senado difieren: las S.J.Res. 172, 180 y 200 también exceptúan «prestar asistencia para la seguridad, la salida y la evacuación» de ciudadanos estadounidenses; las S.J.Res. 181, 185 y 211 no lo hacen.",
+              "cites": [
+                {
+                  "src": "sjres172-is",
+                  "quote": "providing assistance for the security, departure, and evacuation to United States citizens affected by the hostilities."
+                },
+                {
+                  "src": "sjres180-is",
+                  "quote": "providing assistance for the security, departure, and evacuation of United States citizens affected by the hostilities."
+                },
+                {
+                  "src": "sjres200-is",
+                  "quote": "providing assistance for the security, departure, and evacuation to United States citizens affected by the hostilities."
+                },
+                {
+                  "src": "sjres181-is",
+                  "quote": "(B) by providing defensive materiel support for such defensive measures."
+                },
+                {
+                  "src": "sjres185-pcs",
+                  "quote": "(B) by providing defensive materiel support for such defensive measures."
+                },
+                {
+                  "src": "sjres211-is",
+                  "quote": "(B) by providing defensive materiel support for such defensive measures."
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   }
 }
