@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-11-24T21:08:47.838Z"
+    "generated_at": "2026-11-24T23:28:09.718Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -2594,6 +2594,553 @@
           "refs": [
             "https://www.congress.gov/bill/119th-congress/house-bill/7008",
             "https://www.congress.gov/bill/119th-congress/senate-bill/1498"
+          ]
+        },
+        "changed_because": [
+          "first-summary"
+        ],
+        "model": "claude-sonnet-5-5"
+      }
+    ],
+    "summary_attempts": {
+      "day": "2026-11-24",
+      "count": 1
+    }
+  },
+  "event-contracts-on-war-and-assassination": {
+    "updates": [
+      {
+        "id": "u_a5ac32ce",
+        "class": "floor_action",
+        "vehicle": "s-4035-119",
+        "day": "2026-11-20",
+        "occurred_at": "2026-11-20",
+        "occurred_precision": "day",
+        "recorded_at": "2026-11-24T23:28:09.718Z",
+        "text": {
+          "en": "“Held at the desk.”",
+          "es": "Registro oficial, en inglés: “Held at the desk.”"
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4035"
+          ]
+        },
+        "record": {
+          "action_text": "Held at the desk.",
+          "action_code": "H15000",
+          "action_type": "Floor",
+          "source_system": "House floor actions",
+          "day_position": 2
+        },
+        "ai": false
+      },
+      {
+        "id": "u_d9566cfd",
+        "class": "floor_action",
+        "vehicle": "s-4035-119",
+        "day": "2026-11-20",
+        "occurred_at": "2026-11-20",
+        "occurred_precision": "day",
+        "recorded_at": "2026-11-24T23:28:09.718Z",
+        "text": {
+          "en": "“Received in the House.”",
+          "es": "Registro oficial, en inglés: “Received in the House.”"
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4035"
+          ]
+        },
+        "record": {
+          "action_text": "Received in the House.",
+          "action_code": "H14000",
+          "action_type": "Floor",
+          "source_system": "House floor actions",
+          "day_position": 1
+        },
+        "ai": false
+      },
+      {
+        "id": "u_1ead1297",
+        "class": "floor_action",
+        "vehicle": "s-4035-119",
+        "day": "2026-11-19",
+        "occurred_at": "2026-11-19",
+        "occurred_precision": "day",
+        "recorded_at": "2026-11-24T23:28:09.718Z",
+        "text": {
+          "en": "“Passed Senate with an amendment by Voice Vote.”",
+          "es": "Registro oficial, en inglés: “Passed Senate with an amendment by Voice Vote.”"
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4035"
+          ]
+        },
+        "record": {
+          "action_text": "Passed Senate with an amendment by Voice Vote.",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate",
+          "day_position": 4
+        },
+        "ai": false
+      },
+      {
+        "id": "u_4ff91e7e",
+        "class": "floor_action",
+        "vehicle": "s-4035-119",
+        "day": "2026-11-19",
+        "occurred_at": "2026-11-19",
+        "occurred_precision": "day",
+        "recorded_at": "2026-11-24T23:28:09.718Z",
+        "text": {
+          "en": "“Senate Committee on Agriculture, Nutrition, and Forestry discharged by Unanimous Consent.”",
+          "es": "Registro oficial, en inglés: “Senate Committee on Agriculture, Nutrition, and Forestry discharged by Unanimous Consent.”"
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/senate-bill/4035"
+          ]
+        },
+        "record": {
+          "action_text": "Senate Committee on Agriculture, Nutrition, and Forestry discharged by Unanimous Consent.",
+          "action_code": null,
+          "action_type": "Discharge",
+          "source_system": "Senate",
+          "day_position": 1
+        },
+        "ai": false
+      }
+    ],
+    "summary_revisions": []
+  },
+  "permitting-reviews-for-energy-and-building-projects": {
+    "updates": [
+      {
+        "id": "u_01b1e52c",
+        "class": "vote",
+        "vehicle": "hr-2347-119",
+        "day": "2026-11-19",
+        "occurred_at": "2026-11-19",
+        "occurred_precision": "day",
+        "recorded_at": "2026-11-24T23:28:09.718Z",
+        "text": {
+          "en": "“Passed Senate with an amendment by Yea-Nay Vote. 62 - 33. Record Vote Number: 270.”",
+          "es": "Registro oficial, en inglés: “Passed Senate with an amendment by Yea-Nay Vote. 62 - 33. Record Vote Number: 270.”"
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/2347",
+            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00270.xml"
+          ]
+        },
+        "record": {
+          "action_text": "Passed Senate with an amendment by Yea-Nay Vote. 62 - 33. Record Vote Number: 270.",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate",
+          "roll_call": {
+            "chamber": "senate",
+            "number": 270
+          },
+          "day_position": 2
+        },
+        "ai": false
+      },
+      {
+        "id": "u_b5e3c06c",
+        "class": "vote",
+        "vehicle": "hr-2347-119",
+        "day": "2026-11-18",
+        "occurred_at": "2026-11-18",
+        "occurred_precision": "day",
+        "recorded_at": "2026-11-24T23:28:09.718Z",
+        "text": {
+          "en": "“Motion to waive all applicable budgetary discipline with respect to H.R. 2347 agreed to in Senate by Yea-Nay Vote. 70 - 26. Record Vote Number: 266. (CR S5735-5736)”",
+          "es": "Registro oficial, en inglés: “Motion to waive all applicable budgetary discipline with respect to H.R. 2347 agreed to in Senate by Yea-Nay Vote. 70 - 26. Record Vote Number: 266. (CR S5735-5736)”"
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/2347",
+            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00266.xml"
+          ]
+        },
+        "record": {
+          "action_text": "Motion to waive all applicable budgetary discipline with respect to H.R. 2347 agreed to in Senate by Yea-Nay Vote. 70 - 26. Record Vote Number: 266. (CR S5735-5736)",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate",
+          "roll_call": {
+            "chamber": "senate",
+            "number": 266
+          },
+          "day_position": 1
+        },
+        "ai": false
+      },
+      {
+        "id": "u_b6e3c1ff",
+        "class": "vote",
+        "vehicle": "hr-2347-119",
+        "day": "2026-11-18",
+        "occurred_at": "2026-11-18",
+        "occurred_precision": "day",
+        "recorded_at": "2026-11-24T23:28:09.718Z",
+        "text": {
+          "en": "Senate roll call vote 267: “On the Amendment S.Amdt. 6883 to H.R. 2347 (No short title on file)” — “Amendment Agreed to”; Yeas 69, Nays 27, Not Voting 4.",
+          "es": "Votación nominal 267 del Senado, registro oficial en inglés: “On the Amendment S.Amdt. 6883 to H.R. 2347 (No short title on file)” — “Amendment Agreed to”; a favor 69, en contra 27, no votaron 4."
+        },
+        "source": {
+          "kind": "roll_call",
+          "refs": [
+            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00267.xml",
+            "https://www.congress.gov/bill/119th-congress/house-bill/2347"
+          ]
+        },
+        "record": {
+          "action_text": "On the Amendment S.Amdt. 6883 to H.R. 2347 (No short title on file): Amendment Agreed to. Yeas 69, Nays 27, Not Voting 4. Senate roll call vote 267.",
+          "action_code": null,
+          "action_type": "roll_call_vote",
+          "source_system": "senate.gov roll call vote record",
+          "roll_call": {
+            "chamber": "senate",
+            "number": 267
+          },
+          "question": "On the Amendment S.Amdt. 6883 to H.R. 2347 (No short title on file)",
+          "result": "Amendment Agreed to",
+          "totals": {
+            "yea": 69,
+            "nay": 27,
+            "present": 0,
+            "notVoting": 4
+          }
+        },
+        "ai": false
+      },
+      {
+        "id": "u_bbe3c9de",
+        "class": "vote",
+        "vehicle": "hr-2347-119",
+        "day": "2026-11-18",
+        "occurred_at": "2026-11-18",
+        "occurred_precision": "day",
+        "recorded_at": "2026-11-24T23:28:09.718Z",
+        "text": {
+          "en": "“Cloture on the measure invoked in Senate by Yea-Nay Vote. 65 - 31. Record Vote Number: 268. (CR S5736)”",
+          "es": "Registro oficial, en inglés: “Cloture on the measure invoked in Senate by Yea-Nay Vote. 65 - 31. Record Vote Number: 268. (CR S5736)”"
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/2347",
+            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00268.xml"
+          ]
+        },
+        "record": {
+          "action_text": "Cloture on the measure invoked in Senate by Yea-Nay Vote. 65 - 31. Record Vote Number: 268. (CR S5736)",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate",
+          "roll_call": {
+            "chamber": "senate",
+            "number": 268
+          },
+          "day_position": 2
+        },
+        "ai": false
+      },
+      {
+        "id": "u_eb8dc8fc",
+        "class": "vote",
+        "vehicle": "hr-2347-119",
+        "day": "2026-11-16",
+        "occurred_at": "2026-11-16",
+        "occurred_precision": "day",
+        "recorded_at": "2026-11-24T23:28:09.718Z",
+        "text": {
+          "en": "Senate roll call vote 264: “On the Cloture Motion S.Amdt. 6883 to H.R. 2347 (No short title on file)” — “Cloture Motion Agreed to”; Yeas 70, Nays 27, Not Voting 3.",
+          "es": "Votación nominal 264 del Senado, registro oficial en inglés: “On the Cloture Motion S.Amdt. 6883 to H.R. 2347 (No short title on…” — “Cloture Motion Agreed to”; a favor 70, en contra 27, no votaron 3."
+        },
+        "source": {
+          "kind": "roll_call",
+          "refs": [
+            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00264.xml",
+            "https://www.congress.gov/bill/119th-congress/house-bill/2347"
+          ]
+        },
+        "record": {
+          "action_text": "On the Cloture Motion S.Amdt. 6883 to H.R. 2347 (No short title on file): Cloture Motion Agreed to. Yeas 70, Nays 27, Not Voting 3. Senate roll call vote 264.",
+          "action_code": null,
+          "action_type": "roll_call_vote",
+          "source_system": "senate.gov roll call vote record",
+          "roll_call": {
+            "chamber": "senate",
+            "number": 264
+          },
+          "question": "On the Cloture Motion S.Amdt. 6883 to H.R. 2347 (No short title on file)",
+          "result": "Cloture Motion Agreed to",
+          "totals": {
+            "yea": 70,
+            "nay": 27,
+            "present": 0,
+            "notVoting": 3
+          }
+        },
+        "ai": false
+      },
+      {
+        "id": "u_f15be224",
+        "class": "floor_action",
+        "vehicle": "hr-2347-119",
+        "day": "2026-11-16",
+        "occurred_at": "2026-11-16",
+        "occurred_precision": "day",
+        "recorded_at": "2026-11-24T23:28:09.718Z",
+        "text": {
+          "en": "“Motion by Senator Thune to commit to Senate Committee on Finance with instructions to report back forthwith with the following amendment (SA 6888) fell when cloture was invoked on amendment SA 6883…”",
+          "es": "Registro oficial, en inglés: “Motion by Senator Thune to commit to Senate Committee on Finance with instructions to report back forthwith with the following amendment (SA 6888) fell when cloture was…”"
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/2347"
+          ]
+        },
+        "record": {
+          "action_text": "Motion by Senator Thune to commit to Senate Committee on Finance with instructions to report back forthwith with the following amendment (SA 6888) fell when cloture was invoked on amendment SA 6883 in Senate.",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate",
+          "day_position": 0
+        },
+        "ai": false
+      },
+      {
+        "id": "u_972ad58d",
+        "class": "floor_action",
+        "vehicle": "hr-2347-119",
+        "day": "2026-11-11",
+        "occurred_at": "2026-11-11",
+        "occurred_precision": "day",
+        "recorded_at": "2026-11-24T23:28:09.718Z",
+        "text": {
+          "en": "“Cloture motion on the measure presented in Senate. (CR S5568)”",
+          "es": "Registro oficial, en inglés: “Cloture motion on the measure presented in Senate. (CR S5568)”"
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/2347"
+          ]
+        },
+        "record": {
+          "action_text": "Cloture motion on the measure presented in Senate. (CR S5568)",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate",
+          "day_position": 1
+        },
+        "ai": false
+      },
+      {
+        "id": "u_f94d442d",
+        "class": "vote",
+        "vehicle": "hr-2347-119",
+        "day": "2026-11-10",
+        "occurred_at": "2026-11-10",
+        "occurred_precision": "day",
+        "recorded_at": "2026-11-24T23:28:09.718Z",
+        "text": {
+          "en": "“Motion to proceed to consideration of measure agreed to in Senate by Yea-Nay Vote. 62 - 21. Record Vote Number: 258. (CR S5383-5393)”",
+          "es": "Registro oficial, en inglés: “Motion to proceed to consideration of measure agreed to in Senate by Yea-Nay Vote. 62 - 21. Record Vote Number: 258. (CR S5383-5393)”"
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/2347",
+            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00258.xml"
+          ]
+        },
+        "record": {
+          "action_text": "Motion to proceed to consideration of measure agreed to in Senate by Yea-Nay Vote. 62 - 21. Record Vote Number: 258. (CR S5383-5393)",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate",
+          "roll_call": {
+            "chamber": "senate",
+            "number": 258
+          },
+          "day_position": 0
+        },
+        "ai": false
+      },
+      {
+        "id": "u_f0521e42",
+        "class": "vote",
+        "vehicle": "hr-2347-119",
+        "day": "2026-11-09",
+        "occurred_at": "2026-11-09",
+        "occurred_precision": "day",
+        "recorded_at": "2026-11-24T23:28:09.718Z",
+        "text": {
+          "en": "“Cloture on the motion to proceed to the measure invoked in Senate by Yea-Nay Vote. 73 - 25. Record Vote Number: 257. (CR S5343-5344)”",
+          "es": "Registro oficial, en inglés: “Cloture on the motion to proceed to the measure invoked in Senate by Yea-Nay Vote. 73 - 25. Record Vote Number: 257. (CR S5343-5344)”"
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/2347",
+            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00257.xml"
+          ]
+        },
+        "record": {
+          "action_text": "Cloture on the motion to proceed to the measure invoked in Senate by Yea-Nay Vote. 73 - 25. Record Vote Number: 257. (CR S5343-5344)",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate",
+          "roll_call": {
+            "chamber": "senate",
+            "number": 257
+          },
+          "day_position": 1
+        },
+        "ai": false
+      },
+      {
+        "id": "u_759c6b06",
+        "class": "floor_action",
+        "vehicle": "hr-2347-119",
+        "day": "2026-11-09",
+        "occurred_at": "2026-11-09",
+        "occurred_precision": "day",
+        "recorded_at": "2026-11-24T23:28:09.718Z",
+        "text": {
+          "en": "“Motion to proceed to measure considered in Senate. (CR S5337)”",
+          "es": "Registro oficial, en inglés: “Motion to proceed to measure considered in Senate. (CR S5337)”"
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/2347"
+          ]
+        },
+        "record": {
+          "action_text": "Motion to proceed to measure considered in Senate. (CR S5337)",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate",
+          "day_position": 0
+        },
+        "ai": false
+      },
+      {
+        "id": "u_81b92c10",
+        "class": "floor_action",
+        "vehicle": "hr-2347-119",
+        "day": "2026-09-30",
+        "occurred_at": "2026-09-30",
+        "occurred_precision": "day",
+        "recorded_at": "2026-11-24T23:28:09.718Z",
+        "text": {
+          "en": "“Cloture motion on the motion to proceed to the measure presented in Senate. (CR S5241)”",
+          "es": "Registro oficial, en inglés: “Cloture motion on the motion to proceed to the measure presented in Senate. (CR S5241)”"
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/2347"
+          ]
+        },
+        "record": {
+          "action_text": "Cloture motion on the motion to proceed to the measure presented in Senate. (CR S5241)",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate",
+          "day_position": 1
+        },
+        "ai": false
+      },
+      {
+        "id": "u_9d087ef9",
+        "class": "floor_action",
+        "vehicle": "hr-2347-119",
+        "day": "2026-09-30",
+        "occurred_at": "2026-09-30",
+        "occurred_precision": "day",
+        "recorded_at": "2026-11-24T23:28:09.718Z",
+        "text": {
+          "en": "“Motion to proceed to consideration of measure made in Senate. (CR S5241)”",
+          "es": "Registro oficial, en inglés: “Motion to proceed to consideration of measure made in Senate. (CR S5241)”"
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/2347"
+          ]
+        },
+        "record": {
+          "action_text": "Motion to proceed to consideration of measure made in Senate. (CR S5241)",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate",
+          "day_position": 0
+        },
+        "ai": false
+      }
+    ],
+    "summary_revisions": [
+      {
+        "id": "s_b8503475",
+        "generated_at": "2026-11-24T23:28:27.587Z",
+        "as_of_day": "2026-11-24",
+        "text": {
+          "en": "The Senate passed H.R. 2347 with an amendment on November 19, 2026, by a recorded vote of 62 to 33 (Roll no. 270). 47 Republicans and 14 Democrats voted yes. The day before, on November 18, 2026, the Senate agreed to a motion to waive budgetary discipline, 70 to 26 (Roll no. 266). It also agreed to amendment S.Amdt. 6883, 69 to 27 (Roll no. 267), and invoked cloture on the bill, 65 to 31 (Roll no. 268). On November 16, 2026, the Senate invoked cloture on S.Amdt. 6883, 70 to 27 (Roll no. 264). The Senate agreed to proceed to the bill on November 10, 2026, 62 to 21 (Roll no. 258). The bill is now \"Back in the House to settle the changes.\"",
+          "es": "El Senado aprobó el H.R. 2347 con una enmienda el 19 de noviembre de 2026, por votación nominal de 62 a 33 (votación núm. 270). 47 republicanos y 14 demócratas votaron a favor. El día anterior, el 18 de noviembre de 2026, el Senado aprobó una moción para dispensar la disciplina presupuestaria, 70 a 26 (votación núm. 266). También aprobó la enmienda S.Amdt. 6883, 69 a 27 (votación núm. 267), e invocó el cierre del debate sobre el proyecto, 65 a 31 (votación núm. 268). El 16 de noviembre de 2026, el Senado invocó el cierre del debate sobre la S.Amdt. 6883, 70 a 27 (votación núm. 264). El Senado aprobó pasar a considerar el proyecto el 10 de noviembre de 2026, 62 a 21 (votación núm. 258). El proyecto está ahora \"De vuelta en la Cámara para resolver los cambios\"."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "hr-2347-119": "passed_chamber"
+          },
+          "vehicle_status_keys": {
+            "hr-2347-119": "passed_back_house"
+          },
+          "update_ids": [
+            "u_01b1e52c",
+            "u_b5e3c06c",
+            "u_b6e3c1ff",
+            "u_bbe3c9de",
+            "u_eb8dc8fc",
+            "u_f15be224",
+            "u_972ad58d",
+            "u_f94d442d"
+          ],
+          "roll_calls": [
+            "s-119-2-270",
+            "s-119-2-268",
+            "s-119-2-267",
+            "s-119-2-266",
+            "s-119-2-264",
+            "s-119-2-258"
+          ],
+          "roll_calls_on_record": [
+            "s-119-2-257",
+            "s-119-2-258",
+            "s-119-2-264",
+            "s-119-2-266",
+            "s-119-2-267",
+            "s-119-2-268",
+            "s-119-2-270"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/2347"
           ]
         },
         "changed_because": [
