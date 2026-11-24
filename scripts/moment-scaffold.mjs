@@ -79,9 +79,14 @@
  * And `statusBasisText` from the same module (2026-09-25): the sentence a
  * bill's status was READ from, which every other chamber/tense reader has used
  * since #286. See floorActionInRecord's header for why this one must too.
+ *
+ * And `procedureEndedConsideration` (2026-11-23, issue #268): the one reading
+ * of a procedure that ended the measure's consideration, imported for the same
+ * reason as floorMakesNoClaim — so the scaffold and the nightly scaffold sweep
+ * cannot disagree about a motion that fell.
  */
 import { CATEGORIES, SIGNAL_TYPES, lintForbidden } from '../lib/moments-gate.mjs';
-import { floorMakesNoClaim, statusBasisText } from '../lib/floor-text.mjs';
+import { floorMakesNoClaim, procedureEndedConsideration, statusBasisText } from '../lib/floor-text.mjs';
 
 const DAY_MS = 86_400_000;
 
@@ -94,15 +99,19 @@ const DAY_MS = 86_400_000;
 export const REVIEW_WINDOW_DAYS = 30;
 
 /**
- * What `moments.whyCriteria` and `moments.howMadeRule2` promise readers about
- * a qualifying signal: "within the last 45 days" — set equal to the watcher's
- * own currency floor (FLOORS.maxLastActionAgeDays) by owner ruling 2026-08-09,
- * which closed the gap this note was built to name (the copy used to say 14).
- * The note below stays as a tripwire: it can still fire on an out-of-band
- * invocation (`--only` against an older record), and it fires again the day
- * the two numbers drift apart — a drift test pins them equal.
+ * How recent a floor, scheduling or press signal must be for a question to
+ * open on it: 45 days, set equal to the watcher's own currency floor
+ * (FLOORS.maxLastActionAgeDays) by owner ruling 2026-08-09 — a drift test pins
+ * them equal. scripts/moment-approve.mjs applies it at opening time.
+ *
+ * Until 2026-11-22 the site printed this number to readers
+ * (`moments.whyCriteria`, `moments.howMadeRule2`). Since the owner ruled that
+ * a Big Question may be a STANDING TOPIC — open, at any age, while one of its
+ * bills still has a decision open (`qualifying_signal.type` is
+ * `standing_topic`) — the public copy no longer states it, and this window
+ * governs only the signal-based way in.
  */
-export const PUBLISHED_SIGNAL_MAX_AGE_DAYS = 45;
+export const SIGNAL_MAX_AGE_DAYS = 45;
 
 /** The id a scaffold carries when nothing was derived — deliberately the
  *  screaming placeholder, and deliberately NOT a valid moment id, so a code
@@ -332,6 +341,20 @@ export function floorActionInRecord(c, recordText = null) {
   // says "motion to discharge", which the pattern list reads as floor action,
   // but a filing is a signature drive and nothing has happened on the floor.
   if (floorMakesNoClaim(text)) return false;
+  // A procedure that ENDED the measure's consideration derives NOTHING
+  // (2026-11-23, issue #268). S.J.Res. 124's last action, verbatim:
+  //   "The motion to discharge fell when the point of order was well taken."
+  // It says "motion to discharge", which the pattern list reads as floor
+  // action, but the motion FELL: the chamber took the question up and the
+  // answer was no. `tier0_floor_action` would tell readers the chamber is
+  // still moving on the measure, a pending claim over a settled fact (hard
+  // rule 6). lib/floor-text.mjs's procedureEndedConsideration (#370) is the
+  // one reading of these shapes (a point of order upheld against the
+  // measure, an advancing motion that fell on a point of order, or one that
+  // was tabled); it is fail-closed, so a motion to discharge that was MADE,
+  // agreed to or rejected by recorded vote still reads as floor action. The
+  // nightly sweep counts what this refuses as a settled outcome.
+  if (procedureEndedConsideration(text)) return false;
   return text.trim().length > 0 && FLOOR_ACTION_PATTERNS.some((re) => re.test(text));
 }
 
@@ -442,14 +465,15 @@ export function signalFor(c, articles = [], { now = Date.now(), lastActionText =
   };
 }
 
-/** Named when the signal is older than what the site promises readers. The
- *  signal stays — a placement is true until it moves — and since the 2026-08-09
- *  ruling set the published criterion equal to the 45-day notification floor,
- *  this fires only on out-of-band invocations or renewed drift. */
+/** Named when the signal is older than the window a signal-based question
+ *  opens inside. The signal stays — a placement is true until it moves — and
+ *  since the 2026-08-09 ruling set that window equal to the 45-day
+ *  notification floor, this fires only on out-of-band invocations or renewed
+ *  drift. */
 function staleSignalNote(c, now) {
   const age = ageInDays(c?.lastActionDate, now);
-  if (age <= PUBLISHED_SIGNAL_MAX_AGE_DAYS) return null;
-  return `\`qualifying_signal\` is derived from an action ${age === Infinity ? 'with no date' : `${age} days old`} (${c?.lastActionDate ?? 'undated'}). It is still true of the record, but \`moments.whyCriteria\` tells readers a Big Question opens on a signal "within the last ${PUBLISHED_SIGNAL_MAX_AGE_DAYS} days" — check the record against that promise before merging.`;
+  if (age <= SIGNAL_MAX_AGE_DAYS) return null;
+  return `\`qualifying_signal\` is derived from an action ${age === Infinity ? 'with no date' : `${age} days old`} (${c?.lastActionDate ?? 'undated'}). It is still true of the record, but the approve step opens a question on a signal only within the last ${SIGNAL_MAX_AGE_DAYS} days. If a bill here still has a decision open, it can open as a standing topic instead: set the type to \`standing_topic\` and cite the bills' congress.gov pages.`;
 }
 
 /* ------------------------------------------------------------------ *

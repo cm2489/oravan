@@ -20,23 +20,19 @@ export function MomentStatusLine({
   line,
   size = 'sm',
   className = '',
+  dateless = false,
 }: {
   line: StatusLine;
   /** `md` on the question page header, `sm` on cards. */
   size?: 'sm' | 'md';
   className?: string;
+  /** The caller prints the date itself, beside the bill the line is about
+   *  (`MomentStatusDate`; the question page header and its "At a glance" box,
+   *  where the bill is named first and its date rides with it). */
+  dateless?: boolean;
 }) {
   const t = useTranslations('moments.status');
-  const format = useFormatter();
-  const date = line.date
-    ? format.dateTime(new Date(line.date), {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        // date-only string: format in UTC or it reads a day early.
-        timeZone: 'UTC',
-      })
-    : null;
+  const date = dateless ? null : <MomentStatusDate date={line.date} className="mt-1" />;
   const text = size === 'md' ? 'text-md' : 'text-sm';
 
   return (
@@ -60,11 +56,37 @@ export function MomentStatusLine({
           })}
         </p>
       )}
-      {date && (
-        <p className="mt-1 text-xs text-ink-2 tabular-nums">
-          <time dateTime={line.date ?? undefined}>{t('latestAction', { date })}</time>
-        </p>
-      )}
+      {date}
     </div>
+  );
+}
+
+/** "Latest action <date>" for one status line, or nothing when the line is
+ *  undated. `inline` prints it as a span, to sit on the line that names the
+ *  bill. */
+export function MomentStatusDate({
+  date,
+  className = '',
+  inline = false,
+}: {
+  date: string | null;
+  className?: string;
+  inline?: boolean;
+}) {
+  const t = useTranslations('moments.status');
+  const format = useFormatter();
+  if (!date) return null;
+  const shown = format.dateTime(new Date(date), {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    // date-only string: format in UTC or it reads a day early.
+    timeZone: 'UTC',
+  });
+  const Tag = inline ? 'span' : 'p';
+  return (
+    <Tag className={`text-xs text-ink-2 tabular-nums ${className}`}>
+      <time dateTime={date}>{t('latestAction', { date: shown })}</time>
+    </Tag>
   );
 }

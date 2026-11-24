@@ -29,13 +29,13 @@ import { checkMoments, lintForbidden, vehicleKind } from '../lib/moments-gate.mj
 // copy (lib/floor-text.mjs). The corpus totality sweep that also used the
 // claim-free reading from there moved to scripts/check-scaffold-corpus.mjs
 // (the 2026-09-27 audit, SY-47) — see the note where it used to be.
-import { FLOOR_SETTLED, statusBasisText } from '../lib/floor-text.mjs';
+import { FLOOR_SETTLED, procedureEndedConsideration, statusBasisText } from '../lib/floor-text.mjs';
 import { nominationSlug, type Nomination } from '../lib/core/nominations';
 import { buildReport } from '../scripts/moment-candidates.mjs';
 import { blankDraft, draftFor, groundFor } from '../scripts/moment-draft.mjs';
 import {
   PLACEHOLDER_ID,
-  PUBLISHED_SIGNAL_MAX_AGE_DAYS,
+  SIGNAL_MAX_AGE_DAYS,
   REVIEW_WINDOW_DAYS,
   aliasesFor,
   blankStructure,
@@ -495,6 +495,84 @@ test.describe('the qualifying signal is the evidence the floor already tested', 
     expect(FLOOR_SETTLED.test(HOUSE_DEFEAT)).toBe(true);
   });
 
+  /*
+   * ISSUE #398 (2026-11-23): S.J.Res. 98's last action, verbatim. The Senate
+   * upheld a point of order that took the resolution off its expedited track.
+   * That ended the measure's consideration; it is not the chamber MOVING on
+   * it, so the scaffold derives NOTHING (the claim-free route), and the
+   * nightly sweep counts it as a settled outcome
+   * (tests/scaffold-corpus.unit.spec.ts pins that side).
+   */
+  test('sjres-98-119: a point of order the Senate upheld against the measure derives nothing', () => {
+    const SJRES_98 =
+      'Point of order that the measure is not entitled to expedited procedures under 50 U.S.C. 1546(a) raised against the measure agreed to in Senate by Yea-Nay Vote. 50 - 50. Record Vote Number: 9.';
+    expect(floorActionInRecord({ status: 'floor_vote', floorCalendar: false }, SJRES_98)).toBe(false);
+    // Read, and read as the floor answering — never as a pending step.
+    expect(procedureEndedConsideration(SJRES_98)).toBe(true);
+    expect(FLOOR_SETTLED.test(SJRES_98)).toBe(false);
+    const { signal } = signalFor(
+      { ...FLOOR_ACTION, status: 'floor_vote' },
+      [],
+      { now: NOW_FLOOR, lastActionText: SJRES_98 },
+    );
+    expect(signal).toEqual({ type: '', refs: [] });
+  });
+
+  /*
+   * ISSUE #268 (2026-11-23): S.J.Res. 124's last action, verbatim. It says
+   * "motion to discharge", which FLOOR_ACTION_PATTERNS reads, but the motion
+   * FELL on a point of order: the chamber took the question up and the answer
+   * was no. Until this fix the scaffold drafted `tier0_floor_action` for it,
+   * telling readers the chamber was still moving on a measure whose motion had
+   * fallen. It now derives NOTHING, like S.J.Res. 98 above, and the nightly
+   * sweep counts it as a settled outcome. H.J.Res. 117's tabled motion to
+   * discharge (procedureEndedConsideration's third shape, verbatim from
+   * tests/procedural-answer.unit.spec.ts) takes the same route.
+   */
+  test('sjres-124-119: a motion to discharge that fell on a point of order derives nothing', () => {
+    const SJRES_124 = 'The motion to discharge fell when the point of order was well taken.';
+    const HJRES_117 = 'Motion to discharge tabled.';
+    for (const text of [SJRES_124, HJRES_117]) {
+      expect(procedureEndedConsideration(text)).toBe(true);
+      expect(floorActionInRecord({ status: 'floor_vote', floorCalendar: false }, text)).toBe(false);
+      const { signal } = signalFor({ ...FLOOR_ACTION, status: 'floor_vote' }, [], {
+        now: NOW_FLOOR,
+        lastActionText: text,
+      });
+      expect(signal).toEqual({ type: '', refs: [] });
+    }
+  });
+
+  /*
+   * THE NEAR MISSES. procedureEndedConsideration is fail-closed, so the
+   * refusal above must not spread to floor sentences that share its words.
+   * Each is verbatim from the record (tests/procedural-answer.unit.spec.ts):
+   *   - H.R. 6500: a motion that "fell" with no point of order, because
+   *     cloture was invoked on an amendment, while the measure stayed before
+   *     the Senate. The chamber IS moving on it.
+   *   - S.J.Res. 172: a motion to discharge rejected by recorded vote, one of
+   *     the three measured "Motion to discharge … rejected" sentences this
+   *     list has read as floor action since 2026-08-09.
+   *   - a motion to discharge MADE, constructed from the measured shape: the
+   *     motion is pending, not fallen.
+   */
+  test('near misses: a motion that fell without a point of order, or was rejected or made, is still floor action', () => {
+    const NEAR_MISSES = [
+      'Motion by Senator Thune to commit to Senate Committee on Appropriations with instructions to report back forthwith with the following amendment SA 6740 fell when cloture on amendment SA 6732 was invoked in Senate.',
+      'Motion to discharge Senate Committee on Foreign Relations rejected by Yea-Nay Vote. 47 - 48. Record Vote Number: 174.',
+      'Motion to discharge Senate Committee on Foreign Relations made in Senate.',
+    ];
+    for (const text of NEAR_MISSES) {
+      expect(procedureEndedConsideration(text)).toBe(false);
+      expect(floorActionInRecord({ status: 'floor_vote', floorCalendar: false }, text)).toBe(true);
+      const { signal } = signalFor({ ...FLOOR_ACTION, status: 'floor_vote' }, [], {
+        now: NOW_FLOOR,
+        lastActionText: text,
+      });
+      expect(signal.type).toBe('tier0_floor_action');
+    }
+  });
+
   test('structureFor hands the matcher the stored basis, not the bare notice', () => {
     const bill = {
       full_identifier: 'hr-2262-119',
@@ -616,25 +694,28 @@ test.describe('the qualifying signal is the evidence the floor already tested', 
     }
   });
 
-  test('a signal older than the published 45-day criterion is emitted AND flagged', () => {
+  test('a signal older than the 45-day signal window is emitted AND flagged, and the note names the standing-topic way in', () => {
     const stale = { ...ON_CALENDAR, lastActionDate: '2026-06-01' };
     const { signal, note } = signalFor(stale, [], { now: Date.parse('2026-08-01T00:00:00Z') });
     expect(signal.type).toBe('tier0_floor'); // still true of the record
-    expect(note).toContain('moments.whyCriteria');
+    expect(note).toContain(`${SIGNAL_MAX_AGE_DAYS} days`);
+    expect(note).toContain('standing_topic');
   });
 
-  test('the published window, the watcher floor, and the copy agree — in both languages', () => {
-    // Owner ruling 2026-08-09: one number, everywhere a reader can compare.
-    // If any of these four move independently, the stale-signal note starts
-    // firing on real candidates again — that note is detection, this is the pin.
-    expect(PUBLISHED_SIGNAL_MAX_AGE_DAYS).toBe(FLOORS.maxLastActionAgeDays);
+  test('the signal window equals the watcher floor, and the public copy no longer promises it', () => {
+    // Owner ruling 2026-08-09: one number for the watcher and the approve step.
+    expect(SIGNAL_MAX_AGE_DAYS).toBe(FLOORS.maxLastActionAgeDays);
+    // Owner ruling 2026-11-22: a Big Question may be a standing topic with no
+    // recent signal, so no reader-facing sentence may still say a question
+    // opens only inside a window. A number here would be false of a standing
+    // topic the day one opens.
     const en = read('messages/en.json').moments;
     const es = read('messages/es.json').moments;
-    for (const s of [en.whyCriteria, en.howMadeRule2]) {
-      expect(s).toContain(`last ${PUBLISHED_SIGNAL_MAX_AGE_DAYS} days`);
+    for (const s of [en.whyCriteria, en.howMadeRule2, en.emptyBody]) {
+      expect(s).not.toContain(`${SIGNAL_MAX_AGE_DAYS} days`);
     }
-    for (const s of [es.whyCriteria, es.howMadeRule2]) {
-      expect(s).toContain(`últimos ${PUBLISHED_SIGNAL_MAX_AGE_DAYS} días`);
+    for (const s of [es.whyCriteria, es.howMadeRule2, es.emptyBody]) {
+      expect(s).not.toContain(`${SIGNAL_MAX_AGE_DAYS} días`);
     }
   });
 });

@@ -384,14 +384,29 @@ test.describe('the journey-corpus tripwire no longer costs the night', () => {
   test('a novel floor text opens a labeled issue, search-first', () => {
     const issueAt = syncBills.indexOf('- name: Open a journey-corpus issue');
     expect(issueAt).toBeGreaterThan(0);
-    // Sliced to the NEXT step (the scaffold-corpus tripwire since 2026-09-27),
-    // so the assertions below cannot be satisfied by that step's own gh calls.
-    const step = syncBills.slice(issueAt, syncBills.indexOf('- name: Scaffold-corpus tripwire'));
+    // Sliced to the NEXT step (the clean-night note since 2026-11-23), so the
+    // assertions below cannot be satisfied by another step's own gh calls.
+    const step = syncBills.slice(issueAt, syncBills.indexOf("- name: Say so on the open journey-corpus issue"));
     expect(step.length).toBeGreaterThan(0);
     expect(step).toContain("steps.journey.outputs.verdict == 'novel'");
     expect(step).toContain('gh label create journey-corpus');
     expect(step).toContain('gh issue list'); // search-first: no duplicate issues
-    expect(step).toContain('gh issue comment');
+    expect(step).toContain('gh issue create');
+    // A repeat night posts nothing (owner, 2026-11-23, card `emails`): the
+    // comment goes through the new-sentence gate, never straight to gh.
+    expect(step).toContain('node scripts/corpus-issue-comment.mjs --issue "$NUM"');
+    expect(step).not.toMatch(/^\s*gh issue comment\b/m); // a command line, not the comment that explains `.[].number`
+  });
+
+  test('a clean night says so once on the open issue, and can never cost the night', () => {
+    const at = syncBills.indexOf("- name: Say so on the open journey-corpus issue when tonight's sweep is clean");
+    expect(at).toBeGreaterThan(syncBills.indexOf('- name: Open a journey-corpus issue'));
+    const step = syncBills.slice(at, syncBills.indexOf('- name: Scaffold-corpus tripwire'));
+    expect(step).toContain("if: steps.journey.outputs.verdict == 'clean'");
+    expect(step).toContain('continue-on-error: true');
+    expect(step).toContain('--label journey-corpus');
+    expect(step).toContain('node scripts/corpus-issue-comment.mjs --issue "$NUM" --clean');
+    expect(step).not.toContain('gh issue close');
   });
 
   test('the sweep still runs before the commit, so its issue names TONIGHT\'s corpus', () => {
@@ -443,16 +458,35 @@ test.describe('the scaffold-corpus tripwire files an issue and never costs the n
     const { body } = issue();
     expect(body).toContain('gh label create scaffold-corpus');
     expect(body).toContain('gh issue list');
-    expect(body).toContain('gh issue comment');
+    expect(body).toContain('gh issue create');
+    // A repeat night posts nothing (owner, 2026-11-23, card `emails`).
+    expect(body).toContain('node scripts/corpus-issue-comment.mjs --issue "$NUM" --body-file "$BODY"');
+    expect(body).not.toMatch(/^\s*gh issue comment\b/m);
     expect(body).toContain('continue-on-error: true');
+  });
+
+  const clean = () => stepOf("Say so on the open scaffold-corpus issue when tonight's sweep is clean");
+
+  test('a clean night says so once on the open issue, and never closes it', () => {
+    const { at, body } = clean();
+    expect(at).toBeGreaterThan(issue().at);
+    expect(at).toBeLessThan(syncBills.indexOf('- name: Commit data'));
+    expect(body).toContain("if: steps.scaffold.outputs.verdict == 'clean'");
+    expect(body).toContain('continue-on-error: true');
+    expect(body).toContain('--label scaffold-corpus');
+    expect(body).toContain('node scripts/corpus-issue-comment.mjs --issue "$NUM" --clean');
+    expect(body).not.toContain('gh issue close');
   });
 
   test('no step fails the night on this sweep\'s verdict', () => {
     // Unlike the journey sweep's vacuity gate, nothing here is hard: the only
-    // reads of the verdict are the issue step's `if:`.
+    // reads of the verdict are the `if:` of the issue step and of the
+    // clean-night step, and both are continue-on-error.
     const reads = [...syncBills.matchAll(/steps\.scaffold\.outputs\.verdict/g)].length;
     const inIssueStep = [...issue().body.matchAll(/steps\.scaffold\.outputs\.verdict/g)].length;
-    expect(reads).toBe(inIssueStep);
+    const inCleanStep = [...clean().body.matchAll(/steps\.scaffold\.outputs\.verdict/g)].length;
+    expect(inCleanStep).toBe(1);
+    expect(reads).toBe(inIssueStep + inCleanStep);
   });
 
   test('the corpus sweep is gone from the PR suite; the matcher fixtures stay', () => {

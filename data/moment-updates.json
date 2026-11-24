@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-11-22T06:37:49.299Z"
+    "generated_at": "2026-11-24T06:30:07.959Z"
   },
   "government-funding-deadline": {
     "updates": [],
@@ -407,63 +407,6 @@
         },
         "record": null,
         "ai": true
-      },
-      {
-        "id": "u_40aa8bf1",
-        "class": "vote",
-        "vehicle": "hconres-89-119",
-        "day": "2026-09-24",
-        "occurred_at": "2026-09-24",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-25T13:41:33.041Z",
-        "text": {
-          "en": "“Failed of passage in Senate by Yea-Nay Vote. 49 - 50. Record Vote Number: 244.”",
-          "es": "Registro oficial, en inglés: “Failed of passage in Senate by Yea-Nay Vote. 49 - 50. Record Vote Number: 244.”"
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/89",
-            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00244.xml"
-          ]
-        },
-        "record": {
-          "action_text": "Failed of passage in Senate by Yea-Nay Vote. 49 - 50. Record Vote Number: 244.",
-          "action_code": null,
-          "action_type": "Floor",
-          "source_system": "Senate",
-          "roll_call": {
-            "chamber": "senate",
-            "number": 244
-          }
-        },
-        "ai": false
-      },
-      {
-        "id": "u_fe66be12",
-        "class": "floor_action",
-        "vehicle": "hconres-89-119",
-        "day": "2026-09-24",
-        "occurred_at": "2026-09-24",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-25T13:41:33.041Z",
-        "text": {
-          "en": "“Senate Committee on Foreign Relations discharged, under the order of 8/8/26.”",
-          "es": "Registro oficial, en inglés: “Senate Committee on Foreign Relations discharged, under the order of 8/8/26.”"
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/house-concurrent-resolution/89"
-          ]
-        },
-        "record": {
-          "action_text": "Senate Committee on Foreign Relations discharged, under the order of 8/8/26.",
-          "action_code": null,
-          "action_type": "Discharge",
-          "source_system": "Senate"
-        },
-        "ai": false
       }
     ],
     "summary_revisions": [
@@ -836,10 +779,7 @@
             "sjres-172-119": "floor_vote",
             "hconres-38-119": "floor_vote"
           },
-          "update_ids": [
-            "u_40aa8bf1",
-            "u_fe66be12"
-          ],
+          "update_ids": [],
           "roll_calls": [
             "s-119-2-244",
             "h-119-2-307"
@@ -890,10 +830,7 @@
             "sjres-172-119": "floor_vote",
             "hconres-38-119": "floor_vote"
           },
-          "update_ids": [
-            "u_40aa8bf1",
-            "u_fe66be12"
-          ],
+          "update_ids": [],
           "roll_calls": [
             "s-119-2-244",
             "h-119-2-307"
@@ -950,10 +887,7 @@
             "sjres-172-119": "floor_activity",
             "hconres-38-119": "floor_activity"
           },
-          "update_ids": [
-            "u_40aa8bf1",
-            "u_fe66be12"
-          ],
+          "update_ids": [],
           "roll_calls": [
             "s-119-2-244",
             "h-119-2-307"
@@ -1023,10 +957,7 @@
             "sjres-172-119": "floor_activity",
             "hconres-38-119": "rejected"
           },
-          "update_ids": [
-            "u_40aa8bf1",
-            "u_fe66be12"
-          ],
+          "update_ids": [],
           "roll_calls": [
             "s-119-2-244"
           ],
@@ -1825,131 +1756,6 @@
         },
         "record": null,
         "ai": true
-      },
-      {
-        "id": "u_3385513a",
-        "class": "vote",
-        "vehicle": "s-4668-119",
-        "day": "2026-09-24",
-        "occurred_at": "2026-09-24",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-25T13:41:33.041Z",
-        "text": {
-          "en": "Senate roll call vote 242: “On the Amendment S.Amdt. 6776 to S. 4668 (No short title on file)” — “Amendment Agreed to”; Yeas 77, Nays 23.",
-          "es": "Votación nominal 242 del Senado, registro oficial en inglés: “On the Amendment S.Amdt. 6776 to S. 4668 (No short title on file)” — “Amendment Agreed to”; a favor 77, en contra 23."
-        },
-        "source": {
-          "kind": "roll_call",
-          "refs": [
-            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00242.xml",
-            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
-          ]
-        },
-        "record": {
-          "action_text": "On the Amendment S.Amdt. 6776 to S. 4668 (No short title on file): Amendment Agreed to. Yeas 77, Nays 23. Senate roll call vote 242.",
-          "action_code": null,
-          "action_type": "roll_call_vote",
-          "source_system": "senate.gov roll call vote record",
-          "roll_call": {
-            "chamber": "senate",
-            "number": 242
-          },
-          "question": "On the Amendment S.Amdt. 6776 to S. 4668 (No short title on file)",
-          "result": "Amendment Agreed to",
-          "totals": {
-            "yea": 77,
-            "nay": 23,
-            "present": 0,
-            "notVoting": 0
-          }
-        },
-        "ai": false
-      },
-      {
-        "id": "u_348552cd",
-        "class": "vote",
-        "vehicle": "s-4668-119",
-        "day": "2026-09-24",
-        "occurred_at": "2026-09-24",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-25T13:41:33.041Z",
-        "text": {
-          "en": "“Cloture on the measure, as amended, invoked in Senate by Yea-Nay Vote. 74 - 25. Record Vote Number: 243.”",
-          "es": "Registro oficial, en inglés: “Cloture on the measure, as amended, invoked in Senate by Yea-Nay Vote. 74 - 25. Record Vote Number: 243.”"
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/senate-bill/4668",
-            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00243.xml"
-          ]
-        },
-        "record": {
-          "action_text": "Cloture on the measure, as amended, invoked in Senate by Yea-Nay Vote. 74 - 25. Record Vote Number: 243.",
-          "action_code": null,
-          "action_type": "Floor",
-          "source_system": "Senate",
-          "roll_call": {
-            "chamber": "senate",
-            "number": 243
-          }
-        },
-        "ai": false
-      },
-      {
-        "id": "u_d5eaf6d9",
-        "class": "status_change",
-        "vehicle": "s-4668-119",
-        "day": "2026-09-24",
-        "occurred_at": "2026-09-24",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-25T13:41:33.041Z",
-        "text": {
-          "en": "“The committee substitute withdrawn by Voice Vote.”",
-          "es": "Registro oficial, en inglés: “The committee substitute withdrawn by Voice Vote.”"
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
-          ]
-        },
-        "record": {
-          "action_text": "The committee substitute withdrawn by Voice Vote.",
-          "action_code": null,
-          "action_type": "latestAction",
-          "source_system": "Congress.gov bill detail",
-          "status_from": "floor_vote",
-          "status_to": "committee"
-        },
-        "ai": false
-      },
-      {
-        "id": "u_fcb078e5",
-        "class": "scheduled",
-        "vehicle": "s-4668-119",
-        "day": "2026-09-23",
-        "occurred_at": "2026-09-23",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-23T16:51:20.985Z",
-        "text": {
-          "en": "S. 4668, the Protect College Sports Act of 2026, was scheduled for September 23, 2026.",
-          "es": "S. 4668, la Ley de Protección de los Deportes Universitarios de 2026, estaba programada para el 23 de septiembre de 2026."
-        },
-        "source": {
-          "kind": "tier0_feed",
-          "refs": [
-            "https://www.congress.gov/rss/senate-floor-today.xml",
-            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
-          ]
-        },
-        "record": {
-          "action_text": "S.4668 — Protect College Sports Act of 2026 (09/23/2026)",
-          "action_code": null,
-          "action_type": "Senate Floor Today",
-          "source_system": "Congress.gov senate-floor-today RSS"
-        },
-        "ai": true
       }
     ],
     "summary_revisions": [
@@ -2141,9 +1947,7 @@
           "vehicle_statuses": {
             "s-4668-119": "committee"
           },
-          "update_ids": [
-            "u_fcb078e5"
-          ],
+          "update_ids": [],
           "refs": [
             "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
           ]
@@ -2166,9 +1970,7 @@
           "vehicle_statuses": {
             "s-4668-119": "floor_vote"
           },
-          "update_ids": [
-            "u_fcb078e5"
-          ],
+          "update_ids": [],
           "refs": [
             "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
           ]
@@ -2191,12 +1993,7 @@
           "vehicle_statuses": {
             "s-4668-119": "committee"
           },
-          "update_ids": [
-            "u_3385513a",
-            "u_348552cd",
-            "u_d5eaf6d9",
-            "u_fcb078e5"
-          ],
+          "update_ids": [],
           "roll_calls": [
             "s-119-2-243",
             "s-119-2-242",
@@ -2226,12 +2023,7 @@
           "vehicle_statuses": {
             "s-4668-119": "floor_vote"
           },
-          "update_ids": [
-            "u_3385513a",
-            "u_348552cd",
-            "u_d5eaf6d9",
-            "u_fcb078e5"
-          ],
+          "update_ids": [],
           "roll_calls": [
             "s-119-2-243",
             "s-119-2-242",
@@ -2261,11 +2053,7 @@
             "s-4668-119": "floor_vote"
           },
           "update_ids": [
-            "u_5f348c7a",
-            "u_3385513a",
-            "u_348552cd",
-            "u_d5eaf6d9",
-            "u_fcb078e5"
+            "u_5f348c7a"
           ],
           "roll_calls": [
             "s-119-2-243",
@@ -2307,11 +2095,7 @@
             "u_eea56f22",
             "u_efa570b5",
             "u_f0a57248",
-            "u_5f348c7a",
-            "u_3385513a",
-            "u_348552cd",
-            "u_d5eaf6d9",
-            "u_fcb078e5"
+            "u_5f348c7a"
           ],
           "roll_calls": [
             "s-119-2-248",
@@ -2363,11 +2147,7 @@
             "u_efa570b5",
             "u_f0a57248",
             "u_f1a573db",
-            "u_5f348c7a",
-            "u_3385513a",
-            "u_348552cd",
-            "u_d5eaf6d9",
-            "u_fcb078e5"
+            "u_5f348c7a"
           ],
           "roll_calls": [
             "s-119-2-250",
@@ -2427,11 +2207,7 @@
             "u_efa570b5",
             "u_f0a57248",
             "u_f1a573db",
-            "u_5f348c7a",
-            "u_3385513a",
-            "u_348552cd",
-            "u_d5eaf6d9",
-            "u_fcb078e5"
+            "u_5f348c7a"
           ],
           "roll_calls": [
             "s-119-2-250",
@@ -2494,11 +2270,7 @@
             "u_efa570b5",
             "u_f0a57248",
             "u_f1a573db",
-            "u_5f348c7a",
-            "u_3385513a",
-            "u_348552cd",
-            "u_d5eaf6d9",
-            "u_fcb078e5"
+            "u_5f348c7a"
           ],
           "roll_calls": [
             "s-119-2-250",
