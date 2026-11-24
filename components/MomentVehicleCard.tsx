@@ -219,9 +219,8 @@ export function MomentVehicleCard({
       </div>
       <p className="mt-auto pt-5">
         {/* An in-page anchor (a one-bill question's own panel, "#act") is a
-            plain link the browser follows itself, as the header's Call tab
-            treats one (lib/call-tab.ts isInPageTarget); a route goes through
-            the locale-aware Link. */}
+            plain link the browser follows itself (lib/call-tab.ts
+            isInPageTarget); a route goes through the locale-aware Link. */}
         {ctaHref && isInPageTarget(ctaHref) ? (
           <a href={ctaHref} className={`inline-flex min-h-12 items-center gap-2 px-5 ${CALL_BUTTON}`}>
             <PhoneCall className="h-4 w-4" aria-hidden />

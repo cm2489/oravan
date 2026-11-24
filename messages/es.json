@@ -6,13 +6,11 @@
     "nav": {
       "home": "Inicio",
       "bills": "Proyectos de ley",
-      "call": "Llamar",
       "reps": "Mis representantes",
       "whyCall": "¿Por qué llamar?",
       "primaryLabel": "Principal",
       "moments": "Grandes preguntas",
-      "today": "Hoy en el Congreso",
-      "tabQuestions": "Preguntas"
+      "today": "Hoy en el Congreso"
     },
     "footer": {
       "callHub": "Haz una llamada",
@@ -44,7 +42,6 @@
     "navShort": {
       "home": "Inicio",
       "bills": "Proyectos",
-      "call": "Llamar",
       "reps": "Mis reps",
       "moments": "Preguntas",
       "today": "Hoy"

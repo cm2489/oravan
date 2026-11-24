@@ -42,11 +42,11 @@ import { CALL_BUTTON } from './call-button';
  * coverage) back to #act. Funnel invariant I2 counts interactions (stance →
  * a completed script), not this button, and is untouched.
  *
- * IT STAYS BESIDE THE CALL TAB (BP19; the owner's mark on the v1 wireframes
- * said keep, and wireframes v2 of 2026-09-29 draw both). Past the panel on a
- * phone the tab and this button share the job of getting back to #act; the
- * tab is always there, and this is the one within thumb reach of the text.
- * It wears the one shared call style (components/call-button.ts).
+ * PAST THE PANEL ON A PHONE, THIS IS THE WAY BACK TO #act. It used to share
+ * that job with the phone bar's Call tab (BP19; wireframes v2 of 2026-09-29
+ * drew both); the owner took the Call tab off the bar on 2026-11-24 ("every
+ * page has a "call" button close by", 2026-11-23), so this button carries it
+ * alone. It wears the one shared call style (components/call-button.ts).
  *
  * IT PARKS 12px ABOVE THE ISLAND BAR (2026-11-22). The bar floats 4px off the
  * bottom, or the safe area where that is larger, and is 52px tall, so this

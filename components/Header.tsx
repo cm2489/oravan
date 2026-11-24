@@ -1,17 +1,8 @@
 'use client';
 
-import { useSyncExternalStore, type ReactNode } from 'react';
-import { Home, ScrollText, Users, Phone, Newspaper } from 'lucide-react';
+import { Home, ScrollText, Users, Newspaper } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { Link, usePathname } from '@/i18n/navigation';
-import {
-  CALL_HUB_PATH,
-  callTabServerSnapshot,
-  callTabSnapshot,
-  isInPageTarget,
-  subscribeCallTab,
-} from '@/lib/call-tab';
-import { CALL_BUTTON, CALL_BUTTON_CURRENT } from './call-button';
 import { OravanLockup } from './brand/OravanLockup';
 import { LocaleSwitcher } from './LocaleSwitcher';
 
@@ -43,42 +34,35 @@ import { LocaleSwitcher } from './LocaleSwitcher';
  * because the lockup already is the home link; the thumb bar keeps it, because
  * a lockup is not thumb-reachable.
  *
- * THE TWO NAVS NO LONGER SHARE ONE ORDER (owner, 2026-09-29, typed: "The
+ * THE TWO NAVS DO NOT SHARE ONE ORDER (owner, 2026-09-29, typed: "The
  * 'Call' button in the header needs to be removed and 'Today in Congress'
  * needs to come first on the header"; his picker answer on scope: "Desktop
  * only"). The row nav is Today in Congress · Bills · Big Questions · My reps,
- * with the lockup as Home and the language switch last. The thumb bar keeps
- * the "nav 1" order of the same day — Home · Bills · Call · Big Questions ·
- * Reps. Its Questions cell said "Big Questions" from 2026-09-29 (his typed
- * note: "I'd like the phone to say Big Questions instead of just questions
- * if possible") until 2026-11-22, when he picked "Questions", on one line
- * (`nav.tabQuestions`, the thumb bar only). On a desktop the Call
- * hub is the footer's first Site link ("Make a call"). Today stays off the
- * thumb bar — one tap from Home — and the owner's look at /today visits
- * around 2026-10-29 now applies to the phone only. "My record" left both
- * bars in "nav 1": the Reps page links it ("See your record") until the Reps
- * rebuild folds the record in (wireframe Q4 b+c). "Why call?" is a footer
- * link on every page.
+ * with the lockup as Home and the language switch last.
  *
- * THE CALL CELL IS THE ONE CALL CONTROL IN THE BAR, so it wears the shared
- * call-button style (components/call-button.ts) rather than a nav item's.
- * Where it GOES is the page's to say (lib/call-tab.ts): an open bill's own
- * panel, a Big Question's open bills, or — with nothing declared, and always
- * on the server render — the Call hub at /call. The thumb bar stays in the
- * DOM at every width (`md:hidden` is display:none), so a page's declared
- * target is readable on a desktop too.
+ * THE PHONE BAR IS FOUR TABS: Home · Bills · Big Questions · Reps. The owner,
+ * 2026-11-23, on the review card for this bar: "I don't think the "Call"
+ * button or the "Home" button really matter and can be removed, at the very
+ * least the "call" button because every page has a "call" button close by.
+ * What do you think? Does that give it more room for the full text in the
+ * bar? Mock up what you are thinking before building." His pick on the
+ * mock-up card, 2026-11-24: "Four tabs: Home · Bills · Big Questions · Reps".
+ * So the Call tab, and the per-page target it read, are gone; the Big
+ * Questions tab says "Big Questions" / "Grandes preguntas" in full, on one
+ * line (`nav.moments`, the row nav's own full label). The Call hub stays at
+ * /call, the footer's first Site link ("Make a call") on every screen. Today
+ * stays off the thumb bar — one tap from Home. "My record" is on neither bar:
+ * the Reps page links it ("See your record"). "Why call?" is a footer link on
+ * every page.
  */
 
-/** The thumb bar (phones, the island): five destinations, home included.
- *  Five cells are 60.8px each at 320px and 66.4px at 390px, every one 48px tall —
- *  over the 44px floor both ways (tests/header-phone-label.spec.ts). Moments joined 2026-07-25 (v2 slice S5): the
- *  discovery layer is a flagship surface now, not an experiment. Call joined
- *  2026-09-29 in "My record"'s place (owner, "nav 1"). Labels come from
- *  `tabLabel`. */
+/** The thumb bar (phones, the island): four destinations, Home included.
+ *  Labels come from `tabLabel`. Each tab is sized by its own label (see the
+ *  bar below for the measured widths), at least 44px each way. Moments joined
+ *  2026-07-25 (v2 slice S5): the discovery layer is a flagship surface. */
 const TABS = [
   { href: '/', key: 'home', icon: Home },
   { href: '/bills', key: 'bills', icon: ScrollText },
-  { href: CALL_HUB_PATH, key: 'call', icon: Phone },
   { href: '/questions', key: 'moments', icon: Newspaper },
   { href: '/reps', key: 'reps', icon: Users },
 ] as const;
@@ -93,7 +77,7 @@ const TABS = [
  * switch (153px) need 813px of a 736px row, so flex squeezed the switch to
  * 76px and its two labels printed over each other. (main already squeezed it
  * to about 84px with "Mi historial" in this slot; the Call item's icon made
- * it 8px worse.) So BELOW 64rem the row prints the thumb bar's short labels
+ * it 8px worse.) So BELOW 64rem the row prints the short `navShort` labels
  * ("Proyectos", "Preguntas", "Mis reps"; 337px), in both languages for one
  * rule, and the full labels from 64rem.
  *
@@ -119,12 +103,11 @@ const LINKS = [
   { href: '/reps', key: 'reps' },
 ] as const;
 
-/** A thumb-bar cell's label: `navShort`, except the Big Questions cell,
- *  which reads `nav.tabQuestions` ("Questions" / "Preguntas", one line): the
- *  owner's 2026-11-22 pick from the Round Two page, "The bottom bar says
- *  'Questions', on one line, as in the September design" (it replaced the
- *  two-line "Big Questions" of 2026-09-29). */
-const TAB_OWN_LABEL: ReadonlySet<string> = new Set(['moments']);
+/** A thumb-bar tab's label: `navShort`, except the Big Questions tab, which
+ *  reads the full `nav.moments` ("Big Questions" / "Grandes preguntas", one
+ *  line): the owner's 2026-11-24 pick, "Four tabs: Home · Bills · Big
+ *  Questions · Reps", made the room for it. */
+const TAB_FULL_LABEL: ReadonlySet<string> = new Set(['moments']);
 
 /** Segment-exact for everything but Home: '/reps' is current on a member page
  *  ('/reps/<id>'), and no path merely sharing a prefix ('/callx') counts. */
@@ -146,51 +129,12 @@ function RowLabel({ short, full }: { short: string; full: string }) {
   );
 }
 
-/**
- * The Call item's link: an in-page anchor is a plain <a> (the browser scrolls
- * to it, and `scroll-behavior: smooth` glides there); a route is the
- * locale-aware Link, so /es pages stay in Spanish.
- */
-function CallLink({
-  href,
-  current,
-  className,
-  children,
-}: {
-  href: string;
-  current: boolean;
-  className: string;
-  children: ReactNode;
-}) {
-  if (isInPageTarget(href)) {
-    return (
-      <a href={href} data-call-tab={href} className={className}>
-        {children}
-      </a>
-    );
-  }
-  return (
-    <Link
-      href={href}
-      data-call-tab={href}
-      aria-current={current ? 'page' : undefined}
-      className={className}
-    >
-      {children}
-    </Link>
-  );
-}
-
 export function Header() {
   const t = useTranslations('common');
   const locale = useLocale();
   const pathname = usePathname();
-  // What this page declared for the Call item, or null → the Call hub.
-  const callTarget = useSyncExternalStore(subscribeCallTab, callTabSnapshot, callTabServerSnapshot);
-  const callHref = callTarget ?? CALL_HUB_PATH;
-  const onHub = isActive(pathname, CALL_HUB_PATH);
   const tabLabel = (key: (typeof TABS)[number]['key']) =>
-    TAB_OWN_LABEL.has(key) ? t('nav.tabQuestions') : t(`navShort.${key}`);
+    TAB_FULL_LABEL.has(key) ? t(`nav.${key}`) : t(`navShort.${key}`);
 
   return (
     <>
@@ -276,10 +220,24 @@ export function Header() {
 
           SIZE: 4px off the bottom, or the safe area where that is larger;
           6px off each side below 22.5rem (the 320px screen, where Spanish
-          needs the width), then at most 21rem wide, centred. Five 44px cells
-          and a 4px padding top and bottom make it 52px tall; a cell is 60.8px
-          wide at 320px and 66.4px at 390px. Every cell is the whole tap
-          target, at least 44px each way.
+          needs the width), then at most 21rem wide, centred. 44px tabs and a
+          4px padding top and bottom make it 52px tall.
+
+          FOUR TABS, EACH SIZED BY ITS LABEL (owner, 2026-11-24: "Four tabs:
+          Home · Bills · Big Questions · Reps"). Not four equal columns: each
+          tab starts at its label's width plus 6px a side (at least 44px) and
+          the bar's spare width is shared out evenly, so "Big Questions" gets
+          the room it needs. Labels MEASURED at 12px bold Libre Franklin (the
+          widest a label gets, on its own page): Home 34, Bills 25, Big
+          Questions 81, Reps 29; Inicio 31, Proyectos 59, Grandes preguntas
+          110, Mis reps 49 (px). At 320px the bar is 308px and its row 304px;
+          Spanish needs 249 + 4 × 12 = 297px before `tracking-tight` takes
+          about 12px back, English 227px with Bills and Reps held at 44. Every
+          label stays one line (`whitespace-nowrap`), and a flex item never
+          shrinks below its label, so nothing wraps or clips.
+          tests/header-phone-label.spec.ts measures it at 320px and 390px in
+          both languages.
+
           THE BAR TAKES 56px OF THE SCREEN, AND NO MORE (2026-11-22): its top
           edge is at 788 on a 390×844 phone and 608 on 390×664. The first
           build (56px tall, 8px off) put it at 780, over the last 2px of the
@@ -297,47 +255,21 @@ export function Header() {
         aria-label={t('nav.primaryLabel')}
         className="island-bar fixed inset-x-0 bottom-[max(0.25rem,env(safe-area-inset-bottom))] z-40 mx-auto w-[calc(100%-0.75rem)] rounded-full md:hidden min-[22.5rem]:w-[min(calc(100%-1rem),21rem)]"
       >
-        <ul className="grid grid-cols-5 px-0.5 py-1">
+        <ul className="flex px-0.5 py-1">
           {TABS.map(({ href, key, icon: Icon }) => {
             const active = isActive(pathname, href);
-            if (key === 'call') {
-              /* The Call cell wears the one call style (components/
-                 call-button.ts), as every call control does: page 2 has the
-                 Call tab and the call buttons share one token set (2026-09-27
-                 00:38) and says the Call tab in the island bar is not yellow
-                 (00:43). 44px tall, the whole height of its cell; `ring-edge`
-                 sets the focus ring 1px off its ink edge, so the ring (3px)
-                 ends 4px out, inside the island's 4px padding. Current on
-                 /call only: the ink fill. */
-              return (
-                <li key={key} className="flex min-w-0">
-                  <CallLink
-                    href={callHref}
-                    current={onHub}
-                    className={`ring-edge mx-0.5 flex min-h-11 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 text-2xs leading-tight tracking-tight min-[22.5rem]:tracking-normal ${
-                      onHub ? CALL_BUTTON_CURRENT : CALL_BUTTON
-                    }`}
-                  >
-                    <Icon className="h-5 w-5" aria-hidden />
-                    <span data-tab-label className="whitespace-nowrap">
-                      {tabLabel(key)}
-                    </span>
-                  </CallLink>
-                </li>
-              );
-            }
             return (
-              <li key={key} className="flex min-w-0">
+              <li key={key} className="flex flex-auto">
                 <Link
                   href={href}
                   aria-current={active ? 'page' : undefined}
                   data-island-tab
-                  // `tracking-tight` below 22.5rem: at 320px a cell is 60.8px
-                  // and Spanish is the long language ("Proyectos",
-                  // "Preguntas"). The current tab is marked by a wash lozenge
-                  // with a line-strong edge AND a bold label (`.island-bar`
-                  // in app/globals.css), never by colour alone.
-                  className={`flex min-h-11 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-control text-2xs leading-tight tracking-tight text-ink min-[22.5rem]:tracking-normal ${
+                  // `tracking-tight` below 22.5rem: at 320px Spanish is the
+                  // long language ("Grandes preguntas"). The current tab is
+                  // marked by a wash lozenge with a line-strong edge AND a
+                  // bold label (`.island-bar` in app/globals.css), never by
+                  // colour alone.
+                  className={`flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-0.5 rounded-control px-1.5 text-2xs leading-tight tracking-tight text-ink min-[22.5rem]:tracking-normal ${
                     active ? 'font-bold' : 'font-semibold'
                   }`}
                 >

@@ -2,13 +2,12 @@
  * THE ONE CALL-BUTTON STYLE (wireframes v2, 2026-09-29: "One call-button
  * style: outlined, the same as the Call tab").
  *
- * Every control whose job is "call" wears this: the Call tab and the desktop
- * Call link (components/Header.tsx), "Read + call" (the Call hub and both Big
- * Question card kinds), the "Make the call" float, the DC-number and
- * switchboard buttons in a bill's call panel, and the DC button on a rep card.
- * Page 2's own line is that the Call tab and the call buttons "share one token
- * set", so they share ONE string, here, and the colour pass later changes it in
- * one place rather than in eight.
+ * Every control whose job is "call" wears this: "Read + call" (the Call hub,
+ * both Big Question card kinds and the "Still open" rail), the "Make the call"
+ * float, the DC-number and switchboard buttons in a bill's call panel, and the
+ * DC button on a rep card. They share ONE string, here, so the colour pass
+ * later changes it in one place. (The phone bar's Call tab wore it too until
+ * the owner took that tab off the bar, 2026-11-24.)
  *
  * Built only from existing tokens: a 2px ink edge, the control radius, a paper
  * fill and ink type, which is the site's outlined-button idiom already
@@ -23,13 +22,9 @@
  * carries no `ring-gap`, which exists for FILLED controls.
  *
  * Only the look lives here. Size, padding and layout stay with each caller,
- * because a 44px thumb-bar cell and a display-size phone number are not the
+ * because a "Read + call" button and a display-size phone number are not the
  * same box.
  */
 export const CALL_BUTTON =
   'rounded-control border-2 border-ink bg-paper font-bold text-ink no-underline hover:bg-ink hover:text-paper';
 
-/** The "you are here" state of a call control that is also a nav item (the
- *  Call tab on /call): the ink fill every other current nav item uses. */
-export const CALL_BUTTON_CURRENT =
-  'rounded-control border-2 border-ink bg-ink font-bold text-paper no-underline';

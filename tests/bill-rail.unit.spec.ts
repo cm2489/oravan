@@ -38,21 +38,20 @@ test.describe('the bill page rail (lib/bill-rail.ts)', () => {
     expect(rail.endedKey).toBe('bill.ended.note');
     expect(rail.floatingCall).toBe(false);
     expect(rail.walkthrough).toBe(false);
-    expect(rail.callTabTarget).toBe(false);
   });
 
   test('a bill both chambers passed: the ended panel with the president line, and no call apparatus', () => {
     const rail = ended119(() => billRail(PRESENTED_FIXTURE));
     expect(rail.panel).toBe('ended');
     expect(rail.endedKey).toBe('bill.ended.presented');
-    expect([rail.floatingCall, rail.walkthrough, rail.callTabTarget]).toEqual([false, false, false]);
+    expect([rail.floatingCall, rail.walkthrough]).toEqual([false, false]);
   });
 
   test('a law and an enrolled concurrent resolution: the record-only panel, and no call apparatus', () => {
     for (const bill of [LAW, ENROLLED_CONCURRENT_FIXTURE]) {
       const rail = ended119(() => billRail(bill));
       expect(rail.panel, bill.full_identifier).toBe('settled');
-      expect([rail.floatingCall, rail.walkthrough, rail.callTabTarget]).toEqual([false, false, false]);
+      expect([rail.floatingCall, rail.walkthrough]).toEqual([false, false]);
     }
     expect(ended119(() => billRail(LAW)).ended?.kind).toBe('law');
     expect(ended119(() => billRail(ENROLLED_CONCURRENT_FIXTURE)).settled).toEqual({ kind: 'adopted', chamber: 'house' });
@@ -62,7 +61,7 @@ test.describe('the bill page rail (lib/bill-rail.ts)', () => {
     for (const bill of [COMMITTEE_FIXTURE, PRESENTED_FIXTURE, ENROLLED_CONCURRENT_FIXTURE]) {
       const rail = billRail(bill);
       expect(rail.panel, bill.full_identifier).toBe('call');
-      expect([rail.floatingCall, rail.walkthrough, rail.callTabTarget]).toEqual([true, true, true]);
+      expect([rail.floatingCall, rail.walkthrough]).toEqual([true, true]);
       expect(rail.ended).toBeNull();
     }
     expect(billRail(LAW).panel).toBe('settled');
@@ -72,13 +71,14 @@ test.describe('the bill page rail (lib/bill-rail.ts)', () => {
 test.describe('the bill page renders call apparatus only through the rail', () => {
   const page = read('app/[locale]/bills/[id]/page.tsx');
 
-  test('the floating call button, the call demo and the Call-tab target are each gated on the rail, once', () => {
+  test('the floating call button and the call demo are each gated on the rail, once', () => {
     expect(page).toContain('{rail.floatingCall && <FloatingCallButton />}');
     expect(count(page, '<FloatingCallButton')).toBe(1);
     expect(page).toMatch(/\{rail\.walkthrough && \(\s*<div className="min-\[62rem\]:col-start-1">\s*<WalkthroughDisclosure \/>/);
     expect(count(page, '<WalkthroughDisclosure')).toBe(1);
-    expect(page).toContain('{rail.callTabTarget && <CallTabTarget href="#act" />}');
-    expect(count(page, '<CallTabTarget')).toBe(1);
+    // The Call-tab target was a third switch until the Call tab left the
+    // phone bar (owner, 2026-11-24); no page declares one now.
+    expect(count(page, 'CallTabTarget')).toBe(0);
   });
 
   test('the call panel renders only in the branch after the record-only and ended panels', () => {

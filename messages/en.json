@@ -6,13 +6,11 @@
     "nav": {
       "home": "Home",
       "bills": "Bills",
-      "call": "Call",
       "reps": "My reps",
       "whyCall": "Why call?",
       "primaryLabel": "Primary",
       "moments": "Big Questions",
-      "today": "Today in Congress",
-      "tabQuestions": "Questions"
+      "today": "Today in Congress"
     },
     "footer": {
       "callHub": "Make a call",
@@ -44,7 +42,6 @@
     "navShort": {
       "home": "Home",
       "bills": "Bills",
-      "call": "Call",
       "reps": "Reps",
       "moments": "Questions",
       "today": "Today"

@@ -25,11 +25,10 @@ import { getMomentsForBill } from '@/lib/moments';
  * /call — THE CALL HUB (owner, 2026-09-29, "nav 1"; wireframes v2,
  * call-hub.html; UX decision Q1 "c", a small Call hub).
  *
- * Where the Call tab lands when no open bill is in context: home, the lists,
- * Reps, Today, the flat pages, a settled bill page and a member page (the
- * index's "Where the Call tab goes" table; lib/call-tab.ts). It lists this
- * week's callable bills, then — once a ZIP is saved on this device — who a
- * call would reach.
+ * Reached from the footer's first Site link ("Make a call") on every page.
+ * Until 2026-11-24 the phone bar's Call tab landed here too; the owner took
+ * that tab off the bar that day. It lists this week's callable bills, then —
+ * once a ZIP is saved on this device — who a call would reach.
  *
  * THE LIST IS THE ACT-NOW POOL, the same one the homepage's week and the
  * /reps continuation read (getTopActions, lib/core/bills.ts), in the pool's
@@ -48,7 +47,7 @@ import { getMomentsForBill } from '@/lib/moments';
  * with no script is what the hub exists to avoid), no settled bills, and no
  * stance picker — the stances live in each bill's panel, all three equal.
  *
- * THE PATH: Call tab → "Read + call" → a stance is a script on screen, three
+ * THE PATH: footer "Make a call" → "Read + call" → a stance is a script on screen, three
  * interactions; with a saved ZIP the numbers are already under it. A headline
  * opens the bill's decoded answer at the top instead (truth first, I1).
  */

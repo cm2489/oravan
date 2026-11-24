@@ -46,11 +46,11 @@ import { HIDDEN_PAGES } from '@/lib/site';
  */
 
 const SITE_LINKS = [
-  // The Call hub's standing link on a desktop, where the header's row nav no
-  // longer carries a Call item (owner, 2026-09-29: "The 'Call' button in the
-  // header needs to be removed"; scope "Desktop only" — the phone's thumb bar
-  // keeps its Call cell). Beside "Why call?", which answers the question
-  // before it.
+  // The Call hub's standing link, on every screen: the header's row nav has
+  // carried no Call item since 2026-09-29 (owner: "The 'Call' button in the
+  // header needs to be removed"), and the phone's island bar none since
+  // 2026-11-24 (his pick: "Four tabs: Home · Bills · Big Questions · Reps").
+  // Beside "Why call?", which answers the question before it.
   { href: '/call', key: 'footer.callHub' },
   { href: '/why-call', key: 'nav.whyCall' },
   // Beside "Why call?" because it answers the neighbouring question — what the

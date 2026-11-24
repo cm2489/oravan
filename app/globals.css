@@ -495,8 +495,7 @@ label,
 
    THE CURRENT TAB is a wash lozenge (ink on wash 15.13) with a line-strong
    edge (3.89 against the wash) and a bold label: three signals, none of them
-   a hue. The Call cell is the one call style (components/call-button.ts),
-   opaque paper with a 2px ink edge, so it reads 16.50 over anything.
+   a hue.
 
    SOLID FALLBACKS: no backdrop-filter, `prefers-reduced-transparency:
    reduce` and `prefers-contrast: more` all paint solid paper with no blur;
