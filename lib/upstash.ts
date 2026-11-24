@@ -44,7 +44,7 @@
  *   same exposure the host's request logs already have, and disclosed on
  *   the privacy page under Upstash. Never with the side they asked for:
  *   nothing our server sends either database depends on it (the one hint
- *   left, a caller retrying after a failed draft, is stated in
+ *   left, a caller retrying after a script could not be drafted, is stated in
  *   lib/script-serve.ts under "WHAT REMAINS VISIBLE").
  *
  *   The tenancy database (lib/tenancy.ts, S18) holds durable institutional

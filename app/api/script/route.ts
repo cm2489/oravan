@@ -142,7 +142,8 @@ import { noteScriptGeneration, noteScriptRefusal, noteScriptServed } from '@/lib
  *   429 rate_limited       — any limiter or the daily breaker tripped
  *   502 generation_failed  — the model call failed or came back empty, or
  *                            no draft could start for a missing script (a
- *                            failed draft of that bill within its cooldown,
+ *                            failed draft or cache write of that bill within
+ *                            its cooldown,
  *                            1 to 10 minutes, or 16 bills already filling on
  *                            this instance: lib/script-serve.ts, step 5)
  */
@@ -491,6 +492,7 @@ async function serveScript(
     // anywhere waits for the answer either.
     defer: (task) => after(task),
     // One fill per bill at a time, a pause for a bill after a failed draft
+    // (or a cache write that did not land)
     // that backs off from 1 to 10 minutes, at most 16 bills filling at once:
     // per instance, keyed by the bill, never the stance. What keeps a cache
     // hit on a half-warm bill, which still starts the fill of the other

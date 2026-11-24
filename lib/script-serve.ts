@@ -105,10 +105,12 @@ import type { Stance } from './types';
  *          drafts each stance once, not once per request. (A refused fill is
  *          not kept: it spent nothing, and the next request asks the breaker
  *          again.)
- *        - A COOLDOWN after a fill in which any draft failed, backing off per
+ *        - A COOLDOWN after a fill in which any draft failed (or the write
+ *          of what came back did not reach the cache), backing off per
  *          bill: FILL_COOLDOWNS_MS, 1, 2, 4, then 10 minutes for each failed
  *          fill of that bill in a row, back to the start after a fill in
- *          which every draft came back (second check of #554, D5). Meanwhile
+ *          which every draft came back and was stored (second check of #554,
+ *          D5). Meanwhile
  *          no new fill of that bill starts on this instance, so a stance the
  *          model keeps refusing costs one attempt per cooldown, not one per
  *          request, while one transient failure darkens a bill for only a
@@ -124,16 +126,29 @@ import type { Stance } from './types';
  *     rate-limit count (their salted hash, whose salt it also holds) by
  *     timing, as lib/upstash.ts says. That is the interest-level residual the
  *     privacy page discloses under Upstash; the stance is not part of it.
- *   - A RETRY. A caller whose script is missing after a failed or held-back
- *     fill gets a 502, and the panel offers Retry; the same salted hash asking
- *     about the same bill again seconds later hints that their stance was one
- *     of the missing ones. It needs a failed draft, but the cooldown (step 5)
- *     stretches one failure into a window — a minute at first, up to ten
- *     minutes for a bill whose drafts keep failing — in which every caller of
- *     a missing stance on that instance gets the 502 and may retry. Which is
- *     why the privacy page says that nothing our server SENDS names the
- *     stance and that a quick retry after a failed draft can hint at it,
- *     rather than that the provider can never learn anything about it.
+ *   - A RETRY. Whenever the scripts a request needs could not be drafted,
+ *     the caller whose stance is missing gets an error and the caller whose
+ *     stance is cached gets their script. Asking about the same bill again
+ *     seconds later from the same salted hash then hints that their stance
+ *     was one of the missing ones. It does not need a draft to fail in this
+ *     request. The triggers:
+ *       - a draft failed (or its write did not reach the cache), and the
+ *         cooldown that follows (step 5): a minute at first, up to ten
+ *         minutes for a bill whose drafts keep failing, in which every
+ *         missing-stance caller on that instance gets the 502;
+ *       - the in-flight cap (step 5): MAX_FILLS_IN_FLIGHT bills already
+ *         filling on this instance, so no fill starts, and the 502;
+ *       - a stance key that expired during a fill this request joined
+ *         (running, or finished less than RECENT_FILL_MS ago), so that fill
+ *         never drafted it, and the 502;
+ *       - the daily breaker refusing the fill (step 3a): a 429. The panel
+ *         shows no Retry button for it, but pressing the same stance again
+ *         sends a new request.
+ *     So the answer is a 502 or a 429, and which one depends on the
+ *     trigger, not on the stance. Which is why the privacy page says that
+ *     nothing our server SENDS names the stance and that a quick retry
+ *     after a script could not be drafted can hint at it, rather than that
+ *     the provider can never learn anything about it.
  */
 
 export type ServeOutcome =
@@ -174,20 +189,24 @@ export interface Fill {
   refused: boolean;
   /** The drafts that came back, by stance. */
   drafted: Partial<Record<Stance, string>>;
-  /** Every missing stance came back. */
+  /**
+   * Every missing stance came back AND the write of them reached the cache
+   * database. FALSE starts the bill's cooldown (step 5).
+   */
   complete: boolean;
 }
 
 /* ------------------------------------------------------------------ *
- * Step 5: one fill per bill, a cooldown after a failed draft, a cap on
+ * Step 5: one fill per bill, a cooldown after a failed draft or write, a cap on
  * fills in flight. Per instance, in memory, keyed by the bill set.
  * ------------------------------------------------------------------ */
 
 /**
- * How long a bill waits for a new fill after one in which a draft failed:
+ * How long a bill waits for a new fill after one in which a draft (or the
+ * cache write) failed:
  * the first entry after one failed fill, the next after a second in a row,
  * and so on, staying at the last. A fill in which every draft came back
- * starts the bill over at the first.
+ * and was stored starts the bill over at the first.
  */
 export const FILL_COOLDOWNS_MS: readonly number[] = [1, 2, 4, 10].map((min) => min * 60 * 1000);
 /** How long a finished fill stays joinable (step 5, D4). */
@@ -205,7 +224,7 @@ export type FillStart =
    * RECENT_FILL_MS ago; this request shares its result.
    */
   | { kind: 'joined'; fill: Promise<Fill> }
-  /** A recent fill of this bill had a failed draft; none starts yet. */
+  /** A recent fill of this bill had a failed draft or write; none starts yet. */
   | { kind: 'cooling' }
   /** MAX_FILLS_IN_FLIGHT bills are already filling on this instance. */
   | { kind: 'busy' };
@@ -347,8 +366,14 @@ async function fillMissing(set: StanceSetParts, missing: Stance[], deps: ServeDe
     }
   });
   const count = Object.keys(drafted).length;
-  if (count > 0) await deps.cache.setStances(set, drafted); // never throws
-  return { refused: false, drafted, complete: count === missing.length };
+  // Never throws. FALSE means the write did not reach the cache database
+  // (in this process's memory only), so other requests will read those
+  // stances as missing again: a failed store counts as a failed fill, and
+  // the bill cools down (step 5) instead of re-drafting every stance on
+  // the next request (third check of #554, N5). `drafted` is kept, so this
+  // request and its joiners are still served.
+  const stored = count > 0 ? await deps.cache.setStances(set, drafted) : true;
+  return { refused: false, drafted, complete: count === missing.length && stored };
 }
 
 /**

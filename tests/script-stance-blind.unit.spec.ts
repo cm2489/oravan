@@ -501,6 +501,49 @@ test('after a fill with a failed draft, the bill cools down: no breaker unit, no
   }
 });
 
+test('a fill whose cache write fails counts as a failed fill: the bill cools down instead of re-drafting every stance on the next request (third check of #554, N5)', async () => {
+  let now = 1_000_000;
+  const w = sharedWorld({ fills: createFillCoordinator({ now: () => now }) });
+  // The cache answers reads but refuses the write: call 1 is the MGET, call 2
+  // the /multi-exec transaction.
+  w.cacheDb.failOnCallNumber = 2;
+  const realWarn = console.warn;
+  const realError = console.error;
+  console.warn = () => {};
+  console.error = () => {};
+  try {
+    const first = await serveStanceBlind(SET, 'oppose', w.deps());
+    await w.flush();
+    expect(first, 'the caller is still served from the drafts').toEqual({ kind: 'script', script: 'DRAFT oppose', cached: false });
+    expect(w.drafted).toHaveLength(3);
+    expect(w.cacheDb.store.size, 'nothing reached the cache database').toBe(0);
+    const units = count(w.countersDb, counterKey('script-day', 'script-global'));
+    expect(units).toBe(3);
+
+    // Past the five seconds a finished fill stays joinable, inside the first
+    // cooldown: the read finds every stance missing again, and no stance is
+    // drafted again, for any caller.
+    now += RECENT_FILL_MS + 1_000;
+    for (const s of STANCES) {
+      expect(await serveStanceBlind(SET, s, w.deps()), s).toEqual({ kind: 'generation-failed' });
+    }
+    await w.flush();
+    expect(w.drafted, 'no second full fill').toHaveLength(3);
+    expect(count(w.countersDb, counterKey('script-day', 'script-global')), 'no breaker unit while cooling').toBe(units);
+
+    // Once the cooldown ends (and the write lands), the bill fills again.
+    now += FILL_COOLDOWNS_MS[0];
+    expect(await serveStanceBlind(SET, 'support', w.deps())).toEqual({ kind: 'script', script: 'DRAFT support', cached: false });
+    await w.flush();
+    expect(w.drafted).toHaveLength(6);
+    expect(w.cacheDb.store.size).toBe(3);
+  } finally {
+    console.warn = realWarn;
+    console.error = realError;
+    w.restoreFetch();
+  }
+});
+
 test('a breaker refusal does not start a cooldown (it spent nothing, and the breaker already bounds it)', async () => {
   const fills = createFillCoordinator({ now: () => 0 });
   let calls = 0;

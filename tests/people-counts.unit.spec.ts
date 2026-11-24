@@ -447,7 +447,7 @@ test('the routes: one argument-free count each, after the answer is built; the Z
   expect(record).toContain('if (allAvailable) await deps.note.served();');
   // The count is taken after the write it depends on.
   const fill = serve.slice(serve.indexOf('async function fillMissing('), serve.indexOf('async function recordCounts('));
-  expect(fill).toContain('await deps.cache.setStances(set, drafted);');
+  expect(fill).toContain('await deps.cache.setStances(set, drafted)');
   expect(serve).toContain('deps.defer(() => recordCounts(null, missing, deps));');
 });
 
