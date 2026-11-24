@@ -2994,7 +2994,7 @@
           "url": "https://www.govinfo.gov/content/pkg/BILLS-119s1498rs/html/BILLS-119s1498rs.htm",
           "title": {
             "en": "S. 1498 as reported to the Senate, text",
-            "es": "S. 1498 tal como se presentó al Senado, texto (en inglés)"
+            "es": "S. 1498 en la versión que la comisión remitió al pleno del Senado, texto (en inglés)"
           }
         },
         "usc-13101": {
@@ -3131,7 +3131,7 @@
             {
               "kind": "record",
               "en": "S. 1498 as reported to the Senate applies its section 2 to each “covered person” (a Member of Congress as section 13101 defines one, “the President of the United States” or “the Vice President of the United States”) and to each one’s spouse and dependent children, and it defines a dependent child itself as anyone “under 19 years of age” who is also a dependent under section 152 of the Internal Revenue Code.",
-              "es": "El S. 1498, tal como se presentó al Senado, aplica su sección 2 a cada «persona cubierta» (un miembro del Congreso según lo define la sección 13101, «el Presidente de los Estados Unidos» o «el Vicepresidente de los Estados Unidos») y a su cónyuge e hijos dependientes, y define por su cuenta a un hijo dependiente como toda persona «menor de 19 años» que además sea dependiente según la sección 152 del Código de Rentas Internas.",
+              "es": "El S. 1498, en la versión que la comisión remitió al pleno del Senado, aplica su sección 2 a cada «persona cubierta» (un miembro del Congreso según lo define la sección 13101, «el Presidente de los Estados Unidos» o «el Vicepresidente de los Estados Unidos») y a su cónyuge e hijos dependientes, y define por su cuenta a un hijo dependiente como toda persona «menor de 19 años» que además sea dependiente según la sección 152 del Código de Rentas Internas.",
               "cites": [
                 {
                   "src": "s1498-rs",
@@ -3231,8 +3231,8 @@
             },
             {
               "kind": "record",
-              "en": "S. 1498 as reported to the Senate covers securities, commodities, futures and digital assets, including synthetic and indirect holdings, and lists twelve exclusions, among them a “diversified mutual fund,” a “diversified exchange-traded fund,” “a United States Treasury bill, note, or bond” and “a tax-free State or municipal bond”; a guardian may hold up to $10,000 of them for a dependent child.",
-              "es": "El S. 1498, tal como se presentó al Senado, abarca valores, materias primas, futuros y activos digitales, incluidas las tenencias sintéticas e indirectas, y enumera doce exclusiones, entre ellas un «fondo mutuo diversificado», un «fondo cotizado diversificado», «una letra, un pagaré o un bono del Tesoro de los Estados Unidos» y «un bono estatal o municipal libre de impuestos»; un tutor puede tener hasta 10,000 dólares de ellas para un hijo dependiente.",
+              "en": "S. 1498 as reported to the Senate covers securities, commodities, futures and digital assets, including synthetic and indirect holdings, and lists twelve exclusions, among them a “diversified mutual fund,” a “diversified exchange-traded fund” and “a United States Treasury bill, note, or bond”; a legal guardian may hold or trade covered investments worth up to $10,000 in total for a dependent child.",
+              "es": "El S. 1498, en la versión que la comisión remitió al pleno del Senado, abarca valores, materias primas, futuros y activos digitales, incluidas las tenencias sintéticas e indirectas, y enumera doce exclusiones, entre ellas un «fondo mutuo diversificado», un «fondo cotizado diversificado» y «una letra, un pagaré o un bono del Tesoro de los Estados Unidos»; un tutor legal puede tener o negociar, en nombre de un hijo dependiente, inversiones cubiertas por un valor total de hasta 10,000 dólares.",
               "cites": [
                 {
                   "src": "s1498-rs",
@@ -3245,10 +3245,6 @@
                 {
                   "src": "s1498-rs",
                   "quote": "\"(B) Exclusions.--The term `covered investment' does not include-- \"(i) a diversified mutual fund (including any holdings of such a fund); \"(ii) a diversified exchange-traded fund (including any holdings of such a fund); \"(iii) a United States Treasury bill, note, or bond;"
-                },
-                {
-                  "src": "s1498-rs",
-                  "quote": "\"(viii) a tax-free State or municipal bond;"
                 },
                 {
                   "src": "s1498-rs",
@@ -3283,8 +3279,8 @@
             },
             {
               "kind": "record",
-              "en": "H.R. 7008 as passed requires, as a penalty, the sale of “a covered investment purchased in violation of section 13152(a),” requires notice 7 to 14 days before any sale of a covered investment, and its section 2 takes effect “180 days after the date of enactment of this Act.”",
-              "es": "El H.R. 7008, tal como se aprobó, exige, como sanción, vender «una inversión cubierta comprada en violación de la sección 13152(a)», exige un aviso entre 7 y 14 días antes de cualquier venta de una inversión cubierta, y su sección 2 entra en vigor «180 días después de la fecha de promulgación de esta ley».",
+              "en": "H.R. 7008 as passed requires, as a penalty, the sale of “a covered investment purchased in violation of section 13152(a),” requires notice 7 to 14 days before a sale of a covered investment, except for the occupational trades of a spouse or dependent child it lists, and its section 2 takes effect “180 days after the date of enactment of this Act.”",
+              "es": "El H.R. 7008, tal como se aprobó, exige, como sanción, vender «una inversión cubierta comprada en violación de la sección 13152(a)», exige un aviso entre 7 y 14 días antes de vender una inversión cubierta, salvo en las operaciones ocupacionales de un cónyuge o hijo dependiente que enumera, y su sección 2 entra en vigor «180 días después de la fecha de promulgación de esta ley».",
               "cites": [
                 {
                   "src": "hr7008-eh",
@@ -3297,13 +3293,17 @@
                 {
                   "src": "hr7008-eh",
                   "quote": "This section and the amendments made by this section shall take effect on the date that is 180 days after the date of enactment of this Act."
+                },
+                {
+                  "src": "hr7008-eh",
+                  "quote": "Notwithstanding subsections (a) and (b), a spouse or dependent child of a Member of Congress may trade any covered investment"
                 }
               ]
             },
             {
               "kind": "record",
               "en": "S. 1498 as reported to the Senate requires a covered person to “divest each covered investment” owned by or in the custody of the person, a spouse or a dependent child: for someone in office at enactment, by the date the person begins “a new term of service” after enactment, and for someone sworn in later, by the date that term begins.",
-              "es": "El S. 1498, tal como se presentó al Senado, exige a cada persona cubierta «deshacerse de cada inversión cubierta» que sea propiedad o esté bajo la custodia de esa persona, de su cónyuge o de un hijo dependiente: para quien esté en el cargo a la fecha de promulgación, a más tardar en la fecha en que empiece «un nuevo mandato» después de la promulgación, y para quien jure el cargo después, a más tardar en la fecha en que empiece ese mandato.",
+              "es": "El S. 1498, en la versión que la comisión remitió al pleno del Senado, exige a cada persona cubierta «deshacerse de cada inversión cubierta» que sea propiedad o esté bajo la custodia de esa persona, de su cónyuge o de un hijo dependiente: para quien esté en el cargo a la fecha de promulgación, a más tardar en la fecha en que empiece «un nuevo mandato» después de la promulgación, y para quien jure el cargo después, a más tardar en la fecha en que empiece ese mandato.",
               "cites": [
                 {
                   "src": "s1498-rs",
@@ -3322,7 +3322,7 @@
             {
               "kind": "record",
               "en": "Under S. 1498 as reported, an interest in a private fund is to be divested by 90 days after the person “is contractually permitted to sell” it; no covered person, spouse or dependent child may keep a qualified blind trust beyond 180 days after the applicable effective date, its trustee must sell its covered investments and dissolve it, and a person with such a trust may apply to extend the divestiture deadline by up to 90 days.",
-              "es": "Según el S. 1498, tal como se presentó, una participación en un fondo privado debe venderse a más tardar 90 días después de que la persona «tenga permiso contractual para venderla»; ninguna persona cubierta, cónyuge o hijo dependiente puede mantener un fideicomiso ciego calificado más allá de 180 días después de la fecha de vigencia aplicable, su fideicomisario debe vender sus inversiones cubiertas y disolverlo, y quien tenga ese fideicomiso puede solicitar que el plazo para deshacerse de las inversiones se prorrogue hasta 90 días.",
+              "es": "Según el S. 1498, en la versión de la comisión, una participación en un fondo privado debe venderse a más tardar 90 días después de que la persona «tenga permiso contractual para venderla»; ninguna persona cubierta, cónyuge o hijo dependiente puede mantener un fideicomiso ciego calificado más allá de 180 días después de la fecha de vigencia aplicable, su fideicomisario debe vender sus inversiones cubiertas y disolverlo, y quien tenga ese fideicomiso puede solicitar que el plazo para deshacerse de las inversiones se prorrogue hasta 90 días.",
               "cites": [
                 {
                   "src": "s1498-rs",
@@ -3353,7 +3353,7 @@
             {
               "kind": "record",
               "en": "S. 1498 as reported also bars a covered person from buying covered investments from enactment and from selling them from 90 days after enactment “except as provided in section 13163(a)(1),” its divestiture rule, and lets a guardian keep up to $10,000 of them for a dependent child.",
-              "es": "El S. 1498, tal como se presentó, también prohíbe a la persona cubierta comprar inversiones cubiertas desde la promulgación y venderlas desde 90 días después de la promulgación, «salvo lo dispuesto en la sección 13163(a)(1)», su regla de desinversión, y permite que un tutor conserve hasta 10,000 dólares de ellas para un hijo dependiente.",
+              "es": "El S. 1498, en la versión de la comisión, también prohíbe a la persona cubierta comprar inversiones cubiertas desde la promulgación y venderlas desde 90 días después de la promulgación, «salvo lo dispuesto en la sección 13163(a)(1)», su regla de desinversión, y permite que un tutor conserve hasta 10,000 dólares de ellas para un hijo dependiente.",
               "cites": [
                 {
                   "src": "s1498-rs",
@@ -3399,8 +3399,8 @@
             },
             {
               "kind": "record",
-              "en": "Under 5 U.S.C. 13101, the supervising ethics office is the Senate Select Committee on Ethics for Senators and the House Committee on Ethics for Members of the House.",
-              "es": "Según el 5 U.S.C. 13101, la oficina de ética supervisora es el Comité Selecto de Ética del Senado para los senadores y el Comité de Ética de la Cámara para los miembros de la Cámara.",
+              "en": "Under 5 U.S.C. 13101, the supervising ethics office is the Senate Select Committee on Ethics for Senators and the House Committee on Ethics for Members of the House; the same definition also names “the Office of Government Ethics for all executive branch officers and employees,” and S. 1498 as reported, which also covers the President and the Vice President, uses that definition without naming an office for either of them.",
+              "es": "Según el 5 U.S.C. 13101, la oficina de ética supervisora es el Comité Selecto de Ética del Senado para los senadores y el Comité de Ética de la Cámara para los miembros de la Cámara; la misma definición también nombra a «la Oficina de Ética Gubernamental para todos los funcionarios y empleados del poder ejecutivo», y el S. 1498, en la versión que la comisión remitió al pleno del Senado, que también se aplica al Presidente y al Vicepresidente, usa esa definición sin nombrar una oficina para ninguno de los dos.",
               "cites": [
                 {
                   "src": "usc-13101",
@@ -3409,18 +3409,22 @@
                 {
                   "src": "usc-13101",
                   "quote": "the Committee on Ethics of the House of Representatives, for Members"
+                },
+                {
+                  "src": "usc-13101",
+                  "quote": "the Office of Government Ethics for all executive branch officers and employees"
+                },
+                {
+                  "src": "s1498-rs",
+                  "quote": "The terms `Member of Congress' and `supervising ethics office' have the meanings given those terms in section 13101."
                 }
               ]
             },
             {
               "kind": "record",
-              "en": "H.R. 7008 as passed bars paying the fee from the Members’ Representational Allowance, the Senators’ office expense account or campaign contributions, sends fees to “the general fund of the Treasury as miscellaneous receipts,” and lets the office refer to the Department of Justice a former Member who “resigns or retires before paying the fee.”",
-              "es": "El H.R. 7008, tal como se aprobó, prohíbe pagar el cargo con la asignación de representación de los miembros, la cuenta de gastos de oficina de los senadores o contribuciones de campaña, envía los cargos al «fondo general del Tesoro como ingresos varios» y permite que la oficina remita al Departamento de Justicia a un exmiembro que «renuncie o se retire antes de pagar el cargo».",
+              "en": "H.R. 7008 as passed sends fees to “the general fund of the Treasury as miscellaneous receipts” and lets the office refer to the Department of Justice a former Member who “resigns or retires before paying the fee.”",
+              "es": "El H.R. 7008, tal como se aprobó, envía los cargos al «fondo general del Tesoro como ingresos varios» y permite que la oficina remita al Departamento de Justicia a un exmiembro que «renuncie o se retire antes de pagar el cargo».",
               "cites": [
-                {
-                  "src": "hr7008-eh",
-                  "quote": "A Member of Congress may not pay any of the fees under this section by using amounts from the following sources: \"(1) The Members' Representational Allowance. \"(2) The Senators' Official Personnel and Office Expense Account. \"(3) Any contribution"
-                },
                 {
                   "src": "hr7008-eh",
                   "quote": "Any amounts collected in fees authorized by this section shall be deposited in the general fund of the Treasury as miscellaneous receipts"
@@ -3438,7 +3442,7 @@
             {
               "kind": "record",
               "en": "Under S. 1498 as reported to the Senate, the supervising ethics office gives written notice when a covered person or family member fails to divest or acquires a covered investment in violation, and if noncompliance continues it “shall impose a civil penalty” 30 days later and at least every 30 days after, equal to the greater of the person’s monthly pay and 10 percent of the value of each covered investment not divested.",
-              "es": "Según el S. 1498, tal como se presentó al Senado, la oficina de ética supervisora envía un aviso por escrito cuando una persona cubierta o un familiar no se deshace de una inversión o adquiere una inversión cubierta en infracción, y si el incumplimiento continúa «impondrá una sanción civil» 30 días después y al menos cada 30 días a partir de entonces, igual a la mayor de dos cifras: el sueldo mensual de la persona o el 10 por ciento del valor de cada inversión cubierta de la que no se haya deshecho.",
+              "es": "Según el S. 1498, en la versión que la comisión remitió al pleno del Senado, la oficina de ética supervisora envía un aviso por escrito cuando una persona cubierta o un familiar no se deshace de una inversión o adquiere una inversión cubierta en infracción, y si el incumplimiento continúa «impondrá una sanción civil» 30 días después y al menos cada 30 días a partir de entonces, igual a la mayor de dos cifras: el sueldo mensual de la persona o el 10 por ciento del valor de cada inversión cubierta de la que no se haya deshecho.",
               "cites": [
                 {
                   "src": "s1498-rs",
@@ -3463,25 +3467,6 @@
                 {
                   "src": "s1498-rs",
                   "quote": "shall be equal to the greater of-- \"(i) the monthly equivalent of the annual rate of pay payable to the covered person; and \"(ii) an amount equal to 10 percent of the value of each covered investment that was not divested in violation of this section during the period covered by the penalty."
-                }
-              ]
-            },
-            {
-              "kind": "record",
-              "en": "S. 1498 as reported also fines a “reporting individual” $500 for each transaction report not filed under the STOCK Act, from March 31, 2027, with the fines deposited in “the miscellaneous receipts of the Treasury.”",
-              "es": "El S. 1498, tal como se presentó, también multa con 500 dólares a una «persona obligada a informar» por cada informe de operación que no presente según la Ley STOCK, a partir del 31 de marzo de 2027, y las multas se depositan en los «ingresos varios del Tesoro».",
-              "cites": [
-                {
-                  "src": "s1498-rs",
-                  "quote": "a reporting individual shall be assessed a fine, pursuant to regulations issued by the applicable supervising ethics office (including the Administrative Office of the United States Courts, as applicable), of $500 in each case in which the reporting individual fails to file a transaction report required under this Act"
-                },
-                {
-                  "src": "s1498-rs",
-                  "quote": "The fines paid under this section shall be deposited in the miscellaneous receipts of the Treasury."
-                },
-                {
-                  "src": "s1498-rs",
-                  "quote": "The amendment made by paragraph (1) shall apply on and after March 31, 2027."
                 }
               ]
             }
@@ -3557,8 +3542,8 @@
             },
             {
               "kind": "record",
-              "en": "Section 3 of H.R. 7008 as passed lists five valid photo identifications, among them a State driver’s license, a U.S. passport and a Tribal photo document, and requires free public access to copying devices and notice to new registrants.",
-              "es": "La sección 3 del H.R. 7008, tal como se aprobó, enumera cinco identificaciones válidas con foto, entre ellas una licencia de conducir estatal, un pasaporte de EE. UU. y un documento tribal con foto, y exige acceso público gratuito a equipos para hacer copias y que se informe a quienes se inscriben para votar.",
+              "en": "Section 3 of H.R. 7008 as passed lists five valid photo identifications, among them a State driver’s license and a U.S. passport, and requires notice to new registrants and, “to the extent practicable,” free public access to copying devices.",
+              "es": "La sección 3 del H.R. 7008, tal como se aprobó, enumera cinco identificaciones válidas con foto, entre ellas una licencia de conducir estatal y un pasaporte de EE. UU., y exige que se informe a quienes se inscriben para votar y, «en la medida de lo posible», acceso público gratuito a equipos para hacer copias.",
               "cites": [
                 {
                   "src": "hr7008-eh",
@@ -3570,22 +3555,22 @@
                 },
                 {
                   "src": "hr7008-eh",
-                  "quote": "\"(5) A valid identification document issued by a Tribal government that includes a photo of the individual and an expiration date."
-                },
-                {
-                  "src": "hr7008-eh",
                   "quote": "public access to a digital imaging device, which shall include a printer, copier, image scanner, or multifunction machine, at State and local government buildings in the State, including courts, libraries, and police stations, for the purpose of allowing individuals to use such a device at no cost to the individual to make a copy of a valid photo identification."
                 },
                 {
                   "src": "hr7008-eh",
                   "quote": "at the time an individual applies to register to vote in elections for Federal office in the State, the appropriate State or local election official notifies the individual of the photo identification requirements of this section."
+                },
+                {
+                  "src": "hr7008-eh",
+                  "quote": "the appropriate State or local government official of the State shall ensure, to the extent practicable, public access to a digital imaging device"
                 }
               ]
             },
             {
               "kind": "record",
               "en": "S. 1498 as reported to the Senate has, beyond its section 2, a section 3 fining a “reporting individual” $500 for each STOCK Act transaction report not filed, a section 4 on online public access to financial disclosure forms, and a section 5 on severability.",
-              "es": "El S. 1498, tal como se presentó al Senado, tiene, además de su sección 2, una sección 3 que multa con 500 dólares a una «persona obligada a informar» por cada informe de operación de la Ley STOCK que no presente, una sección 4 sobre el acceso público en línea a los formularios de divulgación financiera, y una sección 5 sobre divisibilidad.",
+              "es": "El S. 1498, en la versión que la comisión remitió al pleno del Senado, tiene, además de su sección 2, una sección 3 que multa con 500 dólares a una «persona obligada a informar» por cada informe de operación de la Ley STOCK que no presente, una sección 4 sobre el acceso público en línea a los formularios de divulgación financiera, y una sección 5 sobre divisibilidad.",
               "cites": [
                 {
                   "src": "s1498-rs",
@@ -3670,8 +3655,8 @@
             },
             {
               "kind": "analysis",
-              "en": "A Congressional Research Service report updated November 19, 2025, says the Senate agrees to a motion to proceed “by a majority vote” but in modern practice “only after a multi-day process that requires the support of three-fifths of the Senate,” and that the final vote on a bill “requires only a simple majority for approval,” often after another three-fifths cloture vote.",
-              "es": "Un informe del Servicio de Investigación del Congreso, actualizado el 19 de noviembre de 2025, dice que el Senado aprueba una moción para considerar un proyecto «por mayoría de votos», pero en la práctica moderna «solo después de un proceso de varios días que requiere el apoyo de tres quintos del Senado», y que la votación final sobre un proyecto «requiere solo mayoría simple para su aprobación», a menudo después de otra votación de cierre del debate de tres quintos.",
+              "en": "A Congressional Research Service report updated November 19, 2025, says the Senate agrees to a motion to proceed “by a majority vote,” but that in modern practice it “typically reaches this vote only after a multi-day process that requires the support of three-fifths of the Senate,” and that the final vote on a bill “requires only a simple majority for approval,” often after another three-fifths cloture vote.",
+              "es": "Un informe del Servicio de Investigación del Congreso, actualizado el 19 de noviembre de 2025, dice que el Senado aprueba una moción para considerar un proyecto «por mayoría de votos», pero que en la práctica moderna «normalmente llega a esa votación solo después de un proceso de varios días que requiere el apoyo de tres quintos del Senado», y que la votación final sobre un proyecto «requiere solo mayoría simple para su aprobación», a menudo después de otra votación de cierre del debate de tres quintos.",
               "cites": [
                 {
                   "src": "crs-r42843",
