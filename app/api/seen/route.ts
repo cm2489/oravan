@@ -61,7 +61,9 @@ import { isPageviewSurface, isSelfDeclaredCrawler, noteRead } from '@/lib/usage'
  * rotation can add 5 more). The sketch counts each address once a day
  * however often it sends, so one IPv4 address moves it by one; a program
  * rotating addresses inside one IPv6 /64 can add each accepted signal as a
- * new address, so at most the same ~720 a day.
+ * new address, so at most the same ~720 a day. A network holding many /64s
+ * (a home /56 has 256; a /48, free from tunnel brokers, has 65,536) gets
+ * that allowance per /64, so the read row is not abuse-resistant.
  *
  * WHY THE SKETCH KEEPS THE FULL ADDRESS (not the /64), decided 2026-11-24:
  * the limit already caps a rotating /64 at the bound above; the three daily
