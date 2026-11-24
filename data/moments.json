@@ -165,23 +165,23 @@
       {
         "slug": "hr-6500-119",
         "role": {
-          "en": "The stopgap now in force. The Senate passed it 90–6 on August 8, 2026, the House agreed 370–48 on September 1, and it became law on September 2 (Public Law 119-103). It funds federal agencies through December 11, 2026. There is no vote left on it; the next funding decision comes due by December 11.",
-          "es": "La medida temporal vigente. El Senado la aprobó 90–6 el 8 de agosto de 2026, la Cámara la aceptó 370–48 el 1 de septiembre y se convirtió en ley el 2 de septiembre (Ley Pública 119-103). Financia a las agencias federales hasta el 11 de diciembre de 2026. Ya no queda ninguna votación sobre ella; la próxima decisión de financiamiento vence el 11 de diciembre."
+          "en": "The stopgap now in force. The Senate passed it 90–6 on August 8, 2026, the House agreed 370–48 on September 1, and it became law on September 2 (Public Law 119-103). Its funding runs out on December 11, 2026, unless the law itself provides otherwise for a program or a later spending law ends it sooner. There is no vote left on it; the next funding decision comes due by December 11.",
+          "es": "La medida temporal vigente. El Senado la aprobó 90–6 el 8 de agosto de 2026, la Cámara la aceptó 370–48 el 1 de septiembre y se convirtió en ley el 2 de septiembre (Ley Pública 119-103). Sus fondos se acaban el 11 de diciembre de 2026, salvo que la propia ley disponga otra cosa para un programa o que antes una ley de gasto posterior les ponga fin. Ya no queda ninguna votación sobre ella; la próxima decisión de financiamiento vence el 11 de diciembre."
         },
         "_terminal_ok": "Enacted stopgap kept on a live explainer (owner decision 2026-09-24): it is the law now in force, and the question stays open until the December 11, 2026 deadline it sets."
       },
       {
         "slug": "hr-9770-119",
         "role": {
-          "en": "The House's stopgap, passed July 21, 2026, 220–205, to fund agencies through December 4. The Senate received it on July 22 and has not acted on it. H.R. 6500 became law instead, and it is the law that sets the December 11 deadline.",
-          "es": "La medida temporal de la Cámara, aprobada el 21 de julio de 2026, 220–205, para financiar a las agencias hasta el 4 de diciembre. El Senado la recibió el 22 de julio y no ha actuado sobre ella. En su lugar se convirtió en ley la H.R. 6500, que es la que fija la fecha límite del 11 de diciembre."
+          "en": "The House's stopgap, passed July 21, 2026, 220–205; it lists December 4 where the law in force lists December 11. The Senate received it on July 22 and has not acted on it. H.R. 6500 became law instead; its funding runs out on December 11, unless the law itself provides otherwise for a program or a later spending law ends it sooner.",
+          "es": "La medida temporal de la Cámara, aprobada el 21 de julio de 2026, 220–205; indica el 4 de diciembre donde la ley vigente indica el 11 de diciembre. El Senado la recibió el 22 de julio y no ha actuado sobre ella. En su lugar se convirtió en ley la H.R. 6500; sus fondos se acaban el 11 de diciembre, salvo que la propia ley disponga otra cosa para un programa o que antes una ley de gasto posterior les ponga fin."
         }
       },
       {
         "slug": "hr-8469-119",
         "role": {
-          "en": "The House's full-year spending bill for military construction, the Department of Veterans Affairs and related agencies, for the fiscal year ending September 30, 2027. The House passed it on May 15, 2026, 400–15, and it is on the Senate calendar as No. 455. On November 20, 2026, the Senate began considering a motion to take it up. A yes vote on that motion lets the Senate debate the bill; a no vote means the Senate does not take up the bill on that motion. There is no vote date on the record.",
-          "es": "El proyecto de gasto de la Cámara para todo el año de construcción militar, el Departamento de Asuntos de Veteranos y agencias relacionadas, para el año fiscal que termina el 30 de septiembre de 2027. La Cámara lo aprobó el 15 de mayo de 2026, 400–15, y está en el calendario del Senado con el n.º 455. El 20 de noviembre de 2026, el Senado comenzó a considerar una moción para tomarlo en consideración. Un voto a favor de esa moción permite al Senado debatir el proyecto; un voto en contra significa que el Senado no toma en consideración el proyecto con esa moción. No hay fecha de votación en el expediente."
+          "en": "The House's full-year spending bill for military construction, the Department of Veterans Affairs and related agencies, for the fiscal year ending September 30, 2027, with some money available longer. The House passed it on May 15, 2026, 400–15, and it is on the Senate calendar as No. 455. On November 20, 2026, the Senate began considering a motion to take it up. A yes vote on that motion lets the Senate debate the bill; a no vote means the Senate does not take up the bill on that motion. There is no vote date on the record.",
+          "es": "El proyecto de gasto de la Cámara para todo el año en construcción militar, el Departamento de Asuntos de Veteranos y agencias relacionadas, para el año fiscal que termina el 30 de septiembre de 2027, con algunos fondos disponibles por más tiempo. La Cámara lo aprobó el 15 de mayo de 2026, 400–15, y está en el calendario del Senado con el n.º 455. El 20 de noviembre de 2026, el Senado comenzó a considerar una moción para tomarlo en consideración. Un voto a favor de esa moción permite al Senado debatir el proyecto; un voto en contra significa que el Senado no toma en consideración el proyecto con esa moción. No hay fecha de votación en el expediente."
         }
       }
     ],

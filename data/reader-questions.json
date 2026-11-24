@@ -3,7 +3,7 @@
   "bank": "reader-questions/bank-v1",
   "questions": {
     "government-funding-deadline": {
-      "written": "2026-11-23",
+      "written": "2026-11-24",
       "record_as_of": "2026-11-22",
       "model": "claude-opus-5-5",
       "type": "spending_deadline",
@@ -168,6 +168,14 @@
             "en": "Congress.gov data service: every 119th-Congress bill updated from July 18, 2026, through November 22, 2026, searched for bills introduced after H.R. 9770 (needs a free api.data.gov key)",
             "es": "Servicio de datos de Congress.gov: todos los proyectos del 119.º Congreso actualizados del 18 de julio de 2026 al 22 de noviembre de 2026, revisados en busca de proyectos presentados después de la H.R. 9770 (requiere una clave gratuita de api.data.gov; en inglés)"
           }
+        },
+        "actions-hr6500": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/house-bill/6500/all-actions",
+          "title": {
+            "en": "H.R. 6500, official actions",
+            "es": "H.R. 6500, acciones oficiales (en inglés)"
+          }
         }
       },
       "picks": [
@@ -300,8 +308,8 @@
             },
             {
               "kind": "record",
-              "en": "H.R. 8469, as the House passed it, is titled “Making appropriations for military construction, the Department of Veterans Affairs, and related agencies for the fiscal year ending September 30, 2027, and for other purposes.”",
-              "es": "La H.R. 8469, tal como la aprobó la Cámara, lleva el título «Asignaciones para construcción militar, el Departamento de Asuntos de Veteranos y agencias relacionadas para el año fiscal que termina el 30 de septiembre de 2027, y para otros fines».",
+              "en": "H.R. 8469, as the House passed it, is titled “Making appropriations for military construction, the Department of Veterans Affairs, and related agencies for the fiscal year ending September 30, 2027, and for other purposes”; its text sets other periods for some accounts, among them money to “remain available until September 30, 2031,” money to “remain available until expended,” and money that “shall become available on October 1, 2027.”",
+              "es": "La H.R. 8469, tal como la aprobó la Cámara, lleva el título «Asignaciones para construcción militar, el Departamento de Asuntos de Veteranos y agencias relacionadas para el año fiscal que termina el 30 de septiembre de 2027, y para otros fines»; su texto fija otros plazos para algunas partidas, entre ellos fondos que «seguirán disponibles hasta el 30 de septiembre de 2031», fondos que «seguirán disponibles hasta agotarse» y fondos que «quedarán disponibles el 1 de octubre de 2027».",
               "cites": [
                 {
                   "src": "hr8469-pcs",
@@ -310,6 +318,18 @@
                 {
                   "src": "actions-hr8469",
                   "quote": "2026-05-15 | On passage Passed by the Yeas and Nays: 400 - 15 (Roll no. 175)."
+                },
+                {
+                  "src": "hr8469-pcs",
+                  "quote": "remain available until September 30, 2031"
+                },
+                {
+                  "src": "hr8469-pcs",
+                  "quote": "remain available until expended"
+                },
+                {
+                  "src": "hr8469-pcs",
+                  "quote": "shall become available on October 1, 2027"
                 }
               ]
             }
@@ -392,8 +412,8 @@
           "claims": [
             {
               "kind": "record",
-              "en": "On November 20, 2026, the Senate “began consideration of the motion to proceed to consideration of H.R. 8469,” the House-passed bill for military construction, the Department of Veterans Affairs and related agencies, which the House passed 400–15 on May 15.",
-              "es": "El 20 de noviembre de 2026, el Senado «comenzó a considerar la moción para pasar a considerar la H.R. 8469», el proyecto aprobado por la Cámara para construcción militar, el Departamento de Asuntos de Veteranos y agencias relacionadas, que la Cámara aprobó 400–15 el 15 de mayo.",
+              "en": "On November 20, 2026, the Senate “began consideration of the motion to proceed to consideration of H.R. 8469,” the House’s bill for military construction, the Department of Veterans Affairs and related agencies, passed 400–15 on May 15; the record shows no Senate vote on it as of November 22.",
+              "es": "El 20 de noviembre de 2026, el Senado «comenzó a considerar la moción para pasar a considerar la H.R. 8469», el proyecto de la Cámara para construcción militar, el Departamento de Asuntos de Veteranos y agencias relacionadas, aprobado 400–15 el 15 de mayo; el expediente no muestra ninguna votación del Senado sobre él al 22 de noviembre.",
               "cites": [
                 {
                   "src": "crec-2026-11-20-d1054",
@@ -406,24 +426,17 @@
                 {
                   "src": "hr8469-pcs",
                   "quote": "Making appropriations for military construction, the Department of Veterans Affairs, and related agencies for the fiscal year ending September 30, 2027, and for other purposes."
-                }
-              ]
-            },
-            {
-              "kind": "record",
-              "en": "As of November 22, 2026, the record shows no Senate vote on H.R. 8469; its latest action reads “Motion to proceed to consideration of measure made in Senate.”",
-              "es": "Al 22 de noviembre de 2026, el expediente no muestra ninguna votación del Senado sobre la H.R. 8469; su última acción dice «se presentó en el Senado la moción para pasar a considerar la medida».",
-              "cites": [
+                },
                 {
                   "src": "bill-hr8469",
-                  "quote": "latestAction | 2026-11-20 | Motion to proceed to consideration of measure made in Senate."
+                  "quote": "latestAction | 2026-11-20 | Motion to proceed to consideration of measure made in Senate. (consideration: CR S5847)"
                 }
               ]
             },
             {
               "kind": "record",
-              "en": "Under the Constitution, a bill that has “passed the House of Representatives and the Senate” is “presented to the President of the United States,” who signs it or returns it with objections; a returned bill becomes law only if “two thirds” of each chamber agree to pass it again.",
-              "es": "Según la Constitución, un proyecto «aprobado por la Cámara de Representantes y el Senado» se «presenta al Presidente de los Estados Unidos», que lo firma o lo devuelve con sus objeciones; un proyecto devuelto solo se convierte en ley si «dos tercios» de cada cámara vuelven a aprobarlo.",
+              "en": "Under the Constitution, a bill that has “passed the House of Representatives and the Senate” is “presented to the President,” who signs or returns it with objections; a returned bill becomes law only if “two thirds” of each chamber agree to pass it again.",
+              "es": "Según la Constitución, un proyecto «aprobado por la Cámara de Representantes y el Senado» se «presenta al Presidente», que lo firma o lo devuelve con sus objeciones; un proyecto devuelto solo se convierte en ley si «dos tercios» de cada cámara vuelven a aprobarlo.",
               "cites": [
                 {
                   "src": "constitution",
@@ -437,8 +450,27 @@
             },
             {
               "kind": "record",
-              "en": "For the programs that Public Law 119-103 continues, that law makes its money available until “December 11, 2026,” unless that law or the applicable fiscal 2027 spending law provides otherwise, or a later spending law ends it sooner for a project or activity.",
-              "es": "Para los programas que mantiene la Ley Pública 119-103, esa ley deja disponibles sus fondos hasta el «11 de diciembre de 2026», salvo que esa ley o la ley de gasto aplicable del año fiscal 2027 disponga otra cosa, o que una ley de gasto posterior les ponga fin antes para un proyecto o actividad.",
+              "en": "For H.R. 6500, the law now in force, the Senate passed the House’s bill “with an amendment” on August 8, 2026, and it went to the president only after the House voted on September 1 to “agree to the Senate amendments.”",
+              "es": "En el caso de la H.R. 6500, la ley vigente, el Senado aprobó el proyecto de la Cámara «con una enmienda» el 8 de agosto de 2026, y se envió al presidente solo después de que la Cámara votó el 1 de septiembre para «aceptar las enmiendas del Senado».",
+              "cites": [
+                {
+                  "src": "actions-hr6500",
+                  "quote": "2026-08-08 | Passed Senate with an amendment and an amendment to the Title by Yea-Nay Vote. 90 - 6. Record Vote Number: 228."
+                },
+                {
+                  "src": "actions-hr6500",
+                  "quote": "2026-09-01 | On motion that the House suspend the rules and agree to the Senate amendments Agreed to by the Yeas and Nays: (2/3 required): 370 - 48 (Roll no. 286). (consideration: CR H5387; text: CR H5377-5383)"
+                },
+                {
+                  "src": "actions-hr6500",
+                  "quote": "2026-09-02 | Presented to President."
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "For the programs that law continues, its money is available until “December 11, 2026,” unless that law or the applicable fiscal 2027 spending law provides otherwise, or a later spending law ends it sooner for a project or activity.",
+              "es": "Para los programas que mantiene esa ley, sus fondos están disponibles hasta el «11 de diciembre de 2026», salvo que esa ley o la ley de gasto aplicable del año fiscal 2027 disponga otra cosa, o que una ley de gasto posterior les ponga fin antes para un proyecto o actividad.",
               "cites": [
                 {
                   "src": "plaw-119-103",
@@ -514,7 +546,7 @@
             {
               "kind": "record",
               "en": "The same report says “Of the total for fiscal year 2027, $122,258,000,000 for veterans' healthcare was advanced in the fiscal year 2026” spending law; for veterans’ compensation and pensions, the bill’s text adds “$10,555,052,000, which shall be in addition to funds previously appropriated under this heading that became available on October 1, 2026.”",
-              "es": "El mismo informe dice: «Del total del año fiscal 2027, 122.258.000.000 de dólares para la atención médica de los veteranos se adelantaron en el año fiscal 2026» en una ley de gasto; para compensaciones y pensiones de veteranos, el texto del proyecto añade «10.555.052.000 dólares, que se sumarán a los fondos asignados previamente bajo este rubro que quedaron disponibles el 1 de octubre de 2026».",
+              "es": "El mismo informe dice: «Del total del año fiscal 2027, 122.258.000.000 de dólares para la atención médica de los veteranos se adelantaron en el año fiscal 2026» en la ley de gasto de ese año; para compensaciones y pensiones de veteranos, el texto del proyecto añade «10.555.052.000 dólares, que se sumarán a los fondos asignados previamente bajo este rubro que quedaron disponibles el 1 de octubre de 2026».",
               "cites": [
                 {
                   "src": "hrpt-119-622",
