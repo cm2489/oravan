@@ -28,14 +28,18 @@ test.describe('the committed answers', () => {
     expect(checkReaderQuestions(FILE, BANK, MOMENTS).violations).toEqual([]);
   });
 
-  test('cover the funding question only, written once, dated, never rewritten nightly', () => {
-    expect(Object.keys(FILE.questions)).toEqual([MID]);
-    const e = FILE.questions[MID];
-    expect(e.rewritten_nightly).toBe(false);
-    expect(e.written).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-    expect(e.model).toBeTruthy();
-    expect(e.picks.length).toBeGreaterThanOrEqual(5);
-    expect(e.picks.length).toBeLessThanOrEqual(8);
+  // The funding question was the first to carry reader questions; the owner,
+  // 2026-11-24: "These need to be on all the big questions." So the file may
+  // hold any Big Question, and every entry meets the same terms.
+  test('cover the funding question, and every entry is written once, dated, never rewritten nightly', () => {
+    expect(Object.keys(FILE.questions)).toContain(MID);
+    for (const [id, e] of Object.entries(FILE.questions) as [string, any][]) {
+      expect(e.rewritten_nightly, id).toBe(false);
+      expect(e.written, id).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      expect(e.model, id).toBeTruthy();
+      expect(e.picks.length, id).toBeGreaterThanOrEqual(5);
+      expect(e.picks.length, id).toBeLessThanOrEqual(8);
+    }
   });
 
   test('every question is the bank’s own text, in both languages', () => {
