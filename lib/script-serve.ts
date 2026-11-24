@@ -54,16 +54,28 @@ import type { Stance } from './types';
  *           breaker said no).
  *      The fill STARTS as soon as the read says something is missing, before
  *      the code even looks at whether the caller's own script was among what
- *      came back. Only then is the caller's script picked: if it was cached,
- *      the response goes out at once while the fill carries on (`defer`,
- *      next/server's after() in the route, only keeps it alive); if not, the
- *      response waits for the fill. Either way the breaker units, the model
- *      requests, the write and the counts below leave in the same order, at
- *      times that do not depend on the stance, because none of them waits
- *      on the response
+ *      came back. So the breaker units, the model requests, the write and
+ *      the counts below leave in the same order, at times that do not depend
+ *      on the stance, because none of them waits on the response
  *      (tests/script-stance-blind.unit.spec.ts pins the order, with a
- *      response that is never sent). What the caller's pick changes is only
- *      when THEIR answer leaves, which Upstash and Anthropic do not see.
+ *      response that is never sent).
+ *      THE ANSWER WAITS FOR THE FILL, for every caller whose request started
+ *      or joined one — the caller whose script was already cached included
+ *      (fourth check of #554, B1; owner's answer r554 a, 2026-11-24). Upstash
+ *      and Anthropic never see when an answer leaves, but they do see when
+ *      the same caller asks next: if a cached caller were answered at once
+ *      while a missing one waited seconds for the model, a quick next request
+ *      (a second stance to compare, the House button on a nomination) would
+ *      say the first answer had been a cached one, and so which stances it
+ *      could have been. So every answer leaves at the same point whatever the
+ *      stance: once the fill has ended (its drafts and its write) when a fill
+ *      was started or joined — at once when the joined fill had already
+ *      ended — and at once when none runs (cooling, busy; step 5). The
+ *      caller's pick changes only WHICH answer leaves then: their script, or
+ *      the 502 or 429 when theirs is one that could not be drafted (WHAT
+ *      REMAINS VISIBLE). The cost: on a half-warm bill a caller whose script
+ *      was cached waits for the drafts of the others. That is rare, since a
+ *      bill's stances are normally drafted and written together.
  *
  *   4. COUNTS (counters database, lib/usage.ts), also stance-blind, chained
  *      onto the fill itself, never onto the response:
@@ -114,8 +126,13 @@ import type { Stance } from './types';
  *          no new fill of that bill starts on this instance, so a stance the
  *          model keeps refusing costs one attempt per cooldown, not one per
  *          request, while one transient failure darkens a bill for only a
- *          minute. A caller whose script is missing meanwhile gets the 502
- *          (the panel's template still works).
+ *          minute. A caller whose script that fill did not draft meanwhile
+ *          gets the 502 (the panel's template still works). When the drafts
+ *          came back but their WRITE failed, the fill stays joinable on this
+ *          instance until its cooldown ends, not only RECENT_FILL_MS, so the
+ *          callers of the stances it drafted are still served from it, with
+ *          nothing more spent and nothing more sent than a joiner's read and
+ *          counts (fourth check of #554, N1).
  *        - AT MOST MAX_FILLS_IN_FLIGHT bills filling at once on one instance.
  *          Past that, no fill starts, and a caller whose script is missing
  *          gets the 502.
@@ -128,14 +145,16 @@ import type { Stance } from './types';
  *     privacy page discloses under Upstash; the stance is not part of it.
  *   - A RETRY. Whenever the scripts a request needs could not be drafted,
  *     the caller whose stance is missing gets an error and the caller whose
- *     stance is cached gets their script. Asking about the same bill again
- *     seconds later from the same salted hash then hints that their stance
- *     was one of the missing ones. It does not need a draft to fail in this
- *     request. The triggers:
- *       - a draft failed (or its write did not reach the cache), and the
- *         cooldown that follows (step 5): a minute at first, up to ten
- *         minutes for a bill whose drafts keep failing, in which every
- *         missing-stance caller on that instance gets the 502;
+ *     stance is cached gets their script — at the same moment (step 3), but
+ *     a different answer. Asking about the same bill again seconds later
+ *     from the same salted hash then hints that their stance was one of the
+ *     missing ones. It does not need a draft to fail in this request. The
+ *     triggers:
+ *       - a draft failed, and the cooldown that follows (step 5): a minute
+ *         at first, up to ten minutes for a bill whose drafts keep failing,
+ *         in which every caller on that instance whose stance that fill did
+ *         not draft gets the 502 (a write that failed on its own no longer
+ *         does this: the fill's drafts stay joinable for the cooldown);
  *       - the in-flight cap (step 5): MAX_FILLS_IN_FLIGHT bills already
  *         filling on this instance, so no fill starts, and the 502;
  *       - a stance key that expired during a fill this request joined
@@ -145,7 +164,9 @@ import type { Stance } from './types';
  *         shows no Retry button for it, but pressing the same stance again
  *         sends a new request.
  *     So the answer is a 502 or a 429, and which one depends on the
- *     trigger, not on the stance. Which is why the privacy page says that
+ *     trigger, not on the stance; and when it leaves depends on neither.
+ *     This is the only thing a caller's next request can hint at. Which is
+ *     why the privacy page says that
  *     nothing our server SENDS names the stance and that a quick retry
  *     after a script could not be drafted can hint at it, rather than that
  *     the provider can never learn anything about it.
@@ -194,6 +215,12 @@ export interface Fill {
    * database. FALSE starts the bill's cooldown (step 5).
    */
   complete: boolean;
+  /**
+   * The write of `drafted` reached the cache database (TRUE when there was
+   * nothing to write). FALSE keeps the fill joinable for its cooldown
+   * (step 5, N1), since no other request can read those drafts.
+   */
+  stored: boolean;
 }
 
 /* ------------------------------------------------------------------ *
@@ -241,7 +268,7 @@ export interface FillCoordinator {
   reset(): void;
 }
 
-const FAILED_FILL: Fill = { refused: false, drafted: {}, complete: false };
+const FAILED_FILL: Fill = { refused: false, drafted: {}, complete: false, stored: true };
 
 /** The bill set as a map key. In this process's memory only; never sent anywhere. */
 function setKey(set: StanceSetParts): string {
@@ -274,19 +301,24 @@ export function createFillCoordinator(
     // Still too many live entries: drop the oldest. Forgetting a cooldown
     // (and its count of failures in a row) only lets that bill try again
     // early; forgetting a finished fill only lets a late request start a new
-    // one. The daily breaker still applies to both.
+    // one, or, for a fill whose write failed and whose bill is still
+    // cooling, gives its callers the 502 a cooling bill gives. The daily
+    // breaker still applies to all of them.
     for (const k of map.keys()) {
       if (map.size <= COOLDOWN_SWEEP_AT) break;
       map.delete(k);
     }
   }
 
-  function coolDown(key: string): void {
+  /** Start (or lengthen) the bill's cooldown; returns when it ends. */
+  function coolDown(key: string): number {
     const strikes = (cooling.get(key)?.strikes ?? 0) + 1;
     const wait = cooldownsMs[Math.min(strikes, cooldownsMs.length) - 1];
+    const until = now() + wait;
     cooling.delete(key); // re-insert, so iteration order stays oldest-first
-    cooling.set(key, { until: now() + wait, strikes });
+    cooling.set(key, { until, strikes });
     sweep(cooling, now(), false);
+    return until;
   }
 
   return {
@@ -315,10 +347,18 @@ export function createFillCoordinator(
         // spent nothing, so it neither cools the bill nor resets its
         // backoff, and it is not kept for late joiners.
         if (!result.refused) {
+          let joinableUntil = now() + recentMs;
           if (result.complete) cooling.delete(key);
-          else coolDown(key);
+          else {
+            const cooledUntil = coolDown(key);
+            // Drafts whose write failed are in no cache another request can
+            // read, so keep them joinable for as long as the bill cools,
+            // instead of a 502 for every caller meanwhile (fourth check of
+            // #554, N1). Still a failed fill: the cooldown above stands.
+            if (!result.stored) joinableUntil = Math.max(joinableUntil, cooledUntil);
+          }
           recent.delete(key);
-          recent.set(key, { fill: Promise.resolve(result), until: now() + recentMs });
+          recent.set(key, { fill: Promise.resolve(result), until: joinableUntil });
           sweep(recent, now(), false);
         }
         inFlight.delete(key);
@@ -352,7 +392,7 @@ export const routeFills: FillCoordinator = createFillCoordinator({
 /** Draft every missing stance at once and store what came back, in one write. */
 async function fillMissing(set: StanceSetParts, missing: Stance[], deps: ServeDeps): Promise<Fill> {
   const refusals = await Promise.all(missing.map(() => deps.takeGenerationUnit()));
-  if (refusals.some(Boolean)) return { refused: true, drafted: {}, complete: false };
+  if (refusals.some(Boolean)) return { refused: true, drafted: {}, complete: false, stored: true };
 
   // `async` so a generate() that throws before returning a promise still
   // lands in allSettled as that one draft failing (first check of #554, N6).
@@ -371,9 +411,10 @@ async function fillMissing(set: StanceSetParts, missing: Stance[], deps: ServeDe
   // stances as missing again: a failed store counts as a failed fill, and
   // the bill cools down (step 5) instead of re-drafting every stance on
   // the next request (third check of #554, N5). `drafted` is kept, so this
-  // request and its joiners are still served.
+  // request and its joiners are still served — joiners until the cooldown
+  // ends (step 5, fourth check of #554, N1).
   const stored = count > 0 ? await deps.cache.setStances(set, drafted) : true;
-  return { refused: false, drafted, complete: count === missing.length && stored };
+  return { refused: false, drafted, complete: count === missing.length && stored, stored };
 }
 
 /**
@@ -425,18 +466,20 @@ export async function serveStanceBlind(
     ?.then((f) => recordCounts(f, missing, deps, start.kind === 'started'))
     .catch((err) => deps.logFailure?.(err));
 
-  if (own) {
-    // The answer leaves now; `defer` keeps the running fill and counts alive.
-    if (counted) deps.defer(() => counted);
-    return { kind: 'script', script: own, cached: true };
+  // Cooling or busy (step 5): no fill, so every answer leaves at once.
+  if (!pending || !counted) {
+    return own ? { kind: 'script', script: own, cached: true } : { kind: 'generation-failed' };
   }
-  if (!pending || !counted) return { kind: 'generation-failed' }; // cooling or busy (step 5)
+  // A fill was started or joined: EVERY answer waits for it, the cached one
+  // included, so when the answer leaves says nothing about whose script was
+  // cached (step 3, fourth check of #554, B1).
   const fill = await pending;
   // The counts are already running. Keep them alive past the answer when
   // there is something to count; when every draft failed there is nothing
   // (recordCounts writes nothing), so nothing is deferred — the same as the
   // 502 path before 2026-11-24. Either way nothing sent anywhere changes.
   if (fill.refused || Object.keys(fill.drafted).length > 0) deps.defer(() => counted);
+  if (own) return { kind: 'script', script: own, cached: true };
   if (fill.refused) return { kind: 'daily-limited' };
   const script = fill.drafted[stance];
   if (!script) return { kind: 'generation-failed' };

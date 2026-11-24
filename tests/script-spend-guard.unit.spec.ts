@@ -111,7 +111,7 @@ test('one breaker unit per stance drafted, all or nothing: a refused unit means 
   // takes a unit, and a partial "yes" drafts nothing (lib/script-serve.ts
   // header, step 3a). Behaviour: tests/script-stance-blind.unit.spec.ts.
   expect(serveSrc).toContain('const refusals = await Promise.all(missing.map(() => deps.takeGenerationUnit()));');
-  expect(serveSrc).toContain("if (refusals.some(Boolean)) return { refused: true, drafted: {}, complete: false };");
+  expect(serveSrc).toContain("if (refusals.some(Boolean)) return { refused: true, drafted: {}, complete: false, stored: true };");
 });
 
 /* ------------------------------------------------------------------ *

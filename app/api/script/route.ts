@@ -140,12 +140,14 @@ import { noteScriptGeneration, noteScriptRefusal, noteScriptServed } from '@/lib
  *   422 not_callable       — a NOMINATION with no call to make (past advice
  *                            and consent, unclassified, or no description)
  *   429 rate_limited       — any limiter or the daily breaker tripped
- *   502 generation_failed  — the model call failed or came back empty, or
+ *   502 generation_failed  — the model call failed or came back empty; or
  *                            no draft could start for a missing script (a
- *                            failed draft or cache write of that bill within
- *                            its cooldown,
+ *                            failed draft of that bill within its cooldown,
  *                            1 to 10 minutes, or 16 bills already filling on
- *                            this instance: lib/script-serve.ts, step 5)
+ *                            this instance); or the script's key expired
+ *                            during a fill this request joined, which never
+ *                            drafted it (lib/script-serve.ts, step 5 and
+ *                            WHAT REMAINS VISIBLE)
  */
 
 // 60s: the largest function duration valid on every Vercel plan tier, and

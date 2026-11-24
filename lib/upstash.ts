@@ -43,9 +43,12 @@
  *   back to the address — the interest-level residual KTD-3 accepts, the
  *   same exposure the host's request logs already have, and disclosed on
  *   the privacy page under Upstash. Never with the side they asked for:
- *   nothing our server sends either database depends on it (the one hint
- *   left, a caller retrying after a script could not be drafted, is stated in
- *   lib/script-serve.ts under "WHAT REMAINS VISIBLE").
+ *   nothing our server sends either database depends on it, and the answer
+ *   leaves at the same moment whatever the side, so the timing of a caller's
+ *   next request does not depend on it either. The one hint left: a caller
+ *   asking again soon after a script could not be drafted, since whether
+ *   theirs was one of those does depend on it (lib/script-serve.ts, "WHAT
+ *   REMAINS VISIBLE").
  *
  *   The tenancy database (lib/tenancy.ts, S18) holds durable institutional
  *   tenant records (domain, org name, tier, logo — Stripe-webhook-issued

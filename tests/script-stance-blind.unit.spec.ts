@@ -198,8 +198,8 @@ test("a half-warm bill: the caller whose script is cached and the caller whose i
   expect(JSON.parse(runs.support.cacheWire[1].body)).toEqual(
     (['oppose', 'undecided'] as const).map((s) => ['SET', scriptKey({ ...SET, stance: s }), `DRAFT ${s}`, 'EX', '86400'])
   );
-  // The hit is answered at once from the cache (the drafting ran in after());
-  // the miss waits for its draft.
+  // The hit is answered from the cache, the miss with its draft; both only
+  // once the fill has ended (fourth check of #554, B1: see section 2b).
   expect(runs.support.outcome).toEqual({ kind: 'script', script: 'S', cached: true });
   expect(runs.oppose.outcome).toEqual({ kind: 'script', script: 'DRAFT oppose', cached: false });
 });
@@ -403,11 +403,65 @@ test('a half-warm bill: every Upstash request and model call leaves in the same 
   expect(generatedCount, 'the counts run without the response').toBeGreaterThan(write);
   expect(servedCount).toBeGreaterThan(generatedCount);
 
-  // The caller whose script was cached got it before the fill finished; the
-  // others waited for it. That is the response alone, which only the host sees.
+  // EVERY answer leaves after the fill's write, the cached caller's included
+  // (fourth check of #554, B1), so the moment a caller gets their answer, and
+  // so the timing of their next request, does not depend on their stance.
   expect(runs.support.outcome).toEqual({ kind: 'script', script: 'S', cached: true });
-  expect(runs.support.log.indexOf('RESPONSE')).toBeLessThan(runs.support.log.findIndex((e) => e.startsWith('cache [["SET"')));
-  expect(runs.oppose.log.indexOf('RESPONSE')).toBeGreaterThan(runs.oppose.log.findIndex((e) => e.startsWith('cache [["SET"')));
+  for (const s of STANCES) {
+    const { log } = runs[s];
+    expect(log.indexOf('RESPONSE'), `${s}: the answer leaves after the write`).toBeGreaterThan(
+      log.findIndex((e) => e.startsWith('cache [["SET"'))
+    );
+  }
+});
+
+test('a half-warm bill: the caller whose script is cached does not get it before the fill has settled (fourth check of #554, B1)', async () => {
+  let release!: () => void;
+  const hold = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const w = sharedWorld({ hold });
+  try {
+    w.cacheDb.store.set(scriptKey({ ...SET, stance: 'support' }), { value: 'CACHED support', expiresAt: null });
+    const events: string[] = [];
+    // The starter's deps run the fill, so its write is the one to watch.
+    const real = w.deps();
+    const starterDeps: ServeDeps = {
+      ...real,
+      cache: {
+        ...real.cache,
+        setStances: async (set, scripts) => {
+          const stored = await real.cache.setStances(set, scripts);
+          events.push('write settled');
+          return stored;
+        },
+      },
+    };
+    const answered = (label: string) => (o: ServeOutcome) => {
+      events.push(label);
+      return o;
+    };
+    // A cached caller starts the fill; a cached joiner and a missing joiner
+    // arrive while its drafts are held.
+    const cached = serveStanceBlind(SET, 'support', starterDeps).then(answered('cached starter'));
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    const joiner = serveStanceBlind(SET, 'support', w.deps()).then(answered('cached joiner'));
+    const missing = serveStanceBlind(SET, 'oppose', w.deps()).then(answered('missing joiner'));
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    expect(events, 'no answer leaves while the drafts are out').toEqual([]);
+
+    release();
+    expect(await cached).toEqual({ kind: 'script', script: 'CACHED support', cached: true });
+    expect(await joiner).toEqual({ kind: 'script', script: 'CACHED support', cached: true });
+    expect(await missing).toEqual({ kind: 'script', script: 'DRAFT oppose', cached: false });
+    expect(events[0], 'the fill (its write included) settled before any answer left').toBe('write settled');
+    expect(events.slice(1).sort()).toEqual(['cached joiner', 'cached starter', 'missing joiner']);
+    expect(w.drafted, 'one fill, shared').toEqual([`${SET.slug} oppose`, `${SET.slug} undecided`]);
+    await w.flush();
+  } finally {
+    release();
+    w.restoreFetch();
+  }
 });
 
 /* ------------------------------------------------------------------ *
@@ -501,7 +555,7 @@ test('after a fill with a failed draft, the bill cools down: no breaker unit, no
   }
 });
 
-test('a fill whose cache write fails counts as a failed fill: the bill cools down instead of re-drafting every stance on the next request (third check of #554, N5)', async () => {
+test('a fill whose cache write fails counts as a failed fill: the bill cools down instead of re-drafting every stance, and its drafts still serve every stance until the cooldown ends (third check of #554, N5; fourth, N1)', async () => {
   let now = 1_000_000;
   const w = sharedWorld({ fills: createFillCoordinator({ now: () => now }) });
   // The cache answers reads but refuses the write: call 1 is the MGET, call 2
@@ -520,19 +574,33 @@ test('a fill whose cache write fails counts as a failed fill: the bill cools dow
     const units = count(w.countersDb, counterKey('script-day', 'script-global'));
     expect(units).toBe(3);
 
-    // Past the five seconds a finished fill stays joinable, inside the first
-    // cooldown: the read finds every stance missing again, and no stance is
-    // drafted again, for any caller.
+    // Past the five seconds a successful fill stays joinable, inside the
+    // first cooldown: the read finds every stance missing again, and no
+    // stance is drafted again, for any caller. But every caller is still
+    // served, from the drafts the failed write left in this instance (N1),
+    // and each sends the cache database the same bytes: the one MGET.
     now += RECENT_FILL_MS + 1_000;
     for (const s of STANCES) {
-      expect(await serveStanceBlind(SET, s, w.deps()), s).toEqual({ kind: 'generation-failed' });
+      const cacheBefore = w.cacheDb.requests.length;
+      expect(await serveStanceBlind(SET, s, w.deps()), s).toEqual({ kind: 'script', script: `DRAFT ${s}`, cached: false });
+      expect(w.cacheDb.requests.slice(cacheBefore), `${s}: only the read`).toEqual([
+        { path: '', body: JSON.stringify(['MGET', ...STANCES.map((st) => scriptKey({ ...SET, stance: st }))]) },
+      ]);
     }
     await w.flush();
     expect(w.drafted, 'no second full fill').toHaveLength(3);
     expect(count(w.countersDb, counterKey('script-day', 'script-global')), 'no breaker unit while cooling').toBe(units);
+    expect(count(w.countersDb, scriptUsageKey(DAY)), 'the spend counted once, by the starter').toBe(3);
+    expect(count(w.countersDb, scriptServedUsageKey(DAY)), 'the starter and the three joiners were served').toBe(4);
+
+    // It is still a failed fill: 1 ms before the cooldown ends, a
+    // caller is still served from it and nothing is drafted.
+    now += FILL_COOLDOWNS_MS[0] - (RECENT_FILL_MS + 1_000) - 1;
+    expect(await serveStanceBlind(SET, 'undecided', w.deps())).toEqual({ kind: 'script', script: 'DRAFT undecided', cached: false });
+    expect(w.drafted).toHaveLength(3);
+    now += 1;
 
     // Once the cooldown ends (and the write lands), the bill fills again.
-    now += FILL_COOLDOWNS_MS[0];
     expect(await serveStanceBlind(SET, 'support', w.deps())).toEqual({ kind: 'script', script: 'DRAFT support', cached: false });
     await w.flush();
     expect(w.drafted).toHaveLength(6);
@@ -549,7 +617,7 @@ test('a breaker refusal does not start a cooldown (it spent nothing, and the bre
   let calls = 0;
   const run = async () => {
     calls += 1;
-    return { refused: true, drafted: {}, complete: false };
+    return { refused: true, drafted: {}, complete: false, stored: true };
   };
   const a = fills.start(SET, run);
   expect(a.kind).toBe('started');
@@ -567,8 +635,8 @@ test('the cooldown backs off per bill — 1, 2, 4, then 10 minutes — and a fil
   const fills = createFillCoordinator({ now: () => now });
   const run = async () =>
     succeed
-      ? { refused: false, drafted: { support: 'S', oppose: 'O', undecided: 'U' }, complete: true }
-      : { refused: false, drafted: {}, complete: false };
+      ? { refused: false, drafted: { support: 'S', oppose: 'O', undecided: 'U' }, complete: true, stored: true }
+      : { refused: false, drafted: {}, complete: false, stored: true };
   const other = { ...SET, slug: 's-9-119' };
   /** Start a fill at `now`; return its kind, awaiting it when it started. */
   const attempt = async (set = SET) => {

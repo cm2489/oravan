@@ -600,9 +600,11 @@ export function browserPageviewUsageKey(surface: PageviewSurface, day: string): 
  *                  undercounts it (lib/script-serve.ts, step 4); it never
  *                  counts a script that was not served.
  *
- * Each is incremented with after() from its route, after the answer is
- * built, by a function that takes no argument — so there is no parameter
- * through which a ZIP, a bill or a stance could reach the key.
+ * Each is incremented by a function that takes no argument — so there is no
+ * parameter through which a ZIP, a bill or a stance could reach the key —
+ * started after the answer is built, or for script-served when the fill its
+ * request started or joined ends, kept alive with after(), and never awaited
+ * by the answer.
  */
 export function repLookupUsageKey(day: string): string {
   return `${keyPrefix()}:usage:rep-lookup:${day}`;
