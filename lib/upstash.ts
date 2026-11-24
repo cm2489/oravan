@@ -38,8 +38,14 @@
  *   all of a bill's stances in one MGET, and writes whatever was drafted in
  *   one transaction that does not depend on the caller's pick
  *   (lib/scriptcache.ts getStances/setStances, lib/script-serve.ts). The
- *   provider can still see that SOMEONE asked about a bill — the interest
- *   level KTD-3 accepts — never which side they asked for.
+ *   provider can still pair a caller's scrambled address with the BILL by
+ *   timing — and, while the day's salt lives, work that scrambled address
+ *   back to the address — the interest-level residual KTD-3 accepts, the
+ *   same exposure the host's request logs already have, and disclosed on
+ *   the privacy page under Upstash. Never with the side they asked for:
+ *   nothing our server sends either database depends on it (the one hint
+ *   left, a caller retrying after a failed draft, is stated in
+ *   lib/script-serve.ts under "WHAT REMAINS VISIBLE").
  *
  *   The tenancy database (lib/tenancy.ts, S18) holds durable institutional
  *   tenant records (domain, org name, tier, logo — Stripe-webhook-issued

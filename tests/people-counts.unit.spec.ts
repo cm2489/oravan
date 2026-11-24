@@ -332,7 +332,7 @@ test.describe('People (estimate)', () => {
     expect(e.botShare).toBeCloseTo(0.9, 5);
     const lines = formatPeopleLines(e).join('\n');
     expect(lines).toContain('actions   30 / 12');
-    expect(lines).toContain('ZIP lookups that found a district / call scripts shown (actions, not people)');
+    expect(lines).toContain('ZIP lookups that found a district / call scripts shown, at least (actions, not people)');
     expect(lines).toContain('browsers  150');
     expect(lines).toContain('distinct browser addresses');
   });

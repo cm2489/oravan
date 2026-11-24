@@ -14,7 +14,7 @@ import {
 } from '@/lib/nomination-script';
 import { callerIp, createRateLimiter, createTenantRateLimiter, readOravanKey } from '@/lib/ratelimit';
 import { contentVersion, createScriptCache, nominationContentVersion, type StanceSetParts } from '@/lib/scriptcache';
-import { serveStanceBlind } from '@/lib/script-serve';
+import { routeFills, serveStanceBlind } from '@/lib/script-serve';
 import { buildScriptPrompt, finishScript, SCRIPT_MAX_TOKENS, SCRIPT_MODEL, STANCES } from '@/lib/scriptprompt';
 import { resolveTenantAccess } from '@/lib/tenancy';
 import type { Stance } from '@/lib/types';
@@ -107,11 +107,18 @@ import { noteScriptGeneration, noteScriptRefusal, noteScriptServed } from '@/lib
  * that missing bound — the same GLOBAL daily breaker /api/brand already runs
  * ('brand-day' keyed by 'brand-global'), applied here to CACHE-MISS
  * GENERATIONS ONLY, inside serveScript: one unit per stance drafted, so a
- * cold bill (three stances missing) takes three. A cache hit costs nothing, so it
- * must never consume the breaker: this endpoint's whole economy is that a
- * popular bill is generated once and served from the shared cache forever
- * after, and charging those hits against a spend cap would let free traffic
- * dark a paid feature.
+ * cold bill (three stances missing) takes three. A bill whose every stance is
+ * cached costs nothing and never consumes the breaker: this endpoint's whole
+ * economy is that a popular bill is generated once and served from the shared
+ * cache forever after, and charging those hits against a spend cap would let
+ * free traffic dark a paid feature. A request whose OWN script is cached on a
+ * HALF-warm bill is different since 2026-11-24: to stay stance-blind it
+ * starts (or joins) the drafting of the stances still missing, and that
+ * drafting takes units like any other. What keeps those hits from draining
+ * the cap: one fill per bill at a time on an instance (later requests join
+ * it), a ten-minute pause for a bill after a fill in which a draft failed, at
+ * most 16 bills filling at once per instance (`routeFills`,
+ * lib/script-serve.ts step 5), and this breaker itself.
  *
  * Numbers (60/10min, 800/24h per tenant) are disclosed as tunable, not
  * derived from real per-tenant demand — S18 is dark-shipped, zero live
@@ -131,7 +138,11 @@ import { noteScriptGeneration, noteScriptRefusal, noteScriptServed } from '@/lib
  *   422 not_callable       — a NOMINATION with no call to make (past advice
  *                            and consent, unclassified, or no description)
  *   429 rate_limited       — any limiter or the daily breaker tripped
- *   502 generation_failed  — the model call failed or came back empty
+ *   502 generation_failed  — the model call failed or came back empty, or
+ *                            no draft could start for a missing script (a
+ *                            failed draft of that bill in the last ten
+ *                            minutes, or 16 bills already filling on this
+ *                            instance: lib/script-serve.ts, step 5)
  */
 
 // 60s: the largest function duration valid on every Vercel plan tier, and
@@ -448,7 +459,7 @@ export async function POST(req: NextRequest) {
  * the common case, and the one that must stay cheapest.
  *
  * THE GLOBAL DAILY SPEND BREAKER, and where it sits. Nothing that costs
- * nothing may consume it: a cache hit, a bad body, a slug that resolves to no
+ * nothing may consume it: a full cache hit (every stance stored), a bad body, a slug that resolves to no
  * vehicle, a nomination with no call to make. So it is consulted only inside
  * serveStanceBlind, after the cache read and before any model call, one unit
  * per stance about to be drafted. The counter is consumed by the CHECK, not by
@@ -469,10 +480,19 @@ async function serveScript(
   const outcome = await serveStanceBlind(set, stance, {
     cache,
     takeGenerationUnit: () => dayBreaker.isLimited(SCRIPT_GLOBAL_BUCKET),
-    generate: (draftStance) => generateScript(buildPrompt(draftStance), set.lang),
-    // after(): a slow or failed counter write, or drafting the stances this
-    // caller did not ask for, never delays the answer.
+    // async, so a buildPrompt that throws is one failed draft (a 502 if it
+    // was the caller's), not a bare 500 (first check of #554, N6).
+    generate: async (draftStance) => generateScript(buildPrompt(draftStance), set.lang),
+    // after() only keeps the already-running fill and counts alive past the
+    // response: a slow or failed counter write, or drafting the stances this
+    // caller did not ask for, never delays the answer, and nothing sent
+    // anywhere waits for the answer either.
     defer: (task) => after(task),
+    // One fill per bill at a time, a ten-minute pause for a bill after a
+    // failed draft, at most 16 bills filling at once: per instance, keyed by
+    // the bill, never the stance. What keeps a cache hit on a half-warm bill,
+    // which still starts the fill of the other stances, from draining the cap.
+    fills: routeFills,
     note: {
       // traffic-watch (2026-07): one per real generation (an actual
       // Anthropic spend), never a cache hit — see lib/usage.ts.

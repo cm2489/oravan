@@ -451,7 +451,12 @@ export function createScriptCache(): ScriptCache & StanceSetCache {
       }
       try {
         const values = await client.cmd(['MGET', ...keys]);
-        if (!Array.isArray(values) || values.length !== keys.length) return fromMemory();
+        if (!Array.isArray(values) || values.length !== keys.length) {
+          // A reply that is not one value per key is a protocol fault, not a
+          // miss: count it like any failed request (status 0), then fail open.
+          noteUpstashError('cache', new UpstashRequestError(0));
+          return fromMemory();
+        }
         return Object.fromEntries(
           STANCES.map((stance, i) => [stance, typeof values[i] === 'string' && values[i] ? values[i] : null])
         ) as StanceScripts;

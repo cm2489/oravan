@@ -594,6 +594,11 @@ export function browserPageviewUsageKey(surface: PageviewSurface, day: string): 
  *                  drafted now OR already drafted (cache hits included) — the
  *                  count usage:script above leaves out on purpose, since that
  *                  one tracks spend. Partner widgets call the same route.
+ *                  A FLOOR since #554 (2026-11-24): to stay stance-blind it
+ *                  ticks only when every stance of the bill ended up
+ *                  available, so a day with failed or held-back drafts
+ *                  undercounts it (lib/script-serve.ts, step 4); it never
+ *                  counts a script that was not served.
  *
  * Each is incremented with after() from its route, after the answer is
  * built, by a function that takes no argument — so there is no parameter

@@ -14,6 +14,7 @@ import { parsePregen } from '../lib/pipeline-health.mjs';
 import { planCombos } from '../lib/pregen';
 import { main, type AnthropicLike } from '../lib/pregen-runner';
 import type { ScriptCache } from '../lib/scriptcache';
+import { routeFills } from '../lib/script-serve';
 import { STANCES } from '../lib/scriptprompt';
 import type { Bill } from '../lib/types';
 
@@ -67,6 +68,10 @@ test.afterAll(() => {
 });
 
 test.beforeEach(() => {
+  // The stub model fails every draft, which starts the route's per-bill
+  // cooldown (lib/script-serve.ts step 5); clear it so each test reaches the
+  // model on its own.
+  routeFills.reset();
   modelCalls = 0;
   Anthropic.Messages.prototype.create = function blockedCreate() {
     modelCalls += 1;

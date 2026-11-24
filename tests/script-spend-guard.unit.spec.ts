@@ -76,14 +76,14 @@ test('the breaker is a SPEND guard: failClosed, on the documented global bucket,
  * 2 · WHERE the breaker sits — the property that keeps a cache hit free.
  * ------------------------------------------------------------------ */
 
-test('a cache HIT can never consume the breaker: the check sits after the cache read and before the model call', () => {
+test('a FULL cache hit (every stance stored) can never consume the breaker: the check sits after the cache read and before the model call', () => {
   const serveStart = serveSrc.indexOf('export async function serveStanceBlind(');
   const cacheRead = serveSrc.indexOf('const stored = await deps.cache.getStances(set);', serveStart);
   const fullHitReturn = serveSrc.indexOf("return { kind: 'script', script: own as string, cached: true };", serveStart);
   const fillStart = serveSrc.indexOf('async function fillMissing(');
   const breaker = serveSrc.indexOf('missing.map(() => deps.takeGenerationUnit())', fillStart);
   const refusedReturn = serveSrc.indexOf('if (refusals.some(Boolean)) return', fillStart);
-  const generate = serveSrc.indexOf('missing.map((stance) => deps.generate(stance))', fillStart);
+  const generate = serveSrc.indexOf('missing.map(async (stance) => deps.generate(stance))', fillStart);
   for (const [name, at] of Object.entries({ serveStart, cacheRead, fullHitReturn, fillStart, breaker, refusedReturn, generate })) {
     expect(at, `anchor: ${name}`).toBeGreaterThan(-1);
   }

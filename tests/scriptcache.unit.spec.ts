@@ -325,3 +325,25 @@ test('a transaction answered with an error row counts as a failed write, never a
     console.error = realError;
   }
 });
+
+test('a malformed MGET reply (not one value per key) is counted as an error, then fails open to memory', async () => {
+  // First check of #554, N7: it used to fall back silently, so the fault
+  // never showed in the error counts.
+  restoreEnv = setUpstashEnv();
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = (async () =>
+    new Response(JSON.stringify({ result: ['only one value'] }), { status: 200 })) as typeof fetch;
+  restoreFetch = () => {
+    globalThis.fetch = realFetch;
+  };
+  const errorsBefore = getUpstashErrorCounts().cache;
+  const realError = console.error;
+  console.error = () => {};
+  try {
+    const got = await createScriptCache().getStances({ ...SET_PARTS, version: 'malformed-mget' });
+    expect(got).toEqual({ support: null, oppose: null, undecided: null });
+  } finally {
+    console.error = realError;
+  }
+  expect(getUpstashErrorCounts().cache).toBe(errorsBefore + 1);
+});

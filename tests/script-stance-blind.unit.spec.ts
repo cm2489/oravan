@@ -4,7 +4,14 @@ import { expect, test } from '@playwright/test';
 // Relative imports (not '@/'): plain lib modules resolve under the test
 // runner — same pattern as the other unit specs.
 import { counterKey, createTenantRateLimiter } from '../lib/ratelimit';
-import { serveStanceBlind, type ServeOutcome } from '../lib/script-serve';
+import {
+  createFillCoordinator,
+  FILL_COOLDOWN_MS,
+  serveStanceBlind,
+  type FillCoordinator,
+  type ServeDeps,
+  type ServeOutcome,
+} from '../lib/script-serve';
 import { createScriptCache, scriptKey } from '../lib/scriptcache';
 import { STANCES } from '../lib/scriptprompt';
 import type { Stance } from '../lib/types';
@@ -64,10 +71,11 @@ interface Run {
 /** One request, on fresh databases holding `preload`, with every deferred task run afterwards. */
 async function run(
   stance: Stance,
-  opts: { preload?: Partial<Record<Stance, string>>; fail?: Stance[]; dayMax?: number } = {}
+  opts: { preload?: Partial<Record<Stance, string>>; fail?: Stance[]; dayMax?: number; countersDown?: boolean } = {}
 ): Promise<Run> {
   const cacheDb = new MockUpstash();
   const countersDb = new MockUpstash();
+  if (opts.countersDown) countersDb.failWithStatus = 503;
   // Preloaded straight into the store, so the wire records only this request.
   for (const [s, script] of Object.entries(opts.preload ?? {})) {
     cacheDb.store.set(scriptKey({ ...SET, stance: s }), { value: script as string, expiresAt: null });
@@ -81,6 +89,8 @@ async function run(
     windowSec: 86_400,
     failClosed: true,
   });
+  const realError = console.error;
+  if (opts.countersDown) console.error = () => {};
   try {
     const outcome = await serveStanceBlind(SET, stance, {
       cache: createScriptCache(),
@@ -93,11 +103,10 @@ async function run(
       defer: (task) => {
         deferred.push(task);
       },
-      note: {
-        served: () => noteScriptServed(),
-        generated: () => noteScriptGeneration(),
-        refusedDaily: () => noteScriptRefusal('daily'),
-      },
+      note: realNotes,
+      // A fresh coordinator per request: these runs compare stances against
+      // the SAME starting state, so no cooldown may carry from one to the next.
+      fills: createFillCoordinator(),
       logFailure: () => {},
     });
     for (const task of deferred) await task();
@@ -111,9 +120,16 @@ async function run(
       deferredCount: deferred.length,
     };
   } finally {
+    console.error = realError;
     restoreFetch();
   }
 }
+
+const realNotes: ServeDeps['note'] = {
+  served: () => noteScriptServed(),
+  generated: () => noteScriptGeneration(),
+  refusedDaily: () => noteScriptRefusal('daily'),
+};
 
 /** A counters value, or 0. */
 function count(db: MockUpstash, key: string): number {
@@ -247,34 +263,279 @@ test('when the breaker cannot cover every missing stance, nothing is drafted —
 });
 
 test('an unreachable counters database refuses the drafting (fail-closed), the same way for every stance', async () => {
+  // First check of #554, N4: this used to run one stance and compare nothing.
+  for (const preload of [{}, { support: 'S' }] as Array<Partial<Record<Stance, string>>>) {
+    const runs = await everyStance({ countersDown: true, preload });
+    expectSameWire(runs);
+    // The mock refuses before recording, so compare what was ATTEMPTED too.
+    for (const s of STANCES) {
+      expect(runs[s].countersDb.callsAttempted, `${s}: counters requests attempted`).toBe(
+        runs.support.countersDb.callsAttempted
+      );
+      expect(runs[s].drafted, 'no money spent with the day count unknown').toEqual([]);
+    }
+    expect(runs.support.cacheWire.map((r) => r.path), 'no write').toEqual(['']);
+    expect(runs.oppose.outcome).toEqual({ kind: 'daily-limited' });
+    expect(runs.undecided.outcome).toEqual({ kind: 'daily-limited' });
+  }
+});
+
+test('half-warm plus a failed draft: the same wire for every stance; the cached caller is answered, the failed one gets the 502', async () => {
+  const runs = await everyStance({ preload: { support: 'S' }, fail: ['oppose'] });
+  expectSameWire(runs);
+  expect(runs.support.drafted).toEqual(['oppose', 'undecided']);
+  expect(JSON.parse(runs.support.cacheWire[1].body)).toEqual([
+    ['SET', scriptKey({ ...SET, stance: 'undecided' }), 'DRAFT undecided', 'EX', '86400'],
+  ]);
+  expect(runs.support.outcome).toEqual({ kind: 'script', script: 'S', cached: true });
+  expect(runs.oppose.outcome).toEqual({ kind: 'generation-failed' });
+  expect(runs.undecided.outcome).toEqual({ kind: 'script', script: 'DRAFT undecided', cached: false });
+  for (const s of STANCES) {
+    expect(count(runs[s].countersDb, scriptUsageKey(DAY))).toBe(1);
+    expect(count(runs[s].countersDb, scriptServedUsageKey(DAY))).toBe(0);
+  }
+});
+
+test('a generate() that throws before returning a promise is one failed draft, not a thrown request', async () => {
+  // First check of #554, N6: the route's buildPrompt runs inside generate.
   const cacheDb = new MockUpstash();
   const countersDb = new MockUpstash();
-  countersDb.failWithStatus = 503;
   const restoreFetch = installUpstashFetch({ [CACHE_URL]: cacheDb, [COUNTERS_URL]: countersDb });
-  const realError = console.error;
-  console.error = () => {};
+  const breaker = createTenantRateLimiter({ route: 'script-day', max: 1_800, windowSec: 86_400, failClosed: true });
+  const deferred: Array<() => Promise<void>> = [];
   try {
-    const breaker = createTenantRateLimiter({ route: 'script-day', max: 1_800, windowSec: 86_400, failClosed: true });
-    const drafted: Stance[] = [];
-    const deferred: Array<() => Promise<void>> = [];
     const outcome = await serveStanceBlind(SET, 'oppose', {
       cache: createScriptCache(),
       takeGenerationUnit: () => breaker.isLimited('script-global'),
-      generate: async (s) => {
-        drafted.push(s);
-        return `DRAFT ${s}`;
-      },
+      generate: ((s: Stance) => {
+        if (s === 'oppose') throw new Error('prompt could not be built');
+        return Promise.resolve(`DRAFT ${s}`);
+      }) as ServeDeps['generate'],
       defer: (task) => {
         deferred.push(task);
       },
-      note: { served: noteScriptServed, generated: noteScriptGeneration, refusedDaily: () => noteScriptRefusal('daily') },
+      note: realNotes,
+      fills: createFillCoordinator(),
     });
-    for (const task of deferred) await task();
-    expect(outcome).toEqual({ kind: 'daily-limited' });
-    expect(drafted, 'no money spent with the day count unknown').toEqual([]);
+    expect(outcome).toEqual({ kind: 'generation-failed' });
+    for (const task of deferred) await task(); // the counts, before the mocks go away
   } finally {
-    console.error = realError;
     restoreFetch();
+  }
+});
+
+/* ------------------------------------------------------------------ *
+ * 2b · ORDER and timing, not only bytes (first check of #554, B1).
+ * ------------------------------------------------------------------ */
+
+/** Wait until nothing new has been logged for a few timer turns. */
+async function settle(log: unknown[]): Promise<void> {
+  let seen = -1;
+  while (seen !== log.length) {
+    seen = log.length;
+    await new Promise((resolve) => setTimeout(resolve, 15));
+  }
+}
+
+/**
+ * One request with every Upstash request and every model call written to ONE
+ * ordered log, the moment it is made. `defer` NEVER runs its task: this is a
+ * response whose after() never fires, so anything still in the log was not
+ * waiting on the response.
+ */
+async function runLogged(stance: Stance, preload: Partial<Record<Stance, string>>) {
+  const cacheDb = new MockUpstash();
+  const countersDb = new MockUpstash();
+  for (const [s, script] of Object.entries(preload)) {
+    cacheDb.store.set(scriptKey({ ...SET, stance: s }), { value: script as string, expiresAt: null });
+  }
+  const restoreFetch = installUpstashFetch({ [CACHE_URL]: cacheDb, [COUNTERS_URL]: countersDb });
+  const mocked = globalThis.fetch;
+  const log: string[] = [];
+  globalThis.fetch = (async (input: unknown, init?: RequestInit) => {
+    const url = String(input instanceof Request ? input.url : input);
+    const db = url.startsWith(CACHE_URL) ? 'cache' : url.startsWith(COUNTERS_URL) ? 'counters' : 'other';
+    log.push(`${db} ${String(init?.body)}`);
+    return mocked(input as RequestInfo, init);
+  }) as typeof fetch;
+  const breaker = createTenantRateLimiter({ route: 'script-day', max: 1_800, windowSec: 86_400, failClosed: true });
+  try {
+    const outcome = await serveStanceBlind(SET, stance, {
+      cache: createScriptCache(),
+      takeGenerationUnit: () => breaker.isLimited('script-global'),
+      generate: async (s) => {
+        log.push(`model ${s}`);
+        await new Promise((resolve) => setTimeout(resolve, 5)); // a model takes time
+        return `DRAFT ${s}`;
+      },
+      defer: () => {}, // the response's after() never runs
+      note: realNotes,
+      fills: createFillCoordinator(),
+    });
+    log.push('RESPONSE');
+    await settle(log);
+    return { outcome, log };
+  } finally {
+    globalThis.fetch = mocked;
+    restoreFetch();
+  }
+}
+
+test('a half-warm bill: every Upstash request and model call leaves in the same ORDER for every stance, and none waits on the response', async () => {
+  const preload = { support: 'S' };
+  const runs = {} as Record<Stance, Awaited<ReturnType<typeof runLogged>>>;
+  for (const s of STANCES) runs[s] = await runLogged(s, preload);
+
+  const wire = (s: Stance) => runs[s].log.filter((e) => e !== 'RESPONSE');
+  for (const s of STANCES) expect(wire(s), `${s} vs support: the ordered sequence`).toEqual(wire('support'));
+
+  // The sequence is the whole fill and its counts, though after() never ran:
+  // read, breaker units, drafts, one write, then the day counts.
+  const seq = wire('support');
+  expect(seq[0]).toBe(`cache ${JSON.stringify(['MGET', ...STANCES.map((s) => scriptKey({ ...SET, stance: s }))])}`);
+  expect(seq.filter((e) => e.startsWith('model '))).toEqual(['model oppose', 'model undecided']);
+  const lastModel = seq.lastIndexOf('model undecided');
+  const write = seq.findIndex((e) => e.startsWith('cache [["SET"'));
+  const generatedCount = seq.findIndex((e) => e.includes(scriptUsageKey(DAY)));
+  const servedCount = seq.findIndex((e) => e.includes(scriptServedUsageKey(DAY)));
+  expect(write, 'one write, after the drafts').toBeGreaterThan(lastModel);
+  expect(generatedCount, 'the counts run without the response').toBeGreaterThan(write);
+  expect(servedCount).toBeGreaterThan(generatedCount);
+
+  // The caller whose script was cached got it before the fill finished; the
+  // others waited for it. That is the response alone, which only the host sees.
+  expect(runs.support.outcome).toEqual({ kind: 'script', script: 'S', cached: true });
+  expect(runs.support.log.indexOf('RESPONSE')).toBeLessThan(runs.support.log.findIndex((e) => e.startsWith('cache [["SET"')));
+  expect(runs.oppose.log.indexOf('RESPONSE')).toBeGreaterThan(runs.oppose.log.findIndex((e) => e.startsWith('cache [["SET"')));
+});
+
+/* ------------------------------------------------------------------ *
+ * 2c · What bounds the spend: one fill per bill, a cooldown, a cap
+ *      (first check of #554, B2). Keyed by bill, never by stance.
+ * ------------------------------------------------------------------ */
+
+/** Shared databases, breaker and coordinator, for requests that must see each other. */
+function sharedWorld(opts: { fail?: () => Stance[]; fills?: FillCoordinator; hold?: Promise<void> } = {}) {
+  const cacheDb = new MockUpstash();
+  const countersDb = new MockUpstash();
+  const restoreFetch = installUpstashFetch({ [CACHE_URL]: cacheDb, [COUNTERS_URL]: countersDb });
+  const breaker = createTenantRateLimiter({ route: 'script-day', max: 1_800, windowSec: 86_400, failClosed: true });
+  const drafted: string[] = [];
+  const deferred: Array<() => Promise<void>> = [];
+  const fills = opts.fills ?? createFillCoordinator();
+  const deps = (slug = SET.slug): ServeDeps => ({
+    cache: createScriptCache(),
+    takeGenerationUnit: () => breaker.isLimited('script-global'),
+    generate: async (s) => {
+      drafted.push(`${slug} ${s}`);
+      if (opts.hold) await opts.hold;
+      if (opts.fail?.().includes(s)) throw new Error('model failed');
+      return `DRAFT ${s}`;
+    },
+    defer: (task) => {
+      deferred.push(task);
+    },
+    note: realNotes,
+    fills,
+    logFailure: () => {},
+  });
+  const flush = async () => {
+    while (deferred.length) await deferred.shift()!();
+  };
+  return { cacheDb, countersDb, restoreFetch, drafted, deps, flush };
+}
+
+test('concurrent requests on a cold bill share ONE fill: each stance drafted once, three breaker units, three spends', async () => {
+  const w = sharedWorld();
+  try {
+    const deps = w.deps();
+    const outcomes = await Promise.all(STANCES.map((s) => serveStanceBlind(SET, s, deps)));
+    await w.flush();
+    STANCES.forEach((s, i) => expect(outcomes[i]).toEqual({ kind: 'script', script: `DRAFT ${s}`, cached: false }));
+    expect(w.drafted, 'one draft per stance, not one per request').toEqual(STANCES.map((s) => `${SET.slug} ${s}`));
+    expect(count(w.countersDb, counterKey('script-day', 'script-global'))).toBe(3);
+    expect(count(w.countersDb, scriptUsageKey(DAY)), 'spend counted once, by the request that started the fill').toBe(3);
+    expect(count(w.countersDb, scriptServedUsageKey(DAY)), 'every request was served').toBe(3);
+    expect(w.cacheDb.requests.filter((r) => r.path === '/multi-exec')).toHaveLength(1);
+  } finally {
+    w.restoreFetch();
+  }
+});
+
+test('after a fill with a failed draft, the bill cools down: no breaker unit, no draft, for ANY stance, until the cooldown ends', async () => {
+  let now = 1_000_000;
+  let failing: Stance[] = ['oppose'];
+  const w = sharedWorld({ fail: () => failing, fills: createFillCoordinator({ now: () => now }) });
+  try {
+    const first = await serveStanceBlind(SET, 'support', w.deps());
+    await w.flush();
+    expect(first).toEqual({ kind: 'script', script: 'DRAFT support', cached: false });
+    const unitsAfterFirst = count(w.countersDb, counterKey('script-day', 'script-global'));
+    expect(unitsAfterFirst).toBe(3);
+
+    // A minute later, a popular bill: callers of every stance. None of them
+    // spends; the one whose script is missing gets the 502.
+    now += 60_000;
+    const wireBefore = w.countersDb.requests.length;
+    const cachedCaller = await serveStanceBlind(SET, 'support', w.deps());
+    const missingCaller = await serveStanceBlind(SET, 'oppose', w.deps());
+    await w.flush();
+    expect(cachedCaller).toEqual({ kind: 'script', script: 'DRAFT support', cached: true });
+    expect(missingCaller).toEqual({ kind: 'generation-failed' });
+    expect(w.drafted).toHaveLength(3);
+    expect(count(w.countersDb, counterKey('script-day', 'script-global'))).toBe(unitsAfterFirst);
+    expect(w.countersDb.requests.length, 'nothing at all reaches the counters database while cooling').toBe(wireBefore);
+
+    // Once the cooldown has passed, the next request drafts the missing stance.
+    now += FILL_COOLDOWN_MS;
+    failing = [];
+    const later = await serveStanceBlind(SET, 'support', w.deps());
+    await w.flush();
+    expect(later).toEqual({ kind: 'script', script: 'DRAFT support', cached: true });
+    expect(w.drafted.slice(3)).toEqual([`${SET.slug} oppose`]);
+    expect(await serveStanceBlind(SET, 'oppose', w.deps())).toEqual({ kind: 'script', script: 'DRAFT oppose', cached: true });
+  } finally {
+    w.restoreFetch();
+  }
+});
+
+test('a breaker refusal does not start a cooldown (it spent nothing, and the breaker already bounds it)', async () => {
+  const fills = createFillCoordinator({ now: () => 0 });
+  let calls = 0;
+  const run = async () => {
+    calls += 1;
+    return { refused: true, drafted: {}, complete: false };
+  };
+  const a = fills.start(SET, run);
+  expect(a.kind).toBe('started');
+  if (a.kind === 'started') await a.fill;
+  const b = fills.start(SET, run);
+  expect(b.kind).toBe('started');
+  if (b.kind === 'started') await b.fill;
+  expect(calls).toBe(2);
+});
+
+test('at most MAX_FILLS_IN_FLIGHT bills fill at once on an instance; past it, a missing script is a 502 and nothing is spent', async () => {
+  let release!: () => void;
+  const hold = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const w = sharedWorld({ hold, fills: createFillCoordinator({ maxInFlight: 1 }) });
+  try {
+    const first = serveStanceBlind(SET, 'support', w.deps());
+    // Let the first request reach its drafts (they are held).
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    const other = { ...SET, slug: 's-9-119' };
+    const unitsBefore = count(w.countersDb, counterKey('script-day', 'script-global'));
+    expect(await serveStanceBlind(other, 'oppose', w.deps(other.slug))).toEqual({ kind: 'generation-failed' });
+    expect(w.drafted.filter((d) => d.startsWith(other.slug))).toEqual([]);
+    expect(count(w.countersDb, counterKey('script-day', 'script-global'))).toBe(unitsBefore);
+    release();
+    expect(await first).toEqual({ kind: 'script', script: 'DRAFT support', cached: false });
+    await w.flush();
+  } finally {
+    release();
+    w.restoreFetch();
   }
 });
 
@@ -289,7 +550,9 @@ const serveSrc = readFileSync(join(process.cwd(), 'lib/script-serve.ts'), 'utf8'
 test('the route answers through serveStanceBlind with the real cache, breaker, model call and counts — and never reads or writes one stance itself', () => {
   expect(routeSrc).toContain('const outcome = await serveStanceBlind(set, stance, {');
   expect(routeSrc).toContain('takeGenerationUnit: () => dayBreaker.isLimited(SCRIPT_GLOBAL_BUCKET),');
-  expect(routeSrc).toContain('generate: (draftStance) => generateScript(buildPrompt(draftStance), set.lang),');
+  expect(routeSrc).toContain('generate: async (draftStance) => generateScript(buildPrompt(draftStance), set.lang),');
+  expect(routeSrc).toContain('    fills: routeFills,\n');
+  expect(serveSrc).toContain('export const routeFills: FillCoordinator = createFillCoordinator(');
   expect(routeSrc).toContain('defer: (task) => after(task),');
   expect(routeSrc).toContain('generated: () => noteScriptGeneration(),');
   expect(routeSrc).toContain('served: () => noteScriptServed(),');
