@@ -495,7 +495,9 @@ label,
 
    THE CURRENT TAB is a wash lozenge (ink on wash 15.13) with a line-strong
    edge (3.89 against the wash) and a bold label: three signals, none of them
-   a hue.
+   a hue. The lozenge is a full pill, 4px inside the bar on every side, so
+   it is concentric with the bar's rounded ends (tests/header-phone-label.spec.ts
+   measures that on the first and the last tab).
 
    SOLID FALLBACKS: no backdrop-filter, `prefers-reduced-transparency:
    reduce` and `prefers-contrast: more` all paint solid paper with no blur;
@@ -528,7 +530,9 @@ label,
    the page beneath: ink on the frost (8.30 at worst) or on the wash (15.13). */
 .island-bar [data-island-tab]:focus-visible {
   outline-offset: -3px;
-  border-radius: var(--radius-control);
+  /* A full pill, like the tab itself (components/Header.tsx), so the ring
+     follows the bar's rounded ends on the first and last tabs. */
+  border-radius: 9999px;
 }
 @media (prefers-reduced-transparency: reduce) {
   .island-bar {
