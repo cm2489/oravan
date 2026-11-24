@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-24T21:08:45.940Z",
+    "fetched_at": "2026-11-24T23:28:08.340Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-24T21:08:45.940Z"
+        "checked_at": "2026-11-24T23:28:08.340Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-22",
         "week_label": "Most-Viewed Bills - Week of November 22, 2026",
         "entries": 8,
-        "checked_at": "2026-11-24T21:08:45.940Z"
+        "checked_at": "2026-11-24T23:28:08.340Z"
       },
       "leans": {
         "center": {
@@ -518,6 +518,13 @@
     "hr-4405-119": {
       "outlets7d": [
         {
+          "domain": "reason.com",
+          "lean": "right",
+          "firstSeen": "2026-11-24",
+          "lastSeen": "2026-11-24",
+          "url": "https://reason.com/volokh/2026/11/24/privacy-act-claim-against-u-s-over-release-of-victims-names-in-epstein-files-can-go-forward/"
+        },
+        {
           "domain": "npr.org",
           "lean": "center",
           "firstSeen": "2026-11-19",
@@ -734,6 +741,12 @@
     "hr-5818-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "agdaily.com",
+          "firstSeen": "2026-11-24",
+          "lastSeen": "2026-11-24",
+          "url": "https://news.google.com/rss/articles/CBMiigFBVV95cUxNZEdLdHI1T3AybGFzWUFZMlFuVzJnb0ZuQndOXzZoeTZ3aTU2WkdjRjFqMmswTTJjZWNtSG5NbEh2VXhtb1JSMmY1cGhvUmJyS0tMWWVqb01qQTJJRlc4ckpiWGVIa3ZsY1pMYkNtdld4dDdRS2I5T3dSanZRbnNYTVExQ2FnT3RoV1E?oc=5"
+        },
         {
           "domain": "beefmagazine.com",
           "firstSeen": "2026-11-24",
@@ -1850,6 +1863,12 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "kttc.com",
+          "firstSeen": "2026-11-24",
+          "lastSeen": "2026-11-24",
+          "url": "https://news.google.com/rss/articles/CBMirwFBVV95cUxNd2tWbV9rcVI2T0RCM2NGbDlqNjcxQ1lyU0JQVDY4TzJxRFlHSFg2U0ZiYTM3SDdjTFV6MWhSUDR0clFra0stcVY1VmxXbjhhNVlGdVR1SlFLUzRoSEhGY0dyRVIxTkllalhYSExjMTNnbHRoWmctNHdKaWR1VXJsMEFiSy13YW10SUoxUlJXaEthM2ZTbEM4X2N3TnBfckRCSFFlWHQydzcyQ3JpN0lN0gGvAUFVX3lxTE13a1ZtX2txUjZPREIzY0ZsOWo2NzFDWXJTQlBUNjhPMnFEWUdIWDZTRmJhMzdIN2NMVXoxaFJQNHRyUWtrSy1xVjVWbFduOGE1WUZ1VHVKUUtTNGhISEZjR3JFUjFOSWVqWFhITGMxM2dsdGhaZy00d0ppZHVVcmwwQWJLLXdhbXRJSjFSUldoS2EzZlNsQzhfY3dOcF9yREJIUWVYdDJ3NzJDcmk3SU0?oc=5"
+        },
         {
           "domain": "marijuanamoment.net",
           "firstSeen": "2026-11-24",
