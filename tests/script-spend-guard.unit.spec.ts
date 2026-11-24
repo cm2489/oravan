@@ -74,9 +74,7 @@ test('the breaker is a SPEND guard: failClosed, on the documented global bucket,
 
 test('a cache HIT can never consume the breaker: the check sits after the cache read and before the model call', () => {
   const cacheGet = routeSrc.indexOf('const cached = await cache.get(key);');
-  const cacheHitReturn = routeSrc.indexOf(
-    'if (cached) return NextResponse.json({ script: cached, cached: true });'
-  );
+  const cacheHitReturn = routeSrc.indexOf('return NextResponse.json({ script: cached, cached: true });');
   const breaker = routeSrc.indexOf('await dayBreaker.isLimited(SCRIPT_GLOBAL_BUCKET)');
   const generate = routeSrc.indexOf('await anthropic.messages.create(');
   expect(cacheGet, 'anchor: the cache read').toBeGreaterThan(-1);
@@ -169,7 +167,7 @@ test.describe('refusals are counted at each 429 site, by guard', () => {
     expect(count, 'counted inside the breaker trip').toBeGreaterThan(-1);
     expect(count, 'before the token-path return').toBeLessThan(block.indexOf('if (tokenPath) return'));
     expect(routeSrc.indexOf("noteScriptRefusal('daily')")).toBeGreaterThan(
-      routeSrc.indexOf('if (cached) return NextResponse.json({ script: cached, cached: true });')
+      routeSrc.indexOf('return NextResponse.json({ script: cached, cached: true });')
     );
   });
 

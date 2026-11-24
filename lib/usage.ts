@@ -66,8 +66,22 @@ import { countersClient, keyPrefix, noteUpstashError, type UpstashClient } from 
  *                                                which guard said no, never
  *                                                to whom or about what (see
  *                                                SCRIPT_REFUSAL_SCOPES)
+ *   <env>:usage:pageview-browser:<surface>:<YYYY-MM-DD>
+ *                                                an INCR'd daily counter per
+ *                                                route-TEMPLATE label, of the
+ *                                                page views isBrowserPageLoad
+ *                                                labels "browser" (2026-11-23)
+ *   <env>:usage:rep-lookup:<YYYY-MM-DD>          an INCR'd daily counter of
+ *                                                ZIP lookups that found a
+ *                                                district (2026-11-23)
+ *   <env>:usage:script-served:<YYYY-MM-DD>       an INCR'd daily counter of
+ *                                                call scripts served, cache
+ *                                                hits included (2026-11-23)
  *
- * All five families are content-free (no slug/stance/locale/query/bill)
+ * scripts/check-key-namespaces.mjs (usage-shape) holds this list as exact
+ * key literals: a usage key built any other way fails CI.
+ *
+ * All of these families are content-free (no slug/stance/locale/query/bill)
  * and caller-free (no IP/UA/referer/salt) by construction: noteMcpToolCall's
  * only parameter is a closed-union tool name, noteScriptGeneration takes no
  * parameter at all, noteMcpClientHandshake's one input is force-
@@ -361,6 +375,268 @@ export function isCountablePageviewRequest(req: {
   return (req.headers.get('accept') ?? '').includes('text/html');
 }
 
+// --- browser page loads (owner, 2026-11-23, card `people`, option b) --------
+
+/*
+ * WHAT THIS IS, STATED PLAINLY: a yes/no label on one countable page load —
+ * "did this request arrive the way a web browser opening a page does, from
+ * a program that does not call itself a crawler?" It exists because the
+ * page-view count above includes every bot: on 2026-11-21 it read 4,410 page
+ * loads from 1,737 distinct addresses but only 114 home-page loads. The
+ * owner's words that started this, typed 2026-11-23: "I really need a way to
+ * see how many real users are coming to the site while still preserving our
+ * security guarantee."
+ *
+ * HOW IT DECIDES, from headers proxy.ts already receives and drops — read
+ * here, answered as one boolean, and discarded:
+ *   1. `Sec-Fetch-Dest: document` and `Sec-Fetch-Mode: navigate`. A browser
+ *      sets these itself on a top-level page open (a script on a page cannot
+ *      forge them); most crawlers and HTTP libraries send neither.
+ *   2. a non-empty `Accept-Language`, which a browser always sends and many
+ *      automated clients do not.
+ *   3. a User-Agent that does NOT match SELF_DECLARED_CRAWLER below — the
+ *      programs that say what they are.
+ *   4. NO `Sec-Purpose` header. Chrome's prerender and prefetch (Speculation
+ *      Rules, address-bar preloading) send `Sec-Fetch-Dest: document` and
+ *      `Sec-Fetch-Mode: navigate` like a real open, but mark themselves with
+ *      `Sec-Purpose: prefetch` (or `prefetch;prerender`); such a load may
+ *      never be seen by anyone, so it is not "browser" (review, 2026-11-23).
+ * All four must hold.
+ *
+ * WHAT IT GETS WRONG, said here so nobody reads the number as exact:
+ *   - a bot that copies a browser's headers passes (headless browsers do);
+ *   - browsers too old to send Sec-Fetch-* headers (Safari before 16.4,
+ *     2023) fail, so they count as "not browser";
+ *   - a person who opens a page from a link-preview or reader app may fail.
+ * It is a label for an aggregate, not a verdict on anyone.
+ *
+ * NOTHING ABOUT THE LABEL IS STORED WITH A VISITOR. It chooses which
+ * counters a load ALSO increments (the browser page-view count by route
+ * template below, and lib/ratelimit.ts's second daily sketch); the
+ * User-Agent, the language, and the headers themselves never reach a key.
+ */
+
+/**
+ * Self-declared crawlers, matched case-insensitively against the User-Agent.
+ * Every entry is a name its operator publishes in its own documentation for
+ * site owners to recognise. Grouped so a new entry has an obvious home:
+ *   search engines   Googlebot (and Google's other documented agents:
+ *                    AdsBot-Google, Mediapartners-Google, Google-InspectionTool,
+ *                    GoogleOther, Storebot-Google, Google-Read-Aloud), bingbot,
+ *                    BingPreview, adidxbot, DuckDuckBot, YandexBot (Yandex*),
+ *                    Baiduspider, Applebot, Slurp, Sogou, SeznamBot, PetalBot,
+ *                    Qwantbot/Qwantify, Exabot, MojeekBot, coccocbot, Yeti, Neevabot
+ *   AI crawlers and  GPTBot, ChatGPT-User, OAI-SearchBot, ClaudeBot,
+ *   assistants       Claude-User, Claude-SearchBot, anthropic-ai, PerplexityBot,
+ *                    Perplexity-User, CCBot, Bytespider, Amazonbot,
+ *                    meta-externalagent, meta-externalfetcher, FacebookBot,
+ *                    cohere-ai, Diffbot, YouBot, Timpibot, ImagesiftBot,
+ *                    Applebot-Extended, MistralAI-User, DuckAssistBot, AI2Bot
+ *   link previews    facebookexternalhit, Twitterbot, LinkedInBot, Slackbot,
+ *                    Discordbot, TelegramBot, WhatsApp, Pinterestbot, redditbot,
+ *                    Embedly, SkypeUriPreview, Iframely, vkShare
+ *   SEO tools        AhrefsBot, AhrefsSiteAudit, SemrushBot, SiteAuditBot,
+ *                    MJ12bot, DotBot, rogerbot, BLEXBot, DataForSeoBot,
+ *                    Screaming Frog, serpstatbot, barkrowler, SEOkicks, Sitebulb
+ *   uptime/monitors  UptimeRobot, Pingdom, StatusCake, Better Uptime, Site24x7,
+ *                    checkly, Datadog Synthetics, NewRelicPinger, Uptime-Kuma,
+ *                    Freshping, Hetrix
+ *   automation       HeadlessChrome, Lighthouse, Chrome-Lighthouse, PTST
+ *                    (WebPageTest), GTmetrix, vercel-screenshot, python-requests,
+ *                    python-urllib, aiohttp, httpx, Go-http-client, curl, Wget,
+ *                    node-fetch, undici, axios, okhttp, Java/, libwww-perl,
+ *                    Scrapy, HTTrack
+ * plus the generic words "crawler" and "spider", and "bot" as a whole word
+ * ("compatible; bot"). The generic rule is deliberately NOT a bare substring:
+ * real phones whose model names contain those three letters ("Cubot") must
+ * not be called bots.
+ */
+const SELF_DECLARED_CRAWLER = new RegExp(
+  [
+    // search engines
+    'googlebot',
+    'adsbot-google',
+    'mediapartners-google',
+    'google-inspectiontool',
+    'googleother',
+    'storebot-google',
+    'google-read-aloud',
+    'bingbot',
+    'bingpreview',
+    'adidxbot',
+    'duckduckbot',
+    'yandex',
+    'baiduspider',
+    'applebot',
+    'slurp',
+    'sogou',
+    'seznambot',
+    'petalbot',
+    'qwantbot',
+    'qwantify',
+    'exabot',
+    'mojeekbot',
+    'coccocbot',
+    '\\byeti\\b',
+    'neevabot',
+    // AI crawlers and assistants
+    'gptbot',
+    'chatgpt-user',
+    'oai-searchbot',
+    'claudebot',
+    'claude-user',
+    'claude-searchbot',
+    'anthropic-ai',
+    'perplexitybot',
+    'perplexity-user',
+    'ccbot',
+    'bytespider',
+    'amazonbot',
+    'meta-externalagent',
+    'meta-externalfetcher',
+    'facebookbot',
+    'cohere-ai',
+    'diffbot',
+    'youbot',
+    'timpibot',
+    'imagesiftbot',
+    'mistralai-user',
+    'duckassistbot',
+    'ai2bot',
+    // link previews
+    'facebookexternalhit',
+    'twitterbot',
+    'linkedinbot',
+    'slackbot',
+    'discordbot',
+    'telegrambot',
+    'whatsapp',
+    'pinterestbot',
+    'redditbot',
+    'embedly',
+    'skypeuripreview',
+    'iframely',
+    'vkshare',
+    // SEO tools
+    'ahrefsbot',
+    'ahrefssiteaudit',
+    'semrushbot',
+    'siteauditbot',
+    'mj12bot',
+    'dotbot',
+    'rogerbot',
+    'blexbot',
+    'dataforseobot',
+    'screaming frog',
+    'serpstatbot',
+    'barkrowler',
+    'seokicks',
+    'sitebulb',
+    // uptime and monitors
+    'uptimerobot',
+    'pingdom',
+    'statuscake',
+    'better uptime',
+    'site24x7',
+    'checkly',
+    'datadog',
+    'newrelicpinger',
+    'uptime-kuma',
+    'freshping',
+    'hetrix',
+    // automation and HTTP libraries
+    'headlesschrome',
+    'lighthouse',
+    '\\bptst\\b',
+    'gtmetrix',
+    'vercel-screenshot',
+    'python-requests',
+    'python-urllib',
+    'aiohttp',
+    'python-httpx',
+    'go-http-client',
+    '\\bcurl\\/',
+    '\\bwget\\/',
+    'node-fetch',
+    'undici',
+    'axios\\/',
+    'okhttp',
+    '\\bjava\\/',
+    'libwww-perl',
+    'scrapy',
+    'httrack',
+    // generic self-descriptions
+    'crawler',
+    'spider',
+    '\\bbot\\b',
+  ].join('|'),
+  'i'
+);
+
+/** Does this User-Agent name itself as a crawler, preview fetcher, monitor or script? */
+export function isSelfDeclaredCrawler(userAgent: string | null): boolean {
+  return SELF_DECLARED_CRAWLER.test(userAgent ?? '');
+}
+
+/**
+ * The browser label for one page load. Pure: reads five headers, returns one
+ * boolean, keeps nothing. proxy.ts asks it only of a load that
+ * isCountablePageviewRequest already counts, so a non-GET, a prefetch or an
+ * RSC fetch is never "browser" either way. See the section comment above for
+ * what it decides from and what it gets wrong.
+ */
+export function isBrowserPageLoad(headers: { get(name: string): string | null }): boolean {
+  if ((headers.get('sec-fetch-dest') ?? '').toLowerCase() !== 'document') return false;
+  if ((headers.get('sec-fetch-mode') ?? '').toLowerCase() !== 'navigate') return false;
+  // A speculative load (prerender / prefetch) is not a page someone opened.
+  if (headers.get('sec-purpose') !== null) return false;
+  if ((headers.get('accept-language') ?? '').trim() === '') return false;
+  return !isSelfDeclaredCrawler(headers.get('user-agent'));
+}
+
+/*
+ * The browser page-view count: one integer per ROUTE TEMPLATE per UTC day,
+ * of the page views above that isBrowserPageLoad labels "browser". Split by
+ * template because the all-loads count already is: this divides an existing
+ * aggregate into two aggregates and adds nothing about a visitor (no path,
+ * no header value, no address — the same closed PAGEVIEW_SURFACES label,
+ * narrowed inside the key builder). It is what lets the digest say how many
+ * of 114 home-page loads came from a browser, where bots crawl bill pages
+ * far more than they open the home page.
+ */
+export function browserPageviewUsageKey(surface: PageviewSurface, day: string): string {
+  // Narrowing applied HERE, not just at the call site — same structural rule
+  // as pageviewUsageKey.
+  return `${keyPrefix()}:usage:pageview-browser:${asPageviewSurface(surface)}:${day}`;
+}
+
+// --- ZIP lookups and scripts served (owner, 2026-11-23, card `people`) ------
+
+/*
+ * Two plain daily totals with NO dimension at all — not by route, page,
+ * bill, stance, ZIP, district, language, tenant, or caller:
+ *
+ *   rep-lookup     /api/reps answered a valid ZIP with at least one
+ *                  district. It counts lookups, not people: a bill page asks
+ *                  again on its own whenever a ZIP is saved on that device,
+ *                  and Oravan's partner widgets call the same route.
+ *   script-served  /api/script handed a call script to the page that asked,
+ *                  drafted now OR already drafted (cache hits included) — the
+ *                  count usage:script above leaves out on purpose, since that
+ *                  one tracks spend. Partner widgets call the same route.
+ *
+ * Each is incremented with after() from its route, after the answer is
+ * built, by a function that takes no argument — so there is no parameter
+ * through which a ZIP, a bill or a stance could reach the key.
+ */
+export function repLookupUsageKey(day: string): string {
+  return `${keyPrefix()}:usage:rep-lookup:${day}`;
+}
+
+export function scriptServedUsageKey(day: string): string {
+  return `${keyPrefix()}:usage:script-served:${day}`;
+}
+
 // --- /api/script refusal counters (2026-09-27) ------------------------------
 
 /*
@@ -558,6 +834,34 @@ export async function notePageview(surface: PageviewSurface): Promise<void> {
   await noteUsage(pageviewUsageKey(surface, usageDayKey()));
 }
 
+/**
+ * Record one BROWSER page view against a route-template label — called from
+ * proxy.ts, in its own waitUntil, only for a load isBrowserPageLoad labelled
+ * "browser" (that load is ALSO counted by notePageview). Same contract as
+ * notePageview. Never throws.
+ */
+export async function noteBrowserPageview(surface: PageviewSurface): Promise<void> {
+  await noteUsage(browserPageviewUsageKey(surface, usageDayKey()));
+}
+
+/**
+ * Record one ZIP lookup that found a district (a vacant seat included). No
+ * parameter: the ZIP, the districts and the members stay in app/api/reps.
+ * Never throws.
+ */
+export async function noteRepLookup(): Promise<void> {
+  await noteUsage(repLookupUsageKey(usageDayKey()));
+}
+
+/**
+ * Record one call script served, drafted now or already drafted. No
+ * parameter: the bill, stance, language and caller stay in app/api/script.
+ * Never throws.
+ */
+export async function noteScriptServed(): Promise<void> {
+  await noteUsage(scriptServedUsageKey(usageDayKey()));
+}
+
 // --- the digest read path (scripts/daily-metrics.mjs, via tsx) --------------
 
 export type UsageWindowResult =
@@ -676,6 +980,71 @@ export async function readPageviewWindow(days: string[]): Promise<PageviewWindow
   }
 
   return { ok: true, surfaces };
+}
+
+export type PeopleSignalsWindowResult =
+  | {
+      ok: true;
+      /** Browser page views per route template (browserPageviewUsageKey). */
+      browserSurfaces: Record<PageviewSurface, number[]>;
+      /** ZIP lookups that found a district (repLookupUsageKey). */
+      repLookups: number[];
+      /** Call scripts served, cache hits included (scriptServedUsageKey). */
+      scriptsServed: number[];
+    }
+  | { ok: false };
+
+/**
+ * Read `days.length` days of the 2026-11-23 "people" counts in ONE MGET:
+ * browser page views by template, ZIP lookups, scripts served. Index i in
+ * `days` maps back to index i in each array. Fails closed (`{ ok: false }`)
+ * like every digest read here; scripts/daily-metrics.mjs treats that as
+ * "not read" on the People block only, since these keys are new.
+ *
+ * Exported for the weekly owner note as well as the daily digest:
+ * lib/traffic-metrics.mjs's peopleEstimate turns one day of this (plus the
+ * page-view window and lib/ratelimit.ts's two sketch readings) into the
+ * actions / browsers (distinct browser addresses) / bots' share rows the
+ * digest prints.
+ */
+export async function readPeopleSignalsWindow(days: string[]): Promise<PeopleSignalsWindowResult> {
+  const client = countersClient();
+  if (!client) return { ok: false };
+
+  const emptySurfaces = (): Record<PageviewSurface, number[]> => {
+    const out = {} as Record<PageviewSurface, number[]>;
+    for (const surface of PAGEVIEW_SURFACES) out[surface] = [];
+    return out;
+  };
+  if (days.length === 0) return { ok: true, browserSurfaces: emptySurfaces(), repLookups: [], scriptsServed: [] };
+
+  const allKeys = [
+    ...PAGEVIEW_SURFACES.flatMap((surface) => days.map((day) => browserPageviewUsageKey(surface, day))),
+    ...days.map((day) => repLookupUsageKey(day)),
+    ...days.map((day) => scriptServedUsageKey(day)),
+  ];
+
+  let raw: unknown;
+  try {
+    raw = await client.cmd(['MGET', ...allKeys]);
+  } catch (err) {
+    noteUpstashError('counters', err, 'failing closed to a digest read error (people counts, never a degraded number)');
+    return { ok: false };
+  }
+  if (!Array.isArray(raw) || raw.length !== allKeys.length) return { ok: false };
+
+  const toNum = (v: unknown): number => (typeof v === 'string' ? Number(v) || 0 : 0);
+  const browserSurfaces = emptySurfaces();
+  let cursor = 0;
+  for (const surface of PAGEVIEW_SURFACES) {
+    browserSurfaces[surface] = raw.slice(cursor, cursor + days.length).map(toNum);
+    cursor += days.length;
+  }
+  const repLookups = raw.slice(cursor, cursor + days.length).map(toNum);
+  cursor += days.length;
+  const scriptsServed = raw.slice(cursor, cursor + days.length).map(toNum);
+
+  return { ok: true, browserSurfaces, repLookups, scriptsServed };
 }
 
 export type McpClientDayResult =

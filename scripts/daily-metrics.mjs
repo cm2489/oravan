@@ -110,6 +110,15 @@
  * one — and it keeps a new, never-yet-exercised command (PFCOUNT) from
  * being able to cost the whole digest on its first morning.
  *
+ * PEOPLE (ESTIMATE) joined 2026-11-23, on the owner's answer that day (card
+ * `people`, option b): an actions row (ZIP lookups that found a district,
+ * and call scripts served — actions, not people, and no lower bound), a browsers row (distinct browser
+ * addresses: lib/ratelimit.ts's second daily sketch, of addresses whose page load looked like a browser's;
+ * not an upper bound) and bots'
+ * share of page loads, from lib/traffic-metrics.mjs's pure peopleEstimate.
+ * ADDITIVE like the distinct-address line: these keys are new, so a failed
+ * read prints "not read" on that block and the digest still posts.
+ *
  * PIPELINE HEALTH (2026-09) rides along on this same run, the same way issue
  * hygiene does and for the same reason: this is the job that already runs
  * every morning holding the token it needs. It appends one "Pipeline health"
@@ -131,12 +140,13 @@ import {
   SCRIPT_REFUSAL_SCOPES,
   readMcpClientDay,
   readPageviewWindow,
+  readPeopleSignalsWindow,
   readUsageWindow,
 } from '../lib/usage';
 // The daily distinct-address sketch lives in the caller-keyed registry, not
 // lib/usage.ts, because its input is caller-derived (see that module's
 // DAILY DISTINCT-ADDRESS COUNT section). This script only ever READS it.
-import { readDistinctAddressCount } from '../lib/ratelimit';
+import { readBrowserAddressCount, readDistinctAddressCount } from '../lib/ratelimit';
 import {
   MCP_SPIKE_FLOOR,
   SCRIPT_SPIKE_FLOOR,
@@ -152,6 +162,7 @@ import {
   declineStillDecliningComment,
   declineWindowDays,
   formatDigestBody,
+  peopleEstimate,
   seriesStats,
   spikeClosedComment,
   spikeIssueContent,
@@ -540,6 +551,38 @@ async function main() {
     );
   }
 
+  // People (estimate), 2026-11-23 (owner's answer, card `people`). ADDITIVE,
+  // like the distinct-address line: these keys are new, so a failed read
+  // prints "not read" on the People block and the digest still posts. One
+  // day only (day-1), the same day the distinct-address line reports.
+  const peopleSignals = await readPeopleSignalsWindow([date]);
+  const browserAddresses = await readBrowserAddressCount(date);
+  if (!peopleSignals.ok) {
+    console.log(
+      '::warning::could not read the people counts (browser page views, ZIP lookups, scripts shown) from the counters database — the People block says "not read"'
+    );
+  }
+  if (!browserAddresses.ok) {
+    console.log(
+      '::warning::could not read the browser-address sketch from the counters database — the People browsers row says "not read"'
+    );
+  } else if (browserAddresses.noExpiry) {
+    console.log(`::warning::the browser-address sketch for ${date} has NO expiry — it will not age out on its own`);
+  }
+  const countedSurfaces = PAGEVIEW_SURFACES.filter((surface) => surface !== 'short');
+  const people = peopleSignals.ok
+    ? peopleEstimate({
+        pageLoads: countedSurfaces.reduce((n, surface) => n + (pageviews.surfaces[surface][0] ?? 0), 0),
+        browserPageLoads: countedSurfaces.reduce((n, surface) => n + (peopleSignals.browserSurfaces[surface][0] ?? 0), 0),
+        repLookups: peopleSignals.repLookups[0] ?? 0,
+        scriptsServed: peopleSignals.scriptsServed[0] ?? 0,
+        browserAddresses,
+      })
+    : null;
+  const browserBySurface = peopleSignals.ok
+    ? PAGEVIEW_SURFACES.map((surface) => ({ surface, latest: peopleSignals.browserSurfaces[surface][0] ?? 0 }))
+    : [];
+
   // The aggregate series, full 28 days — the spike half slices its first 8
   // below, the decline half reads all of it.
   const totalWindow = sumWindows(MCP_TOOL_NAMES.map((tool) => window.mcp[tool]));
@@ -632,6 +675,8 @@ async function main() {
     sitePageviews,
     siteTotal,
     siteDistinct,
+    people,
+    browserBySurface,
   });
 
   // Issue hygiene, read once and appended to the SAME comment — one place
@@ -659,7 +704,7 @@ async function main() {
   const closedCount = hygiene ? closeStaleSpikeIssues(hygiene.closable, { digestIssue: issueNumber }) : 0;
 
   console.log(
-    `daily metrics digest posted for ${date} (mcp total ${mcpTotal.latest}${mcpTotal.spike ? ', SPIKE' : ''}; script ${script.latest}${script.spike ? ', SPIKE' : ''} (refused ${refusedYesterday}); 28d ${mcpDecline.recent} vs baseline ${mcpDecline.baseline}${mcpDecline.declining ? ', DECLINING' : ''}${dark.length ? `; dark tools: ${dark.map((d) => d.tool).join(', ')}` : ''}${hygiene ? `; hygiene: ${closedCount}/${hygiene.closable.length} stale spike issue(s) closed` : '; hygiene: SKIPPED'}; site page views ${siteTotal.latest}; distinct addresses ${siteDistinct.ok ? (siteDistinct.count ?? 'not recorded') : 'not read'}${health ? `; health: ${health.report.alarms.length} ⛔${healthIssueUrl ? ` at ${healthIssueUrl}` : ' (issue not updated)'}` : '; health: SKIPPED'})`
+    `daily metrics digest posted for ${date} (mcp total ${mcpTotal.latest}${mcpTotal.spike ? ', SPIKE' : ''}; script ${script.latest}${script.spike ? ', SPIKE' : ''} (refused ${refusedYesterday}); 28d ${mcpDecline.recent} vs baseline ${mcpDecline.baseline}${mcpDecline.declining ? ', DECLINING' : ''}${dark.length ? `; dark tools: ${dark.map((d) => d.tool).join(', ')}` : ''}${hygiene ? `; hygiene: ${closedCount}/${hygiene.closable.length} stale spike issue(s) closed` : '; hygiene: SKIPPED'}; site page views ${siteTotal.latest}; distinct addresses ${siteDistinct.ok ? (siteDistinct.count ?? 'not recorded') : 'not read'}; people actions ${people ? `${people.repLookups}/${people.scriptsServed}` : 'not read'}, browsers ${people ? (people.browsers ?? people.browsersState) : 'not read'}${health ? `; health: ${health.report.alarms.length} ⛔${healthIssueUrl ? ` at ${healthIssueUrl}` : ' (issue not updated)'}` : '; health: SKIPPED'})`
   );
 }
 

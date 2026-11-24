@@ -1,7 +1,7 @@
 import { NextResponse, type NextFetchEvent, type NextRequest } from 'next/server';
 import createProxy from 'next-intl/middleware';
 import { routing } from './i18n/routing';
-import { callerIp, noteDistinctAddress } from './lib/ratelimit';
+import { callerIp, noteBrowserAddress, noteDistinctAddress } from './lib/ratelimit';
 import {
   decodeNameTables,
   decodeShortAddressFallback,
@@ -9,7 +9,14 @@ import {
   nameAddressTarget,
   shortAddressTarget,
 } from './lib/short-address';
-import { isCountablePageviewRequest, notePageview, pageviewSurfaceForPath, type PageviewSurface } from './lib/usage';
+import {
+  isBrowserPageLoad,
+  isCountablePageviewRequest,
+  noteBrowserPageview,
+  notePageview,
+  pageviewSurfaceForPath,
+  type PageviewSurface,
+} from './lib/usage';
 
 // Next.js 16: middleware.ts -> proxy.ts. next-intl's handler still only does
 // locale negotiation/redirects here - no auth, no session, no cookie (see
@@ -27,7 +34,7 @@ const handler = createProxy(routing);
  * most one bit test per table (today: one). The corpus itself never enters
  * this bundle. This is the one
  * piece of per-request work proxy.ts does beyond locale negotiation and the
- * two counts below, and it is named as such where CLAUDE.md rule 2's
+ * rule-1 counts below, and it is named as such where CLAUDE.md rule 2's
  * exceptions are named (tests/static-rendering.spec.ts).
  */
 const SHORT_ADDRESS_INDEX = decodeShortAddressIndex(process.env.SHORT_ADDRESS_INDEX);
@@ -66,7 +73,7 @@ function shortAddressRedirect(req: NextRequest, target: string): NextResponse {
 }
 
 /*
- * The two things this file does BEYOND locale negotiation, both after the
+ * The three things this file does BEYOND locale negotiation, all after the
  * response is on its way out:
  *
  * 1. (site-counter, 2026-09) increment a first-party, server-side page-view
@@ -90,7 +97,15 @@ function shortAddressRedirect(req: NextRequest, target: string): NextResponse {
  *    address. lib/ratelimit.ts is its registry and carries the full
  *    argument, including its honest limits.
  *
- * scripts/check-key-namespaces.mjs gates both in CI.
+ * 3. (browser label, owner 2026-11-23, card `people`, option b) for a load
+ *    that lib/usage.ts's isBrowserPageLoad labels "browser" (the headers a
+ *    browser sends when it opens a page, from a program that does not call
+ *    itself a crawler), ALSO increment the browser page-view count for the
+ *    same template and add the address to lib/ratelimit.ts's second daily
+ *    sketch. The label is one boolean computed here and dropped; no header
+ *    value reaches a key.
+ *
+ * scripts/check-key-namespaces.mjs gates all of these in CI.
  *
  * ORDERING IS DELIBERATE. next-intl's handler runs FIRST and its response
  * is what gets returned; the counter write is handed to
@@ -132,6 +147,26 @@ export default function proxy(req: NextRequest, event: NextFetchEvent) {
       event.waitUntil(noteDistinctAddress(callerIp(req.headers)).catch(() => {}));
     } catch {
       // Same rule: drop the count, never the page.
+    }
+    // 3. The browser label (owner, 2026-11-23, card `people`, option b).
+    // isBrowserPageLoad reads four headers and answers one boolean; the
+    // headers are dropped here like every other. A "browser" load ALSO
+    // increments the browser page-view count for the same template and adds
+    // the address to the second daily sketch — two more separate calls, so
+    // the address and the page label are never in the same key. They do
+    // reach the counters database milliseconds apart; lib/ratelimit.ts (THE
+    // SECOND SKETCH) states what someone watching it live could pair.
+    if (isBrowserPageLoad(req.headers)) {
+      try {
+        event.waitUntil(noteBrowserPageview(surface).catch(() => {}));
+      } catch {
+        // Same rule: drop the count, never the page.
+      }
+      try {
+        event.waitUntil(noteBrowserAddress(callerIp(req.headers)).catch(() => {}));
+      } catch {
+        // Same rule: drop the count, never the page.
+      }
     }
   }
   return res;

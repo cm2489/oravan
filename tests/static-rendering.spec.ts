@@ -88,7 +88,7 @@ const RENDERED_ON_DEMAND: Record<string, string> = {
 /**
  * PER-REQUEST WORK BEYOND PAGES, AND WHY — CLAUDE.md rule 2 names proxy.ts,
  * the route handlers under app/api/ and the embed portrait proxy. Inside
- * proxy.ts, one piece of work goes beyond locale negotiation and the two
+ * proxy.ts, one piece of work goes beyond locale negotiation and the rule-1
  * counts, and it is named here with its reason:
  *
  *   short addresses (2026-09-29): /hr9340 is answered with a 307 to the
