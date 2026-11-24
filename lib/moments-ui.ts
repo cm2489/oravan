@@ -532,8 +532,8 @@ export function groupVehicleStatuses(
  * settled, which show the record and a way to read it and nothing that dials
  * (page 1, rule 6). The split is the card's own button key — `billCtaKey` and
  * `nominationCtaKey` over the same inputs the grid always passed — so the
- * list a card sits in, the label on its button and the Call tab's target
- * (lib/call-tab.ts questionCallTarget) are one decision read three ways.
+ * list a card sits in and the label on its button are one decision read two
+ * ways.
  * ------------------------------------------------------------------------ */
 
 export interface QuestionVehicle extends VehicleStatus {

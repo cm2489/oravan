@@ -348,20 +348,17 @@ test.describe('homepage Big Questions band', () => {
  * every internal name (message keys, lib modules, moment ids) are still
  * unchanged. Exactly one "Primary" landmark is
  * in the tree at a time (components/Header.tsx): the thumb bar on phones, which
- * carries `navShort` and, for this cell, `tab.moments` (2026-09-29), and the
- * row nav above 48rem, which carries `nav`.
+ * carries `navShort` and, for this tab, the full `nav.moments` (owner,
+ * 2026-11-24: "Four tabs: Home · Bills · Big Questions · Reps"), and the row
+ * nav above 48rem, which carries `nav`.
  */
 test.describe('header nav carries the Big Questions label', () => {
   for (const { locale, prefix, messages } of LOCALES) {
-    test(`${locale}: the primary nav reaches /questions under its renamed label`, async ({
-      page,
-      isMobile,
-    }) => {
+    test(`${locale}: the primary nav reaches /questions under its renamed label`, async ({ page }) => {
       await page.goto(`${prefix}/`);
-      // The thumb bar has its own label for this cell (owner, 2026-09-29: "I'd
-      // like the phone to say Big Questions instead of just questions").
-      const label = isMobile ? messages.common.tab.moments : messages.common.nav.moments;
-      const link = page.getByRole('link', { name: label, exact: true });
+      // Both bars print the full label: the row nav always, and the phone
+      // bar since its Call tab left (owner, 2026-11-24), on one line.
+      const link = page.getByRole('link', { name: messages.common.nav.moments, exact: true });
       await expect(link).toBeVisible();
       await expect(link).toHaveAttribute('href', `${prefix}/questions`);
       // The retired label is gone from every nav on the page, both locales.

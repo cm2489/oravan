@@ -6,7 +6,6 @@
     "nav": {
       "home": "Inicio",
       "bills": "Proyectos de ley",
-      "call": "Llamar",
       "reps": "Mis representantes",
       "whyCall": "¿Por qué llamar?",
       "primaryLabel": "Principal",
@@ -43,7 +42,6 @@
     "navShort": {
       "home": "Inicio",
       "bills": "Proyectos",
-      "call": "Llamar",
       "reps": "Mis reps",
       "moments": "Preguntas",
       "today": "Hoy"

@@ -489,6 +489,16 @@ jobs:
           name: blob-e2e-${{ matrix.shard }}
           path: blob-report/
           retention-days: 1
+      - name: The island bar's review pictures, this shard's share (tests/island-bar-shots.spec.ts; e2e-report gathers them)
+        # For the owner's review of the island bar (2026-11-22). Delete with
+        # that spec once he has seen them.
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: island-bar-shots-${{ matrix.shard }}
+          path: island-bar-shots/
+          if-no-files-found: ignore
+          retention-days: 3
 
   names-fixture:
     # THE LIST PAGE IN A BROWSER (the independent check of #510, Nov 19,
@@ -613,6 +623,21 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 7
+      - name: Gather the island bar's review pictures from the shards
+        # One artifact, `island-bar-shots`, for the owner's review of the
+        # island bar (2026-11-22). Delete with tests/island-bar-shots.spec.ts.
+        uses: actions/download-artifact@v8
+        continue-on-error: true
+        with:
+          pattern: island-bar-shots-*
+          path: island-bar-shots
+          merge-multiple: true
+      - uses: actions/upload-artifact@v7
+        with:
+          name: island-bar-shots
+          path: island-bar-shots/
+          if-no-files-found: warn
+          retention-days: 14
 
   test:
     # The one check to read, and the one a required status check on main

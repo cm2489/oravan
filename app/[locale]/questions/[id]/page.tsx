@@ -7,8 +7,7 @@ import { settledDecision, statusKeyFor } from '@/lib/journey';
 import { calendarMarkSuspended } from '@/lib/floor-session';
 import { routing } from '@/i18n/routing';
 import { ActionPanel } from '@/components/ActionPanel';
-import { CallTabTarget } from '@/components/CallTabTarget';
-import { CALL_PANEL_ANCHOR, STILL_OPEN_ID, questionCallTarget, questionHasPanel } from '@/lib/call-tab';
+import { CALL_PANEL_ANCHOR, STILL_OPEN_ID, questionHasPanel } from '@/lib/call-tab';
 import { billCallPanelProps } from '@/lib/bill-call-panel';
 import { settledDecisionDate } from '@/lib/settled-votes';
 import { settledOutcomeSentence, statusWord } from '@/lib/status-word';
@@ -341,21 +340,19 @@ export default async function MomentPage({
 
   /*
    * STILL OPEN, OR KEPT AS THE RECORD — AND WHERE THE CALL GOES (wireframes
-   * v2, 2026-09-29, question-single.html and question-multi.html; the index's
-   * "Where the Call tab goes"). `open` is each card's own "Read + call"
-   * decision (lib/moments-ui.ts questionVehicles: billCtaKey /
-   * nominationCtaKey over the inputs the grid always passed), so the list a
-   * vehicle sits in, the label on its button and the Call tab's target are
-   * one decision read three ways.
+   * v2, 2026-09-29, question-single.html and question-multi.html). `open` is
+   * each card's own "Read + call" decision (lib/moments-ui.ts
+   * questionVehicles: billCtaKey / nominationCtaKey over the inputs the grid
+   * always passed), so the list a vehicle sits in and the label on its button
+   * are one decision read two ways.
    *
    *   one open bill  → the bill page's own call panel sits on this page (Q6
    *                    b), with exactly the props /bills/[id] computes
-   *                    (lib/bill-call-panel.ts). The card's "Read + call" and
-   *                    the header's Call tab both land on it (#act).
+   *                    (lib/bill-call-panel.ts). The card's "Read + call"
+   *                    lands on it (#act).
    *   several open   → a "Still open" list with a stable id (#still-open).
-   *                    Each card lands on its own bill's panel; the Call tab
-   *                    lands on the list.
-   *   nothing open   → no call on this page; the Call tab goes to the hub.
+   *                    Each card lands on its own bill's panel.
+   *   nothing open   → no call on this page.
    *
    * Settled vehicles sit below the open ones as record-only rows, each with
    * one status word from the closed set (lib/status-word.ts) and the record's
@@ -368,15 +365,11 @@ export default async function MomentPage({
   const panel = questionHasPanel(callableKinds)
     ? billCallPanelProps(openVehicles[0].vehicle.slug, locale, { t, fmtDate })
     : null;
-  // Declared under the same condition the panel renders under, so the tab
-  // never points at a panel that is not there (the bill page's rule). `open`
-  // already means the record settles nothing, so a one-bill question always
-  // gets its panel; the guard only keeps the two from ever disagreeing.
-  const callTabHref = questionHasPanel(callableKinds) && !panel ? null : questionCallTarget(callableKinds);
 
   // Group headings print when they tell the reader something: both whenever
-  // both groups are on the page, and "Still open" whenever the Call tab lands
-  // on it. A one-bill question with nothing settled prints neither.
+  // both groups are on the page, and "Still open" whenever there is no panel
+  // on the page, so the list is where the call goes. A one-bill question with
+  // nothing settled prints neither.
   const stillOpenHeading = openVehicles.length > 0 && (recordVehicles.length > 0 || !panel);
   // The AI label covers the cards' decoded headlines and yes-or-no lines. A
   // record row prints neither (its words are the record's), so a section of
@@ -540,7 +533,6 @@ export default async function MomentPage({
 
   return (
     <article className={`${WRAP} pt-12 pb-16`}>
-      {callTabHref && <CallTabTarget href={callTabHref} />}
       {/* 1 · Moment header — full width, above the desk. It names the question
              and dates the record; both columns below answer to it. */}
       <p className="flex flex-wrap items-center gap-3 text-sm">

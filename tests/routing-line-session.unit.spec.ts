@@ -208,7 +208,6 @@ test.describe('the routing line under the chamber-session gate', () => {
           return {
             panel: rail.panel,
             floatingCall: rail.floatingCall,
-            callTabTarget: rail.callTabTarget,
             settled: settledDecision(fx),
             order: order(target),
             prompts: STANCES.flatMap((stance) => (['en', 'es'] as const).map((lang) => buildScriptPrompt({ bill: fx, stance, lang }))),

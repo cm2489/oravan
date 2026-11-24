@@ -361,7 +361,6 @@ test.describe('rule 8: the call panel, the call target and the routing sentence 
     return {
       panel: rail.panel,
       floatingCall: rail.floatingCall,
-      callTabTarget: rail.callTabTarget,
       settled: settledDecision(full),
       target,
       keys,

@@ -1,70 +1,49 @@
 import { expect, test } from '@playwright/test';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
-import {
-  CALL_HUB_PATH,
-  CALL_PANEL_ANCHOR,
-  STILL_OPEN_ANCHOR,
-  STILL_OPEN_ID,
-  callTabServerSnapshot,
-  callTabSnapshot,
-  claimCallTab,
-  isInPageTarget,
-  questionCallTarget,
-  questionHasPanel,
-  releaseCallTab,
-  subscribeCallTab,
-} from '../lib/call-tab';
-import { CALL_BUTTON, CALL_BUTTON_CURRENT } from '../components/call-button';
+import { CALL_PANEL_ANCHOR, STILL_OPEN_ID, isInPageTarget, questionHasPanel } from '../lib/call-tab';
+import { CALL_BUTTON } from '../components/call-button';
 
 /*
- * THE CALL TAB, PINNED WITHOUT A BROWSER (owner, 2026-09-29, "nav 1").
+ * THE BARS AND THE CALL ANCHORS, PINNED WITHOUT A BROWSER.
  *
  * Three things here are decisions rather than plumbing, and each has a pin:
- *   1. the bar's ORDER — Home · Bills · Call · Big Questions · Reps on the
- *      phone, Today in Congress · Bills · Big Questions · My reps on the row
- *      nav (owner, 2026-09-29: "'Today in Congress' needs to come first on
- *      the header", scope "Desktop only") — with "My record" off both;
- *   2. WHERE THE TAB GOES — the page declares it (lib/call-tab.ts), and a
- *      stale declaration can never outlive its page;
+ *   1. the bars' ORDER — Home · Bills · Big Questions · Reps on the phone
+ *      (owner, 2026-11-24, his pick on the mock-up card "The phone bar: which
+ *      tabs stay?": "Four tabs: Home · Bills · Big Questions · Reps"), Today
+ *      in Congress · Bills · Big Questions · My reps on the row nav (owner,
+ *      2026-09-29: "'Today in Congress' needs to come first on the header",
+ *      scope "Desktop only") — with Call, "My record" and "Why call?" on
+ *      neither;
+ *   2. NO CALL-TAB TARGET IS LEFT — the Call tab left the phone bar on
+ *      2026-11-24, so no page declares where it goes and the per-page target
+ *      store is gone (lib/call-tab.ts keeps only the in-page call anchors);
  *   3. ONE CALL STYLE — every call control reads the same string.
- * The browser half (the tab really lands on #act, the hub renders) is in
- * tests/call-hub.spec.ts.
+ * The browser half (the bar's text and the footer's door to the hub) is in
+ * tests/call-hub.spec.ts; the bar's measurements at 320px and 390px are in
+ * tests/header-phone-label.spec.ts.
  */
 
 const ROOT = process.cwd();
 const read = (rel: string) => readFileSync(join(ROOT, rel), 'utf8');
 
-test.describe('the declared target (lib/call-tab.ts)', () => {
-  test('nothing declared means the hub, on the server and in the browser', () => {
-    expect(callTabServerSnapshot()).toBeNull();
-    expect(callTabSnapshot()).toBeNull();
-    expect(CALL_HUB_PATH).toBe('/call');
-  });
+/** Every .ts/.tsx/.mjs source under the app's own folders. */
+function sources(dir: string): string[] {
+  const out: string[] = [];
+  for (const name of readdirSync(join(ROOT, dir))) {
+    const rel = join(dir, name);
+    if (statSync(join(ROOT, rel)).isDirectory()) out.push(...sources(rel));
+    else if (/\.(ts|tsx|mjs)$/.test(name)) out.push(rel);
+  }
+  return out;
+}
 
-  test('a claim sets the target and notifies; its release clears it', () => {
-    let calls = 0;
-    const off = subscribeCallTab(() => {
-      calls += 1;
-    });
-    const token = claimCallTab('#act');
-    expect(callTabSnapshot()).toBe('#act');
-    releaseCallTab(token);
-    expect(callTabSnapshot()).toBeNull();
-    expect(calls).toBe(2);
-    off();
-  });
-
-  test("an old page's release never wipes the new page's claim (client-side navigation order)", () => {
-    const oldPage = claimCallTab('#act');
-    const newPage = claimCallTab('/bills/s-1-119#act');
-    // React may run the old page's cleanup AFTER the new page's effect.
-    releaseCallTab(oldPage);
-    expect(callTabSnapshot()).toBe('/bills/s-1-119#act');
-    releaseCallTab(newPage);
-    expect(callTabSnapshot()).toBeNull();
+test.describe('the in-page call anchors (lib/call-tab.ts)', () => {
+  test('the anchors are the panel heading and a stable list id', () => {
+    expect(CALL_PANEL_ANCHOR).toBe('#act');
+    expect(STILL_OPEN_ID).toBe('still-open');
   });
 
   test('in-page anchors are told apart from routes', () => {
@@ -73,136 +52,111 @@ test.describe('the declared target (lib/call-tab.ts)', () => {
     expect(isInPageTarget('/call')).toBe(false);
     expect(isInPageTarget('/bills/s-4668-119#act')).toBe(false);
   });
-});
 
-/*
- * WHERE A BIG QUESTION SENDS THE CALL TAB (wireframes v2, 2026-09-29; the
- * index's "Where the Call tab goes"): its own call panel when it runs through
- * one open bill (Q6 b — the panel is on the question page now, not a click
- * away on the bill's), its "Still open" list when it runs through several
- * (Claude's ruling 8), and the hub when nothing is open.
- */
-test.describe('a Big Question picks its Call target from its callable vehicles', () => {
-  test('the anchors are the panel heading and a stable list id', () => {
-    expect(CALL_PANEL_ANCHOR).toBe('#act');
-    expect(STILL_OPEN_ID).toBe('still-open');
-    expect(STILL_OPEN_ANCHOR).toBe('#still-open');
-  });
+  /*
+   * A Big Question carries the call panel itself exactly when it runs through
+   * one open bill (wireframes v2, 2026-09-29, Q6 b); several open, or one open
+   * nomination, get the "Still open" list instead.
+   */
   test('one open bill → the call panel on the question page itself', () => {
     expect(questionHasPanel(['bill'])).toBe(true);
-    expect(questionCallTarget(['bill'])).toBe('#act');
   });
-  test('several open → the "Still open" list on the page, never one bill’s panel', () => {
+  test('several open, one open nomination, or nothing open → no panel on the page', () => {
     expect(questionHasPanel(['bill', 'bill'])).toBe(false);
-    expect(questionCallTarget(['bill', 'bill'])).toBe('#still-open');
-    expect(questionCallTarget(['bill', 'nomination'])).toBe('#still-open');
-  });
-  test('one open nomination → the list: no nomination panel is drawn on a question page', () => {
+    expect(questionHasPanel(['bill', 'nomination'])).toBe(false);
     expect(questionHasPanel(['nomination'])).toBe(false);
-    expect(questionCallTarget(['nomination'])).toBe('#still-open');
-  });
-  test('nothing open → null, and the tab goes to the hub', () => {
     expect(questionHasPanel([])).toBe(false);
-    expect(questionCallTarget([])).toBeNull();
   });
 });
 
-test.describe('the bar (components/Header.tsx)', () => {
+test.describe('the bars (components/Header.tsx)', () => {
   const header = read('components/Header.tsx');
 
-  function keysOf(constName: 'TABS' | 'LINKS'): string[] {
+  function blockOf(constName: 'TABS' | 'LINKS'): string {
     const block = new RegExp(`const ${constName} = \\[([\\s\\S]*?)\\] as const;`).exec(header);
     expect(block, `${constName} must stay a literal array in Header.tsx`).not.toBeNull();
-    return [...block![1].matchAll(/key: '([a-zA-Z]+)'/g)].map((m) => m[1]);
+    return block![1];
   }
+  const keysOf = (constName: 'TABS' | 'LINKS') =>
+    [...blockOf(constName).matchAll(/key: '([a-zA-Z]+)'/g)].map((m) => m[1]);
 
-  function blockOf(constName: 'TABS' | 'LINKS'): string {
-    return new RegExp(`const ${constName} = \\[([\\s\\S]*?)\\] as const;`).exec(header)![1];
-  }
-
-  test('phone bar: Home · Bills · Call · Big Questions · Reps', () => {
-    expect(keysOf('TABS')).toEqual(['home', 'bills', 'call', 'moments', 'reps']);
+  test('phone bar: Home · Bills · Big Questions · Reps', () => {
+    expect(keysOf('TABS')).toEqual(['home', 'bills', 'moments', 'reps']);
   });
 
   test('row nav: Today in Congress · Bills · Big Questions · My reps (the lockup is Home, the switch follows)', () => {
-    // Owner, 2026-09-29, typed: the header's Call item removed, "Today in
-    // Congress" first; scope "Desktop only".
     expect(keysOf('LINKS')).toEqual(['today', 'bills', 'moments', 'reps']);
   });
 
-  test('Today is on the row nav only, Call on the thumb bar only; the record and "Why call?" on neither', () => {
+  test('Today is on the row nav only; Call, the record and "Why call?" on neither', () => {
     const links = blockOf('LINKS');
     const tabs = blockOf('TABS');
     expect(links).toMatch(/href: '\/today'/);
     expect(tabs).not.toMatch(/href: '\/today'/);
-    expect(tabs).toMatch(/key: 'call'/);
-    expect(links).not.toMatch(/key: 'call'/);
     for (const block of [links, tabs]) {
+      expect(block).not.toMatch(/key: 'call'/);
+      expect(block).not.toMatch(/href: '\/call'/);
       expect(block).not.toMatch(/href: '\/record'/);
       expect(block).not.toMatch(/href: '\/why-call'/);
     }
+    // No call control left in the header, and no per-page target read.
+    expect(header).not.toMatch(/data-call-tab|CALL_BUTTON|useSyncExternalStore|lib\/call-tab/);
   });
 
-  test('the labels exist in both languages, and the short Spanish one is the wireframe’s', () => {
-    expect(en.common.nav.call).toBe('Call');
-    expect(en.common.navShort.call).toBe('Call');
-    expect(es.common.nav.call).toBe('Llamar');
-    expect(es.common.navShort.call).toBe('Llamar');
-    // The row nav's Today item (owner, 2026-09-29), matching the page's own title.
+  test('the Big Questions tab prints the full label, on one line; the others the short one', () => {
+    // Owner, 2026-11-23: "Does that give it more room for the full text in the
+    // bar?"; 2026-11-24: "Four tabs: Home · Bills · Big Questions · Reps".
+    expect(en.common.nav.moments).toBe('Big Questions');
+    expect(es.common.nav.moments).toBe('Grandes preguntas');
+    expect(header).toContain("const TAB_FULL_LABEL: ReadonlySet<string> = new Set(['moments']);");
+    expect(header).toContain('TAB_FULL_LABEL.has(key) ? t(`nav.${key}`) : t(`navShort.${key}`)');
+    expect(header).toContain('tabLabel(key)');
+    const bar = header.slice(header.indexOf('data-thumb-bar'));
+    expect(bar).toContain('<span data-tab-label className="whitespace-nowrap">');
+    // Content-sized tabs, never an equal grid, each at least 44px each way.
+    expect(bar).toContain('<ul className="flex px-0.5 py-1">');
+    expect(bar).toContain('<li key={key} className="flex flex-auto">');
+    expect(bar).toMatch(/className=\{`flex min-h-11 min-w-11 flex-1 /);
+    expect(bar).not.toMatch(/grid-cols-/);
+    // The row nav's short labels and Today's, in both languages.
+    expect(en.common.navShort.moments).toBe('Questions');
+    expect(es.common.navShort.moments).toBe('Preguntas');
     expect(en.common.nav.today).toBe(en.today.title);
     expect(es.common.nav.today).toBe(es.today.title);
     expect(en.common.navShort.today).toBe('Today');
     expect(es.common.navShort.today).toBe('Hoy');
-    // The desktop door to the Call hub, matching the hub's own title.
+  });
+
+  test('the Call tab’s own labels are gone from both languages; the footer’s door to the hub stays', () => {
+    for (const m of [en, es]) {
+      expect(m.common.nav).not.toHaveProperty('call');
+      expect(m.common.nav).not.toHaveProperty('tabQuestions');
+      expect(m.common.navShort).not.toHaveProperty('call');
+    }
     expect(en.common.footer.callHub).toBe(en.call.title);
     expect(es.common.footer.callHub).toBe(es.call.title);
-    // The thumb bar's own Big Questions label; the row nav's short label stays.
-    expect(en.common.tab.moments).toBe('Big Questions');
-    expect(en.common.navShort.moments).toBe('Questions');
-    expect(es.common.navShort.moments).toBe('Preguntas');
-    expect(header).toContain('tabLabel(key)');
+    expect(read('components/Footer.tsx')).toContain("{ href: '/call', key: 'footer.callHub' }");
   });
 });
 
-test.describe('pages declare the target under the same condition as their panel', () => {
-  test('bill page: #act exactly when the call panel renders, never on a settled record', () => {
-    const src = read('app/[locale]/bills/[id]/page.tsx');
-    // Since 2026-11-13 the panel's branch and the declaration both read one
-    // value, lib/bill-rail.ts `billRail` (tests/bill-rail.unit.spec.ts pins
-    // that callTabTarget is true exactly when the panel is the call panel,
-    // with a settled and with an ended record).
-    expect(src).toContain("{rail.panel === 'settled' && settled && settledOutcome ? (");
-    expect(src).toContain(") : rail.panel === 'ended' && ended && endedText ? (");
-    expect(src).toContain('{rail.callTabTarget && <CallTabTarget href="#act" />}');
+test.describe('no page declares a Call-tab target any more', () => {
+  test('the target component and its store are gone, and nothing names them', () => {
+    const all = [...sources('app'), ...sources('components'), ...sources('lib')];
+    for (const f of all) {
+      const src = read(f);
+      expect(src, f).not.toMatch(/\bCallTabTarget\b|\bclaimCallTab\b|\breleaseCallTab\b|\bcallTabTarget\b/);
+      expect(src, f).not.toMatch(/\bquestionCallTarget\b|\bCALL_HUB_PATH\b|\bsubscribeCallTab\b/);
+    }
+    expect(all).not.toContain(join('components', 'CallTabTarget.tsx'));
   });
 
-  test('nomination page: #act exactly when the rail is the call panel', () => {
-    const src = read('app/[locale]/nominations/[slug]/page.tsx');
-    expect(src).toContain('{closed || noScript ? (');
-    expect(src).toContain('{!(closed || noScript) && <CallTabTarget href="#act" />}');
-  });
-
-  test('question page: reads the cards’ own keys, then questionCallTarget, under the panel’s own condition', () => {
+  test('the question page still prints the "Still open" heading under its own id', () => {
     const src = read('app/[locale]/questions/[id]/page.tsx');
-    // The cards' keys, through the one helper the lists are built from…
     expect(src).toContain('const vehicles = questionVehicles(moment);');
     expect(src).toContain('const openVehicles = vehicles.filter((v) => v.open);');
-    const ui = read('lib/moments-ui.ts');
-    expect(ui).toContain('nominationCtaKey(nomination, isSettled || s.line.terminal)');
-    expect(ui).toContain('billCtaKey(isSettled || s.line.terminal || settledDecision(bill) !== null)');
-    // …then the target, never pointing at a panel that did not render…
-    expect(src).toContain(
-      'const callTabHref = questionHasPanel(callableKinds) && !panel ? null : questionCallTarget(callableKinds);'
-    );
     expect(src).toContain('{panel && (');
     expect(src).toContain('<ActionPanel {...panel} />');
-    // …and the list anchor is the "Still open" heading's own id.
     expect(src).toContain('<h3 id={STILL_OPEN_ID}');
-  });
-
-  test('a member page and the hub itself declare nothing (the table sends both to /call)', () => {
-    expect(read('app/[locale]/reps/[bioguide]/page.tsx')).not.toContain('CallTabTarget');
-    expect(read('app/[locale]/call/page.tsx')).not.toContain('CallTabTarget');
   });
 });
 
@@ -214,12 +168,10 @@ test.describe('one call style (components/call-button.ts)', () => {
     // No green fill left on a call control, and no ring-gap (that mechanism
     // is for FILLED controls — app/globals.css).
     expect(CALL_BUTTON).not.toMatch(/\bbg-go\b|\bring-gap\b/);
-    expect(CALL_BUTTON_CURRENT.split(' ')).toEqual(expect.arrayContaining(['bg-ink', 'text-paper', 'border-ink']));
   });
 
   test('every call control named in the wireframe index reads the shared string', () => {
     const users = [
-      'components/Header.tsx',
       'app/[locale]/call/page.tsx',
       'components/MomentVehicleCard.tsx',
       'components/MomentNominationCard.tsx',
