@@ -703,6 +703,678 @@
           ]
         }
       ]
+    },
+    "paying-college-athletes": {
+      "written": "2026-11-24",
+      "record_as_of": "2026-11-24",
+      "model": "claude-opus-5-5",
+      "type": "industry_regulation",
+      "rewritten_nightly": false,
+      "sources": {
+        "s4668-es": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/BILLS-119s4668es/html/BILLS-119s4668es.htm",
+          "title": {
+            "en": "S. 4668 as passed by the Senate, text",
+            "es": "Texto del S. 4668 tal como lo aprobó el Senado (en inglés)"
+          }
+        },
+        "actions-s4668": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/senate-bill/4668/all-actions",
+          "title": {
+            "en": "S. 4668, official actions",
+            "es": "S. 4668, acciones oficiales (en inglés)"
+          }
+        },
+        "bill-s4668": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/senate-bill/4668",
+          "title": {
+            "en": "S. 4668, official bill record",
+            "es": "S. 4668, registro oficial del proyecto (en inglés)"
+          }
+        },
+        "vote-s-119-2-250": {
+          "kind": "record",
+          "url": "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00250.xml",
+          "title": {
+            "en": "Senate roll call vote 250 of the 119th Congress, 2nd session (S. 4668, passage)",
+            "es": "Votación nominal 250 del Senado, 119.º Congreso, 2.ª sesión (S. 4668, aprobación; en inglés)"
+          }
+        },
+        "usc-15-7801": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/USCODE-2024-title15/html/USCODE-2024-title15-chap104-sec7801.htm",
+          "title": {
+            "en": "15 U.S.C. 7801, Sports Agent Responsibility and Trust Act definitions (U.S. Code, 2024 edition)",
+            "es": "15 U.S.C. 7801, definiciones de la Ley de Responsabilidad y Confianza de los Agentes Deportivos (Código de EE. UU., edición de 2024; en inglés)"
+          }
+        },
+        "usc-15-7803": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/USCODE-2024-title15/html/USCODE-2024-title15-chap104-sec7803.htm",
+          "title": {
+            "en": "15 U.S.C. 7803, enforcement (U.S. Code, 2024 edition)",
+            "es": "15 U.S.C. 7803, cumplimiento (Código de EE. UU., edición de 2024; en inglés)"
+          }
+        },
+        "usc-15-7804": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/USCODE-2024-title15/html/USCODE-2024-title15-chap104-sec7804.htm",
+          "title": {
+            "en": "15 U.S.C. 7804, actions by states (U.S. Code, 2024 edition)",
+            "es": "15 U.S.C. 7804, demandas de los estados (Código de EE. UU., edición de 2024; en inglés)"
+          }
+        },
+        "constitution": {
+          "kind": "record",
+          "url": "https://www.archives.gov/founding-docs/constitution-transcript",
+          "title": {
+            "en": "U.S. Constitution, transcript (National Archives)",
+            "es": "Constitución de EE. UU., transcripción (Archivos Nacionales; en inglés)"
+          }
+        },
+        "crs-r42843": {
+          "kind": "analysis",
+          "url": "https://www.congress.gov/crs_external_products/R/HTML/R42843.html",
+          "title": {
+            "en": "Congressional Research Service, Introduction to the Legislative Process in the U.S. Congress (R42843), updated November 19, 2025",
+            "es": "Servicio de Investigación del Congreso, introducción al proceso legislativo en el Congreso de EE. UU. (R42843), actualizado el 19 de noviembre de 2025 (en inglés)"
+          }
+        },
+        "holam-2007": {
+          "kind": "analysis",
+          "url": "https://www.govinfo.gov/content/pkg/CDOC-110hdoc49/html/CDOC-110hdoc49.htm",
+          "title": {
+            "en": "How Our Laws Are Made, House Document 110-49, by the Parliamentarian of the House (2007)",
+            "es": "Cómo se hacen nuestras leyes, Documento de la Cámara 110-49, del Parlamentario de la Cámara (2007; en inglés)"
+          }
+        }
+      },
+      "picks": [
+        {
+          "bank_id": "reg.state_law",
+          "q": {
+            "en": "Would it override state laws?",
+            "es": "¿Prevalecería sobre las leyes estatales?"
+          },
+          "claims": [
+            {
+              "kind": "record",
+              "en": "S. 4668, as the Senate passed it, says in section 121(a) that no state or political subdivision may “adopt, maintain, enforce, or continue in effect” a law or rule that “conflicts with any provision of this title that would prevent compliance with this title” (title I of the bill).",
+              "es": "El S. 4668, tal como lo aprobó el Senado, dice en su sección 121(a) que ningún estado ni subdivisión política puede «adoptar, mantener, hacer cumplir o seguir aplicando» una ley o norma que «entre en conflicto con alguna disposición de este título de modo que impida cumplir este título» (el título I del proyecto).",
+              "cites": [
+                {
+                  "src": "s4668-es",
+                  "quote": "No State or political subdivision of a State may adopt, maintain, enforce, or continue in effect any law, regulation, rule, requirement, or standard that"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "conflicts with any provision of this title that would prevent compliance with this title"
+                },
+                {
+                  "src": "actions-s4668",
+                  "quote": "2026-09-28 | Passed Senate with an amendment by Yea-Nay Vote. 77 - 22. Record Vote Number: 250. (text: CR S5044-5063)"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "Section 121(a) also bars state laws that govern, regulate or invalidate the rules of schools, conferences or athletic associations on paying athletes for their name, image or likeness “except as necessary to comply with this title,” on transfers between schools, or on the eligibility rules in section 113(a)(1)–(3) or (b).",
+              "es": "La sección 121(a) también prohíbe las leyes estatales que rijan, regulen o invaliden las normas de universidades, conferencias o asociaciones deportivas sobre el pago a los atletas por su nombre, imagen o semejanza «salvo en lo necesario para cumplir este título», sobre los traslados entre universidades o sobre las reglas de elegibilidad de la sección 113(a)(1)–(3) o (b).",
+              "cites": [
+                {
+                  "src": "s4668-es",
+                  "quote": "governs, regulates, or invalidates policies or rules of an institution, a conference, or an intercollegiate athletic association that regulates"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "the compensation to a student athlete or prospective student athlete for the use of their name, image, or likeness, except as necessary to comply with this title"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "transfers of student athletes between institutions"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "any provision described in subsection (a)(1)- (3) or (b) of section 113 relating to the eligibility of a student athlete to participate in intercollegiate athletics"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "Section 121(b) says listed state laws “shall not be preempted, displaced, or supplanted”: except where they conflict with subsection (a), athlete agent acts and civil rights, tort, criminal, privacy, contract, trademark, copyright and consumer protection laws; and, unless they conflict with subsection (a)(2), laws giving rise to claims it lists, among them personal injury, wrongful death, sexual assault, harassment, fraud, and abuse or hazing.",
+              "es": "La sección 121(b) dice que las leyes estatales que enumera «no quedarán sin efecto por primacía federal, ni desplazadas ni sustituidas»: salvo cuando entren en conflicto con el apartado (a), las leyes sobre agentes de atletas y las de derechos civiles, responsabilidad civil, derecho penal, privacidad, contratos, marcas, derechos de autor y protección del consumidor; y, salvo que entren en conflicto con el apartado (a)(2), las leyes que dan lugar a las demandas que enumera, entre ellas por lesiones personales, muerte por negligencia, agresión sexual, acoso, fraude y abuso o novatadas.",
+              "cites": [
+                {
+                  "src": "s4668-es",
+                  "quote": "shall not be preempted, displaced, or supplanted"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "Except to the extent that such law, rule, regulation, requirement, or common law right or remedy conflicts with subsection (a), the following: (A) Uniform Athlete Agent Acts. (B) Civil rights laws. (C) Tort law, unless otherwise specified in paragraph (2). (D) Criminal law, unless otherwise specified in paragraph (2). (E) Laws that relate to privacy or data breach. (F) Contract law. (G) Trademark law. (H) Copyright law. (I) Consumer protection law, unless otherwise specified in paragraph (2)."
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "Except to the extent that such law, rule, regulation, or requirement, or common law right or remedy conflicts with subsection (a)(2)"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "(A) Personal injury, including psychological injury. (B) Wrongful death. (C) Property damage. (D) Sexual assault. (E) Harassment. (F) Fraud. (G) Injury resulting from abuse or hazing of a student athlete, including physical or sexual abuse."
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "Section 121(c) says subsection (a) “shall not be construed to preempt, displace, or supplant the antitrust laws” where liability under them “is not limited by this title,” and section 100 includes “any similar State antitrust law.”",
+              "es": "La sección 121(c) dice que el apartado (a) «no se interpretará en el sentido de dejar sin efecto, desplazar ni sustituir las leyes antimonopolio» cuando la responsabilidad según ellas «no esté limitada por este título», y la sección 100 incluye «cualquier ley antimonopolio estatal similar».",
+              "cites": [
+                {
+                  "src": "s4668-es",
+                  "quote": "To the extent liability for violations of the antitrust laws is not limited by this title, subsection (a) shall not be construed to preempt, displace, or supplant the antitrust laws."
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "any similar State antitrust law"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "bank_id": "reg.antitrust",
+          "q": {
+            "en": "Does it change how antitrust law applies?",
+            "es": "¿Cambia cómo se aplican las leyes antimonopolio?"
+          },
+          "claims": [
+            {
+              "kind": "record",
+              "en": "Section 118(a) of S. 4668, as the Senate passed it, says it “shall not be unlawful under the antitrust laws” for an association, conference or school to enforce or comply with listed sections, among them its pay limits (sections 114 and 115) and eligibility, transfer, recruiting and agent registry rules.",
+              "es": "La sección 118(a) del S. 4668, tal como lo aprobó el Senado, dice que «no será ilegal según las leyes antimonopolio» que una asociación deportiva, una conferencia o una universidad haga cumplir o cumpla las secciones enumeradas, entre ellas sus límites de pago (secciones 114 y 115) y sus reglas de elegibilidad, traslados, reclutamiento y registro de agentes.",
+              "cites": [
+                {
+                  "src": "s4668-es",
+                  "quote": "It shall not be unlawful under the antitrust laws for an intercollegiate athletic association, a conference, or an institution to enforce or comply with, including through rules or bylaws-- (1) section 114; (2) section 115; (3) section 113;"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "(5) section 117; (6) section 112;"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "(8) section 103; and"
+                },
+                {
+                  "src": "actions-s4668",
+                  "quote": "2026-09-28 | Passed Senate with an amendment by Yea-Nay Vote. 77 - 22. Record Vote Number: 250. (text: CR S5044-5063)"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "Section 118(b) covers some fines, eligibility limits and agent decertifications; under section 118(c), an athletic association gets neither unless it “has established rules, bylaws, or other regulations implementing” them, and section 100 includes “any similar State antitrust law.”",
+              "es": "La sección 118(b) abarca ciertas multas, límites de elegibilidad y retiros de certificación de agentes; según la sección 118(c), una asociación deportiva no obtiene ninguna de las dos protecciones salvo que «haya establecido reglas, estatutos u otras normas que las apliquen», y la sección 100 incluye «cualquier ley antimonopolio estatal similar».",
+              "cites": [
+                {
+                  "src": "s4668-es",
+                  "quote": "decertify an athlete agent for violations of section 103 or the amendments made by section 102"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "An intercollegiate athletic association shall not be entitled to the antitrust exemptions set forth in subsections (a) and (b) unless the intercollegiate athletic association has established rules, bylaws, or other regulations implementing paragraphs (1) through (9) of subsection (a) and paragraphs (1) through (4) of subsection (b)."
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "any similar State antitrust law"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "Section 202 amends the Sports Broadcasting Act of 1961 so the antitrust laws “shall not apply to any joint agreement” of schools or conferences forming one entity to sell their telecast rights, if it “complies with and enforces the requirements of section 5,” among them starting with “not less than 75 percent” of Football Bowl Subdivision schools.",
+              "es": "La sección 202 modifica la Ley de Transmisiones Deportivas de 1961 para que las leyes antimonopolio «no se apliquen a ningún acuerdo conjunto» de universidades o conferencias que formen una sola entidad para vender sus derechos de transmisión, si esa entidad «cumple y hace cumplir los requisitos de la sección 5», entre ellos empezar con «no menos del 75 por ciento» de las universidades de la Football Bowl Subdivision.",
+              "cites": [
+                {
+                  "src": "s4668-es",
+                  "quote": "The antitrust laws, as defined in subsection (a), shall not apply to any joint agreement, by or among institutions engaging in or conducting organized intercollegiate sports, or conferences that have such institutions as members, to form and operate a covered entity that complies with and enforces the requirements of section 5 and sells or otherwise transfers to a third party all or any part of the rights of the institutions or conferences in the sponsored telecasting"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "includes, at a minimum, as of the date on which the joint agreement is entered into, not less than 75 percent of the institutions participating in the Football Bowl Subdivision"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "Section 205 makes it “unlawful under the antitrust laws” for a conference whose main athletic revenue comes from football media rights and that reported over $700,000,000 in revenue on its fiscal year 2025 or later tax return to make certain mergers or acquisitions, which “may not be justified by efficiencies, procompetitive effects, or any other defense.”",
+              "es": "La sección 205 declara «ilegal según las leyes antimonopolio» que una conferencia cuyos principales ingresos deportivos provengan de los derechos de medios del fútbol americano y que haya declarado más de 700.000.000 de dólares de ingresos en su declaración de impuestos del año fiscal 2025 o en una posterior haga ciertas fusiones o adquisiciones, que «no pueden justificarse por eficiencias, efectos procompetitivos ni ninguna otra defensa».",
+              "cites": [
+                {
+                  "src": "s4668-es",
+                  "quote": "It shall be unlawful under the antitrust laws, as defined in section 1(a), for--"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "any covered conference that reported more than $700,000,000 in revenue on its fiscal year 2025 tax return or any subsequent tax return to--"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "may not be justified by efficiencies, procompetitive effects, or any other defense under the antitrust laws"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "means a conference, the primary athletic revenue of which is derived from the sale or transfer of media rights relating to intercollegiate football"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "bank_id": "reg.enforcement",
+          "q": {
+            "en": "Who would enforce it, and how?",
+            "es": "¿Quién la haría cumplir y cómo?"
+          },
+          "claims": [
+            {
+              "kind": "record",
+              "en": "Section 119 of S. 4668, as the Senate passed it, lets a person sue in federal or state court “only for a violation of” sections it lists, among them the name, image and likeness rights (section 101(a) and (c)) and the disclosure, academic, medical, health and safety, transfer and eligibility sections (the last two only in federal court, with limits on who can be sued).",
+              "es": "La sección 119 del S. 4668, tal como lo aprobó el Senado, permite demandar ante un tribunal federal o estatal «solo por una infracción de» las secciones que enumera, entre ellas los derechos de nombre, imagen y semejanza (sección 101(a) y (c)) y las secciones de divulgación, protección académica, cobertura médica, salud y seguridad, traslados y elegibilidad (las dos últimas, solo ante un tribunal federal y con límites sobre a quién se puede demandar).",
+              "cites": [
+                {
+                  "src": "s4668-es",
+                  "quote": "A person may file a civil action in an appropriate district court of the United States or in an appropriate State court only for a violation of the following"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "(1) Subsections (a) and (c) of section 101. (2) Section 104. (3) Section 105. (4) Section 106. (5) Section 107."
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "is filed in an appropriate district court of the United States"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "is filed against a Division I or Division II institution, as defined by bylaw 20 of the National Collegiate Athletic Association as of the date of the enactment of this Act, or an intercollegiate athletic association or a conference comprised of any such institutions"
+                },
+                {
+                  "src": "actions-s4668",
+                  "quote": "2026-09-28 | Passed Senate with an amendment by Yea-Nay Vote. 77 - 22. Record Vote Number: 250. (text: CR S5044-5063)"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "A plaintiff must first give 30 days’ written notice and may not sue if the defendant cures it in that time and says so in writing, except over “physical injury, death, or sexual abuse or misconduct”; under section 119(b), such suits do not limit the bill’s antitrust shield.",
+              "es": "Antes, el demandante debe avisar por escrito con 30 días de anticipación, y no puede demandar si en ese plazo el demandado la corrige y lo declara por escrito, salvo por «lesiones físicas, muerte o abuso o conducta sexual indebida»; según la sección 119(b), esas demandas no limitan la protección antimonopolio del proyecto.",
+              "cites": [
+                {
+                  "src": "s4668-es",
+                  "quote": "the plaintiff provides to the defendant 30 days written notice identifying the specific provisions set forth in subsection (a) that the plaintiff alleges have been or are being violated"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "the defendant cures the violation and provides the plaintiff with an express written statement that the violation has been cured and no such further violation shall occur, an action shall not be permitted"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "Paragraphs (1) and (2) shall not apply to any civil action that is based in whole or in part on allegations of physical injury, death, or sexual abuse or misconduct."
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "The protection from antitrust liability set forth in section 118 shall not be limited by a private right of action filed under subsection (a)."
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "Section 102 adds agent rules to section 3 of the Sports Agent Responsibility and Trust Act, among them a fee cap of “5 percent of the value of the endorsement contract,” and lets athletes sue over them; under that law (2024 U.S. Code), the Federal Trade Commission “shall enforce this chapter,” and a state may sue over a section 3 violation.",
+              "es": "La sección 102 añade reglas para los agentes a la sección 3 de la Ley de Responsabilidad y Confianza de los Agentes Deportivos, entre ellas un límite de honorarios del «5 por ciento del valor del contrato de patrocinio», y permite que los atletas demanden por ellas; según esa ley (Código de EE. UU., edición de 2024), la Comisión Federal de Comercio «hará cumplir este capítulo», y un estado puede demandar por una infracción de la sección 3.",
+              "cites": [
+                {
+                  "src": "s4668-es",
+                  "quote": "in section 3 (15 U.S.C. 7802)"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "charge a student athlete a fee in connection with an endorsement contract that exceeds 5 percent of the value of the endorsement contract"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "Any current or former student athlete alleging a violation of paragraphs (4) through (8) of section 3(a), section 9, or section 10 may bring a civil action"
+                },
+                {
+                  "src": "usc-15-7803",
+                  "quote": "The Commission shall enforce this chapter in the same manner, by the same means, and with the same jurisdiction, powers, and duties as though all applicable terms and provisions of the Federal Trade Commission Act"
+                },
+                {
+                  "src": "usc-15-7801",
+                  "quote": "The term \"Commission\" means the Federal Trade Commission."
+                },
+                {
+                  "src": "usc-15-7804",
+                  "quote": "In any case in which the attorney general of a State has reason to believe that an interest of the residents of that State has been or is threatened or adversely affected by the engagement of any athlete agent in a practice that violates section 7802 of this title, the State may bring a civil action"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "Section 118(b) shields associations and conferences from antitrust liability when they fine schools or restrict eligibility for some violations; section 204 gives the Federal Communications Commission “jurisdiction over complaints” of bad-faith negotiation over local football and basketball broadcasts.",
+              "es": "La sección 118(b) protege a asociaciones y conferencias de la responsabilidad antimonopolio cuando multan a universidades o restringen la elegibilidad por ciertas infracciones; la sección 204 da a la Comisión Federal de Comunicaciones «competencia sobre las denuncias» de negociación de mala fe sobre transmisiones locales de fútbol americano y baloncesto.",
+              "cites": [
+                {
+                  "src": "s4668-es",
+                  "quote": "It shall not be unlawful under the antitrust laws for an intercollegiate athletic association or conference to, including through rules or bylaws-- (1) impose a fine against an institution"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "restrict the eligibility of a student athlete who"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "shall negotiate in good faith to fulfill the requirement of that subsection"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "The Federal Communications Commission shall have jurisdiction over complaints alleging a violation of paragraph (1)."
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "MARKET LEVEL BROADCAST ACCESS FOR COLLEGE FOOTBALL AND BASKETBALL"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "bank_id": "elig.who_qualifies",
+          "q": {
+            "en": "Who qualifies, and what would they get?",
+            "es": "¿Quién cumpliría los requisitos y qué recibiría?"
+          },
+          "claims": [
+            {
+              "kind": "record",
+              "en": "S. 4668, as the Senate passed it, defines a “student athlete” (section 100) as a full-time college student making satisfactory academic progress toward a degree who competes in intercollegiate competition or on a varsity team; some rules cover only Division I, or Divisions I and II.",
+              "es": "El S. 4668, tal como lo aprobó el Senado, define en su sección 100 al «atleta estudiante» como un estudiante universitario de tiempo completo que avanza satisfactoriamente hacia un título y participa en competencias interuniversitarias o en un equipo universitario; algunas reglas solo abarcan la División I, o las Divisiones I y II.",
+              "cites": [
+                {
+                  "src": "s4668-es",
+                  "quote": "The term \"student athlete\" means an individual who is enrolled as a full-time student"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "makes satisfactory academic progress"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "toward completing a degree; and (ii) participates in intercollegiate athletic competition or competes for a varsity sports team"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "This subsection shall apply only to student athletes and prospective student athletes of institutions whose primary membership is in Division I"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "An individual is eligible to participate on a Division I or Division II"
+                },
+                {
+                  "src": "actions-s4668",
+                  "quote": "2026-09-28 | Passed Senate with an amendment by Yea-Nay Vote. 77 - 22. Record Vote Number: 250. (text: CR S5044-5063)"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "Within the bill’s limits, section 101 bars schools, conferences and associations like the NCAA from restricting an athlete’s ability “to market or earn compensation for the value of their name, image, or likeness rights,” and lets schools, collectives and others pay athletes for that use.",
+              "es": "Dentro de los límites del proyecto, la sección 101 prohíbe a universidades, conferencias y asociaciones como la NCAA restringir la capacidad de un atleta «de comercializar u obtener compensación por el valor de sus derechos de nombre, imagen o semejanza», y permite que universidades, colectivos y otros paguen a los atletas por ese uso.",
+              "cites": [
+                {
+                  "src": "s4668-es",
+                  "quote": "Except as provided in this title, an institution, conference, intercollegiate athletic association, or any representative of such an entity may not-- (A) restrict the ability of a student athlete, group of student athletes, or prospective student athlete-- (i) to market or earn compensation for the value of their name, image, or likeness rights"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "the National Collegiate Athletic Association"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "Subject to the requirements of this title, an institution, intercollegiate athletic association, conference, collective, associated entity, or third party, may pay, provide, or facilitate compensation to a student athlete for the use of the name, image, or likeness of the student athlete."
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "Section 114 bars schools in a court-approved settlement, and related entities, from pay that would exceed its “revenue share cap,” though a school meeting academic benchmarks may exceed it, for nine years, by up to $22,500,000 a year to keep athletes after a full season there, plus up to $5,000,000 tied to pay in non-revenue sports; non-school deals need a “valid business purpose.”",
+              "es": "La sección 114 prohíbe a las universidades incluidas en un acuerdo aprobado por un tribunal, y a entidades vinculadas, pagar montos que superen su «tope de reparto de ingresos», aunque una universidad que cumpla ciertos parámetros académicos puede superarlo, durante nueve años, hasta en 22.500.000 de dólares al año para retener a atletas que ya jugaron allí una temporada completa, más hasta 5.000.000 de dólares ligados a pagos en deportes que no generan ingresos; los acuerdos que no sean con una universidad necesitan un «fin comercial válido».",
+              "cites": [
+                {
+                  "src": "s4668-es",
+                  "quote": "compensation in an amount that would circumvent or result in the institution exceeding the revenue share cap"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "means the Benefits Pool Limit set forth in the Injunctive Relief Settlement Agreement approved by the court"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "an institution may exceed the revenue share cap by not more than $22,500,000 per academic year for the purpose of retaining a student athlete or group of student athletes who have spent at least one full competitive season at the institution"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "The exception described in subparagraph (A) shall apply only during the nine-year period beginning on the date of the enactment of this Act."
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "by up to an additional $5,000,000 per academic year in proportion to the amount of name, image, and likeness compensation provided by the institution"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "Except for a name, image, and likeness agreement with an institution, a name, image, and likeness agreement with a student athlete shall be for a valid business purpose."
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "an institution that is a party to, through membership in a conference or otherwise, \"In Re College Athlete NIL Litigation\", No. 20-cv-03919 (N.D. Cal. June 6, 2025), or has opted in to the Injunctive Relief Settlement in that case"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "An institution shall not be eligible for the exception described in subparagraph (A) if the institution fails to meet uniform benchmarks established by the relevant intercollegiate athletic association or conference related to graduation rates and the academic progress of its student athletes"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "Section 106 has Division I schools, among others, pay athletes’ out-of-pocket medical costs for sports injuries while competing and, for those enrolled in their last year of eligibility, for five years after their last competition; section 112 lets an athlete transfer once between four-year schools “without losing or delaying eligibility.”",
+              "es": "La sección 106 obliga a las universidades de la División I, entre otras, a pagar los gastos médicos de bolsillo de los atletas por lesiones deportivas mientras compiten y, para quienes estén inscritos en su último año de elegibilidad, durante cinco años después de su última competencia; la sección 112 permite a un atleta trasladarse una vez entre universidades de cuatro años «sin perder ni retrasar la elegibilidad».",
+              "cites": [
+                {
+                  "src": "s4668-es",
+                  "quote": "all out-of-pocket medical expenses, such as copayments or deductibles, for the health care coverage of a student athlete for any injury or disease incurred through participation in an intercollegiate sport"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "Each Division I institution"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "with respect to a student athlete enrolled at the institution during their last year of eligibility to participate in intercollegiate athletic competition, for the 5- year period beginning on the day after the last intercollegiate competition for the student athlete"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "to transfer from one four-year institution to another four-year institution-- (1) once without losing or delaying eligibility to participate in intercollegiate sports"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "bank_id": "elig.legal_status",
+          "q": {
+            "en": "Would it change anyone's legal status?",
+            "es": "¿Cambiaría la situación legal de alguien?"
+          },
+          "claims": [
+            {
+              "kind": "record",
+              "en": "S. 4668, as the Senate passed it, says in section 122: “This title is neutral on, and does nothing to alter, employee or non-employee status for student athletes”; that section is in title I, which holds the bill’s rules on athletes’ pay, eligibility and transfers.",
+              "es": "El S. 4668, tal como lo aprobó el Senado, dice en su sección 122: «Este título es neutral respecto de la condición de empleado o no empleado de los atletas estudiantes y no la altera en nada»; esa sección está en el título I, que contiene las reglas del proyecto sobre el pago, la elegibilidad y los traslados de los atletas.",
+              "cites": [
+                {
+                  "src": "s4668-es",
+                  "quote": "This title is neutral on, and does nothing to alter, employee or non-employee status for student athletes."
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "TITLE I--PROTECTIONS OF STUDENT ATHLETES AND FAIR COMPETITION"
+                },
+                {
+                  "src": "actions-s4668",
+                  "quote": "2026-09-28 | Passed Senate with an amendment by Yea-Nay Vote. 77 - 22. Record Vote Number: 250. (text: CR S5044-5063)"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "Section 113 makes eligibility for Division I or II teams depend in part on being a “student athlete” who “is not a professional athlete,” and says a basketball player is not a professional because of competing before turning 19 or first enrolling full time, whichever comes first, with a similar rule for some prize money in sports other than football and basketball.",
+              "es": "La sección 113 hace depender la elegibilidad para equipos de las Divisiones I o II, en parte, de ser un «atleta estudiante» que «no es un atleta profesional», y dice que un jugador de baloncesto no es profesional por haber competido antes de cumplir 19 años o de inscribirse por primera vez a tiempo completo, lo que ocurra primero, con una regla parecida para ciertos premios en dinero en deportes distintos del fútbol americano y el baloncesto.",
+              "cites": [
+                {
+                  "src": "s4668-es",
+                  "quote": "An individual is eligible to participate on a Division I or Division II"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "(1) is a student athlete;"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "(3) is not a professional athlete; and"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "a student athlete who competes in basketball shall not be considered a professional athlete based on their participation in athletic competitions prior to, whichever occurs first-- (A) the 19th birthday of the student athlete; or (B) the date the student athlete initially enrolls full time at an institution"
+                },
+                {
+                  "src": "s4668-es",
+                  "quote": "a student athlete who competes in a sport other than football or basketball shall not be considered a professional athlete based solely on the amount of prize money"
+                }
+              ]
+            },
+            {
+              "kind": "absence",
+              "absence_kind": "not_checked",
+              "en": "We did not check other laws or court rulings on whether college athletes are employees, or on their tax or immigration status; this answer reads only the bill’s text.",
+              "es": "No revisamos otras leyes ni fallos judiciales sobre si los atletas universitarios son empleados, ni sobre su situación fiscal o migratoria; esta respuesta solo lee el texto del proyecto.",
+              "searched": [
+                "s4668-es"
+              ]
+            }
+          ]
+        },
+        {
+          "bank_id": "core.next_step",
+          "q": {
+            "en": "What has to happen next for this to take effect?",
+            "es": "¿Qué tiene que pasar para que esto entre en vigor?"
+          },
+          "claims": [
+            {
+              "kind": "record",
+              "en": "The Senate passed S. 4668, as amended on its floor, 77–22 on September 28, 2026, and the House received it on October 5; as of November 24, 2026, its latest action is “Held at the desk,” and the record shows no House vote on it.",
+              "es": "El Senado aprobó el S. 4668, con las enmiendas hechas en el pleno, por 77–22 el 28 de septiembre de 2026, y la Cámara lo recibió el 5 de octubre; al 24 de noviembre de 2026, su última acción es «Retenido en la mesa», y el expediente no muestra ninguna votación de la Cámara sobre él.",
+              "cites": [
+                {
+                  "src": "actions-s4668",
+                  "quote": "2026-09-28 | Passed Senate with an amendment by Yea-Nay Vote. 77 - 22. Record Vote Number: 250. (text: CR S5044-5063)"
+                },
+                {
+                  "src": "vote-s-119-2-250",
+                  "quote": "vote_result_text | Bill Passed (77-22)"
+                },
+                {
+                  "src": "actions-s4668",
+                  "quote": "2026-10-05 | Received in the House."
+                },
+                {
+                  "src": "bill-s4668",
+                  "quote": "latestAction | 2026-10-05 | Held at the desk."
+                }
+              ]
+            },
+            {
+              "kind": "analysis",
+              "en": "The Congressional Research Service, in a report updated November 19, 2025, says “A bill must be agreed to by both chambers in the same form before it can be presented to the President,” and the House Parliamentarian’s 2007 guide says that if the House passes an amended version of a Senate bill, “the bill is returned to the Senate for action on the House amendments.”",
+              "es": "El Servicio de Investigación del Congreso, en un informe actualizado el 19 de noviembre de 2025, dice que «un proyecto debe ser aprobado por ambas cámaras en la misma forma antes de poder presentarse al Presidente», y la guía de 2007 del Parlamentario de la Cámara dice que, si la Cámara aprueba una versión enmendada de un proyecto del Senado, «el proyecto se devuelve al Senado para que actúe sobre las enmiendas de la Cámara».",
+              "cites": [
+                {
+                  "src": "crs-r42843",
+                  "quote": "Updated November 19, 2025 (R42843)"
+                },
+                {
+                  "src": "crs-r42843",
+                  "quote": "A bill must be agreed to by both chambers in the same form before it can be presented to the President."
+                },
+                {
+                  "src": "holam-2007",
+                  "quote": "July 24, 2007"
+                },
+                {
+                  "src": "holam-2007",
+                  "quote": "If the House passes an amended version of the Senate bill, the bill is returned to the Senate for action on the House amendments."
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "Under the Constitution, a bill that has “passed the House of Representatives and the Senate” is “presented to the President,” who signs it or returns it with objections; a returned bill becomes law only if “two thirds” of each chamber pass it again, and a bill not returned “within ten Days (Sundays excepted)” becomes law unless Congress’s adjournment prevents its return.",
+              "es": "Según la Constitución, un proyecto «aprobado por la Cámara de Representantes y el Senado» se «presenta al Presidente», que lo firma o lo devuelve con sus objeciones; un proyecto devuelto solo se convierte en ley si «dos tercios» de cada cámara vuelven a aprobarlo, y un proyecto que no se devuelve «dentro de diez días (sin contar los domingos)» se convierte en ley, salvo que el aplazamiento del Congreso impida su devolución.",
+              "cites": [
+                {
+                  "src": "constitution",
+                  "quote": "Every Bill which shall have passed the House of Representatives and the Senate, shall, before it become a Law, be presented to the President of the United States; If he approve he shall sign it, but if not he shall return it, with his Objections"
+                },
+                {
+                  "src": "constitution",
+                  "quote": "If after such Reconsideration two thirds of that House shall agree to pass the Bill, it shall be sent, together with the Objections, to the other House, by which it shall likewise be reconsidered, and if approved by two thirds of that House, it shall become a Law."
+                },
+                {
+                  "src": "constitution",
+                  "quote": "If any Bill shall not be returned by the President within ten Days (Sundays excepted) after it shall have been presented to him, the Same shall be a Law, in like Manner as if he had signed it, unless the Congress by their Adjournment prevent its Return, in which Case it shall not be a Law."
+                }
+              ]
+            },
+            {
+              "kind": "analysis",
+              "en": "The same report says bills “may become law if enacted during the two-year Congress in which they were introduced”; S. 4668 was introduced on June 2, 2026, in the 119th Congress, whose Senate passage vote is recorded in session 2, and the House guide says a Congress “is divided into two regular sessions.”",
+              "es": "El mismo informe dice que los proyectos «pueden convertirse en ley si se promulgan durante el Congreso de dos años en que se presentaron»; el S. 4668 se presentó el 2 de junio de 2026, en el 119.º Congreso, cuya votación de aprobación en el Senado consta en la sesión 2, y la guía de la Cámara dice que un Congreso «se divide en dos sesiones ordinarias».",
+              "cites": [
+                {
+                  "src": "crs-r42843",
+                  "quote": "Bills and joint resolutions may become law if enacted during the two-year Congress in which they were introduced."
+                },
+                {
+                  "src": "actions-s4668",
+                  "quote": "2026-06-02 | Introduced in Senate"
+                },
+                {
+                  "src": "bill-s4668",
+                  "quote": "congress | 119"
+                },
+                {
+                  "src": "vote-s-119-2-250",
+                  "quote": "session | 2"
+                },
+                {
+                  "src": "holam-2007",
+                  "quote": "A Congress lasts for two years, commencing in January of the year following the biennial election of Members. A Congress is divided into two regular sessions."
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   }
 }
