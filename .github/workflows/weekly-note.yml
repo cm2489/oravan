@@ -29,7 +29,9 @@ permissions:
   contents: read
   # `gh run list` over sync-bills.yml (the "Nightly data" line). Read-only.
   actions: read
-  # Open this week's note, label it, assign it, close last week's.
+  # Open this week's note, label it, assign it, close last week's; and read
+  # the daily digest's comments on #81 (each day's distinct browser
+  # addresses, for the real-people line).
   issues: write
 
 concurrency:
