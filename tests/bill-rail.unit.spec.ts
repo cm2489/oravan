@@ -211,9 +211,11 @@ test.describe('the ended-only strings stay off the browser until a Congress has 
         }
         into[leaf] = from[leaf];
       }
-      // `namesPage` (the shared-name page's strings) is server-only too, always.
-      const { namesPage: _n, ...withoutNames } = catalog as typeof catalog & { namesPage?: unknown };
+      // `namesPage` (the shared-name page's strings) and `devConsole` (the
+      // devtools console note) are server-only too, always.
+      const { namesPage: _n, devConsole: _d, ...withoutNames } = catalog as typeof catalog & { namesPage?: unknown; devConsole?: unknown };
       void _n;
+      void _d;
       expect(JSON.stringify(sortKeys(restored))).toBe(JSON.stringify(sortKeys({ ...withoutNames, glossary: chrome })));
 
       const ended = ended119(() => clientMessages(catalog)) as typeof en;

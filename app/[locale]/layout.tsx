@@ -10,6 +10,7 @@ import { Header } from '@/components/Header';
 import { LocalePreferenceNote } from '@/components/LocalePreferenceNote';
 import { ErasedNotice } from '@/components/ErasedNotice';
 import { Footer } from '@/components/Footer';
+import { ReadSignal } from '@/components/ReadSignal';
 import '../globals.css';
 
 /**
@@ -84,6 +85,10 @@ export default async function LocaleLayout({
   if (!hasLocale(routing.locales, locale)) notFound();
   setRequestLocale(locale);
   const t = await getTranslations({ locale, namespace: 'common' });
+  const tConsole = await getTranslations({ locale, namespace: 'devConsole' });
+  // The console note as a JS string literal, with every '<' escaped so no
+  // message text can ever close the inline script early.
+  const consoleNote = JSON.stringify(tConsole('note')).replace(/</g, '\\u003c');
   // Every message the browser needs, minus the glossary's definitions, which
   // are resolved on the server — see i18n/client-messages.ts.
   const messages = clientMessages(await getMessages({ locale }));
@@ -106,10 +111,19 @@ export default async function LocaleLayout({
       className={`${franklin.variable} ${besley.variable}`}
     >
       <body className="min-h-dvh flex flex-col">
-        {/* For the curious who open devtools: the no-trackers claim, verifiable */}
+        {/* For the curious who open devtools: the no-trackers claim, verifiable.
+            Reworded 2026-11-23 with the reading signal: the Network tab is no
+            longer silent after a first scroll, click, tap or key press, so it
+            says what the reading signal's request is (lib/read-signal.ts),
+            and how often: at most once per page load, not once per page
+            (the third independent check, 2026-11-24). It is in the page's own
+            language (`devConsole.note`, rule 5; server-only, see
+            i18n/client-messages.ts). It claims nothing about the page's other
+            requests: no gate checks those for third-party origins yet
+            (CLAUDE.md rule 1). */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `console.log("%cOravan","font-size:16px;font-weight:bold","— your voice, carried. No analytics, no trackers, no account: check the Network tab, it's quiet in here. Code: https://github.com/cm2489/oravan");`,
+            __html: `console.log("%cOravan","font-size:16px;font-weight:bold",${consoleNote});`,
           }}
         />
         <a
@@ -120,6 +134,10 @@ export default async function LocaleLayout({
         </a>
         <NextIntlClientProvider messages={messages}>
           <Header />
+          {/* The reading signal (step 2 of the owner's answer of 2026-11-23,
+              card `people`): renders nothing, sends at most one first-party
+              request per page load after a first scroll, click, tap or key press. */}
+          <ReadSignal />
           {/* Client-side language suggestion for Spanish-preferring browsers
               on the EN locale — see the component for why this is not a
               server redirect (localeDetection: false is deliberate). */}

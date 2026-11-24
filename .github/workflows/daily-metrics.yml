@@ -3,15 +3,24 @@ name: Daily metrics digest
 # Traffic-watch design (2026-07): a founder-facing daily digest of MCP
 # tool-call / /api/script generation VOLUME, sourced entirely from the
 # existing counters-database usage family (lib/usage.ts) — no new
-# database, no new secret, zero client-side analytics (CLAUDE.md's
-# constitution forbids that permanently; see scripts/daily-metrics.mjs's
-# header comment and the digest body itself for the disclosure).
+# database, no new secret, no third-party analytics (CLAUDE.md rule 1; see
+# scripts/daily-metrics.mjs's header comment and the digest body itself for
+# the disclosure).
 #
 # Site page views joined the digest 2026-09 (site-counter), from the SAME
-# counters database and still with no client script: lib/usage.ts's
-# pageview family, one counter per ROUTE TEMPLATE per UTC day, incremented
+# counters database and with no client script: lib/usage.ts's pageview
+# family, one counter per ROUTE TEMPLATE per UTC day, incremented
 # server-side in proxy.ts. Vercel Web Analytics remains out: it needs the
-# @vercel/analytics client script, which the constitution permanently bans.
+# @vercel/analytics client script, a third-party analytics script, which
+# rule 1 bans.
+#
+# Corrected 2026-11-24: this header said "zero client-side analytics" until
+# the People block's "read" row (2026-11-23, #548). That row comes from
+# Oravan's OWN client script, lib/read-signal.ts: at most one first-party
+# request per page load to /api/seen after a person's first scroll, click,
+# tap or key press, naming only the page's shape, which the route checks
+# and drops. It is client-side, first-party analytics with no identifier;
+# the digest's read caveat says what it counts and what it gets wrong.
 # (Corrected 2026-09-18: Vercel's server-side Observability DOES have a
 # programmatic route — `vercel metrics --format json`, CLI, public beta 2026,
 # requires Observability Plus — and runtime-log aggregation over the API. This

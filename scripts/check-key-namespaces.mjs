@@ -163,6 +163,11 @@
  *                     pinned the same way: distinct-shape now holds a closed
  *                     list of sketch key literals (DISTINCT_KEY_LITERALS),
  *                     and any other `uniques…` key in code fails.
+ *                 Step 2 the same day (the reading signal, app/api/seen) adds
+ *                 usage:read:<day>, one total with no dimension (the route
+ *                 checks the page shape the message names and drops it;
+ *                 a shape folded back into the key fails usage-shape), and
+ *                 a THIRD sketch, uniques-read:<day>.
  *                 And a new tooth for the whole usage registry, usage-shape:
  *                 every `:usage:` key in its code must be one of the exact
  *                 literals in ALLOWED_USAGE_KEY_LITERALS, so a new usage
@@ -287,6 +292,8 @@ const PAGEVIEW_SURFACES_DECL = /PAGEVIEW_SURFACES\s*=\s*\[([\s\S]*?)\]/;
 // Both families keyed by a page-view surface label: all loads, and (2026-11-23)
 // the loads labelled "browser". Either one, written with no parsable
 // declaration behind it, fails.
+// (The reading signal of step 2 is one dimensionless total, so it is not
+// here; usage-shape pins its one literal.)
 const PAGEVIEW_KEY_MARKERS = ['usage:pageview:', 'usage:pageview-browser:'];
 // The daily distinct-address family (owner ruling 2026-09-25). The ONE key
 // shape it may ever have, as the exact source literal lib/ratelimit.ts's
@@ -298,7 +305,13 @@ const PAGEVIEW_KEY_MARKERS = ['usage:pageview:', 'usage:pageview-browser:'];
 // built exactly like the first and pinned exactly like it, so the one literal
 // became a closed list. Every literal here is env prefix + a fixed sketch
 // name + the UTC day; a new sketch is an edit to this list, on purpose.
-const DISTINCT_KEY_LITERALS = ['`${keyPrefix()}:uniques:${day}`', '`${keyPrefix()}:uniques-browser:${day}`'];
+// A THIRD joined the same day with step 2 (the reading signal): the
+// addresses that sent it to /api/seen.
+const DISTINCT_KEY_LITERALS = [
+  '`${keyPrefix()}:uniques:${day}`',
+  '`${keyPrefix()}:uniques-browser:${day}`',
+  '`${keyPrefix()}:uniques-read:${day}`',
+];
 // Any `uniques` key that is not the day salt (the salt has its own rules
 // below). Matching the bare family name, not `uniques:`, is what catches a
 // new sketch under a new suffix (`uniques-bills:`) as well as an extra
@@ -453,6 +466,7 @@ const ALLOWED_USAGE_KEY_LITERALS = [
   '`${keyPrefix()}:usage:pageview-browser:${asPageviewSurface(surface)}:${day}`',
   '`${keyPrefix()}:usage:rep-lookup:${day}`',
   '`${keyPrefix()}:usage:script-served:${day}`',
+  '`${keyPrefix()}:usage:read:${day}`',
   '`${keyPrefix()}:usage:mcp-client:`',
 ];
 const USAGE_KEY_MARKER = ':usage:';
@@ -1487,6 +1501,30 @@ const SELF_TEST_FIXTURES = [
     rule: 'usage-caller',
   },
   {
+    name: 'a raw path folded into the reading total (2026-11-23, step 2)',
+    file: USAGE_REGISTRY,
+    text: 'const k = `${keyPrefix()}:usage:read:${pathname}:${day}`;',
+    rule: 'usage-raw-path',
+  },
+  {
+    name: 'the reading total split by page shape again (2026-11-23, step 2: one total, no dimension)',
+    file: USAGE_REGISTRY,
+    text: 'const k = `${keyPrefix()}:usage:read:${asPageviewSurface(surface)}:${day}`;',
+    rule: 'usage-shape',
+  },
+  {
+    name: 'a per-page reader sketch (2026-11-23, step 2)',
+    file: COUNTERS_REGISTRY,
+    text: 'const k = `${keyPrefix()}:uniques-read:${surface}:${day}`;',
+    rule: 'distinct-shape',
+  },
+  {
+    name: 'a reader sketch fed from the reading-signal route itself (2026-11-23, step 2)',
+    file: 'app/api/seen/route.ts',
+    text: "await c.cmd(['PFADD', `${keyPrefix()}:uniques-read:${day}`, h]);",
+    rule: 'distinct-confinement',
+  },
+  {
     name: 'browser page-view keys written with no parsable surface declaration (2026-11-23)',
     file: USAGE_REGISTRY,
     text: 'const k = `${keyPrefix()}:usage:pageview-browser:${asPageviewSurface(surface)}:${day}`;',
@@ -1644,7 +1682,8 @@ const SELF_TEST_CLEAN = [
       "const PAGEVIEW_SURFACES = ['home', 'bills-index', 'bill', 'questions-index', 'question', 'reps', 'member', 'record', 'nominations', 'today', 'short', 'other'] as const;\n" +
       'const a = `${keyPrefix()}:usage:pageview-browser:${asPageviewSurface(surface)}:${day}`;\n' +
       'const b = `${keyPrefix()}:usage:rep-lookup:${day}`;\n' +
-      'const c = `${keyPrefix()}:usage:script-served:${day}`;',
+      'const c = `${keyPrefix()}:usage:script-served:${day}`;\n' +
+      'const d = `${keyPrefix()}:usage:read:${day}`;',
   },
   {
     // The second sketch (2026-11-23), as lib/ratelimit.ts ships it: its own
