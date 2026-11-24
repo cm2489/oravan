@@ -703,6 +703,588 @@
           ]
         }
       ]
+    },
+    "annual-defense-policy": {
+      "written": "2026-11-24",
+      "record_as_of": "2026-11-24",
+      "model": "claude-opus-5-5",
+      "type": "defense_authorization",
+      "rewritten_nightly": false,
+      "sources": {
+        "crs-if10515": {
+          "kind": "analysis",
+          "url": "https://www.congress.gov/crs_external_products/IF/HTML/IF10515.html",
+          "title": {
+            "en": "Congressional Research Service, In Focus IF10515, “Defense Primer: The NDAA Process” (updated Dec. 4, 2025)",
+            "es": "Servicio de Investigación del Congreso, In Focus IF10515, guía sobre el proceso de la NDAA (actualizada el 4 de diciembre de 2025, en inglés)"
+          }
+        },
+        "hrpt-119-698": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/CRPT-119hrpt698/html/CRPT-119hrpt698.htm",
+          "title": {
+            "en": "H. Rept. 119-698, the House Armed Services Committee’s report on H.R. 8800",
+            "es": "Informe de la Cámara 119-698, de la Comisión de Servicios Armados, sobre la H.R. 8800 (en inglés)"
+          }
+        },
+        "srpt-119-127": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/CRPT-119srpt127/html/CRPT-119srpt127.htm",
+          "title": {
+            "en": "S. Rept. 119-127, the Senate Armed Services Committee’s report on S. 4784",
+            "es": "Informe del Senado 119-127, de la Comisión de Servicios Armados, sobre el S. 4784 (en inglés)"
+          }
+        },
+        "hr8800-eh": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/BILLS-119hr8800eh/html/BILLS-119hr8800eh.htm",
+          "title": {
+            "en": "H.R. 8800 as passed by the House, text",
+            "es": "H.R. 8800 tal como la aprobó la Cámara, texto (en inglés)"
+          }
+        },
+        "s4784-rs": {
+          "kind": "record",
+          "url": "https://www.govinfo.gov/content/pkg/BILLS-119s4784rs/html/BILLS-119s4784rs.htm",
+          "title": {
+            "en": "S. 4784 as reported to the Senate, text",
+            "es": "S. 4784 tal como se presentó al Senado, texto (en inglés)"
+          }
+        },
+        "bill-hr9495": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/house-bill/9495",
+          "title": {
+            "en": "H.R. 9495, official bill record",
+            "es": "H.R. 9495, registro oficial del proyecto (en inglés)"
+          }
+        },
+        "actions-hr9495": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/house-bill/9495/all-actions",
+          "title": {
+            "en": "H.R. 9495, official actions",
+            "es": "H.R. 9495, acciones oficiales (en inglés)"
+          }
+        },
+        "actions-hr8800": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/house-bill/8800/all-actions",
+          "title": {
+            "en": "H.R. 8800, official actions",
+            "es": "H.R. 8800, acciones oficiales (en inglés)"
+          }
+        },
+        "bill-hr8800": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/house-bill/8800",
+          "title": {
+            "en": "H.R. 8800, official bill record",
+            "es": "H.R. 8800, registro oficial del proyecto (en inglés)"
+          }
+        },
+        "house-roll-278": {
+          "kind": "record",
+          "url": "https://clerk.house.gov/evs/2026/roll278.xml",
+          "title": {
+            "en": "Clerk of the House, roll call 278 of 2026",
+            "es": "Secretaría de la Cámara, votación nominal 278 de 2026 (en inglés)"
+          }
+        },
+        "actions-s4784": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/senate-bill/4784/all-actions",
+          "title": {
+            "en": "S. 4784, official actions",
+            "es": "S. 4784, acciones oficiales (en inglés)"
+          }
+        },
+        "bill-s4784": {
+          "kind": "record",
+          "url": "https://www.congress.gov/bill/119th-congress/senate-bill/4784",
+          "title": {
+            "en": "S. 4784, official bill record",
+            "es": "S. 4784, registro oficial del proyecto (en inglés)"
+          }
+        },
+        "senate-vote-195": {
+          "kind": "record",
+          "url": "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00195.xml",
+          "title": {
+            "en": "U.S. Senate, roll call vote 195, 119th Congress, 2nd session",
+            "es": "Senado de EE. UU., votación nominal 195 del 119.º Congreso, 2.ª sesión (en inglés)"
+          }
+        },
+        "constitution": {
+          "kind": "record",
+          "url": "https://www.archives.gov/founding-docs/constitution-transcript",
+          "title": {
+            "en": "U.S. Constitution, Article I, Section 7",
+            "es": "Constitución de EE. UU., artículo I, sección 7 (en inglés)"
+          }
+        },
+        "sap-hr8800": {
+          "kind": "record",
+          "url": "https://www.whitehouse.gov/wp-content/uploads/2026/07/SAP-HR8800.pdf",
+          "title": {
+            "en": "Office of Management and Budget, Statement of Administration Policy on H.R. 8800 (July 21, 2026)",
+            "es": "Oficina de Administración y Presupuesto, declaración de política del Gobierno sobre la H.R. 8800 (21 de julio de 2026, en inglés)"
+          }
+        },
+        "sap-list": {
+          "kind": "record",
+          "url": "https://www.whitehouse.gov/omb/statements-of-administration-policy/",
+          "title": {
+            "en": "Office of Management and Budget, list of Statements of Administration Policy (as fetched November 24, 2026)",
+            "es": "Oficina de Administración y Presupuesto, lista de declaraciones de política del Gobierno (consultada el 24 de noviembre de 2026, en inglés)"
+          }
+        }
+      },
+      "picks": [
+        {
+          "bank_id": "def.topline",
+          "q": {
+            "en": "How much does it authorize, and for what?",
+            "es": "¿Cuánto autoriza y para qué?"
+          },
+          "claims": [
+            {
+              "kind": "analysis",
+              "en": "A Congressional Research Service primer, updated December 4, 2025, says the National Defense Authorization Act “provides authorization of appropriations for the Department of Defense (DOD), nuclear weapons programs of the Department of Energy, and other defense-related activities” and that, “Unlike an appropriations bill, the NDAA does not provide budget authority for government activities.”",
+              "es": "Una guía del Servicio de Investigación del Congreso, actualizada el 4 de diciembre de 2025, dice que la Ley de Autorización de Defensa Nacional «autoriza asignaciones para el Departamento de Defensa (DOD), los programas de armas nucleares del Departamento de Energía y otras actividades relacionadas con la defensa» y que, «a diferencia de un proyecto de asignaciones, la NDAA no otorga autoridad presupuestaria para las actividades del gobierno».",
+              "cites": [
+                {
+                  "src": "crs-if10515",
+                  "quote": "The National Defense Authorization Act (NDAA) provides authorization of appropriations for the Department of Defense (DOD), nuclear weapons programs of the Department of Energy, and other defense-related activities."
+                },
+                {
+                  "src": "crs-if10515",
+                  "quote": "Unlike an appropriations bill, the NDAA does not provide budget authority for government activities."
+                },
+                {
+                  "src": "crs-if10515",
+                  "quote": "Updated December 4, 2025"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "For H.R. 8800 as the House Armed Services Committee reported it on June 15, 2026, the committee’s report recommends “an overall discretionary authorization for national defense programs of $1.15 trillion for fiscal year 2027” and says the bill authorizes $1.14 trillion for programs within the committee’s jurisdiction.",
+              "es": "Para la H.R. 8800 tal como la presentó la Comisión de Servicios Armados de la Cámara el 15 de junio de 2026, el informe de la comisión recomienda «una autorización discrecional total para los programas de defensa nacional de 1,15 billones de dólares para el año fiscal 2027» y dice que el proyecto autoriza 1,14 billones de dólares para los programas bajo la jurisdicción de la comisión.",
+              "cites": [
+                {
+                  "src": "hrpt-119-698",
+                  "quote": "June 15, 2026.--Committed to the Committee of the Whole House on the State of the Union and ordered to be printed"
+                },
+                {
+                  "src": "hrpt-119-698",
+                  "quote": "The committee recommends an overall discretionary authorization for national defense programs of $1.15 trillion for fiscal year 2027 and authorizes $1.14 trillion for fiscal year for programs within its jurisdiction."
+                },
+                {
+                  "src": "hrpt-119-698",
+                  "quote": "The bill authorizes $1.14 trillion of discretionary funding to support national defense requirements."
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "For S. 4784 as the Senate Armed Services Committee reported it on June 15, 2026, that committee’s report “recommends an overall discretionary authorization of $1,140.1 billion in fiscal year 2027, including $1,099.0 billion for base DOD programs, $41.1 billion for national security programs in the DOE, and $11.9 billion for defense-related activities outside the jurisdiction of the NDAA.”",
+              "es": "Para el S. 4784 tal como lo presentó la Comisión de Servicios Armados del Senado el 15 de junio de 2026, el informe de esa comisión «recomienda una autorización discrecional total de 1.140,1 miles de millones de dólares en el año fiscal 2027, incluidos 1.099,0 miles de millones para los programas básicos del DOD, 41,1 miles de millones para los programas de seguridad nacional del DOE y 11,9 miles de millones para actividades relacionadas con la defensa fuera de la jurisdicción de la NDAA».",
+              "cites": [
+                {
+                  "src": "srpt-119-127",
+                  "quote": "June 15, 2026.--Ordered to be printed"
+                },
+                {
+                  "src": "srpt-119-127",
+                  "quote": "The committee recommends an overall discretionary authorization of $1,140.1 billion in fiscal year 2027, including $1,099.0 billion for base DOD programs, $41.1 billion for national security programs in the DOE, and $11.9 billion for defense-related activities outside the jurisdiction of the NDAA."
+                }
+              ]
+            },
+            {
+              "kind": "absence",
+              "absence_kind": "not_checked",
+              "en": "We did not add up the funding tables in the text the House passed, so this answer does not say whether the House’s floor amendments changed its committee’s figures.",
+              "es": "No revisamos ni sumamos las tablas de fondos del texto que aprobó la Cámara, así que esta respuesta no dice si las enmiendas aprobadas en el pleno de la Cámara cambiaron las cifras de su comisión.",
+              "searched": [
+                "hr8800-eh",
+                "hrpt-119-698"
+              ]
+            }
+          ]
+        },
+        {
+          "bank_id": "sp.duration",
+          "q": {
+            "en": "How long would the funding last?",
+            "es": "¿Cuánto tiempo duraría el financiamiento?"
+          },
+          "claims": [
+            {
+              "kind": "analysis",
+              "en": "A Congressional Research Service primer, updated December 4, 2025, says “Unlike an appropriations bill, the NDAA does not provide budget authority for government activities.”",
+              "es": "Una guía del Servicio de Investigación del Congreso, actualizada el 4 de diciembre de 2025, dice: «A diferencia de un proyecto de asignaciones, la NDAA no otorga autoridad presupuestaria para las actividades del gobierno».",
+              "cites": [
+                {
+                  "src": "crs-if10515",
+                  "quote": "Unlike an appropriations bill, the NDAA does not provide budget authority for government activities."
+                },
+                {
+                  "src": "crs-if10515",
+                  "quote": "Updated December 4, 2025"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "Section 101 of H.R. 8800 as the House passed it, and of S. 4784 as its committee reported it, says “Funds are hereby authorized to be appropriated for fiscal year 2027” for procurement, and section 421 of each says the same for military personnel.",
+              "es": "La sección 101 de la H.R. 8800, tal como la aprobó la Cámara, y del S. 4784, tal como lo presentó su comisión, dice «se autoriza la asignación de fondos para el año fiscal 2027» para adquisiciones, y la sección 421 de cada uno dice lo mismo para el personal militar.",
+              "cites": [
+                {
+                  "src": "hr8800-eh",
+                  "quote": "SEC. 101. AUTHORIZATION OF APPROPRIATIONS. Funds are hereby authorized to be appropriated for fiscal year 2027 for procurement for the Army"
+                },
+                {
+                  "src": "s4784-rs",
+                  "quote": "SEC. 101. AUTHORIZATION OF APPROPRIATIONS. Funds are hereby authorized to be appropriated for fiscal year 2027 for procurement for the Army"
+                },
+                {
+                  "src": "hr8800-eh",
+                  "quote": "SEC. 421. MILITARY PERSONNEL. (a) Authorization of Appropriations.--Funds are hereby authorized to be appropriated for fiscal year 2027 for the use of the Armed Forces"
+                },
+                {
+                  "src": "s4784-rs",
+                  "quote": "SEC. 421. MILITARY PERSONNEL. (a) Authorization of Appropriations.--Funds are hereby authorized to be appropriated for fiscal year 2027 for the use of the Armed Forces"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "Section 2002 of each bill says its authorizations in titles XXI through XXVII for military construction, land acquisition, family housing and related purposes “shall expire on the later of” October 1, 2029, or the enactment of a law authorizing military construction funds for fiscal year 2030, except those for which appropriated funds have been obligated before then.",
+              "es": "La sección 2002 de cada proyecto dice que sus autorizaciones de los títulos XXI a XXVII para construcción militar, adquisición de terrenos, viviendas familiares y fines relacionados «vencerán en la fecha más tardía» entre el 1 de octubre de 2029 y la promulgación de una ley que autorice fondos de construcción militar para el año fiscal 2030, salvo aquellas para las que se hayan comprometido fondos asignados antes de esa fecha.",
+              "cites": [
+                {
+                  "src": "hr8800-eh",
+                  "quote": "SEC. 2002. EXPIRATION OF AUTHORIZATIONS AND AMOUNTS REQUIRED TO BE SPECIFIED BY LAW. (a) Expiration of Authorizations After Three Years.--Except as provided in subsection (b), all authorizations contained in titles XXI through XXVII for military construction projects"
+                },
+                {
+                  "src": "hr8800-eh",
+                  "quote": "shall expire on the later of-- (1) October 1, 2029; or (2) the date of the enactment of an Act authorizing funds for military construction for fiscal year 2030."
+                },
+                {
+                  "src": "hr8800-eh",
+                  "quote": "for which appropriated funds have been obligated before the later of"
+                },
+                {
+                  "src": "s4784-rs",
+                  "quote": "SEC. 2002. EXPIRATION OF AUTHORIZATIONS AND AMOUNTS REQUIRED TO BE SPECIFIED BY LAW. (a) Expiration of Authorizations After Three Years.--Except as provided in subsection (b), all authorizations contained in titles XXI through XXVII for military construction projects"
+                },
+                {
+                  "src": "s4784-rs",
+                  "quote": "shall expire on the later of-- (1) October 1, 2029; or (2) the date of the enactment of an Act authorizing funds for military construction for fiscal year 2030."
+                },
+                {
+                  "src": "s4784-rs",
+                  "quote": "for which appropriated funds have been obligated before the later of"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "Defense appropriations come in separate bills; one, H.R. 9495, the “Department of Defense Appropriations Act, 2027,” was reported by the House Appropriations Committee and placed on the House calendar on June 26, 2026, and its record shows no later action as of November 24, 2026.",
+              "es": "Las asignaciones de defensa llegan en proyectos aparte; uno, la H.R. 9495, la «Ley de Asignaciones del Departamento de Defensa, 2027», fue presentado por la Comisión de Asignaciones de la Cámara e incluido en el calendario de la Cámara el 26 de junio de 2026, y su expediente no muestra ninguna acción posterior al 24 de noviembre de 2026.",
+              "cites": [
+                {
+                  "src": "bill-hr9495",
+                  "quote": "title | Department of Defense Appropriations Act, 2027"
+                },
+                {
+                  "src": "actions-hr9495",
+                  "quote": "2026-06-26 | Placed on the Union Calendar, Calendar No. 621."
+                },
+                {
+                  "src": "actions-hr9495",
+                  "quote": "2026-06-26 | The House Committee on Appropriations reported an original measure, H. Rept. 119-715"
+                },
+                {
+                  "src": "bill-hr9495",
+                  "quote": "latestAction | 2026-06-26 | Placed on the Union Calendar, Calendar No. 621."
+                }
+              ]
+            },
+            {
+              "kind": "absence",
+              "absence_kind": "not_checked",
+              "en": "We did not search either bill’s full text for other start or end dates, so this answer lists only the periods above.",
+              "es": "No buscamos otras fechas de inicio o de fin en el texto completo de ninguno de los dos proyectos, así que esta respuesta solo menciona los plazos anteriores.",
+              "searched": [
+                "hr8800-eh",
+                "s4784-rs"
+              ]
+            }
+          ]
+        },
+        {
+          "bank_id": "core.next_step",
+          "q": {
+            "en": "What has to happen next for this to take effect?",
+            "es": "¿Qué tiene que pasar para que esto entre en vigor?"
+          },
+          "claims": [
+            {
+              "kind": "record",
+              "en": "The House passed H.R. 8800 216–212 on July 22, 2026, and the Senate received it on September 14; as of November 24, 2026, its record shows no Senate action on it since.",
+              "es": "La Cámara aprobó la H.R. 8800 216–212 el 22 de julio de 2026, y el Senado la recibió el 14 de septiembre; al 24 de noviembre de 2026, su expediente no muestra ninguna acción del Senado sobre ella desde entonces.",
+              "cites": [
+                {
+                  "src": "actions-hr8800",
+                  "quote": "2026-07-22 | On passage Passed by the Yeas and Nays: 216 - 212 (Roll no. 278)."
+                },
+                {
+                  "src": "house-roll-278",
+                  "quote": "Totals 216 212 0 3"
+                },
+                {
+                  "src": "actions-hr8800",
+                  "quote": "2026-09-14 | Received in the Senate."
+                },
+                {
+                  "src": "bill-hr8800",
+                  "quote": "latestAction | 2026-09-14 | Received in the Senate."
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "For S. 4784, the Senate committee’s own bill, the cloture vote on the motion to take it up, which is not a vote on passing it, was “Rejected (50-46, 3/5 majority required)” on July 14, 2026; a motion to reconsider that vote was entered the same day, and as of November 24, 2026, the bill’s latest action is a motion to proceed made on July 27.",
+              "es": "En el caso del S. 4784, el proyecto propio de la comisión del Senado, la votación de cierre del debate sobre la moción para considerarlo, que no es una votación para aprobarlo, fue «rechazada (50-46, se requiere mayoría de 3/5)» el 14 de julio de 2026; ese mismo día se presentó una moción para reconsiderar esa votación, y al 24 de noviembre de 2026, la acción más reciente del proyecto es una moción para proceder presentada el 27 de julio.",
+              "cites": [
+                {
+                  "src": "senate-vote-195",
+                  "quote": "On Cloture on the Motion to Proceed S. 4784"
+                },
+                {
+                  "src": "senate-vote-195",
+                  "quote": "Cloture on the Motion to Proceed Rejected (50-46, 3/5 majority required)"
+                },
+                {
+                  "src": "senate-vote-195",
+                  "quote": "July 14, 2026"
+                },
+                {
+                  "src": "actions-s4784",
+                  "quote": "2026-07-14 | Motion by Senator Thune to reconsider the vote by which cloture on the motion to proceed to the measure was not invoked (Record Vote No. 195) entered in Senate."
+                },
+                {
+                  "src": "bill-s4784",
+                  "quote": "latestAction | 2026-07-27 | Motion to proceed to consideration of measure made in Senate. (CR S4276)"
+                }
+              ]
+            },
+            {
+              "kind": "analysis",
+              "en": "A Congressional Research Service primer, updated December 4, 2025, says reaching a final Senate vote may require “one or more cloture processes (by which three-fifths of the Senate, typically 60 Senators, votes to limit consideration),” and that “The Constitution requires that the House and Senate approve the same bill in precisely the same form before it is presented to the President,” so a change by either chamber needs the other’s agreement.",
+              "es": "Una guía del Servicio de Investigación del Congreso, actualizada el 4 de diciembre de 2025, dice que para llegar a una votación final en el Senado pueden hacer falta «uno o más procesos de cierre del debate (en los que tres quintos del Senado, por lo general 60 senadores, votan para limitar la consideración)», y que «la Constitución exige que la Cámara y el Senado aprueben el mismo proyecto exactamente en la misma forma antes de presentarlo al Presidente», así que un cambio de cualquiera de las dos cámaras necesita el acuerdo de la otra.",
+              "cites": [
+                {
+                  "src": "crs-if10515",
+                  "quote": "However, one or more cloture processes (by which three-fifths of the Senate, typically 60 Senators, votes to limit consideration) may be necessary to reach a final vote on certain amendments, and on the bill itself."
+                },
+                {
+                  "src": "crs-if10515",
+                  "quote": "The Constitution requires that the House and Senate approve the same bill in precisely the same form before it is presented to the President."
+                },
+                {
+                  "src": "crs-if10515",
+                  "quote": "Updated December 4, 2025"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "Under the Constitution, the President then signs the bill or returns it with objections; a returned bill becomes law only if “two thirds” of each chamber agree to pass it again, and one not returned “within ten Days (Sundays excepted)” becomes law unless Congress’s adjournment prevents its return.",
+              "es": "Según la Constitución, el Presidente luego firma el proyecto o lo devuelve con sus objeciones; un proyecto devuelto solo se convierte en ley si «dos tercios» de cada cámara vuelven a aprobarlo, y uno que no se devuelve «dentro de diez días (sin contar los domingos)» se convierte en ley, salvo que el aplazamiento del Congreso impida su devolución.",
+              "cites": [
+                {
+                  "src": "constitution",
+                  "quote": "If he approve he shall sign it, but if not he shall return it, with his Objections to that House in which it shall have originated"
+                },
+                {
+                  "src": "constitution",
+                  "quote": "If after such Reconsideration two thirds of that House shall agree to pass the Bill"
+                },
+                {
+                  "src": "constitution",
+                  "quote": "If any Bill shall not be returned by the President within ten Days (Sundays excepted) after it shall have been presented to him, the Same shall be a Law, in like Manner as if he had signed it, unless the Congress by their Adjournment prevent its Return, in which Case it shall not be a Law."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "bank_id": "core.veto",
+          "q": {
+            "en": "Would it go to the President, and what happens if it is vetoed?",
+            "es": "¿Llegaría al Presidente y qué pasa si lo veta?"
+          },
+          "claims": [
+            {
+              "kind": "record",
+              "en": "Both measures are bills: the House committee’s report calls H.R. 8800 “the bill (H.R. 8800),” and S. 4784 is “An original bill to authorize appropriations for fiscal year 2027,” so either one, once both chambers pass it in the same form, would be presented to the President.",
+              "es": "Las dos medidas son proyectos de ley: el informe de la comisión de la Cámara llama a la H.R. 8800 «el proyecto (H.R. 8800)», y el S. 4784 es «un proyecto original para autorizar asignaciones para el año fiscal 2027», así que cualquiera de los dos, una vez que ambas cámaras lo aprueben en la misma forma, se presentaría al Presidente.",
+              "cites": [
+                {
+                  "src": "hrpt-119-698",
+                  "quote": "The Committee on Armed Services, to whom was referred the bill (H.R. 8800) to authorize appropriations for fiscal year 2027"
+                },
+                {
+                  "src": "bill-s4784",
+                  "quote": "An original bill to authorize appropriations for fiscal year 2027 for military activities of the Department of Defense"
+                },
+                {
+                  "src": "constitution",
+                  "quote": "Every Bill which shall have passed the House of Representatives and the Senate, shall, before it become a Law, be presented to the President of the United States"
+                },
+                {
+                  "src": "crs-if10515",
+                  "quote": "The Constitution requires that the House and Senate approve the same bill in precisely the same form before it is presented to the President."
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "Under the Constitution, the President signs a bill or returns it with objections; a returned bill becomes law only if “two thirds” of each chamber agree to pass it again, and a bill not returned “within ten Days (Sundays excepted)” becomes law unless Congress’s adjournment prevents its return.",
+              "es": "Según la Constitución, el Presidente firma un proyecto o lo devuelve con sus objeciones; un proyecto devuelto solo se convierte en ley si «dos tercios» de cada cámara vuelven a aprobarlo, y un proyecto que no se devuelve «dentro de diez días (sin contar los domingos)» se convierte en ley, salvo que el aplazamiento del Congreso impida su devolución.",
+              "cites": [
+                {
+                  "src": "constitution",
+                  "quote": "If he approve he shall sign it, but if not he shall return it, with his Objections to that House in which it shall have originated"
+                },
+                {
+                  "src": "constitution",
+                  "quote": "If after such Reconsideration two thirds of that House shall agree to pass the Bill"
+                },
+                {
+                  "src": "constitution",
+                  "quote": "If any Bill shall not be returned by the President within ten Days (Sundays excepted) after it shall have been presented to him, the Same shall be a Law, in like Manner as if he had signed it, unless the Congress by their Adjournment prevent its Return, in which Case it shall not be a Law."
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "In a statement dated July 21, 2026, on H.R. 8800 in the House, the White House Office of Management and Budget said “The Administration appreciates the inclusion of numerous provisions that codify or support actions taken by the President and the Administration” and that it “has a number of concerns with certain provisions in H.R. 8800.”",
+              "es": "En una declaración fechada el 21 de julio de 2026 sobre la H.R. 8800 en la Cámara, la Oficina de Administración y Presupuesto de la Casa Blanca dijo que «el Gobierno valora la inclusión de numerosas disposiciones que codifican o respaldan medidas tomadas por el Presidente y el Gobierno» y que «tiene varias inquietudes sobre ciertas disposiciones de la H.R. 8800».",
+              "cites": [
+                {
+                  "src": "sap-hr8800",
+                  "quote": "July 21, 2026 (House) STATEMENT OF ADMINISTRATION POLICY H.R. 8800 – National Defense Authorization Act for Fiscal Year 2027"
+                },
+                {
+                  "src": "sap-hr8800",
+                  "quote": "The Administration appreciates the inclusion of numerous provisions that codify or support actions taken by the President and the Administration."
+                },
+                {
+                  "src": "sap-hr8800",
+                  "quote": "the Administration has a number of concerns with certain provisions in H.R. 8800, several of which are set out below."
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "It added “The Administration expects to work with Congress to ensure these concerns are addressed before the NDAA for FY 2027 is presented to the President.”",
+              "es": "Añadió: «El Gobierno espera trabajar con el Congreso para asegurar que estas inquietudes se atiendan antes de que la NDAA del año fiscal 2027 se presente al Presidente».",
+              "cites": [
+                {
+                  "src": "sap-hr8800",
+                  "quote": "The Administration expects to work with Congress to ensure these concerns are addressed before the NDAA for FY 2027 is presented to the President."
+                }
+              ]
+            },
+            {
+              "kind": "absence",
+              "absence_kind": "not_found",
+              "en": "We found no use of the word veto in that statement, and no statement on S. 4784 in the White House’s list of these statements as fetched on November 24, 2026.",
+              "es": "No encontramos la palabra veto en esa declaración, ni ninguna declaración sobre el S. 4784 en la lista de estas declaraciones de la Casa Blanca, consultada el 24 de noviembre de 2026.",
+              "searched": [
+                "sap-hr8800",
+                "sap-list"
+              ],
+              "absent": [
+                "veto",
+                "4784"
+              ]
+            }
+          ]
+        },
+        {
+          "bank_id": "core.cost",
+          "q": {
+            "en": "What would it cost, and who made that estimate?",
+            "es": "¿Cuánto costaría y quién hizo ese cálculo?"
+          },
+          "claims": [
+            {
+              "kind": "analysis",
+              "en": "A Congressional Research Service primer, updated December 4, 2025, says “Unlike an appropriations bill, the NDAA does not provide budget authority for government activities.”",
+              "es": "Una guía del Servicio de Investigación del Congreso, actualizada el 4 de diciembre de 2025, dice: «A diferencia de un proyecto de asignaciones, la NDAA no otorga autoridad presupuestaria para las actividades del gobierno».",
+              "cites": [
+                {
+                  "src": "crs-if10515",
+                  "quote": "Unlike an appropriations bill, the NDAA does not provide budget authority for government activities."
+                },
+                {
+                  "src": "crs-if10515",
+                  "quote": "Updated December 4, 2025"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "The official bill records list a Congressional Budget Office estimate of H.R. 8800 “As reported by the House Committee on Armed Services on June 15, 2026,” published June 26, 2026, and one of S. 4784 “As reported by the Senate Committee on Armed Services on June 15, 2026,” published September 28, 2026.",
+              "es": "Los registros oficiales de los proyectos incluyen una estimación de la Oficina de Presupuesto del Congreso de la H.R. 8800 «tal como la presentó la Comisión de Servicios Armados de la Cámara el 15 de junio de 2026», publicada el 26 de junio de 2026, y otra del S. 4784 «tal como lo presentó la Comisión de Servicios Armados del Senado el 15 de junio de 2026», publicada el 28 de septiembre de 2026.",
+              "cites": [
+                {
+                  "src": "bill-hr8800",
+                  "quote": "cboCostEstimate | 2026-06-26T15:34:00Z | H.R. 8800, the National Defense Authorization Act for Fiscal Year 2027 | As reported by the House Committee on Armed Services on June 15, 2026 | https://www.cbo.gov/publication/62540"
+                },
+                {
+                  "src": "bill-s4784",
+                  "quote": "cboCostEstimate | 2026-09-28T18:40:00Z | S. 4784, the National Defense Authorization Act for Fiscal Year 2027 | As reported by the Senate Committee on Armed Services on June 15, 2026 | https://www.cbo.gov/publication/62781"
+                }
+              ]
+            },
+            {
+              "kind": "record",
+              "en": "An earlier CBO letter dated June 11, 2026, printed in the House committee’s report, covers the version that committee ordered reported on June 4 and says “Enacting the bill would have an insignificant net effect on direct spending and revenues each year and in total over the 2027-2036 period, CBO estimates.”",
+              "es": "Una carta anterior de la CBO fechada el 11 de junio de 2026, publicada en el informe de la comisión de la Cámara, trata la versión que esa comisión ordenó presentar el 4 de junio y dice: «Aprobar el proyecto tendría un efecto neto insignificante en el gasto directo y en los ingresos cada año y en total durante el período 2027-2036, según estima la CBO».",
+              "cites": [
+                {
+                  "src": "hrpt-119-698",
+                  "quote": "June 11, 2026. Re: Direct Spending and Revenue Effects of H.R. 8800, the National Defense Authorization Act for Fiscal Year 2027"
+                },
+                {
+                  "src": "hrpt-119-698",
+                  "quote": "as ordered reported by the House Committee on Armed Services on June 4, 2026."
+                },
+                {
+                  "src": "hrpt-119-698",
+                  "quote": "Enacting the bill would have an insignificant net effect on direct spending and revenues each year and in total over the 2027-2036 period, CBO estimates."
+                }
+              ]
+            },
+            {
+              "kind": "absence",
+              "absence_kind": "not_checked",
+              "en": "We were unable to retrieve either full estimate, because cbo.gov refused our automated requests, so this answer gives no CBO figure for what the amounts these bills authorize would cost if appropriated.",
+              "es": "No pudimos consultar ninguna de las dos estimaciones completas, porque cbo.gov rechazó nuestras solicitudes automáticas, así que esta respuesta no da ninguna cifra de la CBO sobre lo que costarían, si se asignaran, las sumas que autorizan estos proyectos.",
+              "searched": [
+                "bill-hr8800",
+                "bill-s4784"
+              ]
+            }
+          ]
+        }
+      ]
     }
   }
 }
