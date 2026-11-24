@@ -23,6 +23,15 @@ const MOMENTS = read('data/moments.json');
 const MID = 'government-funding-deadline';
 const clone = () => JSON.parse(JSON.stringify(FILE));
 
+// A source that is a roll call's data file is linked as the chamber's readable
+// page, never as the raw file (tests/timeline-record-links.spec.ts holds every
+// Big Question page to that in a browser; this pins the one line that does it).
+test('the drop-downs link a roll call as its readable page', () => {
+  const src = readFileSync(join(process.cwd(), 'components/ReaderQuestions.tsx'), 'utf8');
+  expect(src).toContain('href={rollCallPage(s.url)}');
+  expect(src).not.toContain('href={s.url}');
+});
+
 test.describe('the committed answers', () => {
   test('pass the gate', () => {
     expect(checkReaderQuestions(FILE, BANK, MOMENTS).violations).toEqual([]);
