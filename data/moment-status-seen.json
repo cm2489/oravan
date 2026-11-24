@@ -8,7 +8,6 @@
     "crypto-oversight-split-between-sec-and-cftc",
     "iran-war-powers",
     "paying-college-athletes",
-    "penny-production-and-cash-rounding",
     "syria-sanctions-repeal"
   ],
   "questions": {
@@ -107,23 +106,6 @@
         "hr-3633-119": {
           "fingerprint": "failedReconsider|senate||2026-09-15",
           "text": "Motion by Senator Tillis to reconsider the vote by which cloture on the motion to proceed to the measure was not invoked (Record Vote No. 234) entered in Senate."
-        }
-      }
-    },
-    "penny-production-and-cash-rounding": {
-      "review_by": "2026-10-05",
-      "vehicles": {
-        "hr-10167-119": {
-          "fingerprint": "signed|||2026-11-20",
-          "text": "Signed by President."
-        },
-        "s-1525-119": {
-          "fingerprint": "heldAtDesk|house||2026-08-10",
-          "text": "Held at the desk."
-        },
-        "hr-3074-119": {
-          "fingerprint": "passedWaiting|senate||2026-07-15",
-          "text": "Received in the Senate and Read twice and referred to the Committee on Banking, Housing, and Urban Affairs."
         }
       }
     }
