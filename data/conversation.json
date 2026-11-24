@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-24T02:23:46.116Z",
+    "fetched_at": "2026-11-24T06:30:05.533Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-24T02:23:46.116Z"
+        "checked_at": "2026-11-24T06:30:05.533Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-22",
         "week_label": "Most-Viewed Bills - Week of November 22, 2026",
         "entries": 8,
-        "checked_at": "2026-11-24T02:23:46.116Z"
+        "checked_at": "2026-11-24T06:30:05.533Z"
       },
       "leans": {
         "center": {
@@ -521,6 +521,18 @@
       ],
       "mostViewed": null
     },
+    "hr-4598-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "sourcenm.com",
+          "firstSeen": "2026-11-24",
+          "lastSeen": "2026-11-24",
+          "url": "https://news.google.com/rss/articles/CBMitgFBVV95cUxPanJadGVzb1ZjS25oMUJBODJwSnFQLUhsdDB2RkJCVmZ1SDU1MlJrMHFOYzVJWUVpR3ZPMDU4a2ZwQ3RkQmUzWW81WWotS3BrNFNzX1V2Zk5mbElZUExsRkN0N2FnVE8xNEVtQWVYeW9OTkVITVZwUUVSU1VJdXdUNWx5b205Zl9hbEJSajFkbWRQNUFtME9LMTJjTThGWHBMdTU0QW10cE0zLTYwX29SNm9oaG9QUQ?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-4624-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -837,6 +849,12 @@
           "url": "https://news.google.com/rss/articles/CBMitwFBVV95cUxOZTlYOFlPd1FSczJfa3phaGxnMzdpUlRrRFoxUVYtMldOeHZTM3VBRkZWS2NUUzJrdTlRS1hzeUk3UTFlY2Rnb0hlazhBclJiVm1SY3JwWUNPUUotSWVEdTJ6RENWNTZKZVJ3bkEzSHNVTmhYalhKUXg1WVRES0tybWFHQVl5SDl3OU5iaGt2TlVWWEtKWTBSYW5EbFd6MW1Rekc2RURqOTEwSFplcE9vRm1zV08tZUk?oc=5"
         },
         {
+          "domain": "wlky.com",
+          "firstSeen": "2026-11-24",
+          "lastSeen": "2026-11-24",
+          "url": "https://news.google.com/rss/articles/CBMitwFBVV95cUxNaTRGSU9pTGRLOFhBcFVweVh2TmlWVUZqb2g3ZkxQeXd2X2k0d0tya2p1eTlWcHZmZWRXM0VYNjFjMHBtbW5jVTJGRUlOZUlVdkI2ZVdpZWUteGI1T2xLWFBiOUladXE4UW9fTEpuVXdBMDlTQTBWVU5vdWdXTjlpbkxkU1pXVUFHSUdWZWd4VGV4UGpIUVhqMnJlcmJhamhuOXFpOFlENDBmR3pMOWllZFlPaW9BaTA?oc=5"
+        },
+        {
           "domain": "wisevoter.com",
           "firstSeen": "2026-11-21",
           "lastSeen": "2026-11-21",
@@ -1089,6 +1107,18 @@
       "unratedOutlets7d": [],
       "mostViewed": null
     },
+    "hr-8454-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "sfchronicle.com",
+          "firstSeen": "2026-11-24",
+          "lastSeen": "2026-11-24",
+          "url": "https://news.google.com/rss/articles/CBMilAFBVV95cUxOc19ncnlhWFR6SUZFOTQ5Yzkta3dhUHJaZ09ZcTRRdEd1NER4Nms0SE5fdmRCblBiRjJPZGE0YzV3RnpJT2JZcVJXcHhHV0ZtWDRyY18zSkFpZE1abE9yREhRdGVKS0lGbEpjRE53OWFlQzZmWDdFdDQ3ZmVmZnhFNHl3RkRhdHpneGdnMzFEamZSaDJj?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-8483-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1132,6 +1162,12 @@
     "hr-8646-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "yahoo.com",
+          "firstSeen": "2026-11-24",
+          "lastSeen": "2026-11-24",
+          "url": "https://news.google.com/rss/articles/CBMinwFBVV95cUxQSzVhLUJDZzFHTG9HRkRVQzJjSThqQ3Z6dnZkcDd5YVpEZ3lMRDFhREUyMURRcUczY3ZRRkZmZFNuU0sxb2tnV1BTbmNKNjZxSWt0bHhnbUhUQ0F4cXhpOW9ITHdDa0FHdFZVaV9icGUwb1Y1a2picmx5azhtc2FuODd2Ul85b3dhcVdNc3ZqeWhpMzRVXzFHZVhmZVU0X1U?oc=5"
+        },
         {
           "domain": "agriculture.com",
           "firstSeen": "2026-11-18",
@@ -1606,6 +1642,18 @@
       "unratedOutlets7d": [],
       "mostViewed": null
     },
+    "s-2883-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "legis1.com",
+          "firstSeen": "2026-11-24",
+          "lastSeen": "2026-11-24",
+          "url": "https://news.google.com/rss/articles/CBMie0FVX3lxTE1Ob090MzFrQllIWnk5by1hZDdpMVpqYVdUOFBIYmNONGdhMnM3blhuams5WktncmxaajJtMjhwRnZWLWpQbHdocHVpRlBXNjVNak9udnh6ZDFVOFZZVGJfRVRpSHhXY0hxUTBGQnc4SmZ2NG5GT1VmWUFaYw?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "s-32-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1697,6 +1745,12 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "marijuanamoment.net",
+          "firstSeen": "2026-11-24",
+          "lastSeen": "2026-11-24",
+          "url": "https://news.google.com/rss/articles/CBMi1wFBVV95cUxQSlpfWEhtaUdNZVkyekhlWW02UExvMkR6VF8xbzZSRGpKQ0tqdUVpM1dmUGEtQ1pfTXNJaXJSbmZURnZZdzFWWHp5WkRTZElxOGJBZUhGVnRaNTk1dUt5cWtIamIybTBCMkdFVXNrM2cxZFAtcnlfM1BBQnJBVlVoN2VSdHJCbDRpNnUyeHBkUURpbGhtYmVrUjlFVXBmekNIMlY1N1lXb1pRU2FBRDdQay1yaDBpMGtwNFFpRjNDYjR0TEVwa1pUSVFJS0VEelVCN0MyZTFQWQ?oc=5"
+        },
         {
           "domain": "cannabisbusinesstimes.com",
           "firstSeen": "2026-11-17",
@@ -1897,6 +1951,18 @@
         "lastSeen": "2026-11-24",
         "lastWeek": "2026-11-22"
       }
+    },
+    "s-5736-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "hempsupporter.com",
+          "firstSeen": "2026-11-24",
+          "lastSeen": "2026-11-24",
+          "url": "https://news.google.com/rss/articles/CBMigwFBVV95cUxObHBSWjhmZTJEelFJSkdJaVJ4NXFnWTMydEQySXlpTUlGTUlEZF9qZTc2N2Nrd29aWDluT1hkNVdRSUItRW1VMGhzd0JZcE52UnNacGxIYnM3ZWd5azlEXzRmbm8zX2JtR1Y4Mmc3ay1kM0hpd2xndWhSeEJBbThqR3BfTQ?oc=5"
+        }
+      ],
+      "mostViewed": null
     },
     "s-714-119": {
       "outlets7d": [],
