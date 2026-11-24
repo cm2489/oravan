@@ -1,6 +1,6 @@
 {
   "schema": "reader-questions/bank-v1",
-  "status": "DRAFT, needs one-time owner approval; Spanish pending native review",
+  "status": "Approved by the owner 2026-11-24, with leave to add questions; 5 questions (core.votes_needed, core.else_in_bill, eth.who_covered, eth.still_allowed, eth.existing_holdings) and 1 type (government_ethics) added that day under that leave, not yet seen by him; Spanish pending native review",
   "types": {
     "war_powers": {
       "en": "War powers / foreign policy",
@@ -25,6 +25,10 @@
     "defense_authorization": {
       "en": "Defense authorization",
       "es": "Autorización de defensa"
+    },
+    "government_ethics": {
+      "en": "Government ethics / rules for officeholders",
+      "es": "Ética pública / reglas para cargos públicos"
     }
   },
   "questions": [
@@ -36,7 +40,8 @@
         "industry_regulation",
         "rights_eligibility",
         "symbolic_currency",
-        "defense_authorization"
+        "defense_authorization",
+        "government_ethics"
       ],
       "deterministic": true,
       "q": {
@@ -57,7 +62,8 @@
         "industry_regulation",
         "rights_eligibility",
         "symbolic_currency",
-        "defense_authorization"
+        "defense_authorization",
+        "government_ethics"
       ],
       "deterministic": true,
       "q": {
@@ -77,7 +83,8 @@
         "industry_regulation",
         "rights_eligibility",
         "symbolic_currency",
-        "defense_authorization"
+        "defense_authorization",
+        "government_ethics"
       ],
       "deterministic": true,
       "q": {
@@ -97,7 +104,8 @@
         "industry_regulation",
         "rights_eligibility",
         "symbolic_currency",
-        "defense_authorization"
+        "defense_authorization",
+        "government_ethics"
       ],
       "q": {
         "en": "What would a yes vote do, and what would a no vote do?",
@@ -117,7 +125,8 @@
         "industry_regulation",
         "rights_eligibility",
         "symbolic_currency",
-        "defense_authorization"
+        "defense_authorization",
+        "government_ethics"
       ],
       "q": {
         "en": "What would change, and for whom?",
@@ -137,7 +146,8 @@
         "industry_regulation",
         "rights_eligibility",
         "symbolic_currency",
-        "defense_authorization"
+        "defense_authorization",
+        "government_ethics"
       ],
       "q": {
         "en": "What are the rules today, without this measure?",
@@ -159,7 +169,8 @@
         "industry_regulation",
         "rights_eligibility",
         "symbolic_currency",
-        "defense_authorization"
+        "defense_authorization",
+        "government_ethics"
       ],
       "q": {
         "en": "What happens if Congress does not act?",
@@ -181,7 +192,8 @@
         "industry_regulation",
         "rights_eligibility",
         "symbolic_currency",
-        "defense_authorization"
+        "defense_authorization",
+        "government_ethics"
       ],
       "q": {
         "en": "What has to happen next for this to take effect?",
@@ -203,7 +215,8 @@
         "industry_regulation",
         "rights_eligibility",
         "symbolic_currency",
-        "defense_authorization"
+        "defense_authorization",
+        "government_ethics"
       ],
       "q": {
         "en": "Would it go to the President, and what happens if it is vetoed?",
@@ -223,7 +236,8 @@
         "industry_regulation",
         "rights_eligibility",
         "symbolic_currency",
-        "defense_authorization"
+        "defense_authorization",
+        "government_ethics"
       ],
       "q": {
         "en": "What would it cost, and who made that estimate?",
@@ -245,7 +259,8 @@
         "industry_regulation",
         "rights_eligibility",
         "symbolic_currency",
-        "defense_authorization"
+        "defense_authorization",
+        "government_ethics"
       ],
       "q": {
         "en": "What are supporters and opponents saying on the record?",
@@ -266,7 +281,8 @@
         "industry_regulation",
         "rights_eligibility",
         "symbolic_currency",
-        "defense_authorization"
+        "defense_authorization",
+        "government_ethics"
       ],
       "q": {
         "en": "Are there other proposals on the same question?",
@@ -286,7 +302,8 @@
         "industry_regulation",
         "rights_eligibility",
         "symbolic_currency",
-        "defense_authorization"
+        "defense_authorization",
+        "government_ethics"
       ],
       "q": {
         "en": "When would it take effect, and does any part of it expire?",
@@ -305,7 +322,8 @@
         "industry_regulation",
         "rights_eligibility",
         "symbolic_currency",
-        "defense_authorization"
+        "defense_authorization",
+        "government_ethics"
       ],
       "q": {
         "en": "How do the House and Senate versions differ?",
@@ -316,6 +334,49 @@
         "crs"
       ],
       "note": "Only when both chambers have text on the record."
+    },
+    {
+      "id": "core.votes_needed",
+      "types": [
+        "war_powers",
+        "spending_deadline",
+        "industry_regulation",
+        "rights_eligibility",
+        "symbolic_currency",
+        "defense_authorization",
+        "government_ethics"
+      ],
+      "q": {
+        "en": "How many votes does it need to pass in each chamber?",
+        "es": "¿Cuántos votos necesita para aprobarse en cada cámara?"
+      },
+      "answered_by": [
+        "chamber_rules",
+        "constitution",
+        "crs",
+        "official_actions"
+      ],
+      "note": "Rules, not predictions: the majority needed for passage; the three-fifths needed to end debate in the Senate where a cloture vote is on the record; two-thirds where the Constitution or a suspension of the rules requires it. A cloture or motion-to-proceed vote is never called a passage vote."
+    },
+    {
+      "id": "core.else_in_bill",
+      "types": [
+        "war_powers",
+        "spending_deadline",
+        "industry_regulation",
+        "rights_eligibility",
+        "symbolic_currency",
+        "defense_authorization",
+        "government_ethics"
+      ],
+      "q": {
+        "en": "What else is in the measure?",
+        "es": "¿Qué más contiene la medida?"
+      },
+      "answered_by": [
+        "bill_text"
+      ],
+      "note": "Sections or titles of the same text beyond the subject of the Big Question, by number and by what the text says they do. Never why they are there, and never \"unrelated\" in our voice."
     },
     {
       "id": "wp.authorized",
@@ -465,7 +526,8 @@
       "types": [
         "industry_regulation",
         "rights_eligibility",
-        "symbolic_currency"
+        "symbolic_currency",
+        "government_ethics"
       ],
       "q": {
         "en": "Who would enforce it, and how?",
@@ -575,6 +637,48 @@
         "crs"
       ],
       "note": "Authorization is not appropriation; say which one the text is."
+    },
+    {
+      "id": "eth.who_covered",
+      "types": [
+        "government_ethics"
+      ],
+      "q": {
+        "en": "Who would the rules apply to?",
+        "es": "¿A quiénes se aplicarían las reglas?"
+      },
+      "answered_by": [
+        "bill_text"
+      ],
+      "note": "Definitions section first: which offices and which family members, per vehicle; vehicles differ."
+    },
+    {
+      "id": "eth.still_allowed",
+      "types": [
+        "government_ethics"
+      ],
+      "q": {
+        "en": "What could the people it covers still own, buy or sell?",
+        "es": "¿Qué podrían seguir teniendo, comprando o vendiendo las personas a las que se aplica?"
+      },
+      "answered_by": [
+        "bill_text"
+      ],
+      "note": "Listed exceptions and exclusions as written, per vehicle."
+    },
+    {
+      "id": "eth.existing_holdings",
+      "types": [
+        "government_ethics"
+      ],
+      "q": {
+        "en": "What would the people it covers have to do with investments they already hold?",
+        "es": "¿Qué tendrían que hacer las personas a las que se aplica con las inversiones que ya tienen?"
+      },
+      "answered_by": [
+        "bill_text"
+      ],
+      "note": "Divestiture, deadlines, trusts and notice rules, as written, per vehicle; say so when a vehicle requires nothing."
     }
   ]
 }
