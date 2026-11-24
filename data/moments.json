@@ -551,5 +551,60 @@
     "opened": "2026-11-24",
     "review_by": "2026-12-24",
     "status": "live"
+  },
+  "permitting-reviews-for-energy-and-building-projects": {
+    "name": {
+      "en": "Permitting reviews for energy and building projects",
+      "es": "Revisión de permisos para proyectos de energía y construcción"
+    },
+    "summary": {
+      "en": "H.R. 2347, the Bipartisan American Affordability and Jobs Act of 2026, is a large package. Most of it changes how federal agencies review and approve projects such as power lines, pipelines, mines and energy plants: it rewrites review and permit deadlines, narrows which actions need a review, lets agencies use state or tribal reviews, and limits some lawsuits. It also changes Clean Water Act, Endangered Species Act and nuclear licensing rules, and requires that, for data centers connected after it becomes law, the added cost of powering them be charged to their owners or operators, not to other electricity customers. A separate part, the House bill’s original subject, exempts damages for sexual abuse, other than punitive damages, from federal income tax whether or not there are medical records or visible injuries. The House passed the bill by voice vote on April 27, 2026, when it held only that tax change. On November 19, 2026, the Senate passed it, 62–33, with this package in place of that text. No House vote date is on the record. A yes vote supports the Senate-passed package; a no vote leaves current rules in place.",
+      "es": "La H.R. 2347, la ley Bipartisan American Affordability and Jobs Act of 2026, es un paquete amplio. La mayor parte cambia cómo las agencias federales revisan y aprueban proyectos como líneas eléctricas, ductos, minas y plantas de energía: reescribe los plazos de revisión y de permisos, reduce las acciones que requieren revisión, permite usar revisiones estatales o tribales y limita algunas demandas. También cambia reglas de las leyes de Agua Limpia y de Especies en Peligro de Extinción y de las licencias nucleares, y exige que, en los centros de datos que se conecten después de que entre en vigor, el costo adicional de darles electricidad se cobre a sus dueños u operadores y no a los demás clientes. Otra parte, tema original del proyecto de la Cámara, exime del impuesto federal sobre la renta las indemnizaciones por abuso sexual, salvo las punitivas, haya o no registros médicos o lesiones visibles. La Cámara aprobó el proyecto por voto oral el 27 de abril de 2026, cuando solo contenía ese cambio fiscal. El 19 de noviembre de 2026, el Senado lo aprobó, 62–33, con este paquete en lugar de ese texto. No hay fecha de votación de la Cámara en el expediente. Un voto a favor respalda el paquete aprobado por el Senado; un voto en contra deja vigentes las reglas actuales."
+    },
+    "aliases": {
+      "en": [
+        "H.R. 2347",
+        "Bipartisan American Affordability and Jobs Act",
+        "permitting reform",
+        "permitting",
+        "NEPA",
+        "environmental review",
+        "energy projects",
+        "data centers"
+      ],
+      "es": [
+        "H.R. 2347",
+        "Bipartisan American Affordability and Jobs Act",
+        "reforma de permisos",
+        "permisos",
+        "NEPA",
+        "revisión ambiental",
+        "proyectos de energía",
+        "centros de datos"
+      ]
+    },
+    "category": "environment_energy",
+    "vehicles": [
+      {
+        "slug": "hr-2347-119",
+        "role": {
+          "en": "H.R. 2347 is the bill itself. The House passed it by voice vote on April 27, 2026, when it held only the tax change on sexual-abuse damages; on November 19, 2026, the Senate replaced its text with this package and passed it, 62–33 (Senate roll call vote 270). A yes vote supports the Senate-passed package; a no vote leaves current rules in place. The record gives no date for a House vote on the Senate’s changes.",
+          "es": "La H.R. 2347 es el proyecto en sí. La Cámara la aprobó por voto oral el 27 de abril de 2026, cuando solo contenía el cambio fiscal sobre las indemnizaciones por abuso sexual; el 19 de noviembre de 2026 el Senado reemplazó su texto por este paquete y lo aprobó, 62–33 (votación nominal 270 del Senado). Un voto a favor respalda el paquete aprobado por el Senado; un voto en contra deja vigentes las reglas actuales. El expediente no da fecha para una votación de la Cámara sobre los cambios del Senado."
+        },
+        "_record": "https://www.congress.gov/bill/119th-congress/house-bill/2347",
+        "_status_at_scaffold": "passed_chamber",
+        "_last_action_at_scaffold": "2026-11-19"
+      }
+    ],
+    "qualifying_signal": {
+      "type": "press",
+      "refs": [
+        "https://nypost.com/2026/11/20/us-news/senate-approves-bipartisan-bill-to-speed-up-permitting-reviews-force-data-centers-to-pay-for-energy/",
+        "https://abcnews.com/US/wireStory/senate-backs-bill-speed-permitting-reviews-force-data-138308460"
+      ]
+    },
+    "opened": "2026-11-24",
+    "review_by": "2026-12-24",
+    "status": "live"
   }
 }
