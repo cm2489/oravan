@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-24T10:52:33.635Z",
+    "fetched_at": "2026-11-24T21:08:45.940Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-24T10:52:33.635Z"
+        "checked_at": "2026-11-24T21:08:45.940Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-22",
         "week_label": "Most-Viewed Bills - Week of November 22, 2026",
         "entries": 8,
-        "checked_at": "2026-11-24T10:52:33.635Z"
+        "checked_at": "2026-11-24T21:08:45.940Z"
       },
       "leans": {
         "center": {
@@ -348,6 +348,18 @@
       ],
       "mostViewed": null
     },
+    "hr-1723-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "azcentral.com",
+          "firstSeen": "2026-11-24",
+          "lastSeen": "2026-11-24",
+          "url": "https://news.google.com/rss/articles/CBMivAFBVV95cUxQSFZqSW51NEdMcGN0d1o0b0hmSENONUw2OU9Kbmh3bXdmbFZlaFQ5aEc2NEZHdWV6aHdlVlBxX0xlMi1iMDNJT1l4elJnNHd4ck5SSHY2Y21Sc3FqbER5b2RkWHZSMmZPUjJhUGNvc2RvWTBLNFRnQ2ZKQ2dBOEMtUUFDNTlZVjMwUDBKNVE0MUxsV1ppR194Yy1pN19IY0EyaDdPQVZSZlhqaHprYkZ6bzZpLVN1c3JLRTU2RA?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-1913-119": {
       "outlets7d": [
         {
@@ -385,7 +397,14 @@
     },
     "hr-2347-119": {
       "outlets7d": [],
-      "unratedOutlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "jayapal.house.gov",
+          "firstSeen": "2026-11-24",
+          "lastSeen": "2026-11-24",
+          "url": "https://news.google.com/rss/articles/CBMirgFBVV95cUxNVndrOF9xRnJBMFlBLVQ0eUZqUmx4ZVBSUDhQaTF3R0NLY0w3ZlpZVHgwT3hPU3pMMU5oQi1CT3JZM2x4RzBsRHZZdTVOcThaRlJ0eEt5REFfbTVwMkNqbzNUYkZ5TEFjY3F6dG1GNjJXNEtoV216MFBqZWNCb281a1Y0ZU5YLTJEeUE4S0RHNHY5Q290LUVpbFJhdkp3eWFNNEd2aWhRMGtzZzNzREE?oc=5"
+        }
+      ],
       "mostViewed": {
         "weeksOnList": 2,
         "lastRank": 4,
@@ -1026,16 +1045,16 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "marijuanamoment.net",
+          "firstSeen": "2026-11-17",
+          "lastSeen": "2026-11-24",
+          "url": "https://news.google.com/rss/articles/CBMiywFBVV95cUxQeFBEdW5DaDRDNTgwWFFTcUo4U0hFVjgzaG5ITVh1d1FRV3pPNHJjWVhsR1I1M2VOT19pY2dtajNSSmkybG5DQ1hfb2pMZVJVMkRXSHdQS1BZYmtYd1cwcEdGQ0hYdnpkS1c2TTdBNHNvOW8xSEVIdWJ3ZFRpM3RoLU05VjlzZHRqUHJHVDJ5SkIwcVRwYkEwYVBibndPcDNFNmtnNTlZa3FiajFaMGZoNk5taGpiVU1iRXhXMDdVMGdPTEROdFhXUzVIRQ?oc=5"
+        },
+        {
           "domain": "bevnet.com",
           "firstSeen": "2026-11-20",
           "lastSeen": "2026-11-20",
           "url": "https://news.google.com/rss/articles/CBMiugFBVV95cUxNbnU3VlpDaDlZZEVibWoyTVljQ3UtN1NXQnRjTzFBTDlKT2FlVzUtcWxSRVpWRHc5UDUwT1NmOENBNjJtbDFNOENneVZhejJ2cDVhWkhfRnRVdWdmTnFjUGpUSEdYSUVlNXRBWkFLSTJjVjZOTjRBRmtDU1pXeEp3SzNsQ28tVEhNX1FCcmJDWndQcE5uZTBheFR2VXYzcEVhRnd3dGhWU1BKX0pUMkl5TkFfRUlTQmNCWGc?oc=5"
-        },
-        {
-          "domain": "marijuanamoment.net",
-          "firstSeen": "2026-11-17",
-          "lastSeen": "2026-11-18",
-          "url": "https://news.google.com/rss/articles/CBMi1gFBVV95cUxOd3hYSnQ2VmdxeHlEdURFdnhpMnNYQ3NIcHRyZXp3TWlsdVgxN2JIenlEbHZvX0cyYXJjRU9UekxlLUNWQjFUaDM4WDJXSUQ2MFIzanZzbjJLNmdEVHg1dmJCQVB3RWJxeXhUejZsVTJwSVB3d0NYTXdEU3ZCclNCMjd4T2xGcE5GZXNtQzh4U1ZGbWZYUXNEeWRWTWVQbFYxUHF6dWpLMWRJa09rV2JDVG9MRXFKR19EVDlsWFBiQlFpNXJDZEhtRFk5c1hheUgySmJUMW1R?oc=5"
         }
       ],
       "mostViewed": null
@@ -1488,16 +1507,22 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "fireandsafetyjournalamericas.com",
+          "firstSeen": "2026-11-23",
+          "lastSeen": "2026-11-24",
+          "url": "https://news.google.com/rss/articles/CBMigAFBVV95cUxPazcyTVQxcUFsZzhEeEppT1VNSlNkbk56NV8xc0FYdzc1QzFNRnFlQ2JEVU13X0pDVlpGUTlFT3pyakJWX1VQU0dfbHVRcnJMbW1sUTNGQnZzRXBkUXNTbHhyQlgtRTdtcWFWcVlwMTFDTHFfNVRUWFhYbVdqNFgyaA?oc=5"
+        },
+        {
+          "domain": "internationalfireandsafetyjournal.com",
+          "firstSeen": "2026-11-24",
+          "lastSeen": "2026-11-24",
+          "url": "https://news.google.com/rss/articles/CBMidEFVX3lxTE9FM2VjbFYyTmUyMHJuV0tjNlNFUGVhT2hlcFI1R19IcEpENXZTVHM2dG5udzU0M0tDYmRKeHhuUWtCLUN1aW54aVBzZWtaS3E0ekRBUTlxMGRfRHYtcFFvU0VYS2lkc3NzMV9BRXVvMUYwSVoy?oc=5"
+        },
+        {
           "domain": "njtoday.news",
           "firstSeen": "2026-11-24",
           "lastSeen": "2026-11-24",
           "url": "https://news.google.com/rss/articles/CBMisAFBVV95cUxON1Y5b1JyY0lnQm9zU1NQdjBtQ3h3djFnS1Z5MVBKY1MzVE9LSGRYSFlQVkU5NjBFTVBWMWIzUjJXZF9mNjZUTVB3OGRYd0pVWnUwVlladV9SdXdVckoydmNJZHg3UFlQVEtCUTFRTzJydVk3dTFyWjdod1NMYnB5Y2hoRHdJdXpGRXpTSGM4dkJ3SVZnNDgwV2lraWdQM3Boekt0RGI2VGM1THhiNU54MQ?oc=5"
-        },
-        {
-          "domain": "fireandsafetyjournalamericas.com",
-          "firstSeen": "2026-11-23",
-          "lastSeen": "2026-11-23",
-          "url": "https://news.google.com/rss/articles/CBMid0FVX3lxTE9kcEhvaGtxdFA1bXF5RXljVXJic2RnS2VqUm9ieW45Rng5ekYtOV9ZdWtwWU5EdmRsSEtpNlhXNWNoWnFYRkVNOGVZSXJvS0tYVm5XQS1aYVF1VXozQ3BlRWhxQWd5R2U0QjFVQUZMeVFNVm82M19R?oc=5"
         },
         {
           "domain": "5townscentral.com",
@@ -1570,6 +1595,18 @@
           "firstSeen": "2026-11-18",
           "lastSeen": "2026-11-18",
           "url": "https://news.google.com/rss/articles/CBMiyAFBVV95cUxQZU03YTdOdTZQYjZ1YU1mOUlQbEhZd3g5OTZYdktwaS0xS3gyN3lnbmpicDFfb2xDZ3dMMHllTE9OYkYtdEp0aHAxV2ttQmFzNnRzR2h0WkR6aXVTMnJ1am5XZ0hpMjFwN1d1ejNYMEh0eXE3QzhQTlNiMDVXQmR2d0Y3eXF6WXF6RlpXaEtwYXJUM0E2T3lYWlIzVkdjTk96eTVMSEp2andiQ3JEblBXVUFQSGdBWExRVWNNQlNTcEdCMU51WFNqWg?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "s-1547-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "legis1.com",
+          "firstSeen": "2026-11-24",
+          "lastSeen": "2026-11-24",
+          "url": "https://news.google.com/rss/articles/CBMifEFVX3lxTE8zSEFVaVFrR013dzhFQTBWcWJ3R1hLUG5wdlkwUHVOY1pYam9KbUp5cV95MmFLUWRCMXZQNHRtcHdWRncwYXZUTDV5OEpNVVUzOWdNYU9JR3RJVlA3aVpHMjJsclJZbTY1T0pZZk5SeXVXMnJpZnA1WGRKOWQ?oc=5"
         }
       ],
       "mostViewed": null
@@ -1764,6 +1801,19 @@
       "unratedOutlets7d": [],
       "mostViewed": null
     },
+    "s-4035-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-11-24",
+          "lastSeen": "2026-11-24",
+          "url": "https://thehill.com/homenews/senate/6239912-senator-deb-fischer-husband-dies/"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "s-4053-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1900,6 +1950,12 @@
           "firstSeen": "2026-11-24",
           "lastSeen": "2026-11-24",
           "url": "https://rollcall.com/2026/11/23/hail-mary-effort-on-college-sports-bill-could-boost-power-conferences"
+        },
+        {
+          "domain": "washingtonsun.com",
+          "firstSeen": "2026-11-24",
+          "lastSeen": "2026-11-24",
+          "url": "https://news.google.com/rss/articles/CBMimAFBVV95cUxPZTdvY0RsZmlDX0JIenlRS2ljNmlaUHFWQWQyUmJkb2xzZlhCT3FMMFh2Ni11cHpHeGZCczZfcWhteThiMFhDcENxbzJ1Uk5QX0tZX3gyYWpfb2hLR1VNcmx1Z0d5dGFleTlYYTByR3p3RGNGYTB1cjRwaUVCV0tib185SURhR2xBb000VjNMWVF5QVNSbzlOTg?oc=5"
         },
         {
           "domain": "peradaban.id",
@@ -2163,6 +2219,19 @@
           "url": "https://news.google.com/rss/articles/CBMitgFBVV95cUxPVkF0cFZrZEcybkp1bk5adGtTc3VJN2d5RE93MWtmQWNQZnNKeHBTRGFXdExaV05rNTQ4eVVVVHR5T0E2RGlteHdzMW85cDNqb3RucGg0d2xvNnJIVUVSVEoxY0NJd1lOZEU5SXFtcjVlVm4yOTNpT0JoNHRKcF9UY3lkYVQ5WmNLZFJMamZVcWQ5R3hueHFIY0hBSWFiU1BEX25IRGRERXZlaHpuVUhrUTdoN1FiQQ?oc=5"
         }
       ],
+      "mostViewed": null
+    },
+    "sjres-96-119": {
+      "outlets7d": [
+        {
+          "domain": "reason.com",
+          "lean": "right",
+          "firstSeen": "2026-11-24",
+          "lastSeen": "2026-11-24",
+          "url": "https://reason.com/2026/11/24/archives-december-2026/"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     }
   }

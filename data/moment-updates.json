@@ -1,10 +1,38 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-11-24T06:30:07.959Z"
+    "generated_at": "2026-11-24T21:08:47.838Z"
   },
   "government-funding-deadline": {
-    "updates": [],
+    "updates": [
+      {
+        "id": "u_5aa1ce1f",
+        "class": "floor_action",
+        "vehicle": "hr-8469-119",
+        "day": "2026-11-20",
+        "occurred_at": "2026-11-20",
+        "occurred_precision": "day",
+        "recorded_at": "2026-11-24T21:08:47.838Z",
+        "text": {
+          "en": "On November 20, 2026, the Senate made a motion to proceed to consideration of H.R. 8469.",
+          "es": "El 20 de noviembre de 2026, el Senado presentó una moción para proceder a la consideración de H.R. 8469."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/8469"
+          ]
+        },
+        "record": {
+          "action_text": "Motion to proceed to consideration of measure made in Senate. (consideration: CR S5847)",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate",
+          "day_position": 0
+        },
+        "ai": true
+      }
+    ],
     "summary_revisions": [
       {
         "id": "s_1856a409",
@@ -2420,6 +2448,163 @@
     "summary_attempts": {
       "day": "2026-09-30",
       "count": 2
+    }
+  },
+  "stock-trading-by-members-of-congress": {
+    "updates": [
+      {
+        "id": "u_5f4ee2e5",
+        "class": "vote",
+        "vehicle": "hr-7008-119",
+        "day": "2026-09-30",
+        "occurred_at": "2026-09-30",
+        "occurred_precision": "day",
+        "recorded_at": "2026-11-24T21:08:47.838Z",
+        "text": {
+          "en": "“Cloture on the motion to proceed to the measure not invoked in Senate by Yea-Nay Vote. 53 - 47. Record Vote Number: 253.”",
+          "es": "Registro oficial, en inglés: “Cloture on the motion to proceed to the measure not invoked in Senate by Yea-Nay Vote. 53 - 47. Record Vote Number: 253.”"
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/7008",
+            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00253.xml"
+          ]
+        },
+        "record": {
+          "action_text": "Cloture on the motion to proceed to the measure not invoked in Senate by Yea-Nay Vote. 53 - 47. Record Vote Number: 253.",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate",
+          "roll_call": {
+            "chamber": "senate",
+            "number": 253
+          },
+          "day_position": 0
+        },
+        "ai": false
+      },
+      {
+        "id": "u_605fe693",
+        "class": "floor_action",
+        "vehicle": "hr-7008-119",
+        "day": "2026-09-28",
+        "occurred_at": "2026-09-28",
+        "occurred_precision": "day",
+        "recorded_at": "2026-11-24T21:08:47.838Z",
+        "text": {
+          "en": "On September 28, 2026, the Senate presented a cloture motion on the motion to proceed to H.R. 7008.",
+          "es": "El 28 de septiembre de 2026, el Senado presentó una moción de clótura sobre la moción para proceder a H.R. 7008."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/7008"
+          ]
+        },
+        "record": {
+          "action_text": "Cloture motion on the motion to proceed to the measure presented in Senate. (CR S5065)",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate",
+          "day_position": 1
+        },
+        "ai": true
+      },
+      {
+        "id": "u_aa281756",
+        "class": "floor_action",
+        "vehicle": "hr-7008-119",
+        "day": "2026-09-28",
+        "occurred_at": "2026-09-28",
+        "occurred_precision": "day",
+        "recorded_at": "2026-11-24T21:08:47.838Z",
+        "text": {
+          "en": "On September 28, 2026, the Senate made a motion to proceed to consideration of H.R. 7008.",
+          "es": "El 28 de septiembre de 2026, el Senado presentó una moción para proceder a la consideración de H.R. 7008."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/7008"
+          ]
+        },
+        "record": {
+          "action_text": "Motion to proceed to consideration of measure made in Senate. (CR S5065)",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate",
+          "day_position": 0
+        },
+        "ai": true
+      },
+      {
+        "id": "u_cf438d82",
+        "class": "floor_action",
+        "vehicle": "hr-7008-119",
+        "day": "2026-09-28",
+        "occurred_at": "2026-09-28",
+        "occurred_precision": "day",
+        "recorded_at": "2026-11-24T21:08:47.838Z",
+        "text": {
+          "en": "On September 28, 2026, the Senate withdrew the motion to proceed to consideration of H.R. 7008.",
+          "es": "El 28 de septiembre de 2026, el Senado retiró la moción para proceder a la consideración de H.R. 7008."
+        },
+        "source": {
+          "kind": "congress_actions",
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/7008"
+          ]
+        },
+        "record": {
+          "action_text": "Motion to proceed to consideration of measure withdrawn in Senate.",
+          "action_code": null,
+          "action_type": "Floor",
+          "source_system": "Senate",
+          "day_position": 2
+        },
+        "ai": true
+      }
+    ],
+    "summary_revisions": [
+      {
+        "id": "s_42478848",
+        "generated_at": "2026-11-24T21:08:55.784Z",
+        "as_of_day": "2026-11-24",
+        "text": {
+          "en": "No votes or other actions on H.R. 7008 or S. 1498 were recorded in the last 14 days.",
+          "es": "No se registraron votaciones ni otras acciones sobre H.R. 7008 o S. 1498 en los últimos 14 días."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "hr-7008-119": "floor_vote",
+            "s-1498-119": "floor_vote"
+          },
+          "vehicle_status_keys": {
+            "hr-7008-119": "floor_activity",
+            "s-1498-119": "floor_vote_stale"
+          },
+          "update_ids": [],
+          "roll_calls": [],
+          "roll_calls_on_record": [
+            "h-119-2-279",
+            "h-119-2-280",
+            "s-119-2-253"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/7008",
+            "https://www.congress.gov/bill/119th-congress/senate-bill/1498"
+          ]
+        },
+        "changed_because": [
+          "first-summary"
+        ],
+        "model": "claude-sonnet-5-5"
+      }
+    ],
+    "summary_attempts": {
+      "day": "2026-11-24",
+      "count": 1
     }
   }
 }
