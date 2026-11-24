@@ -32,6 +32,10 @@ import { countersClient, keyPrefix, noteUpstashError, type UpstashClient } from 
  *                                      (owner, 2026-11-23, card `people`,
  *                                      option b). Same day salt, same
  *                                      deadline, no other dimension.
+ *   <env>:uniques-read:<YYYY-MM-DD>   a THIRD sketch per UTC day, the same
+ *                                      way, of the addresses that sent the
+ *                                      reading signal to /api/seen (step 2,
+ *                                      2026-11-23). Same salt and deadline.
  *   <env>:uniques-salt:<YYYY-MM-DD>   the sketches' OWN salt, one per UTC
  *                                      day, used by nothing else (hardened
  *                                      2026-09-27, owner decision "2. b").
@@ -132,7 +136,11 @@ export type RouteName =
   // /api/brand, /api/script has a cross-user cache in front of it, so this
   // breaker is only ever consumed by a real cache-MISS generation — see
   // serveScript in app/api/script/route.ts.
-  | 'script-day';
+  | 'script-day'
+  // /api/seen (2026-11-23, the reading signal, owner's answer card `people`,
+  // option b): the per-IP limiter that stops one caller from inflating the
+  // daily read total. A real page sends at most one signal per load.
+  | 'seen';
 
 const SALT_TTL_SECONDS = 24 * 60 * 60;
 const SALT_BYTES = 16; // 128 bits of CSPRNG output — never date-derived (F5)
@@ -256,6 +264,15 @@ export function browserAddressKey(day: string): string {
 }
 
 /**
+ * The THIRD daily sketch's key (2026-11-23, step 2): the addresses that sent
+ * Oravan's reading signal (app/api/seen). Same one-argument discipline;
+ * scripts/check-key-namespaces.mjs pins this literal with the other two.
+ */
+export function readerAddressKey(day: string): string {
+  return `${keyPrefix()}:uniques-read:${day}`;
+}
+
+/**
  * The daily distinct-address sketch's OWN salt key (2026-09-27): one per UTC
  * day, read and written only by distinctDaySalt below. Never the rate
  * limiter's salt, and never read by the rate limiter. The same one-argument
@@ -277,6 +294,69 @@ export function callerIp(headers: Headers): string {
 
 export function callerHash(ip: string, salt: string): string {
   return createHash('sha256').update(ip + salt).digest('hex');
+}
+
+/*
+ * WHAT A PER-ADDRESS LIMIT KEYS ON, for a limiter that must not be dodged by
+ * changing address (2026-11-24, the third independent check of #548). An ISP
+ * hands one IPv6 customer a whole /64 (2^64 addresses), and a program on it
+ * can send each request from a new one, so a limit keyed on the full IPv6
+ * address limits nothing. This returns:
+ *   - an IPv6 address's /64 prefix, written canonically ("2001:db8:1:2::/64"),
+ *     so every spelling of every address in one /64 is ONE key;
+ *   - an IPv4-mapped IPv6 address ("::ffff:192.0.2.1") as its IPv4 address;
+ *   - anything else unchanged: an IPv4 address, 'unknown' (callerIp's
+ *     default), or a string that does not parse as IPv6.
+ * The result goes to createRateLimiter's check() like any address: hashed
+ * with the rotating salt before it reaches the counters database, never
+ * stored or logged as it is (same rules as every limiter in this module).
+ * Used only by app/api/seen; the daily sketches keep the full address (that
+ * route's header says why).
+ */
+export function limiterAddress(ip: string): string {
+  const raw = ip.trim();
+  if (!raw.includes(':')) return raw;
+  const hextets = ipv6Hextets(raw.replace(/^\[(.*)\]$/, '$1').split('%')[0].toLowerCase());
+  if (!hextets) return raw;
+  const mapped = hextets.slice(0, 5).every((h) => h === 0) && hextets[5] === 0xffff;
+  if (mapped) {
+    return [hextets[6] >> 8, hextets[6] & 0xff, hextets[7] >> 8, hextets[7] & 0xff].join('.');
+  }
+  return `${hextets
+    .slice(0, 4)
+    .map((h) => h.toString(16))
+    .join(':')}::/64`;
+}
+
+/** Parse an IPv6 address (with an optional dotted IPv4 tail) into its 8 hextets, or null. */
+function ipv6Hextets(text: string): number[] | null {
+  let s = text;
+  const tail: number[] = [];
+  const dotted = /^(.*:)(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(s);
+  if (dotted) {
+    const bytes = dotted.slice(2, 6).map(Number);
+    if (bytes.some((b) => b > 255)) return null;
+    tail.push((bytes[0] << 8) | bytes[1], (bytes[2] << 8) | bytes[3]);
+    s = dotted[1].endsWith('::') ? dotted[1] : dotted[1].slice(0, -1);
+  }
+  const halves = s.split('::');
+  if (halves.length > 2) return null;
+  const parse = (part: string): number[] | null => {
+    if (part === '') return [];
+    const out: number[] = [];
+    for (const h of part.split(':')) {
+      if (!/^[0-9a-f]{1,4}$/.test(h)) return null;
+      out.push(parseInt(h, 16));
+    }
+    return out;
+  };
+  const head = parse(halves[0]);
+  const rest = halves.length === 2 ? parse(halves[1]) : [];
+  if (!head || !rest) return null;
+  const given = head.length + rest.length + tail.length;
+  if (halves.length === 1) return given === 8 ? [...head, ...tail] : null;
+  if (given > 7) return null;
+  return [...head, ...new Array<number>(8 - given).fill(0), ...rest, ...tail];
 }
 
 /**
@@ -824,10 +904,30 @@ export async function noteBrowserAddress(ip: string, now: Date = new Date()): Pr
   await addToDaySketch(browserAddressKey, ip, now);
 }
 
+/*
+ * THE THIRD SKETCH (2026-11-23, step 2 of the owner's answer, card `people`):
+ * the addresses that sent the reading signal app/api/seen accepted. The
+ * same construction, the same day salt and element, the same deadline, no
+ * other dimension — in particular, NOT the page shape the signal named. The
+ * route checks that shape and drops it: what reaches the counters database
+ * is a dimensionless daily total (lib/usage.ts noteRead) and, in a separate
+ * call, this address element. Neither key, and neither command, carries a
+ * page shape, so even someone watching the database's commands as they
+ * arrive sees "a signal, from this element", never which kind of page. (The
+ * page-view counts in proxy.ts are a different story: see THE SECOND SKETCH
+ * above for what live watching could pair there.) The same honest limit:
+ * until the day's salt dies, someone holding the counters database and a
+ * candidate address could test whether that address sent the signal that
+ * day; after, no one can.
+ */
+export async function noteReaderAddress(ip: string, now: Date = new Date()): Promise<void> {
+  await addToDaySketch(readerAddressKey, ip, now);
+}
+
 /**
- * Count one address into `sketchKey(day)`'s sketch. Shared by the two daily
- * sketches; scripts/check-key-namespaces.mjs (distinct-shape) pins the only
- * two key literals that can be passed in. Never throws.
+ * Count one address into `sketchKey(day)`'s sketch. Shared by the daily
+ * sketches; scripts/check-key-namespaces.mjs (distinct-shape) pins the
+ * key literals that can be passed in. Never throws.
  */
 async function addToDaySketch(sketchKey: (day: string) => string, ip: string, now: Date): Promise<void> {
   const address = ip.trim();
@@ -885,6 +985,11 @@ export async function readDistinctAddressCount(day: string): Promise<DistinctAdd
  */
 export async function readBrowserAddressCount(day: string): Promise<DistinctAddressCountResult> {
   return readDaySketch(browserAddressKey(day));
+}
+
+/** Read ONE day's reader-address estimate (the third sketch), like the other two. */
+export async function readReaderAddressCount(day: string): Promise<DistinctAddressCountResult> {
+  return readDaySketch(readerAddressKey(day));
 }
 
 async function readDaySketch(key: string): Promise<DistinctAddressCountResult> {

@@ -9,10 +9,12 @@
 //   npx tsx scripts/weekly-note.mjs --dry-run  print the title and body; touch nothing
 //
 // WHAT IT DOES, in order:
-//   1. reads five sources, each on its own, so one failing never blanks the
+//   1. reads its sources, each on its own, so one failing never blanks the
 //      others: #242's body and recent comments (Needs you, AI spend), the
-//      counters database (visitors: aggregate counts only, rule 1), the
-//      scheduled sync-bills runs, and the open `moment-candidate` issues;
+//      counters database (visitors and real people: aggregate counts only,
+//      rule 1), the daily digest's comments on #81 (each day's distinct
+//      browser addresses, whose sketches are gone by Monday), the scheduled
+//      sync-bills runs, and the open `moment-candidate` issues;
 //   2. opens a NEW issue titled "📬 Oravan this week — <Monday>", labeled
 //      `weekly-note` and ASSIGNED to the owner (the assignment is what emails
 //      him; nothing in the body @-mentions anyone);
@@ -32,18 +34,23 @@ import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { PAGEVIEW_SURFACES, readPageviewWindow } from '../lib/usage';
-import { readDistinctAddressCount } from '../lib/ratelimit';
+import { PAGEVIEW_SURFACES, readPageviewWindow, readPeopleSignalsWindow } from '../lib/usage';
+import { readBrowserAddressCount, readDistinctAddressCount } from '../lib/ratelimit';
 import { trailingWindowDays } from '../lib/traffic-metrics.mjs';
 import {
+  DIGEST_ISSUE,
   HEALTH_ISSUE,
   NEEDS_MAX_AGE_DAYS,
   NOTE_ASSIGNEE,
   NOTE_LABEL,
+  PEOPLE_FIRST_FULL_DAY,
   candidatesLine,
+  digestBrowserCounts,
+  formatPeopleWeek,
   nightlyLine,
   noteBody,
   noteTitle,
+  peopleWeeks,
   pickNeeds,
   spendLine,
   visitorsLine,
@@ -65,17 +72,68 @@ async function attempt(what, fn) {
 }
 
 /**
- * THE HOOK FOR A REAL-PEOPLE COUNT. A later pull request fills this in from
- * whatever rule-1-compliant reader the owner approves; until then it returns
- * null and the note carries no such line. It must return one plain line of
- * aggregate counts, or null — never a number it could not read.
- *
- * @param {{ days: string[] }} ctx  the same 7 UTC days the visitors line reads
- * @returns {Promise<string | null>}
+ * The daily digest's own comments on #81 from the last 16 days (two weeks
+ * of days, plus slack for a digest posted late). Only the digest workflow's
+ * account counts: the repository is public and anyone can comment, the same
+ * reason lib/pipeline-health.mjs gives for byWorkflow. Oldest first.
  */
-export async function peopleLine(ctx) {
-  void ctx; // unread until the reader lands
-  return null;
+function readDigestComments(now) {
+  const since = new Date(now.getTime() - 16 * 86_400_000).toISOString();
+  return gh([
+    'api',
+    '--paginate',
+    `repos/${REPO}/issues/${DIGEST_ISSUE}/comments?per_page=100&since=${since}`,
+    '--jq',
+    '.[] | select(.user.login == "github-actions[bot]") | {body} | @json',
+  ])
+    .split('\n')
+    .filter((l) => l.trim())
+    .map((l) => JSON.parse(l));
+}
+
+/**
+ * How many days back a browser-address sketch can still be read. Each day's
+ * sketch expires 48 hours after its day ends (rule 1), so on a Monday only
+ * Sunday's and Saturday's are left. Those two are read directly when the
+ * digest has not posted them yet (it runs at 13:00 UTC and GitHub often
+ * starts it hours late; this note runs at 14:00 UTC).
+ */
+const SKETCH_READABLE_DAYS = 2;
+
+/**
+ * The real-people line (#547's counts, owner's answer of 2026-11-23, card
+ * `people`): actions and bots' share from the daily totals the counters keep
+ * 90 days, summed over the week; distinct browser addresses as an average a
+ * day, from the daily digest's record on #81 (the sketches themselves are
+ * gone by Monday). Last week's figures beside each, once both weeks are
+ * whole. One plain line, or null only if this function itself throws.
+ *
+ * @param {{ now: Date }} ctx
+ * @returns {Promise<string>}
+ */
+export async function peopleLine({ now }) {
+  const days = trailingWindowDays(now, 14); // yesterday (UTC) back to day-14
+  const signals = await attempt('the people counts', () => readPeopleSignalsWindow(days));
+  const pageviews = await attempt('the page-view counts for the people line', () => readPageviewWindow(days));
+  const digest = await attempt(`the daily digest's comments on #${DIGEST_ISSUE}`, () => readDigestComments(now));
+  const recorded = digestBrowserCounts(digest);
+  const browsers = [];
+  let sketchAnswered = false;
+  for (const [i, day] of days.entries()) {
+    if (day < PEOPLE_FIRST_FULL_DAY) browsers.push(null);
+    else if (recorded.has(day)) browsers.push(recorded.get(day));
+    else if (i < SKETCH_READABLE_DAYS) {
+      const r = await attempt(`the browser-address estimate for ${day}`, () => readBrowserAddressCount(day));
+      if (r && r.ok) sketchAnswered = true;
+      browsers.push(r && r.ok && r.count != null ? r.count : null);
+    } else browsers.push(null);
+  }
+  if (!signals || !signals.ok) {
+    console.log('::warning::weekly-note: the people counts could not be read; the note says so');
+  }
+  return formatPeopleWeek(
+    peopleWeeks({ days, signals, pageviews, browsers, browsersRead: digest != null || sketchAnswered })
+  );
 }
 
 async function readVisitors(days) {
@@ -151,7 +209,8 @@ export async function buildNote(now = new Date()) {
   const health = await attempt(`#${HEALTH_ISSUE}'s body`, readHealth);
   const comments = await attempt(`#${HEALTH_ISSUE}'s recent comments`, () => readHealthComments(now));
   const visitors = await readVisitors(days);
-  const people = await attempt('the real-people count', () => peopleLine({ days }));
+  const people =
+    (await attempt('the real-people count', () => peopleLine({ now }))) ?? formatPeopleWeek({ status: 'unread' });
   const runs = await attempt('the nightly run history', readNightlyRuns);
   const candidates = await attempt('the open Big Question candidates', readCandidates);
   return {

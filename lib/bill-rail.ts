@@ -13,8 +13,9 @@ import type { Bill } from './types';
  * (lib/ended-state.mjs). Now the page reads every call-apparatus switch from
  * here, tests/bill-rail.unit.spec.ts runs this function over fixtures with an
  * ended Congress in CI, and the same spec pins that the page renders the call
- * panel, the floating call button, the "see how a call works" demo and the
- * header's Call-tab target ONLY through these fields.
+ * panel, the floating call button and the "see how a call works" demo ONLY
+ * through these fields. (The header's Call-tab target was a fourth until the
+ * owner took the Call tab off the phone bar, 2026-11-24.)
  *
  *   panel          'call'    the call panel (components/ActionPanel.tsx);
  *                  'settled' the record-only panel (components/SettledPanel.tsx):
@@ -24,7 +25,7 @@ import type { Bill } from './types';
  *                  'ended'   components/EndedPanel.tsx: a bill of an ended
  *                            Congress that Congress did not finish.
  *   endedKey       the approved sentence the ended panel prints.
- *   floatingCall, walkthrough, callTabTarget
+ *   floatingCall, walkthrough
  *                  true only when the panel is the call panel.
  *
  * With the ended list empty (until the January 2027 switch) `ended` is null
@@ -37,7 +38,6 @@ export interface BillRail {
   endedKey: 'bill.ended.note' | 'bill.ended.presented' | null;
   floatingCall: boolean;
   walkthrough: boolean;
-  callTabTarget: boolean;
 }
 
 export function billRail(bill: Bill): BillRail {
@@ -47,5 +47,5 @@ export function billRail(bill: Bill): BillRail {
     ended?.kind === 'presented' ? 'bill.ended.presented' : ended?.kind === 'ended' ? 'bill.ended.note' : null;
   const panel = settled ? 'settled' : endedKey ? 'ended' : 'call';
   const call = panel === 'call';
-  return { panel, settled, ended, endedKey, floatingCall: call, walkthrough: call, callTabTarget: call };
+  return { panel, settled, ended, endedKey, floatingCall: call, walkthrough: call };
 }

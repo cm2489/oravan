@@ -146,7 +146,7 @@ import {
 // The daily distinct-address sketch lives in the caller-keyed registry, not
 // lib/usage.ts, because its input is caller-derived (see that module's
 // DAILY DISTINCT-ADDRESS COUNT section). This script only ever READS it.
-import { readBrowserAddressCount, readDistinctAddressCount } from '../lib/ratelimit';
+import { readBrowserAddressCount, readDistinctAddressCount, readReaderAddressCount } from '../lib/ratelimit';
 import {
   MCP_SPIKE_FLOOR,
   SCRIPT_SPIKE_FLOOR,
@@ -557,6 +557,11 @@ async function main() {
   // day only (day-1), the same day the distinct-address line reports.
   const peopleSignals = await readPeopleSignalsWindow([date]);
   const browserAddresses = await readBrowserAddressCount(date);
+  // Step 2 (the reading signal): the third sketch. Additive like the rest.
+  const readerAddresses = await readReaderAddressCount(date);
+  if (!readerAddresses.ok) {
+    console.log('::warning::could not read the reader-address sketch from the counters database — the People "read" row says "not read"');
+  }
   if (!peopleSignals.ok) {
     console.log(
       '::warning::could not read the people counts (browser page views, ZIP lookups, scripts shown) from the counters database — the People block says "not read"'
@@ -577,6 +582,8 @@ async function main() {
         repLookups: peopleSignals.repLookups[0] ?? 0,
         scriptsServed: peopleSignals.scriptsServed[0] ?? 0,
         browserAddresses,
+        reads: peopleSignals.reads[0] ?? 0,
+        readerAddresses,
       })
     : null;
   const browserBySurface = peopleSignals.ok

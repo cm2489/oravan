@@ -1,38 +1,31 @@
 import { expect, test, type Page } from '@playwright/test';
-import { createTranslator } from 'next-intl';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
-import { questionHasPanel } from '../lib/call-tab';
-import { getMoments } from '../lib/moments';
-import { questionVehicles } from '../lib/moments-ui';
 import { anyTopAt, stableAcross, topActionSlugsAt } from './corpus';
-import { settledBill } from './corpus-fixtures';
-import { callableBillSlug, memberBioguide } from './corpus-samples';
 import { mockScriptApi, seedZip } from './helpers';
 
 /*
- * NAV 1 AND THE CALL HUB, IN A BROWSER (owner, 2026-09-29: "nav 1";
- * wireframes v2, index.html "Where the Call tab goes" and call-hub.html).
+ * THE BARS AND THE CALL HUB, IN A BROWSER (owner, 2026-09-29: "nav 1";
+ * wireframes v2, call-hub.html).
  *
  * What is pinned here, in the order a reader meets it:
- *   - the bar: five tabs on a phone, four links and the switch on a desktop,
- *     in the ruled order — since 2026-09-29 the desktop row is Today in
- *     Congress · Bills · Big Questions · My reps with no Call item (owner,
- *     typed: "The 'Call' button in the header needs to be removed and 'Today
- *     in Congress' needs to come first on the header"; scope "Desktop only"),
- *     so the Call tab below is a phone control, and a desktop reaches the hub
- *     from the footer's "Make a call";
- *   - where the Call tab goes: the hub from general, settled-bill and member
- *     pages; the page's own panel on an open bill; the call panel a Big
- *     Question carries for its one open bill, or its "Still open" list when
- *     it has several;
+ *   - the bar: four tabs on a phone, four links and the switch on a desktop,
+ *     in the ruled order. The desktop row is Today in Congress · Bills · Big
+ *     Questions · My reps with no Call item (owner, 2026-09-29, typed: "The
+ *     'Call' button in the header needs to be removed and 'Today in Congress'
+ *     needs to come first on the header"; scope "Desktop only"). The phone
+ *     bar is Home · Bills · Big Questions · Reps with no Call tab (owner,
+ *     2026-11-24, his pick on the mock-up card: "Four tabs: Home · Bills · Big
+ *     Questions · Reps"; 2026-11-23: "every page has a "call" button close
+ *     by"). So neither bar links the hub, and every screen reaches it from the
+ *     footer's "Make a call";
  *   - the hub: this week's callable bills in the act-now pool's own order,
  *     each with "Read + call" onto its panel; the quiet-week words when the
  *     pool is empty; and who you'll reach only once a ZIP is saved;
- *   - the path: Call tab → Read + call → a stance is a completed script, three
- *     interactions, the ZIP-first budget of tests/funnel.spec.ts.
- * The source-level half (the declared conditions, the one call style) is in
- * tests/call-tab.unit.spec.ts.
+ *   - the path: footer "Make a call" → Read + call → a stance is a completed
+ *     script, three interactions, the ZIP-first budget of tests/funnel.spec.ts.
+ * The bar's phone measurements (44px tabs, one-line labels, no overflow at
+ * 320px) are in tests/header-phone-label.spec.ts.
  */
 
 const LOCALES = [
@@ -50,28 +43,13 @@ const ZIP = '78501'; // TX-15: one House member and two senators, a single distr
 const primaryNav = (page: Page, messages: typeof en | typeof es) =>
   page.getByRole('navigation', { name: messages.common.nav.primaryLabel });
 
-const callTab = (page: Page, messages: typeof en | typeof es) =>
-  primaryNav(page, messages).locator('[data-call-tab]');
-
-/** A Big Question's callable vehicles' kinds, read with the cards' own keys
- *  through the helper app/[locale]/questions/[id]/page.tsx builds its lists
- *  from (lib/moments-ui.ts questionVehicles). */
-function callableKinds(momentId: string): ('bill' | 'nomination')[] {
-  const m = getMoments().find((x) => x.id === momentId)!;
-  return questionVehicles(m)
-    .filter((v) => v.open)
-    .map((v) => v.kind);
-}
-
-const RENDERED_QUESTIONS = getMoments().filter((m) => m.state !== 'retired');
-const ONE_OPEN = RENDERED_QUESTIONS.find((m) => questionHasPanel(callableKinds(m.id))) ?? null;
-const SEVERAL_OPEN = RENDERED_QUESTIONS.find((m) => callableKinds(m.id).length > 1) ?? null;
-const NONE_OPEN = RENDERED_QUESTIONS.find((m) => callableKinds(m.id).length === 0) ?? null;
-const SETTLED = settledBill('law') ?? settledBill('rejected');
+/** The footer's standing door to the Call hub, on every screen. */
+const footerCallHub = (page: Page, messages: typeof en | typeof es) =>
+  page.locator('footer').getByRole('link', { name: messages.common.footer.callHub, exact: true });
 
 for (const { locale, prefix, messages } of LOCALES) {
   test.describe(`${locale}: the bar`, () => {
-    test('phone: Home · Bills · Call · Big Questions · Reps; desktop: Today in Congress · Bills · Big Questions · My reps', async ({
+    test('phone: Home · Bills · Big Questions · Reps; desktop: Today in Congress · Bills · Big Questions · My reps', async ({
       page,
       isMobile,
     }) => {
@@ -82,100 +60,27 @@ for (const { locale, prefix, messages } of LOCALES) {
         ? [
             messages.common.navShort.home,
             messages.common.navShort.bills,
-            messages.common.navShort.call,
-            messages.common.tab.moments,
+            messages.common.nav.moments,
             messages.common.navShort.reps,
           ]
         : [messages.common.nav.today, messages.common.nav.bills, messages.common.nav.moments, messages.common.nav.reps];
       expect(texts).toEqual(expected);
       // The record and "Why call?" are off both bars (owner, "nav 1"); Today
-      // is on the desktop row only, and Call on the phone bar only (owner,
-      // 2026-09-29, "Desktop only").
+      // is on the desktop row only (owner, 2026-09-29, "Desktop only"); the
+      // Call hub is on neither (2026-09-29 desktop, 2026-11-24 phone).
       await expect(nav.locator('a[href$="/record"], a[href$="/why-call"]')).toHaveCount(0);
       await expect(nav.locator('a[href$="/today"]')).toHaveCount(isMobile ? 0 : 1);
-      await expect(nav.locator('[data-call-tab]')).toHaveCount(isMobile ? 1 : 0);
+      await expect(nav.locator(`a[href="${prefix}/call"]`)).toHaveCount(0);
+      await expect(page.locator('[data-call-tab]')).toHaveCount(0);
     });
 
-    test('the Call tab clears the 44px floor @reflow', async ({ page, isMobile }) => {
-      test.skip(!isMobile, 'the Call tab is a phone control since 2026-09-29 (owner: header Call removed, "Desktop only")');
+    test('the footer\'s "Make a call" reaches the hub on every screen', async ({ page }) => {
       await page.goto(`${prefix}/`);
-      const box = await callTab(page, messages).boundingBox();
-      expect(box, 'the Call tab must render').not.toBeNull();
-      expect(box!.height).toBeGreaterThanOrEqual(44);
-      expect(box!.width).toBeGreaterThanOrEqual(44);
-    });
-  });
-
-  test.describe(`${locale}: where the Call tab goes`, () => {
-    // The Call tab is a phone control since 2026-09-29: the owner removed the
-    // header's Call item on desktop ("Desktop only"); the thumb bar keeps it.
-    test.beforeEach(({ isMobile }) => {
-      test.skip(!isMobile, 'phone only since 2026-09-29: the desktop header has no Call item (owner, "Desktop only")');
-    });
-
-    test('from Home to the hub, where it is the current page', async ({ page }) => {
-      await page.goto(`${prefix}/`);
-      const tab = callTab(page, messages);
-      await expect(tab).toHaveAttribute('href', `${prefix}/call`);
-      await tab.click();
+      const link = footerCallHub(page, messages);
+      await expect(link).toHaveAttribute('href', `${prefix}/call`);
+      await link.click();
       await expect(page).toHaveURL(new RegExp(`${prefix}/call$`));
       await expect(page.getByRole('heading', { level: 1, name: messages.call.title })).toBeVisible();
-      await expect(callTab(page, messages)).toHaveAttribute('aria-current', 'page');
-    });
-
-    test('on an open bill page, to its own call panel', async ({ page }) => {
-      await page.goto(`${prefix}/bills/${callableBillSlug()}`);
-      const tab = callTab(page, messages);
-      // The page declares it after hydration; the server render says /call.
-      await expect(tab).toHaveAttribute('href', '#act');
-      await tab.click();
-      await expect(page.locator('#act')).toBeInViewport();
-    });
-
-    test('on a settled bill page and on a member page, to the hub', async ({ page }) => {
-      test.skip(!SETTLED, 'no settled bill in the corpus');
-      await page.goto(`${prefix}/bills/${SETTLED!.slug}`);
-      await expect(page.locator('[data-settled-panel]')).toBeVisible();
-      await callTab(page, messages).click();
-      await expect(page).toHaveURL(new RegExp(`${prefix}/call$`));
-
-      await page.goto(`${prefix}/reps/${memberBioguide()}`);
-      await callTab(page, messages).click();
-      await expect(page).toHaveURL(new RegExp(`${prefix}/call$`));
-    });
-
-    test('on a Big Question with one open bill, to the call panel on that page', async ({ page }) => {
-      test.skip(!ONE_OPEN, 'no Big Question with exactly one open bill in the corpus');
-      await page.goto(`${prefix}/questions/${ONE_OPEN!.id}`);
-      const tab = callTab(page, messages);
-      // Q6 b: the bill page's own panel sits on the question page, so the tab
-      // stays on it instead of leaving for the bill.
-      await expect(tab).toHaveAttribute('href', '#act');
-      await tab.click();
-      await expect(page).toHaveURL(new RegExp(`${prefix}/questions/${ONE_OPEN!.id}#act$`));
-      await expect(page.locator('#act')).toBeInViewport();
-    });
-
-    test('on a Big Question with several open bills, to its "Still open" list', async ({ page }) => {
-      test.skip(!SEVERAL_OPEN, 'no Big Question with several open vehicles in the corpus');
-      await page.goto(`${prefix}/questions/${SEVERAL_OPEN!.id}`);
-      const tab = callTab(page, messages);
-      await expect(tab).toHaveAttribute('href', '#still-open');
-      await tab.click();
-      const list = page.locator('#still-open');
-      await expect(list).toBeInViewport();
-      await expect(list).toHaveText(
-        createTranslator({ locale, messages })('moments.stillOpenHeading', {
-          count: callableKinds(SEVERAL_OPEN!.id).length,
-        })
-      );
-    });
-
-    test('on a Big Question with nothing open, to the hub', async ({ page }) => {
-      test.skip(!NONE_OPEN, 'every Big Question in the corpus has an open vehicle');
-      await page.goto(`${prefix}/questions/${NONE_OPEN!.id}`);
-      await callTab(page, messages).click();
-      await expect(page).toHaveURL(new RegExp(`${prefix}/call$`));
     });
   });
 
@@ -259,44 +164,19 @@ for (const { locale, prefix, messages } of LOCALES) {
       expect(overflow).toBeLessThanOrEqual(0);
     });
 
-    test('desktop: footer "Make a call" → Read + call → a stance is a completed script: three interactions', async ({
+    test('footer "Make a call" → Read + call → a stance is a completed script: three interactions', async ({
       page,
-      isMobile,
     }) => {
-      test.skip(isMobile, 'the phone reaches the hub from its Call tab (the case below)');
       test.skip(!anyTop, 'quiet week: no bill on the hub to call about');
       test.skip(!CORPUS_STABLE, 'corpus sits at a scoring boundary');
       await mockScriptApi(page);
       await page.goto(`${prefix}/`);
       let used = 0;
       used += 1;
-      // Since 2026-09-29 the desktop header has no Call item (owner, "Desktop
-      // only"); the footer's first Site link is the hub's standing door.
-      await page.locator('footer').getByRole('link', { name: messages.common.footer.callHub, exact: true }).click();
-      await expect(page).toHaveURL(new RegExp(`${prefix}/call$`));
-      used += 1;
-      await page.locator('[data-call-hub-cta]').first().click();
-      await expect(page).toHaveURL(/\/bills\/[^#]+#act$/);
-      used += 1;
-      const stance = page.getByRole('radio', { name: messages.bill.stance.support });
-      await expect(async () => {
-        const request = page.waitForRequest('**/api/script', { timeout: 3000 });
-        await stance.click();
-        await request;
-      }).toPass({ timeout: 30_000 });
-      await expect(page.getByRole('textbox', { name: messages.bill.scriptTitle })).toBeVisible();
-      expect(used).toBeLessThanOrEqual(3);
-    });
-
-    test('Call tab → Read + call → a stance is a completed script: three interactions', async ({ page, isMobile }) => {
-      test.skip(!isMobile, 'phone only since 2026-09-29: the desktop header has no Call item (owner, "Desktop only")');
-      test.skip(!anyTop, 'quiet week: no bill on the hub to call about');
-      test.skip(!CORPUS_STABLE, 'corpus sits at a scoring boundary');
-      await mockScriptApi(page);
-      await page.goto(`${prefix}/`);
-      let used = 0;
-      used += 1;
-      await callTab(page, messages).click();
+      // Neither bar links the hub (the desktop row since 2026-09-29, the
+      // phone bar since 2026-11-24); the footer's first Site link is its
+      // standing door on every screen.
+      await footerCallHub(page, messages).click();
       await expect(page).toHaveURL(new RegExp(`${prefix}/call$`));
       used += 1;
       await page.locator('[data-call-hub-cta]').first().click();

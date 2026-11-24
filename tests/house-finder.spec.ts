@@ -100,7 +100,12 @@ for (const { locale, prefix, t } of [
     const url = page.url();
     const sent: string[] = [];
     page.on('request', (r) => {
-      if (r.method() !== 'GET' || new URL(r.url()).pathname.startsWith('/api/')) sent.push(`${r.method()} ${r.url()}`);
+      const path = new URL(r.url()).pathname;
+      // The reading signal (lib/read-signal.ts) posts the page's shape once,
+      // on the page's first click or tap, whatever was clicked; it is the
+      // layout's, not the finder's, and is pinned in tests/read-signal.unit.spec.ts.
+      if (path === '/api/seen') return;
+      if (r.method() !== 'GET' || path.startsWith('/api/')) sent.push(`${r.method()} ${r.url()}`);
     });
     await toggle.click();
     await expect(toggle).toHaveAttribute('aria-expanded', 'true');

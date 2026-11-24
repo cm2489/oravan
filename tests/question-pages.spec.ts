@@ -72,14 +72,19 @@ async function panelText(page: Page, hint: string): Promise<string> {
     .trimEnd();
 }
 
-/** The page has hydrated: a page with a call panel claims the thumb bar's Call
- *  tab for it in an effect (components/CallTabTarget.tsx), so the tab's href
- *  turns from the server's "/call" to "#act" only once React is running. The
- *  thumb bar is in the DOM at every width (display:none above 48rem), so this
- *  reads on a desktop too, where the row nav has had no Call item since
- *  2026-09-29 (owner, "Desktop only"). */
+/** The call panel has hydrated: React has attached its props to the panel's
+ *  own element (the check tests/zip-typed-before-hydration.spec.ts uses), and
+ *  two frames have passed so its mount effects have run. Until 2026-11-24 this
+ *  waited for the phone bar's Call tab to turn to "#act"; the owner took that
+ *  tab off the bar that day, so the panel itself is the signal now. */
 async function hydrated(page: Page) {
-  await expect(page.locator('[data-call-tab][href="#act"]').first()).toBeAttached();
+  const panel = page.locator(PANEL).first();
+  await expect
+    .poll(() => panel.evaluate((el) => Object.keys(el).some((k) => k.startsWith('__reactProps$'))))
+    .toBe(true);
+  await page.evaluate(
+    () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())))
+  );
 }
 
 /** Click a stance until the (mocked) script request goes out — the funnel's

@@ -46,11 +46,11 @@ import { HIDDEN_PAGES } from '@/lib/site';
  */
 
 const SITE_LINKS = [
-  // The Call hub's standing link on a desktop, where the header's row nav no
-  // longer carries a Call item (owner, 2026-09-29: "The 'Call' button in the
-  // header needs to be removed"; scope "Desktop only" — the phone's thumb bar
-  // keeps its Call cell). Beside "Why call?", which answers the question
-  // before it.
+  // The Call hub's standing link, on every screen: the header's row nav has
+  // carried no Call item since 2026-09-29 (owner: "The 'Call' button in the
+  // header needs to be removed"), and the phone's island bar none since
+  // 2026-11-24 (his pick: "Four tabs: Home · Bills · Big Questions · Reps").
+  // Beside "Why call?", which answers the question before it.
   { href: '/call', key: 'footer.callHub' },
   { href: '/why-call', key: 'nav.whyCall' },
   // Beside "Why call?" because it answers the neighbouring question — what the
@@ -83,8 +83,12 @@ export function Footer({ donateUrl = DONATE_URL }: { donateUrl?: string | null }
 
   return (
     <footer className="on-dark mt-16 bg-ink-deep text-ink-pale">
-      {/* pb clears the fixed thumb bar so footer links stay tappable on phones */}
-      <div className="mx-auto max-w-5xl px-4 pt-8 pb-16 text-sm leading-dark tracking-dark md:pt-12 md:pb-12">
+      {/* On a phone the bottom padding clears the floating island bar
+          (components/Header.tsx: 52px tall, 4px off the bottom or the safe
+          area) plus 24px, so the footer's last line scrolls clear of it. The
+          footer holds the whole clearance: <main> carries none, so there is
+          no blank band above the footer. */}
+      <div className="mx-auto max-w-5xl px-4 pt-8 pb-[calc(max(0.25rem,env(safe-area-inset-bottom))+4.75rem)] text-sm leading-dark tracking-dark md:pt-12 md:pb-12">
         <div className="grid gap-8 md:grid-cols-[2fr_1fr_1fr]">
           <div>
             <OravanLockup markRem={1.5} className="text-paper" />

@@ -34,6 +34,13 @@
  * (the addresses that opened a page the way a browser does), so "one number
  * a day" / "this count" became "two numbers a day" / "these counts". Same
  * promise, same words otherwise.
+ *
+ * Step 2 the same day (the reading signal, app/api/seen) made it "three
+ * numbers a day", and changed p4's bold phrase: it said "No analytics
+ * trackers", and Oravan's own script now reports, once per page load, the
+ * kind of page a person scrolled, clicked, tapped or typed on. That is first-party analytics
+ * with no identifier, so the phrase now promises exactly what holds: "No
+ * third-party analytics, no advertising pixels, no cookies at all."
  */
 export type PrivacyParagraph = 'p1' | 'p2' | 'p3' | 'p7' | 'p4' | 'p8' | 'p9' | 'p5';
 
@@ -47,9 +54,9 @@ export const PRIVACY_BOLD: Record<'en' | 'es', Record<PrivacyParagraph, readonly
     ],
     p3: ['not linked to any identity', "don't keep a log tying addresses to political positions"],
     p7: ['type your street address', 'never stores it or writes it to any log', 'Only the district number comes back.'],
-    p4: ['No analytics trackers, no advertising pixels, no cookies at all.'],
+    p4: ['No third-party analytics, no advertising pixels, no cookies at all.'],
     p8: ['daily counts, none of them tied to a visitor', 'never which one'],
-    p9: ['two numbers a day for the whole site', 'these counts store no address'],
+    p9: ['three numbers a day for the whole site', 'these counts store no address'],
     p5: [],
   },
   es: {
@@ -61,9 +68,9 @@ export const PRIVACY_BOLD: Record<'en' | 'es', Record<PrivacyParagraph, readonly
     ],
     p3: ['no se vinculan a ninguna identidad', 'no guardamos registros que liguen direcciones con posiciones políticas'],
     p7: ['escribir tu dirección', 'nunca la guarda ni la escribe en ningún registro', 'Solo regresa el número del distrito.'],
-    p4: ['Sin rastreadores de analítica, sin píxeles publicitarios, sin cookies en absoluto.'],
+    p4: ['Sin analítica de terceros, sin píxeles publicitarios, sin cookies en absoluto.'],
     p8: ['conteos diarios sencillos, ninguno ligado a un visitante', 'nunca cuál en concreto'],
-    p9: ['dos números al día para todo el sitio', 'estos conteos no guardan ninguna dirección'],
+    p9: ['tres números al día para todo el sitio', 'estos conteos no guardan ninguna dirección'],
     p5: [],
   },
 };

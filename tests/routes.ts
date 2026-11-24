@@ -210,6 +210,8 @@ export const API_PROBES: Record<string, string> = {
   // GET answers 405 (the lookup is POST-only, ZIP in the body: 2026-10-06).
   reps: '/api/reps',
   script: '/api/script',
+  // POST-only (the reading signal, lib/read-signal.ts); GET answers 405.
+  seen: '/api/seen',
   stripe: '/api/stripe/webhook',
   tenant: '/api/tenant/impressions',
 };

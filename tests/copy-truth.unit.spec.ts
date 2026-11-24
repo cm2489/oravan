@@ -443,16 +443,18 @@ test.describe('2026-11-23 llms.txt counts visitors as the site-wide numbers that
   // The 2026-11-23 people counts (PR #547) added a second site-wide daily
   // sketch: the addresses that opened a page the way a browser does. The
   // note for AI systems said "one site-wide number a day", which stopped
-  // being true; an independent review caught it the same day. The retired
-  // phrasings fail here, and the current one is pinned word for word.
-  const RETIRED = [/one site-wide number a day/i];
+  // being true; an independent review caught it the same day. Step 2 the
+  // same day (PR #548) added a third sketch, of the addresses that sent the
+  // reading signal, so "two" is retired too. The retired phrasings fail
+  // here, and the current one is pinned word for word.
+  const RETIRED = [/one site-wide number a day/i, /two site-wide numbers a day/i];
   test('llms.txt', () => {
     const src = readFileSync(join(__dirname, '..', 'app', 'llms.txt', 'route.ts'), 'utf8');
     const body = src.slice(src.indexOf('const body = `'), src.lastIndexOf('`;'));
     expect(body.length).toBeGreaterThan(500);
     expect(RETIRED.filter((re) => re.test(body)).map(String)).toEqual([]);
     expect(body).toContain(
-      'Oravan counts visitors only as two site-wide numbers a day (distinct network addresses: all of them, bots included, and those that opened a page the way a browser does; never split by page).',
+      "Oravan counts visitors only as three site-wide numbers a day (distinct network addresses: all of them, bots included; those that opened a page the way a browser does; and those that sent the reading signal, a message Oravan's own script sends at most once per page load after a person first scrolls, clicks, taps or presses a key; never split by page).",
     );
   });
 });
