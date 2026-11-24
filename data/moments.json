@@ -503,5 +503,53 @@
     "opened": "2026-11-23",
     "review_by": "2026-12-23",
     "status": "live"
+  },
+  "event-contracts-on-war-and-assassination": {
+    "name": {
+      "en": "Event contracts on war and assassination",
+      "es": "Contratos de eventos sobre guerra y asesinato"
+    },
+    "summary": {
+      "en": "S. 4035, the DEATH BETS Act, would bar regulated trading platforms from listing event contracts that expressly reference terrorism, assassination, war or U.S. military operations, or whose outcome depends mainly on whether a person dies. The bill lets the Commodity Futures Trading Commission add similar activities to that list by rule. Contracts on other events would be treated as they are under current law. The Senate passed the bill with an amendment by voice vote on November 19, 2026, so no senator’s individual vote was recorded. On November 20, 2026, the House received it and is holding it at the desk. The record gives no date for a House vote. A yes supports these limits; a no leaves the current rules on these contracts in place.",
+      "es": "El S. 4035, la DEATH BETS Act, prohibiría a las plataformas de negociación reguladas ofrecer contratos de eventos que mencionen de forma expresa el terrorismo, el asesinato, la guerra o las operaciones militares de EE. UU., o cuyo resultado dependa sobre todo de si una persona muere. El proyecto permite que la Comisión de Comercio de Futuros de Materias Primas (CFTC) añada actividades similares a esa lista mediante reglamento. Los contratos sobre otros eventos se tratarían igual que ahora bajo la ley vigente. El Senado aprobó el proyecto con una enmienda por voto oral el 19 de noviembre de 2026, así que no quedó registrado el voto de cada senador. El 20 de noviembre de 2026 la Cámara lo recibió y lo mantiene retenido en la mesa. El expediente no da fecha para una votación en la Cámara. Un sí respalda estos límites; un no deja vigentes las reglas actuales sobre estos contratos."
+    },
+    "aliases": {
+      "en": [
+        "S. 4035",
+        "DEATH BETS Act",
+        "prediction markets",
+        "event contracts",
+        "betting on war"
+      ],
+      "es": [
+        "S. 4035",
+        "DEATH BETS Act",
+        "mercados de predicción",
+        "contratos de eventos",
+        "apuestas sobre la guerra"
+      ]
+    },
+    "category": "jobs_economy",
+    "vehicles": [
+      {
+        "slug": "s-4035-119",
+        "role": {
+          "en": "S. 4035 is the bill itself. The Senate passed it with an amendment by voice vote on November 19, 2026. On November 20, 2026, the House received it and is holding it at the desk. A yes supports barring regulated platforms from listing contracts on terrorism, assassination, war, U.S. military operations or a person’s death; a no leaves the current rules in place. The record gives no date for a House vote.",
+          "es": "El S. 4035 es el proyecto en sí. El Senado lo aprobó con una enmienda por voto oral el 19 de noviembre de 2026. El 20 de noviembre de 2026 la Cámara lo recibió y lo mantiene retenido en la mesa. Un sí respalda prohibir que las plataformas reguladas ofrezcan contratos sobre terrorismo, asesinato, guerra, operaciones militares de EE. UU. o la muerte de una persona; un no deja vigentes las reglas actuales. El expediente no da fecha para una votación en la Cámara."
+        },
+        "_record": "https://www.congress.gov/bill/119th-congress/senate-bill/4035",
+        "_status_at_scaffold": "passed_chamber",
+        "_last_action_at_scaffold": "2026-11-20"
+      }
+    ],
+    "qualifying_signal": {
+      "type": "standing_topic",
+      "refs": [
+        "https://www.congress.gov/bill/119th-congress/senate-bill/4035"
+      ]
+    },
+    "opened": "2026-11-24",
+    "review_by": "2026-12-24",
+    "status": "live"
   }
 }
