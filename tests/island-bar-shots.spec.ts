@@ -3,9 +3,12 @@ import path from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 import { billSlug, getAllBills } from '../lib/core';
 import { settledDecision } from '../lib/journey';
+import { getMoments } from '../lib/moments';
 
 /*
- * PICTURES OF THE ISLAND BAR, FOR THE OWNER'S REVIEW (2026-11-22). Not a
+ * PICTURES OF THE ISLAND BAR, FOR THE OWNER'S REVIEW (2026-11-22; the
+ * four-tab bar of 2026-11-24, his pick: "Four tabs: Home · Bills · Big
+ * Questions · Reps"). Not a
  * gate: each test asserts only that its subject is on screen, then writes a
  * picture to island-bar-shots/, which ci.yml uploads from every e2e shard and
  * the e2e-report job gathers into one artifact, `island-bar-shots`. Built for
@@ -28,6 +31,7 @@ mkdirSync(SHOTS, { recursive: true });
 
 const decoded = getAllBills().find((b) => b.ai_sections && settledDecision(b) === null);
 const SLUG = decoded ? billSlug(decoded) : null;
+const QUESTION = getMoments().find((m) => m.state !== 'retired')?.id ?? null;
 
 function width(page: Page) {
   return page.viewportSize()?.width ?? 0;
@@ -54,6 +58,19 @@ async function parkOver(page: Page, selector: string) {
     return Math.max(0, window.scrollY + r.top - b.top + 24);
   }, selector);
   expect(y, `${selector} is on the page`).not.toBeNull();
+  await scrollTo(page, y!);
+}
+
+/** Scroll so the middle of the bill's decoded answer is mid-screen. */
+async function midRead(page: Page) {
+  const y = await page.evaluate(() => {
+    const zones = [...document.querySelectorAll('[data-read-zone]')].map((el) => el.getBoundingClientRect());
+    if (zones.length === 0) return null;
+    const top = Math.min(...zones.map((r) => r.top));
+    const bottom = Math.max(...zones.map((r) => r.bottom));
+    return Math.max(0, window.scrollY + (top + bottom) / 2 - window.innerHeight / 2);
+  });
+  expect(y, 'the decoded answer is on the page').not.toBeNull();
   await scrollTo(page, y!);
 }
 
@@ -144,10 +161,6 @@ test.describe('island bar pictures @reflow', () => {
     await page.keyboard.press('Tab');
     await expect(tab).toBeFocused();
     await shot(page, 'focus-tab');
-    await page.locator('nav[data-thumb-bar] [data-call-tab]').focus();
-    await page.keyboard.press('Shift+Tab');
-    await page.keyboard.press('Tab');
-    await shot(page, 'focus-call');
   });
 
   test('Spanish, home and the end of a page', async ({ page, isMobile }) => {
@@ -158,6 +171,43 @@ test.describe('island bar pictures @reflow', () => {
     await scrollTo(page, 1e6);
     await shot(page, 'es-questions-end');
   });
+
+  // The four-tab bar on every page it lives on, in both languages: the
+  // current tab, the full "Big Questions" / "Grandes preguntas" label and the
+  // bar's room at 390px and 320px.
+  for (const [lang, prefix] of [
+    ['en', ''],
+    ['es', '/es'],
+  ] as const) {
+    for (const [name, route] of [
+      ['home', '/'],
+      ['bills', '/bills'],
+      ['questions', '/questions'],
+      ['reps', '/reps'],
+    ] as const) {
+      test(`${lang}: ${name}`, async ({ page, isMobile }) => {
+        await page.goto(`${prefix}${route}`);
+        await phone(page, isMobile);
+        await shot(page, `${lang}-page-${name}`);
+      });
+    }
+
+    test(`${lang}: a bill page, top and mid-read`, async ({ page, isMobile }) => {
+      test.skip(!SLUG, 'no decoded bill');
+      await page.goto(`${prefix}/bills/${SLUG}`);
+      await phone(page, isMobile);
+      await shot(page, `${lang}-page-bill-top`);
+      await midRead(page);
+      await shot(page, `${lang}-page-bill-mid-read`);
+    });
+
+    test(`${lang}: a question page`, async ({ page, isMobile }) => {
+      test.skip(!QUESTION, 'no Big Question in the corpus');
+      await page.goto(`${prefix}/questions/${QUESTION}`);
+      await phone(page, isMobile);
+      await shot(page, `${lang}-page-question`);
+    });
+  }
 
   test('desktop at 1280: the header is unchanged and the bar is absent', async ({ page, isMobile }) => {
     test.skip(isMobile, 'the desktop picture');

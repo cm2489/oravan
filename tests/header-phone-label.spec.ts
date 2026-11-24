@@ -10,8 +10,13 @@ import { settledDecision } from '../lib/journey';
  * app/globals.css paints it, tests/island-bar.unit.spec.ts computes its
  * contrast. This file measures what only a browser can, in both languages:
  *
- *   - the Questions cell reads `nav.tabQuestions` on one line ("Questions" /
- *     "Preguntas"; owner, 2026-11-22) and reaches /questions;
+ *   - four tabs, Home · Bills · Big Questions · Reps (owner, 2026-11-24, his
+ *     pick on the mock-up card: "Four tabs: Home · Bills · Big Questions ·
+ *     Reps"), and the Big Questions tab reads the full `nav.moments` on one
+ *     line ("Big Questions" / "Grandes preguntas") and reaches /questions;
+ *   - on every page the bar lives on (so each tab takes its turn as the bold
+ *     current tab), no label is clipped or wrapped and the bar adds no
+ *     sideways scroll — at 320px in webkit-320, the tightest case;
  *   - the bar floats: inset from both sides and 4px off the bottom, 52px tall
  *     (56px of screen in all; tests/home-fold.spec.ts holds the hero to it);
  *   - every tab is at least 44px each way, and no label spills past its own
@@ -45,7 +50,7 @@ for (const [prefix, messages] of [
     await page.goto(`${prefix}/`);
     const bar = await island(page);
 
-    const link = bar.getByRole('link', { name: messages.common.nav.tabQuestions, exact: true });
+    const link = bar.getByRole('link', { name: messages.common.nav.moments, exact: true });
     await expect(link).toHaveAttribute('href', `${prefix}/questions`);
 
     const m = await bar.evaluate((nav) => {
@@ -82,7 +87,12 @@ for (const [prefix, messages] of [
       };
     });
 
-    expect(m.cells).toHaveLength(5);
+    expect(m.cells.map((c) => c.text)).toEqual([
+      messages.common.navShort.home,
+      messages.common.navShort.bills,
+      messages.common.nav.moments,
+      messages.common.navShort.reps,
+    ]);
     expect(m.left, 'inset from the left edge').toBeGreaterThanOrEqual(5.5);
     expect(m.vw - m.right, 'inset from the right edge').toBeGreaterThanOrEqual(5.5);
     expect(m.vh - m.bottom, 'lifted off the bottom edge').toBeGreaterThanOrEqual(3.5);
@@ -100,6 +110,64 @@ for (const [prefix, messages] of [
       expect(m.cells[i].glyphLeft - m.cells[i - 1].glyphRight, 'neighbouring labels keep a gap').toBeGreaterThan(0);
     }
   });
+
+  for (const route of ['/', '/bills', '/questions', '/reps']) {
+    test(`${where}${route}: no tab label is clipped or wrapped, and the bar adds no sideways scroll @reflow`, async ({
+      page,
+      isMobile,
+    }) => {
+      test.skip(!isMobile, 'the island bar is a phone surface');
+      await page.goto(`${prefix}${route}`);
+      const bar = await island(page);
+      // The current tab is bold, the widest its label gets (Spanish "Grandes
+      // preguntas" on /questions is the widest of all).
+      await expect(bar.locator('a[aria-current="page"]')).toHaveCount(1);
+      const m = await bar.evaluate((nav) => {
+        const row = nav.querySelector('ul') as HTMLElement;
+        const tabs = [...nav.querySelectorAll('a')].map((a) => {
+          const label = a.querySelector('[data-tab-label]') as HTMLElement;
+          const range = document.createRange();
+          range.selectNodeContents(label);
+          const glyphs = range.getBoundingClientRect();
+          const box = a.getBoundingClientRect();
+          return {
+            text: label.textContent,
+            labelScroll: label.scrollWidth,
+            labelClient: label.clientWidth,
+            tabScroll: a.scrollWidth,
+            tabClient: a.clientWidth,
+            lines: range.getClientRects().length,
+            glyphLeft: glyphs.left,
+            glyphRight: glyphs.right,
+            tabLeft: box.left,
+            tabRight: box.right,
+          };
+        });
+        const r = nav.getBoundingClientRect();
+        return {
+          tabs,
+          rowScroll: row.scrollWidth,
+          rowClient: row.clientWidth,
+          barLeft: r.left,
+          barRight: r.right,
+          vw: document.documentElement.clientWidth,
+          pageScroll: document.documentElement.scrollWidth,
+        };
+      });
+      expect(m.tabs).toHaveLength(4);
+      for (const c of m.tabs) {
+        expect(c.lines, `${c.text}: one line`).toBe(1);
+        expect(c.labelScroll, `${c.text}: the label is not clipped`).toBeLessThanOrEqual(c.labelClient);
+        expect(c.tabScroll, `${c.text}: nothing spills out of the tab`).toBeLessThanOrEqual(c.tabClient);
+        expect(c.glyphLeft, `${c.text}: inside its tab`).toBeGreaterThanOrEqual(c.tabLeft - 0.5);
+        expect(c.glyphRight, `${c.text}: inside its tab`).toBeLessThanOrEqual(c.tabRight + 0.5);
+      }
+      expect(m.rowScroll, 'the row of tabs fits inside the bar').toBeLessThanOrEqual(m.rowClient);
+      expect(m.barLeft, 'the bar starts on screen').toBeGreaterThanOrEqual(0);
+      expect(m.barRight, 'the bar ends on screen').toBeLessThanOrEqual(m.vw);
+      expect(m.pageScroll, 'no sideways scroll').toBeLessThanOrEqual(m.vw);
+    });
+  }
 
   test(`${where}: at the end of the page the footer clears the island, with no blank band above it @reflow`, async ({
     page,
