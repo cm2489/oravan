@@ -2,16 +2,20 @@ import { expect, test } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
+  DIGEST_ISSUE,
   MAX_NEEDS,
   NOTE_ASSIGNEE,
   NOTE_LABEL,
   candidatesLine,
+  digestBrowserCounts,
+  formatPeopleWeek,
   mondayOf,
   needsBlock,
   needsColbyLines,
   nightlyLine,
   noteBody,
   noteTitle,
+  peopleWeeks,
   pickNeeds,
   spendLine,
   visitorsLine,
@@ -121,7 +125,7 @@ test.describe('the other lines — aggregate counts, or a plain "couldn\'t be re
       distinct: days.map((day, i) => ({ day, ok: true, count: i === 0 ? 1737 : i === 1 ? 1802 : null })),
     });
     expect(line).toBe(
-      'Visitors, last 7 days (bots included; a real-people count is coming): 31,240 page loads. Different addresses a day: Sun 1,737 · Sat 1,802 (older days are not kept).'
+      'Visitors, last 7 days (bots included): 31,240 page loads. Different addresses a day: Sun 1,737 · Sat 1,802 (older days are not kept).'
     );
   });
 
@@ -223,10 +227,175 @@ test.describe('.github/workflows/weekly-note.yml and the script it runs', () => 
     expect(dry).not.toMatch(/gh\(/);
   });
 
-  test('it only READS the counters, and leaves a named hook for the real-people count', () => {
-    expect(script).toContain("import { PAGEVIEW_SURFACES, readPageviewWindow } from '../lib/usage';");
-    expect(script).toContain("import { readDistinctAddressCount } from '../lib/ratelimit';");
-    expect(script).not.toMatch(/\b(?:incrPageview|recordDistinct|PFADD|INCR)\b/);
+  test('it only READS the counters, and fills the real-people line from them', () => {
+    expect(script).toContain("import { PAGEVIEW_SURFACES, readPageviewWindow, readPeopleSignalsWindow } from '../lib/usage';");
+    expect(script).toContain("import { readBrowserAddressCount, readDistinctAddressCount } from '../lib/ratelimit';");
+    expect(script).not.toMatch(/\b(?:incrPageview|recordDistinct|recordBrowser|PFADD|INCR)\b/);
     expect(script).toContain('export async function peopleLine(');
+  });
+});
+
+test.describe('the real-people line (#547\'s counts)', () => {
+  // 14 UTC days, yesterday first, as trailingWindowDays(now, 14) gives them.
+  const daysBack = (from: string, count = 14) =>
+    Array.from({ length: count }, (_, i) => {
+      const d = new Date(`${from}T12:00:00Z`);
+      d.setUTCDate(d.getUTCDate() - i);
+      return d.toISOString().slice(0, 10);
+    });
+  // Day i's value from a 7-day pattern for this week (i 0–6) and last week (i 7–13).
+  const series = (thisWeek: number[], lastWeek: number[]) => [...thisWeek, ...lastWeek];
+  const pageviews = (home: number[], bill: number[], short: number[]) => ({
+    ok: true as const,
+    surfaces: { home, bill, short },
+  });
+  const signals = (home: number[], bill: number[], short: number[], repLookups: number[], scriptsServed: number[]) => ({
+    ok: true as const,
+    browserSurfaces: { home, bill, short },
+    repLookups,
+    scriptsServed,
+  });
+
+  // Two whole weeks: Dec 14's note reads Dec 13 back to Nov 30.
+  const WHOLE = daysBack('2026-12-13');
+  const sevens = (x: number) => Array(7).fill(x);
+  const fullFixture = {
+    days: WHOLE,
+    // Page loads: this week 100 + 60 a day (short left out), last week 90 + 50.
+    pageviews: pageviews(series(sevens(100), sevens(90)), series(sevens(60), sevens(50)), series(sevens(999), sevens(999))),
+    // Browser loads: this week 40 + 20 a day (bots 100 of 160 = 63%), last week 40 + 19 (81 of 140 = 58%).
+    signals: signals(
+      series(sevens(40), sevens(40)),
+      series(sevens(20), sevens(19)),
+      series(sevens(999), sevens(999)),
+      series([20, 20, 20, 20, 20, 10, 10], sevens(14)), // 120 vs 98
+      series([6, 6, 6, 5, 5, 5, 5], [5, 5, 4, 4, 4, 4, 4]), // 38 vs 30
+    ),
+    browsers: series([41, 45, 38, 40, 42, 39, 42], [35, 35, 34, 36, 35, 35, 35]) as Array<number | null>,
+    browsersRead: true,
+  };
+
+  test('a whole week beside a whole week: averages a day for browsers, sums for actions, bots by share', () => {
+    const line = formatPeopleWeek(peopleWeeks(fullFixture));
+    expect(line).toBe(
+      'Real people, last 7 days (estimate): On an average day about 41 different browser addresses opened a page ' +
+        '(last week 35, up 17%); a home or office network counts once. ' +
+        '120 ZIP lookups found a district (last week 98, up 22%) and 38 call scripts were shown (last week 30, up 27%); those are actions, not people. ' +
+        'Bots made 63% of page loads (last week 58%).'
+    );
+  });
+
+  test('browser addresses are never summed into a weekly count', () => {
+    const line = formatPeopleWeek(peopleWeeks(fullFixture));
+    const weekSum = fullFixture.browsers.slice(0, 7).reduce((a, b) => a! + b!, 0);
+    expect(line).not.toContain(String(weekSum)); // 287
+    expect(line).toContain('average day');
+  });
+
+  test('the first whole week has no comparison, and says when the first one arrives', () => {
+    // Dec 7's note reads Dec 6 back to Nov 23: this week whole, last week mostly before counting.
+    const w = peopleWeeks({ ...fullFixture, days: daysBack('2026-12-06') });
+    expect(w.status).toBe('ok');
+    const line = formatPeopleWeek(w);
+    expect(line).toMatch(/^Real people, last 7 days \(estimate; the first week-on-week comparison is in the Dec 14 note\):/);
+    expect(line).not.toContain('last week');
+  });
+
+  test('a part week names its days and the Monday the first whole week arrives; nothing before Nov 25 is counted', () => {
+    // Nov 30's note reads Nov 29 back to Nov 16; only Nov 25–29 are whole counted days.
+    const days = daysBack('2026-11-29');
+    const w = peopleWeeks({ ...fullFixture, days });
+    if (w.status !== 'ok') throw new Error('expected ok');
+    expect(w.thisWeek.days).toEqual(['2026-11-29', '2026-11-28', '2026-11-27', '2026-11-26', '2026-11-25']);
+    expect(w.lastWeek).toBeNull();
+    const line = formatPeopleWeek(w);
+    expect(line).toMatch(/^Real people, Nov 25–Nov 29 only \(estimate; counting began Nov 24, the first full week is in the Dec 7 note\):/);
+    // Five days: lookups 20×5 = 100, scripts 6+6+6+5+5 = 28, browsers mean of 41,45,38,40,42 = 41.
+    expect(line).toContain('about 41 different browser');
+    expect(line).toContain('100 ZIP lookups found a district and 28 call scripts were shown');
+  });
+
+  test('before any whole day: counting began, and when the first full week arrives', () => {
+    const w = peopleWeeks({ ...fullFixture, days: daysBack('2026-11-24') });
+    expect(formatPeopleWeek(w)).toBe('Real people (estimate): counting began Nov 24; the first full week is in the Dec 7 note.');
+  });
+
+  test('missing days for browsers say how many days the average is from; an unread source says so, never a zero', () => {
+    const gappy = [null, 50, 40, null, null, null, 30, ...fullFixture.browsers.slice(7)];
+    expect(formatPeopleWeek(peopleWeeks({ ...fullFixture, browsers: gappy }))).toContain(
+      'about 40 different browser addresses opened a page (last week 35, up 14%), from the 3 of 7 days on record;'
+    );
+    const none = Array(14).fill(null);
+    expect(formatPeopleWeek(peopleWeeks({ ...fullFixture, browsers: none, browsersRead: false }))).toContain(
+      "Browser addresses a day couldn't be read."
+    );
+    expect(formatPeopleWeek(peopleWeeks({ ...fullFixture, browsers: none, browsersRead: true }))).toContain(
+      'Browser addresses a day: none on record yet.'
+    );
+  });
+
+  test('counters down: one plain line, no number; page loads down: bots\' share says so', () => {
+    const unread = formatPeopleWeek(peopleWeeks({ ...fullFixture, signals: { ok: false } }));
+    expect(unread).toBe("Real people (estimate): couldn't be read this week (the counters database couldn't be reached).");
+    expect(unread).not.toMatch(/\d/);
+    const noLoads = formatPeopleWeek(peopleWeeks({ ...fullFixture, pageviews: { ok: false } }));
+    expect(noLoads).toContain("Bots' share of page loads couldn't be read.");
+    expect(noLoads).toContain('120 ZIP lookups');
+  });
+
+  test('flat and from-zero comparisons read plainly', () => {
+    const flat = {
+      ...fullFixture,
+      signals: { ...fullFixture.signals, repLookups: series(sevens(2), sevens(2)), scriptsServed: series(sevens(1), sevens(0)) },
+    };
+    const line = formatPeopleWeek(peopleWeeks(flat));
+    expect(line).toContain('14 ZIP lookups found a district (last week 14, the same)');
+    expect(line).toContain('7 call scripts were shown (last week 0)');
+  });
+
+  test("each day's browser figure is read from the digest's People row; \"not read\" rows have none; later comments win", () => {
+    const comment = (day: string, browsers: string) =>
+      [
+        `<!-- daily-metrics:${day} -->`,
+        `📊 Daily metrics — ${day}`,
+        '```',
+        'Distinct network addresses (bots included): 1802 (one site-wide estimate for the UTC day, ±~1%)',
+        '',
+        'People (estimate)',
+        '  actions   12 / 3  ZIP lookups that found a district / call scripts shown (actions, not people)',
+        `  browsers  ${browsers.padEnd(8)}distinct browser addresses (addresses that opened a page the way a browser does; not an upper bound)`,
+        '  bots      62% of page loads (620 of 1000 did not look like a browser opening a page)',
+        '```',
+      ].join('\n');
+    const got = digestBrowserCounts([
+      { body: comment('2026-11-25', '30') },
+      { body: comment('2026-11-26', 'not read') },
+      { body: comment('2026-11-27', 'not recorded') },
+      { body: comment('2026-11-25', '41') },
+      { body: '<!-- daily-metrics:2026-11-22 -->\nan older digest with no People block' },
+    ]);
+    expect([...got.entries()]).toEqual([['2026-11-25', 41]]);
+    expect(digestBrowserCounts(null).size).toBe(0);
+    expect(DIGEST_ISSUE).toBe(81);
+  });
+
+  test('the script reads the digest as the workflow\'s own comments only, and the live sketch only for the days it still exists', () => {
+    const script = readFileSync(join(process.cwd(), 'scripts/weekly-note.mjs'), 'utf8');
+    expect(script).toContain('select(.user.login == "github-actions[bot]")');
+    expect(script).toContain('const SKETCH_READABLE_DAYS = 2;');
+    expect(script).toContain('trailingWindowDays(now, 14)');
+  });
+
+  test('the whole note stays short with the people line in it', () => {
+    const body = noteBody({
+      needs: { status: 'ok', lines: [], url: null },
+      visitors: 'Visitors: v.',
+      people: formatPeopleWeek(peopleWeeks(fullFixture)),
+      nightly: 'Nightly data: n.',
+      candidates: 'Big Question candidates waiting: c.',
+      spend: null,
+    });
+    expect(body.split('\n').length).toBeLessThanOrEqual(12);
+    expect(body).not.toContain('@');
   });
 });
