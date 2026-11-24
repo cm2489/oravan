@@ -114,7 +114,11 @@ test.describe('the bars (components/Header.tsx)', () => {
     const bar = header.slice(header.indexOf('data-thumb-bar'));
     expect(bar).toContain('<span data-tab-label className="whitespace-nowrap">');
     // Content-sized tabs, never an equal grid, each at least 44px each way.
-    expect(bar).toContain('<ul className="flex px-0.5 py-1">');
+    // 4px on every side and a full-pill tab, so the current tab's lozenge is
+    // concentric with the bar's rounded ends (owner, 2026-11-24: "The button
+    // overlaps the container on home and reps.").
+    expect(bar).toContain('<ul className="flex p-1">');
+    expect(bar).toMatch(/justify-center gap-0\.5 rounded-full px-1\.5 /);
     expect(bar).toContain('<li key={key} className="flex flex-auto">');
     expect(bar).toMatch(/className=\{`flex min-h-11 min-w-11 flex-1 /);
     expect(bar).not.toMatch(/grid-cols-/);

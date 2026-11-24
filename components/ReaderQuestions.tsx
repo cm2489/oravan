@@ -3,6 +3,7 @@ import { getFormatter, getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { AiMark } from '@/components/system';
 import { readerQuestionsFor, type ReaderClaim } from '@/lib/reader-questions';
+import { rollCallPage } from '@/lib/roll-call-page';
 
 /**
  * READER QUESTIONS — a few questions from the fixed bank
@@ -87,8 +88,13 @@ export async function ReaderQuestions({ id, locale }: { id: string; locale: stri
                       const s = entry.sources[sid];
                       return (
                         <li key={sid}>
+                          {/* A roll call is stored as the data file its quote was
+                              checked against; the reader lands on the chamber's
+                              readable page for the same vote (lib/roll-call-page.ts,
+                              tests/timeline-record-links.spec.ts). Every other
+                              source is linked as stored. */}
                           <a
-                            href={s.url}
+                            href={rollCallPage(s.url)}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex min-h-11 items-center gap-1.5 text-ink-2 underline underline-offset-4 hover:text-ink"

@@ -169,6 +169,54 @@ for (const [prefix, messages] of [
     });
   }
 
+  // The owner, 2026-11-24, from his phone: "The button overlaps the container
+  // on home and reps." The current tab's lozenge had an 8px corner 2px from
+  // the bar's edge, so on the first and the last tab its corners crossed the
+  // bar's rounded end. A rounded box sits inside a rounded box when each of
+  // its corner circles sits inside the outer one: the distance between the
+  // two centres is at most the difference of the radii.
+  for (const [route, end] of [
+    ['/', 'left'],
+    ['/reps', 'right'],
+  ] as const) {
+    test(`${where}${route}: the current tab's lozenge stays inside the bar's rounded ${end} end @reflow`, async ({
+      page,
+      isMobile,
+    }) => {
+      test.skip(!isMobile, 'the island bar is a phone surface');
+      await page.goto(`${prefix}${route}`);
+      const bar = await island(page);
+      const m = await bar.evaluate((nav, side) => {
+        const tabs = [...nav.querySelectorAll('a')];
+        const tab = (side === 'left' ? tabs[0] : tabs[tabs.length - 1]) as HTMLElement;
+        const b = nav.getBoundingClientRect();
+        const t = tab.getBoundingClientRect();
+        const radius = (el: Element, box: DOMRect) =>
+          Math.min(parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0, box.height / 2, box.width / 2);
+        const R = radius(nav, b);
+        const r = radius(tab, t);
+        const barX = side === 'left' ? b.left + R : b.right - R;
+        const tabX = side === 'left' ? t.left + r : t.right - r;
+        const reach = (barY: number, tabY: number) => Math.hypot(tabX - barX, tabY - barY) + r - R;
+        return {
+          current: tab.getAttribute('aria-current'),
+          R,
+          r,
+          // How far the lozenge's corner reaches past the bar's curve (<= 0 is inside).
+          top: reach(b.top + R, t.top + r),
+          bottom: reach(b.bottom - R, t.bottom - r),
+          insetSide: side === 'left' ? t.left - b.left : b.right - t.right,
+          insetTop: t.top - b.top,
+        };
+      }, end);
+      expect(m.current, 'the end tab is the current one on this page').toBe('page');
+      expect(m.R, 'the bar is a capsule').toBeGreaterThanOrEqual(20);
+      expect(m.top, 'the top corner stays inside the curve').toBeLessThanOrEqual(0.5);
+      expect(m.bottom, 'the bottom corner stays inside the curve').toBeLessThanOrEqual(0.5);
+      expect(m.insetSide, "the lozenge is inset from the bar's end").toBeGreaterThanOrEqual(3);
+    });
+  }
+
   test(`${where}: at the end of the page the footer clears the island, with no blank band above it @reflow`, async ({
     page,
     isMobile,

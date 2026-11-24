@@ -450,5 +450,58 @@
     "review_by": "2026-10-05",
     "reviewed": "2026-11-22",
     "status": "retired"
+  },
+  "stock-trading-by-members-of-congress": {
+    "name": {
+      "en": "Stock trading by members of Congress",
+      "es": "Compraventa de acciones por miembros del Congreso"
+    },
+    "summary": {
+      "en": "Whether members of Congress, and their spouses and dependent children, may buy and sell individual stocks. H.R. 7008, the “Stop Insider Trading Act”, passed the House 232 to 198 on July 22, 2026 (Roll no. 280). As passed by the House, it bars members and their spouses and dependent children from purchasing covered investments, with listed exceptions, and requires public notice 7 to 14 days before selling one; a separate section of the same bill requires voters in elections for federal office to show photo identification, with listed alternatives and exceptions. On September 30, 2026, the Senate did not invoke cloture on the motion to proceed to it: the vote was 53 to 47, and three-fifths was required (Record Vote 253). S. 1498, the “Halting Ownership and Non-Ethical Stock Transactions (HONEST) Act”, as reported in the Senate, would bar members of Congress, the President and the Vice President, and their spouses and dependent children, from buying covered investments, and from selling them except to divest, and would require divestment of those they hold, with listed exceptions; covered investments include securities, commodities, futures and digital assets, but not diversified mutual or exchange-traded funds or other listed exclusions. It has been on the Senate calendar since December 10, 2025.",
+      "es": "Si los miembros del Congreso, y sus cónyuges e hijos dependientes, pueden comprar y vender acciones individuales. El H.R. 7008, la “Stop Insider Trading Act”, fue aprobado por la Cámara de Representantes por 232 votos a 198 el 22 de julio de 2026 (votación nominal 280). Según el texto aprobado por la Cámara, prohíbe a los miembros y a sus cónyuges e hijos dependientes comprar inversiones cubiertas, con excepciones enumeradas, y exige un aviso público entre 7 y 14 días antes de vender una; otra sección del mismo proyecto exige que los votantes en elecciones para cargos federales presenten una identificación con foto, con alternativas y excepciones enumeradas. El 30 de septiembre de 2026, el Senado no aprobó el cierre del debate sobre la moción para considerarlo: la votación fue de 53 a 47, y se requerían tres quintos (votación nominal 253). El S. 1498, la “Halting Ownership and Non-Ethical Stock Transactions (HONEST) Act”, según el texto informado en el Senado, prohibiría a los miembros del Congreso, al presidente y al vicepresidente, y a sus cónyuges e hijos dependientes, comprar inversiones cubiertas, y venderlas salvo para deshacerse de ellas, y exigiría deshacerse de las que tengan, con excepciones enumeradas; las inversiones cubiertas incluyen valores, materias primas, futuros y activos digitales, pero no los fondos mutuos diversificados, los fondos cotizados diversificados ni otras exclusiones enumeradas. Está en el calendario del Senado desde el 10 de diciembre de 2025."
+    },
+    "aliases": {
+      "en": [
+        "H.R. 7008",
+        "S. 1498"
+      ],
+      "es": [
+        "H.R. 7008",
+        "S. 1498"
+      ]
+    },
+    "category": "government_democracy",
+    "vehicles": [
+      {
+        "slug": "hr-7008-119",
+        "role": {
+          "en": "Passed the House 232 to 198 on July 22, 2026. Section 2 restricts covered investments by members and their spouses and dependent children; section 3 requires voters in elections for federal office to show photo identification, with listed alternatives and exceptions. On September 30, 2026, the Senate did not invoke cloture on the motion to proceed to it: the vote was 53 to 47, and three-fifths was required.",
+          "es": "Aprobado por la Cámara de Representantes por 232 votos a 198 el 22 de julio de 2026. La sección 2 restringe las inversiones cubiertas de los miembros y de sus cónyuges e hijos dependientes; la sección 3 exige que los votantes en elecciones para cargos federales presenten una identificación con foto, con alternativas y excepciones enumeradas. El 30 de septiembre de 2026, el Senado no aprobó el cierre del debate sobre la moción para considerarlo: la votación fue de 53 a 47, y se requerían tres quintos."
+        },
+        "_record": "https://www.congress.gov/bill/119th-congress/house-bill/7008",
+        "_status_at_scaffold": "floor_vote",
+        "_last_action_at_scaffold": "2026-09-30"
+      },
+      {
+        "slug": "s-1498-119",
+        "role": {
+          "en": "Reported with a substitute by the Senate Committee on Homeland Security and Governmental Affairs and placed on the Senate calendar on December 10, 2025 (Calendar No. 294). As reported, it would bar members of Congress, the President and the Vice President, and their spouses and dependent children, from buying covered investments, including securities, commodities, futures and digital assets, and from selling them except to divest, and would require members, the President and the Vice President to divest the covered investments they, their spouses or their dependent children hold, with listed exceptions.",
+          "es": "Informado con un texto sustitutivo por el Comité de Seguridad Nacional y Asuntos Gubernamentales del Senado y colocado en el calendario del Senado el 10 de diciembre de 2025 (calendario n.º 294). Según ese texto, prohibiría a los miembros del Congreso, al presidente y al vicepresidente, y a sus cónyuges e hijos dependientes, comprar inversiones cubiertas, incluidos valores, materias primas, futuros y activos digitales, y venderlas salvo para deshacerse de ellas, y exigiría a los miembros, al presidente y al vicepresidente deshacerse de las inversiones cubiertas que tengan ellos, sus cónyuges o sus hijos dependientes, con excepciones enumeradas."
+        },
+        "_record": "https://www.congress.gov/bill/119th-congress/senate-bill/1498",
+        "_status_at_scaffold": "floor_vote",
+        "_last_action_at_scaffold": "2025-12-10"
+      }
+    ],
+    "qualifying_signal": {
+      "type": "standing_topic",
+      "refs": [
+        "https://www.congress.gov/bill/119th-congress/house-bill/7008",
+        "https://www.congress.gov/bill/119th-congress/senate-bill/1498"
+      ]
+    },
+    "opened": "2026-11-23",
+    "review_by": "2026-12-23",
+    "status": "live"
   }
 }

@@ -230,7 +230,7 @@ export function Header() {
           the room it needs. Labels MEASURED at 12px bold Libre Franklin (the
           widest a label gets, on its own page): Home 34, Bills 25, Big
           Questions 81, Reps 29; Inicio 31, Proyectos 59, Grandes preguntas
-          110, Mis reps 49 (px). At 320px the bar is 308px and its row 304px;
+          110, Mis reps 49 (px). At 320px the bar is 308px and its row 300px;
           Spanish needs 249 + 4 × 12 = 297px before `tracking-tight` takes
           about 12px back, English 227px with Bills and Reps held at 44. Every
           label stays one line (`whitespace-nowrap`), and a flex item never
@@ -255,7 +255,14 @@ export function Header() {
         aria-label={t('nav.primaryLabel')}
         className="island-bar fixed inset-x-0 bottom-[max(0.25rem,env(safe-area-inset-bottom))] z-40 mx-auto w-[calc(100%-0.75rem)] rounded-full md:hidden min-[22.5rem]:w-[min(calc(100%-1rem),21rem)]"
       >
-        <ul className="flex px-0.5 py-1">
+        {/* 4px on every side, and each tab a full pill: a 44px-tall tab has a
+            22px end radius, the 52px bar a 26px one, so the current tab's
+            wash lozenge runs concentric with the bar's rounded ends and
+            never pokes past them. (Owner, 2026-11-24, from his phone: "The
+            button overlaps the container on home and reps." The first build
+            used an 8px corner 2px from the edge, and its corners crossed
+            the bar's curve on the first and last tabs.) */}
+        <ul className="flex p-1">
           {TABS.map(({ href, key, icon: Icon }) => {
             const active = isActive(pathname, href);
             return (
@@ -269,7 +276,7 @@ export function Header() {
                   // marked by a wash lozenge with a line-strong edge AND a
                   // bold label (`.island-bar` in app/globals.css), never by
                   // colour alone.
-                  className={`flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-0.5 rounded-control px-1.5 text-2xs leading-tight tracking-tight text-ink min-[22.5rem]:tracking-normal ${
+                  className={`flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-0.5 rounded-full px-1.5 text-2xs leading-tight tracking-tight text-ink min-[22.5rem]:tracking-normal ${
                     active ? 'font-bold' : 'font-semibold'
                   }`}
                 >
