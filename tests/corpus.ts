@@ -50,6 +50,7 @@ import {
   isDecidingNow,
 } from '../lib/docket.mjs';
 import floorSignalsJson from '../data/floor-signals.json';
+import type { ChamberSession } from '../lib/docket';
 import floorSignalsCheckedJson from '../data/floor-signals-checked.json';
 import { BAND_SIZES } from '../lib/taxonomy';
 import { FRESHNESS_DEAD_WINDOW_DAYS, freshnessAgeDays, freshnessState } from '../lib/freshness-state';
@@ -350,6 +351,18 @@ export function pendingChamberOf(slug: string): 'house' | 'senate' | null {
  * it.
  */
 export function senateLiveBillSlugs(at: number = Date.now()): string[] {
+  // THE SESSION HALF, added 2026-11-25. Since #532-era §5 the page holds the
+  // routing line while the Senate reads out of session (liveCallTarget's third
+  // argument, `held`); a bill on the Senate's own calendar is exempt. Without
+  // this mirror the specs drove a bill whose page correctly printed no line:
+  // main went red at 15:40Z that day when the Daily Digest showed only pro
+  // forma sessions until Nov 27. The session is read at both ends of the
+  // skew window, so a verdict that flips between `next build` and the
+  // assertion drops the bill (a skip) instead of failing it.
+  const sessionAt = (t: number) => (c: 'house' | 'senate') =>
+    chamberSessionFrom(FLOOR_META, c, t, FLOOR_CHECKED) as ChamberSession;
+  const heldAt = (b: (typeof corpus)[number], t: number) =>
+    liveCallTarget(b as unknown as Parameters<typeof liveCallTarget>[0], null, sessionAt(t))?.held === true;
   return corpus
     .filter((b) => b.status === 'floor_vote' && b.ai_headline)
     .filter((b) => isSignalFresh(b.last_action_date, at + CLOCK_SKEW_MS))
@@ -358,6 +371,7 @@ export function senateLiveBillSlugs(at: number = Date.now()): string[] {
         floorCalendarChamber(b.last_action_text) === 'senate' ||
         floorPendingChamber(b.last_action_text) === 'senate'
     )
+    .filter((b) => !heldAt(b, at - CLOCK_SKEW_MS) && !heldAt(b, at + CLOCK_SKEW_MS))
     .map(slugOf)
     .sort();
 }
