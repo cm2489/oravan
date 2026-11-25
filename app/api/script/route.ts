@@ -13,7 +13,8 @@ import {
   type NominationAudience,
 } from '@/lib/nomination-script';
 import { callerIp, createRateLimiter, createTenantRateLimiter, readOravanKey } from '@/lib/ratelimit';
-import { contentVersion, createScriptCache, nominationContentVersion } from '@/lib/scriptcache';
+import { contentVersion, createScriptCache, nominationContentVersion, type StanceSetParts } from '@/lib/scriptcache';
+import { routeFills, serveStanceBlind } from '@/lib/script-serve';
 import { buildScriptPrompt, finishScript, SCRIPT_MAX_TOKENS, SCRIPT_MODEL, STANCES } from '@/lib/scriptprompt';
 import { resolveTenantAccess } from '@/lib/tenancy';
 import type { Stance } from '@/lib/types';
@@ -23,9 +24,17 @@ import { noteScriptGeneration, noteScriptRefusal, noteScriptServed } from '@/lib
  * The only Anthropic-calling endpoint in Oravan. Stateless by design:
  * nothing about the caller is stored. Scripts are cached per
  * (bill, stance, locale, content-version) — shared across all visitors —
- * so popular bills cost one generation total, now across ALL instances
- * (S11: the cache lives in the content-keyed Upstash cache database, with
- * an in-memory fallback when unconfigured).
+ * so popular bills cost one generation per stance total, now across ALL
+ * instances (S11: the cache lives in the content-keyed Upstash cache
+ * database, with an in-memory fallback when unconfigured).
+ *
+ * STANCE-BLIND (owner's pick, 2026-11-24). The cache is read and written for
+ * EVERY stance of a bill at once, and a missing stance is drafted together
+ * with every other missing stance, so neither Upstash database nor Anthropic
+ * receives anything that depends on the stance the caller picked. The
+ * caller's stance is used only in this function's memory, to pick which
+ * script to return. The whole path, and why each step is shaped the way it
+ * is, lives in lib/script-serve.ts.
  *
  * TWO VEHICLE KINDS, ONE ENDPOINT (2026-08-06). A `pn-…` slug is a Senate
  * nomination and takes the fork below: a different corpus, its own liveness
@@ -87,9 +96,9 @@ import { noteScriptGeneration, noteScriptRefusal, noteScriptServed } from '@/lib
  *      tenant limiter's threshold. Citizen 429s carry Retry-After;
  *      token-path 429s remain uniform and bare, whether the per-IP or the
  *      tenant limiter tripped.
- *   5. Passes every check -> the EXISTING cache-get -> generate -> cache-set
- *      path below, completely unchanged. Response shape stays
- *      `{script, cached}` — no tenant metadata ever added to it.
+ *   5. Passes every check -> the same stance-blind read -> draft -> store
+ *      path the citizen request takes (serveScript below). Response shape
+ *      stays `{script, cached}` — no tenant metadata ever added to it.
  *
  * SPEND CEILING (spend-guards, 2026-09-18). The three limiters above are
  * per-CALLER or per-TENANT; none of them bounds the day's total. A launch
@@ -97,11 +106,21 @@ import { noteScriptGeneration, noteScriptRefusal, noteScriptServed } from '@/lib
  * run the Anthropic bill up with nothing in the way. `script-day` below is
  * that missing bound — the same GLOBAL daily breaker /api/brand already runs
  * ('brand-day' keyed by 'brand-global'), applied here to CACHE-MISS
- * GENERATIONS ONLY, inside serveScript. A cache hit costs nothing, so it
- * must never consume the breaker: this endpoint's whole economy is that a
- * popular bill is generated once and served from the shared cache forever
- * after, and charging those hits against a spend cap would let free traffic
- * dark a paid feature.
+ * GENERATIONS ONLY, inside serveScript: one unit per stance drafted, so a
+ * cold bill (three stances missing) takes three. A bill whose every stance is
+ * cached costs nothing and never consumes the breaker: this endpoint's whole
+ * economy is that a popular bill is generated once and served from the shared
+ * cache forever after, and charging those hits against a spend cap would let
+ * free traffic dark a paid feature. A request whose OWN script is cached on a
+ * HALF-warm bill is different since 2026-11-24: to stay stance-blind it
+ * starts (or joins) the drafting of the stances still missing, and that
+ * drafting takes units like any other. What keeps those hits from draining
+ * the cap: one fill per bill at a time on an instance (later requests, and
+ * requests arriving within five seconds of its end, join it), a pause for a
+ * bill after a fill in which a draft failed (1, 2, 4, then 10 minutes for
+ * failed fills of that bill in a row, back to 1 after one that succeeds), at
+ * most 16 bills filling at once per instance (`routeFills`,
+ * lib/script-serve.ts step 5), and this breaker itself.
  *
  * Numbers (60/10min, 800/24h per tenant) are disclosed as tunable, not
  * derived from real per-tenant demand — S18 is dark-shipped, zero live
@@ -121,7 +140,14 @@ import { noteScriptGeneration, noteScriptRefusal, noteScriptServed } from '@/lib
  *   422 not_callable       — a NOMINATION with no call to make (past advice
  *                            and consent, unclassified, or no description)
  *   429 rate_limited       — any limiter or the daily breaker tripped
- *   502 generation_failed  — the model call failed or came back empty
+ *   502 generation_failed  — the model call failed or came back empty; or
+ *                            no draft could start for a missing script (a
+ *                            failed draft of that bill within its cooldown,
+ *                            1 to 10 minutes, or 16 bills already filling on
+ *                            this instance); or the script's key expired
+ *                            during a fill this request joined, which never
+ *                            drafted it (lib/script-serve.ts, step 5 and
+ *                            WHAT REMAINS VISIBLE)
  */
 
 // 60s: the largest function duration valid on every Vercel plan tier, and
@@ -344,8 +370,9 @@ export async function POST(req: NextRequest) {
     // is only ever one script prompt in the codebase, never a second copy
     // drifting out of sync with this one.
     return serveScript(
-      { slug, stance, lang, version },
-      () => buildScriptPrompt({ bill, stance, lang }),
+      { slug, lang, version },
+      stance,
+      (draftStance) => buildScriptPrompt({ bill, stance: draftStance, lang }),
       oravanKey !== null
     );
   }
@@ -411,65 +438,90 @@ export async function POST(req: NextRequest) {
   // out of agreement with the key material any future caller writes.
   const version = nominationContentVersion(nomination, audience);
   return serveScript(
-    { slug, stance, lang, version },
-    () => buildNominationScriptPrompt({ nomination, stance, audience, lang }),
+    { slug, lang, version },
+    stance,
+    (draftStance) => buildNominationScriptPrompt({ nomination, stance: draftStance, audience, lang }),
     oravanKey !== null
   );
 }
 
 /**
- * Cache-get → generate → cache-set → respond. Extracted 2026-08-06 when the
- * nomination path landed, and extracted rather than copied for one reason:
- * this is the block that spends money and the block that writes the shared
- * cache, and two copies of it would be two places for a cache-key bug or an
- * uncounted generation to hide. Both kinds get the identical response shape
- * (`{script, cached}`), the identical 502 on failure, and the identical
- * cache-miss-only spend count.
+ * Read every stance → draft every missing one → store them together →
+ * respond. Extracted 2026-08-06 when the nomination path landed, and
+ * extracted rather than copied for one reason: this is the block that spends
+ * money and the block that writes the shared cache, and two copies of it
+ * would be two places for a cache-key bug or an uncounted generation to hide.
+ * Both kinds get the identical response shape (`{script, cached}`), the
+ * identical 502 on failure, and the identical cache-miss-only spend count.
  *
- * `buildPrompt` is a thunk so the prompt is never built on a cache hit — the
- * common case, and the one that must stay cheapest.
+ * Since 2026-11-24 the order of operations lives in lib/script-serve.ts
+ * (serveStanceBlind), where a unit spec can drive it with the real cache and
+ * counters modules; this function only wires in the model call, the daily
+ * breaker, the counts and the response shapes.
+ *
+ * `buildPrompt` takes the stance to draft, and is called only for a stance
+ * that is missing from the cache, so nothing is built on a full cache hit —
+ * the common case, and the one that must stay cheapest.
+ *
+ * THE GLOBAL DAILY SPEND BREAKER, and where it sits. Nothing that costs
+ * nothing may consume it: a full cache hit (every stance stored), a bad body, a slug that resolves to no
+ * vehicle, a nomination with no call to make. So it is consulted only inside
+ * serveStanceBlind, after the cache read and before any model call, one unit
+ * per stance about to be drafted. The counter is consumed by the CHECK, not by
+ * success: a generation that then fails at Anthropic has still occupied the
+ * machinery, and a route that refunded failures would let a persistent
+ * upstream error spin the breaker forever. Same semantics as brand-day.
  *
  * `tokenPath` says which 429 shape a breaker trip gets, and nothing else —
  * the breaker itself applies identically to citizen and tenant traffic,
  * because a dollar spent on either is the same dollar.
  */
 async function serveScript(
-  key: { slug: string; stance: string; lang: 'en' | 'es'; version: string },
-  buildPrompt: () => string,
+  set: StanceSetParts,
+  stance: Stance,
+  buildPrompt: (stance: Stance) => string,
   tokenPath: boolean
 ): Promise<NextResponse> {
-  const cached = await cache.get(key);
-  if (cached) {
-    // People count (owner, 2026-11-23, card `people`): one script served,
-    // cache hit included. No argument, so nothing about the bill, stance,
-    // language or caller reaches the key (lib/usage.ts). after() so the
-    // counter never delays the answer.
-    after(() => noteScriptServed());
-    return NextResponse.json({ script: cached, cached: true });
-  }
+  const outcome = await serveStanceBlind(set, stance, {
+    cache,
+    takeGenerationUnit: () => dayBreaker.isLimited(SCRIPT_GLOBAL_BUCKET),
+    // async, so a buildPrompt that throws is one failed draft (a 502 if it
+    // was the caller's), not a bare 500 (first check of #554, N6).
+    generate: async (draftStance) => generateScript(buildPrompt(draftStance), set.lang),
+    // after() only keeps the day counts alive past the response: a slow or
+    // failed counter write never delays the answer. The answer itself waits
+    // for the fill (its drafts and its write), whichever stance this caller
+    // picked, so when it leaves says nothing about whose script was cached
+    // (lib/script-serve.ts step 3). Nothing sent anywhere waits for the
+    // answer.
+    defer: (task) => after(task),
+    // One fill per bill at a time, a pause for a bill after a failed draft
+    // (or a cache write that did not land)
+    // that backs off from 1 to 10 minutes, at most 16 bills filling at once:
+    // per instance, keyed by the bill, never the stance. What keeps a cache
+    // hit on a half-warm bill, which still starts the fill of the other
+    // stances, from draining the cap.
+    fills: routeFills,
+    note: {
+      // traffic-watch (2026-07): one per real generation (an actual
+      // Anthropic spend), never a cache hit — see lib/usage.ts.
+      generated: () => noteScriptGeneration(),
+      // People count (owner, 2026-11-23, card `people`): no argument, so
+      // nothing about the bill, stance, language or caller reaches the key.
+      served: () => noteScriptServed(),
+      // The refusal the audit found invisible (SY-48): a fail-closed breaker
+      // that trips — at its ceiling OR because the counters database is
+      // unreachable — used to leave only "0 generations" behind. Counted for
+      // both paths, since a dollar not spent for either is the same signal.
+      refusedDaily: () => noteScriptRefusal('daily'),
+    },
+    logFailure: (err) => console.error('script generation failed', err),
+  });
 
-  /*
-   * THE GLOBAL DAILY SPEND BREAKER, and the reason it sits exactly HERE.
-   *
-   * Above this line the request has cost nothing: a cache hit, a bad body, a
-   * slug that resolves to no vehicle, a nomination with no call to make. None
-   * of those spend an Anthropic call, so none of them may consume a cap whose
-   * whole job is to bound spend — charging them would let free traffic dark a
-   * paid feature for everyone. Below this line a generation is about to
-   * happen. So the breaker counts attempts at the only place an attempt is
-   * real, exactly as /api/brand's does.
-   *
-   * The counter is consumed by the CHECK, not by success: a generation that
-   * then fails at Anthropic has still occupied the machinery, and a route
-   * that refunded failures would let a persistent upstream error spin the
-   * breaker forever. Same semantics as brand-day.
-   */
-  if (await dayBreaker.isLimited(SCRIPT_GLOBAL_BUCKET)) {
-    // The refusal the audit found invisible (SY-48): a fail-closed breaker
-    // that trips — at its ceiling OR because the counters database is
-    // unreachable — used to leave only "0 generations" behind. Counted for
-    // both paths, since a dollar not spent for either is the same signal.
-    after(() => noteScriptRefusal('daily'));
+  if (outcome.kind === 'script') {
+    return NextResponse.json({ script: outcome.script, cached: outcome.cached });
+  }
+  if (outcome.kind === 'daily-limited') {
     // Token path: the uniform bare 429, per §4's doctrine above.
     if (tokenPath) return NextResponse.json({ error: 'rate_limited' }, { status: 429 });
     /*
@@ -485,39 +537,34 @@ async function serveScript(
      */
     return NextResponse.json({ error: 'rate_limited', scope: 'daily' }, { status: 429 });
   }
+  return NextResponse.json({ error: 'generation_failed' }, { status: 502 });
+}
 
-  try {
-    const msg = await anthropic.messages.create(
-      {
-        model: SCRIPT_MODEL,
-        max_tokens: SCRIPT_MAX_TOKENS,
-        // Sonnet 5.5's no-up-front-thinking setting (`disabled` is a 400
-        // there); with no tools the reply is text only, so content[0] below
-        // is still the script. The installed SDK's types predate
-        // `between_tools`; the SDK posts the body unchanged, so the cast
-        // changes nothing on the wire.
-        thinking: { type: 'between_tools' } as unknown as Anthropic.ThinkingConfigParam,
-        messages: [{ role: 'user', content: buildPrompt() }],
-      },
-      // Without this the SDK waits out its 10-minute default and the platform
-      // kills the function first — see GENERATION_TIMEOUT_MS above. A timeout
-      // throws here, which is what routes a slow upstream into the 502 below.
-      { timeout: GENERATION_TIMEOUT_MS, maxRetries: GENERATION_MAX_RETRIES }
-    );
-    // finishScript (lib/scriptprompt.ts): trimmed, and restyled to "the
-    // president" (docs/copy-style.md).
-    const script = msg.content[0].type === 'text' ? finishScript(msg.content[0].text, key.lang) : '';
-    if (!script) throw new Error('empty');
-    await cache.set(key, script); // never throws
-    // traffic-watch (2026-07): counts only real cache-miss generations (an
-    // actual Anthropic spend), not cache hits — see lib/usage.ts. after()
-    // so a slow/failed counter write never delays this response.
-    after(() => noteScriptGeneration());
-    // And the people count above, for a script drafted now.
-    after(() => noteScriptServed());
-    return NextResponse.json({ script, cached: false });
-  } catch (err) {
-    console.error('script generation failed', err);
-    return NextResponse.json({ error: 'generation_failed' }, { status: 502 });
-  }
+/**
+ * ONE model call for ONE stance. Throws on a failed or empty reply, which
+ * serveStanceBlind counts as that stance's draft failing.
+ */
+async function generateScript(prompt: string, lang: 'en' | 'es'): Promise<string> {
+  const msg = await anthropic.messages.create(
+    {
+      model: SCRIPT_MODEL,
+      max_tokens: SCRIPT_MAX_TOKENS,
+      // Sonnet 5.5's no-up-front-thinking setting (`disabled` is a 400
+      // there); with no tools the reply is text only, so content[0] below
+      // is still the script. The installed SDK's types predate
+      // `between_tools`; the SDK posts the body unchanged, so the cast
+      // changes nothing on the wire.
+      thinking: { type: 'between_tools' } as unknown as Anthropic.ThinkingConfigParam,
+      messages: [{ role: 'user', content: prompt }],
+    },
+    // Without this the SDK waits out its 10-minute default and the platform
+    // kills the function first — see GENERATION_TIMEOUT_MS above. A timeout
+    // throws here, which is what routes a slow upstream into the 502.
+    { timeout: GENERATION_TIMEOUT_MS, maxRetries: GENERATION_MAX_RETRIES }
+  );
+  // finishScript (lib/scriptprompt.ts): trimmed, and restyled to "the
+  // president" (docs/copy-style.md).
+  const script = msg.content[0].type === 'text' ? finishScript(msg.content[0].text, lang) : '';
+  if (!script) throw new Error('empty');
+  return script;
 }

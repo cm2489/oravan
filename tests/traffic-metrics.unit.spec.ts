@@ -634,7 +634,7 @@ test.describe('formatScriptRefusalLine (the 2026-09-27 audit, SY-48)', () => {
       { scope: 'tenant', window: win(0, [0, 0, 4]) },
     ]);
     expect(line).toBe(
-      '  refusals (HTTP 429) yesterday: daily spend breaker 0 (7d 0), per-caller burst limit 2 (7d 8), embed tenant limit 0 (7d 4)'
+      '  refusals yesterday: daily spend breaker 0 (7d 0), per-caller burst limit 2 (7d 8), embed tenant limit 0 (7d 4)'
     );
   });
 
@@ -742,7 +742,7 @@ test.describe('formatDigestBody / spikeIssueContent', () => {
     expect(genAt).toBeGreaterThan(-1);
     // Directly under the generations number it explains.
     expect(lines[genAt + 2]).toBe(
-      '  refusals (HTTP 429) yesterday: daily spend breaker 0 (7d 0), per-caller burst limit 0 (7d 0), embed tenant limit 0 (7d 0)'
+      '  refusals yesterday: daily spend breaker 0 (7d 0), per-caller burst limit 0 (7d 0), embed tenant limit 0 (7d 0)'
     );
     expect(quiet).not.toContain('⚠ the daily breaker');
     // And the reading guide rides along every day.

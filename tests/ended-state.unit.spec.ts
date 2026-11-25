@@ -35,6 +35,7 @@ import {
 } from '../lib/ended-state.mjs';
 import { billFloorBand, endedDecision, liveCallTarget, passageState, settledDecision, statusKeyFor } from '../lib/journey';
 import { concurrentEnrolledBy, recordStatus } from '../lib/floor-text.mjs';
+import { routeFills } from '../lib/script-serve';
 import { statusWord } from '../lib/status-word';
 import type { Bill, StatusLabelKey } from '../lib/types';
 import { BASE, ENDED_119, ENROLLED_CONCURRENT_FIXTURE, PRESENTED_FIXTURE } from './fixtures/ended-bills';
@@ -509,6 +510,9 @@ test.describe('item 3: app/api/script', () => {
     for (const [name, value] of Object.entries(savedEnv)) if (value !== undefined) process.env[name] = value;
   });
   test.beforeEach(() => {
+    // The stub fails every draft, which starts the route's per-bill cooldown
+    // (lib/script-serve.ts step 5); clear it so each test reaches the model.
+    routeFills.reset();
     modelCalls = 0;
     Anthropic.Messages.prototype.create = function blockedCreate() {
       modelCalls += 1;
@@ -562,6 +566,7 @@ test.describe('item 3: app/api/script', () => {
     const open = getAllBills().find((b) => b.status === 'committee' && b.ai_summary && settledDecision(b) === null)!;
     const res = await post(billSlug(open));
     expect(res.status).toBe(502);
-    expect(modelCalls).toBe(1);
+    // Once per stance: every missing stance is drafted together (lib/script-serve.ts).
+    expect(modelCalls).toBe(3);
   });
 });

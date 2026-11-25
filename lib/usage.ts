@@ -594,10 +594,17 @@ export function browserPageviewUsageKey(surface: PageviewSurface, day: string): 
  *                  drafted now OR already drafted (cache hits included) — the
  *                  count usage:script above leaves out on purpose, since that
  *                  one tracks spend. Partner widgets call the same route.
+ *                  A FLOOR since #554 (2026-11-24): to stay stance-blind it
+ *                  ticks only when every stance of the bill ended up
+ *                  available, so a day with failed or held-back drafts
+ *                  undercounts it (lib/script-serve.ts, step 4); it never
+ *                  counts a script that was not served.
  *
- * Each is incremented with after() from its route, after the answer is
- * built, by a function that takes no argument — so there is no parameter
- * through which a ZIP, a bill or a stance could reach the key.
+ * Each is incremented by a function that takes no argument — so there is no
+ * parameter through which a ZIP, a bill or a stance could reach the key —
+ * started after the answer is built, or for script-served when the fill its
+ * request started or joined ends, kept alive with after(), and never awaited
+ * by the answer.
  */
 export function repLookupUsageKey(day: string): string {
   return `${keyPrefix()}:usage:rep-lookup:${day}`;
@@ -640,8 +647,9 @@ export function isPageviewSurface(raw: unknown): raw is PageviewSurface {
 
 /*
  * WHAT THIS IS, STATED PLAINLY: one integer per /api/script LIMITER per UTC
- * day — "the daily spend breaker answered 429 three times yesterday". Never
- * which bill, which stance, which caller, which tenant, or from where.
+ * day — "the daily spend breaker held back three requests' drafts
+ * yesterday". Never which bill, which stance, which caller, which tenant, or
+ * from where.
  *
  * WHY IT EXISTS (the 2026-09-27 audit, SY-48): usage:script counts only
  * SUCCESSFUL cache-miss generations, and `script-day` (app/api/script/
@@ -650,10 +658,16 @@ export function isPageviewSurface(raw: unknown): raw is PageviewSurface {
  * uncached request all day, and nothing told the two apart. This family is
  * the other half of that number: how many times each guard said no.
  *
- * The scopes are the three places the route answers 429, named for the guard,
- * not the person:
+ * The scopes are the three guards that turn a script request away, named for
+ * the guard, not the person:
  *   'daily'   the GLOBAL spend breaker (script-day). Fail-closed, so it also
- *             refuses when the counters database cannot be reached.
+ *             refuses when the counters database cannot be reached. Since
+ *             #554 (2026-11-24) it counts once per request whose fill (the
+ *             drafting of every missing stance of its bill, started or
+ *             joined) the breaker refused — EVEN WHEN that request's own
+ *             script was cached and it got a 200, not a 429. Counting only
+ *             the 429s would tell the counters database whose stance was
+ *             missing (lib/script-serve.ts, step 4).
  *   'burst'   the per-caller limiter (20 requests / 10 min).
  *   'tenant'  an embed tenant's own limiters (embed-script / -day).
  *
@@ -774,8 +788,9 @@ export async function noteMcpToolCall(tool: McpToolName): Promise<void> {
 
 /**
  * Record one real (cache-miss) script generation. Called via `after()` from
- * app/api/script/route.ts immediately after a successful cache.set, so a
- * slow or failed write can never delay the response. Never throws.
+ * app/api/script/route.ts (through lib/script-serve.ts), once per draft that
+ * came back, after the cache write, so a slow or failed write can never
+ * delay the response. Never throws.
  */
 export async function noteScriptGeneration(): Promise<void> {
   await noteUsage(scriptUsageKey(usageDayKey()));
@@ -791,9 +806,12 @@ export async function noteBrandPreview(): Promise<void> {
 }
 
 /**
- * Record one /api/script 429, by the guard that returned it. Called via
- * `after()` from app/api/script/route.ts at each of its three 429 sites, so a
- * slow or failed write never delays the refusal itself. Content-free and
+ * Record one /api/script refusal, by the guard that made it: a 429 for
+ * 'burst' and 'tenant'; for 'daily', one request whose drafts the breaker
+ * held back, whether or not that request was answered 429 (see
+ * SCRIPT_REFUSAL_SCOPES). Called via `after()` from app/api/script/route.ts
+ * (the daily one through lib/script-serve.ts), so a slow or failed write
+ * never delays the answer. Content-free and
  * caller-free: the one input is narrowed onto SCRIPT_REFUSAL_SCOPES before
  * any key is built. Never throws.
  */

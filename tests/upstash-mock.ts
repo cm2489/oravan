@@ -11,6 +11,14 @@
  *
  * Every command is recorded (`commands`) so privacy specs can assert over
  * everything that WOULD have crossed the wire, not just what got stored.
+ * Every REST request is ALSO recorded as raw bytes (`requests`: the path
+ * after the database URL, and the body exactly as sent), so a spec can assert
+ * that two requests sent the same bytes, not merely equivalent commands.
+ *
+ * `/multi-exec` (Upstash's transaction endpoint, added 2026-11-24 for
+ * lib/scriptcache.ts setStances): the body is a two-dimensional command
+ * array; each command runs in order and is recorded in `commands` like any
+ * other, and the answer is one `{result}` per command.
  */
 
 /** Redis glob (only `*` is used by any caller in this repo) -> RegExp. */
@@ -33,6 +41,8 @@ export class MockUpstash {
    */
   hll = new Map<string, Set<string>>();
   commands: string[][] = [];
+  /** Every REST request as sent: path after the base URL ('' or '/multi-exec') and raw body. */
+  requests: Array<{ path: string; body: string }> = [];
   /** When set, every request answers with this HTTP status (error path). */
   failWithStatus: number | null = null;
   /** When true, every request throws (network-failure path). */
@@ -205,6 +215,16 @@ export function installUpstashFetch(
       }
       if (mock.callsAttempted === mock.failOnCallNumber) {
         return new Response('mock upstream error (induced single-call failure)', { status: 500 });
+      }
+      const path = url.slice(base.length);
+      mock.requests.push({ path, body: String(init?.body) });
+      if (path === '/multi-exec') {
+        const commands = JSON.parse(String(init?.body)) as string[][];
+        const rows = commands.map((command) => ({ result: mock.exec(command) }));
+        return new Response(JSON.stringify(rows), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
       }
       const command = JSON.parse(String(init?.body)) as string[];
       return new Response(JSON.stringify({ result: mock.exec(command) }), {

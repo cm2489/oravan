@@ -280,7 +280,7 @@ test.describe('the real-people line (#547\'s counts)', () => {
     expect(line).toBe(
       'Real people, last 7 days (estimate): On an average day about 41 different browser addresses opened a page ' +
         '(last week 35, up 17%); a home or office network counts once. ' +
-        '120 ZIP lookups found a district (last week 98, up 22%) and 38 call scripts were shown (last week 30, up 27%); those are actions, not people. ' +
+        '120 ZIP lookups found a district (last week 98, up 22%) and at least 38 call scripts were shown (last week 30, up 27%); those are actions, not people. ' +
         'Bots made 63% of page loads (last week 58%).'
     );
   });
@@ -312,7 +312,7 @@ test.describe('the real-people line (#547\'s counts)', () => {
     expect(line).toMatch(/^Real people, Nov 25–Nov 29 only \(estimate; counting began Nov 24, the first full week is in the Dec 7 note\):/);
     // Five days: lookups 20×5 = 100, scripts 6+6+6+5+5 = 28, browsers mean of 41,45,38,40,42 = 41.
     expect(line).toContain('about 41 different browser');
-    expect(line).toContain('100 ZIP lookups found a district and 28 call scripts were shown');
+    expect(line).toContain('100 ZIP lookups found a district and at least 28 call scripts were shown');
   });
 
   test('before any whole day: counting began, and when the first full week arrives', () => {
@@ -350,7 +350,7 @@ test.describe('the real-people line (#547\'s counts)', () => {
     };
     const line = formatPeopleWeek(peopleWeeks(flat));
     expect(line).toContain('14 ZIP lookups found a district (last week 14, the same)');
-    expect(line).toContain('7 call scripts were shown (last week 0)');
+    expect(line).toContain('at least 7 call scripts were shown (last week 0)');
   });
 
   test("each day's browser figure is read from the digest's People row; \"not read\" rows have none; later comments win", () => {

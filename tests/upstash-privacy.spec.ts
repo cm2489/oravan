@@ -122,18 +122,28 @@ test.beforeEach(() => {
 test('a burst of script/district/MCP traffic leaves both databases clean', async () => {
   // --- the burst --------------------------------------------------------------
 
-  // Script-shaped traffic: the same limiter + cache calls the route makes,
-  // three stances x two locales, miss then hit, real summary.
+  // Script-shaped traffic: the same limiter + cache calls the route makes —
+  // stance-blind since 2026-11-24 (lib/script-serve.ts): every stance read in
+  // one MGET, every missing stance written in one transaction. Three callers
+  // x two locales, miss then shared hit, real summary.
   const scriptLimiter = createRateLimiter({ route: 'script', max: 8, windowSec: 600 });
   const scriptCache = createScriptCache();
   const version = contentVersion(bill);
-  for (const [i, stance] of (['support', 'oppose', 'undecided'] as const).entries()) {
-    for (const lang of ['en', 'es'] as const) {
-      expect(await scriptLimiter.isLimited(CALLER_IPS[i])).toBe(false);
-      const parts = { slug: SLUG, stance, lang, version };
-      expect(await scriptCache.get(parts)).toBeNull(); // miss
-      await scriptCache.set(parts, `generated script for ${stance}/${lang}`);
-      expect(await scriptCache.get(parts)).not.toBeNull(); // shared hit
+  for (const lang of ['en', 'es'] as const) {
+    for (const [i, ip] of CALLER_IPS.entries()) {
+      expect(await scriptLimiter.isLimited(ip)).toBe(false);
+      const set = { slug: SLUG, lang, version };
+      const stored = await scriptCache.getStances(set);
+      if (i === 0) {
+        expect(stored).toEqual({ support: null, oppose: null, undecided: null }); // miss
+        await scriptCache.setStances(set, {
+          support: `generated script for support/${lang}`,
+          oppose: `generated script for oppose/${lang}`,
+          undecided: `generated script for undecided/${lang}`,
+        });
+      } else {
+        expect(stored.oppose).toBe(`generated script for oppose/${lang}`); // shared hit
+      }
     }
   }
 
@@ -314,16 +324,23 @@ test('AE5 (embed-originating path): a tenant-authenticated script request leaves
     // anonymous citizen. This is what makes "reuse the one route, don't
     // fork a parallel implementation" (S19 design §1) actually true, not
     // just asserted.
+    // Stance-blind since 2026-11-24: the route reads every stance at once and
+    // writes every drafted stance at once (lib/script-serve.ts).
     const embedScriptCache = createScriptCache();
     const version = contentVersion(bill);
-    const parts = { slug: SLUG, stance: 'support' as const, lang: 'en' as const, version };
-    expect(await embedScriptCache.get(parts), 'fresh cache instance for this test - must start as a miss').toBeNull();
-    await embedScriptCache.set(parts, 'generated script for the embed-originating request');
+    const set = { slug: SLUG, lang: 'en' as const, version };
+    expect(
+      (await embedScriptCache.getStances(set)).support,
+      'fresh cache instance for this test - must start as a miss'
+    ).toBeNull();
+    await embedScriptCache.setStances(set, { support: 'generated script for the embed-originating request' });
 
     // A DIFFERENT ScriptCache instance (standing in for the citizen site's
     // own /api/script request for the identical bill/stance/locale) reads
     // the SAME entry back - proof of sharing, not just same-process reuse.
-    expect(await createScriptCache().get(parts)).toBe('generated script for the embed-originating request');
+    expect((await createScriptCache().getStances(set)).support).toBe(
+      'generated script for the embed-originating request'
+    );
 
     // --- the AE5 invariant itself, now spanning three databases -----------
 

@@ -33,6 +33,10 @@ import { COUNTERS_URL, MockUpstash, installUpstashFetch, setUpstashEnv } from '.
  */
 
 const routeSrc = readFileSync(join(process.cwd(), 'app/api/script/route.ts'), 'utf8');
+// Since 2026-11-24 the order of operations (cache read, breaker, model call,
+// cache write) lives in lib/script-serve.ts; the route wires it. Its
+// behaviour is driven end to end in tests/script-stance-blind.unit.spec.ts.
+const serveSrc = readFileSync(join(process.cwd(), 'lib/script-serve.ts'), 'utf8');
 const panelSrc = readFileSync(join(process.cwd(), 'components/ActionPanel.tsx'), 'utf8');
 const en = JSON.parse(readFileSync(join(process.cwd(), 'messages/en.json'), 'utf8'));
 const es = JSON.parse(readFileSync(join(process.cwd(), 'messages/es.json'), 'utf8'));
@@ -72,30 +76,42 @@ test('the breaker is a SPEND guard: failClosed, on the documented global bucket,
  * 2 · WHERE the breaker sits — the property that keeps a cache hit free.
  * ------------------------------------------------------------------ */
 
-test('a cache HIT can never consume the breaker: the check sits after the cache read and before the model call', () => {
-  const cacheGet = routeSrc.indexOf('const cached = await cache.get(key);');
-  const cacheHitReturn = routeSrc.indexOf('return NextResponse.json({ script: cached, cached: true });');
-  const breaker = routeSrc.indexOf('await dayBreaker.isLimited(SCRIPT_GLOBAL_BUCKET)');
-  const generate = routeSrc.indexOf('await anthropic.messages.create(');
-  expect(cacheGet, 'anchor: the cache read').toBeGreaterThan(-1);
-  expect(cacheHitReturn, 'anchor: the cache-hit early return').toBeGreaterThan(-1);
-  expect(breaker, 'anchor: the breaker check').toBeGreaterThan(-1);
-  expect(generate, 'anchor: the Anthropic call').toBeGreaterThan(-1);
-
-  expect(cacheHitReturn, 'the cache hit must return BEFORE the breaker is consulted').toBeLessThan(
-    breaker
-  );
-  expect(breaker, 'the breaker must be consulted BEFORE any money is spent').toBeLessThan(generate);
+test('a FULL cache hit (every stance stored) can never consume the breaker: the check sits after the cache read and before the model call', () => {
+  const serveStart = serveSrc.indexOf('export async function serveStanceBlind(');
+  const cacheRead = serveSrc.indexOf('const stored = await deps.cache.getStances(set);', serveStart);
+  const fullHitReturn = serveSrc.indexOf("return { kind: 'script', script: own as string, cached: true };", serveStart);
+  const fillStart = serveSrc.indexOf('async function fillMissing(');
+  const breaker = serveSrc.indexOf('missing.map(() => deps.takeGenerationUnit())', fillStart);
+  const refusedReturn = serveSrc.indexOf('if (refusals.some(Boolean)) return', fillStart);
+  const generate = serveSrc.indexOf('missing.map(async (stance) => deps.generate(stance))', fillStart);
+  for (const [name, at] of Object.entries({ serveStart, cacheRead, fullHitReturn, fillStart, breaker, refusedReturn, generate })) {
+    expect(at, `anchor: ${name}`).toBeGreaterThan(-1);
+  }
+  expect(cacheRead, 'the cache is read first').toBeLessThan(fullHitReturn);
+  // A full hit returns before fillMissing is ever called; fillMissing is the
+  // only place a unit is taken.
+  expect(serveSrc.slice(serveStart, fullHitReturn)).not.toContain('fillMissing(');
+  expect(serveSrc.split('deps.takeGenerationUnit()').length - 1, 'one breaker site').toBe(1);
+  expect(breaker, 'the breaker must be consulted BEFORE any money is spent').toBeLessThan(refusedReturn);
+  expect(refusedReturn).toBeLessThan(generate);
 });
 
 test('the breaker lives in serveScript, not in POST — so a bad body, an unknown slug, or a not-callable nomination never spends a unit of it', () => {
   const postStart = routeSrc.indexOf('export async function POST(');
   const serveStart = routeSrc.indexOf('async function serveScript(');
-  const breaker = routeSrc.indexOf('await dayBreaker.isLimited(SCRIPT_GLOBAL_BUCKET)');
+  const breaker = routeSrc.indexOf('takeGenerationUnit: () => dayBreaker.isLimited(SCRIPT_GLOBAL_BUCKET),');
   expect(postStart).toBeGreaterThan(-1);
   expect(serveStart).toBeGreaterThan(postStart);
   expect(breaker, 'the only breaker check must be inside serveScript').toBeGreaterThan(serveStart);
   expect(routeSrc.split('dayBreaker.isLimited').length - 1, 'exactly one breaker check').toBe(1);
+});
+
+test('one breaker unit per stance drafted, all or nothing: a refused unit means no model call at all', () => {
+  // A cold bill drafts up to three stances now; each is a real spend, so each
+  // takes a unit, and a partial "yes" drafts nothing (lib/script-serve.ts
+  // header, step 3a). Behaviour: tests/script-stance-blind.unit.spec.ts.
+  expect(serveSrc).toContain('const refusals = await Promise.all(missing.map(() => deps.takeGenerationUnit()));');
+  expect(serveSrc).toContain("if (refusals.some(Boolean)) return { refused: true, drafted: {}, complete: false, stored: true };");
 });
 
 /* ------------------------------------------------------------------ *
@@ -161,20 +177,24 @@ test.describe('refusals are counted at each 429 site, by guard', () => {
     expect(block).not.toMatch(/noteScriptRefusal\([^)]*tenantId/);
   });
 
-  test("the daily breaker's trip counts 'daily' on BOTH paths, and only after the cache read (a hit still costs nothing)", () => {
-    const block = between('if (await dayBreaker.isLimited(SCRIPT_GLOBAL_BUCKET)) {', 'try {');
-    const count = block.indexOf("after(() => noteScriptRefusal('daily'));");
-    expect(count, 'counted inside the breaker trip').toBeGreaterThan(-1);
-    expect(count, 'before the token-path return').toBeLessThan(block.indexOf('if (tokenPath) return'));
-    expect(routeSrc.indexOf("noteScriptRefusal('daily')")).toBeGreaterThan(
-      routeSrc.indexOf('return NextResponse.json({ script: cached, cached: true });')
-    );
+  test("the daily breaker's refusal counts 'daily' on BOTH paths, deferred, and only after the cache read (a hit still costs nothing)", () => {
+    // The route hands the count to serveStanceBlind, which runs it through
+    // `defer` (after()) whenever a fill was refused — for the token path and
+    // the citizen path alike, and even when this caller's own script was
+    // cached, so the counters database cannot tell callers apart by it.
+    expect(routeSrc).toContain("refusedDaily: () => noteScriptRefusal('daily'),");
+    expect(routeSrc).toContain('defer: (task) => after(task),');
+    expect(serveSrc).toContain('if (fill?.refused) await deps.note.refusedDaily();');
+    const block = between("if (outcome.kind === 'daily-limited') {", "return NextResponse.json({ error: 'generation_failed' }, { status: 502 });");
+    expect(block).toContain("if (tokenPath) return NextResponse.json({ error: 'rate_limited' }, { status: 429 });");
+    expect(block).toContain("return NextResponse.json({ error: 'rate_limited', scope: 'daily' }, { status: 429 });");
   });
 
   test('exactly three refusal counts, one per guard, each deferred with after() — and nothing else is passed to them', () => {
     const calls = [...routeSrc.matchAll(/noteScriptRefusal\(([^)]*)\)/g)].map((m) => m[1]);
     expect(calls.sort()).toEqual(["'burst'", "'daily'", "'tenant'"]);
-    expect(routeSrc.split('after(() => noteScriptRefusal(').length - 1).toBe(3);
+    // 'burst' and 'tenant' directly; 'daily' through serveStanceBlind's defer, which is after().
+    expect(routeSrc.split('after(() => noteScriptRefusal(').length - 1).toBe(2);
   });
 
   test('every 429 the route can return sits behind a counted guard', () => {
