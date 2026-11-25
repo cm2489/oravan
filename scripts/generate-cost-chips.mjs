@@ -6,6 +6,7 @@
  */
 import Anthropic from '@anthropic-ai/sdk';
 import { readFileSync, writeFileSync } from 'node:fs';
+import { decodeLocks } from './decode-locks.mjs';
 import { PRESIDENT_STYLE_RULE, presidentStyle } from '../lib/president-style.mjs';
 
 const anthropic = new Anthropic({ maxRetries: 8 });
@@ -16,7 +17,9 @@ const bills = JSON.parse(readFileSync('data/bills.json', 'utf8'));
 const es = JSON.parse(readFileSync('data/bills-es.json', 'utf8'));
 const slugOf = (b) => `${b.bill_type}-${b.bill_number}-${b.congress_number}`.toLowerCase();
 
-const todo = bills.filter((b) => b.ai_sections?.cost && !b.ai_sections.costChips);
+// A hand-corrected decode (data/decode-locks.json) is never rewritten here.
+const locks = decodeLocks();
+const todo = bills.filter((b) => b.ai_sections?.cost && !b.ai_sections.costChips && !locks.has(slugOf(b)));
 console.log(`${todo.length} cost sections to chip`);
 
 function parseChips(line) {

@@ -1,0 +1,27 @@
+{
+  "_about": [
+    "Decode locks: bills whose decode a person corrected by hand. Read by scripts/decode-locks.mjs; the full rules are in that file's header.",
+    "A locked bill is never re-decoded by any pipeline path (nightly new-text re-decode, FORCE_REDECODE_SLUGS, the newsdesk's two re-decode triggers) and never touched by the one-off decode scripts.",
+    "Each lock records the text version the correction was checked against (text_version_date, text_version_type, text_version_count, copied from data/bills.json when the lock was made; null means bills.json had no value).",
+    "While Congress serves that same version the bill is skipped with one log line. When Congress publishes a NEWER version (later date, different type, a higher count, or a new title) the bill is STILL skipped, and every run that sees it prints '::warning::DECODE LOCK STALE: <slug> ...', which the pipeline-health report raises as the 'decode-lock-stale' alarm.",
+    "To act on that alarm, a person re-reads the new text against the corrected decode, then either deletes the lock (the next nightly re-decodes the bill from the new text; add it to FORCE_REDECODE_SLUGS to do it at once) or, if the correction still holds, updates the three version fields to the new version and the locked_on date."
+  ],
+  "locks": {
+    "hr-9237-119": {
+      "reason": "Hand-corrected: the new monthly payment (sec. 104) goes to the veteran who gets the aid-and-attendance allowance, not to spouses; combat-disabled retirees under 20 years get combined pay up to a cap (sec. 101), so 'full' was dropped.",
+      "locked_on": "2026-11-25",
+      "pr": 562,
+      "text_version_date": null,
+      "text_version_type": null,
+      "text_version_count": 1
+    },
+    "hr-2347-119": {
+      "reason": "Hand-corrected: current law (42 U.S.C. 4336a(g)) already sets the one- and two-year review deadlines; the decode now says the bill keeps them and adds the 90- and 120-day deadlines for other agencies' decisions (sec. 1106).",
+      "locked_on": "2026-11-25",
+      "pr": 562,
+      "text_version_date": "2026-11-19T05:00:00Z",
+      "text_version_type": "Engrossed Amendment Senate",
+      "text_version_count": 5
+    }
+  }
+}
