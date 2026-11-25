@@ -236,10 +236,16 @@ test.describe('the committed data', () => {
     const withSection = Object.entries(prompts)
       .filter(([, p]) => p.includes('PASSED WITHOUT A RECORDED VOTE'))
       .map(([id]) => id);
-    // On the committed data of 2026-09-29 that is penny alone (H.R. 10167's
-    // Senate passage of 09-28 is in the window until 2026-10-12); after that,
-    // no question. Never any other.
-    expect(withSection.every((id) => id === 'penny-production-and-cash-rounding')).toBe(true);
+    // On the committed data of 2026-09-29 that was penny alone (H.R. 10167's
+    // Senate passage of 09-28). Which questions qualify changes with the
+    // data (on 2026-11-24, S. 4035's Senate voice vote of 11-19 put
+    // event-contracts-on-war-and-assassination in), so pin the property, not
+    // the list: a question gets the section only when its window holds a
+    // passage the record says was by voice vote or unanimous consent.
+    for (const id of withSection) {
+      const section = prompts[id].slice(prompts[id].indexOf('PASSED WITHOUT A RECORDED VOTE'));
+      expect(section, id).toMatch(/voice vote|unanimous consent/i);
+    }
     for (const [id, p] of Object.entries(prompts)) {
       if (withSection.includes(id)) continue;
       for (const s of NEW_TEXT) expect(p, id).not.toContain(s);
