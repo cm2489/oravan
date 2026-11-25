@@ -20,6 +20,12 @@ The only *runtime* secrets are:
 
 `CONGRESS_API_KEY` and the optional `NEWS_API_KEY` are build-time only (nightly sync scripts), never shipped to the client.
 
+## Local-only (evaluation)
+
+| Secret | What it is |
+|---|---|
+| `OPENROUTER_API_KEY` | For `scripts/eval-decision-model.mjs` only, an offline test run on the owner's machine. Not in Vercel, not an Actions secret, and never in `.env.local` (`next build` and `next start` load that file into the server process). Supplied through the shell from a file outside the repo, on a key capped at $5 or less; the script refuses an uncapped key. |
+
 ## What checks this
 
 `scripts/check-key-namespaces.mjs` confines each Upstash database's env vars and client constructor to its one registry module. Nothing yet checks that no secret reaches the client bundle.
