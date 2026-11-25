@@ -1,22 +1,6 @@
 {
   "schema": 1,
-  "rows": {
-    "paying-college-athletes/u_d5eaf6d9": {
-      "first_seen": "2026-11-15",
-      "verdict": "would-correct",
-      "vehicle": "s-4668-119",
-      "day": "2026-09-24",
-      "stored": "The committee substitute withdrawn by Voice Vote.",
-      "record": [
-        {
-          "day": "2026-09-24",
-          "text": "The committee substitute tabled by Voice Vote."
-        }
-      ],
-      "note": "the record holds now",
-      "why": "a rewording"
-    }
-  },
+  "rows": {},
   "unchecked": {},
   "newer": {},
   "suspect": {}
