@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-11-25T00:12:20.535Z"
+    "generated_at": "2026-11-25T23:42:41.539Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -2766,13 +2766,13 @@
     ],
     "summary_revisions": [],
     "summary_attempts": {
-      "day": "2026-11-24",
+      "day": "2026-11-25",
       "count": 1
     },
     "summary_refusals": {
-      "count": 1,
-      "day": "2026-11-24",
-      "reason": "en: absence claim \"no recorded votes\" over a record that is not empty — the grounding holds a vote or action in this window, so \"nothing happened\" is false; en: absence claim \"no recorded\" over a record that is not empty — the grounding holds a vote or action in this window, so \"nothing happened\" i…"
+      "count": 2,
+      "day": "2026-11-25",
+      "reason": "en: absence claim \"no other actions\" over a record that is not empty — the grounding holds a vote or action in this window, so \"nothing happened\" is false"
     }
   },
   "permitting-reviews-for-energy-and-building-projects": {
