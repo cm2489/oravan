@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-11-24T23:28:09.718Z"
+    "generated_at": "2026-11-25T00:12:20.535Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -327,10 +327,56 @@
           "reanchor:7d"
         ],
         "model": "record-only"
+      },
+      {
+        "id": "s_7d9e4c95",
+        "generated_at": "2026-11-25T00:12:29.369Z",
+        "as_of_day": "2026-11-24",
+        "text": {
+          "en": "The latest action in the official record on these measures is dated November 20, 2026.",
+          "es": "La última acción del registro oficial sobre estas medidas es del 20 de noviembre de 2026."
+        },
+        "grounded_in": {
+          "vehicle_statuses": {
+            "hr-6500-119": "signed",
+            "hr-9770-119": "passed_chamber",
+            "hr-8469-119": "floor_vote"
+          },
+          "vehicle_status_keys": {
+            "hr-6500-119": "signed",
+            "hr-9770-119": "passed_chamber",
+            "hr-8469-119": "floor_activity"
+          },
+          "update_ids": [
+            "u_5aa1ce1f"
+          ],
+          "roll_calls": [],
+          "roll_calls_on_record": [
+            "h-119-2-14",
+            "h-119-2-175",
+            "h-119-2-272",
+            "h-119-2-286",
+            "s-119-2-218",
+            "s-119-2-226",
+            "s-119-2-227",
+            "s-119-2-228"
+          ],
+          "refs": [
+            "https://www.congress.gov/bill/119th-congress/house-bill/6500",
+            "https://www.congress.gov/bill/119th-congress/house-bill/9770",
+            "https://www.congress.gov/bill/119th-congress/house-bill/8469",
+            "https://www.congress.gov/crs-report/R48832"
+          ]
+        },
+        "changed_because": [
+          "status:hr-8469-119 unknown→floor_vote",
+          "updates:+1"
+        ],
+        "model": "record-only"
       }
     ],
     "summary_attempts": {
-      "day": "2026-09-25",
+      "day": "2026-11-24",
       "count": 1
     }
   },
@@ -2718,7 +2764,16 @@
         "ai": false
       }
     ],
-    "summary_revisions": []
+    "summary_revisions": [],
+    "summary_attempts": {
+      "day": "2026-11-24",
+      "count": 1
+    },
+    "summary_refusals": {
+      "count": 1,
+      "day": "2026-11-24",
+      "reason": "en: absence claim \"no recorded votes\" over a record that is not empty — the grounding holds a vote or action in this window, so \"nothing happened\" is false; en: absence claim \"no recorded\" over a record that is not empty — the grounding holds a vote or action in this window, so \"nothing happened\" i…"
+    }
   },
   "permitting-reviews-for-energy-and-building-projects": {
     "updates": [
