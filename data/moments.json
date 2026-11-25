@@ -503,5 +503,155 @@
     "opened": "2026-11-23",
     "review_by": "2026-12-23",
     "status": "live"
+  },
+  "event-contracts-on-war-and-assassination": {
+    "name": {
+      "en": "Event contracts on war and assassination",
+      "es": "Contratos de eventos sobre guerra y asesinato"
+    },
+    "summary": {
+      "en": "S. 4035, the DEATH BETS Act, would bar regulated trading platforms from listing event contracts that expressly reference terrorism, assassination, war or U.S. military operations, or whose outcome depends mainly on whether a person dies. The bill lets the Commodity Futures Trading Commission add similar activities to that list by rule. Contracts on other events would be treated as they are under current law. The Senate passed the bill with an amendment by voice vote on November 19, 2026, so no senator’s individual vote was recorded. On November 20, 2026, the House received it and is holding it at the desk. The record gives no date for a House vote. A yes supports these limits; a no leaves the current rules on these contracts in place.",
+      "es": "El S. 4035, la DEATH BETS Act, prohibiría a las plataformas de negociación reguladas ofrecer contratos de eventos que mencionen de forma expresa el terrorismo, el asesinato, la guerra o las operaciones militares de EE. UU., o cuyo resultado dependa sobre todo de si una persona muere. El proyecto permite que la Comisión de Comercio de Futuros de Materias Primas (CFTC) añada actividades similares a esa lista mediante reglamento. Los contratos sobre otros eventos se tratarían igual que ahora bajo la ley vigente. El Senado aprobó el proyecto con una enmienda por voto oral el 19 de noviembre de 2026, así que no quedó registrado el voto de cada senador. El 20 de noviembre de 2026 la Cámara lo recibió y lo mantiene retenido en la mesa. El expediente no da fecha para una votación en la Cámara. Un sí respalda estos límites; un no deja vigentes las reglas actuales sobre estos contratos."
+    },
+    "aliases": {
+      "en": [
+        "S. 4035",
+        "DEATH BETS Act",
+        "prediction markets",
+        "event contracts",
+        "betting on war"
+      ],
+      "es": [
+        "S. 4035",
+        "DEATH BETS Act",
+        "mercados de predicción",
+        "contratos de eventos",
+        "apuestas sobre la guerra"
+      ]
+    },
+    "category": "jobs_economy",
+    "vehicles": [
+      {
+        "slug": "s-4035-119",
+        "role": {
+          "en": "S. 4035 is the bill itself. The Senate passed it with an amendment by voice vote on November 19, 2026. On November 20, 2026, the House received it and is holding it at the desk. A yes supports barring regulated platforms from listing contracts on terrorism, assassination, war, U.S. military operations or a person’s death; a no leaves the current rules in place. The record gives no date for a House vote.",
+          "es": "El S. 4035 es el proyecto en sí. El Senado lo aprobó con una enmienda por voto oral el 19 de noviembre de 2026. El 20 de noviembre de 2026 la Cámara lo recibió y lo mantiene retenido en la mesa. Un sí respalda prohibir que las plataformas reguladas ofrezcan contratos sobre terrorismo, asesinato, guerra, operaciones militares de EE. UU. o la muerte de una persona; un no deja vigentes las reglas actuales. El expediente no da fecha para una votación en la Cámara."
+        },
+        "_record": "https://www.congress.gov/bill/119th-congress/senate-bill/4035",
+        "_status_at_scaffold": "passed_chamber",
+        "_last_action_at_scaffold": "2026-11-20"
+      }
+    ],
+    "qualifying_signal": {
+      "type": "standing_topic",
+      "refs": [
+        "https://www.congress.gov/bill/119th-congress/senate-bill/4035"
+      ]
+    },
+    "opened": "2026-11-24",
+    "review_by": "2026-12-24",
+    "status": "live"
+  },
+  "permitting-reviews-for-energy-and-building-projects": {
+    "name": {
+      "en": "Permitting reviews for energy and building projects",
+      "es": "Revisión de permisos para proyectos de energía y construcción"
+    },
+    "summary": {
+      "en": "H.R. 2347, the Bipartisan American Affordability and Jobs Act of 2026, is a large package. Most of it changes how federal agencies review and approve projects such as power lines, pipelines, mines and energy plants: it rewrites review and permit deadlines, narrows which actions need a review, lets agencies use state or tribal reviews, and limits some lawsuits. It also changes Clean Water Act, Endangered Species Act and nuclear licensing rules, and requires that, for data centers connected after it becomes law, the added cost of powering them be charged to their owners or operators, not to other electricity customers. A separate part, the House bill’s original subject, exempts damages for sexual abuse, other than punitive damages, from federal income tax whether or not there are medical records or visible injuries. The House passed the bill by voice vote on April 27, 2026, when it held only that tax change. On November 19, 2026, the Senate passed it, 62–33, with this package in place of that text. No House vote date is on the record. A yes vote supports the Senate-passed package; a no vote leaves current rules in place.",
+      "es": "La H.R. 2347, la ley Bipartisan American Affordability and Jobs Act of 2026, es un paquete amplio. La mayor parte cambia cómo las agencias federales revisan y aprueban proyectos como líneas eléctricas, ductos, minas y plantas de energía: reescribe los plazos de revisión y de permisos, reduce las acciones que requieren revisión, permite usar revisiones estatales o tribales y limita algunas demandas. También cambia reglas de las leyes de Agua Limpia y de Especies en Peligro de Extinción y de las licencias nucleares, y exige que, en los centros de datos que se conecten después de que entre en vigor, el costo adicional de darles electricidad se cobre a sus dueños u operadores y no a los demás clientes. Otra parte, tema original del proyecto de la Cámara, exime del impuesto federal sobre la renta las indemnizaciones por abuso sexual, salvo las punitivas, haya o no registros médicos o lesiones visibles. La Cámara aprobó el proyecto por voto oral el 27 de abril de 2026, cuando solo contenía ese cambio fiscal. El 19 de noviembre de 2026, el Senado lo aprobó, 62–33, con este paquete en lugar de ese texto. No hay fecha de votación de la Cámara en el expediente. Un voto a favor respalda el paquete aprobado por el Senado; un voto en contra deja vigentes las reglas actuales."
+    },
+    "aliases": {
+      "en": [
+        "H.R. 2347",
+        "Bipartisan American Affordability and Jobs Act",
+        "permitting reform",
+        "permitting",
+        "NEPA",
+        "environmental review",
+        "energy projects",
+        "data centers"
+      ],
+      "es": [
+        "H.R. 2347",
+        "Bipartisan American Affordability and Jobs Act",
+        "reforma de permisos",
+        "permisos",
+        "NEPA",
+        "revisión ambiental",
+        "proyectos de energía",
+        "centros de datos"
+      ]
+    },
+    "category": "environment_energy",
+    "vehicles": [
+      {
+        "slug": "hr-2347-119",
+        "role": {
+          "en": "H.R. 2347 is the bill itself. The House passed it by voice vote on April 27, 2026, when it held only the tax change on sexual-abuse damages; on November 19, 2026, the Senate replaced its text with this package and passed it, 62–33 (Senate roll call vote 270). A yes vote supports the Senate-passed package; a no vote leaves current rules in place. The record gives no date for a House vote on the Senate’s changes.",
+          "es": "La H.R. 2347 es el proyecto en sí. La Cámara la aprobó por voto oral el 27 de abril de 2026, cuando solo contenía el cambio fiscal sobre las indemnizaciones por abuso sexual; el 19 de noviembre de 2026 el Senado reemplazó su texto por este paquete y lo aprobó, 62–33 (votación nominal 270 del Senado). Un voto a favor respalda el paquete aprobado por el Senado; un voto en contra deja vigentes las reglas actuales. El expediente no da fecha para una votación de la Cámara sobre los cambios del Senado."
+        },
+        "_record": "https://www.congress.gov/bill/119th-congress/house-bill/2347",
+        "_status_at_scaffold": "passed_chamber",
+        "_last_action_at_scaffold": "2026-11-19"
+      }
+    ],
+    "qualifying_signal": {
+      "type": "press",
+      "refs": [
+        "https://nypost.com/2026/11/20/us-news/senate-approves-bipartisan-bill-to-speed-up-permitting-reviews-force-data-centers-to-pay-for-energy/",
+        "https://abcnews.com/US/wireStory/senate-backs-bill-speed-permitting-reviews-force-data-138308460"
+      ]
+    },
+    "opened": "2026-11-24",
+    "review_by": "2026-12-24",
+    "status": "live"
+  },
+  "franchisor-joint-employer-standard": {
+    "name": {
+      "en": "Franchisor joint-employer standard",
+      "es": "Norma de empleador conjunto para franquiciantes"
+    },
+    "summary": {
+      "en": "H.R. 5267, the American Franchise Act, narrows when a franchisor counts as a “joint employer” of a franchise owner’s workers under the National Labor Relations Act and the Fair Labor Standards Act. Under the bill, a franchisor would share that legal responsibility only if it directly and substantially controls matters such as wages, hiring, firing, discipline or schedules; setting brand standards, staffing minimums or training materials would not count. It does not affect cases already in progress. On November 17, 2026, the Rules Committee reported H. Res. 1665, a rule that provides for the House to consider H.R. 5267 and a separate bill, H.R. 3495, under a closed rule with one hour of debate and one motion to recommit on each. The record gives no date for a vote. A yes supports the narrower standard; a no leaves the current rules in place.",
+      "es": "La H.R. 5267, la American Franchise Act, reduce los casos en que un franquiciante cuenta como “empleador conjunto” de los trabajadores del dueño de una franquicia según la Ley Nacional de Relaciones Laborales y la Ley de Normas Justas de Trabajo. Con el proyecto, un franquiciante compartiría esa responsabilidad legal solo si controla de forma directa y sustancial asuntos como salarios, contrataciones, despidos, disciplina u horarios; fijar normas de marca, mínimos de personal o materiales de capacitación no contaría. No afecta los casos ya en curso. El 17 de noviembre de 2026, el Comité de Reglas presentó la H. Res. 1665, una regla que dispone que la Cámara considere la H.R. 5267 y otro proyecto, la H.R. 3495, con una regla cerrada, una hora de debate y una moción para devolver a comisión en cada uno. El expediente no da fecha para una votación. Un sí respalda la norma más estrecha; un no deja vigentes las reglas actuales."
+    },
+    "aliases": {
+      "en": [
+        "H.R. 5267",
+        "American Franchise Act",
+        "joint employer",
+        "franchise joint employer rule"
+      ],
+      "es": [
+        "H.R. 5267",
+        "American Franchise Act",
+        "empleador conjunto",
+        "franquicias"
+      ]
+    },
+    "category": "jobs_economy",
+    "vehicles": [
+      {
+        "slug": "hr-5267-119",
+        "role": {
+          "en": "H.R. 5267 is the bill itself. On November 17, 2026, the Rules Committee reported H. Res. 1665, a rule that provides for its consideration in the House under a closed rule with one hour of debate and one motion to recommit. A yes supports narrowing when franchisors count as joint employers; a no leaves the current rules in place. The record gives no date for a vote.",
+          "es": "La H.R. 5267 es el proyecto en sí. El 17 de noviembre de 2026, el Comité de Reglas presentó la H. Res. 1665, una regla que dispone su consideración en la Cámara con una regla cerrada, una hora de debate y una moción para devolver a comisión. Un sí respalda reducir los casos en que los franquiciantes cuentan como empleadores conjuntos; un no deja vigentes las reglas actuales. El expediente no da fecha para una votación."
+        },
+        "_record": "https://www.congress.gov/bill/119th-congress/house-bill/5267",
+        "_status_at_scaffold": "floor_vote",
+        "_last_action_at_scaffold": "2026-11-17"
+      }
+    ],
+    "qualifying_signal": {
+      "type": "tier0_floor_action",
+      "refs": [
+        "https://www.congress.gov/bill/119th-congress/house-bill/5267",
+        "https://www.congress.gov/bill/119th-congress/house-bill/5267/all-actions"
+      ]
+    },
+    "opened": "2026-11-24",
+    "review_by": "2026-12-24",
+    "status": "live"
   }
 }

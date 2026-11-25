@@ -235,7 +235,9 @@ test.describe('the new key shapes', () => {
 test.describe('the browser-address sketch', () => {
   test('same day salt, same element as the first sketch, its own key, the same absolute deadline', async () => {
     const mock = useMock();
-    const now = new Date('2026-11-23T15:00:00Z');
+    // The real clock: the mock honours EXPIREAT, so a fixed past date reads
+    // as expired once its deadline passes (it did at 2026-11-25T00:00Z).
+    const now = new Date();
     await noteDistinctAddress('203.0.113.10', now);
     await noteBrowserAddress('203.0.113.10', now);
     await noteBrowserAddress('203.0.113.10', now); // repeat address: one element
@@ -275,9 +277,12 @@ test.describe('the browser-address sketch', () => {
 
   test('the digest read: estimate, absent sketch, and fail-closed', async () => {
     const mock = useMock();
-    const now = new Date('2026-11-22T10:00:00Z');
+    // The real clock, not a fixed date: the mock honours EXPIREAT, and a
+    // fixed 2026-11-22 sketch expired at 2026-11-25T00:00Z, failing this read.
+    const now = new Date();
+    const day = distinctAddressDay(now);
     await noteBrowserAddress('203.0.113.10', now);
-    const read = await readBrowserAddressCount('2026-11-22');
+    const read = await readBrowserAddressCount(day);
     expect(read).toEqual({ ok: true, count: 1, noExpiry: false });
     expect(await readBrowserAddressCount('2026-11-01')).toEqual({ ok: true, count: null, noExpiry: false });
     void mock;
@@ -285,7 +290,7 @@ test.describe('the browser-address sketch', () => {
     restoreFetch = null;
     restoreEnv?.();
     restoreEnv = null;
-    expect(await readBrowserAddressCount('2026-11-22')).toEqual({ ok: false });
+    expect(await readBrowserAddressCount(day)).toEqual({ ok: false });
   });
 });
 
