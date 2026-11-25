@@ -93,7 +93,10 @@ on:
         # the queue and still counted against redecode_max_per_night, so a
         # fifty-slug list costs ten re-decodes tonight and the rest tomorrow.
         # There is no wording of this input that raises a night's bill.
-        description: 'Comma-separated slugs already in the corpus to re-decode from their current text (e.g. hr-5634-119)'
+        #
+        # A bill in data/decode-locks.json (a hand-corrected decode) is NOT
+        # re-decoded even when listed here (2026-11-25): delete its lock first.
+        description: 'Comma-separated slugs already in the corpus to re-decode from their current text (e.g. hr-5634-119); locked bills in data/decode-locks.json are skipped'
         default: ''
       redecode_max_per_night:
         # The ONLY knob for re-decode spend. Blank = the script default of 10,

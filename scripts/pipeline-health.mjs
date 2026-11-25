@@ -66,6 +66,7 @@ import {
   parseCoverageDone,
   parseCoverageLean,
   parseCoverageOutage,
+  parseDecodeLockStale,
   parseShortTitlesTrouble,
   parseShortTitlesSummary,
   shortTitlesSummaryExpected,
@@ -340,6 +341,9 @@ export function buildReport({ now = Date.now() } = {}) {
   let recheckTrouble = null;
   /** Every nightly log read today, newest first, with its DONE line. */
   const nightlyReads = [];
+  /** Hand-corrected decodes with newer bill text, from EVERY data-workflow log
+   *  read today (the nightly and the newsdesk both re-decode). */
+  const decodeLockStale = [];
   /** Every nightly DONE line read today, by run id — the cursor row needs the one that wrote the committed cursor. */
   const syncDoneByRun = new Map();
 
@@ -354,6 +358,9 @@ export function buildReport({ now = Date.now() } = {}) {
       const bucket = (anthropicByWorkflow[r.workflowName] ??= { creditBalance: 0, invalidRequestOther: 0 });
       bucket.creditBalance += errs.creditBalance;
       bucket.invalidRequestOther += errs.invalidRequestOther;
+    }
+    for (const l of parseDecodeLockStale(log)) {
+      if (!decodeLockStale.some((x) => x.slug === l.slug)) decodeLockStale.push(l);
     }
     const runT3 = parseT3(log);
     t3.batched += runT3.batched;
@@ -559,6 +566,7 @@ export function buildReport({ now = Date.now() } = {}) {
     coverageRun: coverageDone,
     coverageOutage,
     shortTitlesTrouble,
+    decodeLockStale,
     shortTitlesSummary,
     shortTitlesSummaryChecked,
     shortTitlesSummaryExpected: shortTitlesSummaryExpectedHere,

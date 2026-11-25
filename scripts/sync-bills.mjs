@@ -193,6 +193,7 @@ import {
   redecodeBill,
   syncOneBill,
 } from './bill-decode.mjs';
+import { decodeLockLine, decodeLockVerdict, decodeLocks } from './decode-locks.mjs';
 import {
   PARKED_PATH,
   drainDecodeQueue,
@@ -1469,7 +1470,20 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
   const toProbe = failVerdict.abort ? [] : probeQueue.slice(0, redecodeProbeLimit);
 
   const newTextCandidates = [];
-  let probed = 0, probeFailed = 0, countStamped = 0;
+  let probed = 0, probeFailed = 0, countStamped = 0, lockedSkipped = 0, lockedStale = 0;
+  // HAND-CORRECTED DECODES (2026-11-25, scripts/decode-locks.mjs). A locked
+  // bill is dropped here, BEFORE planRedecodes applies the ceiling, so a lock
+  // never takes another bill's slot; redecodeBill refuses it too, which is
+  // what covers FORCE_REDECODE_SLUGS. A lock file that cannot be read is
+  // loud and fails closed: every probed bill is held back tonight.
+  let locks = null;
+  let locksError = null;
+  try {
+    locks = decodeLocks();
+  } catch (e) {
+    locksError = e.message;
+    console.log(`::warning::decode locks unreadable (${e.message}); no detected re-decode runs tonight`);
+  }
   for (const c of toProbe) {
     let versions, count;
     try {
@@ -1481,6 +1495,22 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
       // cost the night anything, least of all the cursor.
       probeFailed++;
       console.error(`  re-decode probe failed for ${c.slug}: ${e.message}`);
+      continue;
+    }
+    if (locksError) continue;
+    const lock = locks.get(c.slug);
+    if (lock) {
+      // Nothing is written for a locked bill, not even the count stamp below:
+      // the record stays exactly as the person left it.
+      const fetchedTitle = c.seen.fetchedTitle ?? null;
+      const lockVerdict = decodeLockVerdict(lock, {
+        versions,
+        count,
+        newTitle: fetchedTitle && fetchedTitle !== c.bill.title ? fetchedTitle : null,
+      });
+      lockedSkipped++;
+      if (lockVerdict.stale) lockedStale++;
+      console.log(decodeLockLine(c.slug, lock, lockVerdict, 'new-text re-decode'));
       continue;
     }
     const verdict = dateSaysNewText({ storedDate: c.bill.text_version_date ?? null, versions });
@@ -1519,7 +1549,7 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
     cap: REDECODE_MAX_PER_NIGHT,
   });
   console.log(
-    `re-decode on new text: ${refreshedThisRun.size} refreshed bill(s) seen, ${countHinted} with a grown text-version count, ${probed} probed (limit ${redecodeProbeLimit}${probeFailed ? `, ${probeFailed} probe failure(s)` : ''}), ${newTextCandidates.length} candidate(s) detected (${newTextCandidates.filter((c) => c.reason === 'new-text-version').length} newer than our stamp, ${newTextCandidates.filter((c) => c.reason === 'legacy-backfill').length} unstamped backfill), ${forceRedecodeSlugs.size} forced; ${redecodePlan.run.length} will be re-decoded (cap ${redecodePlan.cap}), ${redecodePlan.deferred.length} deferred to a later run, ${countStamped} record(s) stamped with a first text-version count`
+    `re-decode on new text: ${refreshedThisRun.size} refreshed bill(s) seen, ${countHinted} with a grown text-version count, ${probed} probed (limit ${redecodeProbeLimit}${probeFailed ? `, ${probeFailed} probe failure(s)` : ''}), ${newTextCandidates.length} candidate(s) detected (${newTextCandidates.filter((c) => c.reason === 'new-text-version').length} newer than our stamp, ${newTextCandidates.filter((c) => c.reason === 'legacy-backfill').length} unstamped backfill), ${forceRedecodeSlugs.size} forced; ${redecodePlan.run.length} will be re-decoded (cap ${redecodePlan.cap}), ${redecodePlan.deferred.length} deferred to a later run, ${countStamped} record(s) stamped with a first text-version count${lockedSkipped ? `, ${lockedSkipped} held by a decode lock (${lockedStale} with newer text)` : ''}`
   );
   if (!Number.isFinite(REDECODE_MAX_PER_NIGHT) || REDECODE_MAX_PER_NIGHT < 0) {
     console.log(
@@ -1545,7 +1575,7 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
   //     a refactor of the newsdesk's decode path, done for a night that saves
   //     a third of a dollar. If this ceiling is ever raised far enough to
   //     matter, that is the shape it should take.
-  let redecoded = 0, redecodeFailed = 0, redecodeNoText = 0, redecodeUnchanged = 0, redecodeMissing = 0, redecodeEnded = 0;
+  let redecoded = 0, redecodeFailed = 0, redecodeNoText = 0, redecodeUnchanged = 0, redecodeMissing = 0, redecodeEnded = 0, redecodeLocked = 0;
   for (const item of redecodePlan.run) {
     const bill = bySlug.get(item.slug);
     // An ended Congress's bill is never re-decoded, not even when forced
@@ -1577,13 +1607,14 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
     else if (result.outcome === 'text-unchanged') redecodeUnchanged++;
     else if (result.outcome === 'skipped_no_text') redecodeNoText++;
     else if (result.outcome === 'missing') redecodeMissing++;
+    else if (result.outcome === 'locked') redecodeLocked++;
     else redecodeFailed++;
     const span = item.from && item.to ? ` ${String(item.from).slice(0, 10)} -> ${String(item.to).slice(0, 10)}` : '';
     console.log(`  ${item.slug}: ${result.outcome} (${item.reason}${span}${title ? ', title updated' : ''})`);
   }
   if (redecodePlan.run.length) {
     console.log(
-      `re-decode on new text: ${redecoded} re-decoded, ${redecodeUnchanged} vetoed by the fingerprint (prompt byte-identical — no model call, both provenance stamps refreshed), ${redecodeNoText} skipped (no published text), ${redecodeMissing} not in the corpus, ${redecodeFailed} failed (old decode left standing)${redecodeEnded ? `, ${redecodeEnded} of an ended Congress skipped` : ''}`
+      `re-decode on new text: ${redecoded} re-decoded, ${redecodeUnchanged} vetoed by the fingerprint (prompt byte-identical — no model call, both provenance stamps refreshed), ${redecodeNoText} skipped (no published text), ${redecodeMissing} not in the corpus, ${redecodeFailed} failed (old decode left standing)${redecodeEnded ? `, ${redecodeEnded} of an ended Congress skipped` : ''}${redecodeLocked ? `, ${redecodeLocked} held by a decode lock` : ''}`
     );
   }
 

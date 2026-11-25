@@ -7,6 +7,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { PRESIDENT_STYLE_RULE, presidentStyle } from '../lib/president-style.mjs';
+import { decodeLocks } from './decode-locks.mjs';
 
 const anthropic = new Anthropic({ maxRetries: 8 });
 const MODEL = 'claude-sonnet-5-5';
@@ -17,7 +18,9 @@ const bills = JSON.parse(readFileSync('data/bills.json', 'utf8'));
 const done = existsSync(OUT) ? JSON.parse(readFileSync(OUT, 'utf8')) : {};
 
 const slug = (b) => `${b.bill_type}-${b.bill_number}-${b.congress_number}`.toLowerCase();
-const todo = bills.filter((b) => b.ai_summary && !done[slug(b)]);
+// A hand-corrected decode (data/decode-locks.json) is never rewritten here.
+const locks = decodeLocks();
+const todo = bills.filter((b) => b.ai_summary && !done[slug(b)] && !locks.has(slug(b)));
 console.log(`${todo.length} bills to translate (${Object.keys(done).length} already done)`);
 
 let completed = 0;

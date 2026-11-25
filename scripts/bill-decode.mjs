@@ -37,6 +37,7 @@ import { generateSearchInputs } from './search-inputs.mjs';
 import { formattedTextUrl, pickTextVersion, textVersionStamp, versionCount } from './text-version.mjs';
 import { classifyApiError } from './api-billing.mjs';
 import { bumpCounter, recordApiError } from './run-counters.mjs';
+import { decodeLockLine, decodeLockVerdict, decodeLocks } from './decode-locks.mjs';
 import { PRESIDENT_STYLE_RULE, presidentStyle } from '../lib/president-style.mjs';
 import { FORBIDDEN } from '../lib/moments-gate.mjs';
 // Which Congress is tracked and which have ended (2026-11-12). Import-free.
@@ -911,16 +912,53 @@ export async function syncOneBill(u, ctx) {
  *   'skipped_ended'   — the bill belongs to an ended Congress (2026-11-12):
  *                 never re-read or re-decoded, even when forced (free)
  *   'skipped_no_text' — Congress.gov publishes no readable text (free)
+ *   'locked'          — (2026-11-25) a person corrected this bill's decode by
+ *                 hand and data/decode-locks.json locks it: nothing is
+ *                 decoded and nothing is mutated, not even under `forced`.
+ *                 Free (at most one /text request, to see whether the lock
+ *                 has gone stale). `lockStale` is true when Congress now
+ *                 serves newer text than the lock was made against; the
+ *                 bill is skipped all the same and a `::warning::DECODE LOCK
+ *                 STALE` line is printed for the pipeline-health alarm. See
+ *                 scripts/decode-locks.mjs.
  *   'failed'          — the fetch or the decode threw; the old decode stands
+ *
+ * `ctx.locks` (a Map from scripts/decode-locks.mjs) is for tests; callers
+ * leave it out and the committed data/decode-locks.json is read once.
  */
 export async function redecodeBill(slug, ctx) {
-  const { anthropic, es, bySlug, title = null, forced = false, policy = CONGRESS_POLICY } = ctx;
+  const { anthropic, es, bySlug, title = null, forced = false, policy = CONGRESS_POLICY, locks = null } = ctx;
   const bill = bySlug.get(slug);
   if (!bill) return { outcome: 'missing', slug, decodeAttempted: false };
   // An ended Congress's bill is never re-read or re-decoded (2026-11-12): its
   // text cannot change, and its decode is part of the archive. Free, and
   // nothing is touched — not even under FORCE_REDECODE_SLUGS.
   if (isEndedCongress(congressOfBill(bill), policy)) return { outcome: 'skipped_ended', slug, decodeAttempted: false };
+  // A HAND-CORRECTED DECODE IS NEVER REWRITTEN BY A MACHINE (2026-11-25).
+  // Checked before anything is fetched for a decode, and outranking `forced`:
+  // to re-decode a locked bill, a person deletes its lock. A lock file that
+  // cannot be read fails CLOSED for this bill (the old decode stands), never
+  // open — a half-read file must not unprotect a correction.
+  let lock;
+  try {
+    lock = (locks ?? decodeLocks()).get(slug) ?? null;
+  } catch (e) {
+    console.error(`::warning::decode locks unreadable (${e.message}); ${slug} NOT re-decoded this run, the old decode stands`);
+    return { outcome: 'failed', slug, decodeAttempted: false };
+  }
+  if (lock) {
+    let versions = null, count = null;
+    try {
+      ({ versions, count } = await fetchTextVersions(bill.bill_type, bill.bill_number, congressOfBill(bill)));
+    } catch (e) {
+      // Free and non-fatal: the lock holds either way, and the next run looks again.
+      console.error(`  ${slug}: decode-lock version check failed (${e.message})`);
+    }
+    const newTitle = title && title !== bill.title ? title : null;
+    const verdict = decodeLockVerdict(lock, { versions, count, newTitle });
+    console.log(decodeLockLine(slug, lock, verdict));
+    return { outcome: 'locked', slug, decodeAttempted: false, lockStale: verdict.stale };
+  }
   let decodeAttempted = false;
   try {
     const fetched = await fetchBillText(bill.bill_type, bill.bill_number, congressOfBill(bill));
