@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-25T04:11:23.509Z",
+    "fetched_at": "2026-11-25T15:32:05.386Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-25T04:11:23.509Z"
+        "checked_at": "2026-11-25T15:32:05.386Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-22",
         "week_label": "Most-Viewed Bills - Week of November 22, 2026",
         "entries": 8,
-        "checked_at": "2026-11-25T04:11:23.509Z"
+        "checked_at": "2026-11-25T15:32:05.386Z"
       },
       "leans": {
         "center": {
@@ -1047,6 +1047,18 @@
       ],
       "mostViewed": null
     },
+    "hr-7273-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "xenospectrum.com",
+          "firstSeen": "2026-11-25",
+          "lastSeen": "2026-11-25",
+          "url": "https://news.google.com/rss/articles/CBMib0FVX3lxTFBScExlUmRFVUt5azFKYU54SWc5bG1NYUk1cUV6XzBpM2lfbmcxOUdkX050S2xxaVBTdWVkczAtYm8tcXNPcFM1enRWdUlxVlVTMUI0WThjbXJQUmdyUnZoRTNlOGQ1cWJvZWt6U1ZrQQ?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-7386-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1055,6 +1067,18 @@
           "firstSeen": "2026-11-21",
           "lastSeen": "2026-11-21",
           "url": "https://news.google.com/rss/articles/CBMimAFBVV95cUxNRU9WVG1YVnFMT3BmcjNxX2tzMjZwWFJFd01haFpnMlA2MmduRU9DQXN2T2luN2FGQjA2aXl4N3pTcWwxOFRqZ0V4R3JfdFhOeWY3MlhNOEJ2MGNJbWFVVHZsczc1YXRJSmRsM0FlNk9zZ3BTUXRFbjhJeXlUbVUwZU90Z3o4NUlqaXJCcHg0U2tpRE1GeEcybg?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-7567-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "kotatv.com",
+          "firstSeen": "2026-11-25",
+          "lastSeen": "2026-11-25",
+          "url": "https://news.google.com/rss/articles/CBMisgFBVV95cUxPNjlGbmxUS2MteWVSSkYxSmlVbjV1ajRENE1jNmE1ZUJwX2JSYVFrVDJMWDR3SE1lbHo1cGxJdHVFVUFGcU1qVWRPWXpUcjhVOUtoMGxURzNDdXFCYjd3V0pmbHZZY3lwdi0yMnJaV1hMUmpqUWE4YjVlb2g2ZEFoR1FfV2JESmVsSU1TQmowdWpybkhjVC1PUWRLOE5rTzQ4VG5vTU1Cb0JGYjZrZHdLbUFB?oc=5"
         }
       ],
       "mostViewed": null
@@ -1086,6 +1110,12 @@
     "hr-8454-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "outsideonline.com",
+          "firstSeen": "2026-11-25",
+          "lastSeen": "2026-11-25",
+          "url": "https://news.google.com/rss/articles/CBMiuwFBVV95cUxNOFVoN1NCVFhPV2RCdzNUeXdZbmxZb2VvVDByZVBUZ2RFekhpWWtWZ3pIMkg3dDNXSzZMWFp2Yl9uUTE3Ty1zX08xN0c0Skh2akZGam0zUnp0OUNQdmVzLXRDR1IwQVdRc0QxMlk4ckc2OVFNaTRFMk03WW1XQ1g5OXFvYWczQkY2ekwxNm8xVFZnbVctUjQ4ZVNMbm9qTDJYOEppVGlaN2xwTThNVlpHOFNuU1owczkzSUo4?oc=5"
+        },
         {
           "domain": "sfchronicle.com",
           "firstSeen": "2026-11-24",
