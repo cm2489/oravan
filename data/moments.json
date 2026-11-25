@@ -606,5 +606,52 @@
     "opened": "2026-11-24",
     "review_by": "2026-12-24",
     "status": "live"
+  },
+  "franchisor-joint-employer-standard": {
+    "name": {
+      "en": "Franchisor joint-employer standard",
+      "es": "Norma de empleador conjunto para franquiciantes"
+    },
+    "summary": {
+      "en": "H.R. 5267, the American Franchise Act, narrows when a franchisor counts as a “joint employer” of a franchise owner’s workers under the National Labor Relations Act and the Fair Labor Standards Act. Under the bill, a franchisor would share that legal responsibility only if it directly and substantially controls matters such as wages, hiring, firing, discipline or schedules; setting brand standards, staffing minimums or training materials would not count. It does not affect cases already in progress. On November 17, 2026, the Rules Committee reported H. Res. 1665, a rule that provides for the House to consider H.R. 5267 and a separate bill, H.R. 3495, under a closed rule with one hour of debate and one motion to recommit on each. The record gives no date for a vote. A yes supports the narrower standard; a no leaves the current rules in place.",
+      "es": "La H.R. 5267, la American Franchise Act, reduce los casos en que un franquiciante cuenta como “empleador conjunto” de los trabajadores del dueño de una franquicia según la Ley Nacional de Relaciones Laborales y la Ley de Normas Justas de Trabajo. Con el proyecto, un franquiciante compartiría esa responsabilidad legal solo si controla de forma directa y sustancial asuntos como salarios, contrataciones, despidos, disciplina u horarios; fijar normas de marca, mínimos de personal o materiales de capacitación no contaría. No afecta los casos ya en curso. El 17 de noviembre de 2026, el Comité de Reglas presentó la H. Res. 1665, una regla que dispone que la Cámara considere la H.R. 5267 y otro proyecto, la H.R. 3495, con una regla cerrada, una hora de debate y una moción para devolver a comisión en cada uno. El expediente no da fecha para una votación. Un sí respalda la norma más estrecha; un no deja vigentes las reglas actuales."
+    },
+    "aliases": {
+      "en": [
+        "H.R. 5267",
+        "American Franchise Act",
+        "joint employer",
+        "franchise joint employer rule"
+      ],
+      "es": [
+        "H.R. 5267",
+        "American Franchise Act",
+        "empleador conjunto",
+        "franquicias"
+      ]
+    },
+    "category": "jobs_economy",
+    "vehicles": [
+      {
+        "slug": "hr-5267-119",
+        "role": {
+          "en": "H.R. 5267 is the bill itself. On November 17, 2026, the Rules Committee reported H. Res. 1665, a rule that provides for its consideration in the House under a closed rule with one hour of debate and one motion to recommit. A yes supports narrowing when franchisors count as joint employers; a no leaves the current rules in place. The record gives no date for a vote.",
+          "es": "La H.R. 5267 es el proyecto en sí. El 17 de noviembre de 2026, el Comité de Reglas presentó la H. Res. 1665, una regla que dispone su consideración en la Cámara con una regla cerrada, una hora de debate y una moción para devolver a comisión. Un sí respalda reducir los casos en que los franquiciantes cuentan como empleadores conjuntos; un no deja vigentes las reglas actuales. El expediente no da fecha para una votación."
+        },
+        "_record": "https://www.congress.gov/bill/119th-congress/house-bill/5267",
+        "_status_at_scaffold": "floor_vote",
+        "_last_action_at_scaffold": "2026-11-17"
+      }
+    ],
+    "qualifying_signal": {
+      "type": "tier0_floor_action",
+      "refs": [
+        "https://www.congress.gov/bill/119th-congress/house-bill/5267",
+        "https://www.congress.gov/bill/119th-congress/house-bill/5267/all-actions"
+      ]
+    },
+    "opened": "2026-11-24",
+    "review_by": "2026-12-24",
+    "status": "live"
   }
 }
