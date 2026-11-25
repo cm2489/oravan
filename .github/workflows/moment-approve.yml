@@ -359,12 +359,43 @@ jobs:
             echo
             echo "</details>"
           } >> /tmp/approve/pr-body.md
-          PR_URL=$(gh pr create \
+          # IF THE PR CANNOT OPEN, THE PUSHED BRANCH IS DELETED (2026-11-25).
+          # On 2026-11-24 the first runs pushed their branch and then failed
+          # here ("GitHub Actions is not permitted to create or approve pull
+          # requests"). The branches stayed behind, so every re-label after the
+          # setting was fixed stopped at "branch already exists" above and took
+          # the owner's label off: ten-plus labels removed before anyone found
+          # why. A branch this run pushed and could not turn into a PR is this
+          # run's own leftover, so it removes it, says so, and the next label
+          # starts clean.
+          if ! PR_URL=$(gh pr create \
             --repo "$GITHUB_REPOSITORY" \
             --base main \
             --head "$BRANCH" \
             --title "$(cat /tmp/approve/pr-title.txt)" \
-            --body-file /tmp/approve/pr-body.md)
+            --body-file /tmp/approve/pr-body.md 2>/tmp/approve/pr-create.err); then
+            cat /tmp/approve/pr-create.err
+            if git push origin --delete "$BRANCH"; then
+              CLEANUP="The branch \`$BRANCH\` that this run pushed has been deleted, so re-applying the \`$LABEL\` label starts clean."
+            else
+              CLEANUP="The branch \`$BRANCH\` that this run pushed could NOT be deleted; delete it before re-applying the \`$LABEL\` label, or the next run will stop at \"branch already exists\"."
+            fi
+            {
+              echo "### Nothing was published — the pull request could not be opened"
+              echo
+              echo "GitHub refused to open the pull request:"
+              echo
+              echo '```'
+              cat /tmp/approve/pr-create.err
+              echo '```'
+              echo
+              echo "$CLEANUP \`data/moments.json\` on \`main\` is untouched."
+            } > /tmp/approve/pr-fail.md
+            gh issue comment "$ISSUE" --repo "$GITHUB_REPOSITORY" --body-file /tmp/approve/pr-fail.md
+            gh issue edit "$ISSUE" --repo "$GITHUB_REPOSITORY" --remove-label "$LABEL"
+            echo "::error::gh pr create failed for ${BRANCH} — branch cleanup attempted, label removed, nothing published"
+            exit 1
+          fi
           echo "url=$PR_URL" >> "$GITHUB_OUTPUT"
           echo "::notice::opened $PR_URL"
 
@@ -393,35 +424,40 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           ISSUE: ${{ github.event.issue.number }}
           PR_URL: ${{ steps.pr.outputs.url }}
-        # ATTEMPT, not enable — and the difference is not word-play. Verified
-        # against the API on 2026-08-12: this repository has
-        # `allow_auto_merge: false`, `main` is unprotected, and there are no
-        # rulesets and no required status checks. So today this command FAILS
-        # on every generated PR and the else-branch below is the live path: the
-        # PR waits for the owner's one click.
+        # ATTEMPT, not enable — and NEVER `gh pr merge` (2026-11-25).
         #
-        # It is wired anyway, and left failing loudly-but-safely, because the
-        # two things that would make it work are repository SETTINGS and
-        # therefore the owner's to turn on — deliberately, since together they
-        # are what converts a label into a merge. Both are needed:
-        #   1. Settings -> General -> "Allow auto-merge"
-        #   2. a required status check on `main` (ruleset or branch protection)
-        #      naming ci.yml's aggregate `test` job
-        # Without (2), auto-merge has nothing to wait for and "on green" has no
-        # enforcement mechanism at all. docs/big-question-intake.md states both
-        # as the owner's explicit opt-in rather than describing the merge as
-        # automatic; the two must not drift apart.
+        # This step used to run `gh pr merge --auto --squash`. That command
+        # does not only arm auto-merge: when the PR is already mergeable with
+        # nothing pending (GitHub reports it CLEAN), gh MERGES IT ON THE SPOT.
+        # `main` has no required status checks, so a fresh PR is CLEAN before
+        # CI has even been queued. On 2026-11-24 that merged #564 and #566
+        # five and six seconds after they opened, with no CI run at all, and
+        # posted "Auto-merge is armed" on both issues. #565, opened while
+        # GitHub was still computing its state, failed the same command and
+        # waited correctly. Same command, opposite outcomes, decided by timing.
+        #
+        # The GraphQL mutation below only ever ARMS auto-merge. On a CLEAN PR
+        # it errors instead of merging, and with `allow_auto_merge: false` it
+        # errors too, so today the else-branch is the live path: the PR waits
+        # for the owner (or a session acting on his label) to merge it once
+        # every check is green. It will arm for real only after both settings
+        # in docs/big-question-intake.md are on: "Allow auto-merge" and a
+        # required status check on `main` naming CI's `test` job. Without the
+        # required check, "on green" has nothing to wait for.
         #
         # A failure here is NOT a run failure: the PR is open, correct, and one
-        # click from merging, and the issue gets told exactly that. Red-running
-        # over a settings toggle would be noise about something already in the
-        # owner's hands.
+        # click from merging, and the issue gets told exactly that.
         run: |
-          if gh pr merge --repo "$GITHUB_REPOSITORY" --auto --squash "$PR_URL"; then
+          PR_ID=$(gh pr view "$PR_URL" --repo "$GITHUB_REPOSITORY" --json id --jq .id)
+          # $id below is a GraphQL variable, not a shell one: single quotes on purpose.
+          # shellcheck disable=SC2016
+          if gh api graphql \
+            -f query='mutation($id: ID!) { enablePullRequestAutoMerge(input: {pullRequestId: $id, mergeMethod: SQUASH}) { pullRequest { number } } }' \
+            -f id="$PR_ID"; then
             gh issue comment "$ISSUE" --repo "$GITHUB_REPOSITORY" --body \
               "Approved. $PR_URL carries the entry exactly as this issue has it, byte for byte. Auto-merge is armed: it lands once the required checks are green, which closes this issue."
           else
             gh issue comment "$ISSUE" --repo "$GITHUB_REPOSITORY" --body \
               "Approved, and $PR_URL carries the entry exactly as this issue has it, byte for byte. **Auto-merge is not available on this repository, so the PR is waiting for you** — merge it once CI is green and this issue closes. To make it automatic, both of these have to be on: *Settings -> General -> Allow auto-merge*, and a required status check on \`main\` naming CI's \`test\` job. See \`docs/big-question-intake.md\`."
-            echo "::warning::auto-merge unavailable on ${PR_URL} (expected while allow_auto_merge is off and main has no required checks) — the PR is open and correct; merge it by hand"
+            echo "::warning::auto-merge not armed on ${PR_URL} (expected while allow_auto_merge is off or main has no required checks) — the PR is open and correct; merge it once CI is green"
           fi
