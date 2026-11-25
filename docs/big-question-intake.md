@@ -54,9 +54,11 @@ mechanism.
    Question without a legislative vehicle.
 6. **A PR opens, carrying the byte-fidelity attestation and the gate
    transcript.** The workflow branches, commits, opens the PR, and *attempts*
-   auto-merge. **As this repository is configured today that attempt fails and
+   to arm auto-merge. **As this repository is configured today that attempt fails and
    the PR waits for your one click** — see "Making it merge itself" below.
-   Merging closes the issue either way.
+   Merging closes the issue either way. If the PR cannot be opened at all, the
+   workflow deletes the branch it pushed, says why on the issue and takes the
+   label off, so re-applying it starts clean.
 
 ## Editing before you approve
 
@@ -108,18 +110,24 @@ rather than merely unready:
 
 ## Making it merge itself
 
-The workflow runs `gh pr merge --auto --squash` on every PR it opens. **That
-command fails today, and the failure is the expected path**, because auto-merge
-needs two repository settings that are off (verified against the API,
-2026-08-12: `allow_auto_merge: false`, `main` unprotected, no rulesets, no
-required status checks). When it fails, the workflow says so on the issue and
-the PR sits waiting for you — correct, complete, one click from landing.
+The workflow tries to *arm* auto-merge on every PR it opens, through GitHub's
+`enablePullRequestAutoMerge` mutation, which never merges anything itself.
+**That attempt fails today, and the failure is the expected path**, because
+auto-merge needs two repository settings that are off (`allow_auto_merge:
+false`, and `main` has no required status checks). When it fails, the workflow
+says so on the issue and the PR sits waiting for you — correct, complete, one
+click from landing once CI is green.
+
+It no longer runs `gh pr merge --auto`. That command merges on the spot when a
+PR is already mergeable with nothing pending, and with no required checks a
+fresh PR is exactly that: on 2026-11-24 it merged #564 and #566 within seconds
+of opening, before CI had run.
 
 Both of these have to be on, and turning them on is your explicit opt-in
 because together they are what converts a label into a merge:
 
 1. **Settings → General → Pull Requests → "Allow auto-merge".** Without it
-   `gh pr merge --auto` errors outright.
+   arming auto-merge errors outright.
 2. **A required status check on `main`** naming CI's aggregate `test` job
    (Settings → Rules → Rulesets, or classic branch protection). Without it, auto-merge has
    nothing to wait for — **"on green" has no enforcement mechanism at all**, and

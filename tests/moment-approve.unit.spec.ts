@@ -1208,21 +1208,34 @@ test.describe('moment-approve.yml', () => {
     expect(yml()).toMatch(/gh workflow run ci\.yml/);
   });
 
-  test('auto-merge is ATTEMPTED, and its failure is a supported outcome rather than a red run', () => {
-    // Verified against the API 2026-08-12: allow_auto_merge is false, main is
-    // unprotected, no rulesets, no required checks — so this command fails on
-    // every generated PR today and the else-branch is the LIVE path. The step
-    // name and the issue comment both have to say so; a workflow that
-    // announces "merges itself" over a command that cannot succeed is the
-    // failure mode this project calls a shipped claim that is not true.
+  test('auto-merge is only ever ARMED, never performed: no `gh pr merge` anywhere', () => {
+    // 2026-11-25. `gh pr merge --auto` merges on the spot when GitHub already
+    // reports the PR CLEAN, and with no required checks on main a fresh PR is
+    // CLEAN before CI is queued: #564 and #566 merged 5 and 6 seconds after
+    // opening, with no CI run. The GraphQL enablePullRequestAutoMerge mutation
+    // only arms; on a CLEAN PR, or with allow_auto_merge off, it errors and the
+    // else-branch tells the owner the PR is waiting for him.
     const text = yml();
-    expect(text).toMatch(/gh pr merge .*--auto --squash/);
-    expect(text).toMatch(/if gh pr merge/);
+    expect(text).not.toMatch(/^\s*(if\s+)?gh pr merge/m);
+    expect(text).toContain('enablePullRequestAutoMerge');
+    expect(text).toMatch(/if gh api graphql/);
     expect(text).toMatch(/- name: Attempt auto-merge on green/);
     expect(text).toContain('Allow auto-merge');
     expect(text).toContain('required status check');
     // the not-available comment must tell him the PR is waiting for HIM
     expect(text).toMatch(/waiting for you/);
+  });
+
+  test('a branch it pushed but could not turn into a PR is deleted, and the label comes off', () => {
+    // 2026-11-24: runs that pushed and then failed at `gh pr create` left their
+    // branches behind, and every later label stopped at "branch already exists".
+    const text = yml();
+    const start = text.indexOf('if ! PR_URL=$(gh pr create');
+    expect(start).toBeGreaterThan(-1);
+    const block = text.slice(start, text.indexOf('echo "url=$PR_URL"', start));
+    expect(block).toContain('git push origin --delete "$BRANCH"');
+    expect(block).toContain('--remove-label "$LABEL"');
+    expect(block).toMatch(/exit 1/);
   });
 
   test('it commits as oravan-sync — a bot author silently breaks the Vercel deploy', () => {
