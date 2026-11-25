@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-25T23:00:00.277Z",
+    "fetched_at": "2026-11-25T23:54:17.670Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-25T23:00:00.277Z"
+        "checked_at": "2026-11-25T23:54:17.670Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-22",
         "week_label": "Most-Viewed Bills - Week of November 22, 2026",
         "entries": 8,
-        "checked_at": "2026-11-25T23:00:00.277Z"
+        "checked_at": "2026-11-25T23:54:17.670Z"
       },
       "leans": {
         "center": {
@@ -2193,6 +2193,12 @@
     "sjres-204-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "earthjustice.org",
+          "firstSeen": "2026-11-25",
+          "lastSeen": "2026-11-25",
+          "url": "https://news.google.com/rss/articles/CBMioAFBVV95cUxPWGhOc0Fpb3ZiRXdaeGZqVW5UbVhJMXpUVS0wRFNueXNvOG53WURsbXhNNlY1LWlfWWFicDYwX2xFdXFjQ1kzZEhUeUhYaV9vRjB1Snl4SWpLcGtQQ2RKcDI1TUx5ZExtQUQxMHRNZTAxd1psR3VhM0haTG9fQ01LTkx0eExjWjZnbHpva3A2dXVsSVI2cDZDSkloSF9SOEF1?oc=5"
+        },
         {
           "domain": "selc.org",
           "firstSeen": "2026-11-20",
