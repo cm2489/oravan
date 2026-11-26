@@ -647,6 +647,132 @@ function vocabLintHits(text) {
   );
 }
 
+// ---------------------------------------------------------------------------
+// R5 — the record-check claim: AI text "checked against the record"
+// ---------------------------------------------------------------------------
+
+/*
+ * Added 2026-11-25. The site's AI label read "Decoded by AI · checked against
+ * the record" (ES "verificado con el registro"), the home hero said Oravan
+ * "checks them against the official record" (ES "los coteja"), and the
+ * libraries pitch said the text passes "automated checks against the official
+ * record". Two outside reviews found that overstated: the automated checks
+ * are both languages present, the official record attached and a schema
+ * check, and nothing re-reads the bill to compare the AI text with it. The
+ * owner picked the replacement wording on 2026-11-25 (card "The new words for
+ * 'checked against the record': which version?", option a): "Decoded by AI ·
+ * official record attached". R5 is what keeps the old claim from coming back,
+ * in either language, under any of the verbs it was or could be written with.
+ *
+ * ONE FACTOR, not two like R2/R4, because the sentence is the claim: a check
+ * or verification verb, then within a few words "against/with the (official)
+ * record" (ES "con/contra el registro"). Attaching the record, showing it
+ * beside the text or linking it is honest and does not match; the gap between
+ * the verb and the object never crosses sentence punctuation, a colon or a
+ * semicolon, which is what keeps "passes automated checks: both languages
+ * present, the official record attached" clean.
+ *
+ * Deliberately NOT matched: the bare imperative "Check it against the official
+ * text" (`bill.aiDisclaimer`) — that tells the READER to check, which is the
+ * opposite claim — and anything in a code comment, where the repo describes
+ * internal checks honestly (the nightly record re-check in lib/pipeline-health
+ * .mjs, lib/moment-updates-recheck.mjs).
+ *
+ * WHERE IT RUNS: every message in messages/*.json, every namespace, and the
+ * non-comment text (string literals, concatenation joined, and JSX text) of
+ * the public code surfaces in R5_CODE_SCAN below: the app and components
+ * (pages, page metadata, Open Graph images, the feeds, the embed routes,
+ * llms.txt, the MCP route), lib/core/ (the MCP envelope and tool text, the
+ * feed builders), lib/jsonld.ts and public/embed.js; plus
+ * docs/mcp-server-readme.md as prose, since it is redistributed to MCP
+ * directories. No allowlist: there is no surface where the claim is true.
+ */
+const RECORD_GAP = '[^.!?;:\\n(){}<>=]{0,40}?';
+const RECORD_CHECK = [
+  {
+    name: '"checked against/with the record" (EN)',
+    re: new RegExp(
+      F(
+        '\\b(checked|checks|checking|verified|verifies|verifying|re-?checked|cross[-\\s]?checked|fact[-\\s]?checked|validated|validates|confirmed)\\b',
+        RECORD_GAP,
+        '\\b(against|with)\\s+(the\\s+|its\\s+|their\\s+)?(official\\s+)?(congressional\\s+)?(record|bill\\s+text|official\\s+text|source\\s+text)\\b'
+      ),
+      'i'
+    ),
+  },
+  { name: '"record-checked" (EN)', re: /\brecord[-\s]checked\b/i },
+  {
+    name: '"verificado/cotejado con el registro" (ES)',
+    re: new RegExp(
+      F(
+        '\\b(verific|comprob|comprueb|cotej|contrast|chequ|control)[a-záéíóúñ]*',
+        RECORD_GAP,
+        '\\b(con|contra|frente\\s+al?)\\s+(el\\s+|los\\s+)?(registros?|texto\\s+oficial)\\b'
+      ),
+      'i'
+    ),
+  },
+];
+
+/** R5's rule. Returns a snippet around each record-check claim (empty = clean). Pure. */
+function recordCheckHits(text) {
+  const flat = text.replace(/\s+/g, ' ');
+  const out = [];
+  for (const p of RECORD_CHECK) {
+    for (const m of flat.matchAll(new RegExp(p.re.source, 'gi'))) {
+      out.push({ pattern: p.name, text: flat.slice(Math.max(0, m.index - 40), m.index + m[0].length + 20).trim() });
+    }
+  }
+  return out;
+}
+
+/**
+ * The text a reader or a machine can receive from a source file: string
+ * literals (a `'…' + '…'` run read as one value, as R1 does) and the code
+ * between them, which is where JSX text lives — with every comment removed.
+ * A single- or double-quoted "literal" that runs across a newline is not a
+ * literal (an apostrophe in JSX text, a quote inside a regex), so it is read
+ * as code rather than allowed to swallow the comments after it. Pure.
+ */
+function codeSurfaceText(src) {
+  let out = '';
+  let i = 0;
+  while (i < src.length) {
+    const c = src[i];
+    const n = src[i + 1];
+    if (c === '/' && n === '/') {
+      const j = src.indexOf('\n', i);
+      i = j === -1 ? src.length : j;
+      continue;
+    }
+    if (c === '/' && n === '*') {
+      const j = src.indexOf('*/', i + 2);
+      i = j === -1 ? src.length : j + 2;
+      out += ' ';
+      continue;
+    }
+    if (QUOTES.has(c)) {
+      const first = readOneLiteral(src, i);
+      if (first && (c === '`' || !src.slice(i, first.end).includes('\n'))) {
+        const lit = readConcatenated(src, i);
+        out += ` ${lit.value} `;
+        i = lit.end;
+        continue;
+      }
+    }
+    out += c;
+    i++;
+  }
+  return out;
+}
+
+const R5_CODE_DIRS = ['app/', 'components/', 'lib/core/'];
+const R5_CODE_FILES = ['lib/jsonld.ts', 'public/embed.js'];
+const R5_PROSE_FILES = ['docs/mcp-server-readme.md'];
+const R5_CODE_EXT = /\.(ts|tsx|mjs|js)$/;
+const inR5CodeScan = (f) =>
+  R5_CODE_FILES.includes(f) || (R5_CODE_DIRS.some((d) => f.startsWith(d)) && R5_CODE_EXT.test(f));
+
 const R3_ALLOWLIST = [
   {
     path: 'README.md',
@@ -1226,6 +1352,85 @@ function selfTest() {
     return hits.length === 1 && AMENDMENT_RECORD.re.test(hits[0].context);
   });
 
+  /*
+   * R5. The sixteen strings the site shipped until 2026-11-25, verbatim, each
+   * of which must fail; then the owner's replacement wording and the honest
+   * neighbours that must not.
+   */
+  const R5_SHIPPED = [
+    'Oravan puts active bills in Congress into plain words, checks them against the official record and gives you a 30-second call script.',
+    'Decoded by AI, checked against the record',
+    'Headlines decoded by AI, checked against the record.',
+    'Decoded by AI, checked against the record.',
+    'Headlines and summaries decoded by AI, checked against the record',
+    'Decoded by AI · checked against the record',
+    'Oravan is safe to put in front of every patron: it is nonpartisan by construction, has no accounts and keeps no profile of any patron, and its plain-language text never publishes without passing automated checks against the official record.',
+    'Oravan descifra en palabras claras proyectos de ley activos del Congreso, los coteja con el registro oficial y te da un guion de llamada de 30 segundos.',
+    'Traducido por IA, verificado con el registro',
+    'Titulares traducidos por IA, verificados con el registro.',
+    'Traducido por IA, verificado con el registro.',
+    'Titulares y resúmenes traducidos por IA, verificados con el registro',
+    'Traducido por IA · verificado con el registro',
+    'y su texto en lenguaje claro nunca se publica sin pasar controles automáticos contra el registro oficial.',
+  ];
+  for (const s of R5_SHIPPED) {
+    seed(`R5: the pre-2026-11-25 wording "${s.slice(0, 60)}…"`, () => recordCheckHits(s).length > 0);
+  }
+  seed('R5/en: other verbs and objects — verified with the bill text, fact-checked against the official record', () =>
+    recordCheckHits('Every summary is verified with the bill text before it publishes.').length > 0 &&
+    recordCheckHits('Plain-language text, fact-checked against the official record.').length > 0 &&
+    recordCheckHits('Record-checked AI summaries.').length > 0
+  );
+  seed('R5/es: other verbs and objects — comprobado contra el registro, contrastado con el texto oficial', () =>
+    recordCheckHits('Cada resumen se comprueba automáticamente contra el registro.').length > 0 &&
+    recordCheckHits('Resúmenes contrastados con el texto oficial.').length > 0
+  );
+  seed('R5: a claim straddling a `+` concatenation boundary in TypeScript', () => {
+    const src = ["const LABEL = 'Decoded by AI, checked ' +", "  'against the record';"].join('\n');
+    return src.split('\n').every((l) => recordCheckHits(l).length === 0) && recordCheckHits(codeSurfaceText(src)).length > 0;
+  });
+  seed('R5: a claim in JSX text, wrapped across lines', () =>
+    recordCheckHits(codeSurfaceText(['<p>', '  Decoded by AI, checked against', '  the record', '</p>'].join('\n'))).length > 0
+  );
+
+  const R5_CLEAN = [
+    'Decoded by AI · official record attached',
+    'Traducido por IA · registro oficial adjunto',
+    'Headlines and summaries decoded by AI · official record attached',
+    'Titulares y resúmenes traducidos por IA · registro oficial adjunto',
+    'Oravan puts active bills in Congress into plain words, shows the official record beside them and gives you a 30-second call script.',
+    'Oravan descifra en palabras claras proyectos de ley activos del Congreso, muestra el registro oficial al lado y te da un guion de llamada de 30 segundos.',
+    'its plain-language text never publishes without passing automated checks: both languages present, the official record attached and a format check.',
+    'su texto en lenguaje claro nunca se publica sin pasar controles automáticos: los dos idiomas presentes, el registro oficial adjunto y una verificación de formato.',
+    REAL.heroEn,
+    'Nada se publica sin pasar controles automáticos · el registro oficial siempre va adjunto',
+    REAL.aiBodyEn,
+    REAL.aiBodyEs,
+    // bill.aiDisclaimer tells the READER to check — the opposite claim.
+    'AI-drafted summary. Check it against the official text before you act on it.',
+    'Resumen generado por IA. Compáralo con el texto oficial antes de actuar.',
+    'Actualizado cada noche, con el registro oficial adjunto.',
+  ];
+  clean('R5: the owner-picked wording of 2026-11-25 and the honest neighbours pass', () =>
+    R5_CLEAN.every((s) => recordCheckHits(s).length === 0)
+  );
+  clean('R5: a code comment describing an internal check is not a public claim', () =>
+    recordCheckHits(
+      codeSurfaceText(
+        [
+          '// a line that cannot be checked against the record is left for a person',
+          "const head = 'Stored lines';",
+          '/* verified against the record nightly */',
+        ].join('\n')
+      )
+    ).length === 0
+  );
+  clean('R5: the scan covers the surfaces it was built for — llms.txt, JSON-LD, the MCP envelope and route, the embeds', () =>
+    ['app/llms.txt/route.ts', 'lib/jsonld.ts', 'lib/core/mcp.ts', 'app/api/mcp/[transport]/route.ts', 'app/embed/bill-card/page.tsx'].every(
+      inR5CodeScan
+    ) && R5_PROSE_FILES.includes('docs/mcp-server-readme.md')
+  );
+
   if (failures.length) {
     for (const f of failures) console.error(`::error::check-claim-truth self-test failed: ${f}`);
     process.exit(1);
@@ -1357,6 +1562,45 @@ function scanTree() {
     }
   }
 
+  // --- R5: no surface says AI text was checked against the record ----------
+  let r5Scanned = 0;
+  for (const file of MESSAGE_FILES) {
+    r5Scanned++;
+    for (const [key, value] of flattenMessages(JSON.parse(read(file)))) {
+      for (const hit of recordCheckHits(value)) {
+        fail(
+          `R5 ${key} says AI text is checked against the record ${hit.pattern} — the automated checks are both ` +
+            `languages present, the official record attached and a schema check; nothing compares the text with ` +
+            `the record (owner's wording, 2026-11-25: "official record attached"): ${hit.text}`,
+          file
+        );
+      }
+    }
+  }
+  for (const f of R5_PROSE_FILES) {
+    if (!files.includes(f)) {
+      fail(`R5_PROSE_FILES names ${f}, which is not a tracked file — re-point or remove the entry in the change that moved it`);
+    }
+  }
+  for (const file of [...files.filter(inR5CodeScan), ...R5_PROSE_FILES.filter((f) => files.includes(f))]) {
+    let content;
+    try {
+      content = read(file);
+    } catch {
+      continue;
+    }
+    r5Scanned++;
+    const surface = R5_PROSE_FILES.includes(file) ? content : codeSurfaceText(content);
+    for (const hit of recordCheckHits(surface)) {
+      fail(
+        `R5 says AI text is checked against the record ${hit.pattern} — the automated checks are both languages ` +
+          `present, the official record attached and a schema check (owner's wording, 2026-11-25: "official ` +
+          `record attached"): ${hit.text}`,
+        file
+      );
+    }
+  }
+
   // --- Stale allowlist entries weaken the gate silently ---------------------
   for (const e of R3_ALLOWLIST) {
     if ((allowUsage.get(e) ?? 0) === 0) fail(`stale allowlist entry ${e.path} (zero matches) — remove it (${e.note})`);
@@ -1376,6 +1620,7 @@ function scanTree() {
     `check-claim-truth passed: ${ANCHORS.length} enumerated provenance surfaces verified, ` +
       `${scanned.length + MESSAGE_FILES.length} files scanned, ` +
       `${R3_ALLOWLIST.length + R3_KEY_ALLOWLIST.length} written exemptions honored, ` +
+      `${r5Scanned} public surfaces read for the record-check claim, ` +
       '1 self-exemption (this file).'
   );
 }

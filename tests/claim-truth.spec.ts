@@ -66,7 +66,59 @@ test.describe('the CI gate', () => {
     // named decode gate (R4). Four R1b rewrites walked through this gate
     // untouched on 2026-08-09; they are seeded fixtures now.
     const caught = Number(result.stdout.match(/all (\d+) seeded violations caught/)![1]);
-    expect(caught).toBeGreaterThanOrEqual(16);
+    // 24 before R5; R5 (2026-11-25) seeds the sixteen shipped record-check
+    // strings as fourteen distinct fixtures plus four reworded ones.
+    expect(caught).toBeGreaterThanOrEqual(42);
+    expect(result.stdout).toContain('clean fixtures untouched');
+  });
+
+  test('R5 runs on the tree: the public surfaces are read for the record-check claim', () => {
+    const result = runGate();
+    expect(result.status, result.stderr).toBe(0);
+    const read5 = Number(result.stdout.match(/(\d+) public surfaces read for the record-check claim/)?.[1] ?? 0);
+    // Both message catalogues plus the app, components, lib/core, JSON-LD,
+    // the embed loader and the MCP readme: well over a hundred files.
+    expect(read5).toBeGreaterThan(100);
+  });
+});
+
+/*
+ * R5's claim, spelled out here rather than only inside the gate, so a change
+ * that weakens the gate's regex cannot also hide the claim from this test.
+ * The site said its AI text was "checked against the record" (ES "verificado
+ * con el registro", "los coteja con el registro oficial") until 2026-11-25.
+ * The automated checks are both languages present, the official record
+ * attached and a schema check; nothing compares the AI text with the record.
+ * The owner picked the replacement that day: "Decoded by AI · official record
+ * attached" / "Traducido por IA · registro oficial adjunto".
+ */
+test.describe('no message says AI text was checked against the record', () => {
+  const RECORD_CHECK_EN = /\b(checked|checks|verified|cross-checked|fact-checked|validated)\b[^.!?;:]{0,40}?\b(against|with) (the )?(official )?record\b/i;
+  const RECORD_CHECK_ES = /\b(verificad|comprobad|cotej|contrastad|controles)[a-záéíóúñ]*[^.!?;:]{0,40}?\b(con|contra) (el )?registro\b/i;
+
+  const flatten = (obj: unknown, prefix = ''): [string, string][] =>
+    Object.entries(obj as Record<string, unknown>).flatMap(([k, v]) =>
+      typeof v === 'string' ? [[`${prefix}${k}`, v] as [string, string]] : flatten(v, `${prefix}${k}.`)
+    );
+
+  for (const [lang, re] of [
+    ['en', RECORD_CHECK_EN],
+    ['es', RECORD_CHECK_ES],
+  ] as const) {
+    test(`${lang}: no key makes the claim, and the AI label carries the owner's 2026-11-25 wording`, () => {
+      const messages = JSON.parse(read(`messages/${lang}.json`));
+      const offenders = flatten(messages).filter(([, v]) => re.test(v));
+      expect(offenders.map(([k, v]) => `${k}: ${v}`)).toEqual([]);
+      expect(messages.bill.aiLabel).toBe(
+        lang === 'en' ? 'Decoded by AI · official record attached' : 'Traducido por IA · registro oficial adjunto'
+      );
+    });
+  }
+
+  test('the pre-2026-11-25 label is RED against this check, in both languages', () => {
+    expect(RECORD_CHECK_EN.test('Decoded by AI · checked against the record')).toBe(true);
+    expect(RECORD_CHECK_ES.test('Traducido por IA · verificado con el registro')).toBe(true);
+    expect(RECORD_CHECK_ES.test('los coteja con el registro oficial')).toBe(true);
   });
 });
 
