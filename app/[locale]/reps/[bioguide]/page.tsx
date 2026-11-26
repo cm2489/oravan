@@ -30,7 +30,7 @@ import {
   specialElectionsFor,
   vacancySlug,
 } from '@/lib/core';
-import { formatCitation } from '@/lib/format';
+import { formatCitation, formatCount } from '@/lib/format';
 import { getFreshness } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
 import { statusKeyFor } from '@/lib/journey';
@@ -329,7 +329,7 @@ function MemberBody({
                 {rest.length > 0 && (
                   <details className="mt-4 border-t border-line pt-2">
                     <summary className="flex min-h-11 cursor-pointer items-center text-sm font-bold select-none">
-                      {t('showAll', { count: sponsored.length })}
+                      {t('showAll', { count: formatCount(sponsored.length, locale) })}
                     </summary>
                     <div className="mt-2 grid gap-4 md:grid-cols-2">
                       {rest.map((b) => (

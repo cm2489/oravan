@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { COVERAGE_BOX_ON } from '../lib/coverage-switch';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
 import { getLiveMoments, getMoments, vehicleKind, type MomentWithState } from '../lib/moments';
@@ -176,6 +177,15 @@ test.describe('/questions/[id] detail page', () => {
       // No lean labels anywhere on a Moment page (spec §3.3) — coverage/lean
       // chrome (messages.coverage.lean.*, "AllSides") stays on the bill page only.
       expect(await page.getByText(/Leans left|Leans right|AllSides/i).count()).toBe(0);
+      // And while the coverage box is switched off (lib/coverage-switch.ts;
+      // owner, 2026-11-25, "Remove it everywhere for now"), no vehicle card
+      // prints the outlet count it read off that box. With the switch on, a
+      // card may print it again, so nothing is asserted then.
+      if (!COVERAGE_BOX_ON) {
+        expect(
+          await page.locator('section[aria-labelledby="vehicles-h"]').getByText(/\b\d+ outlets?\b/).count()
+        ).toBe(0);
+      }
 
       // Every vehicle both names its record and resolves — click through and
       // confirm the real page renders (not a 404, not a stub).

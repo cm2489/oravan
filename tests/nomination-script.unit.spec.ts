@@ -5,7 +5,7 @@ import {
   NOMINATION_PROMPT_VERSION,
   type NominationAudience,
 } from '../lib/nomination-script';
-import { buildScriptPrompt, PROMPT_VERSION } from '../lib/scriptprompt';
+import { buildScriptPrompt, PROMPT_VERSION, scriptLangLine } from '../lib/scriptprompt';
 import { contentVersion, nominationContentVersion, scriptKey } from '../lib/scriptcache';
 import { STORED_NOMINATION_STATUSES } from '../lib/nomination-status.mjs';
 import en from '../messages/en.json';
@@ -154,7 +154,7 @@ test('only the language line changes between locales — the record input stays 
   expect(esPrompt).toContain('Latin American Spanish');
   expect(enPrompt).toContain('8th-grade reading level');
   expect(enPrompt.replace('Write the script in plain, warm English at an 8th-grade reading level. Use the placeholders [YOUR NAME] and [YOUR TOWN OR ZIP].', '')).toBe(
-    esPrompt.replace('Write the script in natural, warm Latin American Spanish (tú form). Use the placeholders [TU NOMBRE] and [TU CIUDAD O CÓDIGO POSTAL].', '')
+    esPrompt.replace(scriptLangLine('es'), '')
   );
 });
 

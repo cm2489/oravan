@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { COVERAGE_BOX_ON } from '../lib/coverage-switch';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
 import coverageData from '../data/coverage.json';
@@ -47,7 +48,53 @@ const recentSlug = datedSlugs.find((s) => freshnessAgeDays(newestPublishedAt(s)!
 const section = (page: import('@playwright/test').Page) =>
   page.locator('section[aria-labelledby="coverage-heading"]');
 
+/* THE SWITCH (lib/coverage-switch.ts; owner, 2026-11-25, "Remove it everywhere
+ * for now"). Every test that expects the box skips while COVERAGE_BOX_ON is
+ * false and runs again, unchanged, the day it is set back to true; the
+ * "switched off" test(s) below assert the opposite and skip once it is on. */
+const BOX_OFF = 'the coverage box is switched off (lib/coverage-switch.ts, owner 2026-11-25); runs again when COVERAGE_BOX_ON is true';
+
+/* While the switch is off, a bill whose stored articles WOULD fill the box
+ * shows none of it, in either language: no section, no heading, no outlet
+ * list, no lean label, no lean or language note, no anchor to the section,
+ * and none of it in the prerendered HTML. */
+for (const { prefix, messages } of [
+  { prefix: '', messages: en },
+  { prefix: '/es', messages: es },
+] as const) {
+  test(`${prefix || '/en'}: switched off — a bill with stored coverage shows no box, no ratings and no notes`, async ({
+    page,
+  }) => {
+    test.skip(COVERAGE_BOX_ON, 'the coverage box is switched on');
+    test.skip(!shownSlug, 'no showable coverage in current data');
+    await page.goto(`${prefix}/bills/${shownSlug}`);
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible(); // rendered, not a 404
+    await expect(section(page)).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: messages.coverage.heading })).toHaveCount(0);
+    for (const text of [
+      messages.coverage.leanNote,
+      messages.coverage.foreignLanguageNote,
+      messages.coverage.lean.left,
+      messages.coverage.lean.right,
+      messages.coverage.lean.unrated,
+      messages.coverage.newestLabel,
+    ]) {
+      await expect(page.getByText(text, { exact: true })).toHaveCount(0);
+    }
+    for (const a of shown(shownSlug!)) await expect(page.locator(`a[href="${a.url}"]`)).toHaveCount(0);
+    await expect(page.locator('#coverage-heading, [href="#coverage-heading"]')).toHaveCount(0);
+    const html = await (await page.request.get(`${prefix}/bills/${shownSlug}`)).text();
+    expect(html).not.toContain('coverage-heading');
+    // Every page ships the whole message dictionary inside its script payload,
+    // so the note's words are always in the raw HTML. What must hold is that
+    // no markup outside a <script> carries them.
+    const markup = html.replace(/<script\b[\s\S]*?<\/script>/g, '');
+    expect(markup).not.toContain(messages.coverage.leanNote);
+  });
+}
+
 test('a bill with coverage renders the Read section', async ({ page }) => {
+  test.skip(!COVERAGE_BOX_ON, BOX_OFF);
   test.skip(!shownSlug, 'no showable coverage in current data');
   await page.goto(`/bills/${shownSlug}`);
   await expect(section(page).getByRole('heading', { name: "How it's being covered" })).toBeVisible();
@@ -56,6 +103,7 @@ test('a bill with coverage renders the Read section', async ({ page }) => {
 });
 
 test('snippet preview toggles open (keyboard/touch path)', async ({ page }) => {
+  test.skip(!COVERAGE_BOX_ON, BOX_OFF);
   test.skip(!shownSlug, 'no showable coverage in current data');
   await page.goto(`/bills/${shownSlug}`);
   const button = section(page).getByRole('button', { name: 'Preview' }).first();
@@ -83,6 +131,7 @@ for (const { locale, prefix, messages } of [
   test(`${locale}: a snippet is quoted and attributed — the outlet's voice, never the page's`, async ({
     page,
   }) => {
+    test.skip(!COVERAGE_BOX_ON, BOX_OFF);
     test.skip(!shownSlug, 'no showable coverage in current data');
     await page.goto(`${prefix}/bills/${shownSlug}`);
     const button = section(page).getByRole('button', { name: messages.coverage.preview }).first();
@@ -113,6 +162,7 @@ for (const { locale, prefix, messages } of [
 }
 
 test('the section states the age of what it is showing, in both languages', async ({ page }) => {
+  test.skip(!COVERAGE_BOX_ON, BOX_OFF);
   test.skip(!datedSlugs[0], 'no dated coverage in current data');
   const slug = datedSlugs[0];
   const newest = newestPublishedAt(slug)!;
@@ -159,6 +209,7 @@ const checkedSlug =
   checkedCandidates.find((s) => checkedOf(s) !== newestPublishedAt(s)) ?? checkedCandidates[0];
 
 test('the section says when the sweep last looked, in both languages', async ({ page }) => {
+  test.skip(!COVERAGE_BOX_ON, BOX_OFF);
   test.skip(!checkedSlug, 'no checked, rendering coverage in current data');
   const checked = checkedOf(checkedSlug!)!;
   for (const { prefix, messages } of [
@@ -180,6 +231,7 @@ test('the section says when the sweep last looked, in both languages', async ({ 
 });
 
 test('the check date is absent from the prerendered HTML (the KTD-2 gate)', async ({ page }) => {
+  test.skip(!COVERAGE_BOX_ON, BOX_OFF);
   test.skip(!checkedSlug, 'no checked, rendering coverage in current data');
   const checked = checkedOf(checkedSlug!)!;
   // The raw response, never rendered: this is the static HTML a CDN can serve
@@ -210,6 +262,7 @@ test('the check date is absent from the prerendered HTML (the KTD-2 gate)', asyn
 test('coverage older than the age window carries the caveat; recent coverage does not', async ({
   page,
 }) => {
+  test.skip(!COVERAGE_BOX_ON, BOX_OFF);
   test.skip(!staleSlug && !recentSlug, 'no dated coverage in current data');
   if (staleSlug) {
     await page.goto(`/bills/${staleSlug}`);
@@ -227,6 +280,7 @@ test('coverage older than the age window carries the caveat; recent coverage doe
 });
 
 test('one-sided coverage on a Big Question bill is shown WITH a disclaimer (not hidden)', async ({ page }) => {
+  test.skip(!COVERAGE_BOX_ON, BOX_OFF);
   test.skip(!oneSidedSlug, 'no one-sided coverage in current data');
   await page.goto(`/bills/${oneSidedSlug}`);
   await expect(section(page).getByRole('heading', { name: "How it's being covered" })).toBeVisible();
@@ -234,6 +288,7 @@ test('one-sided coverage on a Big Question bill is shown WITH a disclaimer (not 
 });
 
 test('too-thin coverage renders no section', async ({ page }) => {
+  test.skip(!COVERAGE_BOX_ON, BOX_OFF);
   test.skip(!thinSlug, 'no sub-threshold coverage in current data');
   await page.goto(`/bills/${thinSlug}`);
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible(); // page rendered (not 404)

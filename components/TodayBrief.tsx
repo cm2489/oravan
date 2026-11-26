@@ -3,6 +3,8 @@ import { ExternalLink } from 'lucide-react';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import { BillCard } from '@/components/BillCard';
 import { glossaryTag } from '@/components/glossary-tags';
+import { RecordWords } from '@/components/RecordWords';
+import { formatInstant } from '@/lib/format';
 import { Chip } from '@/components/system';
 import { TodayFloorCard } from '@/components/TodayFloorCard';
 import { TodayVoteCard } from '@/components/TodayVoteCard';
@@ -61,12 +63,10 @@ const THIN_RULE = 'mt-12 border-t border-line-strong pt-4';
 const LINK =
   'font-semibold text-go underline underline-offset-4 visited:text-go-deep hover:text-go-deep';
 
-function Verbatim({ children, className }: { children: ReactNode; className?: string }) {
-  return (
-    <span lang="en" className={className}>
-      {children}
-    </span>
-  );
+/* The record's own English words: `lang="en"`, and «» on the Spanish edition
+   (components/RecordWords.tsx). */
+function Verbatim({ children, locale }: { children: ReactNode; locale: string }) {
+  return <RecordWords locale={locale}>{children}</RecordWords>;
 }
 
 export async function TodayBrief({ brief, locale }: { brief: Brief; locale: string }) {
@@ -122,14 +122,8 @@ export async function TodayBrief({ brief, locale }: { brief: Brief; locale: stri
   /* The newest date is the brief itself, so it links to /today. */
   const dayHref = (iso: string) => (iso === brief.window[0]?.date ? '/today' : `/today/${iso}`);
   /* Full instants keep their zone and print it — the FloorRecessNote rule. */
-  const instant = (value: string) =>
-    format.dateTime(new Date(value), {
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      timeZoneName: 'short',
-    });
+  // es-US in the Spanish edition: "12:00 p.m. EST", not "12:00 GMT-5" (lib/format.ts).
+  const instant = (value: string) => formatInstant(value, locale, { year: false });
 
   const chamberName = (c: 'house' | 'senate') => t(c === 'senate' ? 'senate' : 'house');
   const strong = (chunks: ReactNode) => <strong className="font-bold text-ink">{chunks}</strong>;
@@ -146,7 +140,7 @@ export async function TodayBrief({ brief, locale }: { brief: Brief; locale: stri
         published: day(published),
         meeting: c.nextMeeting.label ?? day(c.nextMeeting.iso),
         when: c.nextMeeting.label
-          ? (chunks: ReactNode) => <Verbatim>{chunks}</Verbatim>
+          ? (chunks: ReactNode) => <Verbatim locale={locale}>{chunks}</Verbatim>
           : (chunks: ReactNode) => <span className="tabular-nums">{chunks}</span>,
         name: strong,
       });
@@ -170,7 +164,7 @@ export async function TodayBrief({ brief, locale }: { brief: Brief; locale: stri
          it printed none — our derived date in the reader's locale. */
       meeting: meeting.label ?? day(meeting.iso!),
       when: meeting.label
-        ? (chunks: ReactNode) => <Verbatim>{chunks}</Verbatim>
+        ? (chunks: ReactNode) => <Verbatim locale={locale}>{chunks}</Verbatim>
         : (chunks: ReactNode) => <span className="tabular-nums">{chunks}</span>,
       name: strong,
       term: glossaryTag('pro-forma-session'),
@@ -185,7 +179,7 @@ export async function TodayBrief({ brief, locale }: { brief: Brief; locale: stri
         published: day(item.published),
         covers: item.coversLabel ?? day(item.covers!),
         when: item.coversLabel
-          ? (chunks: ReactNode) => <Verbatim>{chunks}</Verbatim>
+          ? (chunks: ReactNode) => <Verbatim locale={locale}>{chunks}</Verbatim>
           : (chunks: ReactNode) => <span className="tabular-nums">{chunks}</span>,
       });
     }
@@ -341,7 +335,7 @@ export async function TodayBrief({ brief, locale }: { brief: Brief; locale: stri
                     {b.teaser ? (
                       <BillCard
                         bill={b.teaser}
-                        caption={b.actionText ? <Verbatim>{b.actionText}</Verbatim> : undefined}
+                        caption={b.actionText ? <Verbatim locale={locale}>{b.actionText}</Verbatim> : undefined}
                       />
                     ) : (
                       <Link href={`/bills/${b.slug}`} className={`inline-flex min-h-11 items-center text-md ${LINK}`}>

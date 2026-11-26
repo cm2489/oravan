@@ -11,6 +11,7 @@ import {
   passedBackChamber,
   passedBothReading,
   PROMPT_VERSION,
+  SPANISH_ASK_RULE,
   stanceLine,
   type ScriptPromptInput,
 } from '../lib/scriptprompt';
@@ -124,7 +125,8 @@ const STANCE_ORDER: Stance[] = ['support', 'oppose', 'undecided'];
 const EN_LANG =
   'Write the script in plain, warm English at an 8th-grade reading level. Use the placeholders [YOUR NAME] and [YOUR TOWN OR ZIP].';
 const ES_LANG =
-  'Write the script in natural, warm Latin American Spanish (tú form). Use the placeholders [TU NOMBRE] and [TU CIUDAD O CÓDIGO POSTAL].';
+  'Write the script in natural, warm Latin American Spanish (tú form). Use the placeholders [TU NOMBRE] and [TU CIUDAD O CÓDIGO POSTAL]. ' +
+  SPANISH_ASK_RULE;
 
 /** The concerned stance's shared body, with the one clause that differs. */
 const concerned = (close: string) =>

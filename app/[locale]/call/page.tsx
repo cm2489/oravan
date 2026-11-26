@@ -4,6 +4,7 @@ import { getFormatter, getTranslations, setRequestLocale } from 'next-intl/serve
 import { Link } from '@/i18n/navigation';
 import { CALL_BUTTON } from '@/components/call-button';
 import { CallHubReach, CallHubRouting } from '@/components/CallHubReach';
+import { RecordWords } from '@/components/RecordWords';
 import { StalenessNote } from '@/components/StalenessNote';
 import { UrgencyEmptyState } from '@/components/UrgencyEmptyState';
 import { Chip } from '@/components/system';
@@ -15,7 +16,7 @@ import {
   floorSignalsCheckedAt,
   floorSourcesPosture,
 } from '@/lib/docket';
-import { formatCitation } from '@/lib/format';
+import { formatCitation, formatCount } from '@/lib/format';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
 import { liveCallTarget } from '@/lib/journey';
@@ -160,17 +161,21 @@ export default async function CallHubPage({ params }: { params: Promise<{ locale
                         {covers && (
                           <span className="normal-case">
                             {' · '}
-                            {covers.verbatim ? (
-                              /* The schedule's own printed words, English in
-                                 both locales and marked so (ruling V4) — the
-                                 same treatment components/FloorEvidence.tsx
-                                 gives this label on the bill page and home. */
-                              <span lang="en">{tShared('home.evidenceCovers', { date: covers.label })}</span>
-                            ) : (
-                              <span className="tabular-nums">
-                                {tShared('home.evidenceCovers', { date: shortDate(covers.iso) })}
-                              </span>
-                            )}
+                            {covers.verbatim
+                              ? /* The schedule's own printed words, English in
+                                   both locales and marked so (ruling V4) — the
+                                   same treatment components/FloorEvidence.tsx
+                                   gives this label on the bill page and home;
+                                   "for" / "para el" stays in the reader's
+                                   language (components/RecordWords.tsx). */
+                                tShared.rich('home.evidenceCovers', {
+                                  date: covers.label,
+                                  when: (chunks) => <RecordWords locale={locale}>{chunks}</RecordWords>,
+                                })
+                              : tShared.rich('home.evidenceCovers', {
+                                  date: shortDate(covers.iso),
+                                  when: (chunks) => <span className="tabular-nums">{chunks}</span>,
+                                })}
                           </span>
                         )}
                       </p>
@@ -203,8 +208,10 @@ export default async function CallHubPage({ params }: { params: Promise<{ locale
                           <>
                             {' · '}
                             {/* The record's own sentence: English in both
-                                locales, as every bill page prints it. */}
-                            <span lang="en">{bill.last_action_text}</span>
+                                locales, as every bill page prints it, and
+                                set off as a quotation on the Spanish edition
+                                (components/RecordWords.tsx). */}
+                            <RecordWords locale={locale}>{bill.last_action_text}</RecordWords>
                             {bill.last_action_date && (
                               <>
                                 {' '}
@@ -268,7 +275,7 @@ export default async function CallHubPage({ params }: { params: Promise<{ locale
             href="/bills"
             className="mt-6 inline-flex min-h-11 items-center gap-2 font-semibold text-ink underline underline-offset-4"
           >
-            {tShared('reps.nextSeeAll', { count: total })}
+            {tShared('reps.nextSeeAll', { count: formatCount(total, locale) })}
             <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
           </Link>
         </section>

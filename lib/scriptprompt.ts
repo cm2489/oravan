@@ -252,11 +252,39 @@ export function stanceLine(bill: StanceLineBill, stance: Stance): string {
   return back ? passedBackStanceLine(stance, back) : STANCE_LINES[stance];
 }
 
-function langLine(lang: 'en' | 'es'): string {
+/*
+ * WHO THE SPANISH ASK IS MADE OF (2026-11-25, the outside reviews of the
+ * Spanish edition; the owner's go that day, "Spanish first aid").
+ *
+ * Read a Spanish script that asked the staff themselves to vote: "Les pido a
+ * ustedes en su oficina que voten a favor". The staffer who answers does not
+ * vote; the English stance lines ask "the member", and an English script's
+ * "I urge your office to vote yes" reads as the member through the office.
+ * Spanish grammar makes the plural "ustedes" a request of the people on the
+ * line, so the Spanish line says outright that the ask is made of the member,
+ * in the third person, and gives a chamber-neutral way to name them ("quien me
+ * representa en el Congreso" fits a Representative and a Senator alike, and
+ * carries no gender). The same line retires "constituyente", a false friend
+ * in Spanish (it means a member of a constituent assembly): the caller says
+ * where they live instead.
+ *
+ * Shared with lib/nomination-script.ts, so both Spanish lanes read the same
+ * rule. Not a PROMPT_VERSION bump, for the reason the two deliberate
+ * exceptions above give: every cached script expires inside 24 hours
+ * (SCRIPT_TTL_SECONDS), so a bump would buy at most a day and pay for one
+ * more generation of every script asked for in it.
+ */
+export const SPANISH_ASK_RULE =
+  'In Spanish, the ask is made of the member, in the third person, never of the person who answers: the staff do not vote. Write it as a request the office passes on, for example "Le pido a quien me representa en el Congreso que…"; never "les pido a ustedes que voten" or any wording that asks the staff themselves to vote or to take a position on the bill or nomination; asking the office to note the call, log the concern or pass the message on is fine. Never call the caller a "constituyente"; say where they live instead ("vivo en [TU CIUDAD O CÓDIGO POSTAL]").';
+
+/** The output-language line. Spanish carries SPANISH_ASK_RULE beside it. */
+export function scriptLangLine(lang: 'en' | 'es'): string {
   return lang === 'es'
-    ? 'Write the script in natural, warm Latin American Spanish (tú form). Use the placeholders [TU NOMBRE] and [TU CIUDAD O CÓDIGO POSTAL].'
+    ? `Write the script in natural, warm Latin American Spanish (tú form). Use the placeholders [TU NOMBRE] and [TU CIUDAD O CÓDIGO POSTAL]. ${SPANISH_ASK_RULE}`
     : 'Write the script in plain, warm English at an 8th-grade reading level. Use the placeholders [YOUR NAME] and [YOUR TOWN OR ZIP].';
 }
+
+const langLine = scriptLangLine;
 
 /*
  * THE STAGE THE SCRIPT WRITER IS TOLD (2026-09-29).
