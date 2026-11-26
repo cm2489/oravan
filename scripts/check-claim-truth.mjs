@@ -662,7 +662,18 @@ function vocabLintHits(text) {
  * owner picked the replacement wording on 2026-11-25 (card "The new words for
  * 'checked against the record': which version?", option a): "Decoded by AI ·
  * official record attached". R5 is what keeps the old claim from coming back,
- * in either language, under any of the verbs it was or could be written with.
+ * in either language, under the verbs and objects listed below: checked,
+ * verified, compared, matched, reviewed or audited against the record, the
+ * bill, its text or Congress.gov (widened 2026-11-25 after an independent
+ * check found "compared against" and "checked against Congress.gov" got
+ * through). It is a word list, not a proof: "checked versus the record" and
+ * "verificado según el registro" are two wordings it is known not to catch.
+ *
+ * KNOWN FALSE ALARM (ES): an instruction to the reader such as "Verifica con
+ * el registro oficial antes de actuar" matches, though it is the opposite
+ * claim. No shipped string is written that way (the Spanish disclaimer uses
+ * "Compáralo con el texto oficial"); if one is needed, exempt the imperative
+ * here as the English pattern's shape already does.
  *
  * ONE FACTOR, not two like R2/R4, because the sentence is the claim: a check
  * or verification verb, then within a few words "against/with the (official)
@@ -693,9 +704,9 @@ const RECORD_CHECK = [
     name: '"checked against/with the record" (EN)',
     re: new RegExp(
       F(
-        '\\b(checked|checks|checking|verified|verifies|verifying|re-?checked|cross[-\\s]?checked|fact[-\\s]?checked|validated|validates|confirmed)\\b',
+        '\\b(checked|checks|checking|verified|verifies|verifying|re-?checked|cross[-\\s]?checked|fact[-\\s]?checked|validated|validates|confirmed|compared|compares|comparing|matched|reviewed|audited|cross[-\\s]?referenced)\\b',
         RECORD_GAP,
-        '\\b(against|with)\\s+(the\\s+|its\\s+|their\\s+)?(official\\s+)?(congressional\\s+)?(record|bill\\s+text|official\\s+text|source\\s+text)\\b'
+        '\\b(against|with|to)\\s+(the\\s+|its\\s+|their\\s+)?(official\\s+|original\\s+)?(congressional\\s+|Congress\\.gov\\s+)?(record|bill\\s+text|official\\s+text|source\\s+text|bills?\\b|Congress\\.gov)'
       ),
       'i'
     ),
@@ -705,9 +716,9 @@ const RECORD_CHECK = [
     name: '"verificado/cotejado con el registro" (ES)',
     re: new RegExp(
       F(
-        '\\b(verific|comprob|comprueb|cotej|contrast|chequ|control)[a-záéíóúñ]*',
+        '\\b(verific|comprob|comprueb|cotej|contrast|chequ|control|compar|revis)[a-záéíóúñ]*',
         RECORD_GAP,
-        '\\b(con|contra|frente\\s+al?)\\s+(el\\s+|los\\s+)?(registros?|texto\\s+oficial)\\b'
+        '\\b(con|contra|frente\\s+al?)\\s+(el\\s+|los\\s+)?(registros?|texto\\s+(oficial|del\\s+proyecto)|expediente|proyecto\\s+de\\s+ley|Congress\\.gov)'
       ),
       'i'
     ),
@@ -1380,6 +1391,28 @@ function selfTest() {
     recordCheckHits('Every summary is verified with the bill text before it publishes.').length > 0 &&
     recordCheckHits('Plain-language text, fact-checked against the official record.').length > 0 &&
     recordCheckHits('Record-checked AI summaries.').length > 0
+  );
+  seed('R5/en: compared, reviewed, audited, matched — and the bill or Congress.gov as the object', () =>
+    [
+      'Every summary is compared against the official record.',
+      'Summaries are compared with the bill text.',
+      'Decoded by AI · checked against Congress.gov',
+      'Decoded by AI, checked against the official Congress.gov record',
+      'Plain-language text, verified against the bill.',
+      'Each headline is checked against the original bill.',
+      'Summaries are reviewed against the record.',
+      'Summaries are audited against the record.',
+      'Every decode is matched to the official record.',
+    ].every((s) => recordCheckHits(s).length > 0)
+  );
+  seed('R5/es: comparado, revisado — y el proyecto, el expediente o Congress.gov como objeto', () =>
+    [
+      'Traducido por IA · comparado con el registro oficial',
+      'Cada resumen es revisado contra el registro.',
+      'Traducido por IA, verificado con el texto del proyecto',
+      'Traducido por IA, verificado con Congress.gov',
+      'Resúmenes verificados con el expediente oficial.',
+    ].every((s) => recordCheckHits(s).length > 0)
   );
   seed('R5/es: other verbs and objects — comprobado contra el registro, contrastado con el texto oficial', () =>
     recordCheckHits('Cada resumen se comprueba automáticamente contra el registro.').length > 0 &&
