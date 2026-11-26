@@ -24,6 +24,8 @@ import { getMomentsForBill } from './moments';
 // "In the news" band is a present-tense claim, so it reads the same
 // definition of "now" the amber gate and the homepage crown read.
 import { isSignalFresh } from './urgency.mjs';
+// The site-wide on/off switch for the "Read" box (owner, 2026-11-25).
+import { COVERAGE_BOX_ON } from './coverage-switch';
 import type { CoverageArticle, CoverageArticleRaw, CoverageTier, Lean } from './types';
 
 /** AllSides lean keyed by bare outlet domain. */
@@ -263,6 +265,24 @@ export function coverageForBillPage(
 ): CoverageArticle[] {
   if (!partOfBigQuestion && coverageTier(articles) === 'one_sided') return [];
   return articles;
+}
+
+/**
+ * What a bill page's "Read" box shows, with the site-wide switch applied
+ * (lib/coverage-switch.ts; owner, 2026-11-25, "Remove it everywhere for
+ * now"). Off: nothing, for every bill. On: exactly `coverageForBillPage`, so
+ * turning the switch back on restores the earlier behaviour unchanged. The bill
+ * page and the Big Question page's vehicle cards both read through this, so
+ * the box and the cards' outlet count can never disagree. `boxOn` is a
+ * parameter only so tests/coverage-switch.unit.spec.ts can pin both sides.
+ */
+export function coverageShownOnBillPage(
+  articles: CoverageArticle[],
+  partOfBigQuestion: boolean,
+  boxOn: boolean = COVERAGE_BOX_ON
+): CoverageArticle[] {
+  if (!boxOn) return [];
+  return coverageForBillPage(articles, partOfBigQuestion);
 }
 
 /**

@@ -3,6 +3,7 @@
 import { useId, useState, useSyncExternalStore } from 'react';
 import { ChevronDown, ExternalLink, Info } from 'lucide-react';
 import { useFormatter, useLocale, useTranslations } from 'next-intl';
+import { COVERAGE_BOX_ON } from '@/lib/coverage-switch';
 import { COVERAGE_AGE_NOTE_DAYS, freshnessAgeDays } from '@/lib/freshness-state';
 import type { CoverageArticle, CoverageTier, Lean } from '@/lib/types';
 
@@ -74,8 +75,10 @@ export function CoverageSection({
   const t = useTranslations('coverage');
   const format = useFormatter();
   const locale = useLocale();
+  // Switched off site-wide (owner, 2026-11-25, "Remove it everywhere for
+  // now"; lib/coverage-switch.ts) -> render nothing, whatever a caller passes.
   // No coverage -> render nothing (the graceful-empty path).
-  if (articles.length === 0) return null;
+  if (!COVERAGE_BOX_ON || articles.length === 0) return null;
 
   const newestAt = newestPublishedAt(articles);
   const hasTwins = twinCitations.length > 0;
