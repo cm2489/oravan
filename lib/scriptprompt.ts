@@ -275,7 +275,7 @@ export function stanceLine(bill: StanceLineBill, stance: Stance): string {
  * more generation of every script asked for in it.
  */
 export const SPANISH_ASK_RULE =
-  'In Spanish, the ask is made of the member, in the third person, never of the person who answers: the staff do not vote. Write it as a request the office passes on, for example "Le pido a quien me representa en el Congreso que…"; never "les pido a ustedes que voten" or any wording that asks the staff themselves to vote or act. Never call the caller a "constituyente"; say where they live instead ("vivo en [TU CIUDAD O CÓDIGO POSTAL]").';
+  'In Spanish, the ask is made of the member, in the third person, never of the person who answers: the staff do not vote. Write it as a request the office passes on, for example "Le pido a quien me representa en el Congreso que…"; never "les pido a ustedes que voten" or any wording that asks the staff themselves to vote or to take a position on the bill or nomination; asking the office to note the call, log the concern or pass the message on is fine. Never call the caller a "constituyente"; say where they live instead ("vivo en [TU CIUDAD O CÓDIGO POSTAL]").';
 
 /** The output-language line. Spanish carries SPANISH_ASK_RULE beside it. */
 export function scriptLangLine(lang: 'en' | 'es'): string {
