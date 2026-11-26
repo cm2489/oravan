@@ -1222,6 +1222,22 @@ export function ActionPanel({
                 {scriptCopied ? t('scriptCopied') : t('copyScript')}
               </button>
             </div>
+            {/* WHAT LANGUAGE THE OFFICE ANSWERS IN (2026-11-25, the outside
+                reviews of the Spanish edition). The Spanish edition writes a
+                Spanish script, but the office may well answer in English, and
+                no page said so. Two sentences under the script, never before
+                it (rule 8): "may", never a promise that an office has a
+                Spanish speaker, and one English line to read aloud, marked
+                lang="en" (rule 7). Shown on the Spanish edition only; the
+                English edition's caller needs no language note, and its key
+                exists in messages/en.json for rule 5. */}
+            {locale === 'es' && (
+              <p className="mt-2 max-w-note text-sm text-ink-2" data-office-language-note="">
+                {t.rich('officeLanguageNote', {
+                  en: (chunks) => <span lang="en">{chunks}</span>,
+                })}
+              </p>
+            )}
             {/* Announce the copy confirmation without moving focus - same idiom
                 as SharePanel's copy-link status region. */}
             <span role="status" aria-live="polite" className="sr-only">

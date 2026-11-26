@@ -154,6 +154,7 @@ test.describe('3-stance × 2-locale matrix', () => {
       'callTitle',
       'copyScript',
       'scriptCopied',
+      'officeLanguageNote',
       'staffNote',
       'switchboardNote',
       'alsoYours',
