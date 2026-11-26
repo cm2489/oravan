@@ -4,7 +4,7 @@
     "source": "GDELT DOC 2.0 API (https://api.gdeltproject.org/api/v2/doc/doc), ArtList mode — one search per term in the query shape below, over the days since the question was last checked; the rated outlets are picked out of GDELT’s results using the AllSides table, never named in the query",
     "attribution": "Article discovery by the GDELT Project (https://www.gdeltproject.org/), used under its terms of use with citation and link. Outlet leans by AllSides (https://www.allsides.com/media-bias/ratings), CC BY-NC 4.0.",
     "window_days": 7,
-    "as_of": "2026-11-23",
+    "as_of": "2026-11-26",
     "outlet_policy": "allsides-rated-only",
     "bias_table": "data/media-bias.json",
     "query_shape": "\"<term>\" (congress OR senate OR representatives OR lawmakers)",
@@ -13,23 +13,59 @@
   },
   "questions": {
     "annual-defense-policy": {
-      "checkedOn": "2026-11-23",
+      "checkedOn": "2026-11-26",
       "terms": [
         "national defense authorization act"
       ],
       "counts": {
         "outlets": {
-          "left": 0,
-          "center": 1,
-          "right": 0
+          "left": 2,
+          "center": 2,
+          "right": 2
         },
         "articles": {
-          "left": 0,
-          "center": 1,
-          "right": 0
+          "left": 2,
+          "center": 2,
+          "right": 2
         }
       },
       "outlets": [
+        {
+          "domain": "newrepublic.com",
+          "lean": "left",
+          "firstSeen": "2026-11-24",
+          "lastSeen": "2026-11-24",
+          "articles": [
+            {
+              "url": "https://newrepublic.com/post/218323/investigate-nvidia-democrats-huang",
+              "seen": "2026-11-24"
+            }
+          ]
+        },
+        {
+          "domain": "theverge.com",
+          "lean": "left",
+          "firstSeen": "2026-11-24",
+          "lastSeen": "2026-11-24",
+          "articles": [
+            {
+              "url": "https://www.theverge.com/policy/1041568/fisa-ndaa-blue-wave",
+              "seen": "2026-11-24"
+            }
+          ]
+        },
+        {
+          "domain": "militarytimes.com",
+          "lean": "center",
+          "firstSeen": "2026-11-25",
+          "lastSeen": "2026-11-25",
+          "articles": [
+            {
+              "url": "https://www.militarytimes.com/news/pentagon-congress/2026/11/24/house-measure-aims-to-fill-gaps-in-prenatal-care-after-pcs-moves/",
+              "seen": "2026-11-25"
+            }
+          ]
+        },
         {
           "domain": "stripes.com",
           "lean": "center",
@@ -41,27 +77,64 @@
               "seen": "2026-11-20"
             }
           ]
+        },
+        {
+          "domain": "dailycaller.com",
+          "lean": "right",
+          "firstSeen": "2026-11-24",
+          "lastSeen": "2026-11-24",
+          "articles": [
+            {
+              "url": "https://dailycaller.com/2026/11/24/mike-huckabee-donald-trump-israel-aid-cut/",
+              "seen": "2026-11-24"
+            }
+          ]
+        },
+        {
+          "domain": "oann.com",
+          "lean": "right",
+          "firstSeen": "2026-11-25",
+          "lastSeen": "2026-11-25",
+          "articles": [
+            {
+              "url": "https://www.oann.com/newsroom/sen-cotton-jensen-huangs-return-to-nvidia-wont-halt-congressional-china-probes/",
+              "seen": "2026-11-25"
+            }
+          ]
         }
       ]
     },
     "paying-college-athletes": {
-      "checkedOn": "2026-11-23",
+      "checkedOn": "2026-11-26",
       "terms": [
         "protect college sports act"
       ],
       "counts": {
         "outlets": {
-          "left": 0,
+          "left": 1,
           "center": 0,
           "right": 0
         },
         "articles": {
-          "left": 0,
+          "left": 1,
           "center": 0,
           "right": 0
         }
       },
-      "outlets": []
+      "outlets": [
+        {
+          "domain": "newsweek.com",
+          "lean": "left",
+          "firstSeen": "2026-11-26",
+          "lastSeen": "2026-11-26",
+          "articles": [
+            {
+              "url": "https://www.newsweek.com/ted-cruz-james-talarico-texas-space-academy-bid-12768803",
+              "seen": "2026-11-26"
+            }
+          ]
+        }
+      ]
     }
   }
 }
