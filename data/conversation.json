@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-26T00:15:36.008Z",
+    "fetched_at": "2026-11-26T04:32:33.696Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-26T00:15:36.008Z"
+        "checked_at": "2026-11-26T04:32:33.696Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-22",
         "week_label": "Most-Viewed Bills - Week of November 22, 2026",
         "entries": 8,
-        "checked_at": "2026-11-26T00:15:36.008Z"
+        "checked_at": "2026-11-26T04:32:33.696Z"
       },
       "leans": {
         "center": {
@@ -190,6 +190,12 @@
         }
       ],
       "unratedOutlets7d": [
+        {
+          "domain": "aroundprague.cz",
+          "firstSeen": "2026-11-26",
+          "lastSeen": "2026-11-26",
+          "url": "https://news.google.com/rss/articles/CBMiqwFBVV95cUxOWXFmMHByZjgtaDVkZTFaYTZjdVlrMFlOT0djbVBaRkJteVRja09JX2YxQnI2NTJ5bmVkb05fdTZxRV8zaE1pSHAwUWlSM2pyM3NUMjFhZUxFZ3FfYlZEZE9yd3NnQzlZSnZ2M1ZISHdodnNyM3QzMGMtb0xNUlhDdExxQ1JGTXdTWnZSdHlDZTlQdzdMNjdaRXFXSWxrTVF1YXFTWmk0QmF6eXM?oc=5"
+        },
         {
           "domain": "latintimes.com",
           "firstSeen": "2026-11-21",
@@ -807,7 +813,14 @@
           "url": "https://thehill.com/homenews/senate/6229008-congress-faces-government-shutdown-deadline/"
         }
       ],
-      "unratedOutlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "tradersunion.com",
+          "firstSeen": "2026-11-26",
+          "lastSeen": "2026-11-26",
+          "url": "https://news.google.com/rss/articles/CBMimgFBVV95cUxQWGhtS2dOYzlsQ1lpcm8wRVd0aEdPOHFFM1hiOXJxOGMya1FsaFd4YVNRSnF1T1U4Z2FsQWpYNDVNOWwtVWtBVjIyang3aDB0Q0diMlY4T1UyQ2tqTUlZaGpfMzBxTTZtdGU3RjNoMVRWS2E4M1hTTjBzdzlBZHFlMnBnMWVlU3lNaDY5UTlvUGlhWEc0WjQ1LUFR?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "hr-6509-119": {
@@ -1161,6 +1174,18 @@
         }
       ],
       "unratedOutlets7d": [],
+      "mostViewed": null
+    },
+    "hr-8957-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "theblock.co",
+          "firstSeen": "2026-11-26",
+          "lastSeen": "2026-11-26",
+          "url": "https://news.google.com/rss/articles/CBMiswFBVV95cUxPOVVNTElJZm9mZnBXejBIaHNBLU1WNF9Vd2ozVm1faDhkYUx1QmhuM21FWVBYcXJLSFVPQ0RhYThOWFFBcnctMUFBSHlrT0NrRmh5d21iYnBISXNFcTRMZ2RfbVQtTkNzZkkwNHBrV1hFMGxrc0dZQ3VvZ3B2cTJzUjJxdWdzWWVDbnhVT1pwR3RSaTJwancyYXBLdEhTNjFxcHN6SnV2Y3hOenVqNDlnZDhQRQ?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "hr-9022-119": {
