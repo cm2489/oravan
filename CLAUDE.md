@@ -2,9 +2,9 @@
 
 ## How every session runs
 
-The session rules live in the owner's global rules file, under "How every session runs" (set 2026-11-12; they replace the session contract of 2026-09-29, recorded at `docs/constitution-log.md#session-rules-2026-11-12`). The hard rules below still bind, and a clash with one is a conflict for him.
+The session rules live in the owner's global rules file, under "How every session runs" (set 2026-11-12; they replace the session contract of 2026-09-29, recorded at `docs/constitution-log.md#session-rules-2026-11-12`). As of 2026-11-26 (owner handoff 2026-11-25), Antigravity is the primary coding and orchestration agent using Gemini model tiers (`pro` for planning, architecture, and independent >=95% review; `flash` for mechanical steps and browser verification; `flash_lite` for trivial high-volume tasks). The 12 hard rules below still bind, and a clash with one is a conflict for him.
 
-- **Rule files here:** this file, README and `docs/constitution-log.md`. `docs/process.md` and `docs/current-direction.md` merge under an approved plan when the change only records his own dated words. What Claude may merge, and what waits, is under "Merging" below.
+- **Rule files here:** this file, README and `docs/constitution-log.md`. `docs/process.md` and `docs/current-direction.md` merge under an approved plan when the change only records his own dated words. What the coding agent may merge, and what waits, is under "Merging" below.
 - **Coordination ledger:** pinned issue #341. Every session reads it before it starts, lists its work there before it builds and clears it when done, and the pipeline doctor reads it before it acts (owner, 2026-09-28 and 2026-09-29).
 - **Load:** at most three full local builds or end-to-end runs at once; the pull request's CI is the full-suite check.
 - **Roadmap:** one private page kept outside this repo (owner, 2026-09-29).
@@ -43,12 +43,12 @@ README's **Design principles** are the product's public statement of these promi
 
 ## Merging
 
-Claude opens PRs. Two standing grants let Claude merge; everything else waits for Colby.
+The active coding agent (Antigravity as of 2026-11-26) opens PRs. Two standing grants let it merge; everything else waits for Colby.
 
-1. **His go on a plan** (owner, 2026-11-12; the session rules, point 3). Once Colby says go on a session's plan, Claude merges the pull requests that carry it out — each only when every CI check is green, and each with one PR comment saying on whose word it merged. Bug fixes and small wording or visual fixes merge, and he sees the before and after with a way to revert. What waits for him: a new look (colour, layout, navigation); a new page or section; anything that changes the product's pitch or a promise the site makes; the rule files (this file, README and `docs/constitution-log.md`); anything that publishes text or touches money or privacy and that an independent reviewer scored under 95%; and anything over $3 that he has not approved by name.
+1. **His go on a plan** (owner, 2026-11-12; the session rules, point 3). Once Colby says go on a session's plan, the agent merges the pull requests that carry it out — each only when every CI check is green, and each with one PR comment saying on whose word it merged. Bug fixes and small wording or visual fixes merge, and he sees the before and after with a way to revert. What waits for him: a new look (colour, layout, navigation); a new page or section; anything that changes the product's pitch or a promise the site makes; the rule files (this file, README and `docs/constitution-log.md`); anything that publishes text or touches money or privacy and that an independent reviewer scored under 95%; and anything over $3 that he has not approved by name.
 2. **The pipeline carve-out**, ruled 2026-09-24 in his words: *"From now on you can merge anything that has to do with the doctor's pipeline indefinitely or until I request you to stop."* Its scope is the pipeline doctor's: `.github/workflows/*.yml`, `scripts/*.mjs`, `lib/*.mjs` and the `lib/*.ts` they import, the MCP server (`app/api/mcp`), `app/api/script`, `app/api/reps`, `app/api/brand`, the counters/usage code, and the tests that pin them — merged only when every CI check is green, recorded in a PR comment naming this grant, and never over $3 without his approval.
 
-GitHub does not enforce any of this on `main`, and Claude acts there as the owner's account. So before every merge Claude reads the pull request's checks and merges only when every one has passed. It never merges with an admin override, never pushes to `main` directly, and never applies the `approve-moment` label. (evidence: `docs/constitution-log.md#session-rules-2026-11-12`; what GitHub enforces was read on 2026-09-29, `docs/constitution-log.md#session-contract-2026-09-29`)
+GitHub does not enforce any of this on `main`, and the agent acts there on the owner's account. So before every merge it reads the pull request's checks and merges only when every one has passed. It never merges with an admin override, never pushes to `main` directly, and never applies the `approve-moment` label. (evidence: `docs/constitution-log.md#session-rules-2026-11-12`; what GitHub enforces was read on 2026-09-29, `docs/constitution-log.md#session-contract-2026-09-29`)
 
 ## Architecture
 

@@ -55,3 +55,16 @@ test('a merge commit is exempt', () => {
 test('ALLOW_FABLE_TRAILER=1 passes a Fable trailer', () => {
   expect(checkMessage(msg('Claude Fable 5.1'), { env: { ALLOW_FABLE_TRAILER: '1' } })).toBeNull();
 });
+
+test('valid Antigravity and Gemini tier trailers pass without Claude-Session', () => {
+  for (const label of ['Antigravity', 'Gemini 4 Pro', 'Gemini 4 Flash', 'Gemini 4 Flash-Lite']) {
+    expect(checkMessage(`Fix a thing\n\nCo-Authored-By: ${label} <noreply@antigravity.dev>\n`)).toBeNull();
+  }
+});
+
+test('an unlisted or malformed Antigravity/Gemini trailer fails', () => {
+  expect(
+    checkMessage('Fix a thing\n\nCo-Authored-By: Gemini 99 Experimental <noreply@antigravity.dev>\n')
+  ).toMatch(/allowed/);
+  expect(checkMessage('Fix a thing\n\nCo-Authored-By: Antigravity\n')).toMatch(/no valid/);
+});
