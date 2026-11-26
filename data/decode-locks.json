@@ -16,7 +16,7 @@
       "text_version_count": 1
     },
     "hr-2347-119": {
-      "reason": "Hand-corrected: current law (42 U.S.C. 4336a(g)) already sets the one- and two-year review deadlines; the decode now says the bill keeps them and adds the 90- and 120-day deadlines for other agencies' decisions (sec. 1106).",
+      "reason": "Hand-corrected: current law (42 U.S.C. 4336a(g)) already sets the one- and two-year review deadlines; the decode now says the bill keeps them and adds the 90- and 120-day deadlines for other agencies' decisions (sec. 1106). Corrected again in #578 against the same Engrossed Amendment Senate text (Nov 19, 2026): the summary, what and who now name all three divisions and every title (sec. 1(b)), each from its own text, including Ratepayer protection (sec. 2107) and the Data Center Community Assistance Program (sec. 2117).",
       "locked_on": "2026-11-25",
       "pr": 562,
       "text_version_date": "2026-11-19T05:00:00Z",
@@ -38,6 +38,14 @@
       "text_version_date": "2025-12-09T05:00:00Z",
       "text_version_type": "Introduced in House",
       "text_version_count": 1
+    },
+    "hr-8469-119": {
+      "reason": "Hand-corrected against the Placed on Calendar Senate text (Jul 14, 2026; its body is identical to the Engrossed in House text): vague amounts replaced with the bill's own figures (Title I construction accounts; the Cost of War Toxic Exposures Fund; fiscal 2028 advance appropriations), the discretionary total quoted from H. Rept. 119-622 p. 2 as about $157 billion (true of the passed text within $15 million), Title III's four related agencies added, and the line on where the bill stands in Congress removed.",
+      "locked_on": "2026-11-25",
+      "pr": 578,
+      "text_version_date": "2026-07-14T04:00:00Z",
+      "text_version_type": "Placed on Calendar Senate",
+      "text_version_count": 3
     }
   }
 }
