@@ -6,7 +6,7 @@ import { Chip } from '@/components/system';
 import { GlossaryTerm } from '@/components/GlossaryTerm';
 import { glossify } from '@/components/glossary-tags';
 import { billSlug, getAllBills, localizeBill } from '@/lib/core';
-import { formatCitation } from '@/lib/format';
+import { formatCitation, formatCount } from '@/lib/format';
 import { rollCallPage } from '@/lib/roll-call-page';
 import { deriveJourney } from '@/lib/journey';
 import { journeySessionAt } from '@/lib/floor-session';
@@ -410,7 +410,7 @@ export async function MemberVotes({
           {rest.length > 0 && (
             <details className={`mt-4 border-t border-line pt-2 ${HIDE_UNDER_BQ}`} data-member-votes-all="">
               <summary className="flex min-h-11 cursor-pointer items-center text-sm font-bold select-none">
-                {t('votesShowMore', { count: rest.length })}
+                {t('votesShowMore', { count: formatCount(rest.length, locale) })}
               </summary>
               <ol className="mt-2 grid gap-4">{rest.map((g) => card(g))}</ol>
             </details>

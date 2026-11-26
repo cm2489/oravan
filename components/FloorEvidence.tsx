@@ -1,5 +1,7 @@
 import { ExternalLink } from 'lucide-react';
-import { getFormatter, getTranslations } from 'next-intl/server';
+import { getFormatter, getLocale, getTranslations } from 'next-intl/server';
+import { RecordWords } from '@/components/RecordWords';
+import { formatInstant } from '@/lib/format';
 import { coversDisplay } from '@/lib/docket';
 import type { FloorSignalSource } from '@/lib/docket';
 
@@ -54,6 +56,7 @@ export async function FloorEvidence({
 }) {
   const t = await getTranslations('home');
   const format = await getFormatter();
+  const locale = await getLocale();
 
   /* UTC, for the same reason every other bare `YYYY-MM-DD` on this site is
      formatted in UTC: parsed as UTC midnight and rendered in a negative-offset
@@ -68,15 +71,8 @@ export async function FloorEvidence({
       day: 'numeric',
       timeZone: 'UTC',
     });
-  const instant = (iso: string) =>
-    format.dateTime(new Date(iso), {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      timeZoneName: 'short',
-    });
+  // es-US in the Spanish edition: "12:00 p.m. EST", not "12:00 GMT-5" (lib/format.ts).
+  const instant = (iso: string) => formatInstant(iso, locale);
 
   const covers = coversDisplay(announcement);
 
@@ -99,10 +95,22 @@ export async function FloorEvidence({
           {covers?.verbatim ? (
             /* The document's own words for the meeting it covers. English,
                unformatted, and marked as such — the ISO derivation beside it
-               is ours, and this is the sentence it was derived FROM. */
-            <span lang="en">{t('evidenceCovers', { date: covers.label })}</span>
+               is ours, and this is the sentence it was derived FROM. Only
+               those words are marked: "for" / "para el" is ours, in the
+               reader's language (components/RecordWords.tsx). */
+            <span>
+              {t.rich('evidenceCovers', {
+                date: covers.label,
+                when: (chunks) => <RecordWords locale={locale}>{chunks}</RecordWords>,
+              })}
+            </span>
           ) : covers ? (
-            <span className="tabular-nums">{t('evidenceCovers', { date: day(covers.iso) })}</span>
+            <span>
+              {t.rich('evidenceCovers', {
+                date: day(covers.iso),
+                when: (chunks) => <span className="tabular-nums">{chunks}</span>,
+              })}
+            </span>
           ) : null}
         </span>
         {/* External, same convention as every other link out to the official

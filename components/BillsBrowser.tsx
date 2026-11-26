@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowRight, Search, X } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
+import { formatCount } from '@/lib/format';
 import { BAND_SIZES, CATEGORIES, type UrgencyBand } from '@/lib/taxonomy';
 import { isEmptyBillQuery, matchesBillQuery, parseBillQuery, teaserSearchDoc } from '@/lib/bill-search.mjs';
 import { setPrefs, usePrefs } from '@/lib/local';
@@ -66,6 +67,7 @@ export function BillsBrowser({
   moments?: MomentSearchTeaser[];
 }) {
   const t = useTranslations();
+  const locale = useLocale();
   const [query, setQuery] = useState('');
   const [expanded, setExpanded] = useState<Partial<Record<UrgencyBand, boolean>>>({});
   const searchRef = useRef<HTMLInputElement>(null);
@@ -198,7 +200,7 @@ export function BillsBrowser({
             The count is LIVE (bills with a decode in this very payload),
             never a hardcoded claim that drifts from the data. */}
         <p className="mt-2 max-w-note text-sm text-ink-2">
-          {t('bills.searchTrust', { decoded: decodedCount, total: activeBills.length })}
+          {t('bills.searchTrust', { decoded: formatCount(decodedCount, locale), total: formatCount(activeBills.length, locale) })}
         </p>
       </div>
 
@@ -276,7 +278,7 @@ export function BillsBrowser({
       )}
 
       <p className="mt-4 text-sm text-ink-2" aria-live="polite">
-        {t('bills.showingCount', { shown: filtered.length, total: bills.length })}
+        {t('bills.showingCount', { shown: formatCount(filtered.length, locale), total: formatCount(bills.length, locale) })}
       </p>
 
       {filtered.length === 0 && (
@@ -355,7 +357,7 @@ export function BillsBrowser({
                 onClick={() => setExpanded((e) => ({ ...e, [band]: !isOpen }))}
                 className={`mt-6 ${GHOST_BTN}`}
               >
-                {isOpen ? t('bills.showFewer') : t('bills.showAll', { count: all.length })}
+                {isOpen ? t('bills.showFewer') : t('bills.showAll', { count: formatCount(all.length, locale) })}
               </button>
             )}
           </section>

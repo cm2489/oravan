@@ -10,7 +10,7 @@ import { YourRecord } from '@/components/YourRecord';
 import { CALL_BUTTON } from '@/components/call-button';
 import { Link } from '@/i18n/navigation';
 import { activeBillCount, billSlug, getTopActions } from '@/lib/core';
-import { formatCitation } from '@/lib/format';
+import { formatCitation, formatCount } from '@/lib/format';
 import { getFreshness } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
 import { buildOrganizationJsonLd } from '@/lib/jsonld';
@@ -198,7 +198,7 @@ export default async function RepsPage({
         href="/bills"
         className="mt-6 inline-flex min-h-11 items-center gap-2 font-semibold text-ink underline underline-offset-4"
       >
-        {t('nextSeeAll', { count: totalBills })}
+        {t('nextSeeAll', { count: formatCount(totalBills, locale) })}
         <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
       </Link>
     </section>
