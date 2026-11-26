@@ -29,7 +29,7 @@ import { getBill, localizeBill } from '@/lib/core';
 // forbids the barrel so no bundle pays for data/nominations.json (~520 KB) by
 // accident. This page renders one, so it pays for it deliberately.
 import { getNomination } from '@/lib/core/nominations';
-import { coverageForBillPage, getCoverageWithTwins, normalizeSource } from '@/lib/coverage';
+import { coverageShownOnBillPage, getCoverageWithTwins, normalizeSource } from '@/lib/coverage';
 import { formatCitation } from '@/lib/format';
 import { adoptedConcurrentReading } from '@/lib/concurrent-explainer';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
@@ -421,15 +421,17 @@ export default async function MomentPage({
     if (!raw) return null;
     const bill = localizeBill(raw, locale);
     const identifier = formatCitation(bill.bill_type, bill.bill_number);
-    // The same rule the bill page applies to its coverage box (owner,
-    // 2026-11-13): a card never counts outlets for a one-sided set the bill's
-    // own page does not show. On a live or stale question every vehicle is a
+    // The same rule the bill page applies to its coverage box, switch
+    // included: while the box is off site-wide (owner, 2026-11-25, "Remove it
+    // everywhere for now"; lib/coverage-switch.ts) this is 0 and the card
+    // prints no outlet count. With it on (owner, 2026-11-13): a card never
+    // counts outlets for a one-sided set the bill's own page does not show. On a live or stale question every vehicle is a
     // Big Question bill, so this changes nothing there; it matters on a
     // settled question, whose bills are no longer part of one. It counts the
     // same list the bill page shows, twins' articles included (owner,
     // 2026-11-13), so the card and the page never disagree.
     const coverageCount = new Set(
-      coverageForBillPage(getCoverageWithTwins(v.slug).articles, getMomentsForBill(v.slug).length > 0).map((a) =>
+      coverageShownOnBillPage(getCoverageWithTwins(v.slug).articles, getMomentsForBill(v.slug).length > 0).map((a) =>
         normalizeSource(a.source)
       )
     ).size;
