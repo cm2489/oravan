@@ -22,6 +22,22 @@
       "text_version_date": "2026-11-19T05:00:00Z",
       "text_version_type": "Engrossed Amendment Senate",
       "text_version_count": 5
+    },
+    "hr-8800-119": {
+      "reason": "Hand-corrected against the Engrossed in House text: the decode now describes Division E (the SAVE America Act, secs. 4801-4803: documentary proof of U.S. citizenship to register, photo ID to vote in federal elections) and names all five divisions (sec. 2); the multiyear contracts list missiles, not artillery shells (secs. 1839, 1840).",
+      "locked_on": "2026-11-25",
+      "pr": 573,
+      "text_version_date": "2026-07-22T04:00:00Z",
+      "text_version_type": "Engrossed in House",
+      "text_version_count": 3
+    },
+    "hr-6509-119": {
+      "reason": "Hand-corrected against the Introduced in House text: the 20-a-month limit has no per-patient unit (sec. 2(1)); the new definition of \"essentially a copy\" is described, not called narrower (sec. 2(2)); inspections come before a large outsourcing facility first compounds any drug and at least every two years (sec. 4(a)). Version fields are from the Congress.gov /text record: data/bills.json had none.",
+      "locked_on": "2026-11-25",
+      "pr": 573,
+      "text_version_date": "2025-12-09T05:00:00Z",
+      "text_version_type": "Introduced in House",
+      "text_version_count": 1
     }
   }
 }
