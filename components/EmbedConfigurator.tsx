@@ -6,6 +6,7 @@ import { useEffect, useId, useMemo, useState, useSyncExternalStore } from 'react
 // StalenessNote/UrgencyEmptyState).
 const emptySubscribe = () => () => {};
 import { useLocale, useTranslations } from 'next-intl';
+import { formatCount } from '@/lib/format';
 import { SITE_ORIGIN } from '@/lib/site';
 import { MIN_PAIR_CONTRAST, FONT_VALUES, MODE_DEFAULTS, safeAccent, type FontKey, type ModeKey, type RadiusKey } from '@/lib/embed-theme';
 import { contrastRatio } from '@/lib/contrast';
@@ -474,7 +475,7 @@ export function EmbedConfigurator({ bills }: { bills: FeedTeaser[] }) {
                 ))}
               </ul>
               <p className="mt-1 text-xs tabular-nums text-ink-2">
-                {t('billResultsNote', { shown: filteredBills.length, total: bills.length })}
+                {t('billResultsNote', { shown: formatCount(filteredBills.length, pageLocale), total: formatCount(bills.length, pageLocale) })}
               </p>
             </div>
           )}

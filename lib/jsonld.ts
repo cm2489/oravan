@@ -20,7 +20,7 @@ import 'server-only';
  */
 import { getTranslations } from 'next-intl/server';
 import { absoluteUrl } from './hreflang';
-import { formatCitation } from './format';
+import { cutAtWord, formatCitation } from './format';
 import { getFreshness } from './freshness';
 import { SITE_ORIGIN } from './site';
 import type { Locale } from './core/mcp';
@@ -77,8 +77,9 @@ export async function buildBillJsonLd(bill: Bill, locale: string, slug: string) 
   const href = `/bills/${slug}`;
   const url = absoluteUrl(locale, href);
   const inLanguage: Locale = locale === 'es' ? 'es' : 'en';
-  const headline = (bill.ai_headline ?? bill.short_title ?? bill.title).slice(0, 110);
-  const description = (bill.ai_summary ?? bill.title).slice(0, 300);
+  // Cut at a word, never inside one (cutAtWord); no ellipsis, as before.
+  const headline = cutAtWord(bill.ai_headline ?? bill.short_title ?? bill.title, 110);
+  const description = cutAtWord(bill.ai_summary ?? bill.title, 300);
   // Never invented: introduced_date is the closest real anchor to
   // "published," last_action_date/checkedAt (lib/freshness) are the closest
   // real anchors to "modified." Absent when the underlying data is absent.

@@ -5,6 +5,7 @@
 // lib/scriptcache.ts among them — pulling a byte of the corpus.
 import type { Nomination } from './core/nominations';
 import { PRESIDENT_STYLE_RULE } from './president-style.mjs';
+import { scriptLangLine } from './scriptprompt';
 import type { Stance } from './types';
 
 /*
@@ -129,11 +130,11 @@ const AUDIENCE_LINES: Record<NominationAudience, string> = {
   house: `The script is read to the caller's U.S. REPRESENTATIVE's office. The representative has NO VOTE on this nomination and no formal role in it - the Senate decides it alone - and the script must never state or imply otherwise. Never ask the representative to vote, to support, or to oppose the nomination. The ask is that the representative press the two U.S. Senators from the caller's own state, publicly or privately. The script SHOULD say plainly that the caller knows the House has no vote here, so the office understands why the call was made. Address the recipient as "Representative" or as "your office" - never "Senator," and never the Spanish "senador" or "senadora."`,
 };
 
-function langLine(lang: 'en' | 'es'): string {
-  return lang === 'es'
-    ? 'Write the script in natural, warm Latin American Spanish (tú form). Use the placeholders [TU NOMBRE] and [TU CIUDAD O CÓDIGO POSTAL].'
-    : 'Write the script in plain, warm English at an 8th-grade reading level. Use the placeholders [YOUR NAME] and [YOUR TOWN OR ZIP].';
-}
+/* The bill script's language line, Spanish ask rule included (2026-11-25):
+   the ask is made of the member, never of the staff who answer. See
+   SPANISH_ASK_RULE in lib/scriptprompt.ts, which also says why this is not a
+   NOMINATION_PROMPT_VERSION bump. */
+const langLine = scriptLangLine;
 
 export interface NominationScriptPromptInput {
   /** The stored record, verbatim — never a localized or rewritten copy. Like

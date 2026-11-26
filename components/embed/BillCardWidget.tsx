@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useEmbedDicts } from '@/components/embed/EmbedDictsProvider';
 import type { EmbedLocale } from '@/components/embed/embed-dicts';
 import { HeadlineOrTitle } from '@/components/HeadlineOrTitle';
+import { intlLocale } from '@/lib/format';
 import { SITE_ORIGIN } from '@/lib/site';
 import type { BillStatus, StatusLabelKey } from '@/lib/types';
 
@@ -133,7 +134,7 @@ export function BillCardWidget({
   const siteBase = `${SITE_ORIGIN}${locale === 'es' ? '/es' : ''}`;
   const billUrl = `${siteBase}/bills/${bill.slug}`;
   const dataAsOfText = format(t.freshness.dataAsOf, {
-    date: new Intl.DateTimeFormat(locale === 'es' ? 'es' : 'en', {
+    date: new Intl.DateTimeFormat(intlLocale(locale), {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -160,7 +161,7 @@ export function BillCardWidget({
    */
   const lastActionText = bill.lastActionDate
     ? format(t.bills.updated, {
-        date: new Intl.DateTimeFormat(locale === 'es' ? 'es' : 'en', {
+        date: new Intl.DateTimeFormat(intlLocale(locale), {
           year: 'numeric',
           month: 'short',
           day: 'numeric',

@@ -3,7 +3,7 @@ import { statusKeyFor } from '@/lib/journey';
 import { getTranslations } from 'next-intl/server';
 import { routing } from '@/i18n/routing';
 import { billSlug, getAllBills, getBill, localizeBill } from '@/lib/core';
-import { formatCitation } from '@/lib/format';
+import { cutAtWord, formatCitation } from '@/lib/format';
 import { dataAsOfString } from '@/lib/freshness';
 import { markDataUri, wordmarkDataUri, WORDMARK_RATIO } from '@/lib/og-brand';
 
@@ -49,7 +49,8 @@ export function generateStaticParams() {
 }
 
 // Satori has no ellipsis-on-overflow across wrapped lines; trim in JS instead.
-const clamp = (s: string, max = 140) => (s.length > max ? `${s.slice(0, max - 1).trimEnd()}…` : s);
+// Cut at a word, never inside one (lib/format.ts cutAtWord).
+const clamp = (s: string, max = 140) => cutAtWord(s, max, '…');
 
 export default async function OgImage({
   params,
