@@ -439,20 +439,51 @@ export function assembleDecode(ai_summary, structureText, titles = []) {
   };
 }
 
-/** Decode ONE bill from its own text, synchronously — two Messages API calls,
- *  the second reading the first's reply (or chunked map-reduce for mega-bills >400k chars).
- *  `text` is required and is always the document. */
-export async function decodeBill(anthropic, bill, text, opts = {}) {
+/**
+ * Unified summary decode plan shared by synchronous (decodeBill), batch
+ * (lib/decode-batch.mjs), completeDecode, and redecodeBill so prompt text,
+ * max_tokens, chunking mode, and decode_text_sha never diverge across paths.
+ *
+ * When a bill is single-pass with no divisions/titles TOC or crsSummary override,
+ * `summaryPrompt` stays byte-identical to 2-arg `buildSummaryPrompt(bill, text)`,
+ * preserving existing corpus fingerprints (`323eb7e24a5fbd01`).
+ */
+export function prepareDecodePlan(bill, text, opts = {}) {
   const prepared = prepareBillForDecode(text);
+  const crsSummary = opts?.crsSummary;
   const promptOpts =
-    prepared.toc || prepared.isMultiDivision || opts?.crsSummary
+    prepared.toc || prepared.isMultiDivision || crsSummary
       ? {
           toc: prepared.toc || undefined,
-          crsSummary: opts?.crsSummary,
+          crsSummary,
           status: bill?.status,
           isMultiDivision: prepared.isMultiDivision,
         }
       : undefined;
+  const maxTokens = summaryMaxTokensFor({
+    isMultiDivision: prepared.isMultiDivision,
+    textLength: String(text ?? '').length,
+  });
+  const summaryPrompt =
+    prepared.mode === 'chunked'
+      ? prepared.chunks.map((c) => buildDivisionSummaryPrompt(bill, c, { toc: prepared.toc })).join('\n---\n')
+      : buildSummaryPrompt(bill, prepared.text, promptOpts);
+
+  return {
+    prepared,
+    promptOpts,
+    maxTokens,
+    summaryPrompt,
+    fingerprint: textFingerprint(summaryPrompt),
+  };
+}
+
+/** Decode ONE bill from its own text, synchronously — two Messages API calls,
+ *  the second reading the first's reply (or chunked map-reduce for mega-bills >400k chars).
+ *  `text` is required and is always the document. */
+export async function decodeBill(anthropic, bill, text, opts = {}) {
+  const plan = prepareDecodePlan(bill, text, opts);
+  const { prepared, maxTokens, summaryPrompt } = plan;
 
   let summaryText;
   if (prepared.mode === 'chunked') {
@@ -476,9 +507,9 @@ export async function decodeBill(anthropic, bill, text, opts = {}) {
   } else {
     const sum = await anthropic.messages.create({
       model: DECODE_MODEL,
-      max_tokens: summaryMaxTokensFor({ isMultiDivision: prepared.isMultiDivision, textLength: text.length }),
+      max_tokens: maxTokens,
       thinking: { type: 'between_tools' },
-      messages: [{ role: 'user', content: buildSummaryPrompt(bill, prepared.text, promptOpts) }],
+      messages: [{ role: 'user', content: summaryPrompt }],
     });
     summaryText = sum.content[0].text.trim();
   }
@@ -532,7 +563,7 @@ export async function decodeStructureFrom(anthropic, bill, ai_summary) {
  * stamp would nominate itself for a re-decode every night and veto itself
  * every night.
  */
-export async function completeDecode({ slug, bill, text, version = null, count = null, dec, bills, es, bySlug, anthropic }) {
+export async function completeDecode({ slug, bill, text, version = null, count = null, dec, bills, es, bySlug, anthropic, crsSummary = undefined }) {
   bill.ai_summary = dec.ai_summary;
   bill.ai_headline = dec.ai_headline;
   bill.ai_sections = dec.ai_sections;
@@ -541,10 +572,11 @@ export async function completeDecode({ slug, bill, text, version = null, count =
   // stamp because it left no decode.
   const stampedAt = new Date().toISOString();
   bill.decoded_at = stampedAt;
-  // The MODEL INPUT, not the document: `buildSummaryPrompt` is literally what
-  // call 1 was handed, so a title change moves the fingerprint exactly as a
-  // text change does. See textFingerprint.
-  bill.decode_text_sha = textFingerprint(buildSummaryPrompt(bill, text));
+  // Note (XML/cleanBillMarkup migration): stored fingerprints from pre-XML
+  // raw HTML decodes may differ when re-checked after an action/version bump,
+  // bounded by REDECODE_MAX_PER_NIGHT; hashing via prepareDecodePlan ensures
+  // every new stamp matches the exact prompt sent by decodeBill and decodeBatched.
+  bill.decode_text_sha = prepareDecodePlan(bill, text, { crsSummary }).fingerprint;
   bill.decode_text_verified_at = stampedAt;
   Object.assign(bill, textVersionStamp(version, count));
   // Search handles for the coverage sync (press names + subject query).
@@ -1038,11 +1070,10 @@ export async function redecodeBill(slug, ctx) {
     if (fetched === null) return { outcome: 'skipped_no_text', slug, decodeAttempted };
     const { text, version, count } = fetched;
     const subject = title ? { ...bill, title } : bill;
-    // THE FINGERPRINT COVERS THE MODEL INPUT, NOT THE DOCUMENT (see the
-    // short-circuit note above). `subject` is what call 1 actually reads —
-    // title and all — so a vehicle swap changes the fingerprint on its own and
-    // needs no special case to defeat the veto.
-    const fingerprint = textFingerprint(buildSummaryPrompt(subject, text));
+    // Hash the exact prompt prepareDecodePlan builds for this document (TOC +
+    // status/division hints included) so veto comparison matches what both
+    // synchronous and batched decodes actually send.
+    const fingerprint = prepareDecodePlan(subject, text).fingerprint;
     // THE LAST GATE BEFORE THE SPEND. #248's count/date probe nominates a
     // candidate for free; this is the only thing that can still refuse to pay,
     // and it refuses on the one fact that makes "same answer" certain rather

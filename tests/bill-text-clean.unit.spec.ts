@@ -13,10 +13,12 @@ import {
   buildStructurePrompt,
   buildSummaryPrompt,
   decodeBill,
+  prepareDecodePlan,
   summaryMaxTokensFor,
   textFingerprint,
 } from '../scripts/bill-decode.mjs';
-import { buildSummaryRequests } from '../lib/decode-batch.mjs';
+import { buildSummaryRequests, decodeBatched, jobPromptSha } from '../lib/decode-batch.mjs';
+import { estimateDaySpend } from '../lib/pipeline-health.mjs';
 import { pickTextVersion } from '../scripts/text-version.mjs';
 
 test.beforeAll(() => {
@@ -230,5 +232,51 @@ test.describe('word-boundary clipping, division gate, and tense rules', () => {
     expect(textFingerprint(buildSummaryPrompt(bill, 'SEC. 1. SHORT TITLE.'))).toBe('323eb7e24a5fbd01');
     const [row] = buildSummaryRequests([{ slug: 'hr-10167-119', bill, text: 'Short text' }]);
     expect(row.params.max_tokens).toBe(DECODE_SUMMARY_MAX_TOKENS);
+  });
+
+  test('batch requests and jobPromptSha share prepareDecodePlan parity on multi-division bills', () => {
+    const bill = { bill_type: 'hr', bill_number: 8800, title: 'NDAA', status: 'passed_chamber' };
+    const text = `DIVISION A — PROCUREMENT\n${'Sec. 101 '.repeat(8_000)}\nDIVISION B — MILITARY PAY\n${'Sec. 201 '.repeat(8_000)}`;
+    const plan = prepareDecodePlan(bill, text);
+    const [row] = buildSummaryRequests([{ slug: 'hr-8800-119', bill, text }]);
+    expect(row.params.max_tokens).toBe(DECODE_LONG_SUMMARY_MAX_TOKENS);
+    expect(row.params.messages[0].content).toBe(plan.summaryPrompt);
+    expect(row.params.messages[0].content).toContain('DIVISION A: PROCUREMENT');
+    expect(row.params.messages[0].content).toContain('DIVISION B: MILITARY PAY');
+    expect(row.params.messages[0].content).toContain('conditional tense ("would ...")');
+    expect(jobPromptSha({ slug: 'hr-8800-119', bill, text })).toBe(plan.fingerprint);
+  });
+
+  test('decodeBatched routes >400k chunked mega-bills to decodeBill instead of stuffing them whole into a batch', async () => {
+    const mega = `DIVISION A — ONE\n${'Sec. 1 '.repeat(35_000)}\nDIVISION B — TWO\n${'Sec. 2 '.repeat(35_000)}`;
+    expect(mega.length).toBeGreaterThan(400_000);
+    const bill = { bill_type: 'hr', bill_number: 9999, title: 'Mega Bill', status: 'floor_vote' };
+    const created: unknown[] = [];
+    const mockAnthropic = {
+      messages: {
+        batches: {
+          async create({ requests }: { requests: unknown[] }) {
+            created.push(...requests);
+            return { id: 'b1', processing_status: 'ended' };
+          },
+          async retrieve() { return { id: 'b1', processing_status: 'ended' }; },
+          async *results() {},
+        },
+      },
+    };
+    const results = await decodeBatched([{ slug: 'hr-9999-119', bill, text: mega }], {
+      anthropic: mockAnthropic,
+      log: () => {},
+    });
+    expect(created).toHaveLength(0);
+    expect(results.get('hr-9999-119')).toEqual({ ok: false, reason: 'chunked-mega-bill' });
+  });
+
+  test('estimateDaySpend tracks longDecodes separately while staying compatible at zero', () => {
+    const base = estimateDaySpend({ decodes: 2 });
+    const withLong = estimateDaySpend({ decodes: 2, longDecodes: 1 });
+    expect(base.longDecodeUsd).toBe(0);
+    expect(withLong.longDecodeUsd).toBeGreaterThan(base.decodeUsd);
+    expect(withLong.totalLow).toBeCloseTo(base.totalLow + withLong.longDecodeUsd, 5);
   });
 });
