@@ -46,7 +46,7 @@ Solved pipeline incidents (root cause + the CI gates that prevent recurrence) ar
 
 ### The "Read" section (outlet-bias coverage)
 
-Each top bill's page shows real third-party articles about it, labeled by the **outlet's** political lean (Left / Center / Right) — reusing AllSides' publication-level ratings, never a Oravan-invented one. Oravan takes no stance and authors no partisan text: AI is used only behind the scenes — generating each bill's news-search terms (press-style names and a subject query) and a cheap relevance gate (is this article about this bill?) — and authors nothing displayed. The ingestion runs nightly in CI and bakes results to JSON, so showing the section makes **no runtime third-party call**. Without `NEWS_API_KEY` the sync is a no-op and the section renders nothing; a small hand-built real sample (`data/coverage.json`) keeps it demoable. Lean is shown by **text label + position only — never party colors** (a hard rule; see `CLAUDE.md`, rule 3).
+Currently switched off site-wide (`COVERAGE_BOX_ON = false` in `lib/coverage-switch.mjs` / `lib/coverage-switch.ts`) and nightly coverage sync is paused until redesigned. When enabled, top bill pages show third-party articles labeled by the **outlet's** political lean (Left / Center / Right) using AllSides' publication-level ratings rather than an Oravan-invented rating. Oravan takes no stance and authors no partisan text; lean is shown by **text label + position only — never party colors** (hard rule 3; see `CLAUDE.md`).
 
 ## Develop
 

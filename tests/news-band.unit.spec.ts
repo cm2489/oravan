@@ -593,6 +593,18 @@ test.describe('the news band over the committed corpus', () => {
     }
   });
 
+  test('when COVERAGE_BOX_ON is false, getNewsBills excludes AllSides ratings and outlet counts', () => {
+    for (const b of band) {
+      expect(b.coverageTier, b.slug).toBeNull();
+      expect(b.sourceCount, b.slug).toBe(0);
+      if (b.caption) {
+        expect(b.caption.kind, b.slug).toBe('most_viewed');
+        expect(b.caption.outlets, b.slug).toBe(0);
+        expect(b.caption.leans, b.slug).toEqual([]);
+      }
+    }
+  });
+
   test('in fallback mode the band is still gated on the signal window (#215 unchanged)', () => {
     test.skip(live, 'the lamp is live — the fallback gate is pinned by fixtures above');
     for (const b of band) {

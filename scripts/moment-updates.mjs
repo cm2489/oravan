@@ -130,6 +130,7 @@ import { execSync } from 'node:child_process';
 import { appendFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { cg, mapStatus } from './congress-fetch.mjs';
 import { CONGRESS_POLICY, isEndedBill } from '../lib/congress.mjs';
+import { COVERAGE_BOX_ON } from '../lib/coverage-switch.mjs';
 import { passageState, statusBasisText } from '../lib/floor-text.mjs';
 import { MEDIA_BIAS_PATH, PRESS_ALLOWLIST_PATH, loadPressOutletPolicy } from '../lib/press-outlets.mjs';
 import { PRESIDENT_STYLE_RULE, presidentStyle } from '../lib/president-style.mjs';
@@ -1040,6 +1041,10 @@ async function collectTier0() {
  * 4 · press clusters (nightly only).
  * ------------------------------------------------------------------ */
 function collectPressClusters() {
+  if (!COVERAGE_BOX_ON) {
+    console.log('press clusters: paused while COVERAGE_BOX_ON is false');
+    return [];
+  }
   if (!existsSync('data/coverage.json') || !existsSync(MEDIA_BIAS_PATH)) {
     console.log('press clusters: coverage or media-bias file missing — skipping');
     return [];

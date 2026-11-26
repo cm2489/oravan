@@ -28,6 +28,9 @@
  * again (messages/en.json and messages/es.json, hard rule 4).
  *
  * Import-free on purpose: the client component and the test runner read it
- * without pulling data/coverage.json into either.
+ * without pulling data/coverage.json into either. Re-exported from
+ * lib/coverage-switch.mjs so .mjs pipeline scripts share the same switch.
  */
-export const COVERAGE_BOX_ON: boolean = false;
+import { COVERAGE_BOX_ON as SWITCH_ON } from './coverage-switch.mjs';
+
+export const COVERAGE_BOX_ON: boolean = SWITCH_ON;

@@ -28,12 +28,14 @@ import { coverageTier, getCoverage, newestArticleDate, normalizeSource, rankNews
  * conversation selects and captions the news band and touches nothing else.
  * See getNewsBills' header for the boundary and why it is drawn here. */
 import {
+  MOST_VIEWED_MIN_WEEKS,
   conversationBandPool,
   conversationPosture,
   newsSpread,
   selectConversationBand,
   type NewsCaption,
 } from '../conversation';
+import { COVERAGE_BOX_ON } from '../coverage-switch';
 import { effectiveUrgency } from '../urgency.mjs';
 import { isSiteEndedBill } from '../ended-state.mjs';
 import type { Bill, FeedTeaser, NewsBill } from '../types';
@@ -364,6 +366,39 @@ export function getNewsBills(locale = 'en', n = 6, now: number = Date.now()): Ne
       ...extra,
     };
   };
+
+  if (!COVERAGE_BOX_ON) {
+    if (conversationPosture(now) !== 'live') return [];
+    const bySlug = new Map(BILLS.map((raw) => [billSlug(raw), raw]));
+    // Exclude AllSides ratings and outlet counts while COVERAGE_BOX_ON is false:
+    // keep only Congress.gov most-viewed bills ordered by rank.
+    const mostViewedPool = conversationBandPool(now)
+      .filter((item) => item.evidence.mostViewed !== null && item.evidence.weeksOnList >= MOST_VIEWED_MIN_WEEKS)
+      .sort(
+        (a, b) =>
+          (a.evidence.mostViewed?.lastRank ?? Infinity) - (b.evidence.mostViewed?.lastRank ?? Infinity) ||
+          a.slug.localeCompare(b.slug)
+      )
+      .map((item) => ({ ...item, tier: 'c2' as const }));
+    return selectConversationBand(mostViewedPool, {
+      limit: n,
+      renderable: (slug) => bySlug.has(slug) && !isSiteEndedBill(slug),
+      enacted: (slug) => bySlug.get(slug)?.status === 'signed',
+      mostViewedCap: n,
+    }).map((sel) =>
+      shape(bySlug.get(sel.slug)!, {
+        coverageTier: null,
+        sourceCount: 0,
+        caption: {
+          kind: 'most_viewed',
+          outlets: 0,
+          leans: [],
+          weeks: sel.evidence.weeksOnList,
+          rank: sel.evidence.mostViewed?.lastRank ?? null,
+        },
+      })
+    );
+  }
 
   if (conversationPosture(now) === 'live') {
     // The corpus is the renderable set: the press cites bill numbers this build
