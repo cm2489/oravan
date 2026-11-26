@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-26T19:34:57.741Z",
+    "fetched_at": "2026-11-26T22:39:11.583Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-26T19:34:57.741Z"
+        "checked_at": "2026-11-26T22:39:11.583Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-22",
         "week_label": "Most-Viewed Bills - Week of November 22, 2026",
         "entries": 8,
-        "checked_at": "2026-11-26T19:34:57.741Z"
+        "checked_at": "2026-11-26T22:39:11.583Z"
       },
       "leans": {
         "center": {
@@ -576,6 +576,18 @@
           "firstSeen": "2026-11-20",
           "lastSeen": "2026-11-20",
           "url": "https://news.google.com/rss/articles/CBMiowFBVV95cUxNUlhFd3lDaGhtemZIekJ0VG5zTWZ1T2I1RC1zN3M2bEhXdExfdDFHdzJxbkw2UC1aUGh5eFFFVmhzU1ByZjh3ZU5ncEVUamloWDRSTXZCMFJQc3FRcFJrY0FPY0ozSGFBOXdRUFYwZ2NfbWVxVkZkTXh6TF9RMFVJLURUdHR2VW0xdWoySHk3cmlUN2N2dTFBbk1QM09mYWYtWHhF?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-4889-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "aninews.in",
+          "firstSeen": "2026-11-26",
+          "lastSeen": "2026-11-26",
+          "url": "https://news.google.com/rss/articles/CBMimwJBVV95cUxOaXJTaWNaaUtuSmxOVVY4UXVjTktDV0k5QklJU05HTWNrbXZvb09jZ0l1TnljcElwM2hRTlE1VnFmdmhxSzV4ZkFxVXVVcDBJUHJaSXBuWjE4SWhyVHoxU1luZDNKdl9CTmV5R1VENkdxZVVqMU1DUHZIUm5MajhZX1BRdm5xcXVva1VvVDI4WFZiTzFfOUI3ZkFJSDVQVl9mUHlycmg4elcwYkZ4T2pVOUFvT29HYkdkOGRNOVIyTS1wcktSVHR4cnlJYU52ZUhfc1kwSkdpbDZSbUNEQUlzLVA2eDZ4a3hJY3R4OS1DVGdRaThTQzhlWm41dUVtcVV1Z1dWdm5nbGw2dllUOUdSRnpHX1I4dTFCeHFj?oc=5"
         }
       ],
       "mostViewed": null
