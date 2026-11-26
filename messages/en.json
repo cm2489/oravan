@@ -751,7 +751,7 @@
     "licenseAiLabel": "Oravan's own plain-language content written by AI, in both languages:",
     "langEnglish": "English",
     "langSpanish": "Español",
-    "licenseCoverage": "AllSides' outlet-lean ratings are used under a separate CC BY-NC license and are excluded from the MCP server and from anything commercial. Bill pages and Big Question pages do not show them at present. The home page's \"In the news\" list uses them only to say which leans the outlets it counts carry. They are a website-only feature until that's resolved.",
+    "licenseCoverage": "AllSides' outlet-lean ratings are used under a separate CC BY-NC license and are excluded from the MCP server and from anything commercial. Bill pages and Big Question pages do not show them at present. The home page's \"In the news\" list still uses them: they decide which outlets it counts and which bills it lists, and a row can name those outlets' leans. They are a website-only feature until that's resolved.",
     "correctionTitle": "Report an error",
     "correctionBody": "To report a mistranslation, a misread status or a plain-language summary that misstates what a bill does, email hello@oravan.org. Name the bill and describe the error.",
     "correctionLinkText": "Email hello@oravan.org",
