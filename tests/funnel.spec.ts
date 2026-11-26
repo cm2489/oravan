@@ -29,7 +29,7 @@ import { mockScriptApi } from './helpers';
  *        at the link: the decode's own `bill.sec.what` heading plus the AI
  *        chip beside it, visible. (The spec drafted this as "`bill.sec.what` +
  *        `bill.aiChip`". The bill page's AI chip is actually `bill.aiLabel` -
- *        "Decoded by AI · checked against the record", gated on `hasDecode`;
+ *        "Decoded by AI · official record attached", gated on `hasDecode`;
  *        `bill.aiChip` is the string the MOMENT page reuses. Both are asserted
  *        below, each on the page that renders it.)
  *
