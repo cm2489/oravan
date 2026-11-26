@@ -85,7 +85,11 @@ for (const { prefix, messages } of [
     await expect(page.locator('#coverage-heading, [href="#coverage-heading"]')).toHaveCount(0);
     const html = await (await page.request.get(`${prefix}/bills/${shownSlug}`)).text();
     expect(html).not.toContain('coverage-heading');
-    expect(html).not.toContain(messages.coverage.leanNote);
+    // Every page ships the whole message dictionary inside its script payload,
+    // so the note's words are always in the raw HTML. What must hold is that
+    // no markup outside a <script> carries them.
+    const markup = html.replace(/<script\b[\s\S]*?<\/script>/g, '');
+    expect(markup).not.toContain(messages.coverage.leanNote);
   });
 }
 
