@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { COVERAGE_BOX_ON } from '../lib/coverage-switch';
 import en from '../messages/en.json';
 import es from '../messages/es.json';
 import billsData from '../data/bills.json';
@@ -51,6 +52,12 @@ function pick(): Pick | null {
 const found = pick();
 
 const box = (page: import('@playwright/test').Page) => page.locator('section[aria-labelledby="coverage-heading"]');
+
+/* THE SWITCH (lib/coverage-switch.ts; owner, 2026-11-25, "Remove it everywhere
+ * for now"). Every test that expects the box skips while COVERAGE_BOX_ON is
+ * false and runs again, unchanged, the day it is set back to true; the
+ * "switched off" test(s) below assert the opposite and skip once it is on. */
+const BOX_OFF = 'the coverage box is switched off (lib/coverage-switch.ts, owner 2026-11-25); runs again when COVERAGE_BOX_ON is true';
 const citationOf = (slug: string) => {
   const m = slug.match(/^([a-z]+)-(\d+)-\d+$/)!;
   return formatCitation(m[1], Number(m[2]));
@@ -82,6 +89,7 @@ for (const { prefix, messages } of [
   test(`${prefix || '/en'}: a twin's article is listed under the bill, as it is, with its outlet and lean`, async ({
     page,
   }) => {
+    test.skip(!COVERAGE_BOX_ON, BOX_OFF);
     test.skip(!found, 'no bill in the current data lists an article stored only under its record twin');
     const { slug, twin, url, source, lean } = found!;
     await page.route('**/api/script**', (r) => r.fulfill({ status: 204, body: '' }));
@@ -109,3 +117,15 @@ for (const { prefix, messages } of [
     expect(bad, `party-coded colours in the row: ${bad.join(', ')}`).toEqual([]);
   });
 }
+
+test('switched off — a twin\u2019s article is not listed under the bill', async ({ page }) => {
+  test.skip(COVERAGE_BOX_ON, 'the coverage box is switched on');
+  test.skip(!found, 'no bill in the current data lists an article stored only under its record twin');
+  const { slug, url } = found!;
+  await page.route('**/api/script**', (r) => r.fulfill({ status: 204, body: '' }));
+  await page.route('**/api/district**', (r) => r.fulfill({ status: 204, body: '' }));
+  await page.goto(`/bills/${slug}`);
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await expect(box(page)).toHaveCount(0);
+  await expect(page.locator(`a[href="${url}"]`)).toHaveCount(0);
+});

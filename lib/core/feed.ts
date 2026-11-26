@@ -28,6 +28,7 @@
  * material of any kind ever reaches this file — the four route handlers
  * below take zero arguments beyond a hardcoded locale literal.
  */
+import { channelFieldParts } from './feed-labels';
 import { escapeXml, rfc822 } from './feed-xml';
 import { AI_LABEL_TEXT, whatsMoving, type BillTeaserOut, type Locale } from './mcp';
 
@@ -174,9 +175,8 @@ export function buildFeedRss(locale: Locale): string {
   const channelDescriptionParts = [
     payload.description,
     payload.attribution,
-    `Source: ${payload.source}`,
-    `License: ${payload.license}`,
-    payload.ai_label ? `AI content: ${payload.ai_label}` : null,
+    // Labeled in the feed's own language (lib/core/feed-labels.ts).
+    ...channelFieldParts(locale, payload),
     statusNote,
   ].filter((p): p is string => Boolean(p));
 

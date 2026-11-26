@@ -29,7 +29,7 @@ async function mockScriptApiCapturing(page: Page, sent: Array<Record<string, unk
     await route.fulfill({
       contentType: 'application/json',
       body: JSON.stringify({
-        script: `GUION SIMULADO (${body.stance}): Buenos días, me llamo [TU NOMBRE] y soy constituyente de [TU CIUDAD O CÓDIGO POSTAL]. Llamo sobre la S.J.Res. 99. Gracias por su tiempo.`,
+        script: `GUION SIMULADO (${body.stance}): Buenos días, me llamo [TU NOMBRE] y vivo en [TU CIUDAD O CÓDIGO POSTAL]. Llamo sobre la S.J.Res. 99. Gracias por su tiempo.`,
         cached: false,
       }),
     });

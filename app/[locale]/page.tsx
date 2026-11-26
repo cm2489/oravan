@@ -12,6 +12,7 @@ import { RememberLocaleLink } from '@/components/RememberLocaleLink';
 import { StalenessNote } from '@/components/StalenessNote';
 import { UrgencyEmptyState } from '@/components/UrgencyEmptyState';
 import { FloorEvidence } from '@/components/FloorEvidence';
+import { RecordWords } from '@/components/RecordWords';
 import { AiMark, FloorVotePanel, Stamp, selectFloorVoteFeature, type ChipGround } from '@/components/system';
 import {
   billSlug,
@@ -22,7 +23,7 @@ import {
   hasActNow,
 } from '@/lib/core';
 import type { Bill } from '@/lib/types';
-import { formatCitation } from '@/lib/format';
+import { cutAtWord, formatCitation, formatCount } from '@/lib/format';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
 import { glossaryTag } from '@/components/glossary-tags';
@@ -269,7 +270,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const meetingTag = (meeting: { iso: string | null; label: string | null }) =>
     meeting.label
       ? function VerbatimMeeting(chunks: ReactNode) {
-          return <span lang="en">{chunks}</span>;
+          return <RecordWords locale={locale}>{chunks}</RecordWords>;
         }
       : function DerivedMeeting(chunks: ReactNode) {
           return <span className="tabular-nums">{chunks}</span>;
@@ -641,7 +642,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               href="/bills"
               className="inline-flex min-h-11 items-center gap-1.5 font-bold text-go underline underline-offset-4 hover:text-go-deep"
             >
-              {t('seeAll', { count: total })}
+              {t('seeAll', { count: formatCount(total, locale) })}
               <ArrowRight className="h-4 w-4" aria-hidden />
             </Link>
             <Link
@@ -743,7 +744,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                   {tShared(`bills.status.${statusLabelKey(specimen)}`)} · {t('specimenOfficial')}
                 </p>
                 <p className="mt-2 font-reading text-lg text-ink-2">
-                  {specimen.title.length > 180 ? `${specimen.title.slice(0, 180)}…` : specimen.title}
+                  {cutAtWord(specimen.title, 180, '…')}
                 </p>
               </div>
               <div className="min-w-0 border-t-[1.5px] border-line pt-4 md:border-t-0 md:border-l-[1.5px] md:pt-0 md:pl-12">

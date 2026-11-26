@@ -1,4 +1,5 @@
 import { ImageResponse } from 'next/og';
+import { cutAtWord } from '@/lib/format';
 import { getTranslations } from 'next-intl/server';
 import { routing } from '@/i18n/routing';
 import { getMoment, getMoments } from '@/lib/moments';
@@ -49,7 +50,8 @@ export function generateStaticParams() {
   );
 }
 
-const clamp = (s: string, max = 120) => (s.length > max ? `${s.slice(0, max - 1).trimEnd()}…` : s);
+// Cut at a word, never inside one (lib/format.ts cutAtWord).
+const clamp = (s: string, max = 120) => cutAtWord(s, max, '…');
 
 export default async function OgImage({
   params,

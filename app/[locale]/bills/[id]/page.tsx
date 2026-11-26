@@ -22,7 +22,8 @@ import { EndedPanel } from '@/components/EndedPanel';
 import { ConcurrentExplainer } from '@/components/ConcurrentExplainer';
 import { GlossaryTerm } from '@/components/GlossaryTerm';
 import { Chip, FloorVotePanel, Stamp } from '@/components/system';
-import { coverageCheckedAtWithTwins, coverageForBillPage, coverageTier, getCoverageWithTwins } from '@/lib/coverage';
+import { coverageCheckedAtWithTwins, coverageShownOnBillPage, coverageTier, getCoverageWithTwins } from '@/lib/coverage';
+import { COVERAGE_BOX_ON } from '@/lib/coverage-switch';
 import { StalenessNote } from '@/components/StalenessNote';
 import { repRoleKey } from '@/components/RepCard';
 import {
@@ -582,10 +583,12 @@ export default async function BillPage({
   // list /questions reads; on the overwhelming majority of bills this is empty
   // and the header renders exactly as it did before.
   const parentMoments = getMomentsForBill(id);
-  // The coverage box on a bill that is NOT part of a Big Question is hidden
-  // when it would show only one side (owner, 2026-11-13); lib/coverage.ts's
-  // coverageForBillPage owns the rule. Big Question bills are unchanged.
-  const shownCoverage = coverageForBillPage(coverage, parentMoments.length > 0);
+  // The coverage box is OFF site-wide (owner, 2026-11-25, "Remove it
+  // everywhere for now"; lib/coverage-switch.ts): this is empty for every bill
+  // while the switch is off. With it on, the box on a bill that is NOT part of
+  // a Big Question is hidden when it would show only one side (owner,
+  // 2026-11-13); lib/coverage.ts's coverageForBillPage owns that rule.
+  const shownCoverage = coverageShownOnBillPage(coverage, parentMoments.length > 0);
   // The twins whose articles the box actually lists, as citations, so its
   // intro can say whose coverage it is (hard rule 4: "Coverage of this bill"
   // alone stops being true once a twin's article is listed).
@@ -1055,24 +1058,29 @@ export default async function BillPage({
         </div>
 
         {/* Read — how the bill is being covered (third-party articles + lean).
+            NOT MOUNTED while lib/coverage-switch.ts's COVERAGE_BOX_ON is false
+            (owner, 2026-11-25, "Remove it everywhere for now"): no heading,
+            no list, no lean label, no note, no anchor.
             `checkedAt` is when the news sweep last LOOKED at this bill, read
             here rather than inside the client component so data/coverage.json
             never reaches the browser. It is a different clock from the "Data
             as of" stamp above (the Congress.gov bill sync) and from the
             article dates below (the press) — three clocks, three labels. */}
-        <CoverageSection
-          articles={shownCoverage}
-          tier={coverageTier(shownCoverage)}
-          checkedAt={coverageCheckedAtWithTwins(id, shownTwins)}
-          twinCitations={twinCitations}
-        />
+        {COVERAGE_BOX_ON && (
+          <CoverageSection
+            articles={shownCoverage}
+            tier={coverageTier(shownCoverage)}
+            checkedAt={coverageCheckedAtWithTwins(id, shownTwins)}
+            twinCitations={twinCitations}
+          />
+        )}
       </div>
 
       {/* Keeps the call reachable past the read; yields whenever the rail is
           on screen AND whenever the decoded answer is (SY-07 — it used to sit
           over three lines of it on every phone screen). On the desk that is
-          the whole grid — but the coverage section and the footer sit OUTSIDE
-          it, so the rail scrolls away at the page foot and this is what
+          the whole grid — but the coverage section (when its switch is on)
+          and the footer sit OUTSIDE it, so the rail scrolls away at the page foot and this is what
           carries the call the rest of the way. Measured, not assumed:
           tests/call-action.spec.ts and tests/bill-call-rail.spec.ts. */}
       {rail.floatingCall && <FloatingCallButton />}

@@ -1,5 +1,7 @@
 import { ExternalLink } from 'lucide-react';
-import { getFormatter, getTranslations } from 'next-intl/server';
+import { getFormatter, getLocale, getTranslations } from 'next-intl/server';
+import { RecordWords } from '@/components/RecordWords';
+import { formatInstant } from '@/lib/format';
 import { glossaryTag } from '@/components/glossary-tags';
 import { chamberNextMeeting, floorSessionSource, floorSignalsCheckedAt } from '@/lib/docket';
 import type { Chamber } from '@/lib/journey';
@@ -56,6 +58,7 @@ import type { Chamber } from '@/lib/journey';
 export async function FloorRecessNote({ chamber }: { chamber: Chamber }) {
   const t = await getTranslations();
   const format = await getFormatter();
+  const locale = await getLocale();
 
   const meeting = chamberNextMeeting(chamber);
   const label = meeting?.label ?? null;
@@ -78,15 +81,8 @@ export async function FloorRecessNote({ chamber }: { chamber: Chamber }) {
       day: 'numeric',
       timeZone: 'UTC',
     });
-  const instant = (value: string) =>
-    format.dateTime(new Date(value), {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      timeZoneName: 'short',
-    });
+  // es-US in the Spanish edition: "12:00 p.m. EST", not "12:00 GMT-5" (lib/format.ts).
+  const instant = (value: string) => formatInstant(value, locale);
 
   return (
     /* Full-width, so it is a direct child of the full-width main and takes the
@@ -108,7 +104,7 @@ export async function FloorRecessNote({ chamber }: { chamber: Chamber }) {
             meeting: label ?? day(iso!),
             when: label
               ? function VerbatimMeeting(chunks) {
-                  return <span lang="en">{chunks}</span>;
+                  return <RecordWords locale={locale}>{chunks}</RecordWords>;
                 }
               : function DerivedMeeting(chunks) {
                   return <span className="tabular-nums">{chunks}</span>;
