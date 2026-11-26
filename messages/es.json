@@ -459,6 +459,7 @@
     "viewImpact": "Ver tu historial",
     "copyScript": "Copiar guion",
     "scriptCopied": "Guion copiado",
+    "officeLanguageNote": "Es posible que la oficina conteste en inglés. Si prefieres hablar en español, pregunta: «<en>Is there someone who speaks Spanish?</en>»",
     "hearFirstTitle": "Qué escucharás primero",
     "hearFirstBody": "Normalmente suena una o dos veces y luego alguien del personal dice el nombre de la oficina. También puede salir un menú corto o el buzón de voz. Las tres opciones sirven: lee tu guion, o déjalo como mensaje.",
     "outcomeChange": "Toca otra opción para cambiarla.",
@@ -721,7 +722,7 @@
   },
   "about": {
     "title": "Acerca de Oravan",
-    "intro": "Oravan es una herramienta cívica gratuita y no partidista. Úsala para encontrar a tus miembros del Congreso, leer proyectos de ley activos en lenguaje claro y hacer una llamada de 30 segundos, en inglés o español, sin cuenta y sin ningún perfil tuyo.",
+    "intro": "Oravan es una herramienta cívica gratuita y no partidista. Úsala para encontrar a tus miembros del Congreso, leer proyectos de ley activos en lenguaje claro y obtener un guion de llamada de 30 segundos en inglés o español, sin cuenta y sin ningún perfil tuyo.",
     "fundingTitle": "¿Quién paga esto?",
     "fundingBody": "Oravan es un proyecto independiente, financiado por su fundador. Cuesta unos cientos de dólares al año alojarlo y mantenerlo, actualmente pagados de su propio bolsillo por una sola persona. No hay anuncios, ni patrocinadores, ni inversionistas — y Oravan no les vende nada a los lectores ni guarda ningún perfil de ellos. Los widgets para sitios socios tienen cuatro planes, y ninguno está abierto todavía a sitios nuevos.",
     "fundingSupportBody": "Si Oravan te resulta útil, puedes contribuir a su alojamiento y mantenimiento. Las contribuciones no son deducibles de impuestos.",
