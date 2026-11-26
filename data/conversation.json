@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-26T04:32:33.696Z",
+    "fetched_at": "2026-11-26T09:28:23.243Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-26T04:32:33.696Z"
+        "checked_at": "2026-11-26T09:28:23.243Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-22",
         "week_label": "Most-Viewed Bills - Week of November 22, 2026",
         "entries": 8,
-        "checked_at": "2026-11-26T04:32:33.696Z"
+        "checked_at": "2026-11-26T09:28:23.243Z"
       },
       "leans": {
         "center": {
@@ -1047,6 +1047,12 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "ktvq.com",
+          "firstSeen": "2026-11-26",
+          "lastSeen": "2026-11-26",
+          "url": "https://news.google.com/rss/articles/CBMirwFBVV95cUxPQmllYXNPcHJZczl2UHJlejVVeXZEZzJlOUdLNk9NX1VFXzU0STliU1ZjQnYySGZxUUVycXpFYm9mQXVLSGZXUXRob21nU25ZUGNCeE90aklxZ1ZIc1ZYTGRyaXNiWGxoeDg0cjJWUGg4OHF5YXRTSDE0eEMwQ3pyN29jR2ZYUFR3RWs4cUV3T3gyUmNSa2RMTXkySnI4XzB2MUJlbGdjUUh5ZUJuMGpF?oc=5"
+        },
+        {
           "domain": "thechronicle.com.ph",
           "firstSeen": "2026-11-24",
           "lastSeen": "2026-11-24",
@@ -1180,10 +1186,28 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "mlq.ai",
+          "firstSeen": "2026-11-26",
+          "lastSeen": "2026-11-26",
+          "url": "https://news.google.com/rss/articles/CBMimAFBVV95cUxOMVpxWnVycjktOGxzZnNOUFBxNkNnUnFES2RzOE9sSWphaDdvMEVaWFMyVnJ5Smo5OXFUVnlKeE9YUjJxM2dvUWw4V2tXS24wTUNUWlgwSFJqNW5hYVBTSklETE82NkxUOUpYd0hSLWZpY0hlZGZVSHl1aFNxR241dS03ME0wN1dlSmpPRFVHYlZEelJTTmhmbA?oc=5"
+        },
+        {
+          "domain": "seekingalpha.com",
+          "firstSeen": "2026-11-26",
+          "lastSeen": "2026-11-26",
+          "url": "https://news.google.com/rss/articles/CBMirgFBVV95cUxQM2MzM05GRWYxam40TFh1SkhuWEptSWphTUtfUG9zU25rN3RaSlFfSlctY2o5TmFzTEx1TERfV1p0LTlHSlMyZVdQSm1KYzlZSzFuLWNKMjNhTy1Rd2Ita3p4ZkxyaW1PTHpkRnpoZGJjUF9oTUhQNmNPMk9zdU4xVGIwWEd0dkdZODhGUl9RR0JJTGRJYVRSMUJzZWVXQlpEVjZ6Wjh6aC1Wdzh3dmc?oc=5"
+        },
+        {
           "domain": "theblock.co",
           "firstSeen": "2026-11-26",
           "lastSeen": "2026-11-26",
           "url": "https://news.google.com/rss/articles/CBMiswFBVV95cUxPOVVNTElJZm9mZnBXejBIaHNBLU1WNF9Vd2ozVm1faDhkYUx1QmhuM21FWVBYcXJLSFVPQ0RhYThOWFFBcnctMUFBSHlrT0NrRmh5d21iYnBISXNFcTRMZ2RfbVQtTkNzZkkwNHBrV1hFMGxrc0dZQ3VvZ3B2cTJzUjJxdWdzWWVDbnhVT1pwR3RSaTJwancyYXBLdEhTNjFxcHN6SnV2Y3hOenVqNDlnZDhQRQ?oc=5"
+        },
+        {
+          "domain": "tradersunion.com",
+          "firstSeen": "2026-11-26",
+          "lastSeen": "2026-11-26",
+          "url": "https://news.google.com/rss/articles/CBMimAFBVV95cUxQT2k4dVYxeWNfSFFLWEttMUhuX0JCQ3JMRUZ1Sk5FTGNEZ1hhTjBqdXd4V2h6ZS1XT2pTMHM3YUNVenNuUWJPT0I1ZnRkM05hVUxFSTdYYW5pOWREeXJhVnFfcnUzSnl0MHRFZEt2ZmdBSm1pT1hiazBaSEVLcFdaclZoRTZrX0c0LWRCaWU4UnA2cThfN2dmVQ?oc=5"
         }
       ],
       "mostViewed": null
