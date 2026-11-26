@@ -662,26 +662,40 @@ function vocabLintHits(text) {
  * owner picked the replacement wording on 2026-11-25 (card "The new words for
  * 'checked against the record': which version?", option a): "Decoded by AI ·
  * official record attached". R5 is what keeps the old claim from coming back,
- * in either language, under the verbs and objects listed below: checked,
- * verified, compared, matched, reviewed or audited against the record, the
- * bill, its text or Congress.gov (widened 2026-11-25 after an independent
- * check found "compared against" and "checked against Congress.gov" got
- * through). It is a word list, not a proof: "checked versus the record" and
- * "verificado según el registro" are two wordings it is known not to catch.
+ * in either language. It is a WORD LIST, not a proof (widened twice on
+ * 2026-11-25 after independent checks probed it):
+ *
+ *   1. a check verb in any of the listed forms (checked, verifies, compared,
+ *      matches, reviews, audited, cross-checks…), then within a few words
+ *      "against" or "with", then an object: the record, the bill, its text,
+ *      the legislation, Congress.gov or official sources;
+ *   2. "compared / matched / checked / verified to <object>", with the verb
+ *      directly before "to" — "to" is too common a word to allow a gap;
+ *   3. first person: "we check / verify / compare … against|with|to <object>";
+ *   4. "record-checked";
+ *   5. Spanish: verific-, comprob-, cotej-, contrast-, chequ-, control-,
+ *      compar- (not compart-, which is "to share") or revis-, then
+ *      "con / contra / frente a", then el registro, el texto oficial / del
+ *      proyecto / de la ley, el expediente, el proyecto de ley, la
+ *      legislación, la fuente oficial or Congress.gov.
+ *
+ * The gap between the verb and the object never crosses sentence punctuation,
+ * a colon or a semicolon, which is what keeps "passes automated checks: both
+ * languages present, the official record attached" clean. "The bill" as an
+ * object does not match when a possessive follows ("with the bill's
+ * sponsors"), so ordinary bill-page wording passes.
+ *
+ * KNOWN MISSES: a claim with no object ("verified for accuracy"), inverted
+ * order ("Accurate to the bill: every summary is checked"), "checked versus
+ * the record", "verificado según el registro", "se compara con el proyecto"
+ * (a bare "proyecto" would flag ordinary House and Senate wording).
  *
  * KNOWN FALSE ALARM (ES): an instruction to the reader such as "Verifica con
  * el registro oficial antes de actuar" matches, though it is the opposite
  * claim. No shipped string is written that way (the Spanish disclaimer uses
- * "Compáralo con el texto oficial"); if one is needed, exempt the imperative
- * here as the English pattern's shape already does.
- *
- * ONE FACTOR, not two like R2/R4, because the sentence is the claim: a check
- * or verification verb, then within a few words "against/with the (official)
- * record" (ES "con/contra el registro"). Attaching the record, showing it
- * beside the text or linking it is honest and does not match; the gap between
- * the verb and the object never crosses sentence punctuation, a colon or a
- * semicolon, which is what keeps "passes automated checks: both languages
- * present, the official record attached" clean.
+ * "Compáralo con el texto oficial"). If a hit is not about AI text, rephrase
+ * the sentence or narrow RECORD_CHECK in the same change, with a clean
+ * fixture in the self-test.
  *
  * Deliberately NOT matched: the bare imperative "Check it against the official
  * text" (`bill.aiDisclaimer`) — that tells the READER to check, which is the
@@ -699,15 +713,30 @@ function vocabLintHits(text) {
  * directories. No allowlist: there is no surface where the claim is true.
  */
 const RECORD_GAP = '[^.!?;:\\n(){}<>=]{0,40}?';
+const R5_OBJ_EN =
+  '(the\\s+|its\\s+|their\\s+)?(official\\s+|original\\s+|full\\s+)?(congressional\\s+|Congress\\.gov\\s+)?' +
+  '(record|bill\\s+text|official\\s+text|source\\s+text|legislative\\s+text|legislation|text\\s+of\\s+the\\s+bill|' +
+  "bill['’]s\\s+(own\\s+|full\\s+)?text|bill\\b(?!\\s*['’])|Congress\\.gov|official\\s+sources?)";
 const RECORD_CHECK = [
   {
-    name: '"checked against/with the record" (EN)',
+    name: '"checked/compared/verified against|with the record, the bill or Congress.gov" (EN)',
     re: new RegExp(
       F(
-        '\\b(checked|checks|checking|verified|verifies|verifying|re-?checked|cross[-\\s]?checked|fact[-\\s]?checked|validated|validates|confirmed|compared|compares|comparing|matched|reviewed|audited|cross[-\\s]?referenced)\\b',
+        '\\b(checked|checks|checking|verified|verifies|verifying|re-?checked|cross[-\\s]?check(ed|s|ing)|fact[-\\s]?checked|validated|validates|confirmed|compared|compares|comparing|matched|matches|reviewed|reviews|reviewing|audited|audits|auditing|contrasted|cross[-\\s]?referenced)\\b',
         RECORD_GAP,
-        '\\b(against|with|to)\\s+(the\\s+|its\\s+|their\\s+)?(official\\s+|original\\s+)?(congressional\\s+|Congress\\.gov\\s+)?(record|bill\\s+text|official\\s+text|source\\s+text|bills?\\b|Congress\\.gov)'
+        '\\b(against|with)\\s+', R5_OBJ_EN
       ),
+      'i'
+    ),
+  },
+  {
+    name: '"compared/matched to the record or the bill" (EN)',
+    re: new RegExp('\\b(compared|compares|matched|matches|checked|verified)\\s+(\\w+ly\\s+)?to\\s+' + R5_OBJ_EN, 'i'),
+  },
+  {
+    name: '"we check/verify/compare ... against the record" (EN)',
+    re: new RegExp(
+      F('\\bwe\\s+(\\w+\\s+)?(check|verify|compare|cross[-\\s]?check|review|audit|validate|confirm|match)\\b', RECORD_GAP, '\\b(against|with|to)\\s+', R5_OBJ_EN),
       'i'
     ),
   },
@@ -716,9 +745,9 @@ const RECORD_CHECK = [
     name: '"verificado/cotejado con el registro" (ES)',
     re: new RegExp(
       F(
-        '\\b(verific|comprob|comprueb|cotej|contrast|chequ|control|compar|revis)[a-záéíóúñ]*',
+        '\\b(verific|comprob|comprueb|cotej|contrast|chequ|control|compar(?!t)|revis)[a-záéíóúñ]*',
         RECORD_GAP,
-        '\\b(con|contra|frente\\s+al?)\\s+(el\\s+|los\\s+)?(registros?|texto\\s+(oficial|del\\s+proyecto)|expediente|proyecto\\s+de\\s+ley|Congress\\.gov)'
+        '\\b(con|contra|frente\\s+al?)\\s+(el\\s+|los\\s+|la\\s+|las\\s+)?(registros?|texto\\s+(oficial|del\\s+proyecto|de\\s+la\\s+ley|legal|original|completo)|expediente|proyecto\\s+de\\s+ley|legislaci[oó]n|fuentes?\\s+oficial(es)?|Congress\\.gov)'
       ),
       'i'
     ),
@@ -1405,6 +1434,26 @@ function selfTest() {
       'Every decode is matched to the official record.',
     ].every((s) => recordCheckHits(s).length > 0)
   );
+  seed('R5/en: first person and present tense — we check, Oravan reviews, our AI audits', () =>
+    [
+      'We check every summary against the official record.',
+      'We verify each decode against the bill.',
+      'We cross-check every summary with the bill text.',
+      'We compare every summary to the official record.',
+      'Oravan reviews every summary against the legislation.',
+      'Our AI audits each summary against the full text of the bill.',
+      'Summaries are checked against official sources.',
+      'Each decode is compared to the bill\'s own text.',
+      'Every headline is verified against the legislative text.',
+    ].every((s) => recordCheckHits(s).length > 0)
+  );
+  seed('R5/es: la legislación, la fuente oficial, el texto de la ley', () =>
+    [
+      'Resúmenes verificados con la legislación.',
+      'Cada resumen se verifica con la fuente oficial.',
+      'Traducido por IA, verificado con el texto de la ley',
+    ].every((s) => recordCheckHits(s).length > 0)
+  );
   seed('R5/es: comparado, revisado — y el proyecto, el expediente o Congress.gov como objeto', () =>
     [
       'Traducido por IA · comparado con el registro oficial',
@@ -1446,6 +1495,22 @@ function selfTest() {
   ];
   clean('R5: the owner-picked wording of 2026-11-25 and the honest neighbours pass', () =>
     R5_CLEAN.every((s) => recordCheckHits(s).length === 0)
+  );
+  clean('R5: ordinary bill and privacy wording that uses the same words innocently passes', () =>
+    [
+      "how your members voted compared with the bill's sponsors",
+      "This vote compared to the bill's original version",
+      'Amendments were reviewed and added to the bill',
+      "The House matched the Senate's changes to the bill",
+      'The committee audited spending tied to the bill',
+      'Funding levels compared to the bills passed last year',
+      'Senators who reviewed amendments to the bills this week',
+      "We confirmed with the bill's sponsor",
+      'a bill matched to your ZIP code',
+      'a companion bill is linked to the bill',
+      'reviewed by the committee',
+      'Tu dirección no se comparte con los registros del servidor',
+    ].every((s) => recordCheckHits(s).length === 0)
   );
   clean('R5: a code comment describing an internal check is not a public claim', () =>
     recordCheckHits(
@@ -1602,9 +1667,9 @@ function scanTree() {
     for (const [key, value] of flattenMessages(JSON.parse(read(file)))) {
       for (const hit of recordCheckHits(value)) {
         fail(
-          `R5 ${key} says AI text is checked against the record ${hit.pattern} — the automated checks are both ` +
+          `R5 ${key} reads as a claim that AI text is checked against the record or the bill ${hit.pattern} — the automated checks are both ` +
             `languages present, the official record attached and a schema check; nothing compares the text with ` +
-            `the record (owner's wording, 2026-11-25: "official record attached"): ${hit.text}`,
+            `the record (owner's wording, 2026-11-25: "official record attached"). Not about AI text? Rephrase the sentence, or narrow RECORD_CHECK with a clean fixture in the self-test. Matched: ${hit.text}`,
           file
         );
       }
@@ -1626,9 +1691,9 @@ function scanTree() {
     const surface = R5_PROSE_FILES.includes(file) ? content : codeSurfaceText(content);
     for (const hit of recordCheckHits(surface)) {
       fail(
-        `R5 says AI text is checked against the record ${hit.pattern} — the automated checks are both languages ` +
+        `R5 reads as a claim that AI text is checked against the record or the bill ${hit.pattern} — the automated checks are both languages ` +
           `present, the official record attached and a schema check (owner's wording, 2026-11-25: "official ` +
-          `record attached"): ${hit.text}`,
+          `record attached"). Not about AI text? Rephrase the sentence, or narrow RECORD_CHECK with a clean fixture in the self-test. Matched: ${hit.text}`,
         file
       );
     }
