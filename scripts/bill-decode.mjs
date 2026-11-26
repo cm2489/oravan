@@ -34,6 +34,8 @@ import {
 } from './congress-fetch.mjs';
 import { passesGate } from './decode-gate.mjs';
 import { generateSearchInputs } from './search-inputs.mjs';
+import { cleanBillMarkup, clipAtWordBoundary, preferredTextUrl, prepareBillForDecode } from '../lib/bill-text-clean.mjs';
+import { checkDivisionCoverage } from '../lib/decode-quality-gate.mjs';
 import { formattedTextUrl, pickTextVersion, textVersionStamp, versionCount } from './text-version.mjs';
 import { classifyApiError } from './api-billing.mjs';
 import { bumpCounter, recordApiError } from './run-counters.mjs';
@@ -75,20 +77,16 @@ export const DECODE_MODEL = 'claude-sonnet-5-5';
  * 3,250 has headroom and costs nothing to keep.
  */
 export const DECODE_SUMMARY_MAX_TOKENS = 900;
+export const DECODE_LONG_SUMMARY_MAX_TOKENS = 1800;
 export const DECODE_STRUCTURE_MAX_TOKENS = 3250;
 
-/*
- * How much of a bill's document a decode reads. UNCHANGED, and measured
- * before it was left unchanged (2026-09-18, 66 bills sampled at random from
- * the committed corpus, text pulled from congress.gov): after this truncation
- * the mean document is ~10,159 characters and the median ~5,195, so the cap
- * binds on only 5 of 66 bills — 7.6%. Those five are the appropriations- and
- * authorization-scale bills where a summary matters most, and they are
- * exactly what a lower cap would start cutting. Lowering it would save
- * roughly a tenth of one call's input on the 92% of bills it never touches
- * and would degrade the 8% it does. Left at 60,000 on purpose.
- */
-const BILL_TEXT_MAX_CHARS = 60_000;
+/** Summary token ceiling: multi-division or long bills get 1800 so later divisions are not crowded out. */
+export function summaryMaxTokensFor(opts = {}) {
+  if (opts?.isMultiDivision || (typeof opts?.textLength === 'number' && opts.textLength > 60_000)) {
+    return DECODE_LONG_SUMMARY_MAX_TOKENS;
+  }
+  return DECODE_SUMMARY_MAX_TOKENS;
+}
 
 /**
  * A stable fingerprint of the exact MODEL INPUT a decode was written from.
@@ -161,12 +159,14 @@ async function fetchBillText(type, number, congress) {
   const { versions, count } = await fetchTextVersions(type, number, congress);
   const version = pickTextVersion(versions);
   if (!version) return null;
-  const url = formattedTextUrl(version);
-  const res = await fetch(url);
+  const target = preferredTextUrl(version) ?? (formattedTextUrl(version) ? { url: formattedTextUrl(version), format: 'html' } : null);
+  if (!target) return null;
+  const res = await fetch(target.url);
   if (!res.ok) throw new Error(`bill text ${res.status} for ${type}/${number} (${version.type})`);
-  const html = await res.text();
+  const raw = await res.text();
   return {
-    text: html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, BILL_TEXT_MAX_CHARS),
+    text: cleanBillMarkup(raw, target.format),
+    format: target.format,
     version,
     count,
   };
@@ -264,14 +264,53 @@ export function normChipPair(enRaw, esRaw) {
  * gets today is byte-for-byte the decode it got yesterday.
  */
 
-/** Call 1: the plain-language summary, from the bill's own document. */
-export function buildSummaryPrompt(bill, text) {
-  return `Explain this congressional bill in plain language for an everyday US resident (8th-grade reading level). 2-3 short paragraphs: what it actually does, and who it affects. Strictly nonpartisan, no advocacy, no preamble, no markdown.
+/** Call 1: the plain-language summary, from the bill's own document.
+ *  When no optional `opts` structure/status hints are supplied, keeps the exact
+ *  historical byte layout so existing corpus fingerprints stay valid. */
+export function buildSummaryPrompt(bill, text, opts = {}) {
+  const base = `Explain this congressional bill in plain language for an everyday US resident (8th-grade reading level). 2-3 short paragraphs: what it actually does, and who it affects. Strictly nonpartisan, no advocacy, no preamble, no markdown.
 
-Bill: ${bill.bill_type.toUpperCase()} ${bill.bill_number} — ${bill.title}
+Bill: ${bill.bill_type.toUpperCase()} ${bill.bill_number} — ${bill.title}`;
 
-Full text (may be truncated):
-${text}`;
+  const extras = [];
+  if (opts?.isMultiDivision) {
+    extras.push('Cover EVERY listed division proportionally so late divisions are not omitted.');
+  }
+  if (opts?.status) {
+    const isEnacted = opts.status === 'signed';
+    extras.push(
+      isEnacted
+        ? 'Official status is signed law; describe enacted provisions accurately.'
+        : `Official status is "${opts.status}" (not yet law); use conditional tense ("would ..."), never stating proposals as already in effect.`
+    );
+  }
+  if (opts?.crsSummary) {
+    extras.push(`Official CRS bill summary:\n${opts.crsSummary}`);
+  }
+  if (opts?.toc) {
+    extras.push(`Bill table of contents / divisions:\n${opts.toc}`);
+  }
+
+  if (extras.length === 0) {
+    return `${base}\n\nFull text (may be truncated):\n${text}`;
+  }
+  return `${base}\n\n${extras.join('\n\n')}\n\nCleaned bill text:\n${text}`;
+}
+
+/** Mega-bill chunk call: summarize one division or span accurately in plain language. */
+export function buildDivisionSummaryPrompt(bill, chunk, opts = {}) {
+  return `Summarize this section of congressional bill ${bill.bill_type.toUpperCase()} ${bill.bill_number} (${bill.title}) in plain language (8th-grade level, nonpartisan, no markdown).
+${opts?.toc ? `\nFull bill divisions/titles:\n${opts.toc}\n` : ''}
+Part covered now (${chunk.label}):
+${chunk.text}`;
+}
+
+/** Mega-bill synthesis call: combine per-division summaries into one cohesive summary covering every division. */
+export function buildSynthesisPrompt(bill, chunkSummaries, opts = {}) {
+  const parts = chunkSummaries.map((c) => `[${c.label}]\n${c.summary}`).join('\n\n');
+  return `Combine these section summaries of ${bill.bill_type.toUpperCase()} ${bill.bill_number} — ${bill.title} into one plain-language explanation (3-5 short paragraphs, 8th-grade level, strictly nonpartisan, no preamble, no markdown). Cover EVERY division proportionally.
+${opts?.crsSummary ? `\nOfficial CRS bill summary:\n${opts.crsSummary}\n` : ''}
+${parts}`;
 }
 
 /** The advocacy-vocabulary instruction for call 2 (owner, 2026-09-30:
@@ -312,6 +351,7 @@ STRICT RULES:
 - Use ONLY facts present in the summary. Never invent numbers, costs, or claims.
 - Headlines: 45-90 chars, sentence case, factual news-desk style, varied construction (NOT "Topic — Consequence", avoid colons), never start with "Congress". Prioritize the most decision-relevant specifics: what it does, who it affects, or what it costs.
 - Never say where the bill stands in Congress in the headlines, the TLDR, or any section (WHAT, WHO, WHY, COST, chips), in either language: not which chamber has it, not which committee, not whether a vote happened or is coming, not whether it went to the president, even if the summary says so. The page prints that from the official record.
+- Tense: if the official status is signed/enacted law, describe what it does; otherwise use conditional tense ("would fund", "would bar"; Spanish "financiaría", "impediría"), never stating proposed rules as already in effect.
 ${VOCABULARY_RULE}
 - TLDR: one sentence, max 160 chars, the single most decision-relevant fact.
 - WHAT: 1-3 sentences. WHO: 1-2. WHY: 1-2 sentences of neutral consequence, never benefits-framing.
@@ -385,12 +425,12 @@ export function assembleDecode(ai_summary, structureText, titles = []) {
   const chips = normChipPair(styleChips(p.COST_CHIPS, 'en', titles), styleChips(p.ES_COST_CHIPS, 'es', []));
   return {
     ai_summary: en(ai_summary),
-    ai_headline: en(p.HEADLINE_EN).slice(0, 110),
+    ai_headline: clipAtWordBoundary(en(p.HEADLINE_EN), 110),
     ai_sections: {
       tldr: en(p.TLDR), what: en(p.WHAT), who: en(p.WHO), why: en(p.WHY),
       cost: normCost(en(p.COST)), costChips: chips.en,
     },
-    es_headline: es(p.HEADLINE_ES).slice(0, 110),
+    es_headline: clipAtWordBoundary(es(p.HEADLINE_ES), 110),
     es_summary: es(p.ES_SUMMARY),
     es_sections: {
       tldr: es(p.ES_TLDR), what: es(p.ES_WHAT), who: es(p.ES_WHO), why: es(p.ES_WHY),
@@ -400,25 +440,58 @@ export function assembleDecode(ai_summary, structureText, titles = []) {
 }
 
 /** Decode ONE bill from its own text, synchronously — two Messages API calls,
- *  the second reading the first's reply. `text` is required and is always the
- *  document — it used to fall back to `bill.title` when fetchBillText came
- *  back null, which produced a normal-looking, unlabeled AI summary of a
- *  document the model had never read. See syncOneBill's null-text refusal.
- *
- *  This is the LATENCY-SENSITIVE transport: the hourly newsdesk's re-decodes
- *  heal a live page and cannot wait on a batch queue. The nightly sync uses
- *  lib/decode-batch.mjs instead (half price, minutes of wait) and falls back
- *  to exactly this function whenever the batch can't deliver — except for a
- *  batch that is merely slow, whose bills that can wait a night are parked and
- *  collected by the next run instead (2026-09-25, drainDecodeQueue). */
-export async function decodeBill(anthropic, bill, text) {
-  const sum = await anthropic.messages.create({
-    model: DECODE_MODEL,
-    max_tokens: DECODE_SUMMARY_MAX_TOKENS,
-    thinking: { type: 'between_tools' },
-    messages: [{ role: 'user', content: buildSummaryPrompt(bill, text) }],
-  });
-  return decodeStructureFrom(anthropic, bill, sum.content[0].text.trim());
+ *  the second reading the first's reply (or chunked map-reduce for mega-bills >400k chars).
+ *  `text` is required and is always the document. */
+export async function decodeBill(anthropic, bill, text, opts = {}) {
+  const prepared = prepareBillForDecode(text);
+  const promptOpts =
+    prepared.toc || prepared.isMultiDivision || opts?.crsSummary
+      ? {
+          toc: prepared.toc || undefined,
+          crsSummary: opts?.crsSummary,
+          status: bill?.status,
+          isMultiDivision: prepared.isMultiDivision,
+        }
+      : undefined;
+
+  let summaryText;
+  if (prepared.mode === 'chunked') {
+    const chunkSummaries = [];
+    for (const chunk of prepared.chunks) {
+      const part = await anthropic.messages.create({
+        model: DECODE_MODEL,
+        max_tokens: DECODE_SUMMARY_MAX_TOKENS,
+        thinking: { type: 'between_tools' },
+        messages: [{ role: 'user', content: buildDivisionSummaryPrompt(bill, chunk, { toc: prepared.toc }) }],
+      });
+      chunkSummaries.push({ label: chunk.label, summary: part.content[0].text.trim() });
+    }
+    const synth = await anthropic.messages.create({
+      model: DECODE_MODEL,
+      max_tokens: DECODE_LONG_SUMMARY_MAX_TOKENS,
+      thinking: { type: 'between_tools' },
+      messages: [{ role: 'user', content: buildSynthesisPrompt(bill, chunkSummaries, { crsSummary: opts?.crsSummary }) }],
+    });
+    summaryText = synth.content[0].text.trim();
+  } else {
+    const sum = await anthropic.messages.create({
+      model: DECODE_MODEL,
+      max_tokens: summaryMaxTokensFor({ isMultiDivision: prepared.isMultiDivision, textLength: text.length }),
+      thinking: { type: 'between_tools' },
+      messages: [{ role: 'user', content: buildSummaryPrompt(bill, prepared.text, promptOpts) }],
+    });
+    summaryText = sum.content[0].text.trim();
+  }
+
+  if (prepared.isMultiDivision) {
+    const divCheck = checkDivisionCoverage(summaryText, prepared.divisions);
+    if (!divCheck.ok) {
+      console.warn(
+        `::warning::decode coverage: ${bill.bill_type}-${bill.bill_number} summary missed division(s): ${divCheck.missing.join(', ')}`
+      );
+    }
+  }
+  return decodeStructureFrom(anthropic, bill, summaryText);
 }
 
 /**
