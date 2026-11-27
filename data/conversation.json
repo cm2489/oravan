@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-27T12:05:09.200Z",
+    "fetched_at": "2026-11-27T21:10:31.713Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-27T12:05:09.200Z"
+        "checked_at": "2026-11-27T21:10:31.713Z"
       },
       "most_viewed": {
-        "status": "ok",
+        "status": "error",
         "week": "2026-11-22",
-        "week_label": "Most-Viewed Bills - Week of November 22, 2026",
-        "entries": 8,
-        "checked_at": "2026-11-27T12:05:09.200Z"
+        "week_label": null,
+        "entries": 0,
+        "checked_at": "2026-11-27T21:10:31.713Z"
       },
       "leans": {
         "center": {
@@ -151,6 +151,19 @@
     }
   },
   "slugs": {
+    "hconres-58-119": {
+      "outlets7d": [
+        {
+          "domain": "reason.com",
+          "lean": "right",
+          "firstSeen": "2026-11-27",
+          "lastSeen": "2026-11-27",
+          "url": "https://reason.com/2026/11/27/americans-didnt-vote-for-socialism-in-the-midterms-they-voted-against-republicans/"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "hconres-93-119": {
       "outlets7d": [
         {
@@ -350,6 +363,12 @@
     "hr-2347-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "scrippsnews.com",
+          "firstSeen": "2026-11-27",
+          "lastSeen": "2026-11-27",
+          "url": "https://news.google.com/rss/articles/CBMivwFBVV95cUxQcW5KZ3Brd2xaYThQaGxEcFpwdFRxOWpmSDFpUnZ0b3ZzLW05MWhBRzZRNWlBdWpCUW9lM3V0NXFUVE9walNpeHdVQl94dy1CbW90R0xtTlpJcmEwYnVYRGNzTVRlTFcxNDkwbWhpZEtGZGk5OTN1azMxSmZYVjB1ZTR4NzlQNDhWRFBPU24tMUNRTHZMR2Y2TWFnNktFQTgxRjhXRzlmMEdQenBsMUVYZzZQR1Vic1Q1bFlhblNnRQ?oc=5"
+        },
         {
           "domain": "jayapal.house.gov",
           "firstSeen": "2026-11-24",
@@ -818,6 +837,12 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "ntd.com",
+          "firstSeen": "2026-11-27",
+          "lastSeen": "2026-11-27",
+          "url": "https://news.google.com/rss/articles/CBMipwFBVV95cUxQRl8zS1MteF9NeXZyX3pIekdQQnVUZE0yLWNrUTdiYXdaUmZpbnhNZlNOdzBpa0xhX1J2NVlRV2U5Q2xNeGhmdEFvLWNkRjBTcG41RHMtTXlzUTBQa3RYRTVtVzJyeWRFNmo2S1ZEMEV6LTRTbDJLaGR1VC1CV1pwY21GZDRRYUJib1B4djRVdDh3Y2VkNE9hcExDdi1pZHUweWVpR0lRbw?oc=5"
+        },
+        {
           "domain": "legis1.com",
           "firstSeen": "2026-11-20",
           "lastSeen": "2026-11-20",
@@ -951,6 +976,19 @@
           "url": "https://news.google.com/rss/articles/CBMiowFBVV95cUxQREpGdUVneEhJd0w2OXNtRl9QOGJZUnVCcUxTZEVZREdkZW9rQURtS2x1WXg0eXd4RVRkRGJldGYzZTFodjBMWndNX3RyeXZrV2xIaE5wWXU0S1d6dGdZNDdQd0pPT3Z4Q3EwRzRHTGhGYXZqajYwdG5CZ3BmNFFsV2FCRGhqUGJOT2xPbjduSnVpMUtTMko4eE1EZ3otZ2dlVGtz?oc=5"
         }
       ],
+      "mostViewed": null
+    },
+    "hr-8388-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-11-27",
+          "lastSeen": "2026-11-27",
+          "url": "https://thehill.com/opinion/congress-blog/6243890-senate-filibuster-reform-proposals/"
+        }
+      ],
+      "unratedOutlets7d": [],
       "mostViewed": null
     },
     "hr-8436-119": {
@@ -1393,6 +1431,19 @@
       ],
       "mostViewed": null
     },
+    "s-2523-119": {
+      "outlets7d": [
+        {
+          "domain": "thehill.com",
+          "lean": "center",
+          "firstSeen": "2026-11-27",
+          "lastSeen": "2026-11-27",
+          "url": "https://thehill.com/opinion/judiciary/supreme-court/6242874-voting-rights-act-rucho-callais/"
+        }
+      ],
+      "unratedOutlets7d": [],
+      "mostViewed": null
+    },
     "s-2667-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
@@ -1444,6 +1495,18 @@
           "firstSeen": "2026-11-20",
           "lastSeen": "2026-11-20",
           "url": "https://news.google.com/rss/articles/CBMilwFBVV95cUxPTzZBSXV6enAtMVJ2cXd3QjVjTXkzbmZlbmlZTzdKTW5RSUdOSnkzRDRkc1V0M3ItOWFiLWJTSG1jVkdpZGttbjVHbmFSMlNYSkFld2NreVdIaXF5c1JhblB0aVV0M0tOaHpFOTZzUVJua1AyUlVaMlJrX1RKRWgxb3l3MW1nRnhGNWFkVThsQnhLZXRWeGdj?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "s-3647-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "immigration-analytics.com",
+          "firstSeen": "2026-11-27",
+          "lastSeen": "2026-11-27",
+          "url": "https://news.google.com/rss/articles/CBMifkFVX3lxTE03WGFySkZYZDJ5T2FiYnZmMEJobC1fT1NyV1NZcHJ2VHk3LXNtY2ZIRUdrYi1lQzZtZVNlSmNkX1IzdDVuazlOZ2NCNUstbzI4X19Bam5yUE45ZkYyMTJmQXZ2bEp6eEhFY0R3TGRVYzJlMHVZdkRqTU9fNTJnUQ?oc=5"
         }
       ],
       "mostViewed": null
@@ -1564,6 +1627,18 @@
           "firstSeen": "2026-11-25",
           "lastSeen": "2026-11-25",
           "url": "https://news.google.com/rss/articles/CBMisgFBVV95cUxPN0JUZmQtcENoVXlXSkNTRU9wX1FQUlRiM1ZJMVNkXzRaWlZwLUlCSkt0enBPN0ZoVHY1VS1YRjB1M3hMVFRUdWpPUndJdDJsN0RoYW9VWnJtVlY4NWl5djRlb2ZHeGpIUVozbGFyUzNvTEk2QUUwNmFaaVEtMGdpUlBzUURfZWw0NjVFaXU0QXdycnIyZ19taEhlc25vUkdiRjBBbzBxT1hhS2hZblZyZkRB?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "s-4581-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "broadbandbreakfast.com",
+          "firstSeen": "2026-11-27",
+          "lastSeen": "2026-11-27",
+          "url": "https://news.google.com/rss/articles/CBMitwFBVV95cUxPQVdOQmxfTVYtTDc5QUUzWDBIbjF6emNIQ3h6dlVNTl95M3A4QkhtTGdWc3dUR3VCd01ZaHpJZVFwa2V6WGdpaGthaHhON0ppV2lhc2JOS2NVNWJZdHpZTlc3SmJ2OHZzRU05NUFZZ252aFBVMlJIaG5nZ0ptdTlhWUUwM3paUU9pWWU3OHBhLVlHakdGcHMta2JrM053anBwaTRERHlrTWZsQkxzNzllY0p1UnJpMEE?oc=5"
         }
       ],
       "mostViewed": null
