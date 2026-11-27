@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-27T02:48:13.376Z",
+    "fetched_at": "2026-11-27T12:05:09.200Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-27T02:48:13.376Z"
+        "checked_at": "2026-11-27T12:05:09.200Z"
       },
       "most_viewed": {
         "status": "ok",
         "week": "2026-11-22",
         "week_label": "Most-Viewed Bills - Week of November 22, 2026",
         "entries": 8,
-        "checked_at": "2026-11-27T02:48:13.376Z"
+        "checked_at": "2026-11-27T12:05:09.200Z"
       },
       "leans": {
         "center": {
@@ -184,6 +184,12 @@
       ],
       "unratedOutlets7d": [
         {
+          "domain": "vietnam.vn",
+          "firstSeen": "2026-11-27",
+          "lastSeen": "2026-11-27",
+          "url": "https://news.google.com/rss/articles/CBMiogFBVV95cUxNbUZrQmxDLXFGNzdjRy14M2p6YmJzS3AyZjVESTdSdjR6OVEwYk9NZDRKd3ltYmNkaC1qVVpERmdvcHg0RE40cjZ0aXVYQVVyUXlNNmFUc2ZJdTE0TmotTkFYdFdNZTN4dnQ0QnAwaG9UMFUzSl96VVF0QzFyY2hMem0zZ2tMZkl2TFVOalR6VnhyeUJGZHBaSnNqaFlxSzFtaGc?oc=5"
+        },
+        {
           "domain": "aroundprague.cz",
           "firstSeen": "2026-11-26",
           "lastSeen": "2026-11-26",
@@ -234,6 +240,18 @@
           "firstSeen": "2026-11-21",
           "lastSeen": "2026-11-21",
           "url": "https://rollcall.com/2026/11/20/trump-signs-bill-to-halt-penny-production"
+        }
+      ],
+      "mostViewed": null
+    },
+    "hr-10170-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "heygotrade.com",
+          "firstSeen": "2026-11-27",
+          "lastSeen": "2026-11-27",
+          "url": "https://news.google.com/rss/articles/CBMieEFVX3lxTFBaZ0RvdnlOaDA5eTh6bWNIU2k2SThPSWVCS3Z0R2duaGdxd2o2NllwOVNhQmxQUlFXQ25BaFNCd3hSM0dmdGU1QW4zWXg5QnRTSVpieXhqQk1RRlUyeWJDOTIwUEhVbFQ0OG15TFBON0FFUEdvbTBXeQ?oc=5"
         }
       ],
       "mostViewed": null
@@ -680,6 +698,12 @@
     "hr-6322-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "winbuzzer.com",
+          "firstSeen": "2026-11-27",
+          "lastSeen": "2026-11-27",
+          "url": "https://news.google.com/rss/articles/CBMiogFBVV95cUxQMW5rUnRnUEdXYlk0VmRzYUZwQVRTc1JtQzYzYmJZRDlZbGU0MVRJaGFETk15enJ4R1hnUnFFQ1JQNnQxSzlCOFZ0ODhOR0owRThaUVpVclZnVDU4eW5nZ3ZTYUE1NmVzRzFPQUptRXhZRDR4cnNfaDJKWkpnR2lad3FBN2x6d2lmWmo5WExmazNBQ05zelZPcXRUS0F4dFZuc1E?oc=5"
+        },
         {
           "domain": "thecentersquare.com",
           "firstSeen": "2026-11-24",
@@ -1228,6 +1252,12 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "ua.news",
+          "firstSeen": "2026-11-27",
+          "lastSeen": "2026-11-27",
+          "url": "https://news.google.com/rss/articles/CBMitwFBVV95cUxOTzdqeWxORkt4NU1FOHBNZ1hiTGVtQmZJZWU5bkZ6SWJyVU5jeEoybWpGdDBsamJZZ0dhRlRFR3FWc2dZME4wbmRXUU9sR3Z5ZTl4aGFDNE9DODJKVTQ3X0ZLZGhnaTJSOWpwcDdGZG8zMl9UbEU2clBIUHBjbS1yWXFZUnBBQ0E5WllmR2JlSGRwSWR3YUpsaDR0Y3I1cGlFejREQmRPQnFnbGpBbjdtQTVVa2laNzg?oc=5"
+        },
+        {
           "domain": "wisevoter.com",
           "firstSeen": "2026-11-25",
           "lastSeen": "2026-11-25",
@@ -1301,6 +1331,12 @@
     "s-1547-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "newburyportnews.com",
+          "firstSeen": "2026-11-27",
+          "lastSeen": "2026-11-27",
+          "url": "https://news.google.com/rss/articles/CBMi_gFBVV95cUxNMy05a2huTFR4SmN1bHhXc0otdGNVV3VMSlVCd3d2NFV1MXQ1b3VGRXBNb3U1NFJ2SFNlUnhUc3ZLVXNnWWNiU0oxNm5kMFlUcEN6ZGNhZ1BWbEtLWmlsVlFNOGpkUDFIUEFjYkYtdzRwelZKeWZXZVdTZ3FiUm15TF9keWlZQTk1bHZnbUZVUWJkQXpHYmdsWXlFVExCM3RFTV9RSkFsREpLMlpUaFpaVzdrb0tiVW1DOTNJc0NjTnZITUNuWEliWEtXLTV4UE12cE41Y0VJdlo1d25aRGZfM080Ykk4WWRPdnAxSkU0X1I4U3hxbWRwajNUNFZFQQ?oc=5"
+        },
         {
           "domain": "legis1.com",
           "firstSeen": "2026-11-24",
@@ -1546,6 +1582,13 @@
     },
     "s-4668-119": {
       "outlets7d": [
+        {
+          "domain": "washingtonexaminer.com",
+          "lean": "right",
+          "firstSeen": "2026-11-27",
+          "lastSeen": "2026-11-27",
+          "url": "https://news.google.com/rss/articles/CBMijgFBVV95cUxOSmNBNkh4cEZsZlRMWXZjZ0pNOEc2aC1Kd0JSTXFVVkJ1TUxEZXB4RDQxblZnUURCckE0TC1vemc1ZEhNUFVXTHNNd2NrSDBVNXQzZUtvNmlVazM2Wm5zTzlJR1RmYnhXcHdOblBaMXdhUjhMVjhNMU9MS2xHSVotR1pvNFdaUzBLWHZqVkdR?oc=5"
+        },
         {
           "domain": "thehill.com",
           "lean": "center",
