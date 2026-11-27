@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-27T22:23:05.954Z",
+    "fetched_at": "2026-11-27T23:06:52.878Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-27T22:23:05.954Z"
+        "checked_at": "2026-11-27T23:06:52.878Z"
       },
       "most_viewed": {
         "status": "error",
         "week": "2026-11-22",
         "week_label": null,
         "entries": 0,
-        "checked_at": "2026-11-27T22:23:05.954Z"
+        "checked_at": "2026-11-27T23:06:52.878Z"
       },
       "leans": {
         "center": {
@@ -978,6 +978,18 @@
       ],
       "mostViewed": null
     },
+    "hr-8170-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "finance.biggo.com",
+          "firstSeen": "2026-11-27",
+          "lastSeen": "2026-11-27",
+          "url": "https://news.google.com/rss/articles/CBMidkFVX3lxTE85a0R0OEZiS2RXS1NhVDRsbC1pcThYTldKOE5xWU5Bbm13Rkx0Vmx5NUc3ckpNWm8wYlczbFRhY3ZwaUxDX0dPSzFOeEVzamtKUDZSczdsUy1jN1dIVV9fNVdzU1Mtd3JTSWw5blA2RE5ZdHhpdHc?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-8388-119": {
       "outlets7d": [
         {
@@ -1445,7 +1457,15 @@
       "mostViewed": null
     },
     "s-2667-119": {
-      "outlets7d": [],
+      "outlets7d": [
+        {
+          "domain": "jpost.com",
+          "lean": "center",
+          "firstSeen": "2026-11-27",
+          "lastSeen": "2026-11-27",
+          "url": "https://news.google.com/rss/articles/CBMiZEFVX3lxTFAtckd2c1p2VTVRTUlYYUgxc2Rvd0V5OE41UnFOcE1HaVk4VEpDa0lBaFV1aURqTHdycmNkX1l4M2dtZzdaZk0tcEduRHUwdVZUU3dnWV9xbXAzNjBzVkp0eDIwcWE?oc=5"
+        }
+      ],
       "unratedOutlets7d": [
         {
           "domain": "wisevoter.com",
