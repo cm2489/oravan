@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-27T21:10:31.713Z",
+    "fetched_at": "2026-11-27T22:23:05.954Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-27T21:10:31.713Z"
+        "checked_at": "2026-11-27T22:23:05.954Z"
       },
       "most_viewed": {
         "status": "error",
         "week": "2026-11-22",
         "week_label": null,
         "entries": 0,
-        "checked_at": "2026-11-27T21:10:31.713Z"
+        "checked_at": "2026-11-27T22:23:05.954Z"
       },
       "leans": {
         "center": {
@@ -1794,6 +1794,18 @@
           "firstSeen": "2026-11-24",
           "lastSeen": "2026-11-24",
           "url": "https://news.google.com/rss/articles/CBMigwFBVV95cUxObHBSWjhmZTJEelFJSkdJaVJ4NXFnWTMydEQySXlpTUlGTUlEZF9qZTc2N2Nrd29aWDluT1hkNVdRSUItRW1VMGhzd0JZcE52UnNacGxIYnM3ZWd5azlEXzRmbm8zX2JtR1Y4Mmc3ay1kM0hpd2xndWhSeEJBbThqR3BfTQ?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
+    "s-612-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "kxnet.com",
+          "firstSeen": "2026-11-27",
+          "lastSeen": "2026-11-27",
+          "url": "https://news.google.com/rss/articles/CBMiwAFBVV95cUxNcVBxV2hzdjBuc0VuSlIyZ2hGXzhpeEp5UVBGMHNxcVd3elZUX3paY2RMRVZ0d3JyMHBJLXVJY3gzWWtJcnlDSm8xc28xdGJ5dEZtdHRnel9SVFJZOVA0X0FDcEZxNVh1VWMxdmtETUlsZWlSZHpQZ3VtY252Qk5GS3lCMTU3M20tVUd0M1lEd0VtNkF3WEZWbGxXekM5eHI0VzdtaWZTOHJtOUcwTW9Ka1h2UEZoa1Y3WWRacE1oZFPSAcABQVVfeXFMTXFQcVdoc3YwbnNFbkpSMmdoRl84aXhKeVFQRjBzcXFXd3pWVF96WmNkTEVWdHdycjBwSS11SWN4M1lrSXJ5Q0pvMXNvMXRieXRGbXR0Z3pfUlRSWTlQNF9BQ3BGcTVYdVVjMXZrRE1JbGVpUmR6UGd1bWNudkJORkt5QjE1NzNtLVVHdDNZRHdFbTZBd1hGVmxsV3pDOXhyNFc3bWlmUzhybTlHME1vSmtYdlBGaGtWN1lkWnBNaGRT?oc=5"
         }
       ],
       "mostViewed": null
