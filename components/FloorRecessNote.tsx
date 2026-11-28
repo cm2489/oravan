@@ -91,7 +91,7 @@ export async function FloorRecessNote({ chamber }: { chamber: Chamber }) {
        hairlines (1.5px), not the band's 3px: this is the page's quietest
        structural mark, not its loudest. */
     <div className="border-y-[1.5px] border-line-strong bg-paper py-6 md:py-8">
-      <div className="mx-auto max-w-5xl px-4">
+      <div className="mx-auto max-w-page px-4">
         <p className="max-w-read text-md text-ink">
           {t.rich(chamber === 'senate' ? 'bill.floor.recessSenate' : 'bill.floor.recessHouse', {
             /* The VALUE is a string and the SPAN is a tag, because next-intl's

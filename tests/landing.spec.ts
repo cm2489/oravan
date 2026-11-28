@@ -110,7 +110,9 @@ test('the Spanish language switcher keeps full-size cells beside the header trus
  * drives both locales; the fix is slug equality, and this is its pin.
  *
  * Read through hooks and hrefs only: `[data-crown]` is the panel, and the
- * crowned bill is whatever page its links point at.
+ * crowned bill is whatever page its links point at. Since the layout pass of
+ * 2026-11-28 the week's other rows (`[data-week-rows]`) sit INSIDE the crown's
+ * slab, so a link there counts as listed again even though it is in the crown.
  */
 test('the crowned bill appears exactly once in the week, in both locales', async ({ page }) => {
   for (const path of ['/', '/es']) {
@@ -134,7 +136,9 @@ test('the crowned bill appears exactly once in the week, in both locales', async
     const listedAgain = await week.evaluate(
       (el, target) =>
         [...el.querySelectorAll<HTMLAnchorElement>('a[href]')].filter(
-          (a) => new URL(a.href).pathname === target && !a.closest('[data-crown]')
+          (a) =>
+            new URL(a.href).pathname === target &&
+            (!a.closest('[data-crown]') || Boolean(a.closest('[data-week-rows]')))
         ).length,
       crowned
     );

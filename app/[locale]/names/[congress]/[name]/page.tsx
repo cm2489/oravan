@@ -138,7 +138,7 @@ export default async function SharedNamePage({
   const day = (d: string) => format.dateTime(new Date(d), { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' });
 
   return (
-    <div className="mx-auto max-w-5xl px-4 pt-12 pb-16">
+    <div className="mx-auto max-w-page px-4 pt-6 pb-12 md:pt-8">
       <p className="text-xs font-bold tracking-[0.06em] text-ink-2 uppercase">{t('namesPage.eyebrow')}</p>
       <h1 className="mt-2 text-h1-bill font-extrabold break-words text-ink">
         {titles.map((title, i) => (
@@ -170,7 +170,7 @@ export default async function SharedNamePage({
           </Chip>
         </p>
       )}
-      <ul className="mt-6 grid gap-4 md:grid-cols-2" aria-label={t('namesPage.listLabel')}>
+      <ul className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3" aria-label={t('namesPage.listLabel')}>
         {rows.map(({ bill, teaser, standing }, i) => {
           // THE OUTLINE: h1, then an h2 for each chamber's group (the first card of each
           // chamber carries it, styled exactly as the plain label it replaces), then the

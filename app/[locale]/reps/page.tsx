@@ -95,11 +95,18 @@ export default async function RepsPage({
      visitor deciding whether to type anything sees exactly what they get.
      The skeletons are decorative — the caption carries the promise. They are
      drawn in `wash` rather than dimmed with opacity, so nothing here is a
-     faded copy of a real contrast pair. */
+     faded copy of a real contrast pair.
+
+     From 64rem the note stands beside the prompt box, its first line level
+     with the box's question, and the three ghosts run the page's full width
+     under both (RepsLookup lays the two out; layout pass 2026-11-28, rounds
+     2 and 3: set level with the box's bottom, it left an empty corner above
+     it about 350 by 270). On a phone the note and the ghosts stack under the
+     prompt, as before. */
   const preview = (
     <>
-      <p className="mt-12 max-w-note text-sm text-ink-2">{t('previewNote')}</p>
-      <div aria-hidden className="mt-4 grid gap-4 md:grid-cols-3">
+      <p className="mt-8 max-w-note min-w-0 text-sm text-ink-2 lg:mt-0 lg:self-start lg:pt-6">{t('previewNote')}</p>
+      <div aria-hidden className="mt-4 grid min-w-0 gap-4 md:grid-cols-3 lg:col-span-2">
         {[0, 1, 2].map((i) => (
           <div key={i} className="rounded-control border-[1.5px] border-line-strong bg-paper p-5">
             <div className="flex gap-4">
@@ -164,7 +171,7 @@ export default async function RepsPage({
      it only once a ZIP has matched members. */
   const continuation = (
     <section
-      className="mt-12 rounded-control border-2 border-ink bg-paper p-6 md:p-8"
+      className="mt-8 rounded-control border-2 border-ink bg-paper p-6 md:p-8"
       aria-labelledby="reps-next"
       data-testid="reps-continuation"
     >
@@ -204,8 +211,16 @@ export default async function RepsPage({
     </section>
   );
 
+  /* ONE COLUMN AT THE PAGE'S FULL WIDTH (layout pass 2026-11-28, round 2).
+     The lookup (heading, prompt or members, the bills worth a call) runs the
+     full 1216, so the member cards and the ghosts sit three across it; Your
+     record follows as a full-width band, as it did before the wider shell.
+     Round 1 gave Your record a whole side column, which stood empty under
+     its three lines. The DOM order is unchanged (members, continuation,
+     Your calls), and the visual order now matches it on every width. The
+     notes that say "below" stay above the district sections they point to. */
   return (
-    <div className="mx-auto max-w-5xl px-4 py-12">
+    <div className="mx-auto max-w-page px-4 pt-6 pb-12 md:pt-8">
       <JsonLd id="org-jsonld" data={orgJsonLd} />
       <h1 className="text-h1-bill font-extrabold">{t('membersHeading')}</h1>
 
@@ -224,7 +239,7 @@ export default async function RepsPage({
           Change ZIP — because it is read from this browser, not from the
           lookup. The call panel's "See your record" lands on its Your calls
           (`#your-calls`), and /record renders the same component. */}
-      <div className="mt-12 border-t-[3px] border-ink pt-4">
+      <div className="mt-8 border-t-[3px] border-ink pt-4">
         <YourRecord />
       </div>
     </div>

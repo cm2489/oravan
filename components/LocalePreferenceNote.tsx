@@ -82,7 +82,7 @@ export function LocalePreferenceNote() {
 
   return (
     <div lang="es" className="border-b-[1.5px] border-line-strong bg-wash">
-      <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-1.5">
+      <div className="mx-auto flex max-w-page items-center justify-between gap-3 px-4 py-1.5">
         <p className="text-sm">
           <Link
             href={pathname}

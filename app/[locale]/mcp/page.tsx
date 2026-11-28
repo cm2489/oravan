@@ -36,7 +36,24 @@ import {
  * envelope's source/ai_label/license text below - IS bilingual, and both
  * language versions are shown here regardless of which locale route this is,
  * same pattern as the citations page.
+ *
+ * ROWS OF TWO (layout pass 2026-11-28, round 3), as on /citations. Below
+ * 80rem: one 33rem column, exactly as before. From 80rem the page sits on
+ * the site's shell, its left edge under the logo; the title runs across the
+ * top, then a grid of two 33rem cells read row by row, left then right, in
+ * the DOM's order: the intro beside the endpoint; the connect section across
+ * both cells (its text left, the config it introduces right); the tools
+ * across both cells, their five boxes two across (one tool section in a
+ * single cell ran about 1,000px past everything beside it); privacy beside
+ * the envelope; licence beside freshness. Rows align to the top.
  */
+
+/** The sections: one column, two across from 80rem (2 × 33rem + a 4rem gap). */
+const SECTIONS =
+  'xl:mt-6 xl:grid xl:max-w-[calc(2*var(--container-read)_+_4rem)] xl:grid-cols-2 xl:items-start xl:gap-x-16 xl:gap-y-12';
+/** One grid cell; the grid's gap replaces its top margin from 80rem. */
+const SECTION_BOX = 'mt-8 min-w-0 xl:mt-0';
+const SECTION = `${SECTION_BOX} border-t border-line pt-6`;
 
 const EXAMPLE_CLIENT_CONFIG = `{
   "mcpServers": {
@@ -96,13 +113,22 @@ export default async function McpPage({ params }: { params: Promise<{ locale: st
   const dataAsOf = await dataAsOfString(locale);
 
   return (
-    <article className="mx-auto max-w-read px-4 py-12">
-      {/* one cap on the column, not one per block */}
-      <div className="max-w-read">
-        <h1 className="text-h2-loud font-extrabold">{t('title')}</h1>
-        <p className="mt-4 text-lede text-ink-2">{t('intro')}</p>
+    <article className="mx-auto max-w-read px-4 pt-6 pb-12 md:pt-8 xl:max-w-page">
+      {/* THE TITLE ACROSS THE TOP, THEN ROWS OF TWO (layout pass 2026-11-28,
+          round 3). Every positional sentence still points the way the reader
+          goes: "the address below" (endpoint) has its box under it in the
+          same cell; "the endpoint above" (connect) is a row under the
+          endpoint; "the description below" (tools) has the boxes under it;
+          the tools note's "citation envelope below" is the envelope section,
+          a row under the tools; "shown below" (envelope) has its quotes
+          under it in the same cell. */}
+      <h1 className="text-h2-loud font-extrabold">{t('title')}</h1>
 
-        <section className="mt-8 border-t border-line pt-6">
+      <div className={SECTIONS}>
+        {/* Row 1, left: the intro (its first cell from 80rem). */}
+        <p className="mt-4 min-w-0 text-lede text-ink-2 xl:mt-0">{t('intro')}</p>
+
+        <section className={SECTION}>
           <h2 className="text-h3 font-extrabold">{t('endpointTitle')}</h2>
           <p className="mt-2">{t('endpointBody')}</p>
           <p className="mt-3 text-sm text-ink-2">{t('endpointLabel')}</p>
@@ -111,20 +137,27 @@ export default async function McpPage({ params }: { params: Promise<{ locale: st
           </p>
         </section>
 
-        <section className="mt-8 border-t border-line pt-6">
-          <h2 className="text-h3 font-extrabold">{t('connectTitle')}</h2>
-          <p className="mt-2">{t('connectBody')}</p>
-          <pre className="mt-3 overflow-x-auto rounded-control bg-ink-deep p-4 text-xs text-paper">
+        {/* Row 2, across both cells: the text left, the config it ends on
+            ("something close to this:") right. */}
+        <section className={`${SECTION} xl:col-span-2 xl:grid xl:grid-cols-2 xl:items-start xl:gap-x-16`}>
+          <div className="min-w-0">
+            <h2 className="text-h3 font-extrabold">{t('connectTitle')}</h2>
+            <p className="mt-2">{t('connectBody')}</p>
+          </div>
+          <pre className="mt-3 min-w-0 overflow-x-auto rounded-control bg-ink-deep p-4 text-xs text-paper xl:mt-0">
             <code>{EXAMPLE_CLIENT_CONFIG}</code>
           </pre>
         </section>
 
-        <section className="mt-8 border-t border-line pt-6">
+        {/* Row 3, across both cells: the heading, intro and closing note at
+            the reading measure, the five tool boxes two across between them,
+            the boxes of a row stretched to one height. */}
+        <section className={`${SECTION} xl:col-span-2`}>
           <h2 className="text-h3 font-extrabold">{t('toolsTitle')}</h2>
-          <p className="mt-2">{t('toolsIntro')}</p>
-          <dl className="mt-4 space-y-4">
+          <p className="mt-2 xl:max-w-read">{t('toolsIntro')}</p>
+          <dl className="mt-4 space-y-4 xl:grid xl:grid-cols-2 xl:gap-4 xl:space-y-0">
             {TOOL_NAMES.map((name) => (
-              <div key={name} className="rounded-control bg-wash p-4">
+              <div key={name} className="min-w-0 rounded-control bg-wash p-4">
                 <dt>
                   <code className="font-mono text-sm font-semibold">{name}</code>
                   <span className="ml-2 text-sm text-ink-2">{TOOL_INFO[name].title}</span>
@@ -135,10 +168,10 @@ export default async function McpPage({ params }: { params: Promise<{ locale: st
               </div>
             ))}
           </dl>
-          <p className="mt-4 text-sm text-ink-2">{t('toolsLangNote')}</p>
+          <p className="mt-4 text-sm text-ink-2 xl:max-w-read">{t('toolsLangNote')}</p>
         </section>
 
-        <section className="mt-8 border-t border-line pt-6">
+        <section className={SECTION}>
           <h2 className="text-h3 font-extrabold">{t('privacyTitle')}</h2>
           <ul className="mt-2 list-disc space-y-2 pl-5">
             <li>{t('privacyNoAccounts')}</li>
@@ -153,7 +186,7 @@ export default async function McpPage({ params }: { params: Promise<{ locale: st
           </Link>
         </section>
 
-        <section className="mt-8 border-t border-line pt-6">
+        <section className={SECTION}>
           <h2 className="text-h3 font-extrabold">{t('envelopeTitle')}</h2>
           <p className="mt-2">{t('envelopeBody')}</p>
           <BilingualQuote
@@ -170,7 +203,7 @@ export default async function McpPage({ params }: { params: Promise<{ locale: st
           />
         </section>
 
-        <section className="mt-8 border-t border-line pt-6">
+        <section className={SECTION}>
           <h2 className="text-h3 font-extrabold">{t('licenseTitle')}</h2>
           <dl className="mt-2 space-y-4 text-sm">
             <div>
@@ -198,7 +231,7 @@ export default async function McpPage({ params }: { params: Promise<{ locale: st
           </dl>
         </section>
 
-        <section className="mt-8 rounded-control bg-wash p-6 md:p-8">
+        <section className={`${SECTION_BOX} rounded-control bg-wash p-6 md:p-8`}>
           <h2 className="text-h3 font-extrabold">{t('freshnessTitle')}</h2>
           <p className="mt-2">{t('freshnessBody', { asOfField: 'as_of' })}</p>
           <p className="mt-3 rounded-control bg-paper px-4 py-3 text-sm font-semibold tabular-nums">

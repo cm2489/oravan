@@ -15,8 +15,18 @@ import { GLOSSARY_CATEGORIES, GLOSSARY_ENTRIES } from '@/lib/glossary';
  * statically generated document, with one stable anchor per term
  * (`/glossary#cloture` still resolves for anything anyone ever sent).
  *
- * BUILT LIKE /citations: the same `article` + `max-w-read` column and the
- * same hairline-ruled `section` + heading + `p` rhythm.
+ * BUILT LIKE /citations: the same `article` on the site's shell and the
+ * same hairline-ruled `section` + heading + `p` rhythm, every run of prose at
+ * the reading measure (`max-w-read`).
+ *
+ * TWO ENTRIES TO A ROW (layout pass 2026-11-28). The page is a collection of
+ * short, independent entries, so from 80rem each section's entries run two
+ * across, in alphabetical order row by row. From 64rem the index stands
+ * beside the intro (round 2), in the space the intro left empty. That
+ * roughly halves the page's length on a wide screen. Every entry keeps its id
+ * and `scroll-mt-8`, so an anchor still lands on its term. From 80rem an
+ * entry's rule runs the width of its cell; its text keeps the reading measure. One column
+ * on a phone, as before.
  *
  * SECTIONS, NOT ONE LIST. With well over a hundred entries, a flat index of
  * every term would be several screens of links before the first definition
@@ -80,30 +90,33 @@ export default async function GlossaryPage({ params }: { params: Promise<{ local
   }));
 
   return (
-    <article className="mx-auto max-w-read px-4 py-12">
-      {/* one cap on the column, not one per block */}
-      <div className="max-w-read">
-        <h1 className="text-h2-loud font-extrabold">{t('title')}</h1>
-        <p className="mt-4 text-lede text-ink-2">{t('intro')}</p>
-        <p className="mt-3 text-sm text-ink-2">{t('scopeNote')}</p>
-        {/* The AI label, above the first definition, and where it is made
-            and marked. See the header. */}
-        <p
-          data-glossary-page-ai-note
-          className="mt-3 flex flex-wrap items-center gap-x-3 text-2xs text-ink-2"
-        >
-          <span>{t('pageAiNote')}</span>
-          <Link
-            href="/citations#ai-policy"
-            className="inline-flex min-h-11 items-center underline decoration-line-strong underline-offset-4 hover:decoration-ink"
+    <article className="mx-auto max-w-page px-4 pt-6 pb-12 md:pt-8">
+      {/* The intro and the index side by side from 64rem (PAIR_ROW's
+          columns); the intro, with the AI label, stays first in the DOM. */}
+      <div className="lg:grid lg:grid-cols-2 lg:items-start lg:gap-x-16">
+        <div className="max-w-read min-w-0">
+          <h1 className="text-h2-loud font-extrabold">{t('title')}</h1>
+          <p className="mt-3 text-lede text-ink-2">{t('intro')}</p>
+          <p className="mt-3 text-sm text-ink-2">{t('scopeNote')}</p>
+          {/* The AI label, above the first definition, and where it is made
+              and marked. See the header. */}
+          <p
+            data-glossary-page-ai-note
+            className="mt-3 flex flex-wrap items-center gap-x-3 text-2xs text-ink-2"
           >
-            {t('aiPolicyLink')}
-          </Link>
-        </p>
+            <span>{t('pageAiNote')}</span>
+            <Link
+              href="/citations#ai-policy"
+              className="inline-flex min-h-11 items-center underline decoration-line-strong underline-offset-4 hover:decoration-ink"
+            >
+              {t('aiPolicyLink')}
+            </Link>
+          </p>
+        </div>
 
         {/* THE INDEX: the seven sections. Ink links, not green — they move
             you around inside a document you are already reading. */}
-        <nav aria-labelledby="glossary-index" className="mt-12 border-t-[3px] border-ink pt-4">
+        <nav aria-labelledby="glossary-index" className="mt-8 min-w-0 border-t-[3px] border-ink pt-4 lg:mt-0">
           <h2
             id="glossary-index"
             className="text-2xs leading-tight font-extrabold tracking-[0.1em] text-ink-2 uppercase"
@@ -123,37 +136,41 @@ export default async function GlossaryPage({ params }: { params: Promise<{ local
             ))}
           </ul>
         </nav>
+      </div>
 
+      <div>
         {sections.map(({ category, entries }) => (
           <section
             key={category}
             id={`section-${category}`}
             aria-labelledby={`section-${category}-h`}
-            className="mt-12 scroll-mt-8 border-t-[3px] border-ink pt-4"
+            className="mt-8 scroll-mt-8 border-t-[3px] border-ink pt-4"
           >
             <h2 id={`section-${category}-h`} className="text-h3 font-extrabold">
               {t(`categories.${category}`)}
             </h2>
-            {entries.map((e) => (
-              /* The id IS the term id, and it is a permanent public string:
-                 anything anyone has ever pasted resolves here. */
-              <section key={e.id} id={e.id} className="mt-6 scroll-mt-8 border-t border-line pt-6">
-                <h3 className="text-lg font-extrabold">{e.term}</h3>
-                <p className="mt-2">{e.body}</p>
-                <p className="text-sm text-ink-2">
-                  <a
-                    href={e.source}
-                    hrefLang="en"
-                    rel="noopener noreferrer"
-                    target="_blank"
-                    className="inline-flex min-h-11 items-center gap-1.5 underline decoration-line-strong underline-offset-4 hover:decoration-ink"
-                  >
-                    {t('sourceLabel', { site: siteOf(e.source) })}
-                    <ExternalLink className="h-4 w-4 flex-none" aria-hidden />
-                  </a>
-                </p>
-              </section>
-            ))}
+            <div className="xl:grid xl:grid-cols-2 xl:gap-x-16">
+              {entries.map((e) => (
+                /* The id IS the term id, and it is a permanent public string:
+                   anything anyone has ever pasted resolves here. */
+                <section key={e.id} id={e.id} className="mt-6 max-w-read min-w-0 scroll-mt-8 border-t border-line pt-6 xl:max-w-none">
+                  <h3 className="max-w-read text-lg font-extrabold">{e.term}</h3>
+                  <p className="mt-2 max-w-read">{e.body}</p>
+                  <p className="text-sm text-ink-2">
+                    <a
+                      href={e.source}
+                      hrefLang="en"
+                      rel="noopener noreferrer"
+                      target="_blank"
+                      className="inline-flex min-h-11 items-center gap-1.5 underline decoration-line-strong underline-offset-4 hover:decoration-ink"
+                    >
+                      {t('sourceLabel', { site: siteOf(e.source) })}
+                      <ExternalLink className="h-4 w-4 flex-none" aria-hidden />
+                    </a>
+                  </p>
+                </section>
+              ))}
+            </div>
           </section>
         ))}
       </div>

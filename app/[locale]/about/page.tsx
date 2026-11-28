@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { hreflangAlternates } from '@/lib/hreflang';
 import { DONATE_URL } from '@/lib/site';
+import { PAIR_ROW } from '@/lib/layout';
 
 export async function generateMetadata({
   params,
@@ -22,16 +23,28 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
   // key, no new copy in either language.
   const tc = await getTranslations('common');
 
-  // One reading column, capped ONCE on the wrapper so every block below shares
-  // the same left and right edge (DESIGN.md, Measure).
+  // THE TITLE ACROSS THE TOP, THEN TWO COLUMNS (layout pass 2026-11-28,
+  // rounds 2 and 3). The page sits on the site's shell, so its left edge is
+  // the logo's. The title stands alone above the columns (round 2 set it in
+  // the left column beside "Who pays for this?", two headings on one row at
+  // different sizes, tops and rules). From 64rem both columns open under the
+  // same thin rule at the same top: the intro, the name's origin and then
+  // "Independence and contact" on the left, "Who pays for this?" on the
+  // right, so both run about as deep. Each block keeps the 33rem reading
+  // measure (DESIGN.md, Measure). The DOM order is unchanged (title, intro,
+  // who pays, independence), so a phone and a screen reader read it as
+  // before, and a phone shows no new rule; the independence section holds no
+  // link, so the keyboard order is unchanged too.
   return (
-    <article className="mx-auto max-w-read px-4 py-12">
-      <div className="max-w-read">
-        <h1 className="text-h2-loud font-extrabold">{t('title')}</h1>
-        <p className="mt-4 text-lede text-ink-2">{t('intro')}</p>
-        <p className="mt-4 text-sm text-ink-2">{tc('footer.lore')}</p>
+    <article className="mx-auto max-w-page px-4 pt-6 pb-12 md:pt-8">
+      <h1 className="text-h2-loud font-extrabold">{t('title')}</h1>
+      <div className={`mt-3 lg:mt-6 ${PAIR_ROW}`}>
+        <div className="max-w-read min-w-0 lg:col-start-1 lg:row-start-1 lg:border-t lg:border-line lg:pt-6">
+          <p className="text-lede text-ink-2">{t('intro')}</p>
+          <p className="mt-4 text-sm text-ink-2">{tc('footer.lore')}</p>
+        </div>
 
-        <section className="mt-8 border-t border-line pt-6">
+        <section className="mt-8 max-w-read min-w-0 border-t border-line pt-6 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:mt-0">
           <h2 className="text-h3 font-extrabold">{t('fundingTitle')}</h2>
           <p className="mt-2">{t('fundingBody')}</p>
           {/* The operator, named, with the verifiable half of "built in the
@@ -79,7 +92,7 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
             donation-gated section so it never depends on DONATE_URL being live
             (S6 persona gate: newsroom/library/nonprofit seats couldn't tell who
             stands behind the widget or how to reach them). */}
-        <section className="mt-8 border-t border-line pt-6">
+        <section className="mt-8 max-w-read min-w-0 border-t border-line pt-6 lg:col-start-1 lg:row-start-2">
           <h2 className="text-h3 font-extrabold">{t('accountabilityTitle')}</h2>
           <p className="mt-2">{t('accountabilityBody')}</p>
         </section>

@@ -82,12 +82,12 @@ import { Chip } from './Chip';
  *
  * PARENT CONTRACT — this panel is full-bleed, so it renders full-width with
  * its own inner max-width wrapper. It must be a direct child of a FULL-WIDTH
- * section; do not put it inside `mx-auto max-w-5xl`, or it will not bleed.
+ * section; do not put it inside `mx-auto max-w-page`, or it will not bleed.
  *
  * ⚠️ And it still has to live inside `section[aria-labelledby="top-actions"]`
  * — it carries a callable bill link, and the <=3-click funnel and the
  * freshness specs both read that boundary. So that section must be
- * restructured to be full-width with the `mx-auto max-w-5xl px-4` wrapper
+ * restructured to be full-width with the `mx-auto max-w-page px-4` wrapper
  * INSIDE it, around its other children, rather than around the section's
  * whole contents. That is a required structural change on the home surface.
  *
@@ -157,6 +157,10 @@ export interface FloorVotePanelProps {
    * this node. Omitted (the bill page), the panel is one column, as before.
    */
   aside?: ReactNode;
+  /** The homepage crown only: the week's other bills, rendered inside the
+   *  stone slab after the crown (and after the aside when there is one).
+   *  Omitted (the bill page), the panel lays out exactly as before. */
+  rows?: ReactNode;
   className?: string;
 }
 
@@ -175,6 +179,7 @@ export function FloorVotePanel({
   headingId,
   flush = false,
   aside,
+  rows,
   className = '',
 }: FloorVotePanelProps) {
   // THE GATE. Both halves are load-bearing: the FACT earns the loudness, the
@@ -274,21 +279,51 @@ export function FloorVotePanel({
     <section
       data-crown=""
       className={`on-stone ground-leading bg-stone text-ink ${
-        flush ? 'pt-5 pb-8 md:pb-12' : 'border-y-[3px] border-ink py-8 md:py-12'
+        flush ? 'pt-5 pb-8' : 'border-y-[3px] border-ink py-6 md:py-8'
       } ${className}`}
     >
-      {aside ? (
+      {aside || rows ? (
         // Two columns at md+: the bill, then what the record says about it.
         // On a phone the second column follows the CTA, in reading order.
-        <div className="mx-auto grid max-w-5xl gap-6 px-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] md:gap-12">
-          <div className="grid content-start gap-3">{main}</div>
-          <div className="grid content-start gap-5">
-            {aside}
-            {quote}
-          </div>
+        // With `rows` (layout pass 2026-11-28) the week's other bills join the
+        // slab: a third column at xl (crown | aside | rows) and a full-width
+        // row under the pair from md; with no aside, crown | rows from lg.
+        // DOM order is the reading order at every width.
+        <div
+          className={`mx-auto grid max-w-page gap-6 px-4 ${
+            aside && rows
+              ? 'md:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] md:gap-x-12 xl:grid-cols-[minmax(0,5fr)_minmax(0,3fr)_minmax(0,4fr)] xl:gap-x-10'
+              : aside
+                ? 'md:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] md:gap-12'
+                : 'lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-x-12'
+          }`}
+        >
+          <div className="grid min-w-0 content-start gap-3">{main}</div>
+          {aside && (
+            <div className="grid min-w-0 content-start gap-5">
+              {aside}
+              {quote}
+            </div>
+          )}
+          {/* THE ROWS ON A PHONE (round 2 of the layout pass): below md they
+              look as they did under the slab before the pass, on paper. This
+              block bleeds to the panel's edges (-mx-4), opens with the slab's
+              3px ink foot rule 32px under the CTA (gap-6 + mt-2, the panel's
+              old pb-8), then 24px of paper (the rows' old mt-6). The caller
+              drops the stone under it (`max-md:pb-0`) and the slab's own foot
+              rule below md. The paper ground takes back the paper focus gap
+              and the paper line heights that `on-stone` and
+              `ground-leading` retune for the stone. From md, unchanged. */}
+          {rows && (
+            <div
+              className={`min-w-0 ${aside ? 'md:col-span-2 xl:col-span-1' : ''} max-md:-mx-4 max-md:mt-2 max-md:border-t-[3px] max-md:border-ink max-md:bg-paper max-md:px-4 max-md:pt-6 max-md:[--focus-gap:var(--color-paper)] max-md:[--text-sm--line-height:var(--leading-body)] max-md:[--text-lg--line-height:var(--leading-body)]`}
+            >
+              {rows}
+            </div>
+          )}
         </div>
       ) : (
-        <div className="mx-auto grid max-w-5xl gap-3 px-4">{main}</div>
+        <div className="mx-auto grid max-w-page gap-3 px-4">{main}</div>
       )}
     </section>
   );

@@ -77,7 +77,7 @@ import type { Bill, BillTeaser, DepartedMember, Legislator, Vacancy } from '@/li
  * this page is exactly what it was.
  */
 
-const WRAP = 'mx-auto max-w-5xl px-4 py-12';
+const WRAP = 'mx-auto max-w-page px-4 pt-6 pb-12 md:pt-8';
 const EYEBROW = 'text-xs font-semibold tracking-[0.04em] text-ink-2';
 /** How many sponsored bills show before the rest fold into a disclosure. */
 const SHOWN = 6;
@@ -244,9 +244,17 @@ function MemberBody({
     reviewNew: reviewTreatsAsNew(rep.bioguide),
   });
 
+  /* THE HEADER IN THE GRID (layout pass 2026-11-28, round 2). From 62rem
+     the portrait and name hold column 1 and the call card column 2 of the
+     first row, so the number starts level with the name. The record (how
+     they voted, the bills they sponsor) takes the full width under that
+     row, with its cards three across from 80rem: a call card beside the
+     whole record left the side column empty for most of the page. The DOM
+     order is unchanged (header, the call, the record), so a phone reads
+     exactly as before. */
   return (
-    <>
-      <header className="mt-6 flex items-start gap-4 md:gap-6">
+    <div className="mt-6 grid gap-8 min-[62rem]:grid-cols-[minmax(0,1fr)_22rem] min-[62rem]:items-start min-[62rem]:gap-x-12">
+      <header className="flex min-w-0 items-start gap-4 md:gap-6 min-[62rem]:col-start-1 min-[62rem]:row-start-1">
         {/* Initials alone when the photo is known to be missing at the source
             (the sitting members on data/portrait-missing.json, from 2026-11-13):
             never an image that fails. */}
@@ -281,82 +289,80 @@ function MemberBody({
         </div>
       </header>
 
-      <div className="mt-8 grid gap-8 min-[62rem]:grid-cols-[minmax(0,1fr)_minmax(20rem,22rem)] min-[62rem]:items-start">
-        {/* THE CALL. Same dial, same local numbers as the lookup's card. On a
-            wide screen it holds to the right of the record, so the number is
-            never below the fold of what you're reading about. */}
-        <section
-          aria-labelledby="rep-contact"
-          className="rounded-control border-[1.5px] border-line-strong bg-paper p-5 min-[62rem]:sticky min-[62rem]:top-4 min-[62rem]:col-start-2 min-[62rem]:row-start-1"
-        >
-          <h2 id="rep-contact" className="text-xl font-extrabold">
-            {t('contactHeading')}
-          </h2>
-          <div className="mt-4">
-            <RepContact rep={rep} />
+      {/* THE CALL. Same dial, same local numbers as the lookup's card. On a
+          wide screen it sits beside the name, on the first screen. */}
+      <section
+        aria-labelledby="rep-contact"
+        className="rounded-control border-[1.5px] border-line-strong bg-paper p-5 min-[62rem]:col-start-2 min-[62rem]:row-start-1 min-[62rem]:self-start"
+      >
+        <h2 id="rep-contact" className="text-xl font-extrabold">
+          {t('contactHeading')}
+        </h2>
+        <div className="mt-4">
+          <RepContact rep={rep} />
+        </div>
+      </section>
+
+      <div className="min-w-0 min-[62rem]:col-span-2 min-[62rem]:row-start-2">
+        {/* How they voted (owner, UX inventory R04, 2026-09-28), straight
+            after the numbers and before what they sponsor (wireframes v2,
+            member.html, 2026-09-29: "who she is, her numbers (first screen),
+            how she voted, then the bills she sponsors"). The rep cards on
+            /reps and the bill call panel link here by its `#votes` anchor. */}
+        <MemberVotes bioguide={rep.bioguide} name={rep.name} locale={locale} noVotesYet={noVotesYet} />
+
+        <section aria-labelledby="rep-sponsored" data-testid="rep-sponsored" className="mt-8">
+          <div className="border-t-[3px] border-ink pt-4">
+            <h2 id="rep-sponsored" className="text-h2 font-extrabold">
+              {t('sponsoredHeading')}
+            </h2>
           </div>
+          {sponsored.length > 0 ? (
+            <>
+              <p className="mt-3 max-w-read text-sm text-ink-2">
+                {t('sponsoredNote', { count: sponsored.length })}
+              </p>
+              <p className="mt-3">
+                <Chip tone="ai" marker={tCommon('aiMarker')}>
+                  {t('aiNote')}
+                </Chip>
+              </p>
+              <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {shown.map((b) => (
+                  <BillCard key={b.slug} bill={b} />
+                ))}
+              </div>
+              {rest.length > 0 && (
+                <details className="mt-4 border-t border-line pt-2">
+                  <summary className="flex min-h-11 cursor-pointer items-center text-sm font-bold select-none">
+                    {t('showAll', { count: formatCount(sponsored.length, locale) })}
+                  </summary>
+                  <div className="mt-2 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    {rest.map((b) => (
+                      <BillCard key={b.slug} bill={b} />
+                    ))}
+                  </div>
+                </details>
+              )}
+            </>
+          ) : (
+            <p className="mt-3 max-w-read text-sm text-ink-2">
+              {t('sponsoredNone', { name: rep.name })}
+            </p>
+          )}
         </section>
 
-        <div className="min-w-0 min-[62rem]:col-start-1 min-[62rem]:row-start-1">
-          {/* How they voted (owner, UX inventory R04, 2026-09-28), straight
-              after the numbers and before what they sponsor (wireframes v2,
-              member.html, 2026-09-29: "who she is, her numbers (first screen),
-              how she voted, then the bills she sponsors"). The rep cards on
-              /reps and the bill call panel link here by its `#votes` anchor. */}
-          <MemberVotes bioguide={rep.bioguide} name={rep.name} locale={locale} noVotesYet={noVotesYet} />
-
-          <section aria-labelledby="rep-sponsored" data-testid="rep-sponsored" className="mt-12">
-            <div className="border-t-[3px] border-ink pt-4">
-              <h2 id="rep-sponsored" className="text-h2 font-extrabold">
-                {t('sponsoredHeading')}
-              </h2>
-            </div>
-            {sponsored.length > 0 ? (
-              <>
-                <p className="mt-3 max-w-read text-sm text-ink-2">
-                  {t('sponsoredNote', { count: sponsored.length })}
-                </p>
-                <p className="mt-3">
-                  <Chip tone="ai" marker={tCommon('aiMarker')}>
-                    {t('aiNote')}
-                  </Chip>
-                </p>
-                <div className="mt-4 grid gap-4 md:grid-cols-2">
-                  {shown.map((b) => (
-                    <BillCard key={b.slug} bill={b} />
-                  ))}
-                </div>
-                {rest.length > 0 && (
-                  <details className="mt-4 border-t border-line pt-2">
-                    <summary className="flex min-h-11 cursor-pointer items-center text-sm font-bold select-none">
-                      {t('showAll', { count: formatCount(sponsored.length, locale) })}
-                    </summary>
-                    <div className="mt-2 grid gap-4 md:grid-cols-2">
-                      {rest.map((b) => (
-                        <BillCard key={b.slug} bill={b} />
-                      ))}
-                    </div>
-                  </details>
-                )}
-              </>
-            ) : (
-              <p className="mt-3 max-w-read text-sm text-ink-2">
-                {t('sponsoredNone', { name: rep.name })}
-              </p>
-            )}
-          </section>
-
-          {sponsored.length === 0 && <Continuation locale={locale} t={t} />}
-        </div>
+        {sponsored.length === 0 && <Continuation locale={locale} t={t} />}
       </div>
-    </>
+    </div>
   );
 }
 
 /**
  * A member who left, as a record: the member page's own header with the
- * served-until line where the website link stood, then how they voted, in
- * the same left column at the same width. Nothing from the call column, and
+ * served-until line where the website link stood, then how they voted,
+ * across the page's width (layout pass 2026-11-28: with no call column there
+ * is nothing to hold the right side). Nothing from the call column, and
  * no sponsored-bills block (its heading speaks in the present tense).
  */
 type Formatter = ReturnType<typeof useFormatter>;
@@ -417,10 +423,11 @@ function DepartedBody({
         </div>
       </header>
 
-      <div className="mt-8 grid gap-8 min-[62rem]:grid-cols-[minmax(0,1fr)_minmax(20rem,22rem)] min-[62rem]:items-start">
-        <div className="min-w-0 min-[62rem]:col-start-1 min-[62rem]:row-start-1" data-departed-record="">
-          <MemberVotes bioguide={member.bioguide} name={member.name} locale={locale} />
-        </div>
+      {/* No call column to sit beside (layout pass 2026-11-28): the record
+          takes the full page width, and its vote cards run two across from
+          64rem and three from 80rem (MemberVotes). */}
+      <div className="mt-8" data-departed-record="">
+        <MemberVotes bioguide={member.bioguide} name={member.name} locale={locale} />
       </div>
     </>
   );
@@ -449,7 +456,7 @@ function VacancyBody({
         <VacantSeatCard elections={specialElectionsFor(seat)} />
       </div>
       {senators.length > 0 && (
-        <section aria-labelledby="rep-senators" className="mt-12">
+        <section aria-labelledby="rep-senators" className="mt-8">
           <h2 id="rep-senators" className="text-h2 font-extrabold">
             {t('senatorsHeading', { state: seat.state })}
           </h2>
@@ -478,7 +485,7 @@ function Continuation({ locale, t }: { locale: string; t: RepT }) {
   const freshness = getFreshness();
   return (
     <section
-      className="mt-12 rounded-control border-2 border-ink bg-paper p-6 md:p-8"
+      className="mt-8 rounded-control border-2 border-ink bg-paper p-6 md:p-8"
       aria-labelledby="rep-next"
       data-testid="rep-continuation"
     >

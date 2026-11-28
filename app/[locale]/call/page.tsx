@@ -55,6 +55,25 @@ import { getMomentsForBill } from '@/lib/moments';
 
 const HUB_ROWS = 5;
 
+/*
+ * THE WEEK AS CARDS (layout pass round 3, 2026-11-28). The list sizes itself
+ * to its own width (a container query on the section), not the window's:
+ * one column on a phone, two from 36rem, and from 64rem a six-track grid in
+ * which a card takes two tracks, so three cards a row. A last row of two
+ * takes three tracks each, and a last row of one (four or seven bills)
+ * becomes two rows of two, so a row never ends on an empty slot (the
+ * nth-child variants below count the cards; one card alone spans all six).
+ * With a saved ZIP the reach column takes 22rem beside the list, the list is
+ * narrower than 64rem and runs two across. Each card's buttons sit on its
+ * bottom edge, level across the row. DOM order is the pool's order.
+ */
+const HUB_LIST = 'grid list-none gap-x-8 border-b border-line @xl:grid-cols-2 @5xl:grid-cols-6';
+const HUB_CARD =
+  'flex min-w-0 flex-col border-t border-line py-5 @5xl:col-span-2 ' +
+  '@5xl:[&:nth-child(3n+1):nth-last-child(2)]:col-span-3 @5xl:[&:nth-child(3n+2):last-child]:col-span-3 ' +
+  '@5xl:[&:nth-child(3n+1):nth-last-child(4)]:col-span-3 @5xl:[li:nth-child(3n+1):nth-last-child(4)~&]:col-span-3 ' +
+  '@5xl:[&:only-child]:col-span-6';
+
 export async function generateMetadata({
   params,
 }: {
@@ -113,19 +132,30 @@ export default async function CallHubPage({ params }: { params: Promise<{ locale
     format.dateTime(new Date(iso), { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' });
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-12">
+    <div className="mx-auto max-w-page px-4 pt-6 pb-12 md:pt-8">
       <h1 className="text-h1-bill font-extrabold text-ink">{t('title')}</h1>
-      <p className="mt-4 max-w-read text-lede text-ink-2">{t('lede')}</p>
+      <p className="mt-3 max-w-read text-lede text-ink-2">{t('lede')}</p>
 
-      <div className="mt-10 grid gap-12 min-[62rem]:grid-cols-[minmax(0,var(--measure-read))_minmax(18rem,22rem)] min-[62rem]:justify-between">
-        <section aria-labelledby="week-h" className="min-w-0">
-          <h2 id="week-h" className="text-h2 font-extrabold text-ink">
-            {t('weekTitle')}
-          </h2>
-          <p className="mt-2 text-xs text-ink-2">
-            {dataAsOf}
-            <StalenessNote checkedAt={freshness.checkedAt} />
-          </p>
+      {/* THE WEEK, FULL WIDTH (layout pass round 3, 2026-11-28). "Who you'll
+          reach" renders nothing until this device has a saved ZIP, so a fixed
+          rail stood empty beside the list for every first visit. The week
+          now takes the whole shell; only once the reach section is on the
+          page (:has) does a 22rem side column open at xl beside the list
+          (not sticky: three members' cards can run taller than a laptop
+          window, and a sticky box would keep its last links below the fold),
+          and the list's own container query drops it to two across.
+          With no ZIP the empty wrapper is hidden, so it adds no gap. */}
+      <div className="mt-8 grid gap-12 xl:has-[[data-call-reach]]:grid-cols-[minmax(0,1fr)_22rem] xl:has-[[data-call-reach]]:items-start">
+        <section aria-labelledby="week-h" className="@container min-w-0">
+          <div className="lg:flex lg:flex-wrap lg:items-baseline lg:gap-x-4">
+            <h2 id="week-h" className="text-h2 font-extrabold text-ink">
+              {t('weekTitle')}
+            </h2>
+            <p className="mt-2 text-xs text-ink-2 lg:mt-0">
+              {dataAsOf}
+              <StalenessNote checkedAt={freshness.checkedAt} />
+            </p>
+          </div>
 
           {rows.length > 0 ? (
             <>
@@ -145,9 +175,9 @@ export default async function CallHubPage({ params }: { params: Promise<{ locale
                   {t('aiHowMade')}
                 </Link>
               </p>
-              <ol className="mt-4 grid list-none border-b border-line">
+              <ol className={`mt-4 ${HUB_LIST}`}>
                 {rows.map(({ bill, slug, announcement, liveChamber, covers, parent }) => (
-                  <li key={slug} data-call-hub-row={slug} className="border-t border-line py-5">
+                  <li key={slug} data-call-hub-row={slug} className={HUB_CARD}>
                     {/* A floor claim is dated and attributed (rule 6): the
                         chamber's own schedule, with its own printed label
                         (English verbatim, ruling V4) and the source link. */}
@@ -225,7 +255,7 @@ export default async function CallHubPage({ params }: { params: Promise<{ locale
                       )}
                     </p>
                     {liveChamber && <CallHubRouting chamber={liveChamber} />}
-                    <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
+                    <div className="mt-auto flex flex-wrap items-center gap-x-5 gap-y-2 pt-3">
                       {/* "Read + call" opens the bill AT its call panel, the
                           same deep link Big Question cards use (SY-10). */}
                       <Link
@@ -280,7 +310,7 @@ export default async function CallHubPage({ params }: { params: Promise<{ locale
           </Link>
         </section>
 
-        <div className="min-w-0">
+        <div className="min-w-0 empty:hidden xl:self-start">
           <CallHubReach />
         </div>
       </div>

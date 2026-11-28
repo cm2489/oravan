@@ -91,7 +91,7 @@ export function ErasedNotice() {
 
   if (!show) return null;
   return (
-    <div className="mx-auto max-w-5xl px-4 pt-6">
+    <div className="mx-auto max-w-page px-4 pt-6">
       <p ref={ref} role="status" tabIndex={-1} data-erased-notice="" className="text-sm font-medium">
         {t('erased')}
       </p>

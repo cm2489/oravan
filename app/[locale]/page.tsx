@@ -346,6 +346,76 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     </p>
   );
 
+  /*
+   * THE REST OF THE WEEK: ruled rows, unboxed (card a9), each ONE whole-row
+   * link. The status line is the record's, in the short vocabulary the Big
+   * Questions rows use (lib/home.ts). Built once, placed by the caller (layout
+   * pass 2026-11-28): on a crowned week inside the stone slab, beside the
+   * crown from lg (from xl when the crown has a latest-vote column), so the
+   * week's other bills share the first screen with it; on a crownless week on
+   * paper under the heading, three across from md, as before.
+   */
+  const weekRows = (cls: string) => (
+    <ul className={`list-none border-t-[1.5px] border-line-strong ${cls}`} data-week-rows="">
+      {listed.map((b) => {
+        // The session gate (lib/floor-session.ts): while the
+        // chamber a live floor line names is not meeting, the row
+        // prints the record's own status instead, which is what the
+        // recess note promises ("Bills below show their last status
+        // in the record").
+        const line = siteBillStatusLine(b);
+        return (
+          <li
+            key={billSlug(b)}
+            className="relative border-b-[1.5px] border-line-strong py-4"
+          >
+            <p className="text-sm font-semibold text-ink-2">
+              {statusLine(line, leadTally(line, b))}
+            </p>
+            <h3 className="mt-1 max-w-[36ch] text-lg leading-tight font-bold">
+              <Link
+                href={`/bills/${billSlug(b)}`}
+                className="text-ink no-underline visited:text-ink-2 after:absolute after:inset-0 after:content-[''] hover:underline hover:decoration-go hover:decoration-[3px]"
+              >
+                {b.ai_headline ?? b.short_title ?? b.title}
+              </Link>
+            </h3>
+            <p className="mt-1 text-sm text-ink-2 tabular-nums">
+              {formatCitation(b.bill_type, b.bill_number)}
+              {b.issue_tags?.[0] && ` · ${tShared(`categories.${b.issue_tags[0]}`)}`}
+            </p>
+          </li>
+        );
+      })}
+    </ul>
+  );
+
+  /* The week closes with its two exits, side by side: every active bill, and
+     the day's brief (H14; Today is off the tab bar, so this is its one tap
+     from home). When the rows sit in the slab, the exits follow them there
+     (round 2 of the layout pass: they stood alone in a thin band between the
+     slab and the Big Questions); on a phone that is on paper under the slab,
+     straight after the rows, as before. */
+  const rowsInSlab = Boolean(crowned && feature && crownDate) && listed.length > 0;
+  const weekExits = (
+    <p className="mt-4 flex flex-wrap gap-x-6">
+      <Link
+        href="/bills"
+        className="inline-flex min-h-11 items-center gap-1.5 font-bold text-go underline underline-offset-4 hover:text-go-deep"
+      >
+        {t('seeAll', { count: formatCount(total, locale) })}
+        <ArrowRight className="h-4 w-4" aria-hidden />
+      </Link>
+      <Link
+        href="/today"
+        className="inline-flex min-h-11 items-center gap-1.5 font-bold text-go underline underline-offset-4 hover:text-go-deep"
+      >
+        {t('todayBrief')}
+        <ArrowRight className="h-4 w-4" aria-hidden />
+      </Link>
+    </p>
+  );
+
   return (
     <div>
       <JsonLd id="site-jsonld" data={jsonLd} />
@@ -356,7 +426,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           in this browser, names the reader's members instead
           (components/HeroSavedZip.tsx). Paper, never a ground of its own.
           --------------------------------------------------------------- */}
-      <div data-hero="" className="mx-auto max-w-5xl px-4 pt-5 pb-6 md:pt-16 md:pb-12">
+      <div data-hero="" className="mx-auto max-w-page px-4 pt-5 pb-6 md:pt-12 md:pb-8">
         {/* THE GO-MARK AS A STROKE under the second beat, the measured
             promise. Full width above the columns: the stroked beat cannot
             wrap, and "Understand it in plain words." never breaks (owner,
@@ -378,7 +448,11 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           </span>
         </h1>
 
-        <div className="mt-6 grid gap-4 md:mt-8 md:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] md:gap-16">
+        {/* From lg the hero's two columns are the crown slab's (7fr | 5fr,
+            gap 48: components/system/FloorVotePanel.tsx, the `rows` grid), so
+            the ZIP column and the week's rows below it share one left edge
+            (layout pass 2026-11-28, round 2). */}
+        <div className="mt-6 grid gap-4 md:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] md:gap-16 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-x-12">
           <div className="min-w-0">
             <p className="max-w-read text-lede text-pretty text-ink-2">{t('heroSub')}</p>
 
@@ -463,8 +537,16 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           // the floor panel's slab itself, one ground, earned by the panel.
           // The ground is stone with ink type (the owner's look, 2026-11-13;
           // it was the green enamel); `on-stone` tunes the focus ring to it.
-          <div className="on-stone mt-2 border-y-[3px] border-ink bg-stone">
-            <div className="mx-auto max-w-5xl px-4 pt-6 md:pt-8">
+          // With the week's rows in the slab, its foot rule is drawn from md
+          // only: on a phone the rows sit on paper under the slab, and the
+          // rows block draws the slab's foot rule itself (FloorVotePanel's
+          // `rows`), so the phone looks as it did before the layout pass.
+          <div
+            className={`on-stone mt-2 border-t-[3px] border-ink bg-stone ${
+              rowsInSlab ? 'md:border-b-[3px]' : 'border-b-[3px]'
+            }`}
+          >
+            <div className="mx-auto max-w-page px-4 pt-6">
               {/* Below md the heading and the next line would cross the
                   stamp's straddle band, so the row reserves it: pb-8 here,
                   mt-8 on the line after. */}
@@ -481,7 +563,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                 standalone
                 className="mt-8 max-w-read text-sm font-semibold text-ink md:mt-4"
               />
-              {aiLine(t('aiWeek'), 'stone', 'mt-8 md:mt-4')}
+              {aiLine(t('aiWeek'), 'stone', 'mt-8 md:mt-3')}
             </div>
             <FloorVotePanel
               flush
@@ -507,6 +589,27 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               // (components/HomeLatestVote.tsx). The wireframe's second
               // column; absent when the bill has no stored roll call.
               aside={latestRollCall ? <HomeLatestVote rollCall={latestRollCall} /> : undefined}
+              // The week's other bills, inside the slab (layout pass
+              // 2026-11-28): beside the crown from lg, or from xl as a third
+              // column beside the latest vote; three across under the crown
+              // from md until then. On a phone they sit on paper under the
+              // slab, one column, as before the pass (round 2). The week's
+              // two exits follow them.
+              rows={
+                rowsInSlab ? (
+                  <>
+                    {weekRows(
+                      latestRollCall
+                        ? 'md:grid md:grid-cols-3 md:gap-x-10 xl:block'
+                        : 'md:grid md:grid-cols-3 md:gap-x-10 lg:block'
+                    )}
+                    {weekExits}
+                  </>
+                ) : undefined
+              }
+              // On a phone the rows end the slab on paper, so no stone foot
+              // runs under them.
+              className={rowsInSlab ? 'max-md:pb-0' : ''}
               // The chip prints the fact the selector actually found, in the
               // chamber the record itself names.
               calendarLabel={tShared(FLOOR_LABEL_KEYS[feature.kind][feature.chamber])}
@@ -541,7 +644,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             />
           </div>
         ) : (
-          <div className="mx-auto max-w-5xl px-4 pt-8 md:pt-10">
+          <div className="mx-auto max-w-page px-4 pt-8 md:pt-10">
             {/* Same straddle-band reservation as the crowned masthead. */}
             <div className="relative border-b-[1.5px] border-line-strong pb-8 md:pb-3">
               <h2 id="top-actions" className="text-h2-loud font-extrabold">
@@ -558,44 +661,10 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           </div>
         )}
 
-        <div className="mx-auto max-w-5xl px-4">
-          {/* The rest of the week: ruled rows, unboxed (card a9), each ONE
-              whole-row link. The status line is the record's, in the short
-              vocabulary the Big Questions rows use (lib/home.ts). */}
-          {listed.length > 0 && (
-            <ul className="mt-6 list-none border-t-[1.5px] border-line-strong md:grid md:grid-cols-3 md:gap-x-10">
-              {listed.map((b) => {
-                // The session gate (lib/floor-session.ts): while the
-                // chamber a live floor line names is not meeting, the row
-                // prints the record's own status instead, which is what the
-                // recess note promises ("Bills below show their last status
-                // in the record").
-                const line = siteBillStatusLine(b);
-                return (
-                  <li
-                    key={billSlug(b)}
-                    className="relative border-b-[1.5px] border-line-strong py-4"
-                  >
-                    <p className="text-sm font-semibold text-ink-2">
-                      {statusLine(line, leadTally(line, b))}
-                    </p>
-                    <h3 className="mt-1 max-w-[36ch] text-lg leading-tight font-bold">
-                      <Link
-                        href={`/bills/${billSlug(b)}`}
-                        className="text-ink no-underline visited:text-ink-2 after:absolute after:inset-0 after:content-[''] hover:underline hover:decoration-go hover:decoration-[3px]"
-                      >
-                        {b.ai_headline ?? b.short_title ?? b.title}
-                      </Link>
-                    </h3>
-                    <p className="mt-1 text-sm text-ink-2 tabular-nums">
-                      {formatCitation(b.bill_type, b.bill_number)}
-                      {b.issue_tags?.[0] && ` · ${tShared(`categories.${b.issue_tags[0]}`)}`}
-                    </p>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
+        <div className="mx-auto max-w-page px-4">
+          {/* The rest of the week on a crownless week (`weekRows` above; a
+              crowned week carries them inside the slab). */}
+          {!crowned && listed.length > 0 && weekRows('mt-6 md:grid md:grid-cols-3 md:gap-x-10')}
 
           {quiet && top.length === 0 && (
             <div className="mt-6">
@@ -634,25 +703,9 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             </p>
           )}
 
-          {/* The section closes with its two exits, side by side: every
-              active bill, and the day's brief (H14; Today is off the tab bar,
-              so this is its one tap from home). */}
-          <p className="mt-4 flex flex-wrap gap-x-6">
-            <Link
-              href="/bills"
-              className="inline-flex min-h-11 items-center gap-1.5 font-bold text-go underline underline-offset-4 hover:text-go-deep"
-            >
-              {t('seeAll', { count: formatCount(total, locale) })}
-              <ArrowRight className="h-4 w-4" aria-hidden />
-            </Link>
-            <Link
-              href="/today"
-              className="inline-flex min-h-11 items-center gap-1.5 font-bold text-go underline underline-offset-4 hover:text-go-deep"
-            >
-              {t('todayBrief')}
-              <ArrowRight className="h-4 w-4" aria-hidden />
-            </Link>
-          </p>
+          {/* The section closes with its two exits (`weekExits` above),
+              here unless they follow the rows inside the slab. */}
+          {!rowsInSlab && weekExits}
         </div>
       </section>
 
@@ -666,11 +719,11 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           --------------------------------------------------------------- */}
       {questions.length > 0 && (
         <section
-          className="on-dark mt-10 border-y-[3px] border-line-strong bg-ink-deep py-8 text-paper md:mt-16 md:py-12"
+          className="on-dark mt-8 border-y-[3px] border-line-strong bg-ink-deep py-8 text-paper md:mt-12 md:py-12"
           aria-labelledby="moments-strip-title"
           data-front-door="questions"
         >
-          <div className="mx-auto max-w-5xl px-4">
+          <div className="mx-auto max-w-page px-4">
             <div className="flex flex-wrap items-baseline justify-between gap-x-4">
               <h2 id="moments-strip-title" className="text-h2 font-extrabold text-paper">
                 {t('momentsTitle')}
@@ -685,7 +738,19 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             </div>
             <p className="mt-1 max-w-note text-sm text-pretty text-ink-pale">{t('momentsSub')}</p>
             {aiLine(t('aiQuestions'), 'ink')}
-            <ul className="mt-6 list-none border-t-[1.5px] border-line-strong md:grid md:grid-cols-2 md:gap-x-14">
+            {/* Two across from md; from xl, as many across as leaves no empty
+                cell at the end (layout pass 2026-11-28, round 2): four for
+                4, 7 or 8 rows (eight make two full rows of four), three for
+                3, 5 or 6. At most eight are live (LIVE_CAP). */}
+            <ul
+              className={`mt-6 list-none border-t-[1.5px] border-line-strong md:grid md:grid-cols-2 md:gap-x-10 ${
+                questions.length === 4 || questions.length >= 7
+                  ? 'xl:grid-cols-4 xl:gap-x-8'
+                  : questions.length >= 3
+                    ? 'xl:grid-cols-3'
+                    : ''
+              }`}
+            >
               {questions.map(({ moment: m, lead, tally }) => (
                 <li key={m.id} className="relative border-b-[1.5px] border-line-strong py-4">
                   <h3 className="text-lg leading-tight font-bold">
@@ -715,58 +780,80 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         </section>
       )}
 
-      {/* IN THE NEWS (H16): three rows, each saying why it is here, from
-          stored evidence only. Renders nothing when a sync leaves no
-          coverage to feature. */}
-      {news.length > 0 && (
-        <div className="mx-auto max-w-5xl px-4 pt-10 md:pt-16">
-          <NewsLens bills={news} rows note={aiLine(t('aiNews'))} />
-        </div>
-      )}
-
-      {/* THE OFFICIAL TEXT, DECODED (H07, kept by the owner's mark): the
-          product's core move shown, not told — one real bill's official
-          title, then its plain-words decode, AI-labeled. After the news
-          since option B (live had it beside the hero). */}
-      {specimen && (
-        <section
-          className="mx-auto max-w-5xl px-4 pt-10 md:pt-16"
-          aria-labelledby="specimen-title"
+      {/* IN THE NEWS BESIDE THE SPECIMEN (layout pass 2026-11-28): one
+          wrapper, two blocks side by side from lg (news a third, specimen two
+          thirds), each still its own block with its own AI line; news first in
+          the DOM, as option B orders them. Either alone takes the full width. */}
+      {(news.length > 0 || specimen) && (
+        <div
+          className={`mx-auto max-w-page px-4 pt-8 md:pt-12 ${
+            news.length > 0 && specimen
+              ? 'lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:items-start lg:gap-x-12'
+              : ''
+          }`}
         >
-          <div className="border-t-[1.5px] border-line-strong pt-6">
-            <h2 id="specimen-title" className="text-h2 font-extrabold">
-              {t('specimenTitle')}
-            </h2>
-            <div className="mt-4 grid gap-6 md:grid-cols-2 md:gap-12">
-              <div className="min-w-0">
-                <p className="text-2xs font-extrabold tracking-[0.1em] text-ink-2 uppercase tabular-nums">
-                  {formatCitation(specimen.bill_type, specimen.bill_number)} ·{' '}
-                  {tShared(`bills.status.${statusLabelKey(specimen)}`)} · {t('specimenOfficial')}
-                </p>
-                <p className="mt-2 font-reading text-lg text-ink-2">
-                  {cutAtWord(specimen.title, 180, '…')}
-                </p>
-              </div>
-              <div className="min-w-0 border-t-[1.5px] border-line pt-4 md:border-t-0 md:border-l-[1.5px] md:pt-0 md:pl-12">
-                <p className="text-2xs font-extrabold tracking-[0.1em] text-ink-2 uppercase">
-                  {t('specimenPlain')}
-                </p>
-                {/* `tint` means DECODED-FOR-YOU: the plain-words half of the pair. */}
-                <p className="mt-2 rounded-control bg-tint p-3 font-reading text-lg text-ink">
-                  {specimen.ai_headline}
-                </p>
-                {aiLine(t('aiSpecimen'))}
-                <Link
-                  href={`/bills/${billSlug(specimen)}`}
-                  className="mt-2 inline-flex min-h-11 items-center gap-1.5 font-semibold text-go underline underline-offset-4 hover:text-go-deep"
-                >
-                  {t('specimenCta')}
-                  <ArrowRight className="h-4 w-4" aria-hidden />
-                </Link>
-              </div>
+          {/* IN THE NEWS (H16): three rows, each saying why it is here, from
+              stored evidence only. Renders nothing when a sync leaves no
+              coverage to feature. Stacked rows here, in its third. Beside the
+              specimen (lg) it takes the specimen's rule and top padding, so
+              the two headings share one rule weight and one top edge (round
+              2); below lg, as before, no rule of its own. */}
+          {news.length > 0 && (
+            <div className={`min-w-0 ${specimen ? 'lg:border-t-[1.5px] lg:border-line-strong lg:pt-6' : ''}`}>
+              <NewsLens bills={news} rows stack={Boolean(specimen)} note={aiLine(t('aiNews'))} />
             </div>
-          </div>
-        </section>
+          )}
+
+          {/* THE OFFICIAL TEXT, DECODED (H07, kept by the owner's mark): the
+              product's core move shown, not told — one real bill's official
+              title, then its plain-words decode, AI-labeled. After the news
+              since option B (live had it beside the hero). */}
+          {specimen && (
+            <section
+              className={`min-w-0 ${news.length > 0 ? 'pt-8 lg:pt-0' : ''}`}
+              aria-labelledby="specimen-title"
+            >
+              <div className="border-t-[1.5px] border-line-strong pt-6">
+                <h2 id="specimen-title" className="text-h2 font-extrabold">
+                  {t('specimenTitle')}
+                </h2>
+                <div className="mt-4 grid gap-6 md:grid-cols-2 md:gap-12">
+                  <div className="min-w-0">
+                    <p className="text-2xs font-extrabold tracking-[0.1em] text-ink-2 uppercase tabular-nums">
+                      {formatCitation(specimen.bill_type, specimen.bill_number)} ·{' '}
+                      {tShared(`bills.status.${statusLabelKey(specimen)}`)} · {t('specimenOfficial')}
+                    </p>
+                    <p className="mt-2 font-reading text-lg text-ink-2">
+                      {cutAtWord(specimen.title, 180, '…')}
+                    </p>
+                  </div>
+                  <div className="min-w-0 border-t-[1.5px] border-line pt-4 md:border-t-0 md:border-l-[1.5px] md:pt-0 md:pl-12">
+                    <p className="text-2xs font-extrabold tracking-[0.1em] text-ink-2 uppercase">
+                      {t('specimenPlain')}
+                    </p>
+                    {/* `tint` means DECODED-FOR-YOU: the plain-words half of the pair. */}
+                    <p className="mt-2 rounded-control bg-tint p-3 font-reading text-lg text-ink">
+                      {specimen.ai_headline}
+                    </p>
+                    {aiLine(t('aiSpecimen'))}
+                    {/* The arrow rides inline at the end of the words (round 3):
+                        the Spanish label wraps in this half-column, and as a
+                        flex sibling the arrow floated at the far right edge. */}
+                    <Link
+                      href={`/bills/${billSlug(specimen)}`}
+                      className="mt-2 inline-flex min-h-11 items-center font-semibold text-go underline underline-offset-4 hover:text-go-deep"
+                    >
+                      <span>
+                        {t('specimenCta')}
+                        <ArrowRight className="ml-1.5 inline h-4 w-4 align-[-0.15em]" aria-hidden />
+                      </span>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
+        </div>
       )}
 
       {/* HOW A CALL WORKS (H17): step titles and times only (the four step
@@ -774,7 +861,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           calm line. A real sequence, so the numbers are information. The
           screencast stays off (H18, cut 2026-09-28; its component and
           strings are kept, unmounted). */}
-      <section className="mx-auto max-w-5xl px-4 pt-10 md:pt-16" aria-labelledby="act-zone">
+      <section className="mx-auto max-w-page px-4 pt-8 md:pt-12" aria-labelledby="act-zone">
         <div className="border-t-[3px] border-ink pt-4">
           <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
             <h2 id="act-zone" className="text-h2 font-extrabold">
@@ -814,13 +901,19 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           <section>. §6 rules unchanged for the support half: gated on the one
           DONATE_URL constant, a link out only, never a payment field here,
           and the not-tax-deductible line is the required truthful framing. */}
-      <div className="mx-auto max-w-5xl px-4 pt-10 pb-8 md:pt-16 md:pb-16">
+      <div className="mx-auto max-w-page px-4 pt-8 pb-8 md:pt-12 md:pb-12">
+        {/* From lg, with all three (layout pass 2026-11-28, round 2): two
+            columns, privacy on the right beside why and support stacked on
+            the left. Privacy's list made it the one long column of three;
+            this way both columns run to about the same depth. Reading and
+            tab order stay why, privacy, support: row one is why | privacy,
+            row two is support. Three across at md, as before. */}
         <div
           className={`grid gap-10 border-t-[3px] border-ink pt-6 md:items-start md:gap-12 ${
-            DONATE_URL ? 'md:grid-cols-3' : 'md:grid-cols-2'
+            DONATE_URL ? 'md:grid-cols-3 lg:grid-cols-2' : 'md:grid-cols-2'
           }`}
         >
-          <section aria-labelledby="why-title">
+          <section aria-labelledby="why-title" className="min-w-0">
             <h2 id="why-title" className="text-h2 font-extrabold">
               {t('whyTitle')}
             </h2>
@@ -833,7 +926,10 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               <ArrowRight className="h-4 w-4" aria-hidden />
             </Link>
           </section>
-          <section aria-labelledby="privacy-title">
+          <section
+            aria-labelledby="privacy-title"
+            className={`min-w-0 ${DONATE_URL ? 'lg:col-start-2 lg:row-span-2' : ''}`}
+          >
             <h2 id="privacy-title" className="text-h2 font-extrabold">
               {t('privacyTitle')}
             </h2>
@@ -857,7 +953,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             </Link>
           </section>
           {DONATE_URL && (
-            <section aria-labelledby="support-title">
+            <section aria-labelledby="support-title" className="min-w-0 lg:col-start-1">
               <h2 id="support-title" className="text-h2 font-extrabold">
                 {t('supportTitle')}
               </h2>

@@ -25,7 +25,28 @@ import { AI_LABEL_TEXT, LICENSE_AI_CONTENT, LICENSE_PUBLIC_DOMAIN, SOURCE } from
  * variants of each, unconditionally of which locale route you're on -
  * a reporter using either language should be able to verify what an
  * EN-locale *and* an ES-locale MCP query actually receive, on the same page.
+ *
+ * THREE ROWS OF TWO (layout pass 2026-11-28, round 3). Below 80rem: one
+ * 33rem column, exactly as before. From 80rem the page sits on the site's
+ * shell, its left edge under the logo; the title runs across the top, then a
+ * grid of two 33rem cells read row by row, left then right, DOM order
+ * unchanged. The cells are paired by height so no row leaves a hole: the
+ * intro beside "Canonical URLs"; "Data as of" beside "Where the data comes
+ * from"; and the long AI-content policy beside Licensing and "Report an
+ * error" stacked in one cell, which together run about as deep (round 2's
+ * newspaper columns sent the reader back up the page; a plain row-by-row
+ * grid left the intro and the AI policy with empty cells beside them). Rows
+ * align to the top, so the sections' top rules line up across each row.
+ * Every sentence keeps its quote or box directly after it in the same
+ * section, so "shown below" stays true; no sentence points to another one.
  */
+
+/** The grid: one column, two across from 80rem (2 × 33rem + a 4rem gap). */
+const SECTIONS =
+  'xl:mt-6 xl:grid xl:max-w-[calc(2*var(--container-read)_+_4rem)] xl:grid-cols-2 xl:items-start xl:gap-x-16 xl:gap-y-12';
+/** One grid cell; the grid's gap replaces its top margin from 80rem. */
+const SECTION_BOX = 'mt-8 min-w-0 xl:mt-0';
+const SECTION = `${SECTION_BOX} border-t border-line pt-6`;
 
 const EXAMPLE_SLUG = 'hr-1787-119'; // the same demo bill the walkthrough + ES spot-check use
 
@@ -85,26 +106,28 @@ export default async function CitationsPage({ params }: { params: Promise<{ loca
   const exampleUrl = absoluteUrl(locale, `/bills/${EXAMPLE_SLUG}`);
 
   return (
-    <article className="mx-auto max-w-read px-4 py-12">
-      {/* one cap on the column, not one per block */}
-      <div className="max-w-read">
-        <h1 className="text-h2-loud font-extrabold">{t('title')}</h1>
-        <p className="mt-4 text-lede text-ink-2">{t('intro')}</p>
-        {/* S12: the intro above already names the MCP server as one of this
+    <article className="mx-auto max-w-read px-4 pt-6 pb-12 md:pt-8 xl:max-w-page">
+      <h1 className="text-h2-loud font-extrabold">{t('title')}</h1>
+      <div className={SECTIONS}>
+        {/* Row 1, left: the intro (its first cell from 80rem). */}
+        <div className="mt-3 min-w-0 xl:mt-0">
+          <p className="text-lede text-ink-2">{t('intro')}</p>
+          {/* S12: the intro above already names the MCP server as one of this
             page's audiences - this is the one link out to its own docs page
             (endpoint, tools, client config, privacy posture), added here
             rather than in the site-wide footer/header (smallest-surface). */}
-        <p className="mt-3 text-sm text-ink-2">
-          {t('mcpNoteBody')}{' '}
-          <Link
-            href="/mcp"
-            className="font-semibold text-go underline underline-offset-2 hover:text-go-deep"
-          >
-            {t('mcpNoteLinkText')} →
-          </Link>
-        </p>
+          <p className="mt-3 text-sm text-ink-2">
+            {t('mcpNoteBody')}{' '}
+            <Link
+              href="/mcp"
+              className="font-semibold text-go underline underline-offset-2 hover:text-go-deep"
+            >
+              {t('mcpNoteLinkText')} →
+            </Link>
+          </p>
+        </div>
 
-        <section className="mt-8 border-t border-line pt-6">
+        <section className={SECTION}>
           <h2 className="text-h3 font-extrabold">{t('urlTitle')}</h2>
           <p className="mt-2">{t('urlBody')}</p>
           <p className="mt-3 text-sm text-ink-2">{t('urlExampleLabel')}</p>
@@ -113,7 +136,7 @@ export default async function CitationsPage({ params }: { params: Promise<{ loca
           </p>
         </section>
 
-        <section className="mt-8 border-t border-line pt-6">
+        <section className={SECTION}>
           <h2 className="text-h3 font-extrabold">{t('asOfTitle')}</h2>
           <p className="mt-2">{t('asOfBody', { asOfField: 'as_of' })}</p>
           <p className="mt-3 rounded-control bg-wash px-4 py-3 text-sm font-semibold tabular-nums">
@@ -121,7 +144,7 @@ export default async function CitationsPage({ params }: { params: Promise<{ loca
           </p>
         </section>
 
-        <section className="mt-8 border-t border-line pt-6">
+        <section className={SECTION}>
           <h2 className="text-h3 font-extrabold">{t('sourceTitle')}</h2>
           <p className="mt-2">{t('sourceBody')}</p>
           <BilingualQuote
@@ -133,7 +156,7 @@ export default async function CitationsPage({ params }: { params: Promise<{ loca
         </section>
 
         {/* `ai-policy` is a public anchor: /glossary's AI label links here. */}
-        <section id="ai-policy" className="mt-8 scroll-mt-8 border-t border-line pt-6">
+        <section id="ai-policy" className={`${SECTION} scroll-mt-8`}>
           <h2 className="text-h3 font-extrabold">{t('aiTitle')}</h2>
           <p className="mt-2">{t('aiBody')}</p>
           <BilingualQuote
@@ -150,54 +173,58 @@ export default async function CitationsPage({ params }: { params: Promise<{ loca
           </p>
         </section>
 
-        <section className="mt-8 border-t border-line pt-6">
-          <h2 className="text-h3 font-extrabold">{t('licenseTitle')}</h2>
-          <dl className="mt-2 space-y-4 text-sm">
-            <div>
-              <dt className="font-semibold text-ink-2">{t('licenseOfficialLabel')}</dt>
-              <dd>
-                <BilingualQuote
-                  en={LICENSE_PUBLIC_DOMAIN.en}
-                  es={LICENSE_PUBLIC_DOMAIN.es}
-                  langEnglish={t('langEnglish')}
-                  langSpanish={t('langSpanish')}
-                />
-              </dd>
-            </div>
-            <div>
-              <dt className="font-semibold text-ink-2">{t('licenseAiLabel')}</dt>
-              <dd>
-                <BilingualQuote
-                  en={LICENSE_AI_CONTENT.en}
-                  es={LICENSE_AI_CONTENT.es}
-                  langEnglish={t('langEnglish')}
-                  langSpanish={t('langSpanish')}
-                />
-              </dd>
-            </div>
-          </dl>
-          <p className="mt-4 text-sm text-ink-2">{t('licenseCoverage')}</p>
-        </section>
+        {/* Row 3, right: Licensing and "Report an error" share one cell,
+            beside the AI-content policy. */}
+        <div className="min-w-0">
+          <section className={SECTION}>
+            <h2 className="text-h3 font-extrabold">{t('licenseTitle')}</h2>
+            <dl className="mt-2 space-y-4 text-sm">
+              <div>
+                <dt className="font-semibold text-ink-2">{t('licenseOfficialLabel')}</dt>
+                <dd>
+                  <BilingualQuote
+                    en={LICENSE_PUBLIC_DOMAIN.en}
+                    es={LICENSE_PUBLIC_DOMAIN.es}
+                    langEnglish={t('langEnglish')}
+                    langSpanish={t('langSpanish')}
+                  />
+                </dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-ink-2">{t('licenseAiLabel')}</dt>
+                <dd>
+                  <BilingualQuote
+                    en={LICENSE_AI_CONTENT.en}
+                    es={LICENSE_AI_CONTENT.es}
+                    langEnglish={t('langEnglish')}
+                    langSpanish={t('langSpanish')}
+                  />
+                </dd>
+              </div>
+            </dl>
+            <p className="mt-4 text-sm text-ink-2">{t('licenseCoverage')}</p>
+          </section>
 
-        {/* The one thing on this page a reader DOES: report an error. It is an
+          {/* The one thing on this page a reader DOES: report an error. It is an
             action, so it is the page's one green control. */}
-        <section className="mt-8 rounded-control bg-wash p-6">
-          <h2 className="text-h3 font-extrabold">{t('correctionTitle')}</h2>
-          <p className="mt-2">{t('correctionBody')}</p>
-          {/* The site's public contact address, the one /about and /partners
+          <section className="mt-8 min-w-0 rounded-control bg-wash p-6">
+            <h2 className="text-h3 font-extrabold">{t('correctionTitle')}</h2>
+            <p className="mt-2">{t('correctionBody')}</p>
+            {/* The site's public contact address, the one /about and /partners
               name. The beta feedback form this used to point at was removed
               on 2026-09-28. */}
-          <a
-            href="mailto:hello@oravan.org"
-            className="ring-edge mt-4 inline-flex min-h-12 items-center rounded-control border-2 border-ink bg-urgent px-5 font-bold text-ink no-underline hover:bg-urgent-deep"
-          >
-            {t('correctionLinkText')}
-          </a>
+            <a
+              href="mailto:hello@oravan.org"
+              className="ring-edge mt-4 inline-flex min-h-12 items-center rounded-control border-2 border-ink bg-urgent px-5 font-bold text-ink no-underline hover:bg-urgent-deep"
+            >
+              {t('correctionLinkText')}
+            </a>
 
-          <h3 className="mt-6 text-xl font-extrabold">{t('whenConfirmedTitle')}</h3>
-          <p className="mt-2">{t('whenConfirmedBody', { asOfField: 'as_of' })}</p>
-          <p className="mt-3 text-sm text-ink-2">{t('backlogNote')}</p>
-        </section>
+            <h3 className="mt-6 text-xl font-extrabold">{t('whenConfirmedTitle')}</h3>
+            <p className="mt-2">{t('whenConfirmedBody', { asOfField: 'as_of' })}</p>
+            <p className="mt-3 text-sm text-ink-2">{t('backlogNote')}</p>
+          </section>
+        </div>
       </div>
     </article>
   );

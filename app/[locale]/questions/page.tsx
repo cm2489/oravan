@@ -11,6 +11,7 @@ import { latestVehicleAction, momentDek, momentStatus } from '@/lib/moments-ui';
 import { latestUpdateDay } from '@/lib/moment-updates';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
+import { INTRO_ROW } from '@/lib/layout';
 
 const localeText = (l: { en: string; es: string }, locale: string): string =>
   locale === 'es' ? l.es : l.en;
@@ -33,6 +34,34 @@ function toTeaser(m: MomentWithState, locale: string): MomentTeaser {
     state: m.state,
     status: momentStatus(m.vehicles).lead,
   };
+}
+
+/*
+ * THE CARD GRID OF THIS LIST (layout pass round 3, 2026-11-28). The site's
+ * card grid (CARD_GRID, lib/layout.ts: one column on a phone, two from 40rem,
+ * three from 80rem, 16px gaps) written on six tracks from 80rem, so a short
+ * last row can still run edge to edge: a card takes two tracks, and the cards
+ * of a last row that would leave an empty slot take three, two to a row. A
+ * row of three, then rows of two, never a lonely third slot. From 40rem to
+ * 1279 an odd last card takes the whole row. Each card spans three rows of
+ * this grid as its own (components/MomentCard.tsx), so the cards in a row
+ * are one height with their status rules level.
+ */
+const QUESTION_GRID = 'grid gap-4 sm:grid-cols-2 xl:grid-cols-6';
+
+/** The width of card `i` of `n`, by the rule above. Literal class names, so
+ *  the stylesheet keeps every one. */
+function cardSpan(i: number, n: number): string {
+  const last = i === n - 1;
+  const sm = n % 2 === 1 && last ? 'sm:col-span-2' : '';
+  const r = n % 3;
+  const xl =
+    n === 1
+      ? 'xl:col-span-6'
+      : (r === 2 && i >= n - 2) || (r === 1 && i >= n - 4)
+        ? 'xl:col-span-3'
+        : 'xl:col-span-2';
+  return `${sm} ${xl}`.trim();
 }
 
 export async function generateMetadata({
@@ -72,42 +101,73 @@ export default async function MomentsPage({ params }: { params: Promise<{ locale
   const settled = all.filter((m) => m.state === 'settled');
 
   return (
-    <div className="mx-auto max-w-5xl px-4 pt-12 pb-16">
-      <h1 className="text-h1-bill font-extrabold text-ink">{t('moments.indexTitle')}</h1>
-      <p className="mt-4 max-w-read text-lede text-ink-2">{t('moments.indexSub')}</p>
-      <p className="mt-3 max-w-read text-xs text-ink-2">
-        {dataAsOf}
-        <StalenessNote checkedAt={freshness.checkedAt} />
-      </p>
-      {/* AI labeled at first contact: every dek below is the first sentence
-          of an AI-drafted summary, so the label sits above the grid. */}
-      <p className="mt-5">
-        <Chip tone="ai" marker={t('common.aiMarker')} className="max-w-read">
-          {t('moments.aiNote')}
-        </Chip>
-      </p>
-      {/* The privacy line (v2 spec §7): threaded through, never a banner. It
-          sits beside the AI note because the two are the same disclosure —
-          here is what a machine wrote, and here is what nobody recorded about
-          you reading it. Stated once, in ink, in the calm register: no
-          "unlike them", no adversary, no claim about any named competitor. */}
-      <p className="mt-3 max-w-read text-sm text-ink-2">{t('moments.updates.privacyNote')}</p>
+    <div className="mx-auto max-w-page px-4 pt-6 pb-12 md:pt-8">
+      {/* THE INTRO ROW (layout pass 2026-11-28, INTRO_ROW in lib/layout.ts):
+          from 64rem the title and its sub sit left and the page's small print
+          (data date, AI note, privacy line) sits right, so the first row of
+          cards starts on the first screen of a laptop. Below 64rem the two
+          wrappers stack in source order, exactly as before. */}
+      <div className={INTRO_ROW}>
+        <div className="min-w-0">
+          <h1 className="text-h1-bill font-extrabold text-ink">{t('moments.indexTitle')}</h1>
+          <p className="mt-3 max-w-read text-lede text-ink-2">{t('moments.indexSub')}</p>
+        </div>
+        <div className="min-w-0">
+          <p className="mt-2 max-w-read text-xs text-ink-2 lg:mt-0">
+            {dataAsOf}
+            <StalenessNote checkedAt={freshness.checkedAt} />
+          </p>
+          {/* AI labeled at first contact: every dek below is the first sentence
+              of an AI-drafted summary, so the label sits above the grid. */}
+          <p className="mt-4">
+            <Chip tone="ai" marker={t('common.aiMarker')} className="max-w-read">
+              {t('moments.aiNote')}
+            </Chip>
+          </p>
+          {/* The privacy line (v2 spec §7): threaded through, never a banner. It
+              sits beside the AI note because the two are the same disclosure —
+              here is what a machine wrote, and here is what nobody recorded about
+              you reading it. Stated once, in ink, in the calm register: no
+              "unlike them", no adversary, no claim about any named competitor. */}
+          <p className="mt-3 max-w-read text-sm text-ink-2">{t('moments.updates.privacyNote')}</p>
+        </div>
+      </div>
 
       {/* The section that asks something of the reader takes the full 3px ink
           rule; the record below it takes a hairline. `line` is a separator
-          tone, never a component edge. */}
-      <section className="mt-12 border-t-[3px] border-ink pt-4" aria-labelledby="moments-live">
-        <h2 id="moments-live" className="text-h2 font-extrabold text-ink">
-          {t('moments.liveHeading')}
-        </h2>
-        <p className="mt-2 max-w-read text-sm text-ink-2">{t('moments.liveSub')}</p>
+          tone, never a component edge. From 64rem the heading and its one-line
+          sub share a row, and the cards run three across from 80rem
+          (QUESTION_GRID above), so a laptop's first screen holds a full row
+          of them, every card in a row the same height. */}
+      <section className="mt-8 border-t-[3px] border-ink pt-4" aria-labelledby="moments-live">
+        <div className="lg:flex lg:flex-wrap lg:items-baseline lg:gap-x-4">
+          <h2 id="moments-live" className="text-h2 font-extrabold text-ink">
+            {t('moments.liveHeading')}
+          </h2>
+          <p className="mt-1 max-w-read text-sm text-ink-2 lg:mt-0">{t('moments.liveSub')}</p>
+        </div>
 
+        {/* Scarcity note (spec §4.3 / mockup annotation 6): the cap keeps
+            curation honest — the count is the moments actually reading as
+            live right now, which is exactly the grid it closes. It follows
+            the last card at every width (layout pass round 3, 2026-11-28: in
+            round 2 it sat alone in a short last row's free slot, and the
+            grid now ends on a full row instead). Suppressed at zero, where
+            the empty state has already said the same thing in words and
+            "never more than 6" would be a boast about an empty shelf; the
+            homepage band takes the same posture, disappearing rather than
+            printing a nought. */}
         {live.length > 0 ? (
-          <div className="mt-6 grid gap-4 sm:grid-cols-2">
-            {live.map((m) => (
-              <MomentCard key={m.id} moment={toTeaser(m, locale)} />
-            ))}
-          </div>
+          <>
+            <div className={`mt-4 ${QUESTION_GRID}`}>
+              {live.map((m, i) => (
+                <MomentCard key={m.id} moment={toTeaser(m, locale)} className={cardSpan(i, live.length)} />
+              ))}
+            </div>
+            <p className="mt-4 max-w-read text-sm text-ink-2">
+              {t('moments.scarcityNote', { count: live.length, cap: LIVE_CAP })}
+            </p>
+          </>
         ) : (
           /* Opened by the same 3px ink rule that opens a section — the page
              already knows that mark means "stop and read this". A wash
@@ -127,32 +187,19 @@ export default async function MomentsPage({ params }: { params: Promise<{ locale
             </p>
           </div>
         )}
-
-        {/* Scarcity note (spec §4.3 / mockup annotation 6): the cap keeps
-            curation honest — the count is the moments actually reading as
-            live right now, which is now exactly the grid above it. Suppressed
-            at zero, where the empty state has already said the same thing in
-            words and "never more than 6" would be a boast about an empty
-            shelf; the homepage band takes the same posture, disappearing
-            rather than printing a nought. */}
-        {live.length > 0 && (
-          <p className="mt-6 max-w-read text-sm text-ink-2">
-            {t('moments.scarcityNote', { count: live.length, cap: LIVE_CAP })}
-          </p>
-        )}
       </section>
 
       {settled.length > 0 && (
-        <section className="mt-12 border-t border-line pt-4" aria-labelledby="moments-settled">
+        <section className="mt-8 border-t border-line pt-4" aria-labelledby="moments-settled">
           <h2 id="moments-settled" className="text-h3 font-bold text-ink-2">
             {t('moments.settledHeading')}
           </h2>
           <p className="mt-2 max-w-read text-sm text-ink-2">{t('moments.settledSub')}</p>
           {/* No opacity dimmer: quieter is carried by the heading's weight and
               the hairline rule, never by washing out real text. */}
-          <div className="mt-6 grid gap-4 sm:grid-cols-2">
-            {settled.map((m) => (
-              <MomentCard key={m.id} moment={toTeaser(m, locale)} />
+          <div className={`mt-4 ${QUESTION_GRID}`}>
+            {settled.map((m, i) => (
+              <MomentCard key={m.id} moment={toTeaser(m, locale)} className={cardSpan(i, settled.length)} />
             ))}
           </div>
         </section>
@@ -160,27 +207,30 @@ export default async function MomentsPage({ params }: { params: Promise<{ locale
 
       {/* Criteria explainer — the mockup's "How Moments get made →" link
           (spec §3.1) points here: this page is the criteria's one home. */}
-      <section id="how" className="mt-12 border-t border-line pt-4" aria-labelledby="how-heading">
+      <section id="how" className="mt-8 border-t border-line pt-4" aria-labelledby="how-heading">
         <h2 id="how-heading" className="text-h3 font-bold text-ink">
           {t('moments.howMadeHeading')}
         </h2>
         <p className="mt-3 max-w-read text-sm text-ink-2">{t('moments.howMadeBody')}</p>
-        {/* A ruled list, which is how a document states terms — not bullets. */}
-        <ul className="mt-5 max-w-read list-none">
-          <li className="border-t border-line-strong py-3 text-sm text-ink-2">{t('moments.howMadeRule1')}</li>
+        {/* A ruled list, which is how a document states terms — not bullets.
+            From 64rem the four rules sit two by two, each at the reading
+            measure (layout pass 2026-11-28). The body above still introduces
+            them, so its "every rule below" stays true. */}
+        <ul className="mt-5 list-none lg:grid lg:grid-cols-2 lg:gap-x-16">
+          <li className="max-w-read min-w-0 border-t border-line-strong py-3 text-sm text-ink-2">{t('moments.howMadeRule1')}</li>
           {/* Rule 2 is the one place in the whole product where "cloture" and
               "the Senate Executive Calendar" are already written into
               hand-authored copy, so it is the glossary's first wiring site
               (issue #181). The tags carry the link INSIDE the sentence; the
               sentence itself is unchanged in both languages. */}
-          <li className="border-t border-line-strong py-3 text-sm text-ink-2">
+          <li className="max-w-read min-w-0 border-t border-line-strong py-3 text-sm text-ink-2">
             {t.rich('moments.howMadeRule2', {
               cloture: glossaryTag('cloture'),
               execCalendar: glossaryTag('executive-calendar'),
             })}
           </li>
-          <li className="border-t border-line-strong py-3 text-sm text-ink-2">{t('moments.howMadeRule3')}</li>
-          <li className="border-t border-line-strong py-3 text-sm text-ink-2">{t('moments.howMadeRule4')}</li>
+          <li className="max-w-read min-w-0 border-t border-line-strong py-3 text-sm text-ink-2">{t('moments.howMadeRule3')}</li>
+          <li className="max-w-read min-w-0 border-t border-line-strong py-3 text-sm text-ink-2">{t('moments.howMadeRule4')}</li>
         </ul>
       </section>
     </div>

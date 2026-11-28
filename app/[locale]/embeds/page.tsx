@@ -48,7 +48,7 @@ export default async function EmbedsPage({ params }: { params: Promise<{ locale:
   const feeds = feedPaths(locale);
 
   return (
-    <article className="mx-auto max-w-5xl px-4 py-12">
+    <article className="mx-auto max-w-page px-4 py-12">
       <h1 className="text-h1-bill font-extrabold">{t('title')}</h1>
       <p className="mt-6 max-w-read text-lede text-ink-2">{t('intro')}</p>
 

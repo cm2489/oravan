@@ -200,7 +200,7 @@ export function RepsLookup({ initial, legacy, preview, switchboard, continuation
     <ZipForm autoFocus={autoFocus} formAction={formAction} onSaved={(zip) => void lookup({ zip }, 'replace')} />
   );
   const prompt = (
-    <div className="max-w-xl rounded-control border-[1.5px] border-line-strong bg-paper p-6">
+    <div className="max-w-xl min-w-0 rounded-control border-[1.5px] border-line-strong bg-paper p-6 lg:max-w-none">
       <p className="mb-4 text-lg font-bold">{t('noZip')}</p>
       {/* No autofocus when an erase on this page brought the prompt back:
           the reader's focus stays on the erase's own confirmation. */}
@@ -213,8 +213,13 @@ export function RepsLookup({ initial, legacy, preview, switchboard, continuation
       /* A SAVED ZIP ANSWERS THIS PROMPT ON ITS OWN (owner, Q8 "a",
          2026-09-28): SavedZipLookup reads it in the browser and looks it up.
          `?change=1` is the "Change ZIP code" link's way in, so there the
-         prompt stays put and the saved ZIP only pre-fills it. */
-      <div className="mt-8">
+         prompt stays put and the saved ZIP only pre-fills it.
+         From 64rem (layout pass 2026-11-28, round 2): the prompt fills a
+         wide first column, the preview's note stands in a 22rem column
+         beside it, and the ghost cards span both (the preview's own
+         classes, app/[locale]/reps/page.tsx). DOM order: prompt, note,
+         ghosts, as on a phone. */
+      <div className="mt-8 lg:grid lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-x-12">
         {asking ? (
           prompt
         ) : (
@@ -301,13 +306,15 @@ export function RepsLookup({ initial, legacy, preview, switchboard, continuation
       {districts.map((d) => {
         const noSenators = d.reps.every((r) => r.type !== 'sen');
         return (
-          <section key={`${d.state}-${d.district}`} className="mt-12" aria-label={`${d.state} ${d.district}`}>
+          <section key={`${d.state}-${d.district}`} className="mt-8" aria-label={`${d.state} ${d.district}`}>
             <h2 className="text-h2 font-extrabold">
               {d.district === 0
                 ? t('atLargeHeading', { state: d.state })
                 : t('districtHeading', { state: d.state, district: d.district })}
             </h2>
             {noSenators && <p className={`mt-4 max-w-read ${NOTE}`}>{t('delegateNote', { state: d.state })}</p>}
+            {/* Three across from 48rem, across the page's full width;
+                one on a phone (as before the layout pass of 2026-11-28). */}
             <div className="mt-4 grid gap-4 md:grid-cols-3">
               {d.reps.map((r) => (
                 <RepCard key={r.bioguide} rep={r} />

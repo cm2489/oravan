@@ -117,6 +117,20 @@ const POSITION_TERM: Record<VotePosition, GlossaryTermId> = {
 /** The words behind which a card prints the bill page's own sentence. */
 const SETTLED_SENTENCE: ReadonlySet<StatusWord> = new Set(['rejected', 'vetoed', 'agreed']);
 
+/** The first cards when more are folded: from 80rem the list spans both
+ *  rows of the shared three-column grid and lays its cards on that grid's
+ *  own tracks, so the disclosure can stand in the sixth slot. */
+const FOLD_LIST =
+  'mt-4 grid min-w-0 gap-4 lg:grid-cols-2 xl:col-span-3 xl:row-span-2 xl:mt-0 xl:grid-cols-subgrid xl:grid-rows-subgrid';
+
+/** The closed disclosure from 80rem: a framed tile in the sixth slot (column
+ *  3, row 2), stretched to the row's height. Open, it takes its own row
+ *  under the cards, full width, with the plain top rule it has below 80rem. */
+const FOLD_TILE =
+  'xl:col-start-3 xl:row-start-2 xl:mt-0 xl:min-w-0 xl:rounded-control xl:border xl:border-line-strong xl:p-5 ' +
+  'xl:open:col-[1/-1] xl:open:row-start-3 xl:open:rounded-none xl:open:border-x-0 xl:open:border-b-0 ' +
+  'xl:open:border-line xl:open:p-0 xl:open:pt-2';
+
 /** Hidden while "Big Questions" is the checked filter (see the header). */
 const HIDE_UNDER_BQ = 'group-has-[#member-votes-bq:checked]/votes:hidden';
 
@@ -349,6 +363,7 @@ export async function MemberVotes({
   const olderBills = groups.length - listed.length;
   const shown = listed.slice(0, SHOWN);
   const rest = listed.slice(SHOWN);
+  const fold = rest.length > 0;
   // Every Big Question vehicle the record lists them on, capped or not, so
   // the filter's count is every such bill; the ones not already open in the
   // first batch get the second list.
@@ -359,7 +374,7 @@ export async function MemberVotes({
     <section
       id="votes"
       aria-labelledby="rep-votes"
-      className="group/votes mt-12 first:mt-0"
+      className="group/votes mt-8 first:mt-0"
       data-member-votes=""
     >
       <div className="border-t-[3px] border-ink pt-4">
@@ -406,18 +421,36 @@ export async function MemberVotes({
               {t('votesAiNote')}
             </Chip>
           </p>
-          <ol className="mt-4 grid gap-4">{shown.map((g) => card(g))}</ol>
-          {rest.length > 0 && (
-            <details className={`mt-4 border-t border-line pt-2 ${HIDE_UNDER_BQ}`} data-member-votes-all="">
-              <summary className="flex min-h-11 cursor-pointer items-center text-sm font-bold select-none">
-                {t('votesShowMore', { count: formatCount(rest.length, locale) })}
-              </summary>
-              <ol className="mt-2 grid gap-4">{rest.map((g) => card(g))}</ol>
-            </details>
-          )}
+          {/* Two cards across from 64rem, three from 80rem (layout pass
+              2026-11-28, round 2): the record runs the page's full width
+              under the header and the call card. One column on a phone, as
+              before. The list order reads row by row.
+              THE SIXTH SLOT (round 3). SHOWN is five (member.html), so at
+              three across the second row ended on an empty slot about 395
+              by 440. When more bills are folded, the cards and the "Show N
+              more" disclosure share one three-column grid from 80rem: the
+              list takes both rows on the grid's own tracks (subgrid), and
+              the closed disclosure stands in the sixth slot as a framed
+              tile, level with the cards beside it. Opened, it moves to its
+              own row under the cards, full width, and its cards run three
+              across as before. The DOM order is unchanged: cards, then the
+              disclosure. */}
+          <div className={fold ? 'xl:mt-4 xl:grid xl:grid-cols-3 xl:gap-4' : undefined}>
+            <ol className={fold ? FOLD_LIST : 'mt-4 grid gap-4 lg:grid-cols-2 xl:grid-cols-3'}>
+              {shown.map((g) => card(g))}
+            </ol>
+            {fold && (
+              <details className={`mt-4 border-t border-line pt-2 ${HIDE_UNDER_BQ} ${FOLD_TILE}`} data-member-votes-all="">
+                <summary className="flex min-h-11 cursor-pointer items-center text-sm font-bold select-none">
+                  {t('votesShowMore', { count: formatCount(rest.length, locale) })}
+                </summary>
+                <ol className="mt-2 grid gap-4 lg:grid-cols-2 xl:grid-cols-3">{rest.map((g) => card(g))}</ol>
+              </details>
+            )}
+          </div>
           {bqFolded.length > 0 && (
             <ol
-              className="mt-4 hidden gap-4 group-has-[#member-votes-bq:checked]/votes:grid"
+              className="mt-4 hidden gap-4 group-has-[#member-votes-bq:checked]/votes:grid lg:grid-cols-2 xl:grid-cols-3"
               data-member-votes-bq=""
             >
               {bqFolded.map((g) => card(g, true))}
