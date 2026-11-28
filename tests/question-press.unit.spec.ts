@@ -1608,7 +1608,8 @@ test.describe('the daily digest: is the collector recording anything?', () => {
       today: day,
     });
   const SEARCHABLE = ['iran-war-powers', 'paying-college-athletes'];
-  const codes = (report: Record<string, unknown>) => alarms(report).map((x: { code: string }) => x.code);
+  const codes = (report: Record<string, unknown>, opts = { coverageBoxOn: true }) =>
+    alarms(report, opts).map((x: { code: string }) => x.code);
 
   test("the alarm window is the gate's lateness warning, plus one: both speak up on the same day", () => {
     expect(QUESTION_PRESS_SILENT_DAYS).toBe(3);
@@ -1642,10 +1643,12 @@ test.describe('the daily digest: is the collector recording anything?', () => {
 
   test('silent: a ⛔ that names the last recorded day and says where the reason is', () => {
     const a = questionPressActivity({ data: checked('2026-09-21'), searchableIds: SEARCHABLE, now: at(TODAY) });
-    const raised = alarms({ questionPress: a }).find((x: { code: string }) => x.code === 'question-press-silent');
+    const raised = alarms({ questionPress: a }, { coverageBoxOn: true }).find((x: { code: string }) => x.code === 'question-press-silent');
     expect(raised?.text).toMatch(/recorded no check since 2026-09-21 — 4d, past the 3-day alarm; its runs stay green on every GDELT outcome/);
-    const rendered = formatHealthSection({ questionPress: a, alarms: alarms({ questionPress: a }) });
+    const rendered = formatHealthSection({ questionPress: a, alarms: alarms({ questionPress: a }, { coverageBoxOn: true }) });
     expect(rendered).toContain('⛔ the Big Question press collector (GDELT) has recorded no check since 2026-09-21');
+    // Default (COVERAGE_BOX_ON === false) suppresses the alarm while question-press.yml is paused.
+    expect(alarms({ questionPress: a }).find((x: { code: string }) => x.code === 'question-press-silent')).toBeUndefined();
   });
 
   test('no file yet: quiet while the collector is new, a ⛔ once it has run for the alarm window without recording anything', () => {
@@ -1654,7 +1657,7 @@ test.describe('the daily digest: is the collector recording anything?', () => {
     expect(questionPressActivity({ data: null, searchableIds: SEARCHABLE, now: at(TODAY), firstRunAt: null })).toMatchObject({ silent: false });
     const never = questionPressActivity({ data: null, searchableIds: SEARCHABLE, now: at(TODAY), firstRunAt: runningFor(4) });
     expect(never).toMatchObject({ silent: true, never: true, lastChecked: null, onRecord: 0 });
-    expect(alarms({ questionPress: never }).find((x: { code: string }) => x.code === 'question-press-silent')?.text).toMatch(/running for 4d and has never recorded a check/);
+    expect(alarms({ questionPress: never }, { coverageBoxOn: true }).find((x: { code: string }) => x.code === 'question-press-silent')?.text).toMatch(/running for 4d and has never recorded a check/);
     expect(formatHealthSection({ questionPress: never })).toMatch(/question press\s+no check recorded yet \(collector runs seen for 4d\) · 0\/2 questions on record/);
   });
 
@@ -1761,11 +1764,9 @@ test.describe('boundaries', () => {
     expect(commit).not.toMatch(/git add data\/\s*$/m);
     expect(commit).toMatch(/git rebase origin\/main/);
     expect(yml.indexOf('run: node scripts/gdelt-intake.mjs')).toBeLessThan(yml.indexOf('- name: Commit data'));
-    // twice a day, never on the hour or half hour
-    const crons = [...yml.matchAll(/-\s*cron:\s*'(\d+)\s+([\d,]+)\s/g)];
-    expect(crons).toHaveLength(1);
-    expect(Number(crons[0][1]) % 30).not.toBe(0);
-    expect(crons[0][2].split(',')).toHaveLength(2);
+    // schedule is paused while COVERAGE_BOX_ON is false; manual dispatch remains enabled.
+    expect(yml).not.toMatch(/^\s*-\s*cron:/m);
+    expect(yml).toMatch(/^\s*workflow_dispatch:/m);
     expect(readFileSync(join(ROOT, '.gitignore'), 'utf8')).toMatch(/^\.gdelt-state\/$/m);
   });
 

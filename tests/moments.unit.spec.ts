@@ -722,6 +722,21 @@ test.describe('checkMoments (fixtures)', () => {
     expect(v2.some((x: string) => x.includes('press signal needs'))).toBe(true);
   });
 
+  test('a press signal counts distinct news outlets, not links: same host twice, www. twins and .gov pages do not make two', () => {
+    const press = (refs: string[]) => {
+      const m = validMoment() as Record<string, unknown>;
+      m.qualifying_signal = { type: 'press', refs };
+      return run({ m }).violations.some((x: string) => x.includes('press signal needs'));
+    };
+    expect(press(['https://example.com/one', 'https://example.com/two'])).toBe(true);
+    expect(press(['https://www.example.com/one', 'https://example.com/two'])).toBe(true);
+    expect(
+      press(['https://example.com/one', 'https://www.congress.gov/bill/119th-congress/house-bill/1/all-actions'])
+    ).toBe(true);
+    expect(press(['https://example.com/one', 'https://www.senate.gov/x'])).toBe(true);
+    expect(press(['https://example.com/one', 'https://news.example.org/two'])).toBe(false);
+  });
+
   test('a standing topic cites its bills on congress.gov, and nothing else', () => {
     const standing = validMoment() as Record<string, unknown>;
     standing.qualifying_signal = {

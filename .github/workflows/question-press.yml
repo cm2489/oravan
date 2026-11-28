@@ -59,8 +59,9 @@ name: Big Question press counts
 # (GDELT_RUN_DEADLINE_MS) and at 15 by the job.
 
 on:
-  schedule:
-    - cron: '43 2,14 * * *'
+  # Paused 2026-11-26 while COVERAGE_BOX_ON is false (previously cron '43 2,14 * * *':
+  # 02:43 UTC / 9:43 PM ET previous day & 14:43 UTC / 9:43 AM ET during EST).
+  # Keep workflow_dispatch for manual runs when coverage/press work resumes.
   workflow_dispatch:
 
 permissions:

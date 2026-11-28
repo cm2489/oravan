@@ -472,6 +472,14 @@ test.describe('the step in the nightly workflow', () => {
     expect(yml.indexOf('- name: Read identical bills from the record')).toBeLessThan(yml.indexOf('run: node scripts/verify-sync.mjs'));
   });
 
+  test('runs on every scheduled night, switch or no switch: the health report raises related-bills-stale after 3 days without it', () => {
+    // The 2026-11-26 coverage pause gated the backfill and sync steps on a
+    // manual input. This step reads no ratings and costs $0, and the daily
+    // health report alarms on a skipped run (lib/related-bills.mjs), so it
+    // must carry no `if:` that a scheduled run fails.
+    expect(step).not.toMatch(/\n\s+if:/);
+  });
+
   test("the script's own worst case ends well inside the 8 minutes, and 8 minutes plus the kill grace inside the 10", () => {
     const src = readFileSync(SCRIPT, 'utf8');
     const num = (name: string) => Number(src.match(new RegExp(`envNum\\('${name}', ([\\d_]+)\\)`))![1].replace(/_/g, ''));
