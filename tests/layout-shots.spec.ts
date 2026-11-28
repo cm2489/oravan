@@ -1,9 +1,13 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
-import { billSlug, getAllBills } from '../lib/core';
+import { billSlug, getAllBills, getAllLegislators } from '../lib/core';
+import { questionHasPanel } from '../lib/call-tab';
 import { settledDecision } from '../lib/journey';
 import { getMoments } from '../lib/moments';
+import { questionVehicles } from '../lib/moments-ui';
+import { briefWindow, daySummary, shiftDate } from '../lib/today';
+import { MEMBER_VOTES_MAX_BILLS, memberVotesByBill } from '../lib/votes';
 import { callableBillSlug } from './corpus-samples';
 
 /*
@@ -54,17 +58,81 @@ const BILL = (() => {
   }
 })();
 
+// The busiest dated brief: the date in the brief window whose page prints the
+// most roll-call cards. /today/{date} prints two days, that date and the day
+// before (lib/today.ts buildBrief), each day's roll calls read through the
+// same dayOf that daySummary counts. Ties go to the newer date. Null when no
+// page in the window prints a roll call.
+const TODAY_BUSY = (() => {
+  try {
+    let best: string | null = null;
+    let most = 0;
+    for (const date of briefWindow()) {
+      const cards = daySummary(date).votes + daySummary(shiftDate(date, -1)).votes;
+      if (cards > most) {
+        best = date;
+        most = cards;
+      }
+    }
+    return best;
+  } catch {
+    return null;
+  }
+})();
+
+// A live Big Question with exactly one open bill, so the page carries the
+// bill's own call panel rather than the "Still open" list: the page's own
+// test (questionVehicles' `open`, then questionHasPanel). College athletes
+// when it qualifies.
+const QUESTION_ONE = (() => {
+  try {
+    const live = getMoments().filter((m) => m.state === 'live');
+    const onePanel = (m: (typeof live)[number]) =>
+      questionHasPanel(questionVehicles(m).filter((v) => v.open).map((v) => v.kind));
+    const named = live.find((m) => m.id === 'paying-college-athletes' && onePanel(m));
+    return (named ?? live.find(onePanel))?.id ?? null;
+  } catch {
+    return null;
+  }
+})();
+
+// A sitting senator whose page lists the most votes. The member page prints
+// one row (the newest vote) per bill, newest MEMBER_VOTES_MAX_BILLS bills
+// (components/MemberVotes.tsx over lib/votes.ts memberVotesByBill); ties go
+// to more bills on file, then the bioguide id, so the pick is stable.
+const MEMBER = (() => {
+  try {
+    const ranked = getAllLegislators()
+      .filter((l) => l.type === 'sen')
+      .map((l) => {
+        const bills = memberVotesByBill(l.bioguide).length;
+        return { id: l.bioguide, shown: Math.min(bills, MEMBER_VOTES_MAX_BILLS), bills };
+      })
+      .sort((a, b) => b.shown - a.shown || b.bills - a.bills || a.id.localeCompare(b.id));
+    return ranked[0]?.id ?? null;
+  } catch {
+    return null;
+  }
+})();
+
 const PAGES: { name: string; path: string | null }[] = [
   { name: 'home-en', path: '/' },
   { name: 'today-en', path: '/today' },
+  { name: 'today-busy-en', path: TODAY_BUSY ? `/today/${TODAY_BUSY}` : null },
   { name: 'questions-en', path: '/questions' },
   { name: 'question-en', path: QUESTION ? `/questions/${QUESTION}` : null },
+  { name: 'question-one-en', path: QUESTION_ONE ? `/questions/${QUESTION_ONE}` : null },
   { name: 'bills-en', path: '/bills' },
   { name: 'bill-en', path: BILL ? `/bills/${BILL}` : null },
   { name: 'reps-en', path: '/reps' },
+  { name: 'member-en', path: MEMBER ? `/reps/${MEMBER}` : null },
+  { name: 'glossary-en', path: '/glossary' },
+  { name: 'privacy-en', path: '/privacy' },
   { name: 'about-en', path: '/about' },
   { name: 'home-es', path: '/es' },
   { name: 'today-es', path: '/es/today' },
+  { name: 'question-es', path: QUESTION ? `/es/questions/${QUESTION}` : null },
+  { name: 'bill-es', path: BILL ? `/es/bills/${BILL}` : null },
 ];
 
 const DESKTOP_SIZES = [
