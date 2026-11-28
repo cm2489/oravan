@@ -6,6 +6,7 @@ import {
   extractBillStructure,
   isStruckTag,
   prepareBillForDecode,
+  stripDeletedMarkers,
 } from '../lib/bill-text-clean.mjs';
 import { decodeBill } from '../scripts/bill-decode.mjs';
 
@@ -30,6 +31,13 @@ import { decodeBill } from '../scripts/bill-decode.mjs';
  *   tests/fixtures/bill-xml/BILLS-118hr4366enr.cut.xml  H.R. 4366 as enrolled:
  *     sections 1 and 2 (the bill's own table of contents) and the opening of
  *     every one of its seven divisions.
+ *   tests/fixtures/bill-xml/BILLS-118s1409rs.cut.htm  S. 1409 as reported, the
+ *     "Formatted Text" (HTML) copy GPO and Congress.gov serve (check 2 of #581
+ *     found the two byte-identical): its cover, the struck original's
+ *     sections 1 and the opening of 2 and 15 (escaped `&lt;DELETED&gt;`
+ *     markers, including the struck table of contents whose lines open a
+ *     marker and never close it), then the substitute's sections 1 and the
+ *     opening of 2.
  */
 
 const fixture = (name: string) => readFileSync(join(process.cwd(), 'tests/fixtures/bill-xml', name), 'utf8');
@@ -56,6 +64,40 @@ test.describe('struck text, as real bill XML marks it', () => {
     // Each heading once: the struck SEC. 1 and SEC. 8 are not printed beside the live ones.
     expect(clean.match(/^SEC\. 1\. /gm)).toHaveLength(1);
     expect(clean.match(/^SEC\. 8\. /gm)).toHaveLength(1);
+  });
+
+  test('S. 1409 RS as Formatted Text (HTML): the escaped DELETED text is gone, the substitute is whole', () => {
+    // Check 2 of #581, defect 4: on the full .htm, 46.5% of the cleaned text
+    // sat inside DELETED markers.
+    const clean = cleanBillMarkup(fixture('BILLS-118s1409rs.cut.htm'), 'html');
+    expect(clean).not.toMatch(/DELETED/);
+    // The substitute is kept, word for word.
+    expect(clean).toContain('SECTION 1. SHORT TITLE; TABLE OF CONTENTS.');
+    expect(clean).toContain('Sec. 13. Filter bubble transparency requirements.');
+    expect(clean).toContain('Sec. 16. Severability.');
+    expect(clean).toContain('to cause psychological distress, loss of control, anxiety, or\ndepression.');
+    expect(clean).toContain('likely to be used, by a minor.');
+    // The struck original is not: its wording of SEC. 2, its old table of
+    // contents (unclosed markers, one per line), and its SEC. 15.
+    expect(clean).not.toContain('harmful stress');
+    expect(clean).not.toContain('Sec. 13. Effective date.');
+    expect(clean).not.toContain('SEC. 15. SEVERABILITY.');
+    expect(clean).not.toContain('is determined to be unenforceable');
+    expect(clean.match(/^SECTION 1\. /gm)).toHaveLength(1);
+    expect(clean.match(/^SEC\. 2\. /gm)).toHaveLength(1);
+    expect(clean.match(/Kids Online Safety/g)).toHaveLength(1);
+  });
+
+  test('DELETED markers: a pair goes with its text; an unclosed one takes only the rest of its line', () => {
+    expect(stripDeletedMarkers('a <DELETED>struck\nacross lines</DELETED> b')).toBe('a  b');
+    expect(stripDeletedMarkers('<DELETED>Sec. 1. Old.\n<DELETED>Sec. 2. Old.\nLive line.\n<DELETED>x</DELETED>')).toBe('\n\nLive line.\n');
+    // An unclosed marker never swallows live text below it.
+    expect(stripDeletedMarkers('<DELETED>struck toc line\nLIVE TEXT\nmore live')).toBe('\nLIVE TEXT\nmore live');
+    // A stray closing marker goes; its text stays.
+    expect(stripDeletedMarkers('live</DELETED> text')).toBe('live text');
+    expect(stripDeletedMarkers('no markers')).toBe('no markers');
+    // XML mode never reads them: real XML marks struck text with attributes.
+    expect(cleanBillMarkup('<p>&lt;DELETED&gt;x&lt;/DELETED&gt;</p>', 'xml')).toContain('DELETED');
   });
 
   test('S. 479 RS: <deleted-phrase> is dropped, <added-phrase> and the added quoted block are kept', () => {
@@ -134,6 +176,24 @@ test.describe('divisions and titles, as real bill XML carries them', () => {
       expect(inText).toEqual(c.divisions);
       expect(c.text.length).toBeLessThanOrEqual(4_000);
     }
+  });
+
+  test('the first chunk names the bill\'s opening provisions it holds before DIVISION A', () => {
+    // Check 2 of #581: H.R. 2882's chunk 1 held SEC. 1-4 and was labelled "DIVISION A".
+    const s = extractBillStructure(clean);
+    expect(clean.slice(0, s.divisions[0].charOffset)).toMatch(/SEC\. 1\./);
+    const p = prepareBillForDecode(clean, { singleCallMaxChars: 3_000, chunkMaxChars: 4_000 });
+    expect(p.chunks[0].label).toMatch(/^opening provisions; DIVISION A — /);
+    expect(p.chunks[0].text.startsWith(clean.slice(0, 20))).toBe(true);
+    // Only the first chunk.
+    for (const c of p.chunks.slice(1)) expect(c.label).not.toMatch(/^opening provisions/);
+    // A split first division already says "opening provisions" for that span: not said twice.
+    const split = prepareBillForDecode(clean, { singleCallMaxChars: 1_000, chunkMaxChars: 1_500 });
+    expect(split.chunks[0].label.match(/opening provisions/g)?.length ?? 0).toBeLessThanOrEqual(1);
+    // No text before the first division: no prefix.
+    const bare = clean.slice(s.divisions[0].charOffset);
+    const q = prepareBillForDecode(bare, { singleCallMaxChars: 3_000, chunkMaxChars: 4_000 });
+    expect(q.chunks[0].label).toMatch(/^DIVISION A — /);
   });
 
   test('a division too long for one chunk is split at its titles, then lines, and says which part', () => {
