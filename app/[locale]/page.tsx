@@ -390,6 +390,32 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     </ul>
   );
 
+  /* The week closes with its two exits, side by side: every active bill, and
+     the day's brief (H14; Today is off the tab bar, so this is its one tap
+     from home). When the rows sit in the slab, the exits follow them there
+     (round 2 of the layout pass: they stood alone in a thin band between the
+     slab and the Big Questions); on a phone that is on paper under the slab,
+     straight after the rows, as before. */
+  const rowsInSlab = Boolean(crowned && feature && crownDate) && listed.length > 0;
+  const weekExits = (
+    <p className="mt-4 flex flex-wrap gap-x-6">
+      <Link
+        href="/bills"
+        className="inline-flex min-h-11 items-center gap-1.5 font-bold text-go underline underline-offset-4 hover:text-go-deep"
+      >
+        {t('seeAll', { count: formatCount(total, locale) })}
+        <ArrowRight className="h-4 w-4" aria-hidden />
+      </Link>
+      <Link
+        href="/today"
+        className="inline-flex min-h-11 items-center gap-1.5 font-bold text-go underline underline-offset-4 hover:text-go-deep"
+      >
+        {t('todayBrief')}
+        <ArrowRight className="h-4 w-4" aria-hidden />
+      </Link>
+    </p>
+  );
+
   return (
     <div>
       <JsonLd id="site-jsonld" data={jsonLd} />
@@ -422,7 +448,11 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           </span>
         </h1>
 
-        <div className="mt-6 grid gap-4 md:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] md:gap-16">
+        {/* From lg the hero's two columns are the crown slab's (7fr | 5fr,
+            gap 48: components/system/FloorVotePanel.tsx, the `rows` grid), so
+            the ZIP column and the week's rows below it share one left edge
+            (layout pass 2026-11-28, round 2). */}
+        <div className="mt-6 grid gap-4 md:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] md:gap-16 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-x-12">
           <div className="min-w-0">
             <p className="max-w-read text-lede text-pretty text-ink-2">{t('heroSub')}</p>
 
@@ -507,7 +537,15 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           // the floor panel's slab itself, one ground, earned by the panel.
           // The ground is stone with ink type (the owner's look, 2026-11-13;
           // it was the green enamel); `on-stone` tunes the focus ring to it.
-          <div className="on-stone mt-2 border-y-[3px] border-ink bg-stone">
+          // With the week's rows in the slab, its foot rule is drawn from md
+          // only: on a phone the rows sit on paper under the slab, and the
+          // rows block draws the slab's foot rule itself (FloorVotePanel's
+          // `rows`), so the phone looks as it did before the layout pass.
+          <div
+            className={`on-stone mt-2 border-t-[3px] border-ink bg-stone ${
+              rowsInSlab ? 'md:border-b-[3px]' : 'border-b-[3px]'
+            }`}
+          >
             <div className="mx-auto max-w-page px-4 pt-6">
               {/* Below md the heading and the next line would cross the
                   stamp's straddle band, so the row reserves it: pb-8 here,
@@ -554,16 +592,24 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               // The week's other bills, inside the slab (layout pass
               // 2026-11-28): beside the crown from lg, or from xl as a third
               // column beside the latest vote; three across under the crown
-              // from md until then; one column on a phone, after the CTA.
+              // from md until then. On a phone they sit on paper under the
+              // slab, one column, as before the pass (round 2). The week's
+              // two exits follow them.
               rows={
-                listed.length > 0
-                  ? weekRows(
+                rowsInSlab ? (
+                  <>
+                    {weekRows(
                       latestRollCall
                         ? 'md:grid md:grid-cols-3 md:gap-x-10 xl:block'
                         : 'md:grid md:grid-cols-3 md:gap-x-10 lg:block'
-                    )
-                  : undefined
+                    )}
+                    {weekExits}
+                  </>
+                ) : undefined
               }
+              // On a phone the rows end the slab on paper, so no stone foot
+              // runs under them.
+              className={rowsInSlab ? 'max-md:pb-0' : ''}
               // The chip prints the fact the selector actually found, in the
               // chamber the record itself names.
               calendarLabel={tShared(FLOOR_LABEL_KEYS[feature.kind][feature.chamber])}
@@ -657,25 +703,9 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             </p>
           )}
 
-          {/* The section closes with its two exits, side by side: every
-              active bill, and the day's brief (H14; Today is off the tab bar,
-              so this is its one tap from home). */}
-          <p className="mt-4 flex flex-wrap gap-x-6">
-            <Link
-              href="/bills"
-              className="inline-flex min-h-11 items-center gap-1.5 font-bold text-go underline underline-offset-4 hover:text-go-deep"
-            >
-              {t('seeAll', { count: formatCount(total, locale) })}
-              <ArrowRight className="h-4 w-4" aria-hidden />
-            </Link>
-            <Link
-              href="/today"
-              className="inline-flex min-h-11 items-center gap-1.5 font-bold text-go underline underline-offset-4 hover:text-go-deep"
-            >
-              {t('todayBrief')}
-              <ArrowRight className="h-4 w-4" aria-hidden />
-            </Link>
-          </p>
+          {/* The section closes with its two exits (`weekExits` above),
+              here unless they follow the rows inside the slab. */}
+          {!rowsInSlab && weekExits}
         </div>
       </section>
 
@@ -708,9 +738,19 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             </div>
             <p className="mt-1 max-w-note text-sm text-pretty text-ink-pale">{t('momentsSub')}</p>
             {aiLine(t('aiQuestions'), 'ink')}
-            {/* Two across from md, three from xl (layout pass 2026-11-28):
-                eight rows make three short rows, not four tall ones. */}
-            <ul className="mt-6 list-none border-t-[1.5px] border-line-strong md:grid md:grid-cols-2 md:gap-x-10 xl:grid-cols-3">
+            {/* Two across from md; from xl, as many across as leaves no empty
+                cell at the end (layout pass 2026-11-28, round 2): four for
+                4, 7 or 8 rows (eight make two full rows of four), three for
+                3, 5 or 6. At most eight are live (LIVE_CAP). */}
+            <ul
+              className={`mt-6 list-none border-t-[1.5px] border-line-strong md:grid md:grid-cols-2 md:gap-x-10 ${
+                questions.length === 4 || questions.length >= 7
+                  ? 'xl:grid-cols-4 xl:gap-x-8'
+                  : questions.length >= 3
+                    ? 'xl:grid-cols-3'
+                    : ''
+              }`}
+            >
               {questions.map(({ moment: m, lead, tally }) => (
                 <li key={m.id} className="relative border-b-[1.5px] border-line-strong py-4">
                   <h3 className="text-lg leading-tight font-bold">
@@ -754,9 +794,12 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         >
           {/* IN THE NEWS (H16): three rows, each saying why it is here, from
               stored evidence only. Renders nothing when a sync leaves no
-              coverage to feature. Stacked rows here, in its third. */}
+              coverage to feature. Stacked rows here, in its third. Beside the
+              specimen (lg) it takes the specimen's rule and top padding, so
+              the two headings share one rule weight and one top edge (round
+              2); below lg, as before, no rule of its own. */}
           {news.length > 0 && (
-            <div className="min-w-0">
+            <div className={`min-w-0 ${specimen ? 'lg:border-t-[1.5px] lg:border-line-strong lg:pt-6' : ''}`}>
               <NewsLens bills={news} rows stack={Boolean(specimen)} note={aiLine(t('aiNews'))} />
             </div>
           )}
@@ -854,12 +897,18 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           DONATE_URL constant, a link out only, never a payment field here,
           and the not-tax-deductible line is the required truthful framing. */}
       <div className="mx-auto max-w-page px-4 pt-8 pb-8 md:pt-12 md:pb-12">
+        {/* From lg, with all three (layout pass 2026-11-28, round 2): two
+            columns, privacy on the right beside why and support stacked on
+            the left. Privacy's list made it the one long column of three;
+            this way both columns run to about the same depth. Reading and
+            tab order stay why, privacy, support: row one is why | privacy,
+            row two is support. Three across at md, as before. */}
         <div
           className={`grid gap-10 border-t-[3px] border-ink pt-6 md:items-start md:gap-12 ${
-            DONATE_URL ? 'md:grid-cols-3' : 'md:grid-cols-2'
+            DONATE_URL ? 'md:grid-cols-3 lg:grid-cols-2' : 'md:grid-cols-2'
           }`}
         >
-          <section aria-labelledby="why-title">
+          <section aria-labelledby="why-title" className="min-w-0">
             <h2 id="why-title" className="text-h2 font-extrabold">
               {t('whyTitle')}
             </h2>
@@ -872,7 +921,10 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               <ArrowRight className="h-4 w-4" aria-hidden />
             </Link>
           </section>
-          <section aria-labelledby="privacy-title">
+          <section
+            aria-labelledby="privacy-title"
+            className={`min-w-0 ${DONATE_URL ? 'lg:col-start-2 lg:row-span-2' : ''}`}
+          >
             <h2 id="privacy-title" className="text-h2 font-extrabold">
               {t('privacyTitle')}
             </h2>
@@ -896,7 +948,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             </Link>
           </section>
           {DONATE_URL && (
-            <section aria-labelledby="support-title">
+            <section aria-labelledby="support-title" className="min-w-0 lg:col-start-1">
               <h2 id="support-title" className="text-h2 font-extrabold">
                 {t('supportTitle')}
               </h2>

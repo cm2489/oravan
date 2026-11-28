@@ -4,7 +4,6 @@ import { Link } from '@/i18n/navigation';
 import { absoluteUrl, hreflangAlternates } from '@/lib/hreflang';
 import { dataAsOfString } from '@/lib/freshness';
 import { AI_LABEL_TEXT, LICENSE_AI_CONTENT, LICENSE_PUBLIC_DOMAIN, SOURCE } from '@/lib/core/mcp';
-import { DOC_ROW } from '@/lib/layout';
 
 /*
  * S23 — the citability/correction page (the project records §1.3 S23; canonical-source playbook item 10 in
@@ -27,13 +26,23 @@ import { DOC_ROW } from '@/lib/layout';
  * a reporter using either language should be able to verify what an
  * EN-locale *and* an ES-locale MCP query actually receive, on the same page.
  *
- * A LEDGER (layout pass 2026-11-28). The page sits on the site's shell, its
- * left edge under the logo. From 64rem the title and each section's heading
- * hold a left column, and everything the section says sits to its right in
- * one 33rem reading column, so each heading labels its row the way a ledger
- * does. Every sentence keeps its quote or box directly after it in the same
- * cell, so "shown below" stays true. One column on a phone, as before.
+ * TWO COLUMNS OF SECTIONS (layout pass 2026-11-28, round 2; round 1's ledger
+ * left a heading column empty under each heading). The page sits on the
+ * site's shell, its left edge under the logo. The title and intro run across
+ * the top; from 80rem the sections flow in order down two 33rem columns,
+ * left then right, ending at about the same depth, and no section breaks
+ * across them. Every sentence keeps its quote or box directly after it in
+ * the same section, so "shown below" stays true. One column on a phone and
+ * up to 80rem, as before.
  */
+
+/** The sections' flow: one 33rem column, two from 80rem (2 × 33rem + a 4rem
+ *  gap). A section's top margin is dropped where it starts a column. */
+const SECTIONS =
+  'mt-8 max-w-read xl:max-w-[calc(2*var(--container-read)_+_4rem)] xl:columns-2 xl:gap-x-16';
+/** A section that never splits across the two columns. */
+const SECTION_BOX = 'mt-8 break-inside-avoid first:mt-0';
+const SECTION = `${SECTION_BOX} border-t border-line pt-6`;
 
 const EXAMPLE_SLUG = 'hr-1787-119'; // the same demo bill the walkthrough + ES spot-check use
 
@@ -94,132 +103,118 @@ export default async function CitationsPage({ params }: { params: Promise<{ loca
 
   return (
     <article className="mx-auto max-w-page px-4 pt-6 pb-12 md:pt-8">
-      <div>
-        <div className={DOC_ROW}>
-          <h1 className="text-h2-loud font-extrabold">{t('title')}</h1>
-          <div className="mt-3 max-w-read min-w-0 lg:mt-0">
-            <p className="text-lede text-ink-2">{t('intro')}</p>
-            {/* S12: the intro above already names the MCP server as one of this
-                page's audiences - this is the one link out to its own docs page
-                (endpoint, tools, client config, privacy posture), added here
-                rather than in the site-wide footer/header (smallest-surface). */}
-            <p className="mt-3 text-sm text-ink-2">
-              {t('mcpNoteBody')}{' '}
-              <Link
-                href="/mcp"
-                className="font-semibold text-go underline underline-offset-2 hover:text-go-deep"
-              >
-                {t('mcpNoteLinkText')} →
-              </Link>
-            </p>
-          </div>
-        </div>
+      <h1 className="text-h2-loud font-extrabold">{t('title')}</h1>
+      <div className="mt-3 max-w-read">
+        <p className="text-lede text-ink-2">{t('intro')}</p>
+        {/* S12: the intro above already names the MCP server as one of this
+            page's audiences - this is the one link out to its own docs page
+            (endpoint, tools, client config, privacy posture), added here
+            rather than in the site-wide footer/header (smallest-surface). */}
+        <p className="mt-3 text-sm text-ink-2">
+          {t('mcpNoteBody')}{' '}
+          <Link
+            href="/mcp"
+            className="font-semibold text-go underline underline-offset-2 hover:text-go-deep"
+          >
+            {t('mcpNoteLinkText')} →
+          </Link>
+        </p>
+      </div>
 
-        <section className={`mt-8 border-t border-line pt-6 ${DOC_ROW}`}>
+      <div className={SECTIONS}>
+        <section className={SECTION}>
           <h2 className="text-h3 font-extrabold">{t('urlTitle')}</h2>
-          <div className="min-w-0">
-            <p className="mt-2">{t('urlBody')}</p>
-            <p className="mt-3 text-sm text-ink-2">{t('urlExampleLabel')}</p>
-            <p className="mt-1 rounded-control bg-wash px-4 py-3 font-mono text-sm break-all">
-              {exampleUrl}
-            </p>
-          </div>
+          <p className="mt-2">{t('urlBody')}</p>
+          <p className="mt-3 text-sm text-ink-2">{t('urlExampleLabel')}</p>
+          <p className="mt-1 rounded-control bg-wash px-4 py-3 font-mono text-sm break-all">
+            {exampleUrl}
+          </p>
         </section>
 
-        <section className={`mt-8 border-t border-line pt-6 ${DOC_ROW}`}>
+        <section className={SECTION}>
           <h2 className="text-h3 font-extrabold">{t('asOfTitle')}</h2>
-          <div className="min-w-0">
-            <p className="mt-2">{t('asOfBody', { asOfField: 'as_of' })}</p>
-            <p className="mt-3 rounded-control bg-wash px-4 py-3 text-sm font-semibold tabular-nums">
-              {dataAsOf}
-            </p>
-          </div>
+          <p className="mt-2">{t('asOfBody', { asOfField: 'as_of' })}</p>
+          <p className="mt-3 rounded-control bg-wash px-4 py-3 text-sm font-semibold tabular-nums">
+            {dataAsOf}
+          </p>
         </section>
 
-        <section className={`mt-8 border-t border-line pt-6 ${DOC_ROW}`}>
+        <section className={SECTION}>
           <h2 className="text-h3 font-extrabold">{t('sourceTitle')}</h2>
-          <div className="min-w-0">
-            <p className="mt-2">{t('sourceBody')}</p>
-            <BilingualQuote
-              en={SOURCE.en}
-              es={SOURCE.es}
-              langEnglish={t('langEnglish')}
-              langSpanish={t('langSpanish')}
-            />
-          </div>
+          <p className="mt-2">{t('sourceBody')}</p>
+          <BilingualQuote
+            en={SOURCE.en}
+            es={SOURCE.es}
+            langEnglish={t('langEnglish')}
+            langSpanish={t('langSpanish')}
+          />
         </section>
 
         {/* `ai-policy` is a public anchor: /glossary's AI label links here. */}
-        <section id="ai-policy" className={`mt-8 scroll-mt-8 border-t border-line pt-6 ${DOC_ROW}`}>
+        <section id="ai-policy" className={`${SECTION} scroll-mt-8`}>
           <h2 className="text-h3 font-extrabold">{t('aiTitle')}</h2>
-          <div className="min-w-0">
-            <p className="mt-2">{t('aiBody')}</p>
-            <BilingualQuote
-              en={AI_LABEL_TEXT.en}
-              es={AI_LABEL_TEXT.es}
-              langEnglish={t('langEnglish')}
-              langSpanish={t('langSpanish')}
-            />
-            <p className="mt-4">{t('aiCallScript')}</p>
-            {/* `reader-questions` is a public anchor: the AI label on a Big
-                Question's reader questions links here (components/ReaderQuestions.tsx). */}
-            <p id="reader-questions" className="mt-4 scroll-mt-8">
-              {t('aiReaderQuestions')}
-            </p>
-          </div>
+          <p className="mt-2">{t('aiBody')}</p>
+          <BilingualQuote
+            en={AI_LABEL_TEXT.en}
+            es={AI_LABEL_TEXT.es}
+            langEnglish={t('langEnglish')}
+            langSpanish={t('langSpanish')}
+          />
+          <p className="mt-4">{t('aiCallScript')}</p>
+          {/* `reader-questions` is a public anchor: the AI label on a Big
+              Question's reader questions links here (components/ReaderQuestions.tsx). */}
+          <p id="reader-questions" className="mt-4 scroll-mt-8">
+            {t('aiReaderQuestions')}
+          </p>
         </section>
 
-        <section className={`mt-8 border-t border-line pt-6 ${DOC_ROW}`}>
+        <section className={SECTION}>
           <h2 className="text-h3 font-extrabold">{t('licenseTitle')}</h2>
-          <div className="min-w-0">
-            <dl className="mt-2 space-y-4 text-sm">
-              <div>
-                <dt className="font-semibold text-ink-2">{t('licenseOfficialLabel')}</dt>
-                <dd>
-                  <BilingualQuote
-                    en={LICENSE_PUBLIC_DOMAIN.en}
-                    es={LICENSE_PUBLIC_DOMAIN.es}
-                    langEnglish={t('langEnglish')}
-                    langSpanish={t('langSpanish')}
-                  />
-                </dd>
-              </div>
-              <div>
-                <dt className="font-semibold text-ink-2">{t('licenseAiLabel')}</dt>
-                <dd>
-                  <BilingualQuote
-                    en={LICENSE_AI_CONTENT.en}
-                    es={LICENSE_AI_CONTENT.es}
-                    langEnglish={t('langEnglish')}
-                    langSpanish={t('langSpanish')}
-                  />
-                </dd>
-              </div>
-            </dl>
-            <p className="mt-4 text-sm text-ink-2">{t('licenseCoverage')}</p>
-          </div>
+          <dl className="mt-2 space-y-4 text-sm">
+            <div>
+              <dt className="font-semibold text-ink-2">{t('licenseOfficialLabel')}</dt>
+              <dd>
+                <BilingualQuote
+                  en={LICENSE_PUBLIC_DOMAIN.en}
+                  es={LICENSE_PUBLIC_DOMAIN.es}
+                  langEnglish={t('langEnglish')}
+                  langSpanish={t('langSpanish')}
+                />
+              </dd>
+            </div>
+            <div>
+              <dt className="font-semibold text-ink-2">{t('licenseAiLabel')}</dt>
+              <dd>
+                <BilingualQuote
+                  en={LICENSE_AI_CONTENT.en}
+                  es={LICENSE_AI_CONTENT.es}
+                  langEnglish={t('langEnglish')}
+                  langSpanish={t('langSpanish')}
+                />
+              </dd>
+            </div>
+          </dl>
+          <p className="mt-4 text-sm text-ink-2">{t('licenseCoverage')}</p>
         </section>
 
         {/* The one thing on this page a reader DOES: report an error. It is an
             action, so it is the page's one green control. */}
-        <section className={`mt-8 rounded-control bg-wash p-6 ${DOC_ROW}`}>
+        <section className={`${SECTION_BOX} rounded-control bg-wash p-6`}>
           <h2 className="text-h3 font-extrabold">{t('correctionTitle')}</h2>
-          <div className="min-w-0">
-            <p className="mt-2">{t('correctionBody')}</p>
-            {/* The site's public contact address, the one /about and /partners
-                name. The beta feedback form this used to point at was removed
-                on 2026-09-28. */}
-            <a
-              href="mailto:hello@oravan.org"
-              className="ring-edge mt-4 inline-flex min-h-12 items-center rounded-control border-2 border-ink bg-urgent px-5 font-bold text-ink no-underline hover:bg-urgent-deep"
-            >
-              {t('correctionLinkText')}
-            </a>
+          <p className="mt-2">{t('correctionBody')}</p>
+          {/* The site's public contact address, the one /about and /partners
+              name. The beta feedback form this used to point at was removed
+              on 2026-09-28. */}
+          <a
+            href="mailto:hello@oravan.org"
+            className="ring-edge mt-4 inline-flex min-h-12 items-center rounded-control border-2 border-ink bg-urgent px-5 font-bold text-ink no-underline hover:bg-urgent-deep"
+          >
+            {t('correctionLinkText')}
+          </a>
 
-            <h3 className="mt-6 text-xl font-extrabold">{t('whenConfirmedTitle')}</h3>
-            <p className="mt-2">{t('whenConfirmedBody', { asOfField: 'as_of' })}</p>
-            <p className="mt-3 text-sm text-ink-2">{t('backlogNote')}</p>
-          </div>
+          <h3 className="mt-6 text-xl font-extrabold">{t('whenConfirmedTitle')}</h3>
+          <p className="mt-2">{t('whenConfirmedBody', { asOfField: 'as_of' })}</p>
+          <p className="mt-3 text-sm text-ink-2">{t('backlogNote')}</p>
         </section>
       </div>
     </article>

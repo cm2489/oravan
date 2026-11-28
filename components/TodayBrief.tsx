@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { Fragment, type ReactNode } from 'react';
 import { ExternalLink } from 'lucide-react';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import { BillCard } from '@/components/BillCard';
@@ -9,7 +9,6 @@ import { Chip } from '@/components/system';
 import { TodayFloorCard } from '@/components/TodayFloorCard';
 import { TodayVoteCard } from '@/components/TodayVoteCard';
 import { Link } from '@/i18n/navigation';
-import { CARD_GRID, INTRO_ROW } from '@/lib/layout';
 import { dayCountParts, type Brief, type BriefChamber, type BriefScheduleItem } from '@/lib/today';
 
 /*
@@ -35,13 +34,14 @@ import { dayCountParts, type Brief, type BriefChamber, type BriefScheduleItem } 
  *
  * FILL THE SCREEN (layout pass 2026-11-28; owner, that day: "SOOO much empty
  * white space… Especially the today in Congress page"). The title sits left
- * with the date and the note beside it from `lg`. The short facts of a quiet
- * day — the floor's one quiet line, the chambers, the record's quiet line —
- * share one row from `lg` (two or three cells), each still its own section
- * with its own rule and heading, in the same DOM order. Alone in its row, the
- * chambers set Senate and House side by side. "Other days" is a strip of
- * seven columns from `lg`, so a quiet day fits on one laptop screen. Below
- * `lg` every block stacks in the same order as before.
+ * with the date and the note beside it from `xl`, the date on the title's
+ * baseline. The short facts of a quiet day — the floor's one quiet line, the
+ * chambers, the record's quiet line — share one row from `lg` (two or three
+ * cells), each still its own section with its own heading, in the same DOM
+ * order, under one rule weight. Alone in its row, the chambers set Senate and
+ * House side by side. Card rows end full at `xl` (see `cell`). "Other days"
+ * is a strip of seven columns from `lg`, so a quiet day fits on one laptop
+ * screen. Below `lg` every block stacks in the same order as before.
  *
  * WHAT IS OURS, WHAT IS THE RECORD'S, WHAT IS AI'S. Every interface sentence
  * is a message key with record values interpolated. The record's own words —
@@ -230,9 +230,26 @@ export async function TodayBrief({ brief, locale }: { brief: Brief; locale: stri
      about Congress at all — our own reading may be why it is empty. */
   const showSchedule = brief.schedule.length > 0 || brief.schedulePosture === 'quiet';
 
-  /* The shared card grid (lib/layout.ts): one column, two from sm, three
-     from xl (layout pass 2026-11-28; it stopped at two). */
-  const GRID = `mt-4 ${CARD_GRID}`;
+  /* THE CARD GRID: one column, two from sm, three across from xl (layout
+     pass 2026-11-28; it stopped at two). Round 2 of that pass: at xl the
+     grid has six tracks and each card takes two, so a row holds three; the
+     last row is never left with an empty slot. Two left over take half the
+     row each; one left over would be a lone card, so the last four run two
+     and two instead; a single card takes the row. Cards keep DOM order.
+     From md each item is a grid of one, so the card fills its row's height
+     and the bottoms line up. Below xl this is the shared CARD_GRID
+     (lib/layout.ts) exactly. */
+  const GRID = 'mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-6';
+  const cell = (i: number, n: number) => {
+    const left = n % 3;
+    const span =
+      n === 1
+        ? 'xl:col-span-6'
+        : (left === 1 && i >= n - 4) || (left === 2 && i >= n - 2)
+          ? 'xl:col-span-3'
+          : 'xl:col-span-2';
+    return `min-w-0 md:grid md:grid-cols-1 ${span}`;
+  };
 
   /* THE FACTS ROW (layout pass 2026-11-28). The short same-day facts share
      one row from lg: the floor band only when it is its one quiet line (its
@@ -241,9 +258,15 @@ export async function TodayBrief({ brief, locale }: { brief: Brief; locale: stri
      from xl. One cell, or none, and the wrapper is a plain div. */
   const scheduleInRow = showSchedule && brief.schedule.length === 0; // the one quiet line
   const rowCount = (scheduleInRow ? 1 : 0) + (brief.chamber ? 1 : 0) + (!hasRecord ? 1 : 0);
+  /* One rule weight across the row (round 2): when the row opens the page,
+     its first cell carries the heavy rule, so from lg every cell in it does,
+     and the headings share one top edge. Below lg each keeps its own. */
+  const rowLeads = !(showSchedule && !scheduleInRow);
   const FACTS_ROW =
     rowCount >= 2
-      ? `lg:grid lg:grid-cols-2 lg:items-start lg:gap-x-8 lg:*:min-w-0 ${rowCount === 3 ? 'xl:grid-cols-3' : ''}`
+      ? `lg:grid lg:grid-cols-2 lg:items-start lg:gap-x-8 lg:*:min-w-0 ${rowCount === 3 ? 'xl:grid-cols-3' : ''} ${
+          rowLeads ? 'lg:*:border-t-[3px] lg:*:border-ink' : ''
+        }`
       : '';
 
   /* The blocks are declared in the order the page prints them
@@ -263,8 +286,12 @@ export async function TodayBrief({ brief, locale }: { brief: Brief; locale: stri
           <p className="mt-2 max-w-read text-sm text-ink-2">{t('scheduleNote')}</p>
           {brief.schedule.some((i) => i.teaser?.headline) && aiLabel('aiHeadlines')}
           <ul className={GRID}>
-            {brief.schedule.map((item) => (
-              <li key={`${item.kind}-${item.citation}`} data-ai-text={item.teaser?.headline ? '' : undefined}>
+            {brief.schedule.map((item, i) => (
+              <li
+                key={`${item.kind}-${item.citation}`}
+                className={cell(i, brief.schedule.length)}
+                data-ai-text={item.teaser?.headline ? '' : undefined}
+              >
                 <TodayFloorCard
                   item={item}
                   meta={scheduleMeta(item)}
@@ -341,8 +368,8 @@ export async function TodayBrief({ brief, locale }: { brief: Brief; locale: stri
         <div className="mt-4" data-block="votes">
           <h3 className="text-md font-bold text-ink">{t('votesHeading')}</h3>
           <ul className={GRID}>
-            {d.rollCalls.map((r) => (
-              <li key={r.id} data-ai-text={r.teaser?.headline ? '' : undefined}>
+            {d.rollCalls.map((r, i) => (
+              <li key={r.id} className={cell(i, d.rollCalls.length)} data-ai-text={r.teaser?.headline ? '' : undefined}>
                 <TodayVoteCard vote={r} chamberName={chamberName(r.chamber)} />
               </li>
             ))}
@@ -354,15 +381,15 @@ export async function TodayBrief({ brief, locale }: { brief: Brief; locale: stri
         <div className="mt-6" data-block="moved">
           <h3 className="text-md font-bold text-ink">{t('movedHeading')}</h3>
           <ul className={GRID}>
-            {d.moved.map((b) => (
-              <li key={b.slug} data-ai-text={b.teaser?.headline ? '' : undefined}>
+            {d.moved.map((b, i) => (
+              <li key={b.slug} className={cell(i, d.moved.length)} data-ai-text={b.teaser?.headline ? '' : undefined}>
                 {b.teaser ? (
                   <BillCard
                     bill={b.teaser}
                     caption={b.actionText ? <Verbatim locale={locale}>{b.actionText}</Verbatim> : undefined}
                   />
                 ) : (
-                  <Link href={`/bills/${b.slug}`} className={`inline-flex min-h-11 items-center text-md ${LINK}`}>
+                  <Link href={`/bills/${b.slug}`} className={`inline-flex min-h-11 items-center self-start justify-self-start text-md ${LINK}`}>
                     {b.citation}
                   </Link>
                 )}
@@ -386,7 +413,9 @@ export async function TodayBrief({ brief, locale }: { brief: Brief; locale: stri
       <h2 id="today-record" className="text-h3 font-extrabold text-ink">
         {t('recordHeading')}
       </h2>
-      <p role="status" className="mt-4 max-w-read bg-wash p-6 text-md text-ink">
+      {/* Beside another fact the box fills its cell (round 2): its text,
+          inside the padding, still runs under the reading measure. */}
+      <p role="status" className={`mt-4 max-w-read bg-wash p-6 text-md text-ink ${rowCount >= 2 ? 'lg:max-w-none' : ''}`}>
         {t('empty', { date: shortDay(brief.date), prev: shortDay(brief.days[1]?.date ?? brief.date) })}
       </p>
       {brief.latestRecord && (
@@ -405,14 +434,19 @@ export async function TodayBrief({ brief, locale }: { brief: Brief; locale: stri
 
   return (
     <div className="mx-auto max-w-page px-4 pt-6 pb-12 md:pt-8">
-      {/* THE TITLE ROW (layout pass 2026-11-28): the title left, the date
-          and the note beside it from lg; stacked below lg, as before. */}
-      <div className={INTRO_ROW}>
+      {/* THE TITLE ROW (layout pass 2026-11-28, round 2): the title left, the
+          date and the note beside it from xl, the date sitting on the
+          title's baseline and the note hanging under it. The title's column
+          is 1216 − 384 − 40 = 792px, so the dated title ("Congress on Nov 19,
+          2026", about 700px at 56px; the Spanish one about 750) stays on one
+          line, as it was before the pass. Below xl it stacks, as before:
+          between lg and xl a side column would wrap the title. */}
+      <div className="xl:grid xl:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] xl:items-baseline xl:gap-x-10">
         <h1 className="min-w-0 text-h1-bill font-extrabold text-ink">
           {brief.isToday ? t('title') : t('titleDated', { date: day(brief.date) })}
         </h1>
         <div className="min-w-0">
-          <p className="mt-3 max-w-read text-lede text-ink-2 lg:mt-0">
+          <p className="mt-3 max-w-read text-lede text-ink-2 xl:mt-0">
             <span className="tabular-nums">{longDay(brief.date)}</span>
           </p>
           <p className="mt-2 max-w-read text-sm text-ink-2">{t('recordNote')}</p>
@@ -438,8 +472,8 @@ export async function TodayBrief({ brief, locale }: { brief: Brief; locale: stri
           </h2>
           {aiLabel('aiNames')}
           <ul className={GRID}>
-            {brief.questions.map((q) => (
-              <li key={q.id} data-ai-text="">
+            {brief.questions.map((q, i) => (
+              <li key={q.id} className={cell(i, brief.questions.length)} data-ai-text="">
                 <article className="h-full rounded-control border border-line-strong bg-paper p-5">
                   <h3 className="text-lg leading-tight font-bold text-ink">
                     <Link
@@ -488,9 +522,22 @@ export async function TodayBrief({ brief, locale }: { brief: Brief; locale: stri
                   className={`flex min-h-11 items-center justify-between gap-3 text-md text-ink underline-offset-2 hover:underline lg:h-full lg:flex-col lg:items-start lg:justify-start lg:gap-0.5 lg:py-2 ${current ? 'border-l-4 border-ink pl-3 font-bold' : ''}`}
                 >
                   <span className="tabular-nums">{rowDay(s.date)}</span>
+                  {/* Each count is one unbreakable chunk with its separator at
+                      its end, so a narrow cell wraps between counts and a
+                      line never starts with "·" (round 2; the Spanish counts
+                      wrap in a seventh of the page). The text is unchanged:
+                      the counts joined by " · ". */}
                   <span className="text-right text-sm text-ink-2 tabular-nums lg:text-left">
                     {parts.length > 0
-                      ? parts.map((p) => t(p.key, { count: p.count })).join(' · ')
+                      ? parts.map((p, i) => (
+                          <Fragment key={p.key}>
+                            {i > 0 && ' '}
+                            <span className="whitespace-nowrap">
+                              {t(p.key, { count: p.count })}
+                              {i < parts.length - 1 && ' ·'}
+                            </span>
+                          </Fragment>
+                        ))
                       : t('dayNoRecord')}
                   </span>
                 </Link>

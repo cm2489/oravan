@@ -7,7 +7,6 @@ import { getTeasers } from '@/lib/core';
 import { getMomentSearchTeasers } from '@/lib/moments-ui';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
-import { INTRO_ROW } from '@/lib/layout';
 
 export async function generateMetadata({
   params,
@@ -28,19 +27,18 @@ export default async function BillsPage({ params }: { params: Promise<{ locale: 
 
   return (
     <div className="mx-auto max-w-page px-4 pt-6 pb-12 md:pt-8">
-      {/* THE INTRO ROW (layout pass 2026-11-28): title and lede on the left,
-          the page's small print (data date, AI label) on the right from lg,
-          so the notes sit beside the title instead of under it and the first
-          band of bills reaches the first laptop screen. One column, same
-          order, below lg. */}
-      <div className={INTRO_ROW}>
-        <div className="min-w-0">
-          {/* The page-title rung: the home hero owns `text-h1`, every other page
-              titles itself one rung down at `text-h1-bill`. */}
-          <h1 className="text-h1-bill font-extrabold text-ink">{t('bills.title')}</h1>
-          <p className="mt-3 max-w-read text-lede text-ink-2">{t('bills.sub')}</p>
-        </div>
-        <div className="min-w-0">
+      {/* THE INTRO ROW (layout pass 2026-11-28; round 2 the same day): the
+          title runs the full width, then the lede and the page's small print
+          (data date, AI label) sit side by side from lg on the toolbar's own
+          two columns (components/BillsBrowser.tsx), so the small print and
+          the topic chips start on one column line. One column, same order,
+          below lg. */}
+      <div className="lg:grid lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:items-start lg:gap-x-8">
+        {/* The page-title rung: the home hero owns `text-h1`, every other page
+            titles itself one rung down at `text-h1-bill`. */}
+        <h1 className="min-w-0 text-h1-bill font-extrabold text-ink lg:col-span-2">{t('bills.title')}</h1>
+        <p className="mt-3 min-w-0 max-w-read text-lede text-ink-2">{t('bills.sub')}</p>
+        <div className="min-w-0 lg:mt-3">
           {/* R2: the client-side stale caveat continues the stamp's own
               sentence — one line, one date; renders nothing while fresh. This is
               this page's SOLE printed sync date. */}

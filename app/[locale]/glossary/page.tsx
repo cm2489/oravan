@@ -21,10 +21,12 @@ import { GLOSSARY_CATEGORIES, GLOSSARY_ENTRIES } from '@/lib/glossary';
  *
  * TWO ENTRIES TO A ROW (layout pass 2026-11-28). The page is a collection of
  * short, independent entries, so from 80rem each section's entries run two
- * across, in alphabetical order row by row, and the index lays its links out
- * four to a row from 64rem. That roughly halves the page's length on a wide
- * screen. Every entry keeps its id and `scroll-mt-8`, so an anchor still
- * lands on its term. One column on a phone, as before.
+ * across, in alphabetical order row by row. From 64rem the index stands
+ * beside the intro (round 2), in the space the intro left empty. That
+ * roughly halves the page's length on a wide screen. Every entry keeps its id
+ * and `scroll-mt-8`, so an anchor still lands on its term. From 80rem an
+ * entry's rule runs the width of its cell; its text keeps the reading measure. One column
+ * on a phone, as before.
  *
  * SECTIONS, NOT ONE LIST. With well over a hundred entries, a flat index of
  * every term would be several screens of links before the first definition
@@ -89,8 +91,10 @@ export default async function GlossaryPage({ params }: { params: Promise<{ local
 
   return (
     <article className="mx-auto max-w-page px-4 pt-6 pb-12 md:pt-8">
-      <div>
-        <div className="max-w-read">
+      {/* The intro and the index side by side from 64rem (PAIR_ROW's
+          columns); the intro, with the AI label, stays first in the DOM. */}
+      <div className="lg:grid lg:grid-cols-2 lg:items-start lg:gap-x-16">
+        <div className="max-w-read min-w-0">
           <h1 className="text-h2-loud font-extrabold">{t('title')}</h1>
           <p className="mt-3 text-lede text-ink-2">{t('intro')}</p>
           <p className="mt-3 text-sm text-ink-2">{t('scopeNote')}</p>
@@ -112,14 +116,14 @@ export default async function GlossaryPage({ params }: { params: Promise<{ local
 
         {/* THE INDEX: the seven sections. Ink links, not green — they move
             you around inside a document you are already reading. */}
-        <nav aria-labelledby="glossary-index" className="mt-8 border-t-[3px] border-ink pt-4">
+        <nav aria-labelledby="glossary-index" className="mt-8 min-w-0 border-t-[3px] border-ink pt-4 lg:mt-0">
           <h2
             id="glossary-index"
             className="text-2xs leading-tight font-extrabold tracking-[0.1em] text-ink-2 uppercase"
           >
             {t('indexLabel')}
           </h2>
-          <ul className="mt-1 grid list-none sm:grid-cols-2 sm:gap-x-6 lg:grid-cols-4">
+          <ul className="mt-1 grid list-none sm:grid-cols-2 sm:gap-x-6">
             {sections.map(({ category }) => (
               <li key={category}>
                 <a
@@ -132,7 +136,9 @@ export default async function GlossaryPage({ params }: { params: Promise<{ local
             ))}
           </ul>
         </nav>
+      </div>
 
+      <div>
         {sections.map(({ category, entries }) => (
           <section
             key={category}
@@ -147,9 +153,9 @@ export default async function GlossaryPage({ params }: { params: Promise<{ local
               {entries.map((e) => (
                 /* The id IS the term id, and it is a permanent public string:
                    anything anyone has ever pasted resolves here. */
-                <section key={e.id} id={e.id} className="mt-6 max-w-read min-w-0 scroll-mt-8 border-t border-line pt-6">
-                  <h3 className="text-lg font-extrabold">{e.term}</h3>
-                  <p className="mt-2">{e.body}</p>
+                <section key={e.id} id={e.id} className="mt-6 max-w-read min-w-0 scroll-mt-8 border-t border-line pt-6 xl:max-w-none">
+                  <h3 className="max-w-read text-lg font-extrabold">{e.term}</h3>
+                  <p className="mt-2 max-w-read">{e.body}</p>
                   <p className="text-sm text-ink-2">
                     <a
                       href={e.source}

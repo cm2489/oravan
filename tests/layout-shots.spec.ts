@@ -20,7 +20,9 @@ import { callableBillSlug } from './corpus-samples';
  * For each page it writes, into ui-fixes-shots/ (uploaded by every e2e shard
  * as `ui-fixes-shots-<shard>`; every file name starts with `layout-`):
  *   - a first-screen picture and a full-page picture, and
- *   - a JSON file of measurements (see `measure` below),
+ *   - a JSON file of measurements (see `measure` below), and
+ *   - for the pages in MID_PAGES, in webkit-desktop at 1440x900 only, one
+ *     more screen with the window scrolled to y=1400 (`-mid.png`),
  * at 1280x800 and 1440x900 in webkit-desktop, and at the phone's own
  * viewport (390 wide) in webkit-mobile. webkit-320 runs only @reflow tests,
  * and none here carries the tag.
@@ -128,6 +130,9 @@ const PAGES: { name: string; path: string | null }[] = [
   { name: 'member-en', path: MEMBER ? `/reps/${MEMBER}` : null },
   { name: 'glossary-en', path: '/glossary' },
   { name: 'privacy-en', path: '/privacy' },
+  { name: 'terms-en', path: '/terms' },
+  { name: 'citations-en', path: '/citations' },
+  { name: 'call-en', path: '/call' },
   { name: 'about-en', path: '/about' },
   { name: 'home-es', path: '/es' },
   { name: 'today-es', path: '/es/today' },
@@ -139,6 +144,13 @@ const DESKTOP_SIZES = [
   { width: 1280, height: 800 },
   { width: 1440, height: 900 },
 ];
+
+/** Pages that also get a mid-page picture in webkit-desktop at 1440x900, so a
+ *  reviewer can see what stays in view (a sticky call panel or list) halfway
+ *  down. Taken after the other pictures, with the window scrolled to MID_Y. */
+const MID_PAGES = new Set(['bill-en', 'bill-es', 'question-en', 'member-en']);
+const MID_SIZE = { width: 1440, height: 900 };
+const MID_Y = 1400;
 
 /**
  * Measurements of the page as it stands, scrolled to the top. Runs in the
@@ -290,6 +302,23 @@ async function record(page: Page, info: TestInfo, name: string, url: string) {
       2
     ) + '\n'
   );
+
+  // The mid-page picture: one screen with the window scrolled to MID_Y (or as
+  // far as the page goes). The site scrolls smoothly (app/globals.css), so the
+  // jump is instant, then the page gets up to a second to be there. It never
+  // fails on where the page ended up; the picture shows whatever is on screen.
+  if (info.project.name === 'webkit-desktop' && MID_PAGES.has(name) && width === MID_SIZE.width && height === MID_SIZE.height) {
+    await page.evaluate(async (y) => {
+      window.scrollTo({ top: y, behavior: 'instant' });
+      const target = Math.min(y, document.documentElement.scrollHeight - window.innerHeight);
+      for (let i = 0; i < 60 && Math.abs(window.scrollY - target) > 1; i++) {
+        await new Promise((r) => requestAnimationFrame(r));
+      }
+      // Two more frames, so scroll observers (the floating call button) answer.
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    }, MID_Y);
+    await page.screenshot({ path: `${base}-mid.png`, animations: 'disabled' });
+  }
 }
 
 for (const { name, path: url } of PAGES) {

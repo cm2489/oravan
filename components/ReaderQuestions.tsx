@@ -24,7 +24,16 @@ import { rollCallPage } from '@/lib/roll-call-page';
  *
  * Renders nothing for a Big Question with no entry in the file.
  */
-export async function ReaderQuestions({ id, locale }: { id: string; locale: string }) {
+export async function ReaderQuestions({
+  id,
+  locale,
+  className,
+}: {
+  id: string;
+  locale: string;
+  /** Placement classes from the page's desk (layout only, appended). */
+  className?: string;
+}) {
   const entry = readerQuestionsFor(id);
   if (!entry) return null;
   const t = await getTranslations({ locale, namespace: 'readerQuestions' });
@@ -50,7 +59,11 @@ export async function ReaderQuestions({ id, locale }: { id: string; locale: stri
     );
 
   return (
-    <section className="mt-8 border-t border-line pt-4" aria-labelledby="reader-questions-h" data-reader-questions="">
+    <section
+      className={`mt-8 border-t border-line pt-4${className ? ` ${className}` : ''}`}
+      aria-labelledby="reader-questions-h"
+      data-reader-questions=""
+    >
       <h2 id="reader-questions-h" className="text-h2 font-extrabold text-ink">
         {t('heading')}
       </h2>

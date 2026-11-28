@@ -74,7 +74,7 @@ export function MomentCard({ moment }: { moment: MomentTeaser }) {
   return (
     <Link
       href={`/questions/${moment.id}`}
-      className="group flex h-full flex-col rounded-control border border-line-strong bg-paper p-5 transition-colors hover:border-ink"
+      className="group block rounded-control border border-line-strong bg-paper p-5 transition-colors hover:border-ink"
     >
       <div className="flex flex-wrap items-center gap-2">
         <Chip tone="tag">{t(`categories.${moment.category}`)}</Chip>
@@ -87,17 +87,15 @@ export function MomentCard({ moment }: { moment: MomentTeaser }) {
       <h3 className="mt-3 text-lg leading-tight font-bold text-ink group-hover:underline group-hover:decoration-go group-hover:decoration-[3px]">
         {moment.name}
       </h3>
-      <p className="mt-2 mb-3 max-w-read text-sm text-ink-2">{moment.dek}</p>
+      <p className="mt-2 max-w-read text-sm text-ink-2">{moment.dek}</p>
       {/* Where it stands, from the record — hairline above it so the AI-drafted
           dek and the record's own status never read as one passage. The date
           it prints is the record's; the "Updated" line below is the
-          question's own freshness and stays. The card is a column that fills
-          its grid cell (layout pass 2026-11-28) and `mt-auto` sends this line
-          and the count to the card's foot, so in a row of three the status
-          lines line up and the room a short dek leaves sits above the status
-          line, not under the count. */}
+          question's own freshness and stays. The card ends where its text
+          ends (layout pass round 2, 2026-11-28): the list's grid does not
+          stretch it, so a short dek leaves no blank well inside the card. */}
       {moment.status && (
-        <MomentStatusLine line={moment.status} className="mt-auto border-t border-line pt-3" />
+        <MomentStatusLine line={moment.status} className="mt-3 border-t border-line pt-3" />
       )}
       <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-ink-2">
         <span>

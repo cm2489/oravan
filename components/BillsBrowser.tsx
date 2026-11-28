@@ -159,9 +159,16 @@ export function BillsBrowser({
           corpus line) and the topic chips (with their privacy note) sit side
           by side, so the chip wall no longer stacks under the search and the
           first band reaches the first laptop screen. Below lg: one column,
-          the same order as before. */}
-      <div className="mt-6 lg:grid lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:items-start lg:gap-x-8">
-        <div className="min-w-0">
+          the same order as before.
+          Round 2 (2026-11-28): the pinned question and the count line moved
+          inside this grid, still after the chips in the DOM (reading, tab
+          and phone order unchanged). From lg the chips span two rows, so the
+          count sits under the search's corpus line instead of alone in a
+          gap under it, and a pinned question takes its own full-width row
+          under the whole toolbar. The second row is 1fr so the chip wall's
+          extra height lands there, not between the search and the count. */}
+      <div className="mt-6 lg:grid lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:grid-rows-[auto_1fr] lg:items-start lg:gap-x-8">
+        <div className="min-w-0 lg:col-start-1 lg:row-start-1">
           <label htmlFor="bill-search" className="sr-only">
             {t('bills.searchLabel')}
           </label>
@@ -211,7 +218,7 @@ export function BillsBrowser({
           </p>
         </div>
 
-        <div className="min-w-0">
+        <div className="min-w-0 lg:col-start-2 lg:row-span-2 lg:row-start-1">
           {/* One scrollable row on mobile (no chip wall), wrapping rail on desktop */}
           <div
             className="mt-3 -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 lg:mt-0"
@@ -241,55 +248,57 @@ export function BillsBrowser({
 
           <p className="mt-2 text-xs text-ink-2">{t('bills.interestsNote')}</p>
         </div>
+
+        {/* THE PINNED QUESTION (spec §7.3). Before the count in reading order
+            (from lg it shows in a full-width row under the toolbar, and the
+            count under the search), and outside it. Three rules hold this
+            row honest:
+              1. It is not a bill result. The aria-live count still says
+                 how many BILLS matched — a pin that inflated that number would
+                 be answering a question the reader didn't ask with a number
+                 they can't check. "ukraine" can legitimately read
+                 "0 bills" and still show this row.
+              2. No vehicle bill is force-injected into the list underneath. The
+                 moment's own page is where its bills live; the browser keeps
+                 showing exactly what the corpus matched.
+              3. Aliases are never printed. The reader matched on "shutdown";
+                 what they see is the neutral name we chose and the dek.
+
+            DARK ENAMEL, NOT GREEN — the homepage strip's idiom, and for the
+            same reason (owner decision, 2026-07-24): green is spent on the call
+            itself and is data-earned, and a search match is not a floor-calendar
+            fact. Ink enamel buys the weight without spending it. */}
+        {pinned.length > 0 && (
+          <ul className="mt-6 min-w-0 list-none lg:col-span-2 lg:row-start-3">
+            {pinned.map((m) => (
+              <li key={m.id} className="mt-3 first:mt-0">
+                <Link
+                  href={`/questions/${m.id}`}
+                  className="on-dark group flex min-h-12 flex-col items-start gap-x-3 gap-y-2 rounded-control bg-ink-deep px-5 py-4 text-paper no-underline sm:flex-row sm:flex-wrap sm:items-baseline"
+                >
+                  <Chip tone="tag" ground="ink" className="shrink-0">
+                    {t('moments.searchPinLabel')}
+                  </Chip>
+                  <span className="text-lg font-bold group-hover:underline group-hover:decoration-go-bright group-hover:decoration-[3px]">
+                    {m.name}
+                  </span>
+                  {/* AI-drafted, like every other dek — the page already carries
+                      the AI chip above the feed, which is the same first contact. */}
+                  <span className="max-w-note text-sm text-ink-pale">{m.dek}</span>
+                  <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-go-bright underline underline-offset-4 group-hover:text-paper">
+                    {t('moments.searchPinCta')}
+                    <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <p className="mt-3 min-w-0 text-sm text-ink-2 lg:col-start-1 lg:row-start-2" aria-live="polite">
+          {t('bills.showingCount', { shown: formatCount(filtered.length, locale), total: formatCount(bills.length, locale) })}
+        </p>
       </div>
-
-      {/* THE PINNED QUESTION (spec §7.3). Above the count, and outside it.
-          Three rules hold this row honest:
-            1. It is not a bill result. The aria-live count below still says
-               how many BILLS matched — a pin that inflated that number would
-               be answering a question the reader didn't ask with a number
-               they can't check. "ukraine" can legitimately read
-               "0 bills" and still show this row.
-            2. No vehicle bill is force-injected into the list underneath. The
-               moment's own page is where its bills live; the browser keeps
-               showing exactly what the corpus matched.
-            3. Aliases are never printed. The reader matched on "shutdown";
-               what they see is the neutral name we chose and the dek.
-
-          DARK ENAMEL, NOT GREEN — the homepage strip's idiom, and for the
-          same reason (owner decision, 2026-07-24): green is spent on the call
-          itself and is data-earned, and a search match is not a floor-calendar
-          fact. Ink enamel buys the weight without spending it. */}
-      {pinned.length > 0 && (
-        <ul className="mt-6 list-none">
-          {pinned.map((m) => (
-            <li key={m.id} className="mt-3 first:mt-0">
-              <Link
-                href={`/questions/${m.id}`}
-                className="on-dark group flex min-h-12 flex-col items-start gap-x-3 gap-y-2 rounded-control bg-ink-deep px-5 py-4 text-paper no-underline sm:flex-row sm:flex-wrap sm:items-baseline"
-              >
-                <Chip tone="tag" ground="ink" className="shrink-0">
-                  {t('moments.searchPinLabel')}
-                </Chip>
-                <span className="text-lg font-bold group-hover:underline group-hover:decoration-go-bright group-hover:decoration-[3px]">
-                  {m.name}
-                </span>
-                {/* AI-drafted, like every other dek — the page already carries
-                    the AI chip above the feed, which is the same first contact. */}
-                <span className="max-w-note text-sm text-ink-pale">{m.dek}</span>
-                <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-go-bright underline underline-offset-4 group-hover:text-paper">
-                  {t('moments.searchPinCta')}
-                  <ArrowRight className="h-3.5 w-3.5" aria-hidden />
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <p className="mt-3 text-sm text-ink-2" aria-live="polite">
-        {t('bills.showingCount', { shown: formatCount(filtered.length, locale), total: formatCount(bills.length, locale) })}
-      </p>
 
       {filtered.length === 0 && (
         <div className="mt-8">

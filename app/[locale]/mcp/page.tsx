@@ -12,7 +12,6 @@ import {
   TOOL_INFO,
   TOOL_NAMES,
 } from '@/lib/core/mcp';
-import { DOC_ROW } from '@/lib/layout';
 
 /*
  * S12 — the public MCP server docs page (the project records §1.3 S12; canonical-source playbook item 11 in
@@ -38,14 +37,21 @@ import { DOC_ROW } from '@/lib/layout';
  * language versions are shown here regardless of which locale route this is,
  * same pattern as the citations page.
  *
- * A LEDGER (layout pass 2026-11-28), as on /citations: the page sits on the
- * site's shell, its left edge under the logo, and from 64rem the title and
- * each section's heading hold a left column while what the section says sits
- * to its right in one 33rem reading column. The endpoint's address stays
- * under its sentence in the same cell ("the address below"), and the config
- * follows the endpoint's row ("the endpoint above"). One column on a phone,
- * as before.
+ * TWO COLUMNS OF SECTIONS (layout pass 2026-11-28, round 2; round 1's ledger
+ * left a heading column empty under each heading). The page sits on the
+ * site's shell, its left edge under the logo. The title and intro run across
+ * the top; from 80rem the sections flow in order down two 33rem columns, as
+ * on /citations, and no section breaks across them. One column on a phone
+ * and up to 80rem, as before.
  */
+
+/** The sections' flow: one 33rem column, two from 80rem (2 × 33rem + a 4rem
+ *  gap). A section's top margin is dropped where it starts a column. */
+const SECTIONS =
+  'mt-8 max-w-read xl:max-w-[calc(2*var(--container-read)_+_4rem)] xl:columns-2 xl:gap-x-16';
+/** A section that never splits across the two columns. */
+const SECTION_BOX = 'mt-8 break-inside-avoid first:mt-0';
+const SECTION = `${SECTION_BOX} border-t border-line pt-6`;
 
 const EXAMPLE_CLIENT_CONFIG = `{
   "mcpServers": {
@@ -106,134 +112,126 @@ export default async function McpPage({ params }: { params: Promise<{ locale: st
 
   return (
     <article className="mx-auto max-w-page px-4 pt-6 pb-12 md:pt-8">
-      <div>
-        <div className={DOC_ROW}>
-          <h1 className="text-h2-loud font-extrabold">{t('title')}</h1>
-          <p className="mt-3 max-w-read min-w-0 text-lede text-ink-2 lg:mt-0">{t('intro')}</p>
-        </div>
+      {/* THE TITLE AND INTRO ACROSS THE TOP, THE SECTIONS IN TWO COLUMNS
+          (layout pass 2026-11-28, round 2). From 80rem the sections flow in
+          order down two 33rem columns, left then right, ending at about the
+          same depth; no section breaks across the two. Each section reads
+          straight down, so "the address below" (endpoint) and "the
+          description below" (tools) stay true, and the connect section
+          follows the endpoint section, so its "endpoint above" does too.
+          One column on a phone and up to 80rem, as before. */}
+      <h1 className="text-h2-loud font-extrabold">{t('title')}</h1>
+      <p className="mt-3 max-w-read text-lede text-ink-2">{t('intro')}</p>
 
-        <section className={`mt-8 border-t border-line pt-6 ${DOC_ROW}`}>
+      <div className={SECTIONS}>
+        <section className={SECTION}>
           <h2 className="text-h3 font-extrabold">{t('endpointTitle')}</h2>
-          <div className="min-w-0">
-            <p className="mt-2">{t('endpointBody')}</p>
-            <p className="mt-3 text-sm text-ink-2">{t('endpointLabel')}</p>
-            <p className="mt-1 break-all rounded-control bg-wash px-4 py-3 font-mono text-sm">
-              {MCP_ENDPOINT_URL}
-            </p>
-          </div>
+          <p className="mt-2">{t('endpointBody')}</p>
+          <p className="mt-3 text-sm text-ink-2">{t('endpointLabel')}</p>
+          <p className="mt-1 break-all rounded-control bg-wash px-4 py-3 font-mono text-sm">
+            {MCP_ENDPOINT_URL}
+          </p>
         </section>
 
-        <section className={`mt-8 border-t border-line pt-6 ${DOC_ROW}`}>
+        <section className={SECTION}>
           <h2 className="text-h3 font-extrabold">{t('connectTitle')}</h2>
-          <div className="min-w-0">
-            <p className="mt-2">{t('connectBody')}</p>
-            <pre className="mt-3 overflow-x-auto rounded-control bg-ink-deep p-4 text-xs text-paper">
-              <code>{EXAMPLE_CLIENT_CONFIG}</code>
-            </pre>
-          </div>
+          <p className="mt-2">{t('connectBody')}</p>
+          <pre className="mt-3 overflow-x-auto rounded-control bg-ink-deep p-4 text-xs text-paper">
+            <code>{EXAMPLE_CLIENT_CONFIG}</code>
+          </pre>
         </section>
 
-        <section className={`mt-8 border-t border-line pt-6 ${DOC_ROW}`}>
+        <section className={SECTION}>
           <h2 className="text-h3 font-extrabold">{t('toolsTitle')}</h2>
-          <div className="min-w-0">
-            <p className="mt-2">{t('toolsIntro')}</p>
-            <dl className="mt-4 space-y-4">
-              {TOOL_NAMES.map((name) => (
-                <div key={name} className="rounded-control bg-wash p-4">
-                  <dt>
-                    <code className="font-mono text-sm font-semibold">{name}</code>
-                    <span className="ml-2 text-sm text-ink-2">{TOOL_INFO[name].title}</span>
-                  </dt>
-                  <dd className="mt-1.5 text-sm text-ink-2" lang="en">
-                    {TOOL_INFO[name].description}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-            <p className="mt-4 text-sm text-ink-2">{t('toolsLangNote')}</p>
-          </div>
+          <p className="mt-2">{t('toolsIntro')}</p>
+          <dl className="mt-4 space-y-4">
+            {TOOL_NAMES.map((name) => (
+              <div key={name} className="rounded-control bg-wash p-4">
+                <dt>
+                  <code className="font-mono text-sm font-semibold">{name}</code>
+                  <span className="ml-2 text-sm text-ink-2">{TOOL_INFO[name].title}</span>
+                </dt>
+                <dd className="mt-1.5 text-sm text-ink-2" lang="en">
+                  {TOOL_INFO[name].description}
+                </dd>
+              </div>
+            ))}
+          </dl>
+          <p className="mt-4 text-sm text-ink-2">{t('toolsLangNote')}</p>
         </section>
 
-        <section className={`mt-8 border-t border-line pt-6 ${DOC_ROW}`}>
+        <section className={SECTION}>
           <h2 className="text-h3 font-extrabold">{t('privacyTitle')}</h2>
-          <div className="min-w-0">
-            <ul className="mt-2 list-disc space-y-2 pl-5">
-              <li>{t('privacyNoAccounts')}</li>
-              <li>{t('privacyRateLimit')}</li>
-              <li>{t('privacyNoLogging')}</li>
-            </ul>
-            <Link
-              href="/privacy"
-              className="mt-4 inline-flex min-h-12 items-center gap-2 rounded-control border-2 border-ink px-5 font-bold text-ink no-underline hover:bg-ink hover:text-paper"
-            >
-              {t('privacyLinkText')} →
-            </Link>
-          </div>
+          <ul className="mt-2 list-disc space-y-2 pl-5">
+            <li>{t('privacyNoAccounts')}</li>
+            <li>{t('privacyRateLimit')}</li>
+            <li>{t('privacyNoLogging')}</li>
+          </ul>
+          <Link
+            href="/privacy"
+            className="mt-4 inline-flex min-h-12 items-center gap-2 rounded-control border-2 border-ink px-5 font-bold text-ink no-underline hover:bg-ink hover:text-paper"
+          >
+            {t('privacyLinkText')} →
+          </Link>
         </section>
 
-        <section className={`mt-8 border-t border-line pt-6 ${DOC_ROW}`}>
+        <section className={SECTION}>
           <h2 className="text-h3 font-extrabold">{t('envelopeTitle')}</h2>
-          <div className="min-w-0">
-            <p className="mt-2">{t('envelopeBody')}</p>
-            <BilingualQuote
-              en={SOURCE.en}
-              es={SOURCE.es}
-              langEnglish={tc('langEnglish')}
-              langSpanish={tc('langSpanish')}
-            />
-            <BilingualQuote
-              en={AI_LABEL_TEXT.en}
-              es={AI_LABEL_TEXT.es}
-              langEnglish={tc('langEnglish')}
-              langSpanish={tc('langSpanish')}
-            />
-          </div>
+          <p className="mt-2">{t('envelopeBody')}</p>
+          <BilingualQuote
+            en={SOURCE.en}
+            es={SOURCE.es}
+            langEnglish={tc('langEnglish')}
+            langSpanish={tc('langSpanish')}
+          />
+          <BilingualQuote
+            en={AI_LABEL_TEXT.en}
+            es={AI_LABEL_TEXT.es}
+            langEnglish={tc('langEnglish')}
+            langSpanish={tc('langSpanish')}
+          />
         </section>
 
-        <section className={`mt-8 border-t border-line pt-6 ${DOC_ROW}`}>
+        <section className={SECTION}>
           <h2 className="text-h3 font-extrabold">{t('licenseTitle')}</h2>
-          <div className="min-w-0">
-            <dl className="mt-2 space-y-4 text-sm">
-              <div>
-                <dt className="font-semibold text-ink-2">{t('licenseOfficialLabel')}</dt>
-                <dd className="mt-0.5">
-                  <BilingualQuote
-                    en={LICENSE_PUBLIC_DOMAIN.en}
-                    es={LICENSE_PUBLIC_DOMAIN.es}
-                    langEnglish={tc('langEnglish')}
-                    langSpanish={tc('langSpanish')}
-                  />
-                </dd>
-              </div>
-              <div>
-                <dt className="font-semibold text-ink-2">{t('licenseAiLabel')}</dt>
-                <dd className="mt-0.5">
-                  <BilingualQuote
-                    en={LICENSE_AI_CONTENT.en}
-                    es={LICENSE_AI_CONTENT.es}
-                    langEnglish={tc('langEnglish')}
-                    langSpanish={tc('langSpanish')}
-                  />
-                </dd>
-              </div>
-            </dl>
-          </div>
+          <dl className="mt-2 space-y-4 text-sm">
+            <div>
+              <dt className="font-semibold text-ink-2">{t('licenseOfficialLabel')}</dt>
+              <dd className="mt-0.5">
+                <BilingualQuote
+                  en={LICENSE_PUBLIC_DOMAIN.en}
+                  es={LICENSE_PUBLIC_DOMAIN.es}
+                  langEnglish={tc('langEnglish')}
+                  langSpanish={tc('langSpanish')}
+                />
+              </dd>
+            </div>
+            <div>
+              <dt className="font-semibold text-ink-2">{t('licenseAiLabel')}</dt>
+              <dd className="mt-0.5">
+                <BilingualQuote
+                  en={LICENSE_AI_CONTENT.en}
+                  es={LICENSE_AI_CONTENT.es}
+                  langEnglish={tc('langEnglish')}
+                  langSpanish={tc('langSpanish')}
+                />
+              </dd>
+            </div>
+          </dl>
         </section>
 
-        <section className={`mt-8 rounded-control bg-wash p-6 md:p-8 ${DOC_ROW}`}>
+        <section className={`${SECTION_BOX} rounded-control bg-wash p-6 md:p-8`}>
           <h2 className="text-h3 font-extrabold">{t('freshnessTitle')}</h2>
-          <div className="min-w-0">
-            <p className="mt-2">{t('freshnessBody', { asOfField: 'as_of' })}</p>
-            <p className="mt-3 rounded-control bg-paper px-4 py-3 text-sm font-semibold tabular-nums">
-              {dataAsOf}
-            </p>
-            <Link
-              href="/citations"
-              className="mt-4 inline-flex min-h-11 items-center gap-1.5 font-semibold text-go underline underline-offset-2 hover:text-go-deep"
-            >
-              {t('citationsLinkText')} →
-            </Link>
-          </div>
+          <p className="mt-2">{t('freshnessBody', { asOfField: 'as_of' })}</p>
+          <p className="mt-3 rounded-control bg-paper px-4 py-3 text-sm font-semibold tabular-nums">
+            {dataAsOf}
+          </p>
+          <Link
+            href="/citations"
+            className="mt-4 inline-flex min-h-11 items-center gap-1.5 font-semibold text-go underline underline-offset-2 hover:text-go-deep"
+          >
+            {t('citationsLinkText')} →
+          </Link>
         </section>
       </div>
     </article>

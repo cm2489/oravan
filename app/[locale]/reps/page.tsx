@@ -15,7 +15,6 @@ import { getFreshness } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
 import { buildOrganizationJsonLd } from '@/lib/jsonld';
 import { membersFor } from '@/lib/members';
-import { SIDE_ROW } from '@/lib/layout';
 
 /*
  * THE LOOKUP SURFACE, as ruled paper.
@@ -96,11 +95,16 @@ export default async function RepsPage({
      visitor deciding whether to type anything sees exactly what they get.
      The skeletons are decorative — the caption carries the promise. They are
      drawn in `wash` rather than dimmed with opacity, so nothing here is a
-     faded copy of a real contrast pair. */
+     faded copy of a real contrast pair.
+
+     From 64rem the note stands beside the prompt box, level with its
+     bottom, and the three ghosts run the page's full width under both
+     (RepsLookup lays the two out; layout pass 2026-11-28, round 2). On a
+     phone the note and the ghosts stack under the prompt, as before. */
   const preview = (
     <>
-      <p className="mt-8 max-w-note text-sm text-ink-2">{t('previewNote')}</p>
-      <div aria-hidden className="mt-4 grid grid-cols-[repeat(auto-fill,minmax(min(15rem,100%),1fr))] gap-4">
+      <p className="mt-8 max-w-note min-w-0 text-sm text-ink-2 lg:mt-0 lg:self-end">{t('previewNote')}</p>
+      <div aria-hidden className="mt-4 grid min-w-0 gap-4 md:grid-cols-3 lg:col-span-2">
         {[0, 1, 2].map((i) => (
           <div key={i} className="rounded-control border-[1.5px] border-line-strong bg-paper p-5">
             <div className="flex gap-4">
@@ -205,29 +209,26 @@ export default async function RepsPage({
     </section>
   );
 
-  /* THE SIDE COLUMN (layout pass 2026-11-28). From 64rem the page is two
-     columns: the lookup (heading, prompt or members, the bills worth a call)
-     on the left, Your record in a 22rem column on the right, so the reader's
-     own calls fill the side of the page that stood empty beside the ZIP
-     prompt. The DOM order is unchanged (members, continuation, Your calls),
-     so the reading and keyboard order is the same as on a phone, where the
-     two blocks stack. Your record is not sticky: it holds folded rows and
-     the erase confirmation. The notes that say "below" stay in the left
-     column, above the district sections they point to. */
+  /* ONE COLUMN AT THE PAGE'S FULL WIDTH (layout pass 2026-11-28, round 2).
+     The lookup (heading, prompt or members, the bills worth a call) runs the
+     full 1216, so the member cards and the ghosts sit three across it; Your
+     record follows as a full-width band, as it did before the wider shell.
+     Round 1 gave Your record a whole side column, which stood empty under
+     its three lines. The DOM order is unchanged (members, continuation,
+     Your calls), and the visual order now matches it on every width. The
+     notes that say "below" stay above the district sections they point to. */
   return (
-    <div className={`mx-auto max-w-page px-4 pt-6 pb-12 md:pt-8 ${SIDE_ROW}`}>
+    <div className="mx-auto max-w-page px-4 pt-6 pb-12 md:pt-8">
       <JsonLd id="org-jsonld" data={orgJsonLd} />
-      <div className="min-w-0">
-        <h1 className="text-h1-bill font-extrabold">{t('membersHeading')}</h1>
+      <h1 className="text-h1-bill font-extrabold">{t('membersHeading')}</h1>
 
-        <RepsLookup
-          initial={initial}
-          legacy={legacy}
-          preview={preview}
-          switchboard={switchboard}
-          continuation={continuation}
-        />
-      </div>
+      <RepsLookup
+        initial={initial}
+        legacy={legacy}
+        preview={preview}
+        switchboard={switchboard}
+        continuation={continuation}
+      />
 
       {/* YOUR RECORD, folded into this tab (owner, UX question Q4 "b + c";
           wireframes v2, reps.html, 2026-09-29): Your calls, then what you
@@ -236,7 +237,7 @@ export default async function RepsPage({
           Change ZIP — because it is read from this browser, not from the
           lookup. The call panel's "See your record" lands on its Your calls
           (`#your-calls`), and /record renders the same component. */}
-      <div className="mt-8 min-w-0 border-t-[3px] border-ink pt-4 lg:mt-0">
+      <div className="mt-8 border-t-[3px] border-ink pt-4">
         <YourRecord />
       </div>
     </div>

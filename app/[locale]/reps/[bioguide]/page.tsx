@@ -244,11 +244,14 @@ function MemberBody({
     reviewNew: reviewTreatsAsNew(rep.bioguide),
   });
 
-  /* THE HEADER IN THE GRID (layout pass 2026-11-28). From 62rem the
-     portrait and name hold column 1, row 1, and the call card spans both
-     rows of column 2, so the number starts level with the name instead of
-     under an empty band beside the header. The DOM order is unchanged
-     (header, the call, the record), so a phone reads exactly as before. */
+  /* THE HEADER IN THE GRID (layout pass 2026-11-28, round 2). From 62rem
+     the portrait and name hold column 1 and the call card column 2 of the
+     first row, so the number starts level with the name. The record (how
+     they voted, the bills they sponsor) takes the full width under that
+     row, with its cards three across from 80rem: a call card beside the
+     whole record left the side column empty for most of the page. The DOM
+     order is unchanged (header, the call, the record), so a phone reads
+     exactly as before. */
   return (
     <div className="mt-6 grid gap-8 min-[62rem]:grid-cols-[minmax(0,1fr)_22rem] min-[62rem]:items-start min-[62rem]:gap-x-12">
       <header className="flex min-w-0 items-start gap-4 md:gap-6 min-[62rem]:col-start-1 min-[62rem]:row-start-1">
@@ -287,11 +290,10 @@ function MemberBody({
       </header>
 
       {/* THE CALL. Same dial, same local numbers as the lookup's card. On a
-          wide screen it holds to the right of the record, so the number is
-          never below the fold of what you're reading about. */}
+          wide screen it sits beside the name, on the first screen. */}
       <section
         aria-labelledby="rep-contact"
-        className="rounded-control border-[1.5px] border-line-strong bg-paper p-5 min-[62rem]:sticky min-[62rem]:top-4 min-[62rem]:col-start-2 min-[62rem]:row-start-1 min-[62rem]:row-span-2 min-[62rem]:self-start"
+        className="rounded-control border-[1.5px] border-line-strong bg-paper p-5 min-[62rem]:col-start-2 min-[62rem]:row-start-1 min-[62rem]:self-start"
       >
         <h2 id="rep-contact" className="text-xl font-extrabold">
           {t('contactHeading')}
@@ -301,7 +303,7 @@ function MemberBody({
         </div>
       </section>
 
-      <div className="min-w-0 min-[62rem]:col-start-1 min-[62rem]:row-start-2">
+      <div className="min-w-0 min-[62rem]:col-span-2 min-[62rem]:row-start-2">
         {/* How they voted (owner, UX inventory R04, 2026-09-28), straight
             after the numbers and before what they sponsor (wireframes v2,
             member.html, 2026-09-29: "who she is, her numbers (first screen),
@@ -325,7 +327,7 @@ function MemberBody({
                   {t('aiNote')}
                 </Chip>
               </p>
-              <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {shown.map((b) => (
                   <BillCard key={b.slug} bill={b} />
                 ))}
@@ -335,7 +337,7 @@ function MemberBody({
                   <summary className="flex min-h-11 cursor-pointer items-center text-sm font-bold select-none">
                     {t('showAll', { count: formatCount(sponsored.length, locale) })}
                   </summary>
-                  <div className="mt-2 grid gap-4 md:grid-cols-2">
+                  <div className="mt-2 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                     {rest.map((b) => (
                       <BillCard key={b.slug} bill={b} />
                     ))}
@@ -423,7 +425,7 @@ function DepartedBody({
 
       {/* No call column to sit beside (layout pass 2026-11-28): the record
           takes the full page width, and its vote cards run two across from
-          80rem (MemberVotes). */}
+          64rem and three from 80rem (MemberVotes). */}
       <div className="mt-8" data-departed-record="">
         <MemberVotes bioguide={member.bioguide} name={member.name} locale={locale} />
       </div>

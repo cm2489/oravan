@@ -13,6 +13,7 @@ import { settledDecisionDate } from '@/lib/settled-votes';
 import { settledOutcomeSentence, statusWord } from '@/lib/status-word';
 import { MomentQuietNote } from '@/components/MomentQuietNote';
 import { ReaderQuestions } from '@/components/ReaderQuestions';
+import { readerQuestionsFor } from '@/lib/reader-questions';
 import { MomentRecordRow } from '@/components/MomentRecordRow';
 import { MomentStatusDate, MomentStatusLine } from '@/components/MomentStatusLine';
 import { MomentStillOpenRail } from '@/components/MomentStillOpenRail';
@@ -97,13 +98,18 @@ const WRAP = 'mx-auto w-full max-w-page px-4';
  *          ("the panel right after the decoded answer", question-single),
  *          or the desk-only "Still open to a call" list on a several-bills
  *          question;
- *   REST   where it stands, what's moved, why this question exists.
+ *   REST   where it stands, what's moved, why this question exists, then
+ *          how Big Questions get made and the lifecycle note.
  *
  * So on a phone the panel follows the question's answer and its bill
- * directly, as it follows the decode on a bill page (rule 8).
+ * directly, as it follows the decode on a bill page (rule 8). The desk-only
+ * list is display: none on a phone, so it sits in the source right after
+ * "deciding", beside which it stands on the desk.
  *
- * WHERE THE RAIL AND THE REST GO DEPENDS ON THE WIDTH (layout pass
- * 2026-11-28). RAIL and REST share one wrapper (SIDE, in the JSX below):
+ * WITH THE PANEL, WHERE THE RAIL AND THE REST GO DEPENDS ON THE WIDTH (layout
+ * pass 2026-11-28). RAIL and REST share one wrapper (SIDE, in the JSX below).
+ * Without a panel the desk runs in rows from 80rem instead: see `place`, in
+ * the page function, for that layout.
  *
  *   62rem to 1279  the wrapper is `display: contents`, so RAIL and REST are
  *                  grid items exactly as before: RAIL in col 2, rows 1–2,
@@ -131,7 +137,7 @@ const WRAP = 'mx-auto w-full max-w-page px-4';
  */
 const DESK = `grid max-w-desk min-[62rem]:max-w-none ${DESK_COLS} min-[62rem]:items-start`;
 
-/* The rail's place on the desk from 62rem to 1279: column 2, both rows,
+/* The panel's place on the desk from 62rem to 1279: column 2, both rows,
    sticky 1rem from the top of the window (the bill page's `sticky top-4
    self-start`). From 80rem it sits at the top of the SIDE wrapper and is not
    sticky, so `sticky` stops at `max-xl`; the placement utilities do nothing
@@ -546,6 +552,75 @@ export default async function MomentPage({
         ];
       });
 
+  /*
+   * THE DESK WITHOUT A PANEL, FROM 80rem (layout pass round 2, 2026-11-28).
+   * With the panel the desk keeps its two stacks (see DESK). Without one — a
+   * question with several open bills, or with none — the long list of bill
+   * cards left column 2 ending far above column 1, so here every block is its
+   * own grid item (the LEAD, SIDE and REST wrappers become `display:
+   * contents`) and the desk runs in rows, each read left then right:
+   *
+   *   rows 1–2  what Congress is deciding | the desk's "Still open" list,
+   *                                         then reader questions
+   *   row 3     the bills, across both columns, their cards two across
+   *   row 4     where it stands           | what's moved
+   *   row 5     why this question exists  | how Big Questions get made, the
+   *                                         lifecycle note
+   *
+   * A LONG LIST (four or more bills still open, Iran war powers today) is
+   * the one exception in rows 1–2: the list is capped at the window's
+   * height, and with reader questions under it column 2 would run far past
+   * "deciding". So reader questions stay in column 1 under "deciding" (row
+   * 2), and the list stands beside both, sticky, so it stays in view while
+   * they scroll. Four is where the two arrangements cross: each item is
+   * about 150px, so four or more fill more height than "deciding" does.
+   *
+   * With no "where it stands", row 4 is what's moved | why, and the closing
+   * notes run below. With nothing to sit beside "deciding" (no list and no
+   * reader questions), the bills take column 2 of row 1 instead. Source
+   * order is unchanged: the desk-only list sits right after "deciding" in
+   * the source (it is display: none below 62rem, so a phone never meets it),
+   * and every other block keeps its place, so the phone, the keyboard and a
+   * screen reader meet the blocks top to bottom, left to right. From 62rem
+   * to 1279 every block is in column 1 and the list rides sticky in column
+   * 2, as before: it spans the seven rows the column can hold (deciding,
+   * reader questions, bills, where, moved, why, closing).
+   */
+  const wide = !panel;
+  const hasRail = wide && railItems.length > 0;
+  const longRail = hasRail && railItems.length >= 4;
+  const besideDeciding = wide && (hasRail || readerQuestionsFor(id) !== null);
+  const hasWhere = Boolean(summaryRevision && !VERBATIM_MODE);
+  const COL1 = 'min-w-0 min-[62rem]:max-xl:col-start-1';
+  const place = {
+    deciding: wide ? ` ${COL1} xl:col-start-1 xl:row-start-1` : '',
+    // The wrapper of the list and reader questions: column 2 of row 1, or,
+    // for a long list, no box at all, so each is placed on its own.
+    beside: longRail ? 'contents' : 'min-w-0 min-[62rem]:max-xl:contents xl:col-start-2 xl:row-start-1',
+    rail: longRail ? ' xl:sticky xl:top-4 xl:col-start-2 xl:row-start-1 xl:row-span-2 xl:self-start' : '',
+    // Beside "deciding" (no list above it) it takes that section's 3px rule,
+    // so the row's two tops match.
+    reader: longRail
+      ? ` ${COL1} xl:col-start-1 xl:row-start-2`
+      : ` ${COL1}${hasRail ? '' : ' xl:mt-0 xl:border-t-[3px] xl:border-ink'}`,
+    bills: !wide
+      ? ''
+      : besideDeciding
+        ? ` ${COL1} xl:col-span-2 xl:col-start-1 xl:row-start-3`
+        : // Beside "deciding" it takes that section's 3px rule, as above.
+          ` ${COL1} xl:col-start-2 xl:row-start-1 xl:mt-0 xl:border-t-[3px] xl:border-ink`,
+    where: wide ? ` ${COL1} xl:col-start-1 xl:row-start-4` : '',
+    moved: wide ? ` ${COL1} ${hasWhere ? 'xl:col-start-2' : 'xl:col-start-1'} xl:row-start-4` : '',
+    why: wide ? ` ${COL1} ${hasWhere ? 'xl:col-start-1 xl:row-start-5' : 'xl:col-start-2 xl:row-start-4'}` : '',
+    // Beside "why" it takes the same hairline, so the row's two tops match.
+    closing: wide
+      ? ` ${COL1} ${hasWhere ? 'xl:col-start-2 xl:row-start-5 xl:border-t xl:border-line xl:pt-4' : 'xl:col-span-2 xl:col-start-1 xl:row-start-5'}`
+      : '',
+  };
+  // The bills' full-width row: the cards run two across and keep their own
+  // height (no stretched blank inside the shorter one).
+  const billsRow = besideDeciding;
+
   return (
     <article className={`${WRAP} pt-6 pb-12 md:pt-8`}>
       {/* 1 · Moment header — above the desk. It names the question and dates
@@ -628,14 +703,17 @@ export default async function MomentPage({
       {/* THE DESK — three blocks in reading order (see DESK): the LEAD
           (what Congress is deciding, then the bills), the RAIL (the call),
           then the REST (where it stands, what's moved, why this question
-          exists); the RAIL and the REST share the SIDE wrapper. Below 62rem
-          they stack in exactly that order, so on a phone the call panel
-          follows the question's answer and its bill directly; from 62rem to
-          1279 the rail rides beside the whole column; from 80rem the rail and
-          the rest fill column 2 beside the lead. */}
+          exists, the closing notes); the RAIL and the REST share the SIDE
+          wrapper. Below 62rem they stack in exactly that order, so on a phone
+          the call panel follows the question's answer and its bill directly;
+          from 62rem to 1279 the rail rides beside the whole column; from 80rem
+          the panel and the rest fill column 2 beside the lead, and a desk
+          with no panel runs in rows (see `place`). */}
       <div className={`mt-8 ${DESK}`}>
-        {/* THE LEAD (2 · 3). Each section keeps its own mt-8 rhythm. */}
-        <div className="min-w-0 min-[62rem]:col-start-1 min-[62rem]:row-start-1">
+        {/* THE LEAD (2 · 3). Each section keeps its own mt-8 rhythm. Without
+            a panel it is `display: contents` and its blocks are placed one by
+            one (see `place` above). */}
+        <div className={wide ? 'contents' : 'min-w-0 min-[62rem]:col-start-1 min-[62rem]:row-start-1'}>
           {/* 2 · The Moment entry's own summary — the page's one reading passage,
               and so the one place Besley is spent. Provenance, spelled out because
               this page renders two passages with DIFFERENT provenance and the
@@ -648,7 +726,7 @@ export default async function MomentPage({
               nightly by the collector (scripts/moment-updates.mjs), gate-checked
               and published with no merge at all. Never let the two blur — the
               difference is the path to the page, not the authorship. */}
-          <section aria-labelledby="deciding" className="border-t-[3px] border-ink pt-4">
+          <section aria-labelledby="deciding" className={`border-t-[3px] border-ink pt-4${place.deciding}`}>
             <h2 id="deciding" className="text-h2 font-extrabold text-ink">
               {isSettled || explainer ? t('moments.decidingSettled') : t('moments.decidingLive')}
             </h2>
@@ -673,8 +751,32 @@ export default async function MomentPage({
             </p>
           </section>
 
-          {/* Reader questions: bank questions answered once from quoted official sources (renders only where data/reader-questions.json has an entry). */}
-          <ReaderQuestions id={id} locale={locale} />
+          {/* Without a panel, from 80rem, column 2 beside "deciding": the
+              desk's "Still open to a call" list, then reader questions (rows
+              1–2 of `place` above; a long list stands sticky beside both).
+              From 62rem to 1279 the wrapper is `display: contents`: the list
+              rides sticky in column 2 beside the whole column, as the panel
+              does, and reader questions stay in column 1. Desk only
+              (display: none below 62rem, where the column's own list is the
+              list), capped at the window's height with the list scrolling
+              inside it (components/MomentStillOpenRail.tsx). Its heading
+              takes the h2 size from 80rem, so the two headings of row 1
+              match. */}
+          {besideDeciding ? (
+            <div className={place.beside}>
+              {hasRail && (
+                <div
+                  className={`hidden min-w-0 min-[62rem]:flex min-[62rem]:max-h-[calc(100dvh-2rem)] min-[62rem]:max-xl:sticky min-[62rem]:max-xl:top-4 min-[62rem]:max-xl:col-start-2 min-[62rem]:max-xl:row-start-1 min-[62rem]:max-xl:row-span-7 min-[62rem]:max-xl:self-start xl:[&_#still-open-rail]:text-h2 ${place.rail.trim()}`}
+                >
+                  <MomentStillOpenRail heading={t('moments.stillOpenRailHeading')} items={railItems} />
+                </div>
+              )}
+              {/* Reader questions: bank questions answered once from quoted official sources (renders only where data/reader-questions.json has an entry). */}
+              <ReaderQuestions id={id} locale={locale} className={place.reader.trim()} />
+            </div>
+          ) : (
+            <ReaderQuestions id={id} locale={locale} />
+          )}
 
           {/* 3 · The bills — STILL OPEN, THEN KEPT AS THE RECORD (wireframes
               v2, 2026-09-29). Open vehicles are cards whose "Read + call"
@@ -682,33 +784,41 @@ export default async function MomentPage({
               and a way to read it, with nothing that dials. The grouping by
               chamber this replaced survives as each card's "Started in the
               House / Senate" tag. */}
-          <section className="mt-8 border-t border-line pt-4" aria-labelledby="vehicles-h">
-            <h2 id="vehicles-h" className="text-h2 font-extrabold text-ink">
-              {t(`moments.${vehiclesKey.heading}`)}
-            </h2>
-            <p className="mt-2 max-w-note text-sm text-ink-2">{t(`moments.${vehiclesKey.lede}`)}</p>
-            {/* Every card leads with an AI-decoded headline and carries the
-                vehicle's `role` — what a yes and a no vote do — which is
-                model-written too (scripts/moment-draft.mjs, CLAUDE.md's
-                2026-08-07 amendment), and the card's button drives a call. So
-                the note names both pieces (pre-launch audit 2026-07-25,
-                constitution-05; widened 2026-08-09), and it is not gated on a
-                decode: the gate requires a `role` on every vehicle. The "where
-                there is one" clause keeps the headline half honest on a card
-                that fell back to its official title. It is gated on a CARD
-                being here at all: a settled vehicle's record row prints no AI
-                text (see `anyCard`). */}
-            {anyCard && (
-              <p className="mt-5">
-                <Chip tone="ai" marker={t('common.aiMarker')} className="max-w-note">
-                  {t('moments.vehiclesAiNote')}
-                </Chip>
-              </p>
-            )}
+          <section className={`mt-8 border-t border-line pt-4${place.bills}`} aria-labelledby="vehicles-h">
+            {/* On the full-width row (from 80rem, no panel) the heading and
+                its lede sit left and the cards' AI note right, both still
+                above the cards they describe. Elsewhere they stack. */}
+            <div className={billsRow ? 'xl:grid xl:grid-cols-2 xl:items-end xl:gap-x-16' : undefined}>
+              <div className="min-w-0">
+                <h2 id="vehicles-h" className="text-h2 font-extrabold text-ink">
+                  {t(`moments.${vehiclesKey.heading}`)}
+                </h2>
+                <p className="mt-2 max-w-note text-sm text-ink-2">{t(`moments.${vehiclesKey.lede}`)}</p>
+              </div>
+              {/* Every card leads with an AI-decoded headline and carries the
+                  vehicle's `role` — what a yes and a no vote do — which is
+                  model-written too (scripts/moment-draft.mjs, CLAUDE.md's
+                  2026-08-07 amendment), and the card's button drives a call. So
+                  the note names both pieces (pre-launch audit 2026-07-25,
+                  constitution-05; widened 2026-08-09), and it is not gated on a
+                  decode: the gate requires a `role` on every vehicle. The "where
+                  there is one" clause keeps the headline half honest on a card
+                  that fell back to its official title. It is gated on a CARD
+                  being here at all: a settled vehicle's record row prints no AI
+                  text (see `anyCard`). */}
+              {anyCard && (
+                <p className={billsRow ? 'mt-5 min-w-0 xl:mt-0' : 'mt-5'}>
+                  <Chip tone="ai" marker={t('common.aiMarker')} className="max-w-note">
+                    {t('moments.vehiclesAiNote')}
+                  </Chip>
+                </p>
+              )}
+            </div>
 
-            {/* STILL OPEN. One card per row: the reading column is one card
-                wide at every width now that the cards live in it (the rail
-                is the call). Authoring order, as data/moments.json lists them. */}
+            {/* STILL OPEN. One card per row in the reading column; two across
+                on the bills' full-width row (from 80rem, no panel), each card
+                its own height. Authoring order, as data/moments.json lists
+                them, read left then right. */}
             {openVehicles.length > 0 && (
               <div className="mt-6" data-still-open>
                 {stillOpenHeading && (
@@ -716,7 +826,9 @@ export default async function MomentPage({
                     {t('moments.stillOpenHeading', { count: openVehicles.length })}
                   </h3>
                 )}
-                <div className="mt-4 grid gap-4">{openVehicles.map(vehicleCard)}</div>
+                <div className={`mt-4 grid gap-4${billsRow ? ' xl:grid-cols-2 xl:items-start' : ''}`}>
+                  {openVehicles.map(vehicleCard)}
+                </div>
               </div>
             )}
 
@@ -749,41 +861,34 @@ export default async function MomentPage({
             on the desk exactly as before. From 80rem it is column 2: the rail
             on top, then where it stands, what's moved and why, so both
             columns carry content the whole way down. Below 62rem it is an
-            ordinary block, and the order is the phone's reading order. */}
-        <div className="min-w-0 min-[62rem]:max-xl:contents xl:col-start-2 xl:row-start-1">
-          {/* THE RAIL — the call.
-
-              ONE OPEN BILL: the bill page's own call panel (Q6 b; Q5 a, one
-              call route, inline), in the bill page's own rail wrapper — sticky
-              from 62rem to 1279 and at the top of column 2 from 80rem, capped
-              at the window's height with the panel scrolling inside it on the
-              desk — and, on a phone, in flow right after the bills with the
-              column's own 2rem rhythm. No floating "Make the call" button
-              here: the wireframe draws none on a question page (see the PR).
-
-              SEVERAL OPEN: the short "Still open to a call" list, on the desk
-              only (display: none below 62rem, where the column's list is the
-              list), capped at the window's height like the panel, with the
-              list scrolling inside it (components/MomentStillOpenRail.tsx). */}
+            ordinary block, and the order is the phone's reading order. Without
+            a panel it is `display: contents` (see `place` above). */}
+        <div className={wide ? 'contents' : 'min-w-0 min-[62rem]:max-xl:contents xl:col-start-2 xl:row-start-1'}>
+          {/* THE RAIL — the call, on a question with ONE OPEN BILL: the bill
+              page's own call panel (Q6 b; Q5 a, one call route, inline), in
+              the bill page's own rail wrapper — sticky from 62rem to 1279 and
+              at the top of column 2 from 80rem, capped at the window's height
+              with the panel scrolling inside it on the desk — and, on a
+              phone, in flow right after the bills with the column's own 2rem
+              rhythm. No floating "Make the call" button here: the wireframe
+              draws none on a question page (see the PR). With SEVERAL OPEN,
+              the desk's short "Still open to a call" list stands beside
+              "deciding" instead (above, after that section in the source). */}
           {panel && (
             <div className={`mt-8 ${RAIL} min-[62rem]:mt-0 min-[62rem]:flex min-[62rem]:max-h-[calc(100dvh-2rem)]`}>
               <ActionPanel {...panel} />
             </div>
           )}
-          {!panel && railItems.length > 0 && (
-            <div className={`hidden ${RAIL} min-[62rem]:flex min-[62rem]:max-h-[calc(100dvh-2rem)]`}>
-              <MomentStillOpenRail heading={t('moments.stillOpenRailHeading')} items={railItems} />
-            </div>
-          )}
 
-          {/* THE REST: where it stands, what's moved, why this question exists.
-              (The section numbers in the comments below are the old page's.) */}
-          <div className="min-w-0 min-[62rem]:col-start-1 min-[62rem]:row-start-2">
+          {/* THE REST: where it stands, what's moved, why this question exists,
+              then how Big Questions get made and the lifecycle note. (The
+              section numbers in the comments below are the old page's.) */}
+          <div className={wide ? 'contents' : 'min-w-0 min-[62rem]:col-start-1 min-[62rem]:row-start-2'}>
             {/* 3 · "Where it stands" — the machine-written state summary (v2 spec
                 §7). It comes AFTER the summary section above on purpose: the
                 issue stays front-and-center and dated motion is subordinate to it
-                (from 80rem it sits in column 2 under the rail, still after the
-                summary in reading order and beside it rather than ahead of it).
+                (from 80rem it sits in column 2 under the panel, or below the
+                bills without one — always after the summary in reading order).
                 Renders NOTHING when no revision exists — an empty placeholder
                 promising a summary later is a claim about our pipeline, not about
                 Congress, and this surface only makes the second kind of claim.
@@ -801,7 +906,7 @@ export default async function MomentPage({
                 off-state is silence (the section is already absent when no revision
                 exists — see lib/moment-updates.ts). */}
             {summaryRevision && !VERBATIM_MODE && (
-              <section aria-labelledby="where-it-stands" className="mt-8 border-t border-line pt-4">
+              <section aria-labelledby="where-it-stands" className={`mt-8 border-t border-line pt-4${place.where}`}>
                 <h2 id="where-it-stands" className="text-h2 font-extrabold text-ink">
                   {t('moments.updates.whereHeading', { date: fmtDate(summaryRevision.as_of_day) })}
                 </h2>
@@ -896,7 +1001,7 @@ export default async function MomentPage({
                 one of them is Congress's: "nothing moved" is server-rendered from
                 the record, "we couldn't check" is the visitor's own clock talking
                 (v2 spec §3). */}
-            <section aria-labelledby="whats-moved" className="mt-8 border-t border-line pt-4">
+            <section aria-labelledby="whats-moved" className={`mt-8 border-t border-line pt-4${place.moved}`}>
               <h2 id="whats-moved" className="text-h2 font-extrabold text-ink">
                 {t('moments.updates.timelineHeading')}
               </h2>
@@ -910,7 +1015,7 @@ export default async function MomentPage({
             {/* 6 · Why this Moment exists — the column's last section, as the
                    wireframes draw it (v2, 2026-09-29). It sat in the rail under
                    the cards until the rail became the call. */}
-            <section className="mt-8 border-t border-line pt-4" aria-labelledby="why-h">
+            <section className={`mt-8 border-t border-line pt-4${place.why}`} aria-labelledby="why-h">
               <h2 id="why-h" className="text-xs leading-tight font-extrabold tracking-[0.1em] text-ink-2 uppercase">
                 {t('moments.whyHeading')}
               </h2>
@@ -973,23 +1078,29 @@ export default async function MomentPage({
                 </>
               )}
             </section>
+
+            {/* 7 · How this page is made, and the lifecycle note, in the order
+                   they had inside the "why" section. They close the column
+                   that holds "why" (layout pass round 2, 2026-11-28): column 2
+                   from 80rem, so it ends near column 1; column 1 below that,
+                   at the same left edge and measure as when they sat under
+                   the desk. */}
+            <div className={`mt-8${place.closing}`}>
+              <p>
+                <Link href="/questions#how" className={`${CONTENT_LINK} text-sm`}>
+                  {t('moments.howMadeLink')} →
+                </Link>
+              </p>
+
+              {!isSettled && (
+                <p className="mt-5 max-w-read border-t border-line pt-4 text-sm text-ink-2">
+                  {t('moments.lifecycleLive')}
+                </p>
+              )}
+            </div>
           </div>
         </div>
       </div>
-
-      {/* 7 · How this page is made, and the lifecycle note — full width below
-             the desk, in the order they had inside the "why" section. */}
-      <p className="mt-8">
-        <Link href="/questions#how" className={`${CONTENT_LINK} text-sm`}>
-          {t('moments.howMadeLink')} →
-        </Link>
-      </p>
-
-      {!isSettled && (
-        <p className="mt-5 max-w-read border-t border-line pt-4 text-sm text-ink-2">
-          {t('moments.lifecycleLive')}
-        </p>
-      )}
 
       {/* 8 · Browse-all affordance (scarcity) */}
       <p className="mt-8 flex flex-wrap items-baseline gap-x-4 gap-y-1 border-t border-line pt-4">

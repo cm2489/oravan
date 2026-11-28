@@ -109,7 +109,9 @@ export default async function MomentsPage({ params }: { params: Promise<{ locale
           rule; the record below it takes a hairline. `line` is a separator
           tone, never a component edge. From 64rem the heading and its one-line
           sub share a row, and the cards run three across from 80rem
-          (CARD_GRID), so a laptop's first screen holds a full row of them. */}
+          (CARD_GRID), so a laptop's first screen holds a full row of them.
+          `items-start`: each card keeps its own height, so a short dek leaves
+          no blank well inside its card (layout pass round 2). */}
       <section className="mt-8 border-t-[3px] border-ink pt-4" aria-labelledby="moments-live">
         <div className="lg:flex lg:flex-wrap lg:items-baseline lg:gap-x-4">
           <h2 id="moments-live" className="text-h2 font-extrabold text-ink">
@@ -118,11 +120,25 @@ export default async function MomentsPage({ params }: { params: Promise<{ locale
           <p className="mt-1 max-w-read text-sm text-ink-2 lg:mt-0">{t('moments.liveSub')}</p>
         </div>
 
+        {/* Scarcity note (spec §4.3 / mockup annotation 6): the cap keeps
+            curation honest — the count is the moments actually reading as
+            live right now, which is exactly the grid it closes. It is the
+            grid's last item (layout pass round 2, 2026-11-28): from 80rem it
+            takes the free cell beside a short last row of cards instead of a
+            row of its own; from 40rem to 1279 it runs across the row under
+            the cards; on a phone it follows the last card, as before.
+            Suppressed at zero, where the empty state has already said the
+            same thing in words and "never more than 6" would be a boast
+            about an empty shelf; the homepage band takes the same posture,
+            disappearing rather than printing a nought. */}
         {live.length > 0 ? (
-          <div className={`mt-4 ${CARD_GRID}`}>
+          <div className={`mt-4 ${CARD_GRID} items-start`}>
             {live.map((m) => (
               <MomentCard key={m.id} moment={toTeaser(m, locale)} />
             ))}
+            <p className="mt-2 max-w-read min-w-0 text-sm text-ink-2 sm:col-span-2 xl:col-span-1 xl:mt-0 xl:pt-5">
+              {t('moments.scarcityNote', { count: live.length, cap: LIVE_CAP })}
+            </p>
           </div>
         ) : (
           /* Opened by the same 3px ink rule that opens a section — the page
@@ -143,19 +159,6 @@ export default async function MomentsPage({ params }: { params: Promise<{ locale
             </p>
           </div>
         )}
-
-        {/* Scarcity note (spec §4.3 / mockup annotation 6): the cap keeps
-            curation honest — the count is the moments actually reading as
-            live right now, which is now exactly the grid above it. Suppressed
-            at zero, where the empty state has already said the same thing in
-            words and "never more than 6" would be a boast about an empty
-            shelf; the homepage band takes the same posture, disappearing
-            rather than printing a nought. */}
-        {live.length > 0 && (
-          <p className="mt-6 max-w-read text-sm text-ink-2">
-            {t('moments.scarcityNote', { count: live.length, cap: LIVE_CAP })}
-          </p>
-        )}
       </section>
 
       {settled.length > 0 && (
@@ -166,7 +169,7 @@ export default async function MomentsPage({ params }: { params: Promise<{ locale
           <p className="mt-2 max-w-read text-sm text-ink-2">{t('moments.settledSub')}</p>
           {/* No opacity dimmer: quieter is carried by the heading's weight and
               the hairline rule, never by washing out real text. */}
-          <div className={`mt-4 ${CARD_GRID}`}>
+          <div className={`mt-4 ${CARD_GRID} items-start`}>
             {settled.map((m) => (
               <MomentCard key={m.id} moment={toTeaser(m, locale)} />
             ))}

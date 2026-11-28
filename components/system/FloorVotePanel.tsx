@@ -305,7 +305,22 @@ export function FloorVotePanel({
               {quote}
             </div>
           )}
-          {rows && <div className={`min-w-0 ${aside ? 'md:col-span-2 xl:col-span-1' : ''}`}>{rows}</div>}
+          {/* THE ROWS ON A PHONE (round 2 of the layout pass): below md they
+              look as they did under the slab before the pass, on paper. This
+              block bleeds to the panel's edges (-mx-4), opens with the slab's
+              3px ink foot rule 32px under the CTA (gap-6 + mt-2, the panel's
+              old pb-8), then 24px of paper (the rows' old mt-6). The caller
+              drops the stone under it (`max-md:pb-0`) and the slab's own foot
+              rule below md. The paper ground takes back the paper focus gap
+              and the paper line heights that `on-stone` and
+              `ground-leading` retune for the stone. From md, unchanged. */}
+          {rows && (
+            <div
+              className={`min-w-0 ${aside ? 'md:col-span-2 xl:col-span-1' : ''} max-md:-mx-4 max-md:mt-2 max-md:border-t-[3px] max-md:border-ink max-md:bg-paper max-md:px-4 max-md:pt-6 max-md:[--focus-gap:var(--color-paper)] max-md:[--text-sm--line-height:var(--leading-body)] max-md:[--text-lg--line-height:var(--leading-body)]`}
+            >
+              {rows}
+            </div>
+          )}
         </div>
       ) : (
         <div className="mx-auto grid max-w-page gap-3 px-4">{main}</div>

@@ -354,18 +354,24 @@ export default async function NominationPage({
         </Link>
       </p>
 
-      {/* THE DOSSIER (layout pass 2026-11-28), the bill page's header
-          geometry: from 62rem the headline takes the desk's reading track and
-          the record line, the no-decode note and the parent question take
-          the rail track beside it. Below 62rem, one column in the same order. */}
-      <header className={`pt-4 pb-4 min-[62rem]:grid ${DESK_COLS} min-[62rem]:items-start`}>
-        <h1 className="min-w-0 max-w-[36ch] text-h1-bill font-extrabold text-ink">{headline}</h1>
-        <div className="min-w-0">
+      {/* THE DOSSIER (layout pass 2026-11-28, round 2), the bill page's header
+          geometry: the headline runs the full width from 80rem, and the
+          record facts sit under it on one 3px rule in the desk's two tracks,
+          the record line over the reading column and the no-decode note and
+          the parent question over the rail. DOM order is the reading and tab
+          order. Below 62rem, one column in the same order, looking as it did
+          before the pass. */}
+      <header className="pt-4 pb-4">
+        <h1 className="max-w-[36ch] text-h1-bill font-extrabold text-ink xl:max-w-none">{headline}</h1>
+        <div
+          className={`mt-3 max-w-read border-t-[3px] border-ink pt-2 min-[62rem]:grid min-[62rem]:max-w-none ${DESK_COLS} min-[62rem]:items-start`}
+        >
           {/* THE PROVENANCE RITUAL, the bill page's own line in the bill page's
               own voice and order: citation · receiving body · status · latest
               action. No AI label rides here — unlike a bill headline, nothing
-              above this line was written by a model. */}
-          <p className="mt-3 max-w-read border-t-[3px] border-ink pt-2 text-2xs font-extrabold tracking-[0.14em] text-ink-2 uppercase min-[62rem]:mt-2 min-[62rem]:max-w-none">
+              above this line was written by a model. Its rule sits on the
+              wrapper above (round 2), so on the desk it spans both tracks. */}
+          <p className="min-w-0 text-2xs font-extrabold tracking-[0.14em] text-ink-2 uppercase">
             <span className="tabular-nums">{nomination.citation}</span>
             {nomination.organization && (
               <>
@@ -395,25 +401,27 @@ export default async function NominationPage({
             )}
           </p>
 
-          {/* The absence of a decode, stated where a decode would have been —
-              immediately with the headline it would have replaced (under it on
-              a phone, in the record column beside it on the desk). */}
-          <p className="mt-2 max-w-read text-sm text-ink-2 min-[62rem]:max-w-none">{t('nominations.noDecodeNote')}</p>
+          <div className="min-w-0">
+            {/* The absence of a decode, stated where a decode would have been —
+                immediately with the headline it would have replaced (under it
+                on a phone, in the rail track under it on the desk). */}
+            <p className="mt-2 max-w-read text-sm text-ink-2 min-[62rem]:mt-0 min-[62rem]:max-w-none">{t('nominations.noDecodeNote')}</p>
 
-          {parentMoments.length > 0 && (
-            <ul className="mt-2 max-w-read border-t border-line pt-1 min-[62rem]:max-w-none">
-              {parentMoments.map((m) => (
-                <li key={m.id}>
-                  <Link
-                    href={`/questions/${m.id}`}
-                    className="inline-flex min-h-11 items-center text-sm font-semibold text-ink underline decoration-line-strong underline-offset-4 hover:decoration-ink"
-                  >
-                    {t('moments.partOf', { name: locale === 'es' ? m.name.es : m.name.en })}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
+            {parentMoments.length > 0 && (
+              <ul className="mt-2 max-w-read border-t border-line pt-1 min-[62rem]:max-w-none">
+                {parentMoments.map((m) => (
+                  <li key={m.id}>
+                    <Link
+                      href={`/questions/${m.id}`}
+                      className="inline-flex min-h-11 items-center text-sm font-semibold text-ink underline decoration-line-strong underline-offset-4 hover:decoration-ink"
+                    >
+                      {t('moments.partOf', { name: locale === 'es' ? m.name.es : m.name.en })}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
       </header>
 
@@ -421,7 +429,7 @@ export default async function NominationPage({
         {/* THE DESK: the record on the left, the call rail on the right. Same
             grid the bill page uses, and the rail spans every row so a sticky
             item holds to the page foot. DESK_COLS since 2026-11-28. */}
-        <div className={`grid max-w-desk gap-8 pt-2 min-[62rem]:max-w-none ${DESK_COLS} min-[62rem]:items-start min-[62rem]:gap-y-8`}>
+        <div className={`grid max-w-read gap-8 pt-2 min-[62rem]:max-w-none ${DESK_COLS} min-[62rem]:items-start min-[62rem]:gap-y-8`}>
           <section
             aria-labelledby="record-h"
             className="min-w-0 min-[62rem]:col-start-1 min-[62rem]:row-start-1"

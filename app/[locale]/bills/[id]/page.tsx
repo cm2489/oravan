@@ -153,6 +153,16 @@ export async function generateMetadata({
 // tracks (headline left, record facts right).
 const WRAP = 'mx-auto w-full max-w-page px-4';
 
+/** The desk's explicit row template, one auto row per block in the reading
+ *  column (see the desk below for why). Written out in full so Tailwind sees
+ *  every class: the read, the tracker and the share row always, plus the
+ *  vote record and the call demo when they render. */
+const DESK_ROWS: Record<number, string> = {
+  3: 'min-[62rem]:grid-rows-[repeat(3,auto)]',
+  4: 'min-[62rem]:grid-rows-[repeat(4,auto)]',
+  5: 'min-[62rem]:grid-rows-[repeat(5,auto)]',
+};
+
 /*
  * WHICH of the three dated floor facts the band is standing on is decided by
  * `billFloorBand` (lib/journey.ts) and named by `FloorBandKind` — the same
@@ -603,6 +613,11 @@ export default async function BillPage({
     return m ? formatCitation(m[1], Number(m[2])) : s;
   });
 
+  // One desk row per reading-column block: the read, the tracker and the share
+  // row always; VoteRecord renders nothing when votesForBill is empty; the
+  // call demo renders on the rail's say-so. Must match the JSX below.
+  const deskRows = 3 + (votesForBill(id).length > 0 ? 1 : 0) + (rail.walkthrough ? 1 : 0);
+
   return (
     <>
       <JsonLd id="bill-jsonld" data={jsonLd} />
@@ -635,16 +650,20 @@ export default async function BillPage({
             content it labels (above the fold at 390px), and 27 words of
             statute-speak that no first-time caller reads before deciding are
             folded into a disclosure.
-            THE DOSSIER (layout pass 2026-11-28): from 62rem the header uses
-            the desk's two tracks, the headline on the left and the record
-            facts (status, sponsor, AI label, parent question, official text)
-            on the right under their rule, so the top right of the first
-            screen carries the record instead of paper. Below 62rem it is one
-            column in the same order. The header's first <p> is still the
-            status line. */}
-        <header className={`pt-4 pb-4 min-[62rem]:grid ${DESK_COLS} min-[62rem]:items-start`}>
-          <h1 className="min-w-0 max-w-[24ch] text-h1-bill font-extrabold text-ink">{displayTitle}</h1>
-          <div className="min-w-0">
+            THE DOSSIER (layout pass 2026-11-28, round 2): the headline runs
+            the full width from 80rem (it wrapped to five lines when it shared
+            the row with the facts), and the record facts sit under it on one
+            3px rule in the desk's two tracks: status, citation and sponsor
+            over the reading column; the AI label, the parent question and the
+            official text over the rail. DOM order is the reading and tab
+            order (left track, then right). Below 62rem it is one column in
+            the same order and looks as it did before the pass. The header's
+            first <p> is still the status line. */}
+        <header className="pt-4 pb-4">
+          <h1 className="max-w-[24ch] text-h1-bill font-extrabold text-ink xl:max-w-none">{displayTitle}</h1>
+          <div
+            className={`mt-3 max-w-read border-t-[3px] border-ink pt-3 min-[62rem]:grid min-[62rem]:max-w-none ${DESK_COLS} min-[62rem]:items-start`}
+          >
             {/* Descends from the PROVENANCE RITUAL (2026-08 design pick C1):
                 the same facts in the same order — record, status, latest
                 action, the AI label — now as three marks instead of one run of
@@ -666,8 +685,12 @@ export default async function BillPage({
                 The status and the date share the header's FIRST <p> on purpose:
                 tests/freshness.spec.ts reads the status off `main header p`.
                 One plain line joined it on 2026-09-27 — the sponsor, under the
-                citation (SY-33) — as its own <p>, so that first <p> is unchanged. */}
-            <div className="mt-3 max-w-read border-t-[3px] border-ink pt-3 min-[62rem]:mt-2 min-[62rem]:max-w-none">
+                citation (SY-33) — as its own <p>, so that first <p> is unchanged.
+                Since round 2 of the layout pass (2026-11-28) the rule sits on
+                the facts wrapper above, so it spans both tracks on the desk;
+                the AI mark opens the right track, still directly under the
+                headline it labels. On a phone nothing moved. */}
+            <div className="min-w-0">
               <p>
                 <Chip tone="status">{t(statusLabelKey)}</Chip>
                 <span className="mt-2 block text-sm text-ink-2 tabular-nums">
@@ -724,87 +747,89 @@ export default async function BillPage({
                   })}
                 </p>
               )}
+            </div>
+            <div className="min-w-0">
               {hasDecode && (
-                <Chip tone="ai" marker={t('bill.aiMarker')} className="mt-2">
+                <Chip tone="ai" marker={t('bill.aiMarker')} className="mt-2 min-[62rem]:mt-0">
                   {t('bill.aiLabel')}
                 </Chip>
               )}
-            </div>
-            {/* PART OF A BIGGER QUESTION (repositioning spec §7.2). Until now
-                a bill page said nothing about the Moment it is a vehicle of —
-                the link existed in one direction only. It lands here, after
-                the chips and above the statute-speak, because it is context
-                for the claim in the h1, not a task.
-                Quiet on purpose: a hairline rule and an ink link, never green.
-                Green is the call, and this page already spends its one green
-                affordance on the rail; a second one competing for the eye
-                would make the reader choose between reading and calling. */}
-            {parentMoments.length > 0 && (
-              <ul className="mt-2 max-w-read border-t border-line pt-1 min-[62rem]:max-w-none">
-                {parentMoments.map((m) => (
-                  <li key={m.id}>
-                    <Link
-                      href={`/questions/${m.id}`}
-                      className="inline-flex min-h-11 items-center text-sm font-semibold text-ink underline decoration-line-strong underline-offset-4 hover:decoration-ink"
-                    >
-                      {t('moments.partOf', { name: locale === 'es' ? m.name.es : m.name.en })}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <details className="group mt-2 max-w-read min-[62rem]:max-w-none">
-              <summary className="inline-flex min-h-11 cursor-pointer list-none items-center gap-2 text-sm font-semibold text-ink hover:text-go-deep [&::-webkit-details-marker]:hidden">
-                <span
-                  aria-hidden
-                  className="inline-flex h-5 w-5 flex-none items-center justify-center rounded-stamp border-[1.5px] border-ink text-xs font-extrabold leading-none"
-                >
-                  <span className="group-open:hidden">+</span>
-                  <span className="hidden group-open:inline">{'–'}</span>
-                </span>
-                {t('bill.officialDisclosure')}
-              </summary>
-              <div className="space-y-2 pb-2 text-sm text-ink-2">
-                <p>
-                  <b className="font-semibold text-ink">{t('bill.officialTitle')}:</b> {bill.title}
-                </p>
-                {bill.short_title && (
-                  <p>
-                    <b className="font-semibold text-ink">{t('bill.shortTitleLabel')}:</b>{' '}
-                    {`“${bill.short_title}”`}
-                  </p>
-                )}
-                <p>{t('bill.congressLabel', { congress: bill.congress_number })}</p>
-                {/* Topics as plain words, not chips: on this page a chip means
-                    status, and there is exactly one. */}
-                {(bill.issue_tags ?? []).length > 0 && (
-                  <p>
-                    <b className="font-semibold text-ink">{t('bill.topicsLabel')}:</b>{' '}
-                    {(bill.issue_tags ?? [])
-                      .slice(0, 2)
-                      .map((tag) => t(`categories.${tag}`))
-                      .join(' · ')}
-                  </p>
-                )}
-                {bill.introduced_date && (
-                  <p className="tabular-nums">
-                    <b className="font-semibold text-ink">{t('bill.introduced')}:</b>{' '}
-                    <time dateTime={bill.introduced_date}>{fmtDate(bill.introduced_date)}</time>
-                  </p>
-                )}
-                {bill.congress_gov_url && (
-                  <a
-                    href={bill.congress_gov_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex min-h-11 items-center gap-1.5 font-semibold text-go underline visited:text-go-deep hover:text-go-deep"
+              {/* PART OF A BIGGER QUESTION (repositioning spec §7.2). Until now
+                  a bill page said nothing about the Moment it is a vehicle of —
+                  the link existed in one direction only. It lands here, after
+                  the chips and above the statute-speak, because it is context
+                  for the claim in the h1, not a task.
+                  Quiet on purpose: a hairline rule and an ink link, never green.
+                  Green is the call, and this page already spends its one green
+                  affordance on the rail; a second one competing for the eye
+                  would make the reader choose between reading and calling. */}
+              {parentMoments.length > 0 && (
+                <ul className="mt-2 max-w-read border-t border-line pt-1 min-[62rem]:max-w-none min-[62rem]:first:mt-0 min-[62rem]:first:border-t-0 min-[62rem]:first:pt-0">
+                  {parentMoments.map((m) => (
+                    <li key={m.id}>
+                      <Link
+                        href={`/questions/${m.id}`}
+                        className="inline-flex min-h-11 items-center text-sm font-semibold text-ink underline decoration-line-strong underline-offset-4 hover:decoration-ink"
+                      >
+                        {t('moments.partOf', { name: locale === 'es' ? m.name.es : m.name.en })}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <details className="group mt-2 max-w-read min-[62rem]:max-w-none min-[62rem]:first:mt-0">
+                <summary className="inline-flex min-h-11 cursor-pointer list-none items-center gap-2 text-sm font-semibold text-ink hover:text-go-deep [&::-webkit-details-marker]:hidden">
+                  <span
+                    aria-hidden
+                    className="inline-flex h-5 w-5 flex-none items-center justify-center rounded-stamp border-[1.5px] border-ink text-xs font-extrabold leading-none"
                   >
-                    {t('bill.viewOfficial')}
-                    <ExternalLink className="h-4 w-4 flex-none" aria-hidden />
-                  </a>
-                )}
-              </div>
-            </details>
+                    <span className="group-open:hidden">+</span>
+                    <span className="hidden group-open:inline">{'–'}</span>
+                  </span>
+                  {t('bill.officialDisclosure')}
+                </summary>
+                <div className="space-y-2 pb-2 text-sm text-ink-2">
+                  <p>
+                    <b className="font-semibold text-ink">{t('bill.officialTitle')}:</b> {bill.title}
+                  </p>
+                  {bill.short_title && (
+                    <p>
+                      <b className="font-semibold text-ink">{t('bill.shortTitleLabel')}:</b>{' '}
+                      {`“${bill.short_title}”`}
+                    </p>
+                  )}
+                  <p>{t('bill.congressLabel', { congress: bill.congress_number })}</p>
+                  {/* Topics as plain words, not chips: on this page a chip means
+                      status, and there is exactly one. */}
+                  {(bill.issue_tags ?? []).length > 0 && (
+                    <p>
+                      <b className="font-semibold text-ink">{t('bill.topicsLabel')}:</b>{' '}
+                      {(bill.issue_tags ?? [])
+                        .slice(0, 2)
+                        .map((tag) => t(`categories.${tag}`))
+                        .join(' · ')}
+                    </p>
+                  )}
+                  {bill.introduced_date && (
+                    <p className="tabular-nums">
+                      <b className="font-semibold text-ink">{t('bill.introduced')}:</b>{' '}
+                      <time dateTime={bill.introduced_date}>{fmtDate(bill.introduced_date)}</time>
+                    </p>
+                  )}
+                  {bill.congress_gov_url && (
+                    <a
+                      href={bill.congress_gov_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex min-h-11 items-center gap-1.5 font-semibold text-go underline visited:text-go-deep hover:text-go-deep"
+                    >
+                      {t('bill.viewOfficial')}
+                      <ExternalLink className="h-4 w-4 flex-none" aria-hidden />
+                    </a>
+                  )}
+                </div>
+              </details>
+            </div>
           </div>
         </header>
       </div>
@@ -874,8 +899,15 @@ export default async function BillPage({
         {/* THE DESK: reading column + call rail. The rail spans every row, so
             a sticky item is not confined to row 1 and holds to the page foot.
             DESK_COLS since 2026-11-28: a 608 reading track and a rail that
-            takes the rest (544 at the full shell, never under 360). */}
-        <div className={`grid max-w-desk gap-8 pt-6 min-[62rem]:max-w-none ${DESK_COLS} min-[62rem]:items-start min-[62rem]:gap-y-8`}>
+            takes the rest (544 at the full shell, never under 360).
+            THE ROWS ARE EXPLICIT (round 2, 2026-11-28): `row-span-full` is
+            `grid-row: 1 / -1`, and -1 counts from the end of the EXPLICIT
+            grid, so with no row template the rail spanned row 1 only and its
+            sticky panel scrolled away with the end of the decode, leaving the
+            rail blank beside the tracker and the votes. DESK_ROWS declares one
+            auto row per reading-column block, so the rail really spans them
+            all. Below 62rem the column stays 528 wide, as before the pass. */}
+        <div className={`grid max-w-read gap-8 pt-6 min-[62rem]:max-w-none ${DESK_COLS} ${DESK_ROWS[deskRows]} min-[62rem]:items-start min-[62rem]:gap-y-8`}>
           {/* data-read-zone: FloatingCallButton stands down while any of the
               decoded answer is on screen, so it never sits over the text the
               page exists to deliver (2026-09-27 audit, SY-07). */}
