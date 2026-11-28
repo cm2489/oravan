@@ -37,7 +37,7 @@ export interface MomentTeaser {
  * no green and no amber on this card: a moment asks a question, and neither
  * asking nor having settled is a floor-calendar fact.
  */
-export function MomentCard({ moment }: { moment: MomentTeaser }) {
+export function MomentCard({ moment, className = '' }: { moment: MomentTeaser; className?: string }) {
   const t = useTranslations();
   const format = useFormatter();
 
@@ -71,33 +71,53 @@ export function MomentCard({ moment }: { moment: MomentTeaser }) {
   const updatedDate =
     moment.updatedDate && moment.updatedDate !== moment.status?.date ? moment.updatedDate : null;
 
+  /*
+   * TITLE FIRST (owner, 2026-11-28: "The Big Question title should be bigger
+   * than the chip… That should not lead it should be next to the title or
+   * under it and in a smaller font than the title."). The name leads, one
+   * type step up (text-xl, 21px), and the topic chip sits under it, so the
+   * question is the first and largest thing on the card and the topic reads
+   * as a label on it. The DOM follows the same order.
+   *
+   * THREE ROWS ON THE LIST'S GRID (layout pass round 3, 2026-11-28). The card
+   * spans three rows of the list's grid and takes them as its own
+   * (`grid-rows-subgrid`): the question (name, chip, dek), the record's status
+   * line, the count. So every card in a row is the same height, the status
+   * rules line up across the row, and the blank a short dek leaves sits above
+   * its status rule instead of as paper under a shorter box. The rows take
+   * the list's 16px gap. Where subgrid is missing the card is an ordinary
+   * three-row grid of its own height, its rows with no gap between them.
+   */
   return (
     <Link
       href={`/questions/${moment.id}`}
-      className="group block rounded-control border border-line-strong bg-paper p-5 transition-colors hover:border-ink"
+      className={`group row-span-3 grid min-w-0 grid-rows-subgrid rounded-control border border-line-strong bg-paper p-5 transition-colors hover:border-ink ${className}`}
     >
-      <div className="flex flex-wrap items-center gap-2">
-        <Chip tone="tag">{t(`categories.${moment.category}`)}</Chip>
-        {moment.state === 'settled' && <Chip tone="stale">{t('moments.settledBadge')}</Chip>}
-        {/* No "Needs review" badge any more (owner, 2026-09-24): a lapsed
-            review date is a curation reminder the watcher sends the owner,
-            not a caveat on the reader's card. The card's status line below is
-            re-derived from the record on every build either way. */}
+      <div className="min-w-0">
+        <h3 className="text-xl leading-tight font-bold text-ink group-hover:underline group-hover:decoration-go group-hover:decoration-[3px]">
+          {moment.name}
+        </h3>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <Chip tone="tag">{t(`categories.${moment.category}`)}</Chip>
+          {moment.state === 'settled' && <Chip tone="stale">{t('moments.settledBadge')}</Chip>}
+          {/* No "Needs review" badge any more (owner, 2026-09-24): a lapsed
+              review date is a curation reminder the watcher sends the owner,
+              not a caveat on the reader's card. The card's status line below
+              is re-derived from the record on every build either way. */}
+        </div>
+        <p className="mt-3 max-w-read text-sm text-ink-2">{moment.dek}</p>
       </div>
-      <h3 className="mt-3 text-lg leading-tight font-bold text-ink group-hover:underline group-hover:decoration-go group-hover:decoration-[3px]">
-        {moment.name}
-      </h3>
-      <p className="mt-2 max-w-read text-sm text-ink-2">{moment.dek}</p>
       {/* Where it stands, from the record — hairline above it so the AI-drafted
           dek and the record's own status never read as one passage. The date
           it prints is the record's; the "Updated" line below is the
-          question's own freshness and stays. The card ends where its text
-          ends (layout pass round 2, 2026-11-28): the list's grid does not
-          stretch it, so a short dek leaves no blank well inside the card. */}
-      {moment.status && (
-        <MomentStatusLine line={moment.status} className="mt-3 border-t border-line pt-3" />
+          question's own freshness and stays. An empty row holds its place
+          when the record gives no line, so the count stays on the third row. */}
+      {moment.status ? (
+        <MomentStatusLine line={moment.status} className="min-w-0 border-t border-line pt-3" />
+      ) : (
+        <div />
       )}
-      <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-ink-2">
+      <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-ink-2">
         <span>
           {countLine}
           {updatedDate && <span aria-hidden>&nbsp;·</span>}

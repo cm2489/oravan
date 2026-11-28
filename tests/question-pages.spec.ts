@@ -295,6 +295,47 @@ for (const { locale, prefix, messages, t } of LOCALES) {
     });
   });
 
+  /* TITLE FIRST (owner, 2026-11-28: the title "should be bigger and more
+     pronounced"; the topic "should not lead", it sits "next to the title or
+     under it and in a smaller font"). On the list's card and on the
+     question's own page, the title comes before its topic chip in the
+     source (so in reading, keyboard and phone order), the chip sits under
+     it, and the title's type is the larger. */
+  test(`${locale}: a Big Question's title leads its topic chip and outranks it`, async ({ page }) => {
+    const m = RENDERED[0];
+    test.skip(!m, 'no Big Question in the corpus');
+    const topic = messages.categories[m.category as keyof typeof messages.categories];
+    const titleThenTopic = (root: string, heading: string) =>
+      page.locator(root).first().evaluate(
+        (el, [heading, topic]) => {
+          const h = el.querySelector(heading)!;
+          const chip = [...el.querySelectorAll('*')].find(
+            (e) => e.children.length === 0 && e.textContent?.trim() === topic
+          )!;
+          return {
+            first: Boolean(h.compareDocumentPosition(chip) & Node.DOCUMENT_POSITION_FOLLOWING),
+            under: chip.getBoundingClientRect().top >= h.getBoundingClientRect().bottom - 1,
+            larger: parseFloat(getComputedStyle(h).fontSize) > parseFloat(getComputedStyle(chip).fontSize),
+          };
+        },
+        [heading, topic] as const
+      );
+
+    await page.goto(`${prefix}/questions`);
+    expect(await titleThenTopic(`main a[href$="/questions/${m.id}"]`, 'h3'), 'the list card').toEqual({
+      first: true,
+      under: true,
+      larger: true,
+    });
+
+    await page.goto(`${prefix}/questions/${m.id}`);
+    expect(await titleThenTopic('main article', 'h1'), 'the question page').toEqual({
+      first: true,
+      under: true,
+      larger: true,
+    });
+  });
+
   test(`${locale}: both shapes reflow at 320px with no sideways scroll @reflow`, async ({ page }) => {
     for (const m of [ONE_BILL, SEVERAL].filter((x): x is MomentWithState => x !== null)) {
       await page.goto(`${prefix}/questions/${m.id}`);

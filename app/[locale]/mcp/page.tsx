@@ -37,20 +37,22 @@ import {
  * language versions are shown here regardless of which locale route this is,
  * same pattern as the citations page.
  *
- * TWO COLUMNS OF SECTIONS (layout pass 2026-11-28, round 2; round 1's ledger
- * left a heading column empty under each heading). The page sits on the
- * site's shell, its left edge under the logo. The title and intro run across
- * the top; from 80rem the sections flow in order down two 33rem columns, as
- * on /citations, and no section breaks across them. One column on a phone
- * and up to 80rem, as before.
+ * ROWS OF TWO (layout pass 2026-11-28, round 3), as on /citations. Below
+ * 80rem: one 33rem column, exactly as before. From 80rem the page sits on
+ * the site's shell, its left edge under the logo; the title runs across the
+ * top, then a grid of two 33rem cells read row by row, left then right, in
+ * the DOM's order: the intro beside the endpoint; the connect section across
+ * both cells (its text left, the config it introduces right); the tools
+ * across both cells, their five boxes two across (one tool section in a
+ * single cell ran about 1,000px past everything beside it); privacy beside
+ * the envelope; licence beside freshness. Rows align to the top.
  */
 
-/** The sections' flow: one 33rem column, two from 80rem (2 × 33rem + a 4rem
- *  gap). A section's top margin is dropped where it starts a column. */
+/** The sections: one column, two across from 80rem (2 × 33rem + a 4rem gap). */
 const SECTIONS =
-  'mt-8 max-w-read xl:max-w-[calc(2*var(--container-read)_+_4rem)] xl:columns-2 xl:gap-x-16';
-/** A section that never splits across the two columns. */
-const SECTION_BOX = 'mt-8 break-inside-avoid first:mt-0';
+  'xl:mt-6 xl:grid xl:max-w-[calc(2*var(--container-read)_+_4rem)] xl:grid-cols-2 xl:items-start xl:gap-x-16 xl:gap-y-12';
+/** One grid cell; the grid's gap replaces its top margin from 80rem. */
+const SECTION_BOX = 'mt-8 min-w-0 xl:mt-0';
 const SECTION = `${SECTION_BOX} border-t border-line pt-6`;
 
 const EXAMPLE_CLIENT_CONFIG = `{
@@ -111,19 +113,21 @@ export default async function McpPage({ params }: { params: Promise<{ locale: st
   const dataAsOf = await dataAsOfString(locale);
 
   return (
-    <article className="mx-auto max-w-page px-4 pt-6 pb-12 md:pt-8">
-      {/* THE TITLE AND INTRO ACROSS THE TOP, THE SECTIONS IN TWO COLUMNS
-          (layout pass 2026-11-28, round 2). From 80rem the sections flow in
-          order down two 33rem columns, left then right, ending at about the
-          same depth; no section breaks across the two. Each section reads
-          straight down, so "the address below" (endpoint) and "the
-          description below" (tools) stay true, and the connect section
-          follows the endpoint section, so its "endpoint above" does too.
-          One column on a phone and up to 80rem, as before. */}
+    <article className="mx-auto max-w-read px-4 pt-6 pb-12 md:pt-8 xl:max-w-page">
+      {/* THE TITLE ACROSS THE TOP, THEN ROWS OF TWO (layout pass 2026-11-28,
+          round 3). Every positional sentence still points the way the reader
+          goes: "the address below" (endpoint) has its box under it in the
+          same cell; "the endpoint above" (connect) is a row under the
+          endpoint; "the description below" (tools) has the boxes under it;
+          the tools note's "citation envelope below" is the envelope section,
+          a row under the tools; "shown below" (envelope) has its quotes
+          under it in the same cell. */}
       <h1 className="text-h2-loud font-extrabold">{t('title')}</h1>
-      <p className="mt-3 max-w-read text-lede text-ink-2">{t('intro')}</p>
 
       <div className={SECTIONS}>
+        {/* Row 1, left: the intro (its first cell from 80rem). */}
+        <p className="mt-4 min-w-0 text-lede text-ink-2 xl:mt-0">{t('intro')}</p>
+
         <section className={SECTION}>
           <h2 className="text-h3 font-extrabold">{t('endpointTitle')}</h2>
           <p className="mt-2">{t('endpointBody')}</p>
@@ -133,20 +137,27 @@ export default async function McpPage({ params }: { params: Promise<{ locale: st
           </p>
         </section>
 
-        <section className={SECTION}>
-          <h2 className="text-h3 font-extrabold">{t('connectTitle')}</h2>
-          <p className="mt-2">{t('connectBody')}</p>
-          <pre className="mt-3 overflow-x-auto rounded-control bg-ink-deep p-4 text-xs text-paper">
+        {/* Row 2, across both cells: the text left, the config it ends on
+            ("something close to this:") right. */}
+        <section className={`${SECTION} xl:col-span-2 xl:grid xl:grid-cols-2 xl:items-start xl:gap-x-16`}>
+          <div className="min-w-0">
+            <h2 className="text-h3 font-extrabold">{t('connectTitle')}</h2>
+            <p className="mt-2">{t('connectBody')}</p>
+          </div>
+          <pre className="mt-3 min-w-0 overflow-x-auto rounded-control bg-ink-deep p-4 text-xs text-paper xl:mt-0">
             <code>{EXAMPLE_CLIENT_CONFIG}</code>
           </pre>
         </section>
 
-        <section className={SECTION}>
+        {/* Row 3, across both cells: the heading, intro and closing note at
+            the reading measure, the five tool boxes two across between them,
+            the boxes of a row stretched to one height. */}
+        <section className={`${SECTION} xl:col-span-2`}>
           <h2 className="text-h3 font-extrabold">{t('toolsTitle')}</h2>
-          <p className="mt-2">{t('toolsIntro')}</p>
-          <dl className="mt-4 space-y-4">
+          <p className="mt-2 xl:max-w-read">{t('toolsIntro')}</p>
+          <dl className="mt-4 space-y-4 xl:grid xl:grid-cols-2 xl:gap-4 xl:space-y-0">
             {TOOL_NAMES.map((name) => (
-              <div key={name} className="rounded-control bg-wash p-4">
+              <div key={name} className="min-w-0 rounded-control bg-wash p-4">
                 <dt>
                   <code className="font-mono text-sm font-semibold">{name}</code>
                   <span className="ml-2 text-sm text-ink-2">{TOOL_INFO[name].title}</span>
@@ -157,7 +168,7 @@ export default async function McpPage({ params }: { params: Promise<{ locale: st
               </div>
             ))}
           </dl>
-          <p className="mt-4 text-sm text-ink-2">{t('toolsLangNote')}</p>
+          <p className="mt-4 text-sm text-ink-2 xl:max-w-read">{t('toolsLangNote')}</p>
         </section>
 
         <section className={SECTION}>

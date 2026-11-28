@@ -563,24 +563,51 @@ export default async function MomentPage({
    *   rows 1–2  what Congress is deciding | the desk's "Still open" list,
    *                                         then reader questions
    *   row 3     the bills, across both columns, their cards two across
-   *   row 4     where it stands           | what's moved
-   *   row 5     why this question exists  | how Big Questions get made, the
+   *   rows 4–6  where it stands, then     | what's moved, then how Big
+   *             why this question exists  | Questions get made and the
    *                                         lifecycle note
+   *
+   * ROWS 4–6 ARE TWO COLUMNS THAT EACH RUN ON (layout pass round 3,
+   * 2026-11-28). Round 2 gave "why" a row of its own under where | moved, so
+   * the long timeline left a hole under "where" and "why" left one beside
+   * itself. Now "where" sits in row 4, "why" spans rows 5–6 under it, "what's
+   * moved" spans rows 4–5 and the closing notes take row 6. The grid gives a
+   * spanning block's extra height to the row that no single-row block has
+   * set: row 4 stays the height of "where", so "why" starts right under it,
+   * and row 5 takes what the timeline or "why" needs beyond that. Each column
+   * then reads straight down. The source order (where, moved, why, closing)
+   * is the phone's, untouched; left then right, row by row, it is also the
+   * order the desk shows.
    *
    * A LONG LIST (four or more bills still open, Iran war powers today) is
    * the one exception in rows 1–2: the list is capped at the window's
    * height, and with reader questions under it column 2 would run far past
    * "deciding". So reader questions stay in column 1 under "deciding" (row
-   * 2), and the list stands beside both, sticky, so it stays in view while
-   * they scroll. Four is where the two arrangements cross: each item is
-   * about 150px, so four or more fill more height than "deciding" does.
+   * 2), and the list stands beside both. Four is where the two arrangements
+   * cross: each item is about 150px, so four or more fill more height than
+   * "deciding" does. At 80rem the list is not sticky and its heading keeps
+   * its own size, as in round 1 (the layout SPEC: at xl nothing on this
+   * page is sticky). Round 2 made it sticky with an h2-size heading, and a
+   * focused "Read + call" then ended a third of a pixel outside the window
+   * at 1280×720 in WebKit (rule 7, tests/question-pages.spec.ts). The likely
+   * reason, worked out on paper and not measured: the 34px × 1.15 heading
+   * moved every link down a fractional 6.6px, and the focus scroll lands
+   * on a whole pixel. The links' scroll margin (below) is there to cover any
+   * fraction a later change brings back.
    *
    * With no "where it stands", row 4 is what's moved | why, and the closing
    * notes run below. With nothing to sit beside "deciding" (no list and no
-   * reader questions), the bills take column 2 of row 1 instead. Source
-   * order is unchanged: the desk-only list sits right after "deciding" in
-   * the source (it is display: none below 62rem, so a phone never meets it),
-   * and every other block keeps its place, so the phone, the keyboard and a
+   * reader questions), the bills take column 2 of row 1 instead.
+   *
+   * In the bills' row, ONE record row (kept as the record) and the note
+   * under the cards ("No side is pre-selected…") stand side by side, so
+   * neither leaves half the row empty; two or more record rows run two
+   * across with the note under them.
+   *
+   * Source order is unchanged: the desk-only list sits right after
+   * "deciding" in the source (it is display: none below 62rem, so a phone
+   * never meets it), and every other block keeps its place, so the phone,
+   * the keyboard and a
    * screen reader meet the blocks top to bottom, left to right. From 62rem
    * to 1279 every block is in column 1 and the list rides sticky in column
    * 2, as before: it spans the seven rows the column can hold (deciding,
@@ -597,7 +624,7 @@ export default async function MomentPage({
     // The wrapper of the list and reader questions: column 2 of row 1, or,
     // for a long list, no box at all, so each is placed on its own.
     beside: longRail ? 'contents' : 'min-w-0 min-[62rem]:max-xl:contents xl:col-start-2 xl:row-start-1',
-    rail: longRail ? ' xl:sticky xl:top-4 xl:col-start-2 xl:row-start-1 xl:row-span-2 xl:self-start' : '',
+    rail: longRail ? ' xl:col-start-2 xl:row-start-1 xl:row-span-2 xl:self-start' : '',
     // Beside "deciding" (no list above it) it takes that section's 3px rule,
     // so the row's two tops match.
     reader: longRail
@@ -610,26 +637,38 @@ export default async function MomentPage({
         : // Beside "deciding" it takes that section's 3px rule, as above.
           ` ${COL1} xl:col-start-2 xl:row-start-1 xl:mt-0 xl:border-t-[3px] xl:border-ink`,
     where: wide ? ` ${COL1} xl:col-start-1 xl:row-start-4` : '',
-    moved: wide ? ` ${COL1} ${hasWhere ? 'xl:col-start-2' : 'xl:col-start-1'} xl:row-start-4` : '',
-    why: wide ? ` ${COL1} ${hasWhere ? 'xl:col-start-1 xl:row-start-5' : 'xl:col-start-2 xl:row-start-4'}` : '',
-    // Beside "why" it takes the same hairline, so the row's two tops match.
+    moved: wide
+      ? ` ${COL1} ${hasWhere ? 'xl:col-start-2 xl:row-start-4 xl:row-span-2' : 'xl:col-start-1 xl:row-start-4'}`
+      : '',
+    why: wide
+      ? ` ${COL1} ${hasWhere ? 'xl:col-start-1 xl:row-start-5 xl:row-span-2' : 'xl:col-start-2 xl:row-start-4'}`
+      : '',
+    // Under "what's moved" it opens with a hairline, as each block above it
+    // does.
     closing: wide
-      ? ` ${COL1} ${hasWhere ? 'xl:col-start-2 xl:row-start-5 xl:border-t xl:border-line xl:pt-4' : 'xl:col-span-2 xl:col-start-1 xl:row-start-5'}`
+      ? ` ${COL1} ${hasWhere ? 'xl:col-start-2 xl:row-start-6 xl:border-t xl:border-line xl:pt-4' : 'xl:col-span-2 xl:col-start-1 xl:row-start-5'}`
       : '',
   };
   // The bills' full-width row: the cards run two across and keep their own
   // height (no stretched blank inside the shorter one).
   const billsRow = besideDeciding;
+  // On that row, one settled record row stands beside the note under the
+  // cards; two or more run two across (see the note above `wide`).
+  const recordBesideNote = billsRow && recordVehicles.length === 1;
+  const recordsAcross = billsRow && recordVehicles.length > 1;
 
   return (
     <article className={`${WRAP} pt-6 pb-12 md:pt-8`}>
       {/* 1 · Moment header — above the desk. It names the question and dates
-             the record; both columns below answer to it. From 62rem it is a
-             row on the desk's own columns (layout pass 2026-11-28): the crumb
-             and the h1 on the left, the record's status for the question on
-             the right, their bottoms aligned. Below 62rem it stacks in source
-             order, as before. */}
-      <div className={`min-[62rem]:grid ${DESK_COLS} min-[62rem]:items-end`}>
+             the record; both columns below answer to it. From 80rem it is a
+             row (layout pass round 3, 2026-11-28): the crumb, the h1 and the
+             topic on the left, the record's status for the question on the
+             right in 20rem, their bottoms aligned. The left cell is 848 at
+             1216, wider than the h1's own 24ch bound, so a title wraps where
+             it did before the layout pass (round 2 held it to the desk's 608,
+             and "Government funding deadline" broke onto two lines). Below
+             80rem it stacks in source order, as before the layout pass. */}
+      <div className="xl:grid xl:grid-cols-[minmax(0,1fr)_minmax(0,20rem)] xl:items-end xl:gap-x-12">
         <div className="min-w-0">
           <p className="flex flex-wrap items-center gap-3 text-sm">
             <Link
@@ -641,14 +680,18 @@ export default async function MomentPage({
             <span className="text-2xs leading-tight font-extrabold tracking-[0.1em] text-ink-2 uppercase">
               {isSettled ? t('moments.settledBadge') : t('moments.liveBadge')}
             </span>
-            <Chip tone="tag">{t(`categories.${moment.category}`)}</Chip>
           </p>
 
           {/* The h1 carries the same measure bound the bill page's h1 carries —
               an unbounded display line across the page shell is not a heading, it
-              is a banner. Same utility, same value; the desk's left column holds
-              it to 608 from 62rem as well. */}
+              is a banner. Same utility, same value. */}
           <h1 className="mt-3 max-w-[24ch] text-h1-bill font-extrabold text-ink">{name}</h1>
+          {/* The topic under the title, never ahead of it (owner, 2026-11-28:
+              the title "should be bigger and more pronounced", the topic "next
+              to the title or under it and in a smaller font"). */}
+          <p className="mt-3">
+            <Chip tone="tag">{t(`categories.${moment.category}`)}</Chip>
+          </p>
           {!glance && (
             <p className="mt-5 max-w-read text-xs text-ink-2">
               {dataAsOf}
@@ -664,7 +707,7 @@ export default async function MomentPage({
             record on every build — plus the "Summary updated" date printed
             under the summary it describes. */}
         {lead && glance?.line !== lead && (
-          <section aria-labelledby="record-status" className="mt-6 max-w-read min-w-0 min-[62rem]:mt-0">
+          <section aria-labelledby="record-status" className="mt-6 max-w-read min-w-0 xl:mt-0">
             <h2
               id="record-status"
               className="text-2xs leading-tight font-extrabold tracking-[0.1em] text-ink-2 uppercase"
@@ -753,20 +796,21 @@ export default async function MomentPage({
 
           {/* Without a panel, from 80rem, column 2 beside "deciding": the
               desk's "Still open to a call" list, then reader questions (rows
-              1–2 of `place` above; a long list stands sticky beside both).
-              From 62rem to 1279 the wrapper is `display: contents`: the list
+              1–2 of `place` above; a long list stands beside both). From
+              62rem to 1279 the wrapper is `display: contents`: the list
               rides sticky in column 2 beside the whole column, as the panel
               does, and reader questions stay in column 1. Desk only
               (display: none below 62rem, where the column's own list is the
               list), capped at the window's height with the list scrolling
-              inside it (components/MomentStillOpenRail.tsx). Its heading
-              takes the h2 size from 80rem, so the two headings of row 1
-              match. */}
+              inside it (components/MomentStillOpenRail.tsx). Each link keeps
+              12px of scroll margin, so a focus scroll that lands on a whole
+              pixel still leaves the whole link and its focus ring on screen
+              (rule 7), whatever fraction of a pixel the blocks above leave. */}
           {besideDeciding ? (
             <div className={place.beside}>
               {hasRail && (
                 <div
-                  className={`hidden min-w-0 min-[62rem]:flex min-[62rem]:max-h-[calc(100dvh-2rem)] min-[62rem]:max-xl:sticky min-[62rem]:max-xl:top-4 min-[62rem]:max-xl:col-start-2 min-[62rem]:max-xl:row-start-1 min-[62rem]:max-xl:row-span-7 min-[62rem]:max-xl:self-start xl:[&_#still-open-rail]:text-h2 ${place.rail.trim()}`}
+                  className={`hidden min-w-0 min-[62rem]:flex min-[62rem]:max-h-[calc(100dvh-2rem)] min-[62rem]:max-xl:sticky min-[62rem]:max-xl:top-4 min-[62rem]:max-xl:col-start-2 min-[62rem]:max-xl:row-start-1 min-[62rem]:max-xl:row-span-7 min-[62rem]:max-xl:self-start min-[62rem]:[&_a]:scroll-my-3 ${place.rail.trim()}`}
                 >
                   <MomentStillOpenRail heading={t('moments.stillOpenRailHeading')} items={railItems} />
                 </div>
@@ -833,25 +877,35 @@ export default async function MomentPage({
             )}
 
             {/* SETTLED · KEPT AS THE RECORD. Rows, not cards: the record's
-                word, its outcome sentence and "Read the bill" (rule 6). */}
-            {recordVehicles.length > 0 && (
-              <div className="mt-8" data-record-list>
-                <h3 className="border-b border-line pb-2 text-sm font-bold text-ink">
-                  {t('moments.settledGroupHeading', { count: recordVehicles.length })}
-                </h3>
-                <ul className="list-none">{recordVehicles.map(recordRow)}</ul>
-              </div>
-            )}
+                word, its outcome sentence and "Read the bill" (rule 6). On
+                the bills' full-width row, one row stands beside the note
+                below it and two or more run two across (see `place`). */}
+            <div className={recordBesideNote ? 'xl:grid xl:grid-cols-2 xl:items-start xl:gap-x-16' : undefined}>
+              {recordVehicles.length > 0 && (
+                <div className="mt-8 min-w-0" data-record-list>
+                  <h3 className="border-b border-line pb-2 text-sm font-bold text-ink">
+                    {t('moments.settledGroupHeading', { count: recordVehicles.length })}
+                  </h3>
+                  <ul
+                    className={`list-none${recordsAcross ? ' xl:grid xl:grid-cols-2 xl:gap-x-16 xl:[&>li]:min-w-0' : ''}`}
+                  >
+                    {recordVehicles.map(recordRow)}
+                  </ul>
+                </div>
+              )}
 
-            {/* "Every link above opens the same call flow" was printed here
-                unconditionally — true of a bill card whose decision is still
-                open, and false of a settled bill (record-only panel since
-                2026-09-28) and of a nomination card whose page has no call
-                script waiting on it. Asked of the SET, because that is what
-                the sentence quantifies over (lib/moments-ui.ts bothNoteKey). A
-                set whose every vehicle can be called keeps
-                `moments.bothNote` byte for byte. */}
-            <p className="mt-6 max-w-note text-sm text-ink-2">{t(bothNoteKey(moment.vehicles))}</p>
+              {/* "Every link above opens the same call flow" was printed here
+                  unconditionally — true of a bill card whose decision is still
+                  open, and false of a settled bill (record-only panel since
+                  2026-09-28) and of a nomination card whose page has no call
+                  script waiting on it. Asked of the SET, because that is what
+                  the sentence quantifies over (lib/moments-ui.ts bothNoteKey). A
+                  set whose every vehicle can be called keeps
+                  `moments.bothNote` byte for byte. */}
+              <p className={`mt-6 max-w-note text-sm text-ink-2${recordBesideNote ? ' min-w-0 xl:mt-8' : ''}`}>
+                {t(bothNoteKey(moment.vehicles))}
+              </p>
+            </div>
           </section>
         </div>
 
@@ -1080,11 +1134,11 @@ export default async function MomentPage({
             </section>
 
             {/* 7 · How this page is made, and the lifecycle note, in the order
-                   they had inside the "why" section. They close the column
-                   that holds "why" (layout pass round 2, 2026-11-28): column 2
-                   from 80rem, so it ends near column 1; column 1 below that,
-                   at the same left edge and measure as when they sat under
-                   the desk. */}
+                   they had inside the "why" section. From 80rem they close
+                   column 2 under "what's moved", while "why" closes column 1
+                   (layout pass round 3, 2026-11-28; see `place`); column 1
+                   below that, at the same left edge and measure as when they
+                   sat under the desk. */}
             <div className={`mt-8${place.closing}`}>
               <p>
                 <Link href="/questions#how" className={`${CONTENT_LINK} text-sm`}>

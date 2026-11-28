@@ -11,7 +11,7 @@ import { latestVehicleAction, momentDek, momentStatus } from '@/lib/moments-ui';
 import { latestUpdateDay } from '@/lib/moment-updates';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
-import { CARD_GRID, INTRO_ROW } from '@/lib/layout';
+import { INTRO_ROW } from '@/lib/layout';
 
 const localeText = (l: { en: string; es: string }, locale: string): string =>
   locale === 'es' ? l.es : l.en;
@@ -34,6 +34,34 @@ function toTeaser(m: MomentWithState, locale: string): MomentTeaser {
     state: m.state,
     status: momentStatus(m.vehicles).lead,
   };
+}
+
+/*
+ * THE CARD GRID OF THIS LIST (layout pass round 3, 2026-11-28). The site's
+ * card grid (CARD_GRID, lib/layout.ts: one column on a phone, two from 40rem,
+ * three from 80rem, 16px gaps) written on six tracks from 80rem, so a short
+ * last row can still run edge to edge: a card takes two tracks, and the cards
+ * of a last row that would leave an empty slot take three, two to a row. A
+ * row of three, then rows of two, never a lonely third slot. From 40rem to
+ * 1279 an odd last card takes the whole row. Each card spans three rows of
+ * this grid as its own (components/MomentCard.tsx), so the cards in a row
+ * are one height with their status rules level.
+ */
+const QUESTION_GRID = 'grid gap-4 sm:grid-cols-2 xl:grid-cols-6';
+
+/** The width of card `i` of `n`, by the rule above. Literal class names, so
+ *  the stylesheet keeps every one. */
+function cardSpan(i: number, n: number): string {
+  const last = i === n - 1;
+  const sm = n % 2 === 1 && last ? 'sm:col-span-2' : '';
+  const r = n % 3;
+  const xl =
+    n === 1
+      ? 'xl:col-span-6'
+      : (r === 2 && i >= n - 2) || (r === 1 && i >= n - 4)
+        ? 'xl:col-span-3'
+        : 'xl:col-span-2';
+  return `${sm} ${xl}`.trim();
 }
 
 export async function generateMetadata({
@@ -109,9 +137,8 @@ export default async function MomentsPage({ params }: { params: Promise<{ locale
           rule; the record below it takes a hairline. `line` is a separator
           tone, never a component edge. From 64rem the heading and its one-line
           sub share a row, and the cards run three across from 80rem
-          (CARD_GRID), so a laptop's first screen holds a full row of them.
-          `items-start`: each card keeps its own height, so a short dek leaves
-          no blank well inside its card (layout pass round 2). */}
+          (QUESTION_GRID above), so a laptop's first screen holds a full row
+          of them, every card in a row the same height. */}
       <section className="mt-8 border-t-[3px] border-ink pt-4" aria-labelledby="moments-live">
         <div className="lg:flex lg:flex-wrap lg:items-baseline lg:gap-x-4">
           <h2 id="moments-live" className="text-h2 font-extrabold text-ink">
@@ -122,24 +149,25 @@ export default async function MomentsPage({ params }: { params: Promise<{ locale
 
         {/* Scarcity note (spec §4.3 / mockup annotation 6): the cap keeps
             curation honest — the count is the moments actually reading as
-            live right now, which is exactly the grid it closes. It is the
-            grid's last item (layout pass round 2, 2026-11-28): from 80rem it
-            takes the free cell beside a short last row of cards instead of a
-            row of its own; from 40rem to 1279 it runs across the row under
-            the cards; on a phone it follows the last card, as before.
-            Suppressed at zero, where the empty state has already said the
-            same thing in words and "never more than 6" would be a boast
-            about an empty shelf; the homepage band takes the same posture,
-            disappearing rather than printing a nought. */}
+            live right now, which is exactly the grid it closes. It follows
+            the last card at every width (layout pass round 3, 2026-11-28: in
+            round 2 it sat alone in a short last row's free slot, and the
+            grid now ends on a full row instead). Suppressed at zero, where
+            the empty state has already said the same thing in words and
+            "never more than 6" would be a boast about an empty shelf; the
+            homepage band takes the same posture, disappearing rather than
+            printing a nought. */}
         {live.length > 0 ? (
-          <div className={`mt-4 ${CARD_GRID} items-start`}>
-            {live.map((m) => (
-              <MomentCard key={m.id} moment={toTeaser(m, locale)} />
-            ))}
-            <p className="mt-2 max-w-read min-w-0 text-sm text-ink-2 sm:col-span-2 xl:col-span-1 xl:mt-0 xl:pt-5">
+          <>
+            <div className={`mt-4 ${QUESTION_GRID}`}>
+              {live.map((m, i) => (
+                <MomentCard key={m.id} moment={toTeaser(m, locale)} className={cardSpan(i, live.length)} />
+              ))}
+            </div>
+            <p className="mt-4 max-w-read text-sm text-ink-2">
               {t('moments.scarcityNote', { count: live.length, cap: LIVE_CAP })}
             </p>
-          </div>
+          </>
         ) : (
           /* Opened by the same 3px ink rule that opens a section — the page
              already knows that mark means "stop and read this". A wash
@@ -169,9 +197,9 @@ export default async function MomentsPage({ params }: { params: Promise<{ locale
           <p className="mt-2 max-w-read text-sm text-ink-2">{t('moments.settledSub')}</p>
           {/* No opacity dimmer: quieter is carried by the heading's weight and
               the hairline rule, never by washing out real text. */}
-          <div className={`mt-4 ${CARD_GRID} items-start`}>
-            {settled.map((m) => (
-              <MomentCard key={m.id} moment={toTeaser(m, locale)} />
+          <div className={`mt-4 ${QUESTION_GRID}`}>
+            {settled.map((m, i) => (
+              <MomentCard key={m.id} moment={toTeaser(m, locale)} className={cardSpan(i, settled.length)} />
             ))}
           </div>
         </section>

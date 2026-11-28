@@ -97,13 +97,15 @@ export default async function RepsPage({
      drawn in `wash` rather than dimmed with opacity, so nothing here is a
      faded copy of a real contrast pair.
 
-     From 64rem the note stands beside the prompt box, level with its
-     bottom, and the three ghosts run the page's full width under both
-     (RepsLookup lays the two out; layout pass 2026-11-28, round 2). On a
-     phone the note and the ghosts stack under the prompt, as before. */
+     From 64rem the note stands beside the prompt box, its first line level
+     with the box's question, and the three ghosts run the page's full width
+     under both (RepsLookup lays the two out; layout pass 2026-11-28, rounds
+     2 and 3: set level with the box's bottom, it left an empty corner above
+     it about 350 by 270). On a phone the note and the ghosts stack under the
+     prompt, as before. */
   const preview = (
     <>
-      <p className="mt-8 max-w-note min-w-0 text-sm text-ink-2 lg:mt-0 lg:self-end">{t('previewNote')}</p>
+      <p className="mt-8 max-w-note min-w-0 text-sm text-ink-2 lg:mt-0 lg:self-start lg:pt-6">{t('previewNote')}</p>
       <div aria-hidden className="mt-4 grid min-w-0 gap-4 md:grid-cols-3 lg:col-span-2">
         {[0, 1, 2].map((i) => (
           <div key={i} className="rounded-control border-[1.5px] border-line-strong bg-paper p-5">

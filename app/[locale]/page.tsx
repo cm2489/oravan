@@ -836,12 +836,17 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                       {specimen.ai_headline}
                     </p>
                     {aiLine(t('aiSpecimen'))}
+                    {/* The arrow rides inline at the end of the words (round 3):
+                        the Spanish label wraps in this half-column, and as a
+                        flex sibling the arrow floated at the far right edge. */}
                     <Link
                       href={`/bills/${billSlug(specimen)}`}
-                      className="mt-2 inline-flex min-h-11 items-center gap-1.5 font-semibold text-go underline underline-offset-4 hover:text-go-deep"
+                      className="mt-2 inline-flex min-h-11 items-center font-semibold text-go underline underline-offset-4 hover:text-go-deep"
                     >
-                      {t('specimenCta')}
-                      <ArrowRight className="h-4 w-4" aria-hidden />
+                      <span>
+                        {t('specimenCta')}
+                        <ArrowRight className="ml-1.5 inline h-4 w-4 align-[-0.15em]" aria-hidden />
+                      </span>
                     </Link>
                   </div>
                 </div>

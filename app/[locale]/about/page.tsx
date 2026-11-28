@@ -23,21 +23,24 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
   // key, no new copy in either language.
   const tc = await getTranslations('common');
 
-  // TWO COLUMNS (layout pass 2026-11-28, round 2). The page sits on the
-  // site's shell, so its left edge is the logo's. From 64rem the intro, the
-  // name's origin and then "Independence and contact" hold the left column,
-  // and "Who pays for this?" the right, so both columns run about as deep
-  // (round 1 left the left column empty under the intro). Each block keeps
-  // the 33rem reading measure (DESIGN.md, Measure). The DOM order is
-  // unchanged (intro, who pays, independence), so a phone and a screen
-  // reader read it as before; the independence section holds no link, so
-  // the keyboard order is unchanged too.
+  // THE TITLE ACROSS THE TOP, THEN TWO COLUMNS (layout pass 2026-11-28,
+  // rounds 2 and 3). The page sits on the site's shell, so its left edge is
+  // the logo's. The title stands alone above the columns (round 2 set it in
+  // the left column beside "Who pays for this?", two headings on one row at
+  // different sizes, tops and rules). From 64rem both columns open under the
+  // same thin rule at the same top: the intro, the name's origin and then
+  // "Independence and contact" on the left, "Who pays for this?" on the
+  // right, so both run about as deep. Each block keeps the 33rem reading
+  // measure (DESIGN.md, Measure). The DOM order is unchanged (title, intro,
+  // who pays, independence), so a phone and a screen reader read it as
+  // before, and a phone shows no new rule; the independence section holds no
+  // link, so the keyboard order is unchanged too.
   return (
     <article className="mx-auto max-w-page px-4 pt-6 pb-12 md:pt-8">
-      <div className={PAIR_ROW}>
-        <div className="max-w-read min-w-0 lg:col-start-1 lg:row-start-1">
-          <h1 className="text-h2-loud font-extrabold">{t('title')}</h1>
-          <p className="mt-3 text-lede text-ink-2">{t('intro')}</p>
+      <h1 className="text-h2-loud font-extrabold">{t('title')}</h1>
+      <div className={`mt-3 lg:mt-6 ${PAIR_ROW}`}>
+        <div className="max-w-read min-w-0 lg:col-start-1 lg:row-start-1 lg:border-t lg:border-line lg:pt-6">
+          <p className="text-lede text-ink-2">{t('intro')}</p>
           <p className="mt-4 text-sm text-ink-2">{tc('footer.lore')}</p>
         </div>
 

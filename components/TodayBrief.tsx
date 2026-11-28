@@ -504,12 +504,14 @@ export async function TodayBrief({ brief, locale }: { brief: Brief; locale: stri
           clipped by a sticky box taller than the screen. From lg it is a
           calendar strip of seven columns, two rows for the 14 days, the date
           over its counts in each cell (layout pass 2026-11-28); below lg,
-          44px rows, in two columns from sm, read row by row. */}
+          44px rows, in two columns from sm, read row by row. The strip's
+          cells stand 16px apart (round 3: at 8px a full Spanish count line
+          ran up against the next cell). */}
       <nav aria-labelledby="today-days" data-days="" className="mt-8 border-t border-line-strong pt-4">
         <h2 id="today-days" className="text-h3 font-extrabold text-ink">
           {t('navLabel')}
         </h2>
-        <ul className="mt-3 grid sm:grid-cols-2 sm:gap-x-8 lg:grid-cols-7 lg:gap-2">
+        <ul className="mt-3 grid sm:grid-cols-2 sm:gap-x-8 lg:grid-cols-7 lg:gap-x-4 lg:gap-y-2">
           {brief.window.map((s) => {
             const current = s.date === brief.date;
             const parts = dayCountParts(s);
@@ -559,9 +561,21 @@ export async function TodayBrief({ brief, locale }: { brief: Brief; locale: stri
       </nav>
 
       {/* (f) FRESHNESS — the stamp each block was read at, printed plainly. */}
+      {/* Each stamp is one unbreakable chunk with its separator at its end
+          (round 3), so the line wraps between stamps and never leaves "UTC"
+          starting a line. The text is unchanged: the stamps joined by " · ". */}
       {stampParts.length > 0 && (
         <p className="mt-6 max-w-read text-xs text-ink-2 tabular-nums" data-stamps>
-          {t('stampsLead')} {stampParts.join(' · ')}
+          {t('stampsLead')}{' '}
+          {stampParts.map((p, i) => (
+            <Fragment key={p}>
+              {i > 0 && ' '}
+              <span className="whitespace-nowrap">
+                {p}
+                {i < stampParts.length - 1 && ' ·'}
+              </span>
+            </Fragment>
+          ))}
         </p>
       )}
     </div>
