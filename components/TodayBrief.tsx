@@ -137,7 +137,6 @@ export async function TodayBrief({ brief, locale }: { brief: Brief; locale: stri
     if (c.meetsLater && c.nextMeeting?.iso) {
       return t.rich('chamberInNext', {
         chamber: name,
-        published: day(published),
         meeting: c.nextMeeting.label ?? day(c.nextMeeting.iso),
         when: c.nextMeeting.label
           ? (chunks: ReactNode) => <Verbatim locale={locale}>{chunks}</Verbatim>
@@ -146,20 +145,18 @@ export async function TodayBrief({ brief, locale }: { brief: Brief; locale: stri
       });
     }
     if (c.session === 'in_session') {
-      return t.rich('chamberIn', { chamber: name, published: day(published), name: strong });
+      return t.rich('chamberIn', { chamber: name, name: strong });
     }
     const meeting = c.nextMeeting;
     if (!meeting || (!meeting.label && !meeting.iso)) {
       return t.rich('chamberOutNoMeeting', {
         chamber: name,
-        published: day(published),
         name: strong,
         term: glossaryTag('pro-forma-session'),
       });
     }
     return t.rich('chamberOut', {
       chamber: name,
-      published: day(published),
       /* The Digest's own line, verbatim and English (ruling V4), or — only when
          it printed none — our derived date in the reader's locale. */
       meeting: meeting.label ?? day(meeting.iso!),
@@ -286,9 +283,20 @@ export async function TodayBrief({ brief, locale }: { brief: Brief; locale: stri
           {brief.chamber.source?.url && (
             <p className="mt-2">
               <a href={brief.chamber.source.url} target="_blank" rel="noopener noreferrer" className={`inline-flex min-h-11 items-center gap-1.5 text-sm ${LINK}`}>
-                {tHome('evidenceLink')}
+                {/* The Digest's date, printed once for the block (page 1, rule 6:
+                    the data's age is printed), not in each chamber line. */}
+                {brief.chamber.source.published
+                  ? t('chamberSource', { published: day(brief.chamber.source.published) })
+                  : tHome('evidenceLink')}
                 <ExternalLink className="h-4 w-4 flex-none" aria-hidden />
               </a>
+            </p>
+          )}
+          {/* No link to give, but a Digest date in hand: the date still prints
+              (page 1, rule 6), as plain text. An unusual state of the data. */}
+          {!brief.chamber.source?.url && brief.chamber.source?.published && (
+            <p className="mt-2 text-sm text-ink-2">
+              {t('chamberSourceNoLink', { published: day(brief.chamber.source.published) })}
             </p>
           )}
         </section>
