@@ -1,8 +1,9 @@
 /**
- * Commit-trailer check (owner's answer T20, 2026-10-03). Every commit a helper
- * makes carries `Co-Authored-By: Claude <Model> <noreply@anthropic.com>` naming
- * the model that wrote it, plus a `Claude-Session:` line. Helpers never run on
- * Fable, so a Fable trailer is refused. Local only: it runs as the
+ * Commit-trailer check (owner's answer T20, 2026-10-03; updated 2026-11-26 for
+ * Antigravity handoff). Plain human or Antigravity commits with no trailer pass;
+ * commits carrying a `Claude` trailer must name an allowed model and carry
+ * `Claude-Session:`, and commits carrying an `Antigravity` / `Gemini` trailer
+ * must name an allowed Antigravity/Gemini model tier. Local only: it runs as the
  * `.githooks/commit-msg` hook (one-time setup: `git config core.hooksPath
  * .githooks`); CI does not run it because squash-merge messages are written by
  * the orchestrator.
