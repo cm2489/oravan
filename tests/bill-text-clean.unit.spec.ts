@@ -148,6 +148,9 @@ test.describe('long bills, division structure, and mega-bill splitting', () => {
 
     const bill = { bill_type: 'hr', bill_number: 8800, title: 'Omnibus Package', status: 'floor_vote' };
     const decoded = await decodeBill(mockAnthropic as never, bill, mega);
+    // Two divisions of ~265k and ~276k: one chunk each, each labelled with its own division only.
+    expect(prepared.chunks.map((c) => c.label)).toEqual(['DIVISION A — BORDER OPERATIONS', 'DIVISION B — VETERANS HOUSING']);
+    expect(prepared.chunks.map((c) => c.text).join('')).toBe(mega);
     expect(decoded.ai_summary).toContain('Division A');
     expect(decoded.ai_summary).toContain('Division B');
     // Chunk summaries + 1 synthesis + 1 structure
@@ -180,6 +183,16 @@ test.describe('word-boundary clipping, division gate, and tense rules', () => {
     expect(checkHeadlineWordBoundary(sliced, 110).ok).toBe(false);
   });
 
+  test('a CLOSING quotation mark is not dangling; an opening one is (the report\'s false positives)', () => {
+    expect(checkHeadlineWordBoundary('Labor rule would decide which companies count as "joint employers"', 110).ok).toBe(true);
+    expect(checkHeadlineWordBoundary('Labor rule would decide which companies count as "', 110).ok).toBe(false);
+    const long = 'Labor rule would change which franchise companies count as "joint employers" under federal wage law today and more';
+    expect(clipAtWordBoundary(long, 76)).toBe('Labor rule would change which franchise companies count as "joint employers"');
+    expect(clipAtWordBoundary('A headline that quotes "something long enough to be cut here in the middle', 60)).toBe(
+      'A headline that quotes "something long enough to be cut here'
+    );
+  });
+
   test('checkDivisionCoverage catches dropped Division B and passes complete summary', () => {
     const divisions = [
       { id: 'A', title: 'Defense Appropriations' },
@@ -195,9 +208,13 @@ test.describe('word-boundary clipping, division gate, and tense rules', () => {
     });
   });
 
-  test('assembleDecode uses word-boundary clipping and preserves conditional tense rule in structure prompt', () => {
+  test('assembleDecode uses word-boundary clipping; call 2 is never told a status it does not receive', () => {
+    // Hard rule 6 (2026-11-28): the bill's status reaches neither call. Call 2
+    // already says never to state where the bill stands; the tense line #581
+    // added referred to an "official status" call 2 is never given.
     const structurePrompt = buildStructurePrompt({ bill_type: 'hr', bill_number: 10 }, 'Summary');
-    expect(structurePrompt).toContain('conditional tense ("would fund", "would bar"');
+    expect(structurePrompt).not.toMatch(/official status/i);
+    expect(structurePrompt).toContain('Never say where the bill stands in Congress');
 
     const longEn =
       'Nationwide infrastructure funding measure would expand state highway maintenance and modernize municipal water pipe systems';
@@ -243,7 +260,9 @@ test.describe('word-boundary clipping, division gate, and tense rules', () => {
     expect(row.params.messages[0].content).toBe(plan.summaryPrompt);
     expect(row.params.messages[0].content).toContain('DIVISION A: PROCUREMENT');
     expect(row.params.messages[0].content).toContain('DIVISION B: MILITARY PAY');
-    expect(row.params.messages[0].content).toContain('conditional tense ("would ...")');
+    // The status is not in the prompt (hard rule 6), so not in the fingerprint either.
+    expect(row.params.messages[0].content).not.toContain('passed_chamber');
+    expect(row.params.messages[0].content).not.toMatch(/official status/i);
     expect(jobPromptSha({ slug: 'hr-8800-119', bill, text })).toBe(plan.fingerprint);
   });
 
