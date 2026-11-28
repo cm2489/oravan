@@ -135,7 +135,7 @@ on:
         type: boolean
         default: false
       run_coverage:
-        description: 'Run outlet coverage backfill, TheNewsAPI coverage sync, and identical-bill sync manually (paused on scheduled runs while COVERAGE_BOX_ON is false)'
+        description: 'Run the coverage search-input backfill and the TheNewsAPI coverage sync on this manual run (both paused on scheduled runs while COVERAGE_BOX_ON is false)'
         type: boolean
         default: false
 
@@ -628,8 +628,12 @@ jobs:
           fi
           node scripts/sync-coverage.mjs
       - name: Read identical bills from the record (for the coverage box)
-        if: github.event_name == 'workflow_dispatch' && inputs.run_coverage == true
-        # Paused on scheduled runs (2026-11-26) while COVERAGE_BOX_ON is false.
+        # NOT paused with the two coverage steps above (2026-11-28): it costs $0,
+        # reads no outlet ratings and no news API, only Congress.gov's free
+        # related-bills list, and the daily health report raises
+        # related-bills-stale when data/related-bills.json goes 3 days without a
+        # run (lib/related-bills.mjs). Keeping it running keeps that alarm true
+        # and the file current for the day the box returns.
         # The owner's 2026-11-13 card on a bill's twin ("Yes, show it under the
         # bill as it is."): a bill page's coverage box also lists the articles
         # stored under a bill Congress.gov's related-bills list calls an
