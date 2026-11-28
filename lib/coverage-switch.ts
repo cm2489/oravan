@@ -25,10 +25,12 @@
  *     with no outlet count and no lean;
  *   - the nightly sync's coverage backfill and TheNewsAPI coverage sync run on
  *     a manual dispatch only (sync-bills.yml, input `run_coverage`), and
- *     question-press.yml has no schedule; the identical-bills step keeps
- *     running, because it reads no ratings and its health alarm expects it;
+ *     the Big Question press-count workflow has no schedule; the
+ *     identical-bills step keeps running, because it reads no ratings and
+ *     its health alarm expects it;
  *   - scripts/moment-updates.mjs collects no press clusters, and the health
- *     report does not raise `question-press-silent` (lib/pipeline-health.mjs).
+ *     report does not raise the press-count collector's silence alarm
+ *     (lib/pipeline-health.mjs).
  * Still reading data/media-bias.json while it is false: the hourly newsdesk
  * (scripts/newsdesk.mjs, which bills count as corroborated in the press) and
  * the daily Big Question candidate ranking (scripts/moment-candidates.mjs).
