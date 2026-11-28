@@ -50,12 +50,19 @@
  * than a bill.
  */
 
+import { preferredTextUrl } from '../lib/bill-text-clean.mjs';
+
 const formattedText = (v) =>
   (v?.formats ?? []).find((f) => f?.type === 'Formatted Text')?.url ?? null;
 
 /** The Formatted Text URL of one textVersions entry, or null. */
 export function formattedTextUrl(v) {
   return formattedText(v);
+}
+
+/** Preferred document URL + format ('xml' over 'html'), or null. */
+export function preferredTextFormat(v) {
+  return preferredTextUrl(v);
 }
 
 /**
@@ -97,7 +104,7 @@ export function formattedTextUrl(v) {
  * the list — the pick is "the newest version we can actually read".
  */
 export function pickTextVersion(versions) {
-  return (versions ?? []).find((v) => formattedText(v)) ?? null;
+  return (versions ?? []).find((v) => preferredTextUrl(v)) ?? null;
 }
 
 /**

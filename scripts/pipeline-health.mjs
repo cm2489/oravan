@@ -72,6 +72,7 @@ import {
   shortTitlesSummaryExpected,
   parseFailingTests,
   parsePregen,
+  parseDecodeLedger,
   parseRedecodeDone,
   parseSyncDone,
   parseT3,
@@ -328,6 +329,7 @@ export function buildReport({ now = Date.now() } = {}) {
   const t3 = { batched: 0, resolved: 0, runs: 0 };
   let sync = null;
   let redecode = null;
+  let decodeLedger = null;
   let coverageDone = null;
   let coverageLean = null;
   let coverageOutage = null;
@@ -378,6 +380,7 @@ export function buildReport({ now = Date.now() } = {}) {
     const { log } = nightlyLog;
     sync = nightlyLog.done;
     redecode = parseRedecodeDone(log);
+    decodeLedger = parseDecodeLedger(log);
     coverageDone = parseCoverageDone(log);
     coverageLean = parseCoverageLean(log);
     coverageOutage = parseCoverageOutage(log);
@@ -660,6 +663,11 @@ export function buildReport({ now = Date.now() } = {}) {
     // leaving it out made the printed decode figure a minority of the night's
     // decode calls (2026-09-26: 10 re-decodes against 3 added+decoded).
     redecodes: redecode?.redecoded ?? 0,
+    // The long-bill figure (2026-11-28, PR #581): before this it was never
+    // passed, so the digest's long-decode cost always read $0. The ledger's
+    // own list-price total, when the log carries it, replaces the averages.
+    longDecodes: decodeLedger?.long ?? 0,
+    ledger: decodeLedger,
     t3Batched: t3.batched,
     t3Runs: t3.runs,
     pregen,

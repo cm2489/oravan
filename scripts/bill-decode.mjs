@@ -34,8 +34,11 @@ import {
 } from './congress-fetch.mjs';
 import { passesGate } from './decode-gate.mjs';
 import { generateSearchInputs } from './search-inputs.mjs';
+import { cleanBillMarkup, clipAtWordBoundary, preferredTextUrl, prepareBillForDecode } from '../lib/bill-text-clean.mjs';
+import { checkDivisionCoverage } from '../lib/decode-quality-gate.mjs';
+import { DECODE_CHARS_PER_TOKEN, MODEL_PRICE_PER_MTOK, SEARCH_INPUTS_ESTIMATE } from '../lib/decode-spend.mjs';
 import { formattedTextUrl, pickTextVersion, textVersionStamp, versionCount } from './text-version.mjs';
-import { classifyApiError } from './api-billing.mjs';
+import { classifyApiError, countsTowardFailureLimit } from './api-billing.mjs';
 import { bumpCounter, recordApiError } from './run-counters.mjs';
 import { decodeLockLine, decodeLockVerdict, decodeLocks } from './decode-locks.mjs';
 import { PRESIDENT_STYLE_RULE, presidentStyle } from '../lib/president-style.mjs';
@@ -75,20 +78,16 @@ export const DECODE_MODEL = 'claude-sonnet-5-5';
  * 3,250 has headroom and costs nothing to keep.
  */
 export const DECODE_SUMMARY_MAX_TOKENS = 900;
+export const DECODE_LONG_SUMMARY_MAX_TOKENS = 1800;
 export const DECODE_STRUCTURE_MAX_TOKENS = 3250;
 
-/*
- * How much of a bill's document a decode reads. UNCHANGED, and measured
- * before it was left unchanged (2026-09-18, 66 bills sampled at random from
- * the committed corpus, text pulled from congress.gov): after this truncation
- * the mean document is ~10,159 characters and the median ~5,195, so the cap
- * binds on only 5 of 66 bills — 7.6%. Those five are the appropriations- and
- * authorization-scale bills where a summary matters most, and they are
- * exactly what a lower cap would start cutting. Lowering it would save
- * roughly a tenth of one call's input on the 92% of bills it never touches
- * and would degrade the 8% it does. Left at 60,000 on purpose.
- */
-const BILL_TEXT_MAX_CHARS = 60_000;
+/** Summary token ceiling: multi-division or long bills get 1800 so later divisions are not crowded out. */
+export function summaryMaxTokensFor(opts = {}) {
+  if (opts?.isMultiDivision || (typeof opts?.textLength === 'number' && opts.textLength > 60_000)) {
+    return DECODE_LONG_SUMMARY_MAX_TOKENS;
+  }
+  return DECODE_SUMMARY_MAX_TOKENS;
+}
 
 /**
  * A stable fingerprint of the exact MODEL INPUT a decode was written from.
@@ -113,10 +112,15 @@ const BILL_TEXT_MAX_CHARS = 60_000;
  * a title change and a text change are the same kind of event to this field:
  * different input, different fingerprint, re-decode.
  *
- * It is still a fingerprint of the TRUNCATED text (BILL_TEXT_MAX_CHARS above),
- * because that is what the model actually sees: a bill that grows past the cap
- * without its first 60,000 characters changing correctly reads as unchanged —
- * the decode never saw the difference.
+ * Since PR #581 there is no 60,000-character cut: the model reads the whole
+ * CLEANED text (lib/bill-text-clean.mjs), so the fingerprint covers all of it.
+ * Every stamp written before that change was taken over the old flattened,
+ * truncated HTML, so it no longer matches. That costs nothing by itself: the
+ * fingerprint only VETOES a re-decode something else nominated (the nightly's
+ * text-version date check, capped at REDECODE_MAX_PER_NIGHT; the newsdesk's
+ * floor/vehicle triggers, capped per run and per day), so the mismatch can
+ * only let a nominated bill through, never nominate one — no corpus-wide
+ * re-decode follows from it.
  */
 export function textFingerprint(text) {
   return createHash('sha256').update(text ?? '', 'utf8').digest('hex').slice(0, 16);
@@ -161,12 +165,14 @@ async function fetchBillText(type, number, congress) {
   const { versions, count } = await fetchTextVersions(type, number, congress);
   const version = pickTextVersion(versions);
   if (!version) return null;
-  const url = formattedTextUrl(version);
-  const res = await fetch(url);
+  const target = preferredTextUrl(version) ?? (formattedTextUrl(version) ? { url: formattedTextUrl(version), format: 'html' } : null);
+  if (!target) return null;
+  const res = await fetch(target.url);
   if (!res.ok) throw new Error(`bill text ${res.status} for ${type}/${number} (${version.type})`);
-  const html = await res.text();
+  const raw = await res.text();
   return {
-    text: html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, BILL_TEXT_MAX_CHARS),
+    text: cleanBillMarkup(raw, target.format),
+    format: target.format,
     version,
     count,
   };
@@ -264,14 +270,53 @@ export function normChipPair(enRaw, esRaw) {
  * gets today is byte-for-byte the decode it got yesterday.
  */
 
-/** Call 1: the plain-language summary, from the bill's own document. */
-export function buildSummaryPrompt(bill, text) {
-  return `Explain this congressional bill in plain language for an everyday US resident (8th-grade reading level). 2-3 short paragraphs: what it actually does, and who it affects. Strictly nonpartisan, no advocacy, no preamble, no markdown.
+/** Call 1: the plain-language summary, from the bill's own document.
+ *  With no structure hint (`opts.toc` empty and not multi-division) the prompt
+ *  is byte-identical to the historical one, so its fingerprint is unchanged.
+ *
+ *  THE BILL'S STATUS IS DELIBERATELY NOT HERE (hard rule 6, 2026-11-28). Call
+ *  1's reply is the published `ai_summary`, and a status handed to it can be
+ *  restated with no date ("the bill has passed the House") and go stale while
+ *  the page keeps printing it; the page prints the status itself, dated, from
+ *  the official record. Keeping it out also keeps it out of the fingerprint,
+ *  so a status change on unchanged text never re-buys a decode. Main never
+ *  sent it either. */
+export function buildSummaryPrompt(bill, text, opts = {}) {
+  const base = `Explain this congressional bill in plain language for an everyday US resident (8th-grade reading level). 2-3 short paragraphs: what it actually does, and who it affects. Strictly nonpartisan, no advocacy, no preamble, no markdown.
 
-Bill: ${bill.bill_type.toUpperCase()} ${bill.bill_number} — ${bill.title}
+Bill: ${bill.bill_type.toUpperCase()} ${bill.bill_number} — ${bill.title}`;
 
-Full text (may be truncated):
-${text}`;
+  const extras = [];
+  if (opts?.isMultiDivision) {
+    extras.push('Cover EVERY listed division proportionally so late divisions are not omitted.');
+  }
+  if (opts?.toc) {
+    extras.push(`Bill table of contents / divisions:\n${opts.toc}`);
+  }
+
+  if (extras.length === 0) {
+    return `${base}\n\nFull text (may be truncated):\n${text}`;
+  }
+  return `${base}\n\n${extras.join('\n\n')}\n\nCleaned bill text:\n${text}`;
+}
+
+/** Mega-bill chunk call: summarize one division or span accurately in plain language.
+ *  The label names exactly the divisions and titles this chunk holds. */
+export function buildDivisionSummaryPrompt(bill, chunk, opts = {}) {
+  return `Summarize this section of congressional bill ${bill.bill_type.toUpperCase()} ${bill.bill_number} (${bill.title}) in plain language (8th-grade level, nonpartisan, no markdown).
+${opts?.toc ? `\nFull bill divisions/titles:\n${opts.toc}\n` : ''}
+Part covered now (${chunk.label}):
+${chunk.text}`;
+}
+
+/** Mega-bill synthesis call: combine per-chunk summaries into one cohesive
+ *  summary covering every division. The chunks partition the text (every
+ *  character in exactly one), so each figure is stated once. */
+export function buildSynthesisPrompt(bill, chunkSummaries) {
+  const parts = chunkSummaries.map((c) => `[${c.label}]\n${c.summary}`).join('\n\n');
+  return `Combine these section summaries of ${bill.bill_type.toUpperCase()} ${bill.bill_number} — ${bill.title} into one plain-language explanation (3-5 short paragraphs, 8th-grade level, strictly nonpartisan, no preamble, no markdown). Cover EVERY division proportionally. Each section summary below covers a different, non-overlapping part of the bill: never add up or repeat a figure twice.
+
+${parts}`;
 }
 
 /** The advocacy-vocabulary instruction for call 2 (owner, 2026-09-30:
@@ -385,12 +430,12 @@ export function assembleDecode(ai_summary, structureText, titles = []) {
   const chips = normChipPair(styleChips(p.COST_CHIPS, 'en', titles), styleChips(p.ES_COST_CHIPS, 'es', []));
   return {
     ai_summary: en(ai_summary),
-    ai_headline: en(p.HEADLINE_EN).slice(0, 110),
+    ai_headline: clipAtWordBoundary(en(p.HEADLINE_EN), 110),
     ai_sections: {
       tldr: en(p.TLDR), what: en(p.WHAT), who: en(p.WHO), why: en(p.WHY),
       cost: normCost(en(p.COST)), costChips: chips.en,
     },
-    es_headline: es(p.HEADLINE_ES).slice(0, 110),
+    es_headline: clipAtWordBoundary(es(p.HEADLINE_ES), 110),
     es_summary: es(p.ES_SUMMARY),
     es_sections: {
       tldr: es(p.ES_TLDR), what: es(p.ES_WHAT), who: es(p.ES_WHO), why: es(p.ES_WHY),
@@ -399,26 +444,174 @@ export function assembleDecode(ai_summary, structureText, titles = []) {
   };
 }
 
-/** Decode ONE bill from its own text, synchronously — two Messages API calls,
- *  the second reading the first's reply. `text` is required and is always the
- *  document — it used to fall back to `bill.title` when fetchBillText came
- *  back null, which produced a normal-looking, unlabeled AI summary of a
- *  document the model had never read. See syncOneBill's null-text refusal.
+/**
+ * Unified summary decode plan shared by synchronous (decodeBill), batch
+ * (lib/decode-batch.mjs), completeDecode, and redecodeBill so prompt text,
+ * max_tokens, chunking mode, and decode_text_sha never diverge across paths.
  *
- *  This is the LATENCY-SENSITIVE transport: the hourly newsdesk's re-decodes
- *  heal a live page and cannot wait on a batch queue. The nightly sync uses
- *  lib/decode-batch.mjs instead (half price, minutes of wait) and falls back
- *  to exactly this function whenever the batch can't deliver — except for a
- *  batch that is merely slow, whose bills that can wait a night are parked and
- *  collected by the next run instead (2026-09-25, drainDecodeQueue). */
-export async function decodeBill(anthropic, bill, text) {
-  const sum = await anthropic.messages.create({
-    model: DECODE_MODEL,
-    max_tokens: DECODE_SUMMARY_MAX_TOKENS,
-    thinking: { type: 'between_tools' },
-    messages: [{ role: 'user', content: buildSummaryPrompt(bill, text) }],
+ * It reads the bill's TYPE, NUMBER and TITLE and the cleaned text — nothing
+ * else about the record (not its status: see buildSummaryPrompt). When a bill
+ * is single-pass with no divisions/titles TOC, `summaryPrompt` stays
+ * byte-identical to 2-arg `buildSummaryPrompt(bill, text)`.
+ */
+export function prepareDecodePlan(bill, text) {
+  const prepared = prepareBillForDecode(text);
+  const promptOpts =
+    prepared.toc || prepared.isMultiDivision
+      ? { toc: prepared.toc || undefined, isMultiDivision: prepared.isMultiDivision }
+      : undefined;
+  const maxTokens = summaryMaxTokensFor({
+    isMultiDivision: prepared.isMultiDivision,
+    textLength: String(text ?? '').length,
   });
-  return decodeStructureFrom(anthropic, bill, sum.content[0].text.trim());
+  const summaryPrompt =
+    prepared.mode === 'chunked'
+      ? prepared.chunks.map((c) => buildDivisionSummaryPrompt(bill, c, { toc: prepared.toc })).join('\n---\n')
+      : buildSummaryPrompt(bill, prepared.text, promptOpts);
+
+  return {
+    prepared,
+    promptOpts,
+    maxTokens,
+    summaryPrompt,
+    fingerprint: textFingerprint(summaryPrompt),
+  };
+}
+
+/** A bill is LONG (and gets the 1,800-token summary) past this many cleaned
+ *  characters — the old 60,000-character cut. */
+export const LONG_BILL_CHARS = 60_000;
+
+/**
+ * What ONE decode of this bill could cost at LIST PRICE, worst case, BEFORE
+ * any call is made: the input is the exact prompts this decode would send
+ * (converted at DECODE_CHARS_PER_TOKEN), the output is every call's
+ * max_tokens cap, and nothing is discounted — not the Batches half price,
+ * not a reply shorter than its cap. It is what the nightly spend ceiling
+ * (lib/decode-spend.mjs) is charged with, so it errs high on purpose —
+ * except that the characters-per-token figure is not yet measured on bill
+ * text, and may count too few tokens on dense numeric tables (see
+ * DECODE_CHARS_PER_TOKEN).
+ *
+ *   call 1     single pass: the summary prompt + its cap (900, or 1,800 long)
+ *              split bill:  every chunk prompt + 900 each, then the synthesis
+ *                           (its template + every chunk's 900) + 1,800
+ *   call 2     the structure template + the summary's cap, + 3,250
+ *   search     the search-input call a new decode makes (Haiku; an estimate)
+ *
+ * `summaryInHand`: call 1 already ran (a batch delivered it), so only call 2
+ * (and the search call) remain. `searchInputs`: false for a re-decode, which
+ * makes that call only when the title changed.
+ *
+ * @returns {{ usd: number, inputTokens: number, outputTokens: number, long: boolean, chunked: boolean, chunks: number }}
+ */
+export function estimateDecodeUsd(bill, text, { summaryInHand = false, searchInputs = true } = {}) {
+  const plan = prepareDecodePlan(bill, text);
+  const { prepared } = plan;
+  const tok = (chars) => Math.ceil(chars / DECODE_CHARS_PER_TOKEN);
+  const chunked = prepared.mode === 'chunked';
+  let inputTokens = 0;
+  let outputTokens = 0;
+  if (!summaryInHand) {
+    if (chunked) {
+      for (const c of prepared.chunks) {
+        inputTokens += tok(buildDivisionSummaryPrompt(bill, c, { toc: prepared.toc }).length);
+        outputTokens += DECODE_SUMMARY_MAX_TOKENS;
+      }
+      const synthTemplate = buildSynthesisPrompt(bill, prepared.chunks.map((c) => ({ label: c.label, summary: '' })));
+      inputTokens += tok(synthTemplate.length) + prepared.chunks.length * DECODE_SUMMARY_MAX_TOKENS;
+      outputTokens += DECODE_LONG_SUMMARY_MAX_TOKENS;
+    } else {
+      inputTokens += tok(plan.summaryPrompt.length);
+      outputTokens += plan.maxTokens;
+    }
+  }
+  const summaryCap = chunked ? DECODE_LONG_SUMMARY_MAX_TOKENS : plan.maxTokens;
+  inputTokens += tok(buildStructurePrompt(bill, '').length) + summaryCap;
+  outputTokens += DECODE_STRUCTURE_MAX_TOKENS;
+  const sonnet = MODEL_PRICE_PER_MTOK[DECODE_MODEL];
+  let usd = (inputTokens * sonnet.input + outputTokens * sonnet.output) / 1_000_000;
+  if (searchInputs) {
+    const haiku = MODEL_PRICE_PER_MTOK[SEARCH_INPUTS_ESTIMATE.priceKey];
+    usd += (SEARCH_INPUTS_ESTIMATE.inputTokens * haiku.input + SEARCH_INPUTS_ESTIMATE.outputTokens * haiku.output) / 1_000_000;
+  }
+  return {
+    usd,
+    inputTokens,
+    outputTokens,
+    long: chunked || String(text ?? '').length > LONG_BILL_CHARS,
+    chunked,
+    chunks: chunked ? prepared.chunks.length : 1,
+  };
+}
+
+/** Decode ONE bill from its own text, synchronously — two Messages API calls,
+ *  the second reading the first's reply (or chunked map-reduce for mega-bills >400k chars).
+ *  `text` is required and is always the document. */
+export async function decodeBill(anthropic, bill, text) {
+  const plan = prepareDecodePlan(bill, text);
+  const { prepared, maxTokens, summaryPrompt } = plan;
+
+  // PAID CALLS BEFORE A FAILURE (2026-11-28, check 2 of PR #581, defect 5).
+  // A split decode makes one call per chunk, then the synthesis, then call 2;
+  // a single-pass decode makes call 1, then call 2. When a LATER call is
+  // refused (a 429, a 400, a 5xx — "unbilled" by scripts/api-billing.mjs),
+  // the earlier calls were still paid for. The error is marked
+  // `partialBilled` so the callers book it as a billed failure toward the
+  // per-bill failure limit, instead of re-paying the bill every night.
+  let returned = 0;
+  const create = async (params) => {
+    const reply = await anthropic.messages.create(params);
+    returned++;
+    return reply;
+  };
+  try {
+    let summaryText;
+    if (prepared.mode === 'chunked') {
+      // Every chunk call runs before anything is assembled, and a throw from
+      // any of them leaves this function: no half decode can reach a caller.
+      const chunkSummaries = [];
+      for (const chunk of prepared.chunks) {
+        const part = await create({
+          model: DECODE_MODEL,
+          max_tokens: DECODE_SUMMARY_MAX_TOKENS,
+          thinking: { type: 'between_tools' },
+          messages: [{ role: 'user', content: buildDivisionSummaryPrompt(bill, chunk, { toc: prepared.toc }) }],
+        });
+        chunkSummaries.push({ label: chunk.label, summary: part.content[0].text.trim() });
+      }
+      const synth = await create({
+        model: DECODE_MODEL,
+        max_tokens: DECODE_LONG_SUMMARY_MAX_TOKENS,
+        thinking: { type: 'between_tools' },
+        messages: [{ role: 'user', content: buildSynthesisPrompt(bill, chunkSummaries) }],
+      });
+      summaryText = synth.content[0].text.trim();
+    } else {
+      const sum = await create({
+        model: DECODE_MODEL,
+        max_tokens: maxTokens,
+        thinking: { type: 'between_tools' },
+        messages: [{ role: 'user', content: summaryPrompt }],
+      });
+      summaryText = sum.content[0].text.trim();
+    }
+
+    if (prepared.isMultiDivision) {
+      const divCheck = checkDivisionCoverage(summaryText, prepared.divisions);
+      if (!divCheck.ok) {
+        console.warn(
+          `::warning::decode coverage: ${bill.bill_type}-${bill.bill_number} summary missed division(s): ${divCheck.missing.join(', ')}`
+        );
+      }
+    }
+    return await decodeStructureFrom({ messages: { create } }, bill, summaryText);
+  } catch (e) {
+    if (returned > 0 && e && typeof e === 'object') {
+      try { e.partialBilled = true; } catch { /* a frozen error object: leave it */ }
+    }
+    throw e;
+  }
 }
 
 /**
@@ -468,10 +661,12 @@ export async function completeDecode({ slug, bill, text, version = null, count =
   // stamp because it left no decode.
   const stampedAt = new Date().toISOString();
   bill.decoded_at = stampedAt;
-  // The MODEL INPUT, not the document: `buildSummaryPrompt` is literally what
-  // call 1 was handed, so a title change moves the fingerprint exactly as a
-  // text change does. See textFingerprint.
-  bill.decode_text_sha = textFingerprint(buildSummaryPrompt(bill, text));
+  // The MODEL INPUT, not the document: prepareDecodePlan builds exactly what
+  // call 1 is sent on every path (sync, batch, split), so a title change moves
+  // the fingerprint exactly as a text change does. See textFingerprint for
+  // why stamps written before the XML cleaning stop matching (bounded, and
+  // never a corpus-wide re-decode).
+  bill.decode_text_sha = prepareDecodePlan(bill, text).fingerprint;
   bill.decode_text_verified_at = stampedAt;
   Object.assign(bill, textVersionStamp(version, count));
   // Search handles for the coverage sync (press names + subject query).
@@ -504,15 +699,22 @@ export async function completeDecode({ slug, bill, text, version = null, count =
  * that could carry request content into a counter file.
  */
 function failureBilling(err, decodeAttempted) {
-  if (!decodeAttempted) return { unbilledApiError: true, apiErrorKind: 'before_first_call' };
+  if (!decodeAttempted) return { unbilledApiError: true, apiErrorKind: 'before_first_call', countsTowardFailureLimit: false };
   const v = classifyApiError(err);
   recordApiError(v);
+  // An earlier call of this same decode returned, so it was paid for even
+  // though the call that failed was refused (decodeBill's `partialBilled`).
+  const partialBilled = Boolean(err?.partialBilled);
   if (v.unbilled) {
     console.error(
-      `  ^ the API refused that request before generating (${v.kind}${v.status === null ? '' : `, HTTP ${v.status}`}) - NOT billed, so it is not charged to any decode cap${v.creditBalance ? '. THIS IS THE CREDIT-BALANCE REFUSAL: top up the Anthropic account' : ''}`
+      `  ^ the API refused that request before generating (${v.kind}${v.status === null ? '' : `, HTTP ${v.status}`}) - that call was NOT billed${partialBilled ? ', but earlier calls of this decode were, so the failure counts toward the bill\'s failure limit' : ', so it is not charged to any decode cap'}${v.creditBalance ? '. THIS IS THE CREDIT-BALANCE REFUSAL: top up the Anthropic account' : ''}`
     );
   }
-  return { unbilledApiError: v.unbilled, apiErrorKind: v.kind };
+  return {
+    unbilledApiError: v.unbilled && !partialBilled,
+    apiErrorKind: v.kind,
+    countsTowardFailureLimit: countsTowardFailureLimit(v, { partialBilled, err }),
+  };
 }
 
 /**
@@ -570,6 +772,24 @@ function failureBilling(err, decodeAttempted) {
  *                 named an ended Congress, or one that is neither tracked nor
  *                 ended: nothing fetched, nothing written, free. No caller
  *                 can reach either while the ended list is empty.
+ *   'skipped_too_long' — (2026-11-28) `ctx.maxTextChars` is set (the hourly
+ *                 newsdesk sets NEWSDESK_MAX_BILL_TEXT_CHARS) and the bill's
+ *                 cleaned text is longer: nothing written, nothing spent. The
+ *                 nightly decodes it, under its spend ceiling.
+ *   'failure_parked' — (2026-11-28) `ctx.isFailureParked(slug, version)` says
+ *                 this bill's decode has failed, billed, on too many nights
+ *                 in a row for this same text (scripts/decode-failures.mjs):
+ *                 nothing written, nothing spent, NOT a failure — the caller
+ *                 counts it, prints the alarm, and lets the cursor move on. A
+ *                 forced slug is never held back.
+ *   'over_decode_limit' — (2026-11-28, check 2 of #581) `ctx.budget` refused
+ *                 this decode as one no night can pay for: its estimate alone
+ *                 is over the single-decode limit (lib/decode-spend.mjs
+ *                 MAX_SINGLE_DECODE_USD), or over the owner's one-off amount.
+ *                 Nothing written, nothing spent, NOT a failure, and NOT a
+ *                 deferral: the caller records it (the nightly alarm repeats
+ *                 until a one-off run decodes it) and lets the cursor move on.
+ *                 Carries `estUsd`.
  *   'failed'    — the fetch or decode threw (including a text version that
  *                 exists but whose document couldn't be fetched — retryable,
  *                 unlike 'skipped_no_text'); `isNew` tells the caller
@@ -591,10 +811,20 @@ function failureBilling(err, decodeAttempted) {
  * scripts/api-billing.mjs). `decodeAttempted` is set before the request, so it
  * is true for those too, and on 2026-09-09/10 that let a credit outage spend
  * a whole day of decode caps on requests nobody was invoiced for. A caller
- * charging a budget must exempt them; chargeableDecode does.
+ * charging a budget must exempt them; chargeableDecode does. It is false when
+ * an earlier call of the same decode returned (decodeBill's `partialBilled`):
+ * that decode was paid for in part.
+ *
+ * And `countsTowardFailureLimit` on a 'failed' result (check 2 of #581): book
+ * it against the bill's failure limit (scripts/api-billing.mjs
+ * countsTowardFailureLimit — billed, partly billed, or a prompt-too-long
+ * refusal that recurs on the same text).
  */
 export async function syncOneBill(u, ctx) {
-  const { allowDecode, forceSlugs = new Set(), bills, es, bySlug, anthropic, decodeQueue = null, policy = CONGRESS_POLICY } = ctx;
+  const {
+    allowDecode, forceSlugs = new Set(), bills, es, bySlug, anthropic, decodeQueue = null, policy = CONGRESS_POLICY,
+    maxTextChars = null, budget = null, isFailureParked = null,
+  } = ctx;
   const type = u.type.toLowerCase();
   // WHICH CONGRESS (2026-11-12). `u.congress_number` is the bill's own
   // Congress, passed by a caller that holds an existing corpus record. A bare
@@ -608,6 +838,7 @@ export async function syncOneBill(u, ctx) {
   const congress = u.congress_number ?? policy.tracked;
   const slug = updateSlug(u, congress);
   let decodeAttempted = false;
+  let readVersion = null;
   if (!isTrackedCongress(congress, policy)) {
     return { outcome: isEndedCongress(congress, policy) ? 'skipped_ended' : 'skipped_untracked', slug, decodeAttempted };
   }
@@ -768,6 +999,16 @@ export async function syncOneBill(u, ctx) {
     const fetched = await fetchBillText(type, u.number, congress);
     if (fetched === null) return { outcome: 'skipped_no_text', slug, decodeAttempted };
     const { text, version, count } = fetched;
+    readVersion = version ?? null;
+    // The newsdesk's length limit (2026-11-28): checked on the cleaned text the
+    // decode would read, before any model call.
+    if (Number.isFinite(maxTextChars) && text.length > maxTextChars) {
+      console.log(`  ${slug}: ${text.length} cleaned characters, over the ${maxTextChars} this caller may decode - left to the nightly`);
+      return { outcome: 'skipped_too_long', slug, decodeAttempted, textChars: text.length };
+    }
+    if (!forced && typeof isFailureParked === 'function' && isFailureParked(slug, version)) {
+      return { outcome: 'failure_parked', slug, decodeAttempted };
+    }
 
     // THE BATCH HAND-OFF (2026-09-18). With a `decodeQueue` in ctx the caller
     // has taken responsibility for spending this decode itself, through
@@ -796,6 +1037,19 @@ export async function syncOneBill(u, ctx) {
     // check, a parse failure, an SDK error past the retries) still means the
     // request was ISSUED. Whether it was BILLED is a second question, and the
     // catch below answers it — see `unbilledApiError`.
+    // THE SPEND CEILING (2026-11-28; lib/decode-spend.mjs). Charged with the
+    // list-price estimate BEFORE the first call; a decode that does not fit is
+    // the same 'budget' deferral MAX_NEW_DECODES already produces — the bill
+    // still needs work, so the caller's cursor waits for it. A decode no night
+    // can pay for (over the single-decode limit on its own) is the other
+    // refusal: 'over_decode_limit', which stops nothing and holds no cursor.
+    if (budget) {
+      const est = estimateDecodeUsd(bill, text);
+      if (!budget.tryCharge({ slug, usd: est.usd, long: est.long, chunked: est.chunked, what: 'new decode' })) {
+        if (budget.lastRefusal === 'never_fits') return { outcome: 'over_decode_limit', slug, decodeAttempted, estUsd: est.usd, version: readVersion };
+        return { outcome: 'budget', slug, decodeAttempted, overCeiling: true };
+      }
+    }
     decodeAttempted = true;
     bumpCounter('decodeAttempts');
     const dec = await decodeBill(anthropic, bill, text);
@@ -811,6 +1065,8 @@ export async function syncOneBill(u, ctx) {
       decodeAttempted,
       unbilledApiError: billing.unbilledApiError,
       apiErrorKind: billing.apiErrorKind,
+      countsTowardFailureLimit: billing.countsTowardFailureLimit,
+      version: readVersion,
     };
   }
 }
@@ -921,13 +1177,31 @@ export async function syncOneBill(u, ctx) {
  *                 bill is skipped all the same and a `::warning::DECODE LOCK
  *                 STALE` line is printed for the pipeline-health alarm. See
  *                 scripts/decode-locks.mjs.
+ *   'skipped_too_long' — (2026-11-28) the cleaned text is longer than
+ *                 `ctx.maxTextChars` (the newsdesk's limit); free, nothing
+ *                 mutated, the old decode stands.
+ *   'over_ceiling'    — (2026-11-28) `ctx.budget` (the nightly spend ledger,
+ *                 lib/decode-spend.mjs) refused this decode's estimate; free,
+ *                 nothing mutated, and the bill stays a candidate, so the next
+ *                 night picks it up.
+ *   'failure_parked'  — (2026-11-28) `ctx.isFailureParked(slug, version)` says
+ *                 this re-decode has failed, billed, on too many nights for this
+ *                 same text; free, nothing mutated. `forced` overrides it.
+ *   'over_decode_limit' — (check 2 of #581) `ctx.budget` refused it as a
+ *                 decode no night can pay for (over the single-decode limit
+ *                 on its own, or over the one-off amount); free, nothing
+ *                 mutated, the old decode stands, and nothing behind it in
+ *                 the night is stopped. Carries `estUsd`.
  *   'failed'          — the fetch or the decode threw; the old decode stands
  *
  * `ctx.locks` (a Map from scripts/decode-locks.mjs) is for tests; callers
  * leave it out and the committed data/decode-locks.json is read once.
  */
 export async function redecodeBill(slug, ctx) {
-  const { anthropic, es, bySlug, title = null, forced = false, policy = CONGRESS_POLICY, locks = null } = ctx;
+  const {
+    anthropic, es, bySlug, title = null, forced = false, policy = CONGRESS_POLICY, locks = null,
+    maxTextChars = null, budget = null, isFailureParked = null,
+  } = ctx;
   const bill = bySlug.get(slug);
   if (!bill) return { outcome: 'missing', slug, decodeAttempted: false };
   // An ended Congress's bill is never re-read or re-decoded (2026-11-12): its
@@ -960,16 +1234,18 @@ export async function redecodeBill(slug, ctx) {
     return { outcome: 'locked', slug, decodeAttempted: false, lockStale: verdict.stale };
   }
   let decodeAttempted = false;
+  // Which text a failure is pinned to (lib/decode-failures.mjs), once known.
+  let readVersion = null;
   try {
     const fetched = await fetchBillText(bill.bill_type, bill.bill_number, congressOfBill(bill));
     if (fetched === null) return { outcome: 'skipped_no_text', slug, decodeAttempted };
     const { text, version, count } = fetched;
+    readVersion = version ?? null;
     const subject = title ? { ...bill, title } : bill;
-    // THE FINGERPRINT COVERS THE MODEL INPUT, NOT THE DOCUMENT (see the
-    // short-circuit note above). `subject` is what call 1 actually reads —
-    // title and all — so a vehicle swap changes the fingerprint on its own and
-    // needs no special case to defeat the veto.
-    const fingerprint = textFingerprint(buildSummaryPrompt(subject, text));
+    // Hash the exact prompt prepareDecodePlan builds for this document (title,
+    // TOC and division hints; never the status) so the veto compares what both
+    // synchronous and batched decodes actually send.
+    const fingerprint = prepareDecodePlan(subject, text).fingerprint;
     // THE LAST GATE BEFORE THE SPEND. #248's count/date probe nominates a
     // candidate for free; this is the only thing that can still refuse to pay,
     // and it refuses on the one fact that makes "same answer" certain rather
@@ -1000,6 +1276,21 @@ export async function redecodeBill(slug, ctx) {
       // moves the fingerprint) and cheap insurance if a third ever appears.
       if (title) bill.title = title;
       return { outcome: 'text-unchanged', slug, decodeAttempted };
+    }
+    // Free refusals, each before any model call and with nothing mutated.
+    if (Number.isFinite(maxTextChars) && text.length > maxTextChars) {
+      console.log(`  ${slug}: ${text.length} cleaned characters, over the ${maxTextChars} this caller may decode - left to the nightly`);
+      return { outcome: 'skipped_too_long', slug, decodeAttempted, textChars: text.length };
+    }
+    if (!forced && typeof isFailureParked === 'function' && isFailureParked(slug, version)) {
+      return { outcome: 'failure_parked', slug, decodeAttempted };
+    }
+    if (budget) {
+      const est = estimateDecodeUsd(subject, text, { searchInputs: Boolean(title) });
+      if (!budget.tryCharge({ slug, usd: est.usd, long: est.long, chunked: est.chunked, what: 're-decode' })) {
+        if (budget.lastRefusal === 'never_fits') return { outcome: 'over_decode_limit', slug, decodeAttempted, estUsd: est.usd, version: readVersion };
+        return { outcome: 'over_ceiling', slug, decodeAttempted };
+      }
     }
     decodeAttempted = true;
     bumpCounter('decodeAttempts');
@@ -1044,6 +1335,8 @@ export async function redecodeBill(slug, ctx) {
       decodeAttempted,
       unbilledApiError: billing.unbilledApiError,
       apiErrorKind: billing.apiErrorKind,
+      countsTowardFailureLimit: billing.countsTowardFailureLimit,
+      version: readVersion,
     };
   }
 }

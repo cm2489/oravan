@@ -66,6 +66,12 @@
  * in the queue, so no env var can raise a night's Anthropic bill above
  * REDECODE_MAX_PER_NIGHT. See planRedecodes in scripts/text-version.mjs.
  *
+ * ONE_OFF_DECODE_SLUG + ONE_OFF_DECODE_MAX_USD (2026-11-28, check 2 of PR
+ * #581): one slug whose decode is over the nightly single-decode limit
+ * (lib/decode-spend.mjs MAX_SINGLE_DECODE_USD), decoded once at the amount
+ * the owner approved, charged apart from the nightly ceiling. The only env
+ * pair that lets a night spend past $3.00, and only by the amount it names.
+ *
  * Two-pass fetch (2026-07-16, audit §5 item 2). Congress.gov is queried
  * TWICE per run, in this order:
  *   1. Recent-first: `sort=updateDate+desc, limit=RECENT_FETCH_LIMIT` - the
@@ -220,6 +226,29 @@ import { parseForceSlugs, passesGate } from './decode-gate.mjs';
 // Ended Congresses (2026-11-12): empty until the January switch. Import-free.
 import { congressOfBill, isEndedBill } from '../lib/congress.mjs';
 import { setCounter } from './run-counters.mjs';
+// The nightly spend ceiling and the per-bill failure limit (2026-11-28, PR #581).
+import {
+  createSpendLedger,
+  formatSpendLedgerLine,
+  NIGHTLY_DECODE_USD_CEILING,
+  overDecodeLimitLine,
+  parseOneOffDecode,
+} from '../lib/decode-spend.mjs';
+import {
+  DECODE_FAILURES_PATH,
+  addWaiting,
+  dropWaiting,
+  emptyFailureState,
+  failureParkedLine,
+  isFailureParked,
+  normalizeFailureState,
+  overLimitBills,
+  parkedFailures,
+  pruneFailureState,
+  recordFailure,
+  recordOverLimit,
+  recordSuccess,
+} from '../lib/decode-failures.mjs';
 import {
   DEFAULT_REDECODE_MAX_PER_NIGHT,
   DEFAULT_REDECODE_PROBE_LIMIT,
@@ -366,7 +395,7 @@ export function loadParkingContext(read = (p) => readFileSync(p, 'utf8'), log = 
  * @returns {string}
  */
 export function formatSyncDoneLine(f) {
-  return `DONE: ${f.refreshed} refreshed, ${f.added} added+decoded, ${f.gated} gated (no real legislative motion), ${f.queued} queued for next run, ${f.deferredDecodes} waiting on a slow batch (${f.parkedTonight} parked tonight, ${f.heldTonight} held behind an earlier parked batch; collected next run, never re-bought), ${f.harvestedDecodes} completed from a parked batch, ${f.revisited} parked bill(s) re-fetched directly (${f.revisitFailed} with an error), ${f.partialSkipped} skipped: partial payload (left untouched), ${f.noTextSkipped} skipped: no bill text published yet (not decoded), ${f.forceWrongCongress} skipped: force slug naming another Congress (never fetched), ${f.failed} failed in the ascending pass (${f.newFailed} new), ${f.recentFailed} in the recent-first pass, ${f.forceFailed} force-slug; cursor -> ${f.cursor} (${f.cursorReason}); new bills seen this run: ${f.newSeen}; corpus ${f.corpus}`;
+  return `DONE: ${f.refreshed} refreshed, ${f.added} added+decoded, ${f.gated} gated (no real legislative motion), ${f.queued} queued for next run, ${f.deferredDecodes} waiting on a slow batch or the spend ceiling (${f.parkedTonight} parked tonight, ${f.heldTonight} held behind an earlier parked batch; collected next run, never re-bought; ${f.overCeiling ?? 0} left for the next night by the spend ceiling), ${f.harvestedDecodes} completed from a parked batch, ${f.revisited} parked bill(s) re-fetched directly (${f.revisitFailed} with an error), ${f.partialSkipped} skipped: partial payload (left untouched), ${f.noTextSkipped} skipped: no bill text published yet (not decoded), ${f.forceWrongCongress} skipped: force slug naming another Congress (never fetched), ${f.failed} failed in the ascending pass (${f.newFailed} new), ${f.recentFailed} in the recent-first pass, ${f.forceFailed} force-slug; cursor -> ${f.cursor} (${f.cursorReason}); new bills seen this run: ${f.newSeen}; corpus ${f.corpus}`;
 }
 
 /** Record which pass queued a decode, so the drain can put a failure in the
@@ -458,6 +487,15 @@ const REDECODE_PROBE_LIMIT = Number(
 // moved) but NOT the ceiling — forced slugs are simply first in the queue, so
 // no env var can raise a night's bill. See planRedecodes.
 const forceRedecodeSlugs = parseForceSlugs(process.env.FORCE_REDECODE_SLUGS);
+// THE ONE-OFF DECODE (2026-11-28, check 2 of PR #581). A bill whose one decode
+// is estimated over the single-decode limit (lib/decode-spend.mjs
+// MAX_SINGLE_DECODE_USD) is never run by the nightly; the owner decodes it by
+// dispatching sync-bills.yml with ONE_OFF_DECODE_SLUG and the amount he
+// approves in ONE_OFF_DECODE_MAX_USD. That slug is forced (a new bill through
+// the force list, a bill already in the corpus through the forced re-decode)
+// and charged on its own account, up to that amount, never against the
+// nightly ceiling. Both blank: nothing. A malformed pair decodes nothing.
+const oneOffDecode = parseOneOffDecode(process.env.ONE_OFF_DECODE_SLUG, process.env.ONE_OFF_DECODE_MAX_USD);
 
 // ---- the "mostly failed" abort predicate (exported so it can be tested) --
 // A majority-failed run must not reach the commit step, but "majority" only
@@ -813,7 +851,72 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
   // it — see its 'queued_decode' outcome. Null restores the synchronous path
   // byte for byte.
   const decodeQueue = DECODE_BATCH ? [] : null;
-  const ctxBase = { bills, es, bySlug, anthropic, forceSlugs, decodeQueue };
+
+  // THE SPEND CEILING (2026-11-28; lib/decode-spend.mjs, owner approval
+  // pending — see NIGHTLY_DECODE_USD_CEILING). One ledger for the whole run:
+  // the batch drain, its synchronous fallbacks, the DECODE_BATCH=0 inline
+  // path and the re-decode pass all charge it before their first model call.
+  // New decodes may use at most $2.25 of the $3.00 and re-decodes the rest;
+  // the first decode that does not fit its lane stops that lane for the
+  // night. A decode over the single-decode limit on its own stops nothing:
+  // it is recorded and alarmed on ('over_decode_limit', check 2 of #581).
+  if (oneOffDecode && !oneOffDecode.ok) {
+    console.log(`::warning::one-off decode REFUSED: ${oneOffDecode.reason}. Nothing was decoded for it; the rest of the night runs as usual.`);
+  }
+  const oneOff = oneOffDecode?.ok ? { slug: oneOffDecode.slug, maxUsd: oneOffDecode.maxUsd } : null;
+  if (oneOff) {
+    // In the corpus already: a forced re-decode. Not yet: a forced new decode.
+    // Never both, or a bill the force list adds tonight would be paid for twice.
+    if (bySlug.has(oneOff.slug)) forceRedecodeSlugs.add(oneOff.slug);
+    else forceSlugs.add(oneOff.slug);
+    console.log(`one-off decode: ${oneOff.slug}, approved up to $${oneOff.maxUsd.toFixed(2)} at list price, charged apart from the $${NIGHTLY_DECODE_USD_CEILING.toFixed(2)} nightly ceiling (${bySlug.has(oneOff.slug) ? 'a forced re-decode' : 'a forced new decode'})`);
+  }
+  const ledger = createSpendLedger({ ceilingUsd: NIGHTLY_DECODE_USD_CEILING, oneOff });
+
+  // THE PER-BILL FAILURE LIMIT (2026-11-28; lib/decode-failures.mjs). Read
+  // fail-safe: an unreadable file is reported and treated as empty, which
+  // costs at most one more paid retry per bill, never a wrong skip.
+  let failState = emptyFailureState();
+  if (existsSync(DECODE_FAILURES_PATH)) {
+    try {
+      failState = normalizeFailureState(JSON.parse(readFileSync(DECODE_FAILURES_PATH, 'utf8')), console.log);
+    } catch (e) {
+      console.log(`::warning::decode-failures: ${DECODE_FAILURES_PATH} could not be read (${e.message}) — treating it as empty tonight.`);
+    }
+  }
+  failState = pruneFailureState(failState, { now: Date.now(), inCorpus: (slug) => bySlug.has(slug) });
+  const parkedForFailure = (slug, version) => isFailureParked(failState, slug, version);
+  let failureParkedSkipped = 0;
+  // A billed decode failure (never an unbilled refusal) books one strike
+  // against the bill; a landed decode clears its record.
+  const bookFailure = (slug, version, kind) => {
+    const r = recordFailure(failState, slug, version, { now: Date.now(), kind });
+    failState = r.state;
+    if (r.parkedNow) console.log(failureParkedLine({ slug, ...r.entry }));
+  };
+  // Does this failed result count toward the failure limit? Billed, partly
+  // billed, or a refusal the same text meets every night (api-billing.mjs
+  // countsTowardFailureLimit); an older result shape falls back to "billed".
+  const countsAsFailure = (result) =>
+    Boolean(result?.decodeAttempted) && (result.countsTowardFailureLimit ?? !result.unbilledApiError);
+  // A decode no night can pay for (lib/decode-spend.mjs MAX_SINGLE_DECODE_USD):
+  // recorded, so the alarm repeats every night until a one-off run decodes it.
+  let overLimitNew = 0;
+  const noteOverLimit = (slug, { version = null, usd = null, what = 'new decode' } = {}) => {
+    failState = recordOverLimit(failState, slug, { version, usd, what, now: Date.now() });
+  };
+  const noteInline = (result) => {
+    if (result?.outcome === 'added') failState = recordSuccess(failState, result.slug);
+    else if (result?.outcome === 'failed' && result.isNew && countsAsFailure(result)) {
+      bookFailure(result.slug, result.version ?? null, result.apiErrorKind);
+    } else if (result?.outcome === 'failure_parked') failureParkedSkipped++;
+    else if (result?.outcome === 'over_decode_limit') {
+      noteOverLimit(result.slug, { version: result.version ?? null, usd: result.estUsd ?? null });
+      overLimitNew++;
+    }
+  };
+
+  const ctxBase = { bills, es, bySlug, anthropic, forceSlugs, decodeQueue, budget: ledger, isFailureParked: parkedForFailure };
 
   // Batches an earlier run PARKED (2026-09-25; lib/decode-batch.mjs). Loaded
   // up front because the passes below need to know which new bills already
@@ -884,6 +987,7 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
   let recentRefreshed = 0, recentAdded = 0, recentGated = 0, recentDeferred = 0, recentPartial = 0, recentNoText = 0, recentFailed = 0;
   for (const u of recentBills) {
     const result = await syncOneBill(u, { ...ctxBase, allowDecode: added < recentDecodeCap });
+    noteInline(result);
     // A 'budget' deferral here is the RECENT reserve running out, not the
     // night's budget, and it is counted in no DONE-line tally — so it is the
     // one outcome the parked-bill direct fetch may still try again.
@@ -916,6 +1020,15 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
       // same run would ask the same /text endpoint the same question and spend
       // two more API calls to get the same empty answer.
       noTextSkipped++; recentNoText++; handledSlugs.add(result.slug); noDecodeNeeded.add(result.slug);
+    } else if (result.outcome === 'failure_parked') {
+      // Parked after repeated billed failures (lib/decode-failures.mjs): a
+      // resolution for tonight, like 'gated' — the alarm line says so below.
+      handledSlugs.add(result.slug);
+    } else if (result.outcome === 'over_decode_limit') {
+      // One decode over the single-decode limit (lib/decode-spend.mjs): no
+      // night can pay for it, so it is resolved like a parked bill; the alarm
+      // line below names it every night until a one-off run decodes it.
+      handledSlugs.add(result.slug); noDecodeNeeded.add(result.slug);
     } else {
       recentFailed++; // logged only; deliberately NOT folded into the abort check below
     }
@@ -1118,6 +1231,7 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
       // still advance over it exactly as if pass 2 had handled it itself.
     } else {
       const result = await syncOneBill(u, { ...ctxBase, allowDecode: added < MAX_NEW_DECODES });
+      noteInline(result);
       metTonight.add(slug);
       if (result.outcome === 'refreshed') {
         refreshed++; handledSlugs.add(result.slug); noteRefreshed(result);
@@ -1152,6 +1266,15 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
         // Counted in newSeen below (unlike 'skipped_partial'): we really did
         // read this bill's record, so saying we saw it is honest.
         noTextSkipped++; handledSlugs.add(result.slug); noDecodeNeeded.add(result.slug);
+      } else if (result.outcome === 'failure_parked') {
+        // Parked after repeated billed failures for this same text: resolved
+        // for the cursor, so ONE bill that cannot be decoded no longer stalls
+        // the backlog scan; the alarm line below names it every night.
+        handledSlugs.add(result.slug);
+      } else if (result.outcome === 'over_decode_limit') {
+        // Over the single-decode limit on its own: resolved for the cursor in
+        // the same way (check 2 of #581), never a freeze that no night clears.
+        handledSlugs.add(result.slug); noDecodeNeeded.add(result.slug);
       } else {
         failed++;
         // A new bill that failed to decode must be retried; a failed refresh of
@@ -1203,6 +1326,7 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
       continue;
     }
     const result = await syncOneBill({ type: target.type, number: target.number }, { ...ctxBase, allowDecode: true });
+    noteInline(result);
     console.log(`force direct-fetch: ${slug} -> ${result.outcome}`);
     if (result.outcome === 'refreshed') { refreshed++; noteRefreshed(result); }
     else if (result.outcome === 'added') added++;
@@ -1211,6 +1335,7 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
       tagPass(decodeQueue, slug, 'force');
     } else if (result.outcome === 'skipped_partial') partialSkipped++;
     else if (result.outcome === 'skipped_no_text') { noTextSkipped++; noDecodeNeeded.add(slug); }
+    else if (result.outcome === 'over_decode_limit') noDecodeNeeded.add(slug);
     else if (result.outcome === 'failed') forceFailed++;
     handledSlugs.add(slug);
   }
@@ -1231,7 +1356,11 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
   let revisited = 0;
   if (decodeQueue) {
     const queuedTonight = new Set(decodeQueue.map((j) => j.slug));
-    for (const slug of parkedSlugs(parkedState)) {
+    // Plus the new bills the spend ceiling left for tonight (2026-11-28): the
+    // same guarantee, for the same reason — a recent-pass bill dated before
+    // the cursor is in no window, and the ceiling must never strand one.
+    const revisitSlugs = new Set([...parkedSlugs(parkedState), ...Object.keys(failState.waiting)]);
+    for (const slug of revisitSlugs) {
       // metTonight, not just handledSlugs (2026-09-25 fix pass): a parked bill
       // a pass already met tonight with a budget deferral, a partial payload
       // or a failure has had its verdict counted. Fetching it again here would
@@ -1249,6 +1378,8 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
       );
       console.log(`parked-bill direct fetch: ${slug} -> ${result.outcome}`);
       if (result.outcome === 'queued_decode') { added++; tagPass(decodeQueue, slug, 'parked'); }
+      else if (result.outcome === 'failure_parked') { noDecodeNeeded.add(slug); }
+      else if (result.outcome === 'over_decode_limit') { noteOverLimit(slug, { version: result.version ?? null, usd: result.estUsd ?? null }); overLimitNew++; noDecodeNeeded.add(slug); }
       else if (result.outcome === 'gated') { gated++; noDecodeNeeded.add(slug); }
       else if (result.outcome === 'skipped_no_text') { noTextSkipped++; noDecodeNeeded.add(slug); }
       else if (result.outcome === 'skipped_partial') partialSkipped++;
@@ -1300,6 +1431,7 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
   // The union of the two, as the drain computes it (lib/decode-batch.mjs's
   // unresolvedSlugs): the ONE set the cursor decision below is handed.
   let drainUnresolvedSlugs = new Set();
+  let overCeilingTonight = 0;
   if (decodeQueue) {
     if (decodeQueue.length) {
       console.log(`decode-batch: draining ${decodeQueue.length} queued decode(s) — parked batches collected first, then the Message Batches API at half the standard rate; a slow batch is parked for the next run (time-critical bills fall back synchronously)`);
@@ -1309,7 +1441,7 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
       console.log('decode-batch: DECODE_BATCH_PARK=0 — nothing is parked tonight; earlier parked batches are still collected.');
     }
     const drain = await drainDecodeQueue(decodeQueue, {
-      anthropic, bills, es, bySlug, parkedState, noDecodeNeeded,
+      anthropic, bills, es, bySlug, parkedState, noDecodeNeeded, ledger,
       isTimeCritical: parkingCtx?.ok
         ? (job) => isTimeCriticalDecode(job, { liveVehicles: parkingCtx.liveVehicles, floorSignals: parkingCtx.floorSignals, now: Date.now() })
         : () => true,
@@ -1323,6 +1455,21 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
     parkedTonight = drain.parked;
     heldTonight = drain.held;
     parkedState = drain.parkedState;
+    overCeilingTonight = drain.overCeiling ?? 0;
+    // The failure limit's bookkeeping (lib/decode-failures.mjs): a landed
+    // decode clears the bill's record; a BILLED failure books one strike
+    // against the text it was read from; a bill the ceiling deferred is
+    // remembered so the next night fetches it even if no window holds it.
+    for (const job of decodeQueue) {
+      if (bySlug.has(job.slug)) failState = recordSuccess(failState, job.slug);
+      else if (drain.billedFailedSlugs?.has(job.slug)) bookFailure(job.slug, job.version ?? null, 'decode');
+      else if (drain.neverFitsSlugs?.has(job.slug)) {
+        const nf = drain.neverFitsSlugs.get(job.slug);
+        noteOverLimit(job.slug, { version: job.version ?? null, usd: nf?.usd ?? null, what: nf?.what ?? 'new decode' });
+      }
+    }
+    failState = addWaiting(failState, [...(drain.ceilingDeferredSlugs ?? [])], { now: Date.now() });
+    failState = dropWaiting(failState, [...noDecodeNeeded]);
     // Reconcile the optimistic budget accounting the loops did (see their
     // 'queued_decode' branches): a queued decode that produced nothing is not
     // an `added` bill. A FAILED one lands in the same tally its pass's inline
@@ -1330,6 +1477,10 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
     // failure — it must not trip the honesty alarm or the mostly-failed abort.
     for (const job of decodeQueue) {
       if (drainDeferredSlugs.has(job.slug)) { added--; continue; }
+      // Over the single-decode limit: not decoded, not failed, not waiting —
+      // resolved for the cursor (it is not in drainUnresolvedSlugs) and
+      // counted as seen below.
+      if (drain.neverFitsSlugs?.has(job.slug)) { added--; overLimitNew++; continue; }
       if (!drainFailedSlugs.has(job.slug)) continue;
       added--;
       if (job.pass === 'recent') { recentFailed++; newQueuedFailed++; }
@@ -1339,7 +1490,7 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
     }
     if (decodeQueue.length) {
       console.log(
-        `decode-batch: ${batchDecoded} decoded via Batches (50% rate), ${harvestedDecodes} completed from a batch an earlier run parked (50% rate, not re-bought), ${syncFallback} via synchronous fallback (full rate), ${parkedTonight} parked in a slow batch for the next run to collect, ${heldTonight} held back behind a parked batch still running, ${drainFailedSlugs.size} failed both`
+        `decode-batch: ${batchDecoded} decoded via Batches (50% rate), ${harvestedDecodes} completed from a batch an earlier run parked (50% rate, not re-bought), ${syncFallback} via synchronous fallback (full rate), ${parkedTonight} parked in a slow batch for the next run to collect, ${heldTonight} held back behind a parked batch still running, ${drainFailedSlugs.size} failed both, ${overCeilingTonight} left for the next night by the spend ceiling`
       );
     }
     // PERSIST THE MOMENT THE MONEY IS SPENT. This is the 2026-08-09 guarantee
@@ -1389,9 +1540,12 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
   // floor signal. The nightly is the right place because the nightly is what
   // already holds every refreshed bill's detail payload.
   //
-  // WHAT IT SPENDS, and the one knob that governs it: REDECODE_MAX_PER_NIGHT
-  // (10 → ~$0.65 worst case), additive to MAX_NEW_DECODES. Forced slugs jump
-  // the queue but do not raise the ceiling. The detection itself is free: the
+  // WHAT IT SPENDS, and the knobs that govern it: REDECODE_MAX_PER_NIGHT
+  // (10 bills), additive to MAX_NEW_DECODES — and, since PR #581 read long
+  // bills whole (2026-11-28), the run's dollar ceiling: every re-decode is
+  // charged to the same ledger as the new-bill decodes before its first call,
+  // and one that does not fit stays a candidate for the next night. Forced
+  // slugs jump the queue but raise neither ceiling. The detection itself is free: the
   // count comparison rides on a payload already paid for, and confirming a
   // candidate costs one free Congress.gov /text request.
   //
@@ -1576,6 +1730,7 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
   //     a third of a dollar. If this ceiling is ever raised far enough to
   //     matter, that is the shape it should take.
   let redecoded = 0, redecodeFailed = 0, redecodeNoText = 0, redecodeUnchanged = 0, redecodeMissing = 0, redecodeEnded = 0, redecodeLocked = 0;
+  let redecodeOverCeiling = 0, redecodeParked = 0, redecodeOverLimit = 0;
   for (const item of redecodePlan.run) {
     const bill = bySlug.get(item.slug);
     // An ended Congress's bill is never re-decoded, not even when forced
@@ -1600,21 +1755,33 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
     // 'text-unchanged' with zero model calls and the workflow input was inert
     // on exactly the bill someone typed it for. The ceiling is untouched:
     // forced slugs are already inside redecodePlan.run, which is capped.
+    // The ceiling and the failure limit ride along (2026-11-28): redecodeBill
+    // checks both after the fingerprint veto and before its first model call,
+    // and a refusal mutates nothing, so the bill stays a candidate.
     const result = await redecodeBill(item.slug, {
       anthropic, es, bySlug, title, forced: item.reason === 'forced',
+      budget: ledger, isFailureParked: parkedForFailure,
     });
-    if (result.outcome === 'redecoded') redecoded++;
+    if (result.outcome === 'redecoded') { redecoded++; failState = recordSuccess(failState, item.slug); }
     else if (result.outcome === 'text-unchanged') redecodeUnchanged++;
     else if (result.outcome === 'skipped_no_text') redecodeNoText++;
     else if (result.outcome === 'missing') redecodeMissing++;
     else if (result.outcome === 'locked') redecodeLocked++;
-    else redecodeFailed++;
+    else if (result.outcome === 'over_ceiling') redecodeOverCeiling++;
+    else if (result.outcome === 'failure_parked') { redecodeParked++; failureParkedSkipped++; }
+    else if (result.outcome === 'over_decode_limit') {
+      redecodeOverLimit++;
+      noteOverLimit(item.slug, { version: result.version ?? null, usd: result.estUsd ?? null, what: 're-decode' });
+    } else {
+      redecodeFailed++;
+      if (countsAsFailure(result)) bookFailure(item.slug, result.version ?? null, result.apiErrorKind);
+    }
     const span = item.from && item.to ? ` ${String(item.from).slice(0, 10)} -> ${String(item.to).slice(0, 10)}` : '';
     console.log(`  ${item.slug}: ${result.outcome} (${item.reason}${span}${title ? ', title updated' : ''})`);
   }
   if (redecodePlan.run.length) {
     console.log(
-      `re-decode on new text: ${redecoded} re-decoded, ${redecodeUnchanged} vetoed by the fingerprint (prompt byte-identical — no model call, both provenance stamps refreshed), ${redecodeNoText} skipped (no published text), ${redecodeMissing} not in the corpus, ${redecodeFailed} failed (old decode left standing)${redecodeEnded ? `, ${redecodeEnded} of an ended Congress skipped` : ''}${redecodeLocked ? `, ${redecodeLocked} held by a decode lock` : ''}`
+      `re-decode on new text: ${redecoded} re-decoded, ${redecodeUnchanged} vetoed by the fingerprint (prompt byte-identical — no model call, both provenance stamps refreshed), ${redecodeNoText} skipped (no published text), ${redecodeMissing} not in the corpus, ${redecodeFailed} failed (old decode left standing)${redecodeEnded ? `, ${redecodeEnded} of an ended Congress skipped` : ''}${redecodeLocked ? `, ${redecodeLocked} held by a decode lock` : ''}${redecodeOverCeiling ? `, ${redecodeOverCeiling} left for the next night by the spend ceiling` : ''}${redecodeParked ? `, ${redecodeParked} parked after repeated failures` : ''}${redecodeOverLimit ? `, ${redecodeOverLimit} over the single-decode limit (not run at night)` : ''}`
     );
   }
 
@@ -1697,6 +1864,30 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
 
   writeCorpus();
   writeFileSync('data/sync-state.json', JSON.stringify(state, null, 2));
+  // The failure limit's record, same commit as the cursor (one writer: this
+  // script). Written only once it has ever held anything, so a quiet pipeline
+  // adds no file.
+  if (Object.keys(failState.bills).length || Object.keys(failState.waiting).length || Object.keys(failState.overLimit ?? {}).length || existsSync(DECODE_FAILURES_PATH)) {
+    writeFileSync(DECODE_FAILURES_PATH, `${JSON.stringify(failState, null, 2)}\n`);
+  }
+
+  // THE LEDGER LINE (lib/pipeline-health.mjs parseDecodeLedger reads it for
+  // the daily digest), then an alarm line for every bill the ceiling left and
+  // every bill parked after repeated failures — never silence.
+  const spend = ledger.summary();
+  const parkedNow = parkedFailures(failState);
+  const overLimitNow = overLimitBills(failState);
+  console.log(formatSpendLedgerLine(spend, { failureParked: parkedNow.length, overLimit: overLimitNow.length }));
+  if (spend.deferred) {
+    console.log(
+      `::warning::decode spend ceiling reached: ${spend.deferred} decode(s) left for the next night (${spend.deferredSlugs.slice(0, 10).join(', ')}${spend.deferred > 10 ? ', ...' : ''}) after $${spend.spentUsd.toFixed(3)} of the $${spend.ceilingUsd.toFixed(2)} list-price ceiling was charged. Not an error: new bills wait (the cursor holds for them), re-decodes stay candidates.`
+    );
+  }
+  for (const p of parkedNow) console.log(failureParkedLine(p));
+  // Every bill on record as over the single-decode limit, every night it stays
+  // undecoded — tonight's and earlier nights' (check 2 of #581).
+  for (const o of overLimitNow) console.log(overDecodeLimitLine({ slug: o.slug, usd: o.usd }));
+  if (failureParkedSkipped) console.log(`decode-failures: ${failureParkedSkipped} decode(s) skipped tonight because the bill is parked after repeated failures`);
 
   // New bills seen this run, deduped across both passes: every new-bill slug
   // this run touched resolves to exactly one of added/gated/queued/newFailed/
@@ -1714,7 +1905,9 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
   // behind one, came back out of `added` too — it was seen, it is simply
   // waiting — so it is counted here and never as a failure.
   const deferredDecodes = drainDeferredSlugs.size;
-  const newSeen = added + gated + queued + newFailed + newQueuedFailed + noTextSkipped + deferredDecodes;
+  // `overLimitNew` (check 2 of #581): new bills met tonight whose one decode is
+  // over the single-decode limit — seen, resolved, not decoded.
+  const newSeen = added + gated + queued + newFailed + newQueuedFailed + noTextSkipped + deferredDecodes + overLimitNew;
   // What the post-commit honesty alarm judges the night on
   // (scripts/check-run-honesty.mjs). Written here, after both passes and the
   // force-slug pass have resolved, so the numbers are the same ones the DONE
@@ -1727,7 +1920,7 @@ if (/(^|\/)sync-bills\.mjs$/.test(process.argv[1] ?? '')) {
   setCounter('billsRefreshed', refreshed);
   console.log(
     formatSyncDoneLine({
-      refreshed, added, gated, queued, deferredDecodes, parkedTonight, heldTonight, harvestedDecodes,
+      refreshed, added, gated, queued, deferredDecodes, parkedTonight, heldTonight, overCeiling: overCeilingTonight, harvestedDecodes,
       revisited, revisitFailed, partialSkipped, noTextSkipped, forceWrongCongress, failed, newFailed,
       recentFailed, forceFailed, cursor: state.lastSync,
       cursorReason: `${next.reason}${finishedDay ? `, finished ${finishedDay}` : ''}`,

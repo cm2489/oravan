@@ -117,6 +117,7 @@ import { SHORT_TITLES_TREND_PATH } from '../lib/short-titles-summary.mjs';
 import { corpusCongressVerdict, statusBasisProblems } from './congress-fetch.mjs';
 // The tracked Congress and the ended list (2026-11-12). Import-free.
 import { CONGRESS_POLICY } from '../lib/congress.mjs';
+import { checkHeadlineWordBoundary } from '../lib/decode-quality-gate.mjs';
 // Same split as verifyMomentUpdates above: the judgement lives in a pure
 // module the unit spec can reach, this file supplies the bytes.
 import {
@@ -222,6 +223,16 @@ if (Array.isArray(bills) && bills.length > 0 && es && typeof es === 'object') {
   if (orphanEs.length) {
     fail(
       `EN/ES parity broke: ${orphanEs.length} bills-es.json entr(ies) point at bills that don't exist (first: ${orphanEs[0]})`
+    );
+  }
+
+  // Non-blocking warning diagnostic for legacy/new headlines that hit the exact 110-char slice boundary.
+  const slicedHeadlines = bills
+    .filter((b) => b.ai_headline && !checkHeadlineWordBoundary(b.ai_headline, 110).ok)
+    .map(slugOf);
+  if (slicedHeadlines.length) {
+    warn(
+      `headline boundary: ${slicedHeadlines.length} decoded bill(s) end at 110-char boundary or trailing punctuation (first: ${slicedHeadlines[0]})`
     );
   }
 
