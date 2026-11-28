@@ -16,9 +16,23 @@
  *     the bill page and the Big Question page read through it;
  *   - app/[locale]/bills/[id]/page.tsx does not mount CoverageSection;
  *   - components/CoverageSection.tsx returns null on its own as well.
- * The nightly sync, data/coverage.json, data/media-bias.json and the code stay
- * as they are. The home page's "In the news" rail does NOT read this switch
- * (the owner decides that one separately).
+ * data/coverage.json, data/media-bias.json and the code stay as they are.
+ *
+ * Since 2026-11-26 (PR #580) the switch also reaches past the box:
+ *   - the home page's "In the news" rail reads it (lib/core/bills.ts,
+ *     getNewsBills): while it is false the rail lists only bills on
+ *     congress.gov's own most-viewed list, newest list first, then by rank,
+ *     with no outlet count and no lean;
+ *   - the nightly sync's coverage backfill and TheNewsAPI coverage sync run on
+ *     a manual dispatch only (sync-bills.yml, input `run_coverage`), and
+ *     question-press.yml has no schedule; the identical-bills step keeps
+ *     running, because it reads no ratings and its health alarm expects it;
+ *   - scripts/moment-updates.mjs collects no press clusters, and the health
+ *     report does not raise `question-press-silent` (lib/pipeline-health.mjs).
+ * Still reading data/media-bias.json while it is false: the hourly newsdesk
+ * (scripts/newsdesk.mjs, which bills count as corroborated in the press) and
+ * the daily Big Question candidate ranking (scripts/moment-candidates.mjs).
+ * /citations' `licenseCoverage` says so.
  *
  * TO TURN IT BACK ON: set this to true. The specs that expect the box
  * (tests/coverage.spec.ts, tests/twin-coverage.spec.ts,

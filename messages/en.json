@@ -751,7 +751,7 @@
     "licenseAiLabel": "Oravan's own plain-language content written by AI, in both languages:",
     "langEnglish": "English",
     "langSpanish": "Español",
-    "licenseCoverage": "AllSides' outlet-lean ratings are used under a separate CC BY-NC license and are excluded from the MCP server and from anything commercial. At present, AllSides outlet ratings are switched off across the entire site — bill pages, Big Question pages, the home page's \"In the news\" list, and the MCP server.",
+    "licenseCoverage": "AllSides' outlet-lean ratings are used under a separate CC BY-NC license and are excluded from the MCP server and from anything commercial. At present no page shows them, and the home page's \"In the news\" list no longer uses them to choose its bills. Behind the scenes, they still help two automated steps: one that tracks which bills are in the news, and one that ranks and drafts possible new Big Questions. A few news items already on Big Question pages were chosen with their help and are kept as they were.",
     "correctionTitle": "Report an error",
     "correctionBody": "To report a mistranslation, a misread status or a plain-language summary that misstates what a bill does, email hello@oravan.org. Name the bill and describe the error.",
     "correctionLinkText": "Email hello@oravan.org",

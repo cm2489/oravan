@@ -751,7 +751,7 @@
     "licenseAiLabel": "El contenido en lenguaje claro redactado por IA de Oravan, en ambos idiomas:",
     "langEnglish": "English",
     "langSpanish": "Español",
-    "licenseCoverage": "Las calificaciones de tendencia editorial de AllSides se usan bajo una licencia CC BY-NC separada y están excluidas del servidor MCP y de cualquier uso comercial. Por ahora, las calificaciones de medios de AllSides están desactivadas en todo el sitio: en las páginas de proyectos, en las Grandes preguntas, en la lista «En las noticias» de inicio y en el servidor MCP.",
+    "licenseCoverage": "Las calificaciones de tendencia editorial de AllSides se usan bajo una licencia CC BY-NC separada y están excluidas del servidor MCP y de cualquier uso comercial. Por ahora, ninguna página las muestra, y la lista «En las noticias» de la página de inicio ya no las usa para elegir sus proyectos. Internamente, todavía ayudan a dos procesos automáticos: uno que sigue qué proyectos de ley aparecen en las noticias y otro que ordena y redacta posibles nuevas Grandes preguntas. Algunas noticias que ya figuran en las páginas de las Grandes preguntas se eligieron con su ayuda y se mantienen como estaban.",
     "correctionTitle": "Reportar un error",
     "correctionBody": "Para señalar una mala traducción, un estado mal leído o un resumen en lenguaje claro que no refleja lo que hace el proyecto, escríbenos a hello@oravan.org. Indica el proyecto de ley y describe el error.",
     "correctionLinkText": "Escríbenos a hello@oravan.org",
