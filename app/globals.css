@@ -1,4 +1,8 @@
 @import "tailwindcss";
+/* The layout pass's grid strings (2026-11-28) live in a .ts module outside
+   app/ and components/; named here so they are generated whatever the
+   automatic scan decides. */
+@source "../lib/layout.ts";
 
 /* ============================================================================
    Oravan design tokens — variant B.
@@ -297,6 +301,13 @@
   --container-read: 33rem;
   --container-note: 27rem;
 
+  /* THE SHELL (layout pass 2026-11-28): one page width for header, footer
+     and every page. 78rem = 1248, so 1216 of content inside px-4. */
+  --container-page: 78rem;
+  /* The desk's reading column (bill, nomination, question, /call): 38rem =
+     608, ~70 characters of Besley 18px; the rail takes the rest. */
+  --container-desk: 38rem;
+
   /* ------------------------------------------------------------ ELEVATION
      There is none. Depth is carried by rules, edges and grounds — never by a
      shadow. The namespace is cleared so shadow-sm/md/lg render nothing. */
@@ -315,6 +326,7 @@
   /* one source of truth: these mirror the container tokens above */
   --measure-read: var(--container-read);
   --measure-note: var(--container-note);
+  --measure-desk: var(--container-desk);
 
   /* FOCUS is two-tone: a 3px rule plus a gap of the opposite tone. It is
      never drawn in the action green, because the action green is what

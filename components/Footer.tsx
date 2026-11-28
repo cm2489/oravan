@@ -82,13 +82,13 @@ export function Footer({ donateUrl = DONATE_URL }: { donateUrl?: string | null }
     '-mx-1 inline-flex min-h-11 min-w-11 items-center px-1 text-paper underline decoration-go-bright underline-offset-4 hover:text-go-bright';
 
   return (
-    <footer className="on-dark mt-16 bg-ink-deep text-ink-pale">
+    <footer className="on-dark mt-12 bg-ink-deep text-ink-pale">
       {/* On a phone the bottom padding clears the floating island bar
           (components/Header.tsx: 52px tall, 4px off the bottom or the safe
           area) plus 24px, so the footer's last line scrolls clear of it. The
           footer holds the whole clearance: <main> carries none, so there is
           no blank band above the footer. */}
-      <div className="mx-auto max-w-5xl px-4 pt-8 pb-[calc(max(0.25rem,env(safe-area-inset-bottom))+4.75rem)] text-sm leading-dark tracking-dark md:pt-12 md:pb-12">
+      <div className="mx-auto max-w-page px-4 pt-8 pb-[calc(max(0.25rem,env(safe-area-inset-bottom))+4.75rem)] text-sm leading-dark tracking-dark md:pt-12 md:pb-12">
         <div className="grid gap-8 md:grid-cols-[2fr_1fr_1fr]">
           <div>
             <OravanLockup markRem={1.5} className="text-paper" />

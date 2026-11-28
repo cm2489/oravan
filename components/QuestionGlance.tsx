@@ -153,7 +153,7 @@ export async function QuestionGlance({
   return (
     <section
       aria-labelledby="glance-h"
-      className="mt-6 max-w-read rounded-control bg-wash p-4"
+      className="mt-6 max-w-desk rounded-control bg-wash p-4 md:p-6 min-[62rem]:grid min-[62rem]:max-w-none min-[62rem]:grid-cols-2 min-[62rem]:gap-x-8 min-[62rem]:gap-y-4 xl:grid-cols-[minmax(0,4fr)_minmax(0,5fr)_minmax(0,3fr)]"
       data-question-glance={glance.settled ? 'settled' : 'live'}
       data-glance-lead={slug}
     >
@@ -161,98 +161,110 @@ export async function QuestionGlance({
         {t('moments.glance.heading')}
       </h2>
 
-      {/* 1 · Which bill this is and why it leads, then the bill: its number
-             (linked) with its latest-action date, and its title. */}
-      <p className="text-sm text-ink-2" data-glance-row="reason">
-        {t('moments.glance.lead', { reason: glance.reason })}
-      </p>
-      <div className="mt-1" data-glance-row="bill">
-        <p className="flex flex-wrap items-baseline gap-x-2">
-          <Link href={`/bills/${slug}`} className={`${LINK} -my-3 inline-block py-3 text-md font-semibold`}>
-            {citation}
-          </Link>
-          {!glance.settled && <MomentStatusDate date={line.date} inline />}
+      {/* A STRIP ACROSS THE PAGE (layout pass 2026-11-28). From 62rem the box
+          runs the full width of the page in three groups, in source order:
+          A, the bill and where it stands; B, the record's rows; C, the call,
+          the other bills and the data date. Two columns with C across both
+          below 80rem; three side by side from 80rem. Below 62rem the groups
+          stack exactly as the box always read. */}
+      <div className="min-w-0">
+        {/* 1 · Which bill this is and why it leads, then the bill: its number
+               (linked) with its latest-action date, and its title. */}
+        <p className="text-sm text-ink-2" data-glance-row="reason">
+          {t('moments.glance.lead', { reason: glance.reason })}
         </p>
-        <p className="mt-0.5 line-clamp-2 text-sm text-ink-2" lang={titleLang} data-glance-title>
-          {title}
-        </p>
+        <div className="mt-1" data-glance-row="bill">
+          <p className="flex flex-wrap items-baseline gap-x-2">
+            <Link href={`/bills/${slug}`} className={`${LINK} -my-3 inline-block py-3 text-md font-semibold`}>
+              {citation}
+            </Link>
+            {!glance.settled && <MomentStatusDate date={line.date} inline />}
+          </p>
+          <p className="mt-0.5 line-clamp-2 text-sm text-ink-2" lang={titleLang} data-glance-title>
+            {title}
+          </p>
+        </div>
+
+        {/* 2 · Where that bill stands. A settled bill shows the record's
+               outcome, with its date, as its record row and its bill page do. */}
+        {settled ? (
+          <p className="mt-2 max-w-read text-md font-semibold text-ink" data-glance-row="status">
+            {settledOutcomeSentence(t, settled, settledDate ? fmtDate(settledDate) : null)}
+          </p>
+        ) : (
+          <MomentStatusLine line={line} size="md" dateless className="mt-2" />
+        )}
+        {glance.settled && <p className="mt-2 text-sm text-ink-2">{t('moments.status.explainer')}</p>}
       </div>
 
-      {/* 2 · Where that bill stands. A settled bill shows the record's
-             outcome, with its date, as its record row and its bill page do. */}
-      {settled ? (
-        <p className="mt-2 max-w-read text-md font-semibold text-ink" data-glance-row="status">
-          {settledOutcomeSentence(t, settled, settledDate ? fmtDate(settledDate) : null)}
-        </p>
-      ) : (
-        <MomentStatusLine line={line} size="md" dateless className="mt-2" />
-      )}
-      {glance.settled && <p className="mt-2 text-sm text-ink-2">{t('moments.status.explainer')}</p>}
+      <div className="min-w-0">
+        <dl className="mt-3 grid gap-2.5 min-[62rem]:mt-0">
+          {rows.map((r) => (
+            <div key={r.key} className={ROW} data-glance-row={r.key}>
+              <dt className={DT}>{r.label}</dt>
+              <dd className={DD}>{r.value}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
 
-      <dl className="mt-3 grid gap-2.5">
-        {rows.map((r) => (
-          <div key={r.key} className={ROW} data-glance-row={r.key}>
-            <dt className={DT}>{r.label}</dt>
-            <dd className={DD}>{r.value}</dd>
+      <div className="min-w-0 min-[62rem]:col-span-2 xl:col-span-1">
+        {(panel || membersHref) && (
+          <div className="mt-4 grid gap-2 min-[62rem]:mt-0 min-[48rem]:grid-cols-2 xl:grid-cols-1">
+            {panel &&
+              (() => {
+                const cls =
+                  'ring-edge inline-flex min-h-12 items-center justify-center gap-2 rounded-control border-2 border-ink bg-urgent px-5 py-3 text-center font-bold text-ink no-underline hover:bg-urgent-deep';
+                const body = (
+                  <>
+                    <Phone className="h-5 w-5 flex-none" aria-hidden />
+                    <span>
+                      {t('moments.glance.call', { chamber: callChamber })}
+                      <span className="sr-only"> {t('moments.glance.callAbout', { citation })}</span>
+                    </span>
+                  </>
+                );
+                return isInPageTarget(callHref) ? (
+                  <a href={callHref} className={cls} data-glance-call>
+                    {body}
+                  </a>
+                ) : (
+                  <Link href={callHref} className={cls} data-glance-call>
+                    {body}
+                  </Link>
+                );
+              })()}
+            {membersHref && (
+              <Link
+                href={membersHref}
+                className="inline-flex min-h-12 items-center justify-center rounded-control border border-line-strong bg-paper px-5 py-3 text-center font-bold text-ink no-underline transition-colors hover:border-ink"
+                data-glance-members
+              >
+                {t('moments.glance.members')}
+                <span className="sr-only"> {t('moments.glance.membersAbout', { citation })}</span>
+              </Link>
+            )}
           </div>
-        ))}
-      </dl>
+        )}
 
-      {(panel || membersHref) && (
-        <div className="mt-4 grid gap-2 min-[48rem]:grid-cols-2">
-          {panel &&
-            (() => {
-              const cls =
-                'ring-edge inline-flex min-h-12 items-center justify-center gap-2 rounded-control border-2 border-ink bg-urgent px-5 py-3 text-center font-bold text-ink no-underline hover:bg-urgent-deep';
-              const body = (
-                <>
-                  <Phone className="h-5 w-5 flex-none" aria-hidden />
-                  <span>
-                    {t('moments.glance.call', { chamber: callChamber })}
-                    <span className="sr-only"> {t('moments.glance.callAbout', { citation })}</span>
-                  </span>
-                </>
-              );
-              return isInPageTarget(callHref) ? (
-                <a href={callHref} className={cls} data-glance-call>
-                  {body}
-                </a>
-              ) : (
-                <Link href={callHref} className={cls} data-glance-call>
-                  {body}
-                </Link>
-              );
-            })()}
-          {membersHref && (
-            <Link
-              href={membersHref}
-              className="inline-flex min-h-12 items-center justify-center rounded-control border border-line-strong bg-paper px-5 py-3 text-center font-bold text-ink no-underline transition-colors hover:border-ink"
-              data-glance-members
-            >
-              {t('moments.glance.members')}
-              <span className="sr-only"> {t('moments.glance.membersAbout', { citation })}</span>
-            </Link>
-          )}
-        </div>
-      )}
+        {glance.otherBills > 0 && (
+          <p className="mt-2">
+            <a href="#vehicles-h" className={`${LINK} inline-flex min-h-11 items-center text-sm font-semibold`}>
+              {t('moments.glance.more', { count: glance.otherBills })}
+            </a>
+          </p>
+        )}
 
-      {glance.otherBills > 0 && (
-        <p className="mt-2">
-          <a href="#vehicles-h" className={`${LINK} inline-flex min-h-11 items-center text-sm font-semibold`}>
-            {t('moments.glance.more', { count: glance.otherBills })}
-          </a>
+        {/* 8 · Whose words these are, and how old the data is. The staleness
+               sentinel rides here, beside the one data date on the page. */}
+        <p className="mt-4 flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-2">
+          <span className="font-semibold">{t('moments.status.label')}</span>
+          <span>
+            {dataAsOf}
+            <StalenessNote checkedAt={checkedAt} />
+          </span>
         </p>
-      )}
-
-      {/* 8 · Whose words these are, and how old the data is. The staleness
-             sentinel rides here, beside the one data date on the page. */}
-      <p className="mt-4 flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-2">
-        <span className="font-semibold">{t('moments.status.label')}</span>
-        <span>
-          {dataAsOf}
-          <StalenessNote checkedAt={checkedAt} />
-        </span>
-      </p>
+      </div>
     </section>
   );
 }

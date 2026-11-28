@@ -359,7 +359,7 @@ export async function MemberVotes({
     <section
       id="votes"
       aria-labelledby="rep-votes"
-      className="group/votes mt-12 first:mt-0"
+      className="group/votes mt-8 first:mt-0"
       data-member-votes=""
     >
       <div className="border-t-[3px] border-ink pt-4">
@@ -406,18 +406,21 @@ export async function MemberVotes({
               {t('votesAiNote')}
             </Chip>
           </p>
-          <ol className="mt-4 grid gap-4">{shown.map((g) => card(g))}</ol>
+          {/* Two cards across from 80rem (layout pass 2026-11-28): the
+              column beside the call card is 816 wide there, and one card per
+              row left half of it bare. The list order reads row by row. */}
+          <ol className="mt-4 grid gap-4 xl:grid-cols-2">{shown.map((g) => card(g))}</ol>
           {rest.length > 0 && (
             <details className={`mt-4 border-t border-line pt-2 ${HIDE_UNDER_BQ}`} data-member-votes-all="">
               <summary className="flex min-h-11 cursor-pointer items-center text-sm font-bold select-none">
                 {t('votesShowMore', { count: formatCount(rest.length, locale) })}
               </summary>
-              <ol className="mt-2 grid gap-4">{rest.map((g) => card(g))}</ol>
+              <ol className="mt-2 grid gap-4 xl:grid-cols-2">{rest.map((g) => card(g))}</ol>
             </details>
           )}
           {bqFolded.length > 0 && (
             <ol
-              className="mt-4 hidden gap-4 group-has-[#member-votes-bq:checked]/votes:grid"
+              className="mt-4 hidden gap-4 group-has-[#member-votes-bq:checked]/votes:grid xl:grid-cols-2"
               data-member-votes-bq=""
             >
               {bqFolded.map((g) => card(g, true))}

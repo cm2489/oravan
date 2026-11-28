@@ -50,7 +50,7 @@ export async function ReaderQuestions({ id, locale }: { id: string; locale: stri
     );
 
   return (
-    <section className="mt-12 border-t border-line pt-4" aria-labelledby="reader-questions-h" data-reader-questions="">
+    <section className="mt-8 border-t border-line pt-4" aria-labelledby="reader-questions-h" data-reader-questions="">
       <h2 id="reader-questions-h" className="text-h2 font-extrabold text-ink">
         {t('heading')}
       </h2>

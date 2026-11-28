@@ -65,12 +65,17 @@ export async function NewsLens({
   bills,
   compact = false,
   rows = false,
+  stack = false,
   note,
 }: {
   bills: NewsBill[];
   compact?: boolean;
   /** The homepage's rows (Home option B, 2026-09-29): see below. */
   rows?: boolean;
+  /** Rows only: one column from lg, where the band sits in a narrow column
+   *  beside the specimen; three across from md until then, as without it
+   *  (layout pass 2026-11-28). */
+  stack?: boolean;
   /** The block's one quiet AI line, from the caller (rows only). */
   note?: ReactNode;
 }) {
@@ -158,7 +163,11 @@ export async function NewsLens({
           </h2>
         </div>
         {note}
-        <ul className="mt-4 list-none border-t-[1.5px] border-line-strong md:grid md:grid-cols-3 md:gap-x-10">
+        <ul
+          className={`mt-4 list-none border-t-[1.5px] border-line-strong ${
+            stack ? 'md:grid md:grid-cols-3 md:gap-x-10 lg:block' : 'md:grid md:grid-cols-3 md:gap-x-10'
+          }`}
+        >
           {bills.map((b) => {
             const meta = [
               b.identifier,

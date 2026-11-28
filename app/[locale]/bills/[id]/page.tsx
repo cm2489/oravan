@@ -52,6 +52,7 @@ import { getMomentsForBill } from '@/lib/moments';
 import { chamberSession, floorSignalsCheckedAt, rungFor } from '@/lib/docket';
 import { journeySessionFrom } from '@/lib/floor-session';
 import { SITE_ORIGIN } from '@/lib/site';
+import { DESK_COLS } from '@/lib/layout';
 import { shareAddress, shareTablesFor } from '@/lib/share-address';
 import { settledDecisionDate, settledVoteGroups } from '@/lib/settled-votes';
 import { adoptedConcurrentReading, isConcurrentResolution } from '@/lib/concurrent-explainer';
@@ -142,13 +143,15 @@ export async function generateMetadata({
   };
 }
 
-/** The page's one wrapper. 70rem holds 33rem of reading + a 25rem rail. */
+/** The page's one wrapper: the site shell, 1216 of content on the desk. */
 // Was max-w-[70rem] with a clamped gutter, which put this page's content on a
 // DIFFERENT left edge from the header and footer at every width — and the
 // disagreement flipped sign across the breakpoints (+16px at 1024, −32px at
-// 1440). max-w-5xl px-4 is the site rail every other route already sits on,
-// and the two-track grid still fits exactly: 1024 − 32 = 992 = 528 + 64 + 400.
-const WRAP = 'mx-auto w-full max-w-5xl px-4';
+// 1440). max-w-page px-4 is the site rail every other route already sits on.
+// Since the layout pass of 2026-11-28 the desk is DESK_COLS (lib/layout.ts):
+// 1216 = 608 of reading + 64 + a 544 rail, and the header uses the same two
+// tracks (headline left, record facts right).
+const WRAP = 'mx-auto w-full max-w-page px-4';
 
 /*
  * WHICH of the three dated floor facts the band is standing on is decided by
@@ -631,169 +634,178 @@ export default async function BillPage({
             headline, the designation captions it, the AI label sits with the
             content it labels (above the fold at 390px), and 27 words of
             statute-speak that no first-time caller reads before deciding are
-            folded into a disclosure. */}
-        <header className="pt-6 pb-4">
-          <h1 className="max-w-[24ch] text-h1-bill font-extrabold text-ink">{displayTitle}</h1>
-          {/* Descends from the PROVENANCE RITUAL (2026-08 design pick C1):
-              the same facts in the same order — record, status, latest
-              action, the AI label — now as three marks instead of one run of
-              tracked capitals. Status routes through statusKeyFor — the label
-              can never outrun the record — except where the fresh floor gate
-              above has already read a stronger, dated fact out of that same
-              record, in which case it prints THAT (see statusLabelKey). */}
-          {/* THE CREDIBILITY BLOCK (B6, 2026-09-24) — three marks, no more:
-              one STATUS chip, one DATE line, one AI mark. It replaces a
-              four-line run of tracked capitals (citation · congress · status
-              · latest action · AI label) plus a short-title line and topic
-              chips, which at 390px pushed the decode below the fold. Nothing
-              it says changed: the status still routes through statusLabelKey
-              (statusKeyFor, or the fresh floor gate's stronger fact), the date
-              is the record's own last action, and the AI line is funnel
-              invariant I1's `bill.aiLabel`, verbatim, at first contact. The
-              congress, the short title and the topics moved into the
-              official-text disclosure below, unchanged.
-              The status and the date share the header's FIRST <p> on purpose:
-              tests/freshness.spec.ts reads the status off `main header p`.
-              One plain line joined it on 2026-09-27 — the sponsor, under the
-              citation (SY-33) — as its own <p>, so that first <p> is unchanged. */}
-          <div className="mt-3 max-w-read border-t-[3px] border-ink pt-3">
-            <p>
-              <Chip tone="status">{t(statusLabelKey)}</Chip>
-              <span className="mt-2 block text-sm text-ink-2 tabular-nums">
-                <span className="font-semibold text-ink">{citation}</span>
-                {/* WHAT KIND OF MEASURE (owner, 2026-09-29: "What is a
-                    concurrent resolution? Add to glossary."). On a concurrent
-                    resolution the citation is captioned with the glossary's
-                    own term, which opens its definition in place — adopted,
-                    rejected or pending alike, so a reader of H.Con.Res. 89
-                    or 38 learns what kind of measure failed. */}
-                {isConcurrentResolution(bill) && (
-                  <>
-                    <span aria-hidden> · </span>
-                    <span data-measure-kind="concurrent-resolution">
-                      <GlossaryTerm id="concurrent-resolution" />
-                    </span>
-                  </>
-                )}
-                {bill.last_action_date && (
-                  <>
-                    <span aria-hidden> · </span>
-                    <span>
-                      {t('bill.lastAction')}{' '}
-                      <time dateTime={bill.last_action_date}>
-                        {fmtShort(bill.last_action_date)}
-                      </time>
-                    </span>
-                  </>
-                )}
-              </span>
-            </p>
-            {/* THE SPONSOR, under the citation (audit 2026-09-27, SY-33):
-                name · seat · state, the member page's own chunks minus the
-                party, linked to /reps/[bioguide] when that page exists — a
-                sponsor who has left Congress is named without a link rather
-                than linked to a 404. The link is a full 44px target. */}
-            {sponsor && (
-              <p className="text-sm text-ink-2" data-sponsor={sponsor.bioguide}>
-                {t.rich('bill.sponsorLine', {
-                  name: sponsor.name,
-                  role: t(`reps.${repRoleKey(sponsor)}`),
-                  state: sponsor.state,
-                  who: (chunks) =>
-                    sponsor.hasPage ? (
-                      <Link
-                        href={`/reps/${sponsor.bioguide}`}
-                        className="inline-flex min-h-11 items-center font-semibold text-ink underline decoration-line-strong underline-offset-4 hover:decoration-ink"
-                      >
-                        {chunks}
-                      </Link>
-                    ) : (
-                      <span className="font-semibold text-ink">{chunks}</span>
-                    ),
-                })}
-              </p>
-            )}
-            {hasDecode && (
-              <Chip tone="ai" marker={t('bill.aiMarker')} className="mt-2">
-                {t('bill.aiLabel')}
-              </Chip>
-            )}
-          </div>
-          {/* PART OF A BIGGER QUESTION (repositioning spec §7.2). Until now
-              a bill page said nothing about the Moment it is a vehicle of —
-              the link existed in one direction only. It lands here, after
-              the chips and above the statute-speak, because it is context
-              for the claim in the h1, not a task.
-              Quiet on purpose: a hairline rule and an ink link, never green.
-              Green is the call, and this page already spends its one green
-              affordance on the rail; a second one competing for the eye
-              would make the reader choose between reading and calling. */}
-          {parentMoments.length > 0 && (
-            <ul className="mt-4 max-w-read border-t border-line pt-1">
-              {parentMoments.map((m) => (
-                <li key={m.id}>
-                  <Link
-                    href={`/questions/${m.id}`}
-                    className="inline-flex min-h-11 items-center text-sm font-semibold text-ink underline decoration-line-strong underline-offset-4 hover:decoration-ink"
-                  >
-                    {t('moments.partOf', { name: locale === 'es' ? m.name.es : m.name.en })}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-          <details className="group mt-4 max-w-read">
-            <summary className="inline-flex min-h-11 cursor-pointer list-none items-center gap-2 text-sm font-semibold text-ink hover:text-go-deep [&::-webkit-details-marker]:hidden">
-              <span
-                aria-hidden
-                className="inline-flex h-5 w-5 flex-none items-center justify-center rounded-stamp border-[1.5px] border-ink text-xs font-extrabold leading-none"
-              >
-                <span className="group-open:hidden">+</span>
-                <span className="hidden group-open:inline">{'–'}</span>
-              </span>
-              {t('bill.officialDisclosure')}
-            </summary>
-            <div className="space-y-2 pb-2 text-sm text-ink-2">
+            folded into a disclosure.
+            THE DOSSIER (layout pass 2026-11-28): from 62rem the header uses
+            the desk's two tracks, the headline on the left and the record
+            facts (status, sponsor, AI label, parent question, official text)
+            on the right under their rule, so the top right of the first
+            screen carries the record instead of paper. Below 62rem it is one
+            column in the same order. The header's first <p> is still the
+            status line. */}
+        <header className={`pt-4 pb-4 min-[62rem]:grid ${DESK_COLS} min-[62rem]:items-start`}>
+          <h1 className="min-w-0 max-w-[24ch] text-h1-bill font-extrabold text-ink">{displayTitle}</h1>
+          <div className="min-w-0">
+            {/* Descends from the PROVENANCE RITUAL (2026-08 design pick C1):
+                the same facts in the same order — record, status, latest
+                action, the AI label — now as three marks instead of one run of
+                tracked capitals. Status routes through statusKeyFor — the label
+                can never outrun the record — except where the fresh floor gate
+                above has already read a stronger, dated fact out of that same
+                record, in which case it prints THAT (see statusLabelKey). */}
+            {/* THE CREDIBILITY BLOCK (B6, 2026-09-24) — three marks, no more:
+                one STATUS chip, one DATE line, one AI mark. It replaces a
+                four-line run of tracked capitals (citation · congress · status
+                · latest action · AI label) plus a short-title line and topic
+                chips, which at 390px pushed the decode below the fold. Nothing
+                it says changed: the status still routes through statusLabelKey
+                (statusKeyFor, or the fresh floor gate's stronger fact), the date
+                is the record's own last action, and the AI line is funnel
+                invariant I1's `bill.aiLabel`, verbatim, at first contact. The
+                congress, the short title and the topics moved into the
+                official-text disclosure below, unchanged.
+                The status and the date share the header's FIRST <p> on purpose:
+                tests/freshness.spec.ts reads the status off `main header p`.
+                One plain line joined it on 2026-09-27 — the sponsor, under the
+                citation (SY-33) — as its own <p>, so that first <p> is unchanged. */}
+            <div className="mt-3 max-w-read border-t-[3px] border-ink pt-3 min-[62rem]:mt-2 min-[62rem]:max-w-none">
               <p>
-                <b className="font-semibold text-ink">{t('bill.officialTitle')}:</b> {bill.title}
+                <Chip tone="status">{t(statusLabelKey)}</Chip>
+                <span className="mt-2 block text-sm text-ink-2 tabular-nums">
+                  <span className="font-semibold text-ink">{citation}</span>
+                  {/* WHAT KIND OF MEASURE (owner, 2026-09-29: "What is a
+                      concurrent resolution? Add to glossary."). On a concurrent
+                      resolution the citation is captioned with the glossary's
+                      own term, which opens its definition in place — adopted,
+                      rejected or pending alike, so a reader of H.Con.Res. 89
+                      or 38 learns what kind of measure failed. */}
+                  {isConcurrentResolution(bill) && (
+                    <>
+                      <span aria-hidden> · </span>
+                      <span data-measure-kind="concurrent-resolution">
+                        <GlossaryTerm id="concurrent-resolution" />
+                      </span>
+                    </>
+                  )}
+                  {bill.last_action_date && (
+                    <>
+                      <span aria-hidden> · </span>
+                      <span>
+                        {t('bill.lastAction')}{' '}
+                        <time dateTime={bill.last_action_date}>
+                          {fmtShort(bill.last_action_date)}
+                        </time>
+                      </span>
+                    </>
+                  )}
+                </span>
               </p>
-              {bill.short_title && (
-                <p>
-                  <b className="font-semibold text-ink">{t('bill.shortTitleLabel')}:</b>{' '}
-                  {`“${bill.short_title}”`}
+              {/* THE SPONSOR, under the citation (audit 2026-09-27, SY-33):
+                  name · seat · state, the member page's own chunks minus the
+                  party, linked to /reps/[bioguide] when that page exists — a
+                  sponsor who has left Congress is named without a link rather
+                  than linked to a 404. The link is a full 44px target. */}
+              {sponsor && (
+                <p className="text-sm text-ink-2" data-sponsor={sponsor.bioguide}>
+                  {t.rich('bill.sponsorLine', {
+                    name: sponsor.name,
+                    role: t(`reps.${repRoleKey(sponsor)}`),
+                    state: sponsor.state,
+                    who: (chunks) =>
+                      sponsor.hasPage ? (
+                        <Link
+                          href={`/reps/${sponsor.bioguide}`}
+                          className="inline-flex min-h-11 items-center font-semibold text-ink underline decoration-line-strong underline-offset-4 hover:decoration-ink"
+                        >
+                          {chunks}
+                        </Link>
+                      ) : (
+                        <span className="font-semibold text-ink">{chunks}</span>
+                      ),
+                  })}
                 </p>
               )}
-              <p>{t('bill.congressLabel', { congress: bill.congress_number })}</p>
-              {/* Topics as plain words, not chips: on this page a chip means
-                  status, and there is exactly one. */}
-              {(bill.issue_tags ?? []).length > 0 && (
-                <p>
-                  <b className="font-semibold text-ink">{t('bill.topicsLabel')}:</b>{' '}
-                  {(bill.issue_tags ?? [])
-                    .slice(0, 2)
-                    .map((tag) => t(`categories.${tag}`))
-                    .join(' · ')}
-                </p>
-              )}
-              {bill.introduced_date && (
-                <p className="tabular-nums">
-                  <b className="font-semibold text-ink">{t('bill.introduced')}:</b>{' '}
-                  <time dateTime={bill.introduced_date}>{fmtDate(bill.introduced_date)}</time>
-                </p>
-              )}
-              {bill.congress_gov_url && (
-                <a
-                  href={bill.congress_gov_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex min-h-11 items-center gap-1.5 font-semibold text-go underline visited:text-go-deep hover:text-go-deep"
-                >
-                  {t('bill.viewOfficial')}
-                  <ExternalLink className="h-4 w-4 flex-none" aria-hidden />
-                </a>
+              {hasDecode && (
+                <Chip tone="ai" marker={t('bill.aiMarker')} className="mt-2">
+                  {t('bill.aiLabel')}
+                </Chip>
               )}
             </div>
-          </details>
+            {/* PART OF A BIGGER QUESTION (repositioning spec §7.2). Until now
+                a bill page said nothing about the Moment it is a vehicle of —
+                the link existed in one direction only. It lands here, after
+                the chips and above the statute-speak, because it is context
+                for the claim in the h1, not a task.
+                Quiet on purpose: a hairline rule and an ink link, never green.
+                Green is the call, and this page already spends its one green
+                affordance on the rail; a second one competing for the eye
+                would make the reader choose between reading and calling. */}
+            {parentMoments.length > 0 && (
+              <ul className="mt-2 max-w-read border-t border-line pt-1 min-[62rem]:max-w-none">
+                {parentMoments.map((m) => (
+                  <li key={m.id}>
+                    <Link
+                      href={`/questions/${m.id}`}
+                      className="inline-flex min-h-11 items-center text-sm font-semibold text-ink underline decoration-line-strong underline-offset-4 hover:decoration-ink"
+                    >
+                      {t('moments.partOf', { name: locale === 'es' ? m.name.es : m.name.en })}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <details className="group mt-2 max-w-read min-[62rem]:max-w-none">
+              <summary className="inline-flex min-h-11 cursor-pointer list-none items-center gap-2 text-sm font-semibold text-ink hover:text-go-deep [&::-webkit-details-marker]:hidden">
+                <span
+                  aria-hidden
+                  className="inline-flex h-5 w-5 flex-none items-center justify-center rounded-stamp border-[1.5px] border-ink text-xs font-extrabold leading-none"
+                >
+                  <span className="group-open:hidden">+</span>
+                  <span className="hidden group-open:inline">{'–'}</span>
+                </span>
+                {t('bill.officialDisclosure')}
+              </summary>
+              <div className="space-y-2 pb-2 text-sm text-ink-2">
+                <p>
+                  <b className="font-semibold text-ink">{t('bill.officialTitle')}:</b> {bill.title}
+                </p>
+                {bill.short_title && (
+                  <p>
+                    <b className="font-semibold text-ink">{t('bill.shortTitleLabel')}:</b>{' '}
+                    {`“${bill.short_title}”`}
+                  </p>
+                )}
+                <p>{t('bill.congressLabel', { congress: bill.congress_number })}</p>
+                {/* Topics as plain words, not chips: on this page a chip means
+                    status, and there is exactly one. */}
+                {(bill.issue_tags ?? []).length > 0 && (
+                  <p>
+                    <b className="font-semibold text-ink">{t('bill.topicsLabel')}:</b>{' '}
+                    {(bill.issue_tags ?? [])
+                      .slice(0, 2)
+                      .map((tag) => t(`categories.${tag}`))
+                      .join(' · ')}
+                  </p>
+                )}
+                {bill.introduced_date && (
+                  <p className="tabular-nums">
+                    <b className="font-semibold text-ink">{t('bill.introduced')}:</b>{' '}
+                    <time dateTime={bill.introduced_date}>{fmtDate(bill.introduced_date)}</time>
+                  </p>
+                )}
+                {bill.congress_gov_url && (
+                  <a
+                    href={bill.congress_gov_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex min-h-11 items-center gap-1.5 font-semibold text-go underline visited:text-go-deep hover:text-go-deep"
+                  >
+                    {t('bill.viewOfficial')}
+                    <ExternalLink className="h-4 w-4 flex-none" aria-hidden />
+                  </a>
+                )}
+              </div>
+            </details>
+          </div>
         </header>
       </div>
 
@@ -858,10 +870,12 @@ export default async function BillPage({
         />
       )}
 
-      <div className={`${WRAP} pb-16`}>
+      <div className={`${WRAP} pb-12`}>
         {/* THE DESK: reading column + call rail. The rail spans every row, so
-            a sticky item is not confined to row 1 and holds to the page foot. */}
-        <div className="grid max-w-read gap-8 pt-6 min-[62rem]:max-w-none min-[62rem]:grid-cols-[minmax(0,var(--measure-read))_minmax(20rem,25rem)] min-[62rem]:items-start min-[62rem]:justify-between min-[62rem]:gap-x-[clamp(2rem,4vw,4rem)] min-[62rem]:gap-y-8">
+            a sticky item is not confined to row 1 and holds to the page foot.
+            DESK_COLS since 2026-11-28: a 608 reading track and a rail that
+            takes the rest (544 at the full shell, never under 360). */}
+        <div className={`grid max-w-desk gap-8 pt-6 min-[62rem]:max-w-none ${DESK_COLS} min-[62rem]:items-start min-[62rem]:gap-y-8`}>
           {/* data-read-zone: FloatingCallButton stands down while any of the
               decoded answer is on screen, so it never sits over the text the
               page exists to deliver (2026-09-27 audit, SY-07). */}

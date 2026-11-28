@@ -34,6 +34,7 @@ import { formatCitation } from '@/lib/format';
 import { adoptedConcurrentReading } from '@/lib/concurrent-explainer';
 import { dataAsOfString, getFreshness } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
+import { DESK_COLS } from '@/lib/layout';
 import {
   RENDER_DAY_CAP,
   VERBATIM_MODE,
@@ -71,60 +72,72 @@ const CONTENT_LINK =
   'inline-flex min-h-11 items-center gap-2 font-bold text-go underline transition-colors hover:text-go-deep';
 
 /*
- * THE PAGE'S ONE WRAPPER — the site rail every other route sits on, and the
- * reason this page can hold two columns at all. Identical string to
- * app/[locale]/bills/[id]/page.tsx and app/[locale]/nominations/[slug]/page.tsx:
- * 1024 − 32 = 992 = 528 (33rem of reading) + 64 + 400 (a 25rem rail). This page
- * used to be a centered max-w-3xl article; nothing about that container was
- * this page's own, and adopting the site's two-panel rail is what puts the
- * vehicles beside the narrative instead of a screen below it.
+ * THE PAGE'S ONE WRAPPER — the site shell every other route sits on (layout
+ * pass 2026-11-28): 78rem, so 1248 − 32 = 1216 of content at 1280 and up, and
+ * the window less 32 below that. This page used to be a centered max-w-3xl
+ * article; adopting the site's two-panel shell is what puts the vehicles
+ * beside the narrative instead of a screen below it.
  */
-const WRAP = 'mx-auto w-full max-w-5xl px-4';
+const WRAP = 'mx-auto w-full max-w-page px-4';
 
 /*
- * THE DESK — the same grid string as the bill page and the nomination page
- * apart from the leading spacing utility and the ROW gap: one track of
- * `--measure-read` and one of 20–25rem, opening at the site's 62rem
- * breakpoint, `items-start`, `justify-between`, and the same clamped column
- * gutter. No new tokens, no new breakpoint.
+ * THE DESK — the site's one desk string (DESK_COLS, lib/layout.ts), written
+ * for the bill, nomination, question and /call pages: one reading track of up to
+ * 38rem and a rail that takes the rest, never under 22.5rem, opening at the
+ * site's 62rem breakpoint with a 4rem gutter. At 1216: 608 | 64 | 544. At a
+ * 992 window (960 of content): 536 | 64 | 360. Below 62rem the desk is one
+ * column, held to the same 38rem. No new breakpoint.
  *
- * THREE CHILDREN, IN READING ORDER (wireframes v2, 2026-09-29). Source order
+ * THREE BLOCKS, IN READING ORDER (wireframes v2, 2026-09-29). Source order
  * is the phone's reading order, and the rail has to sit in the MIDDLE of it:
  *
- *   LEAD   what Congress is deciding, then the bills (col 1, row 1);
+ *   LEAD   what Congress is deciding, reader questions, then the bills
+ *          (col 1, row 1);
  *   RAIL   the call — the bill page's own call panel on a one-bill question
  *          ("the panel right after the decoded answer", question-single),
  *          or the desk-only "Still open to a call" list on a several-bills
- *          question (col 2, rows 1–2, sticky);
- *   REST   where it stands, what's moved, why this question exists (col 1,
- *          row 2).
+ *          question;
+ *   REST   where it stands, what's moved, why this question exists.
  *
  * So on a phone the panel follows the question's answer and its bill
- * directly, as it follows the decode on a bill page (rule 8), and on the desk
- * it rides beside the whole column.
+ * directly, as it follows the decode on a bill page (rule 8).
  *
- * WHY THE RAIL SPANS TWO NAMED ROWS AND NOT `row-span-full`. `grid-row: 1 /
- * -1` resolves against the EXPLICIT grid, which is empty when the rows are
- * implicit, so it would collapse to row 1 and the sticky box could never
- * travel past the lead. `row-start-1 row-span-2` names both rows. What rides
- * in the rail is always short beside the column — the panel and the desk list
- * are both capped at the window's height and scroll inside themselves, as the
- * panel does on the bill page — so the rail never pushes a row taller than
- * its column content, and no gap opens in the column. The
- * old page's rail of full cards was the reason it used one row; those cards
- * now sit in the column.
+ * WHERE THE RAIL AND THE REST GO DEPENDS ON THE WIDTH (layout pass
+ * 2026-11-28). RAIL and REST share one wrapper (SIDE, in the JSX below):
  *
- * NO ROW GAP. Every section keeps its own `mt-12` rhythm, exactly as when the
+ *   62rem to 1279  the wrapper is `display: contents`, so RAIL and REST are
+ *                  grid items exactly as before: RAIL in col 2, rows 1–2,
+ *                  sticky beside the whole column; REST in col 1, row 2.
+ *                  The rail here can be as narrow as 360, too narrow for
+ *                  "Where it stands" to read well, so REST stays in col 1.
+ *   80rem and up   the wrapper is col 2, row 1: RAIL on top (not sticky,
+ *                  still capped at the window's height and scrolling inside
+ *                  itself), then REST below it, its prose at 528 inside 544.
+ *                  Both columns carry content the whole way down the page,
+ *                  where before col 2 was a short rail beside a long column.
+ *
+ * WHY THE RAIL SPANS TWO NAMED ROWS AND NOT `row-span-full` (62rem to 1279).
+ * `grid-row: 1 / -1` resolves against the EXPLICIT grid, which is empty when
+ * the rows are implicit, so it would collapse to row 1 and the sticky box
+ * could never travel past the lead. `row-start-1 row-span-2` names both rows.
+ * What rides in the rail is always short beside the column — the panel and
+ * the desk list are both capped at the window's height and scroll inside
+ * themselves, as the panel does on the bill page — so the rail never pushes a
+ * row taller than its column content, and no gap opens in the column.
+ *
+ * NO ROW GAP. Every section keeps its own `mt-8` rhythm, exactly as when the
  * column was one child; a row gap would add to it between LEAD and REST. The
- * panel carries its own `mt-12` on a phone for the same reason.
+ * panel carries its own `mt-8` on a phone for the same reason.
  */
-const DESK =
-  'grid max-w-read gap-x-8 min-[62rem]:max-w-none min-[62rem]:grid-cols-[minmax(0,var(--measure-read))_minmax(20rem,25rem)] min-[62rem]:items-start min-[62rem]:justify-between min-[62rem]:gap-x-[clamp(2rem,4vw,4rem)]';
+const DESK = `grid max-w-desk min-[62rem]:max-w-none ${DESK_COLS} min-[62rem]:items-start`;
 
-/* The rail's place on the desk: column 2, both rows, sticky 1rem from the top
-   of the window (the bill page's `sticky top-4 self-start`). */
+/* The rail's place on the desk from 62rem to 1279: column 2, both rows,
+   sticky 1rem from the top of the window (the bill page's `sticky top-4
+   self-start`). From 80rem it sits at the top of the SIDE wrapper and is not
+   sticky, so `sticky` stops at `max-xl`; the placement utilities do nothing
+   there, because the wrapper is not a grid. */
 const RAIL =
-  'min-w-0 min-[62rem]:sticky min-[62rem]:top-4 min-[62rem]:col-start-2 min-[62rem]:row-start-1 min-[62rem]:row-span-2 min-[62rem]:self-start';
+  'min-w-0 min-[62rem]:max-xl:sticky min-[62rem]:top-4 min-[62rem]:col-start-2 min-[62rem]:row-start-1 min-[62rem]:row-span-2 min-[62rem]:self-start';
 
 /*
  * TRUE 404s INSIDE THE LOCALE BOUNDARY (Phase-1 P1 pair, 2026-08-04).
@@ -534,66 +547,75 @@ export default async function MomentPage({
       });
 
   return (
-    <article className={`${WRAP} pt-12 pb-16`}>
-      {/* 1 · Moment header — full width, above the desk. It names the question
-             and dates the record; both columns below answer to it. */}
-      <p className="flex flex-wrap items-center gap-3 text-sm">
-        <Link
-          href="/questions"
-          className="inline-flex min-h-11 items-center font-semibold text-ink-2 underline transition-colors hover:text-ink"
-        >
-          {t('moments.crumb')}
-        </Link>
-        <span className="text-2xs leading-tight font-extrabold tracking-[0.1em] text-ink-2 uppercase">
-          {isSettled ? t('moments.settledBadge') : t('moments.liveBadge')}
-        </span>
-        <Chip tone="tag">{t(`categories.${moment.category}`)}</Chip>
-      </p>
+    <article className={`${WRAP} pt-6 pb-12 md:pt-8`}>
+      {/* 1 · Moment header — above the desk. It names the question and dates
+             the record; both columns below answer to it. From 62rem it is a
+             row on the desk's own columns (layout pass 2026-11-28): the crumb
+             and the h1 on the left, the record's status for the question on
+             the right, their bottoms aligned. Below 62rem it stacks in source
+             order, as before. */}
+      <div className={`min-[62rem]:grid ${DESK_COLS} min-[62rem]:items-end`}>
+        <div className="min-w-0">
+          <p className="flex flex-wrap items-center gap-3 text-sm">
+            <Link
+              href="/questions"
+              className="inline-flex min-h-11 items-center font-semibold text-ink-2 underline transition-colors hover:text-ink"
+            >
+              {t('moments.crumb')}
+            </Link>
+            <span className="text-2xs leading-tight font-extrabold tracking-[0.1em] text-ink-2 uppercase">
+              {isSettled ? t('moments.settledBadge') : t('moments.liveBadge')}
+            </span>
+            <Chip tone="tag">{t(`categories.${moment.category}`)}</Chip>
+          </p>
 
-      {/* The wrapper is 70rem now, so the h1 needs the same measure bound the
-          bill page's h1 carries — an unbounded display line across a 5xl rail
-          is not a heading, it is a banner. Same utility, same value. */}
-      <h1 className="mt-4 max-w-[24ch] text-h1-bill font-extrabold text-ink">{name}</h1>
-      {!glance && (
-        <p className="mt-5 max-w-read text-xs text-ink-2">
-          {dataAsOf}
-          <StalenessNote checkedAt={freshness.checkedAt} />
-        </p>
-      )}
-
-      {/* The record's own status for the whole question. The staleBanner that
-          stood here ("scheduled review passed…") is gone: a lapsed review date
-          is the owner's curation reminder, sent by the nightly watcher, and
-          the currency a reader needs is this line — re-derived from the
-          record on every build — plus the "Summary updated" date printed
-          under the summary it describes. */}
-      {lead && glance?.line !== lead && (
-        <section aria-labelledby="record-status" className="mt-6 max-w-read">
-          <h2
-            id="record-status"
-            className="text-2xs leading-tight font-extrabold tracking-[0.1em] text-ink-2 uppercase"
-          >
-            {t('moments.status.label')}
-          </h2>
-          {leadSubject ? (
-            <>
-              <p className="mt-2 flex flex-wrap items-baseline gap-x-2" data-question-line-bill>
-                <Link
-                  href={leadSubject.href}
-                  className="-my-3 inline-block py-3 text-md font-semibold text-go underline transition-colors hover:text-go-deep"
-                >
-                  {leadSubject.label}
-                </Link>
-                <MomentStatusDate date={lead.date} inline />
-              </p>
-              <MomentStatusLine line={lead} size="md" dateless />
-            </>
-          ) : (
-            <MomentStatusLine line={lead} size="md" className="mt-2" />
+          {/* The h1 carries the same measure bound the bill page's h1 carries —
+              an unbounded display line across the page shell is not a heading, it
+              is a banner. Same utility, same value; the desk's left column holds
+              it to 608 from 62rem as well. */}
+          <h1 className="mt-3 max-w-[24ch] text-h1-bill font-extrabold text-ink">{name}</h1>
+          {!glance && (
+            <p className="mt-5 max-w-read text-xs text-ink-2">
+              {dataAsOf}
+              <StalenessNote checkedAt={freshness.checkedAt} />
+            </p>
           )}
-          {explainer && <p className="mt-2 text-sm text-ink-2">{t('moments.status.explainer')}</p>}
-        </section>
-      )}
+        </div>
+
+        {/* The record's own status for the whole question. The staleBanner that
+            stood here ("scheduled review passed…") is gone: a lapsed review date
+            is the owner's curation reminder, sent by the nightly watcher, and
+            the currency a reader needs is this line — re-derived from the
+            record on every build — plus the "Summary updated" date printed
+            under the summary it describes. */}
+        {lead && glance?.line !== lead && (
+          <section aria-labelledby="record-status" className="mt-6 max-w-read min-w-0 min-[62rem]:mt-0">
+            <h2
+              id="record-status"
+              className="text-2xs leading-tight font-extrabold tracking-[0.1em] text-ink-2 uppercase"
+            >
+              {t('moments.status.label')}
+            </h2>
+            {leadSubject ? (
+              <>
+                <p className="mt-2 flex flex-wrap items-baseline gap-x-2" data-question-line-bill>
+                  <Link
+                    href={leadSubject.href}
+                    className="-my-3 inline-block py-3 text-md font-semibold text-go underline transition-colors hover:text-go-deep"
+                  >
+                    {leadSubject.label}
+                  </Link>
+                  <MomentStatusDate date={lead.date} inline />
+                </p>
+                <MomentStatusLine line={lead} size="md" dateless />
+              </>
+            ) : (
+              <MomentStatusLine line={lead} size="md" className="mt-2" />
+            )}
+            {explainer && <p className="mt-2 text-sm text-ink-2">{t('moments.status.explainer')}</p>}
+          </section>
+        )}
+      </div>
       {glance && (
         <QuestionGlance
           glance={glance}
@@ -603,14 +625,16 @@ export default async function MomentPage({
         />
       )}
 
-      {/* THE DESK — three children in reading order (see DESK): the LEAD
+      {/* THE DESK — three blocks in reading order (see DESK): the LEAD
           (what Congress is deciding, then the bills), the RAIL (the call),
           then the REST (where it stands, what's moved, why this question
-          exists). Below 62rem they stack in exactly that order, so on a phone
-          the call panel follows the question's answer and its bill directly;
-          on the desk the rail rides beside the whole column. */}
-      <div className={`mt-12 ${DESK}`}>
-        {/* THE LEAD (2 · 3). Each section keeps its own mt-12 rhythm. */}
+          exists); the RAIL and the REST share the SIDE wrapper. Below 62rem
+          they stack in exactly that order, so on a phone the call panel
+          follows the question's answer and its bill directly; from 62rem to
+          1279 the rail rides beside the whole column; from 80rem the rail and
+          the rest fill column 2 beside the lead. */}
+      <div className={`mt-8 ${DESK}`}>
+        {/* THE LEAD (2 · 3). Each section keeps its own mt-8 rhythm. */}
         <div className="min-w-0 min-[62rem]:col-start-1 min-[62rem]:row-start-1">
           {/* 2 · The Moment entry's own summary — the page's one reading passage,
               and so the one place Besley is spent. Provenance, spelled out because
@@ -658,7 +682,7 @@ export default async function MomentPage({
               and a way to read it, with nothing that dials. The grouping by
               chamber this replaced survives as each card's "Started in the
               House / Senate" tag. */}
-          <section className="mt-12 border-t border-line pt-4" aria-labelledby="vehicles-h">
+          <section className="mt-8 border-t border-line pt-4" aria-labelledby="vehicles-h">
             <h2 id="vehicles-h" className="text-h2 font-extrabold text-ink">
               {t(`moments.${vehiclesKey.heading}`)}
             </h2>
@@ -719,231 +743,243 @@ export default async function MomentPage({
           </section>
         </div>
 
-        {/* THE RAIL — the call.
+        {/* SIDE — the rail and the rest, in one wrapper (layout pass
+            2026-11-28; see the note above DESK). From 62rem to 1279 the
+            wrapper is `display: contents`, so the rail and the rest are placed
+            on the desk exactly as before. From 80rem it is column 2: the rail
+            on top, then where it stands, what's moved and why, so both
+            columns carry content the whole way down. Below 62rem it is an
+            ordinary block, and the order is the phone's reading order. */}
+        <div className="min-w-0 min-[62rem]:max-xl:contents xl:col-start-2 xl:row-start-1">
+          {/* THE RAIL — the call.
 
-            ONE OPEN BILL: the bill page's own call panel (Q6 b; Q5 a, one
-            call route, inline), in the bill page's own rail wrapper — sticky,
-            capped at the window's height with the panel scrolling inside it
-            on the desk — and, on a phone, in flow right after the bills with
-            the column's own 3rem rhythm. No floating "Make the call" button
-            here: the wireframe draws none on a question page (see the PR).
+              ONE OPEN BILL: the bill page's own call panel (Q6 b; Q5 a, one
+              call route, inline), in the bill page's own rail wrapper — sticky
+              from 62rem to 1279 and at the top of column 2 from 80rem, capped
+              at the window's height with the panel scrolling inside it on the
+              desk — and, on a phone, in flow right after the bills with the
+              column's own 2rem rhythm. No floating "Make the call" button
+              here: the wireframe draws none on a question page (see the PR).
 
-            SEVERAL OPEN: the short "Still open to a call" list, on the desk
-            only (display: none below 62rem, where the column's list is the
-            list), capped at the window's height like the panel, with the
-            list scrolling inside it (components/MomentStillOpenRail.tsx). */}
-        {panel && (
-          <div className={`mt-12 ${RAIL} min-[62rem]:mt-0 min-[62rem]:flex min-[62rem]:max-h-[calc(100dvh-2rem)]`}>
-            <ActionPanel {...panel} />
-          </div>
-        )}
-        {!panel && railItems.length > 0 && (
-          <div className={`hidden ${RAIL} min-[62rem]:flex min-[62rem]:max-h-[calc(100dvh-2rem)]`}>
-            <MomentStillOpenRail heading={t('moments.stillOpenRailHeading')} items={railItems} />
-          </div>
-        )}
-
-        {/* THE REST: where it stands, what's moved, why this question exists.
-            (The section numbers in the comments below are the old page's.) */}
-        <div className="min-w-0 min-[62rem]:col-start-1 min-[62rem]:row-start-2">
-          {/* 3 · "Where it stands" — the machine-written state summary (v2 spec
-              §7). It sits BELOW the summary section above on purpose: the
-              issue stays front-and-center and dated motion is subordinate to it.
-              Renders NOTHING when no revision exists — an empty placeholder
-              promising a summary later is a claim about our pipeline, not about
-              Congress, and this surface only makes the second kind of claim.
-
-              THE EDITORIAL LAW (owner-settled 2026-07-25, v2 §2): "Truth about
-              the record, attribution about the spin… When the record is silent —
-              motive, likelihood, what it really means — Oravan's voice stops, and
-              named sources speak or nobody does. Speculation never wears our
-              voice." The gate lints this text in BOTH languages before it can
-              land; what the page owes the law is the labeling and the receipts —
-              the AI chip above the passage, the standing disclaimer under it, and
-              the dated record of every time the summary was rewritten. */}
-          {/* VERBATIM_MODE hides this entire block: unlike a timeline item, a
-              summary has no government record to fall back to, so the honest
-              off-state is silence (the section is already absent when no revision
-              exists — see lib/moment-updates.ts). */}
-          {summaryRevision && !VERBATIM_MODE && (
-            <section aria-labelledby="where-it-stands" className="mt-12 border-t border-line pt-4">
-              <h2 id="where-it-stands" className="text-h2 font-extrabold text-ink">
-                {t('moments.updates.whereHeading', { date: fmtDate(summaryRevision.as_of_day) })}
-              </h2>
-              {/* AI labeled at FIRST contact — above the passage, never in a
-                  footnote. Reuses the page's own chip pattern, and appears only
-                  when a model wrote the passage below it (see `currentIsAi`). */}
-              {currentIsAi && (
-                <p className="mt-4">
-                  <Chip tone="ai" marker={t('common.aiMarker')} className="max-w-read">
-                    {t('moments.updates.summaryAiChip')}
-                  </Chip>
-                </p>
-              )}
-              {/* Franklin, not Besley: the reading voice is spent on the ONE
-                  passage above (a bill's decoded prose and the words a caller
-                  says aloud). This is Oravan stating where the record currently
-                  stands — its own voice, in its own font, and visibly
-                  subordinate to the section it follows. */}
-              <p className="mt-4 max-w-read text-md text-ink">
-                {localeText(summaryRevision.text, locale)}
-              </p>
-              {/* The standing caveat describes AI text ("AI-drafted summary…"),
-                  so it travels with the chip: both are claims about how the
-                  passage above was written. */}
-              {currentIsAi && (
-                <p className="mt-5 max-w-note text-xs font-semibold text-ink-2">{t('bill.aiDisclaimer')}</p>
-              )}
-
-              {/* The site's existing native-disclosure idiom (WalkthroughDisclosure):
-                  the browser's own marker is kept and merely toned, so the
-                  affordance survives with no client JavaScript and no icon. */}
-              {priorRevisions.length > 0 && (
-                <details className="mt-5 max-w-read rounded-control border border-line-strong bg-paper px-4 pb-2">
-                  <summary className="min-h-11 cursor-pointer py-3 text-sm font-bold text-ink select-none marker:text-ink-2 hover:text-go-deep">
-                    {t('moments.updates.revisionsToggle', { count: priorRevisions.length })}
-                  </summary>
-                  {/* The label follows the AI text. When the current summary is
-                      hand-authored the chip above is gone, and any model-written
-                      version in the history would otherwise render with no label
-                      at all — so it moves here, once, over the list it describes.
-                      Still one AI chip per section (v2 spec §7), never two. */}
-                  {!currentIsAi && historyIsAi && (
-                    <p className="mt-1 mb-2">
-                      <Chip tone="ai" marker={t('common.aiMarker')} className="max-w-read">
-                        {t('moments.updates.summaryAiChip')}
-                      </Chip>
-                    </p>
-                  )}
-                  <ol className="mt-2 list-none">
-                    {priorRevisions.map((rev) => {
-                      /* changed_because holds the collector's machine tokens
-                         ('seed', 'updates:+2', 'status:sjres-185-119
-                         floor_vote→committee'). This line used to print them, so
-                         the page read "Rewritten because seed" — and the Spanish
-                         page read the same English token (audit constitution-07).
-                         Each token is now a message key; a token this build does
-                         not recognize renders nothing at all, and a revision with
-                         no recognized token loses the line rather than leaking
-                         one. The tokens themselves stay in the data, where they
-                         are an audit trail, and stay out of the DOM entirely —
-                         the status form carries the raw bill-status enum. */
-                      const reasons = revisionReasons(rev.changed_because).map((r) =>
-                        t(`moments.updates.reason.${r.key}`, r.values),
-                      );
-                      return (
-                        <li key={rev.id} className="border-t border-line py-3">
-                          <p className="text-xs font-bold text-ink-2 tabular-nums">
-                            {t('moments.updates.revisionAsOf', { date: fmtDate(rev.as_of_day) })}
-                          </p>
-                          <p className="mt-1 max-w-read text-sm text-ink">
-                            {localeText(rev.text, locale)}
-                          </p>
-                          {reasons.length > 0 && (
-                            <p className="mt-1 max-w-read text-xs text-ink-2">
-                              <span className="font-semibold">
-                                {t('moments.updates.revisionReasonLabel')}
-                              </span>{' '}
-                              {reasons.join(' · ')}
-                            </p>
-                          )}
-                        </li>
-                      );
-                    })}
-                  </ol>
-                </details>
-              )}
-            </section>
+              SEVERAL OPEN: the short "Still open to a call" list, on the desk
+              only (display: none below 62rem, where the column's list is the
+              list), capped at the window's height like the panel, with the
+              list scrolling inside it (components/MomentStillOpenRail.tsx). */}
+          {panel && (
+            <div className={`mt-8 ${RAIL} min-[62rem]:mt-0 min-[62rem]:flex min-[62rem]:max-h-[calc(100dvh-2rem)]`}>
+              <ActionPanel {...panel} />
+            </div>
+          )}
+          {!panel && railItems.length > 0 && (
+            <div className={`hidden ${RAIL} min-[62rem]:flex min-[62rem]:max-h-[calc(100dvh-2rem)]`}>
+              <MomentStillOpenRail heading={t('moments.stillOpenRailHeading')} items={railItems} />
+            </div>
           )}
 
-          {/* 4 · "What's moved" — the dated timeline. The lede carries the client
-              sentinel, because a quiet ledger has two possible causes and only
-              one of them is Congress's: "nothing moved" is server-rendered from
-              the record, "we couldn't check" is the visitor's own clock talking
-              (v2 spec §3). */}
-          <section aria-labelledby="whats-moved" className="mt-12 border-t border-line pt-4">
-            <h2 id="whats-moved" className="text-h2 font-extrabold text-ink">
-              {t('moments.updates.timelineHeading')}
-            </h2>
-            <p className="mt-2 max-w-read text-sm text-ink-2">
-              {t('moments.updates.timelineLede', { cap: RENDER_DAY_CAP })}
-              <MomentQuietNote checkedAt={freshness.checkedAt} dateLabel={fmtDate(freshness.checkedAt)} />
-            </p>
-            <MomentTimeline momentId={id} locale={locale} vehicles={timelineVehicles} />
-          </section>
+          {/* THE REST: where it stands, what's moved, why this question exists.
+              (The section numbers in the comments below are the old page's.) */}
+          <div className="min-w-0 min-[62rem]:col-start-1 min-[62rem]:row-start-2">
+            {/* 3 · "Where it stands" — the machine-written state summary (v2 spec
+                §7). It comes AFTER the summary section above on purpose: the
+                issue stays front-and-center and dated motion is subordinate to it
+                (from 80rem it sits in column 2 under the rail, still after the
+                summary in reading order and beside it rather than ahead of it).
+                Renders NOTHING when no revision exists — an empty placeholder
+                promising a summary later is a claim about our pipeline, not about
+                Congress, and this surface only makes the second kind of claim.
 
-          {/* 6 · Why this Moment exists — the column's last section, as the
-                 wireframes draw it (v2, 2026-09-29). It sat in the rail under
-                 the cards until the rail became the call. */}
-          <section className="mt-12 border-t border-line pt-4" aria-labelledby="why-h">
-            <h2 id="why-h" className="text-xs leading-tight font-extrabold tracking-[0.1em] text-ink-2 uppercase">
-              {t('moments.whyHeading')}
-            </h2>
-            <p className="mt-3 max-w-note text-sm text-ink-2">{t('moments.whyCriteria')}</p>
+                THE EDITORIAL LAW (owner-settled 2026-07-25, v2 §2): "Truth about
+                the record, attribution about the spin… When the record is silent —
+                motive, likelihood, what it really means — Oravan's voice stops, and
+                named sources speak or nobody does. Speculation never wears our
+                voice." The gate lints this text in BOTH languages before it can
+                land; what the page owes the law is the labeling and the receipts —
+                the AI chip above the passage, the standing disclaimer under it, and
+                the dated record of every time the summary was rewritten. */}
+            {/* VERBATIM_MODE hides this entire block: unlike a timeline item, a
+                summary has no government record to fall back to, so the honest
+                off-state is silence (the section is already absent when no revision
+                exists — see lib/moment-updates.ts). */}
+            {summaryRevision && !VERBATIM_MODE && (
+              <section aria-labelledby="where-it-stands" className="mt-8 border-t border-line pt-4">
+                <h2 id="where-it-stands" className="text-h2 font-extrabold text-ink">
+                  {t('moments.updates.whereHeading', { date: fmtDate(summaryRevision.as_of_day) })}
+                </h2>
+                {/* AI labeled at FIRST contact — above the passage, never in a
+                    footnote. Reuses the page's own chip pattern, and appears only
+                    when a model wrote the passage below it (see `currentIsAi`). */}
+                {currentIsAi && (
+                  <p className="mt-4">
+                    <Chip tone="ai" marker={t('common.aiMarker')} className="max-w-read">
+                      {t('moments.updates.summaryAiChip')}
+                    </Chip>
+                  </p>
+                )}
+                {/* Franklin, not Besley: the reading voice is spent on the ONE
+                    passage above (a bill's decoded prose and the words a caller
+                    says aloud). This is Oravan stating where the record currently
+                    stands — its own voice, in its own font, and visibly
+                    subordinate to the section it follows. */}
+                <p className="mt-4 max-w-read text-md text-ink">
+                  {localeText(summaryRevision.text, locale)}
+                </p>
+                {/* The standing caveat describes AI text ("AI-drafted summary…"),
+                    so it travels with the chip: both are claims about how the
+                    passage above was written. */}
+                {currentIsAi && (
+                  <p className="mt-5 max-w-note text-xs font-semibold text-ink-2">{t('bill.aiDisclaimer')}</p>
+                )}
 
-            <p className="mt-5 text-sm font-bold text-ink">{t('moments.signalLabel')}</p>
-            <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-2">
-              {/* the signal is a LABEL — an ink mark. The evidence beside it is a
-                  set of links, so it is set as links, in the go tone. */}
-              <Chip tone="tag">
-                {QUALIFYING_SIGNAL_TYPES.includes(moment.qualifying_signal.type)
-                  ? t(`moments.signalType.${moment.qualifying_signal.type}`)
-                  : moment.qualifying_signal.type}
-              </Chip>
-              {moment.qualifying_signal.refs.map((ref, i) => (
-                <a
-                  key={ref}
-                  href={ref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`${CONTENT_LINK} text-sm`}
-                >
-                  {t('moments.evidenceLink', { index: i + 1 })}
-                  <ExternalLink className="h-3 w-3" aria-hidden />
-                </a>
-              ))}
-            </div>
-
-            {/* Hand-curated institutional grounding (v2 spec §5): the CRS / CBO /
-                GAO material a reader can check the summaries against. Auto-
-                discovery of CRS reports was refuted, so these are added by hand
-                when a moment opens and host-allowlisted by the moments gate —
-                which is why the row renders only when a moment actually carries
-                them, and why nothing is invented to fill it. Ink label, green
-                links: the label is a mark, the evidence goes somewhere. */}
-            {moment.context_refs && moment.context_refs.length > 0 && (
-              <>
-                <p className="mt-5 text-sm font-bold text-ink">{t('moments.updates.refsLabel')}</p>
-                <ul className="mt-2 max-w-note list-none">
-                  {moment.context_refs.map((ref) => (
-                    <li
-                      key={ref.url}
-                      className="flex flex-wrap items-baseline gap-x-3 border-t border-line py-2"
-                    >
-                      <span className="text-2xs leading-tight font-extrabold tracking-[0.1em] text-ink-2 uppercase">
-                        {t(`moments.updates.refKind.${ref.kind}`)}
-                      </span>
-                      <a
-                        href={ref.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`${CONTENT_LINK} text-sm`}
-                      >
-                        {ref.title ? localeText(ref.title, locale) : linkHost(ref.url)}
-                        <ExternalLink className="h-3 w-3" aria-hidden />
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </>
+                {/* The site's existing native-disclosure idiom (WalkthroughDisclosure):
+                    the browser's own marker is kept and merely toned, so the
+                    affordance survives with no client JavaScript and no icon. */}
+                {priorRevisions.length > 0 && (
+                  <details className="mt-5 max-w-read rounded-control border border-line-strong bg-paper px-4 pb-2">
+                    <summary className="min-h-11 cursor-pointer py-3 text-sm font-bold text-ink select-none marker:text-ink-2 hover:text-go-deep">
+                      {t('moments.updates.revisionsToggle', { count: priorRevisions.length })}
+                    </summary>
+                    {/* The label follows the AI text. When the current summary is
+                        hand-authored the chip above is gone, and any model-written
+                        version in the history would otherwise render with no label
+                        at all — so it moves here, once, over the list it describes.
+                        Still one AI chip per section (v2 spec §7), never two. */}
+                    {!currentIsAi && historyIsAi && (
+                      <p className="mt-1 mb-2">
+                        <Chip tone="ai" marker={t('common.aiMarker')} className="max-w-read">
+                          {t('moments.updates.summaryAiChip')}
+                        </Chip>
+                      </p>
+                    )}
+                    <ol className="mt-2 list-none">
+                      {priorRevisions.map((rev) => {
+                        /* changed_because holds the collector's machine tokens
+                           ('seed', 'updates:+2', 'status:sjres-185-119
+                           floor_vote→committee'). This line used to print them, so
+                           the page read "Rewritten because seed" — and the Spanish
+                           page read the same English token (audit constitution-07).
+                           Each token is now a message key; a token this build does
+                           not recognize renders nothing at all, and a revision with
+                           no recognized token loses the line rather than leaking
+                           one. The tokens themselves stay in the data, where they
+                           are an audit trail, and stay out of the DOM entirely —
+                           the status form carries the raw bill-status enum. */
+                        const reasons = revisionReasons(rev.changed_because).map((r) =>
+                          t(`moments.updates.reason.${r.key}`, r.values),
+                        );
+                        return (
+                          <li key={rev.id} className="border-t border-line py-3">
+                            <p className="text-xs font-bold text-ink-2 tabular-nums">
+                              {t('moments.updates.revisionAsOf', { date: fmtDate(rev.as_of_day) })}
+                            </p>
+                            <p className="mt-1 max-w-read text-sm text-ink">
+                              {localeText(rev.text, locale)}
+                            </p>
+                            {reasons.length > 0 && (
+                              <p className="mt-1 max-w-read text-xs text-ink-2">
+                                <span className="font-semibold">
+                                  {t('moments.updates.revisionReasonLabel')}
+                                </span>{' '}
+                                {reasons.join(' · ')}
+                              </p>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ol>
+                  </details>
+                )}
+              </section>
             )}
-          </section>
+
+            {/* 4 · "What's moved" — the dated timeline. The lede carries the client
+                sentinel, because a quiet ledger has two possible causes and only
+                one of them is Congress's: "nothing moved" is server-rendered from
+                the record, "we couldn't check" is the visitor's own clock talking
+                (v2 spec §3). */}
+            <section aria-labelledby="whats-moved" className="mt-8 border-t border-line pt-4">
+              <h2 id="whats-moved" className="text-h2 font-extrabold text-ink">
+                {t('moments.updates.timelineHeading')}
+              </h2>
+              <p className="mt-2 max-w-read text-sm text-ink-2">
+                {t('moments.updates.timelineLede', { cap: RENDER_DAY_CAP })}
+                <MomentQuietNote checkedAt={freshness.checkedAt} dateLabel={fmtDate(freshness.checkedAt)} />
+              </p>
+              <MomentTimeline momentId={id} locale={locale} vehicles={timelineVehicles} />
+            </section>
+
+            {/* 6 · Why this Moment exists — the column's last section, as the
+                   wireframes draw it (v2, 2026-09-29). It sat in the rail under
+                   the cards until the rail became the call. */}
+            <section className="mt-8 border-t border-line pt-4" aria-labelledby="why-h">
+              <h2 id="why-h" className="text-xs leading-tight font-extrabold tracking-[0.1em] text-ink-2 uppercase">
+                {t('moments.whyHeading')}
+              </h2>
+              <p className="mt-3 max-w-note text-sm text-ink-2">{t('moments.whyCriteria')}</p>
+
+              <p className="mt-5 text-sm font-bold text-ink">{t('moments.signalLabel')}</p>
+              <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-2">
+                {/* the signal is a LABEL — an ink mark. The evidence beside it is a
+                    set of links, so it is set as links, in the go tone. */}
+                <Chip tone="tag">
+                  {QUALIFYING_SIGNAL_TYPES.includes(moment.qualifying_signal.type)
+                    ? t(`moments.signalType.${moment.qualifying_signal.type}`)
+                    : moment.qualifying_signal.type}
+                </Chip>
+                {moment.qualifying_signal.refs.map((ref, i) => (
+                  <a
+                    key={ref}
+                    href={ref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`${CONTENT_LINK} text-sm`}
+                  >
+                    {t('moments.evidenceLink', { index: i + 1 })}
+                    <ExternalLink className="h-3 w-3" aria-hidden />
+                  </a>
+                ))}
+              </div>
+
+              {/* Hand-curated institutional grounding (v2 spec §5): the CRS / CBO /
+                  GAO material a reader can check the summaries against. Auto-
+                  discovery of CRS reports was refuted, so these are added by hand
+                  when a moment opens and host-allowlisted by the moments gate —
+                  which is why the row renders only when a moment actually carries
+                  them, and why nothing is invented to fill it. Ink label, green
+                  links: the label is a mark, the evidence goes somewhere. */}
+              {moment.context_refs && moment.context_refs.length > 0 && (
+                <>
+                  <p className="mt-5 text-sm font-bold text-ink">{t('moments.updates.refsLabel')}</p>
+                  <ul className="mt-2 max-w-note list-none">
+                    {moment.context_refs.map((ref) => (
+                      <li
+                        key={ref.url}
+                        className="flex flex-wrap items-baseline gap-x-3 border-t border-line py-2"
+                      >
+                        <span className="text-2xs leading-tight font-extrabold tracking-[0.1em] text-ink-2 uppercase">
+                          {t(`moments.updates.refKind.${ref.kind}`)}
+                        </span>
+                        <a
+                          href={ref.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`${CONTENT_LINK} text-sm`}
+                        >
+                          {ref.title ? localeText(ref.title, locale) : linkHost(ref.url)}
+                          <ExternalLink className="h-3 w-3" aria-hidden />
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </section>
+          </div>
         </div>
       </div>
 
       {/* 7 · How this page is made, and the lifecycle note — full width below
              the desk, in the order they had inside the "why" section. */}
-      <p className="mt-12">
+      <p className="mt-8">
         <Link href="/questions#how" className={`${CONTENT_LINK} text-sm`}>
           {t('moments.howMadeLink')} →
         </Link>
@@ -956,7 +992,7 @@ export default async function MomentPage({
       )}
 
       {/* 8 · Browse-all affordance (scarcity) */}
-      <p className="mt-12 flex flex-wrap items-baseline gap-x-4 gap-y-1 border-t border-line pt-4">
+      <p className="mt-8 flex flex-wrap items-baseline gap-x-4 gap-y-1 border-t border-line pt-4">
         <Link href="/questions" className={CONTENT_LINK}>
           {t('moments.browseAll')} →
         </Link>

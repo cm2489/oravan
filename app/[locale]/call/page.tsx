@@ -21,6 +21,7 @@ import { dataAsOfString, getFreshness } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
 import { liveCallTarget } from '@/lib/journey';
 import { getMomentsForBill } from '@/lib/moments';
+import { DESK_COLS } from '@/lib/layout';
 
 /*
  * /call — THE CALL HUB (owner, 2026-09-29, "nav 1"; wireframes v2,
@@ -113,11 +114,16 @@ export default async function CallHubPage({ params }: { params: Promise<{ locale
     format.dateTime(new Date(iso), { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' });
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-12">
+    <div className="mx-auto max-w-page px-4 pt-6 pb-12 md:pt-8">
       <h1 className="text-h1-bill font-extrabold text-ink">{t('title')}</h1>
-      <p className="mt-4 max-w-read text-lede text-ink-2">{t('lede')}</p>
+      <p className="mt-3 max-w-read text-lede text-ink-2">{t('lede')}</p>
 
-      <div className="mt-10 grid gap-12 min-[62rem]:grid-cols-[minmax(0,var(--measure-read))_minmax(18rem,22rem)] min-[62rem]:justify-between">
+      {/* THE DESK (layout pass 2026-11-28): the week's rows in the 38rem
+          reading column, who a call would reach in the rail that takes the
+          rest, the bill page's own columns. The old fixed 22rem rail pushed
+          apart with justify-between would open a 336px gutter in the 1216
+          shell. */}
+      <div className={`mt-8 grid gap-12 ${DESK_COLS} min-[62rem]:items-start`}>
         <section aria-labelledby="week-h" className="min-w-0">
           <h2 id="week-h" className="text-h2 font-extrabold text-ink">
             {t('weekTitle')}

@@ -135,8 +135,8 @@ test.describe('the heavy rule opens the page', () => {
   const src = readFileSync(join(process.cwd(), 'components/TodayBrief.tsx'), 'utf8');
 
   test('the floor band carries the 3px rule; the chambers carry the thin rule while the band shows', () => {
-    expect(src).toContain("const HEAVY_RULE = 'mt-12 border-t-[3px] border-ink pt-4'");
-    expect(src).toContain("const THIN_RULE = 'mt-12 border-t border-line-strong pt-4'");
+    expect(src).toContain("const HEAVY_RULE = 'mt-8 border-t-[3px] border-ink pt-4'");
+    expect(src).toContain("const THIN_RULE = 'mt-8 border-t border-line-strong pt-4'");
     expect(src).toContain('<section className={HEAVY_RULE} aria-labelledby="today-schedule"');
     expect(src).toContain('className={showSchedule ? THIN_RULE : HEAVY_RULE} aria-labelledby="today-chambers"');
   });

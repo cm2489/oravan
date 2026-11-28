@@ -139,7 +139,7 @@ export function Header() {
   return (
     <>
       <header className="on-band border-b border-go-deep bg-go-deep">
-        <div className="mx-auto flex min-h-14 max-w-5xl items-center gap-3 px-4 md:min-h-16">
+        <div className="mx-auto flex min-h-14 max-w-page items-center gap-3 px-4 md:min-h-16">
           <Link href="/" className="inline-flex min-h-11 items-center text-paper">
             {/* Sized AGAINST the language switch, not by eye: the switch box
                 measures 46px tall, and the lockup's art height is the mark
@@ -157,7 +157,10 @@ export function Header() {
               build at the 1024 content rail: EN bar totals 963px of 992
               usable, but the Spanish nav alone is 686px, so the inline
               variant can never fit /es (the squeeze crushed the language
-              switcher to 25px cells and swallowed its clicks). Spanish
+              switcher to 25px cells and swallowed its clicks). That
+              measurement still holds at 1024 and below, where the row is
+              still the window less 32; from 1248 up the max-w-page shell
+              (layout pass 2026-11-28) gives the row 1216. Spanish
               carries the SAME two sentences in the sub-bar below. */}
           {locale === 'en' && (
             <p className="hidden border-l-[1.5px] border-go-pale pl-3 text-xs leading-tight text-go-pale lg:block">
@@ -197,7 +200,7 @@ export function Header() {
             Wide screens only, matching the EN variant's scope. */}
         {locale === 'es' && (
           <div className="hidden border-t border-go-pale bg-go-deep lg:block">
-            <p className="mx-auto max-w-5xl px-4 py-1 text-center text-2xs font-semibold tracking-[0.06em] text-go-pale">
+            <p className="mx-auto max-w-page px-4 py-1 text-center text-2xs font-semibold tracking-[0.06em] text-go-pale">
               {t('trustLine1')} {t('trustLine2')}
             </p>
           </div>

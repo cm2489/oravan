@@ -16,6 +16,7 @@ import { dataAsOfString, getFreshness } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
 import { liveCallTargetForNomination, nominationHasCallScript } from '@/lib/journey';
 import { getMomentsForNomination } from '@/lib/moments';
+import { DESK_COLS } from '@/lib/layout';
 
 /*
  * THE SENATE NOMINATION PAGE — the surface that makes a nomination a callable
@@ -105,7 +106,7 @@ import { getMomentsForNomination } from '@/lib/moments';
  * (Congress.gov, /questions) are all worth following.
  */
 
-const WRAP = 'mx-auto w-full max-w-5xl px-4';
+const WRAP = 'mx-auto w-full max-w-page px-4';
 
 /** The same 8px-box-with-a-2px-edge geometry components/ActionPanel.tsx states
  *  for its own title bar. Restated rather than imported so this server page
@@ -353,67 +354,74 @@ export default async function NominationPage({
         </Link>
       </p>
 
-      <header className="pt-6 pb-4">
-        <h1 className="max-w-[36ch] text-h1-bill font-extrabold text-ink">{headline}</h1>
-        {/* THE PROVENANCE RITUAL, the bill page's own line in the bill page's
-            own voice and order: citation · receiving body · status · latest
-            action. No AI label rides here — unlike a bill headline, nothing
-            above this line was written by a model. */}
-        <p className="mt-3 max-w-read border-t-[3px] border-ink pt-2 text-2xs font-extrabold tracking-[0.14em] text-ink-2 uppercase">
-          <span className="tabular-nums">{nomination.citation}</span>
-          {nomination.organization && (
-            <>
-              <span aria-hidden> · </span>
-              <span>{nomination.organization}</span>
-            </>
-          )}
-          <span aria-hidden> · </span>
-          {/* Two of these labels ARE procedural terms rather than descriptions
-              of one — "Reported by committee", "On the Executive Calendar" —
-              and a reader meeting them here has nothing telling them what
-              either means. Those two carry the glossary trigger; the rest are
-              plain (issue #181, lib/glossary.ts NOMINATION_STATUS_TERMS). */}
-          <span>
-            <NominationStatusLabel
-              status={nomination.status}
-              label={t(`nominations.status.${nomination.status}`)}
-            />
-          </span>
-          {nomination.last_action_date && (
-            <>
-              <span aria-hidden> · </span>
-              <span className="tabular-nums">
-                {t('bill.lastAction')} {fmtShort(nomination.last_action_date)}
-              </span>
-            </>
-          )}
-        </p>
+      {/* THE DOSSIER (layout pass 2026-11-28), the bill page's header
+          geometry: from 62rem the headline takes the desk's reading track and
+          the record line, the no-decode note and the parent question take
+          the rail track beside it. Below 62rem, one column in the same order. */}
+      <header className={`pt-4 pb-4 min-[62rem]:grid ${DESK_COLS} min-[62rem]:items-start`}>
+        <h1 className="min-w-0 max-w-[36ch] text-h1-bill font-extrabold text-ink">{headline}</h1>
+        <div className="min-w-0">
+          {/* THE PROVENANCE RITUAL, the bill page's own line in the bill page's
+              own voice and order: citation · receiving body · status · latest
+              action. No AI label rides here — unlike a bill headline, nothing
+              above this line was written by a model. */}
+          <p className="mt-3 max-w-read border-t-[3px] border-ink pt-2 text-2xs font-extrabold tracking-[0.14em] text-ink-2 uppercase min-[62rem]:mt-2 min-[62rem]:max-w-none">
+            <span className="tabular-nums">{nomination.citation}</span>
+            {nomination.organization && (
+              <>
+                <span aria-hidden> · </span>
+                <span>{nomination.organization}</span>
+              </>
+            )}
+            <span aria-hidden> · </span>
+            {/* Two of these labels ARE procedural terms rather than descriptions
+                of one — "Reported by committee", "On the Executive Calendar" —
+                and a reader meeting them here has nothing telling them what
+                either means. Those two carry the glossary trigger; the rest are
+                plain (issue #181, lib/glossary.ts NOMINATION_STATUS_TERMS). */}
+            <span>
+              <NominationStatusLabel
+                status={nomination.status}
+                label={t(`nominations.status.${nomination.status}`)}
+              />
+            </span>
+            {nomination.last_action_date && (
+              <>
+                <span aria-hidden> · </span>
+                <span className="tabular-nums">
+                  {t('bill.lastAction')} {fmtShort(nomination.last_action_date)}
+                </span>
+              </>
+            )}
+          </p>
 
-        {/* The absence of a decode, stated where a decode would have been —
-            immediately under the headline it would have replaced. */}
-        <p className="mt-4 max-w-read text-sm text-ink-2">{t('nominations.noDecodeNote')}</p>
+          {/* The absence of a decode, stated where a decode would have been —
+              immediately with the headline it would have replaced (under it on
+              a phone, in the record column beside it on the desk). */}
+          <p className="mt-2 max-w-read text-sm text-ink-2 min-[62rem]:max-w-none">{t('nominations.noDecodeNote')}</p>
 
-        {parentMoments.length > 0 && (
-          <ul className="mt-4 max-w-read border-t border-line pt-1">
-            {parentMoments.map((m) => (
-              <li key={m.id}>
-                <Link
-                  href={`/questions/${m.id}`}
-                  className="inline-flex min-h-11 items-center text-sm font-semibold text-ink underline decoration-line-strong underline-offset-4 hover:decoration-ink"
-                >
-                  {t('moments.partOf', { name: locale === 'es' ? m.name.es : m.name.en })}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
+          {parentMoments.length > 0 && (
+            <ul className="mt-2 max-w-read border-t border-line pt-1 min-[62rem]:max-w-none">
+              {parentMoments.map((m) => (
+                <li key={m.id}>
+                  <Link
+                    href={`/questions/${m.id}`}
+                    className="inline-flex min-h-11 items-center text-sm font-semibold text-ink underline decoration-line-strong underline-offset-4 hover:decoration-ink"
+                  >
+                    {t('moments.partOf', { name: locale === 'es' ? m.name.es : m.name.en })}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </header>
 
-      <div className="pb-16">
+      <div className="pb-12">
         {/* THE DESK: the record on the left, the call rail on the right. Same
             grid the bill page uses, and the rail spans every row so a sticky
-            item holds to the page foot. */}
-        <div className="grid max-w-read gap-8 pt-2 min-[62rem]:max-w-none min-[62rem]:grid-cols-[minmax(0,var(--measure-read))_minmax(20rem,25rem)] min-[62rem]:items-start min-[62rem]:justify-between min-[62rem]:gap-x-[clamp(2rem,4vw,4rem)] min-[62rem]:gap-y-8">
+            item holds to the page foot. DESK_COLS since 2026-11-28. */}
+        <div className={`grid max-w-desk gap-8 pt-2 min-[62rem]:max-w-none ${DESK_COLS} min-[62rem]:items-start min-[62rem]:gap-y-8`}>
           <section
             aria-labelledby="record-h"
             className="min-w-0 min-[62rem]:col-start-1 min-[62rem]:row-start-1"

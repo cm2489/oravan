@@ -18,6 +18,7 @@ import type { FreshnessSignals } from '@/lib/freshness-state';
 import type { FeedTeaser } from '@/lib/types';
 import { BillCard } from './BillCard';
 import { UrgencyEmptyState } from './UrgencyEmptyState';
+import { CARD_GRID } from '@/lib/layout';
 
 const BANDS: UrgencyBand[] = ['now', 'moving', 'radar'];
 
@@ -154,84 +155,93 @@ export function BillsBrowser({
 
   return (
     <div>
-      <div className="mt-8">
-        <label htmlFor="bill-search" className="sr-only">
-          {t('bills.searchLabel')}
-        </label>
-        <div className="relative max-w-xl">
-          <Search
-            className="pointer-events-none absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 text-ink-2"
-            aria-hidden
-          />
-          <input
-            ref={searchRef}
-            id="bill-search"
-            type="search"
-            placeholder={t('bills.searchPlaceholder')}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="min-h-12 w-full rounded-control border-2 border-line-strong bg-paper py-3 pr-12 pl-12 text-md text-ink transition-colors placeholder:text-ink-2 hover:border-ink focus:border-ink [&::-webkit-search-cancel-button]:appearance-none"
-          />
-          {/* The field has its own clear button (below, 44px, labelled), so
-              the browser's built-in one is hidden: two clear marks side by
-              side read as a fault (UI audit fixes, 2026-11-22). */}
-          {query ? (
+      {/* THE TOOLBAR (layout pass 2026-11-28): from lg the search (with its
+          corpus line) and the topic chips (with their privacy note) sit side
+          by side, so the chip wall no longer stacks under the search and the
+          first band reaches the first laptop screen. Below lg: one column,
+          the same order as before. */}
+      <div className="mt-6 lg:grid lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:items-start lg:gap-x-8">
+        <div className="min-w-0">
+          <label htmlFor="bill-search" className="sr-only">
+            {t('bills.searchLabel')}
+          </label>
+          <div className="relative max-w-xl">
+            <Search
+              className="pointer-events-none absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 text-ink-2"
+              aria-hidden
+            />
+            <input
+              ref={searchRef}
+              id="bill-search"
+              type="search"
+              placeholder={t('bills.searchPlaceholder')}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="min-h-12 w-full rounded-control border-2 border-line-strong bg-paper py-3 pr-12 pl-12 text-md text-ink transition-colors placeholder:text-ink-2 hover:border-ink focus:border-ink [&::-webkit-search-cancel-button]:appearance-none"
+            />
+            {/* The field has its own clear button (below, 44px, labelled), so
+                the browser's built-in one is hidden: two clear marks side by
+                side read as a fault (UI audit fixes, 2026-11-22). */}
+            {query ? (
+              <button
+                type="button"
+                onClick={() => setQuery('')}
+                aria-label={t('bills.clearSearch')}
+                className="absolute top-1/2 right-1 inline-flex min-h-11 min-w-11 -translate-y-1/2 items-center justify-center rounded-control text-ink-2 transition-colors hover:text-ink"
+              >
+                <X className="h-4 w-4" aria-hidden />
+              </button>
+            ) : (
+              // decorative, aria-hidden: `line` is a separator tone and is legal
+              // on a mark that carries no meaning of its own
+              <kbd
+                aria-hidden
+                className="absolute top-1/2 right-4 hidden -translate-y-1/2 rounded-stamp border border-line bg-wash px-1.5 py-0.5 text-2xs text-ink-2 md:block"
+              >
+                /
+              </kbd>
+            )}
+          </div>
+          {/* The corpus, stated at the point of first input (2026-08): the
+              inline count is both a trust signal and an expectation-setter.
+              The count is LIVE (bills with a decode in this very payload),
+              never a hardcoded claim that drifts from the data. */}
+          <p className="mt-2 max-w-note text-sm text-ink-2">
+            {t('bills.searchTrust', { decoded: formatCount(decodedCount, locale), total: formatCount(activeBills.length, locale) })}
+          </p>
+        </div>
+
+        <div className="min-w-0">
+          {/* One scrollable row on mobile (no chip wall), wrapping rail on desktop */}
+          <div
+            className="mt-3 -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 lg:mt-0"
+            role="group"
+            aria-label={t('bills.all')}
+          >
             <button
               type="button"
-              onClick={() => setQuery('')}
-              aria-label={t('bills.clearSearch')}
-              className="absolute top-1/2 right-1 inline-flex min-h-11 min-w-11 -translate-y-1/2 items-center justify-center rounded-control text-ink-2 transition-colors hover:text-ink"
+              onClick={() => setPrefs({ interests: [] })}
+              aria-pressed={active.length === 0}
+              className={`${FILTER_CHIP} ${active.length === 0 ? FILTER_ON : FILTER_OFF}`}
             >
-              <X className="h-4 w-4" aria-hidden />
+              {t('bills.all')}
             </button>
-          ) : (
-            // decorative, aria-hidden: `line` is a separator tone and is legal
-            // on a mark that carries no meaning of its own
-            <kbd
-              aria-hidden
-              className="absolute top-1/2 right-4 hidden -translate-y-1/2 rounded-stamp border border-line bg-wash px-1.5 py-0.5 text-2xs text-ink-2 md:block"
-            >
-              /
-            </kbd>
-          )}
+            {orderedCategories.map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => toggle(cat)}
+                aria-pressed={active.includes(cat)}
+                className={`${FILTER_CHIP} ${active.includes(cat) ? FILTER_ON : FILTER_OFF}`}
+              >
+                {t(`categories.${cat}`)}
+              </button>
+            ))}
+          </div>
+
+          <p className="mt-2 text-xs text-ink-2">{t('bills.interestsNote')}</p>
         </div>
-        {/* The corpus, stated at the point of first input (2026-08): the
-            inline count is both a trust signal and an expectation-setter.
-            The count is LIVE (bills with a decode in this very payload),
-            never a hardcoded claim that drifts from the data. */}
-        <p className="mt-2 max-w-note text-sm text-ink-2">
-          {t('bills.searchTrust', { decoded: formatCount(decodedCount, locale), total: formatCount(activeBills.length, locale) })}
-        </p>
       </div>
-
-      {/* One scrollable row on mobile (no chip wall), wrapping rail on desktop */}
-      <div
-        className="mt-4 -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0"
-        role="group"
-        aria-label={t('bills.all')}
-      >
-        <button
-          type="button"
-          onClick={() => setPrefs({ interests: [] })}
-          aria-pressed={active.length === 0}
-          className={`${FILTER_CHIP} ${active.length === 0 ? FILTER_ON : FILTER_OFF}`}
-        >
-          {t('bills.all')}
-        </button>
-        {orderedCategories.map((cat) => (
-          <button
-            key={cat}
-            type="button"
-            onClick={() => toggle(cat)}
-            aria-pressed={active.includes(cat)}
-            className={`${FILTER_CHIP} ${active.includes(cat) ? FILTER_ON : FILTER_OFF}`}
-          >
-            {t(`categories.${cat}`)}
-          </button>
-        ))}
-      </div>
-
-      <p className="mt-3 text-xs text-ink-2">{t('bills.interestsNote')}</p>
 
       {/* THE PINNED QUESTION (spec §7.3). Above the count, and outside it.
           Three rules hold this row honest:
@@ -277,7 +287,7 @@ export function BillsBrowser({
         </ul>
       )}
 
-      <p className="mt-4 text-sm text-ink-2" aria-live="polite">
+      <p className="mt-3 text-sm text-ink-2" aria-live="polite">
         {t('bills.showingCount', { shown: formatCount(filtered.length, locale), total: formatCount(bills.length, locale) })}
       </p>
 
@@ -311,7 +321,7 @@ export function BillsBrowser({
           const unfiltered = query.trim() === '' && active.length === 0 && bills.length > 0;
           if (band !== 'now' || !unfiltered) return null;
           return (
-            <section key={band} className={`mt-12 pt-4 ${BAND_RULE[band]}`} aria-labelledby={`band-${band}`}>
+            <section key={band} className={`mt-8 pt-4 ${BAND_RULE[band]}`} aria-labelledby={`band-${band}`}>
               <h2 id={`band-${band}`} className="text-h2 font-extrabold text-ink">
                 {t(`bills.band.${band}`)}
               </h2>
@@ -319,7 +329,7 @@ export function BillsBrowser({
                   band promised urgency the band could not show (B4,
                   2026-09-24). The empty state says what is true instead, and
                   points at "Moving" when that band has bills. */}
-              <div className="mt-6">
+              <div className="mt-4">
                 <UrgencyEmptyState
                   {...freshness}
                   moving={{ count: byBand.moving.length, href: '#band-moving' }}
@@ -331,15 +341,21 @@ export function BillsBrowser({
         const isOpen = !!expanded[band];
         const visible = isOpen ? all : all.slice(0, BAND_CAP);
         return (
-          <section key={band} className={`mt-12 pt-4 ${BAND_RULE[band]}`} aria-labelledby={`band-${band}`}>
-            <h2 id={`band-${band}`} className="text-h2 font-extrabold text-ink">
-              {t(`bills.band.${band}`)}
-            </h2>
-            <p className="mt-2 max-w-read text-sm text-ink-2">{t(`bills.bandSub.${band}`)}</p>
+          <section key={band} className={`mt-8 pt-4 ${BAND_RULE[band]}`} aria-labelledby={`band-${band}`}>
+            {/* The band head (layout pass 2026-11-28): from lg the heading and
+                its one-line sub share a baseline row instead of stacking. */}
+            <div className="lg:flex lg:flex-wrap lg:items-baseline lg:gap-x-4">
+              <h2 id={`band-${band}`} className="text-h2 font-extrabold text-ink">
+                {t(`bills.band.${band}`)}
+              </h2>
+              <p className="mt-1 max-w-read text-sm text-ink-2 lg:mt-0">{t(`bills.bandSub.${band}`)}</p>
+            </div>
             {/* Only "Deciding now" cards carry the 2px ink border (the
                 ActionPanel's own treatment) — the urgency hierarchy the bands
-                exist for, visible before it's read (2026-07 critique round 2). */}
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                exist for, visible before it's read (2026-07 critique round 2).
+                Three across from xl (layout pass 2026-11-28), so a whole
+                "Deciding now" row fits the first laptop screen. */}
+            <div className={`mt-4 ${CARD_GRID}`}>
               {visible.map((b) => (
                 <BillCard key={b.slug} bill={b} emphasis={band === 'now'} />
               ))}

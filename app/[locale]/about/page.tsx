@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { hreflangAlternates } from '@/lib/hreflang';
 import { DONATE_URL } from '@/lib/site';
+import { PAIR_ROW } from '@/lib/layout';
 
 export async function generateMetadata({
   params,
@@ -22,67 +23,74 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
   // key, no new copy in either language.
   const tc = await getTranslations('common');
 
-  // One reading column, capped ONCE on the wrapper so every block below shares
-  // the same left and right edge (DESIGN.md, Measure).
+  // TWO BLOCKS SIDE BY SIDE (layout pass 2026-11-28). The page sits on the
+  // site's shell, so its left edge is the logo's. From 64rem the intro and the
+  // name's origin hold the left column, and who pays and who answers for it
+  // the right; each block keeps the 33rem reading measure (DESIGN.md,
+  // Measure). On a phone the blocks stack in the same order.
   return (
-    <article className="mx-auto max-w-read px-4 py-12">
-      <div className="max-w-read">
-        <h1 className="text-h2-loud font-extrabold">{t('title')}</h1>
-        <p className="mt-4 text-lede text-ink-2">{t('intro')}</p>
-        <p className="mt-4 text-sm text-ink-2">{tc('footer.lore')}</p>
+    <article className="mx-auto max-w-page px-4 pt-6 pb-12 md:pt-8">
+      <div className={PAIR_ROW}>
+        <div className="max-w-read min-w-0">
+          <h1 className="text-h2-loud font-extrabold">{t('title')}</h1>
+          <p className="mt-3 text-lede text-ink-2">{t('intro')}</p>
+          <p className="mt-4 text-sm text-ink-2">{tc('footer.lore')}</p>
+        </div>
 
-        <section className="mt-8 border-t border-line pt-6">
-          <h2 className="text-h3 font-extrabold">{t('fundingTitle')}</h2>
-          <p className="mt-2">{t('fundingBody')}</p>
-          {/* The operator, named, with the verifiable half of "built in the
-              open": an outside audit (2026-08-02) found the site claiming
-              inspectability while linking no repository and naming no human —
-              while asking for money. The repo IS public; now the claim
-              carries its proof, and the donation ask below has a name on it. */}
-          <p className="mt-2">
-            {t('builtBy')}{' '}
-            <a
-              href="https://github.com/cm2489/oravan"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-semibold text-go underline underline-offset-2 hover:text-go-deep"
-            >
-              {t('repoLinkLabel')}
-            </a>
-          </p>
-          {/* The one support ask on this page (the HCB fiscal-sponsorship route
-              was denied 2026-07-15, so the former DonateSupport section and its
-              sponsor/tax-deductible claims are retired). Dark by construction
-              until DONATE_URL is set - one constant, no second flag. Never
-              claims tax-deductibility or nonprofit status - this is a personal,
-              founder-funded contribution, not a charitable gift. Link-out only:
-              never an iframe or a payment field on Oravan's own infra (§6).
-              The link is an ACTION, so it is green — an inline link inside a
-              sentence is exempt from the 44px floor (WCAG 2.5.8), and forcing
-              the height onto it would break the line it sits in. */}
-          {DONATE_URL && (
+        <div className="min-w-0">
+          <section className="mt-8 max-w-read border-t border-line pt-6 lg:mt-0">
+            <h2 className="text-h3 font-extrabold">{t('fundingTitle')}</h2>
+            <p className="mt-2">{t('fundingBody')}</p>
+            {/* The operator, named, with the verifiable half of "built in the
+                open": an outside audit (2026-08-02) found the site claiming
+                inspectability while linking no repository and naming no human —
+                while asking for money. The repo IS public; now the claim
+                carries its proof, and the donation ask below has a name on it. */}
             <p className="mt-2">
-              {t('fundingSupportBody')}{' '}
+              {t('builtBy')}{' '}
               <a
-                href={DONATE_URL}
+                href="https://github.com/cm2489/oravan"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="font-semibold text-go underline underline-offset-2 hover:text-go-deep"
               >
-                {t('fundingSupportCta')}
+                {t('repoLinkLabel')}
               </a>
             </p>
-          )}
-        </section>
+            {/* The one support ask on this page (the HCB fiscal-sponsorship route
+                was denied 2026-07-15, so the former DonateSupport section and its
+                sponsor/tax-deductible claims are retired). Dark by construction
+                until DONATE_URL is set - one constant, no second flag. Never
+                claims tax-deductibility or nonprofit status - this is a personal,
+                founder-funded contribution, not a charitable gift. Link-out only:
+                never an iframe or a payment field on Oravan's own infra (§6).
+                The link is an ACTION, so it is green — an inline link inside a
+                sentence is exempt from the 44px floor (WCAG 2.5.8), and forcing
+                the height onto it would break the line it sits in. */}
+            {DONATE_URL && (
+              <p className="mt-2">
+                {t('fundingSupportBody')}{' '}
+                <a
+                  href={DONATE_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold text-go underline underline-offset-2 hover:text-go-deep"
+                >
+                  {t('fundingSupportCta')}
+                </a>
+              </p>
+            )}
+          </section>
 
-        {/* Who's accountable + how to reach a person — surfaced outside the
-            donation-gated section so it never depends on DONATE_URL being live
-            (S6 persona gate: newsroom/library/nonprofit seats couldn't tell who
-            stands behind the widget or how to reach them). */}
-        <section className="mt-8 border-t border-line pt-6">
-          <h2 className="text-h3 font-extrabold">{t('accountabilityTitle')}</h2>
-          <p className="mt-2">{t('accountabilityBody')}</p>
-        </section>
+          {/* Who's accountable + how to reach a person — surfaced outside the
+              donation-gated section so it never depends on DONATE_URL being live
+              (S6 persona gate: newsroom/library/nonprofit seats couldn't tell who
+              stands behind the widget or how to reach them). */}
+          <section className="mt-8 max-w-read border-t border-line pt-6">
+            <h2 className="text-h3 font-extrabold">{t('accountabilityTitle')}</h2>
+            <p className="mt-2">{t('accountabilityBody')}</p>
+          </section>
+        </div>
       </div>
     </article>
   );

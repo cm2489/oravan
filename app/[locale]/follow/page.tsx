@@ -4,6 +4,7 @@ import { Link } from '@/i18n/navigation';
 import { hreflangAlternates } from '@/lib/hreflang';
 import { EMBEDS_PAGES_PUBLIC, SITE_ORIGIN, feedPaths } from '@/lib/site';
 import { MCP_ENDPOINT_URL, TOOL_NAMES } from '@/lib/core/mcp';
+import { PAIR_ROW } from '@/lib/layout';
 
 /*
  * /follow — every way to keep up with Oravan that exists TODAY, on one calm
@@ -26,6 +27,12 @@ import { MCP_ENDPOINT_URL, TOOL_NAMES } from '@/lib/core/mcp';
  *
  * Static: no searchParams, no headers — tests/static-rendering.spec.ts
  * asserts both locales prerender.
+ *
+ * SIDE BY SIDE (layout pass 2026-11-28): the page sits on the site's shell,
+ * its left edge under the logo, and from 64rem the ways to follow run two to
+ * a row in source order (feeds beside MCP, then the embeds while public and
+ * the broadcast panel). Each block keeps the reading measure; one column on a
+ * phone, as before.
  */
 
 export async function generateMetadata({
@@ -62,92 +69,95 @@ export default async function FollowPage({ params }: { params: Promise<{ locale:
   const feeds = feedPaths(locale);
 
   return (
-    <article className="mx-auto max-w-read px-4 py-12">
-      {/* one cap on the column, not one per block */}
-      <div className="max-w-read">
-        <h1 className="text-h2-loud font-extrabold">{t('title')}</h1>
-        <p className="mt-4 text-lede text-ink-2">{t('intro')}</p>
+    <article className="mx-auto max-w-page px-4 pt-6 pb-12 md:pt-8">
+      <div>
+        <div className="max-w-read">
+          <h1 className="text-h2-loud font-extrabold">{t('title')}</h1>
+          <p className="mt-3 text-lede text-ink-2">{t('intro')}</p>
+        </div>
 
-        <section aria-labelledby="follow-feeds" className="mt-8 border-t border-line pt-6">
-          <h2 id="follow-feeds" className="text-h3 font-extrabold">
-            {t('feedsTitle')}
-          </h2>
-          <p className="mt-2">{t('feedsBody')}</p>
-          <FeedAddress
-            title={t('rssTitle')}
-            body={t('rssBody')}
-            path={feeds.xml}
-            type="application/rss+xml"
-          />
-          <FeedAddress
-            title={t('jsonTitle')}
-            body={t('jsonBody')}
-            path={feeds.json}
-            type="application/json"
-          />
-          <p className="mt-4 text-sm text-ink-2">{t('feedLangNote')}</p>
-        </section>
-
-        <section aria-labelledby="follow-mcp" className="mt-8 border-t border-line pt-6">
-          <h2 id="follow-mcp" className="text-h3 font-extrabold">
-            {t('mcpTitle')}
-          </h2>
-          <p className="mt-2">{t('mcpBody')}</p>
-          <p className="mt-3 text-sm text-ink-2">{t('mcpUrlLabel')}</p>
-          <p
-            data-testid="follow-mcp-url"
-            className="mt-1 break-all rounded-control bg-wash px-4 py-3 font-mono text-sm"
-          >
-            {MCP_ENDPOINT_URL}
-          </p>
-          <p className="mt-3 text-sm text-ink-2">{t('mcpToolsLabel', { count: TOOL_NAMES.length })}</p>
-          <ul data-testid="follow-mcp-tools" className="mt-1 grid gap-1">
-            {TOOL_NAMES.map((name) => (
-              <li key={name}>
-                <code className="font-mono text-sm">{name}</code>
-              </li>
-            ))}
-          </ul>
-          <Link
-            href="/mcp"
-            className="mt-4 inline-flex min-h-11 items-center gap-1.5 font-semibold text-go underline underline-offset-2 hover:text-go-deep"
-          >
-            {t('mcpLink')} <span aria-hidden>→</span>
-          </Link>
-        </section>
-
-        {/* Only while the /embeds page is public (lib/site.ts EMBEDS_PAGES_PUBLIC;
-            hidden since 2026-09-28): this page lists what exists today, and a
-            link to a 404 is worse than none. */}
-        {EMBEDS_PAGES_PUBLIC && (
-          <section aria-labelledby="follow-embeds" className="mt-8 border-t border-line pt-6">
-            <h2 id="follow-embeds" className="text-h3 font-extrabold">
-              {t('embedsTitle')}
+        <div className={PAIR_ROW}>
+          <section aria-labelledby="follow-feeds" className="mt-8 max-w-read min-w-0 border-t border-line pt-6">
+            <h2 id="follow-feeds" className="text-h3 font-extrabold">
+              {t('feedsTitle')}
             </h2>
-            <p className="mt-2">{t('embedsBody')}</p>
+            <p className="mt-2">{t('feedsBody')}</p>
+            <FeedAddress
+              title={t('rssTitle')}
+              body={t('rssBody')}
+              path={feeds.xml}
+              type="application/rss+xml"
+            />
+            <FeedAddress
+              title={t('jsonTitle')}
+              body={t('jsonBody')}
+              path={feeds.json}
+              type="application/json"
+            />
+            <p className="mt-4 text-sm text-ink-2">{t('feedLangNote')}</p>
+          </section>
+
+          <section aria-labelledby="follow-mcp" className="mt-8 max-w-read min-w-0 border-t border-line pt-6">
+            <h2 id="follow-mcp" className="text-h3 font-extrabold">
+              {t('mcpTitle')}
+            </h2>
+            <p className="mt-2">{t('mcpBody')}</p>
+            <p className="mt-3 text-sm text-ink-2">{t('mcpUrlLabel')}</p>
+            <p
+              data-testid="follow-mcp-url"
+              className="mt-1 break-all rounded-control bg-wash px-4 py-3 font-mono text-sm"
+            >
+              {MCP_ENDPOINT_URL}
+            </p>
+            <p className="mt-3 text-sm text-ink-2">{t('mcpToolsLabel', { count: TOOL_NAMES.length })}</p>
+            <ul data-testid="follow-mcp-tools" className="mt-1 grid gap-1">
+              {TOOL_NAMES.map((name) => (
+                <li key={name}>
+                  <code className="font-mono text-sm">{name}</code>
+                </li>
+              ))}
+            </ul>
             <Link
-              href="/embeds"
+              href="/mcp"
               className="mt-4 inline-flex min-h-11 items-center gap-1.5 font-semibold text-go underline underline-offset-2 hover:text-go-deep"
             >
-              {t('embedsLink')} <span aria-hidden>→</span>
+              {t('mcpLink')} <span aria-hidden>→</span>
             </Link>
           </section>
-        )}
 
-        {/* Empty by design — see the header comment. A recessed `wash` panel
-            with an ink-2 edge (6.93:1 on wash; line-strong on wash was 2.97:1 in
-            the July palette and is 3.89:1 now), the same
-            treatment /partners gives its licensing note. */}
-        <section
-          aria-labelledby="follow-broadcast"
-          data-testid="follow-broadcast"
-          className="mt-8 rounded-control border border-ink-2 bg-wash p-6"
-        >
-          <h2 id="follow-broadcast" className="text-h3 font-extrabold">
-            {t('broadcastTitle')}
-          </h2>
-          <p className="mt-2">{t('broadcastBody')}</p>
-        </section>
+          {/* Only while the /embeds page is public (lib/site.ts EMBEDS_PAGES_PUBLIC;
+              hidden since 2026-09-28): this page lists what exists today, and a
+              link to a 404 is worse than none. */}
+          {EMBEDS_PAGES_PUBLIC && (
+            <section aria-labelledby="follow-embeds" className="mt-8 max-w-read min-w-0 border-t border-line pt-6">
+              <h2 id="follow-embeds" className="text-h3 font-extrabold">
+                {t('embedsTitle')}
+              </h2>
+              <p className="mt-2">{t('embedsBody')}</p>
+              <Link
+                href="/embeds"
+                className="mt-4 inline-flex min-h-11 items-center gap-1.5 font-semibold text-go underline underline-offset-2 hover:text-go-deep"
+              >
+                {t('embedsLink')} <span aria-hidden>→</span>
+              </Link>
+            </section>
+          )}
+
+          {/* Empty by design — see the header comment. A recessed `wash` panel
+              with an ink-2 edge (6.93:1 on wash; line-strong on wash was 2.97:1 in
+              the July palette and is 3.89:1 now), the same
+              treatment /partners gives its licensing note. */}
+          <section
+            aria-labelledby="follow-broadcast"
+            data-testid="follow-broadcast"
+            className="mt-8 min-w-0 rounded-control border border-ink-2 bg-wash p-6"
+          >
+            <h2 id="follow-broadcast" className="text-h3 font-extrabold">
+              {t('broadcastTitle')}
+            </h2>
+            <p className="mt-2">{t('broadcastBody')}</p>
+          </section>
+        </div>
       </div>
     </article>
   );

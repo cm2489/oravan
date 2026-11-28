@@ -274,9 +274,10 @@ test.describe('/today', () => {
     }
   });
 
-  test('the day list follows the brief at full width, in columns on a wide screen, never sticky', async ({ page }) => {
+  test('the day list follows the brief at full width, a calendar strip of 7 columns on a wide screen, never sticky', async ({ page }) => {
     // The grid layout (2026-09-29): no side rail. "Other days" sits under the
     // record at the page's full width, so no sticky box can clip its rows.
+    // From lg it is a calendar strip of 7 columns (layout pass 2026-11-28).
     await page.goto('/today');
     const h1 = (await page.getByRole('heading', { level: 1 }).boundingBox())!;
     const railEl = page.locator('nav[data-days]');
@@ -289,8 +290,8 @@ test.describe('/today', () => {
     const lefts = await railEl
       .locator('a[data-day-row]')
       .evaluateAll((els) => new Set(els.map((e) => Math.round(e.getBoundingClientRect().left))).size);
-    // One column on a phone, two from 40rem (sm), three from 64rem (lg).
-    expect(lefts).toBe(width >= 1024 ? 3 : width >= 640 ? 2 : 1);
+    // One column on a phone, two from 40rem (sm), a 7-day calendar strip from 64rem (lg).
+    expect(lefts).toBe(width >= 1024 ? 7 : width >= 640 ? 2 : 1);
   });
 });
 

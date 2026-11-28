@@ -3,6 +3,7 @@ import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { hreflangAlternates } from '@/lib/hreflang';
 import { EMBEDS_PAGES_PUBLIC } from '@/lib/site';
+import { PAIR_ROW } from '@/lib/layout';
 
 export async function generateMetadata({
   params,
@@ -25,6 +26,13 @@ export async function generateMetadata({
  * (lib/site.ts EMBEDS_PAGES_PUBLIC), so the "Build your embed" button prints
  * only while that constant is true, and the copy says the embeds aren't open
  * to new sites right now.
+ *
+ * SIDE BY SIDE (layout pass 2026-11-28): the page sits on the site's shell,
+ * its left edge under the logo. From 64rem the three audiences and the
+ * licensing panel run two to a row, newsrooms and libraries, then
+ * organizations and licensing; the intro's "Below is what they do" stays
+ * true, since every block sits under it. Prose blocks keep the reading
+ * measure; the panel fills its cell. One column on a phone, as before.
  */
 export default async function PartnersPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -32,52 +40,55 @@ export default async function PartnersPage({ params }: { params: Promise<{ local
   const t = await getTranslations('partners');
 
   return (
-    <article className="mx-auto max-w-read px-4 py-12">
-      {/* one cap on the column, not one per block */}
-      <div className="max-w-read">
-        <h1 className="text-h2-loud font-extrabold">{t('title')}</h1>
-        <p className="mt-4 text-lede text-ink-2">{t('intro')}</p>
+    <article className="mx-auto max-w-page px-4 pt-6 pb-12 md:pt-8">
+      <div>
+        <div className="max-w-read">
+          <h1 className="text-h2-loud font-extrabold">{t('title')}</h1>
+          <p className="mt-3 text-lede text-ink-2">{t('intro')}</p>
+        </div>
 
-        <section className="mt-8 border-t border-line pt-6">
-          <h2 className="text-h3 font-extrabold">{t('newsroomsTitle')}</h2>
-          <p className="mt-2">{t('newsroomsBody')}</p>
-          {/* the page's one filled action — green, with the two-tone focus
-              stack (`ring-gap` swaps the border to paper so the ink ring is
-              never adjacent to the green fill) */}
-          {EMBEDS_PAGES_PUBLIC && (
-            <Link
-              href="/embeds"
-              className="ring-edge mt-4 inline-flex min-h-12 items-center gap-2 rounded-control border-2 border-ink bg-urgent px-5 font-bold text-ink no-underline hover:bg-urgent-deep"
+        <div className={PAIR_ROW}>
+          <section className="mt-8 max-w-read min-w-0 border-t border-line pt-6">
+            <h2 className="text-h3 font-extrabold">{t('newsroomsTitle')}</h2>
+            <p className="mt-2">{t('newsroomsBody')}</p>
+            {/* the page's one filled action — green, with the two-tone focus
+                stack (`ring-gap` swaps the border to paper so the ink ring is
+                never adjacent to the green fill) */}
+            {EMBEDS_PAGES_PUBLIC && (
+              <Link
+                href="/embeds"
+                className="ring-edge mt-4 inline-flex min-h-12 items-center gap-2 rounded-control border-2 border-ink bg-urgent px-5 font-bold text-ink no-underline hover:bg-urgent-deep"
+              >
+                {t('newsroomsCta')} <span aria-hidden>→</span>
+              </Link>
+            )}
+          </section>
+
+          <section className="mt-8 max-w-read min-w-0 border-t border-line pt-6">
+            <h2 className="text-h3 font-extrabold">{t('librariesTitle')}</h2>
+            <p className="mt-2">{t('librariesBody')}</p>
+          </section>
+
+          <section className="mt-8 max-w-read min-w-0 border-t border-line pt-6">
+            <h2 className="text-h3 font-extrabold">{t('orgsTitle')}</h2>
+            <p className="mt-2">{t('orgsBody')}</p>
+          </section>
+
+          {/* A recessed `wash` panel, so its own edge is `ink-2` (6.93:1). The
+              July palette's line-strong missed on wash (2.97:1); today's clears
+              it (3.89:1), but the ink-2 edge stays. */}
+          <section className="mt-8 min-w-0 rounded-control border border-ink-2 bg-wash p-6">
+            <h2 className="text-h3 font-extrabold">{t('licensingTitle')}</h2>
+            <p className="mt-2">{t('licensingBody')}</p>
+            {/* The partnership contact (M12). */}
+            <a
+              href="mailto:hello@oravan.org"
+              className="mt-4 inline-flex min-h-12 items-center gap-2 rounded-control border-2 border-ink px-5 font-bold text-ink no-underline hover:bg-ink hover:text-paper"
             >
-              {t('newsroomsCta')} <span aria-hidden>→</span>
-            </Link>
-          )}
-        </section>
-
-        <section className="mt-8 border-t border-line pt-6">
-          <h2 className="text-h3 font-extrabold">{t('librariesTitle')}</h2>
-          <p className="mt-2">{t('librariesBody')}</p>
-        </section>
-
-        <section className="mt-8 border-t border-line pt-6">
-          <h2 className="text-h3 font-extrabold">{t('orgsTitle')}</h2>
-          <p className="mt-2">{t('orgsBody')}</p>
-        </section>
-
-        {/* A recessed `wash` panel, so its own edge is `ink-2` (6.93:1). The
-            July palette's line-strong missed on wash (2.97:1); today's clears
-            it (3.89:1), but the ink-2 edge stays. */}
-        <section className="mt-8 rounded-control border border-ink-2 bg-wash p-6">
-          <h2 className="text-h3 font-extrabold">{t('licensingTitle')}</h2>
-          <p className="mt-2">{t('licensingBody')}</p>
-          {/* The partnership contact (M12). */}
-          <a
-            href="mailto:hello@oravan.org"
-            className="mt-4 inline-flex min-h-12 items-center gap-2 rounded-control border-2 border-ink px-5 font-bold text-ink no-underline hover:bg-ink hover:text-paper"
-          >
-            {t('licensingCta')} <span aria-hidden>→</span>
-          </a>
-        </section>
+              {t('licensingCta')} <span aria-hidden>→</span>
+            </a>
+          </section>
+        </div>
       </div>
     </article>
   );

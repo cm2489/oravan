@@ -301,14 +301,17 @@ export function RepsLookup({ initial, legacy, preview, switchboard, continuation
       {districts.map((d) => {
         const noSenators = d.reps.every((r) => r.type !== 'sen');
         return (
-          <section key={`${d.state}-${d.district}`} className="mt-12" aria-label={`${d.state} ${d.district}`}>
+          <section key={`${d.state}-${d.district}`} className="mt-8" aria-label={`${d.state} ${d.district}`}>
             <h2 className="text-h2 font-extrabold">
               {d.district === 0
                 ? t('atLargeHeading', { state: d.state })
                 : t('districtHeading', { state: d.state, district: d.district })}
             </h2>
             {noSenators && <p className={`mt-4 max-w-read ${NOTE}`}>{t('delegateNote', { state: d.state })}</p>}
-            <div className="mt-4 grid gap-4 md:grid-cols-3">
+            {/* As many 15rem cards as fit (layout pass 2026-11-28): three
+                in the lookup column beside Your record at 1280, two at
+                1024, one on a phone. */}
+            <div className="mt-4 grid grid-cols-[repeat(auto-fill,minmax(min(15rem,100%),1fr))] gap-4">
               {d.reps.map((r) => (
                 <RepCard key={r.bioguide} rep={r} />
               ))}

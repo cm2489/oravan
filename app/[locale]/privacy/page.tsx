@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { hreflangAlternates } from '@/lib/hreflang';
+import { DOC_ROW } from '@/lib/layout';
 
 /*
  * The bold is the paragraph's promise (owner's pick, 2026-09-29: Version 2,
@@ -42,11 +43,18 @@ export default async function PrivacyPage({ params }: { params: Promise<{ locale
   const t = await getTranslations('privacy');
 
   return (
-    <article className="mx-auto max-w-read px-4 py-12">
-      {/* one cap on the column, not one per block */}
-      <div className="max-w-read">
-        <h1 className="text-h2-loud font-extrabold">{t('title')}</h1>
-        <div className="mt-6 space-y-5">
+    <article className="mx-auto max-w-page px-4 pt-6 pb-12 md:pt-8">
+      {/* A TITLE COLUMN BESIDE THE TEXT (layout pass 2026-11-28). The page sits
+          on the site's shell, its left edge under the logo. From 64rem the
+          title holds the left column and rides along as the reader scrolls,
+          and the text keeps one 33rem reading column on the right, in the
+          same single sequence, so every "above" in it stays true. One column
+          on a phone, as before. */}
+      <div className={DOC_ROW}>
+        <div className="lg:sticky lg:top-4 lg:self-start">
+          <h1 className="text-h2-loud font-extrabold">{t('title')}</h1>
+        </div>
+        <div className="mt-6 max-w-read min-w-0 space-y-5 lg:mt-0">
           {(['p1', 'p2', 'p3', 'p7', 'p4', 'p8', 'p9', 'p5'] as const).map((p) => (
             <p key={p} data-privacy-paragraph={p} className={p === 'p5' ? 'font-semibold' : undefined}>
               {t.rich(p, { strong })}

@@ -15,6 +15,7 @@ import { getFreshness } from '@/lib/freshness';
 import { hreflangAlternates } from '@/lib/hreflang';
 import { buildOrganizationJsonLd } from '@/lib/jsonld';
 import { membersFor } from '@/lib/members';
+import { SIDE_ROW } from '@/lib/layout';
 
 /*
  * THE LOOKUP SURFACE, as ruled paper.
@@ -98,8 +99,8 @@ export default async function RepsPage({
      faded copy of a real contrast pair. */
   const preview = (
     <>
-      <p className="mt-12 max-w-note text-sm text-ink-2">{t('previewNote')}</p>
-      <div aria-hidden className="mt-4 grid gap-4 md:grid-cols-3">
+      <p className="mt-8 max-w-note text-sm text-ink-2">{t('previewNote')}</p>
+      <div aria-hidden className="mt-4 grid grid-cols-[repeat(auto-fill,minmax(min(15rem,100%),1fr))] gap-4">
         {[0, 1, 2].map((i) => (
           <div key={i} className="rounded-control border-[1.5px] border-line-strong bg-paper p-5">
             <div className="flex gap-4">
@@ -164,7 +165,7 @@ export default async function RepsPage({
      it only once a ZIP has matched members. */
   const continuation = (
     <section
-      className="mt-12 rounded-control border-2 border-ink bg-paper p-6 md:p-8"
+      className="mt-8 rounded-control border-2 border-ink bg-paper p-6 md:p-8"
       aria-labelledby="reps-next"
       data-testid="reps-continuation"
     >
@@ -204,18 +205,29 @@ export default async function RepsPage({
     </section>
   );
 
+  /* THE SIDE COLUMN (layout pass 2026-11-28). From 64rem the page is two
+     columns: the lookup (heading, prompt or members, the bills worth a call)
+     on the left, Your record in a 22rem column on the right, so the reader's
+     own calls fill the side of the page that stood empty beside the ZIP
+     prompt. The DOM order is unchanged (members, continuation, Your calls),
+     so the reading and keyboard order is the same as on a phone, where the
+     two blocks stack. Your record is not sticky: it holds folded rows and
+     the erase confirmation. The notes that say "below" stay in the left
+     column, above the district sections they point to. */
   return (
-    <div className="mx-auto max-w-5xl px-4 py-12">
+    <div className={`mx-auto max-w-page px-4 pt-6 pb-12 md:pt-8 ${SIDE_ROW}`}>
       <JsonLd id="org-jsonld" data={orgJsonLd} />
-      <h1 className="text-h1-bill font-extrabold">{t('membersHeading')}</h1>
+      <div className="min-w-0">
+        <h1 className="text-h1-bill font-extrabold">{t('membersHeading')}</h1>
 
-      <RepsLookup
-        initial={initial}
-        legacy={legacy}
-        preview={preview}
-        switchboard={switchboard}
-        continuation={continuation}
-      />
+        <RepsLookup
+          initial={initial}
+          legacy={legacy}
+          preview={preview}
+          switchboard={switchboard}
+          continuation={continuation}
+        />
+      </div>
 
       {/* YOUR RECORD, folded into this tab (owner, UX question Q4 "b + c";
           wireframes v2, reps.html, 2026-09-29): Your calls, then what you
@@ -224,7 +236,7 @@ export default async function RepsPage({
           Change ZIP — because it is read from this browser, not from the
           lookup. The call panel's "See your record" lands on its Your calls
           (`#your-calls`), and /record renders the same component. */}
-      <div className="mt-12 border-t-[3px] border-ink pt-4">
+      <div className="mt-8 min-w-0 border-t-[3px] border-ink pt-4 lg:mt-0">
         <YourRecord />
       </div>
     </div>
