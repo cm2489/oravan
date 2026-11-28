@@ -33,6 +33,7 @@ import {
   conversationPosture,
   newsSpread,
   selectConversationBand,
+  type ConversationPoolItem,
   type NewsCaption,
 } from '../conversation';
 import { COVERAGE_BOX_ON } from '../coverage-switch';
@@ -292,6 +293,33 @@ export function hasDecidingNow(): boolean {
 }
 
 /**
+ * THE RAIL'S POOL WHILE COVERAGE_BOX_ON IS FALSE: congress.gov's most-viewed
+ * list and nothing else. Only bills on the current list for at least
+ * MOST_VIEWED_MIN_WEEKS weeks running; every one re-tiered C2, so no rated
+ * outlet decides a slot.
+ *
+ * ORDER, the owner's ruling of 2026-09-26 (lib/conversation.mjs,
+ * conversationPool): NEWEST LIST FIRST, then the list's own rank, then the
+ * slug. Ranks from two different weeks are not comparable: a bill that fell
+ * off last week's list stays inside the seven-day window, and its old rank 1
+ * must not outrank this week's rank 2. An entry with no week label sorts after
+ * every labelled one; an entry with no rank after every ranked one.
+ */
+export function mostViewedOnlyPool(pool: readonly ConversationPoolItem[]): ConversationPoolItem[] {
+  const rankOf = (item: ConversationPoolItem) =>
+    Number.isInteger(item.evidence.mostViewed?.lastRank) ? (item.evidence.mostViewed!.lastRank as number) : Infinity;
+  return pool
+    .filter((item) => item.evidence.mostViewed != null && item.evidence.weeksOnList >= MOST_VIEWED_MIN_WEEKS)
+    .sort(
+      (a, b) =>
+        String(b.evidence.mostViewed?.lastWeek ?? '').localeCompare(String(a.evidence.mostViewed?.lastWeek ?? '')) ||
+        rankOf(a) - rankOf(b) ||
+        a.slug.localeCompare(b.slug)
+    )
+    .map((item) => ({ ...item, tier: 'c2' as const }));
+}
+
+/**
  * THE EVIDENCE FOR ONE BILL'S POSITION — the rung it stands on and the sentence
  * that put it there, for the surfaces that publish their own reasoning (the
  * crown, MCP `whats_moving`, both feeds).
@@ -321,6 +349,13 @@ export function docketSignalFor(
  * the 2026-07-31 decision of record (proximity ranks; volume never does)
  * survives the lamp existing, and it is enforced by construction — this is the
  * only function in this file that imports lib/conversation.
+ *
+ * WHILE COVERAGE_BOX_ON IS FALSE (lib/coverage-switch.ts, since 2026-11-26)
+ * neither mode below runs: the rail lists only bills on congress.gov's own
+ * most-viewed list (mostViewedOnlyPool above, newest list first, then rank),
+ * captioned with the listing alone, with no outlet count and no lean, and with
+ * no 2-of-6 most-viewed cap, since every row is a most-viewed row. It is empty
+ * when the lamp is not live. The two modes below describe the switch on.
  *
  * TWO MODES, and the posture decides which (lib/conversation.ts):
  *
@@ -372,14 +407,7 @@ export function getNewsBills(locale = 'en', n = 6, now: number = Date.now()): Ne
     const bySlug = new Map(BILLS.map((raw) => [billSlug(raw), raw]));
     // Exclude AllSides ratings and outlet counts while COVERAGE_BOX_ON is false:
     // keep only Congress.gov most-viewed bills ordered by rank.
-    const mostViewedPool = conversationBandPool(now)
-      .filter((item) => item.evidence.mostViewed !== null && item.evidence.weeksOnList >= MOST_VIEWED_MIN_WEEKS)
-      .sort(
-        (a, b) =>
-          (a.evidence.mostViewed?.lastRank ?? Infinity) - (b.evidence.mostViewed?.lastRank ?? Infinity) ||
-          a.slug.localeCompare(b.slug)
-      )
-      .map((item) => ({ ...item, tier: 'c2' as const }));
+    const mostViewedPool = mostViewedOnlyPool(conversationBandPool(now));
     return selectConversationBand(mostViewedPool, {
       limit: n,
       renderable: (slug) => bySlug.has(slug) && !isSiteEndedBill(slug),

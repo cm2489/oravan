@@ -11,7 +11,10 @@ import type { NewsBill } from '@/lib/types';
  * The "In the news" band — bills the press corroborated this week, or that
  * congress.gov's own readers are on. Selection lives in lib/core/bills.ts's
  * getNewsBills (the conversation lamp, with #215's stored-coverage gate as the
- * fallback); this file renders it and says WHY each card is here.
+ * fallback); this file renders it and says WHY each card is here. While
+ * COVERAGE_BOX_ON is false (lib/coverage-switch.ts) every card is a
+ * congress.gov most-viewed card and no caption carries an outlet count or a
+ * lean; the outlet captions below describe the switch on.
  *
  * COLOR: everything here is ink. The outlet count used to be set in the old
  * accent; under the color law an accent that means GO cannot also mean "four

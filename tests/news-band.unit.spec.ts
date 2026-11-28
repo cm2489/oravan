@@ -20,7 +20,7 @@ import {
   type NewsCaptionKind,
 } from '../lib/conversation';
 import { conversationPool } from '../lib/conversation.mjs';
-import { getNewsBills } from '../lib/core/bills';
+import { getNewsBills, mostViewedOnlyPool } from '../lib/core/bills';
 import { getCoverage, coverageTier, newestArticleDate } from '../lib/coverage';
 import { isSignalFresh } from '../lib/urgency.mjs';
 import { CLOCK_SKEW_MS, corpus, slugOf } from './corpus';
@@ -449,6 +449,45 @@ test.describe('most-viewed slots: rank order, and enacted laws only when in the 
 /* ------------------------------------------------------------------ *
  * 5 · The posture gate — when the lamp may speak at all
  * ------------------------------------------------------------------ */
+test.describe('switch off: the rail\'s most-viewed-only pool (COVERAGE_BOX_ON false)', () => {
+  const listed = (lastRank: number, weeksOnList = 3, lastWeek: string | null = '2026-08-09') => ({
+    ...corroborated(),
+    mostViewed: { weeksOnList, lastRank, lastSeen: T, lastWeek },
+  });
+
+  test('newest list first, then rank (the 2026-09-26 ruling): an old rank 1 does not outrank this week\'s rank 2', () => {
+    const pool = mostViewedOnlyPool(
+      poolOf({
+        'hr-10-119': listed(1, 3, '2026-08-02'),
+        'hr-20-119': listed(2),
+        's-5-119': listed(4, 2),
+        'hr-50-119': listed(1, 2, null),
+      })
+    );
+    expect(pool.map((p) => p.slug)).toEqual(['hr-20-119', 's-5-119', 'hr-10-119', 'hr-50-119']);
+  });
+
+  test('ties on week and rank fall to the slug, and every item is re-tiered C2', () => {
+    const pool = mostViewedOnlyPool(poolOf({ 's-9-119': listed(3), 'hr-9-119': listed(3) }));
+    expect(pool.map((p) => p.slug)).toEqual(['hr-9-119', 's-9-119']);
+    expect(pool.every((p) => p.tier === 'c2')).toBe(true);
+  });
+
+  test('no rated outlet admits a bill: press-only C1 and a first-week listing with two rated outlets are both left out', () => {
+    const pool = mostViewedOnlyPool(
+      poolOf({
+        'hr-30-119': corroborated(outlet('apnews.com', 'center'), outlet('foxnews.com', 'right'), outlet('cnn.com', 'left')),
+        'hr-31-119': {
+          ...corroborated(outlet('apnews.com', 'center'), outlet('foxnews.com', 'right')),
+          mostViewed: { weeksOnList: 1, lastRank: 1, lastSeen: T, lastWeek: '2026-08-09' },
+        },
+        'hr-32-119': listed(6),
+      })
+    );
+    expect(pool.map((p) => p.slug)).toEqual(['hr-32-119']);
+  });
+});
+
 test.describe('posture: the fallback is a decision, not an accident', () => {
   const FILE = JSON.parse(readFileSync(join(__dirname, '..', 'data', 'conversation.json'), 'utf8'));
 
