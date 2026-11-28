@@ -90,6 +90,40 @@ export function classifyApiError(err) {
   return { status, apiType, kind: apiType ?? `http_${status}`, unbilled: false, creditBalance };
 }
 
+/**
+ * A refusal THIS SAME REQUEST will meet every time: the prompt is longer than
+ * the model accepts (a 413, or a 400 invalid_request_error that says the
+ * prompt is too long). Deliberately narrow: an account-level 400 (the credit
+ * balance, a usage limit) is not about the bill and must never count against
+ * it, or one outage could park the whole queue.
+ */
+const PROMPT_TOO_LONG = /prompt is too long|too many (?:input )?tokens|maximum context length|context window/i;
+export function isDeterministicRefusal(verdict, err) {
+  if (!verdict || verdict.creditBalance) return false;
+  if (verdict.status === 413) return true;
+  return verdict.status === 400 && verdict.apiType === 'invalid_request_error' && PROMPT_TOO_LONG.test(apiErrorMessage(err));
+}
+
+/**
+ * Does this decode failure count toward the per-bill failure limit
+ * (lib/decode-failures.mjs)? Yes when it was billed; when an EARLIER call of
+ * the same decode was billed (`partialBilled`: a split decode whose chunk
+ * calls returned before a later 429/400/5xx, a call 1 that returned before
+ * call 2 was refused, a batch-delivered summary before the fallback failed);
+ * or when it is a deterministic refusal (above) that would recur on the same
+ * text every night. An outage-shaped refusal with nothing paid stays free.
+ * Check 2 of PR #581, defect 5.
+ *
+ * @param {{status: number|null, apiType: string|null, unbilled: boolean, creditBalance: boolean}} verdict
+ * @param {{ partialBilled?: boolean, err?: unknown }} [opts]
+ */
+export function countsTowardFailureLimit(verdict, { partialBilled = false, err = null } = {}) {
+  if (!verdict) return false;
+  if (!verdict.unbilled) return true;
+  if (partialBilled) return true;
+  return isDeterministicRefusal(verdict, err);
+}
+
 /** Shorthand: was this failure free? */
 export function isUnbilledApiError(err) {
   return classifyApiError(err).unbilled;

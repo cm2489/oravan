@@ -487,9 +487,14 @@ import {
 } from '../lib/conversation.mjs';
 import { loadJSON, redecodeBill, syncOneBill } from './bill-decode.mjs';
 // The newsdesk never decodes a bill longer than this (2026-11-28, PR #581;
-// owner approval pending): a split, multi-call decode of a very long bill is
-// left to the nightly, which runs under the spend ceiling in lib/decode-spend.mjs.
+// owner approval pending): 60,000 cleaned characters, so its 30 decodes a day
+// stay near $3 at list price; a longer bill is left to the nightly, which runs
+// under the spend ceiling in lib/decode-spend.mjs.
 import { NEWSDESK_MAX_BILL_TEXT_CHARS } from '../lib/decode-spend.mjs';
+// The nightly's per-bill failure park (2026-11-28, check 2 of PR #581), READ
+// here so the newsdesk does not re-pay, once a day, a bill the nightly parked
+// after repeated paid failures. The nightly is the file's one writer.
+import { DECODE_FAILURES_PATH, isFailureParked, normalizeFailureState } from '../lib/decode-failures.mjs';
 // Ended Congresses (2026-11-12): empty until the January switch. Import-free.
 import { isEndedBill } from '../lib/congress.mjs';
 import { fetchRecentlyUpdated, slugOf } from './congress-fetch.mjs';
@@ -923,6 +928,18 @@ if (health.dark) {
 // Dedupe against the seen-headlines cache: skip anything already processed
 // in a previous run (see the header comment's Dedupe section).
 const newItems = items.filter((it) => !cache.seen.has(hashHeadline(it.title, it.outlet)));
+
+// data/decode-failures.json (the nightly's failure park), read-only. A missing
+// or unreadable file parks nothing: the cost of that is at most one paid retry
+// of a parked bill, never a wrong skip.
+const decodeFailureState = (() => {
+  try {
+    return normalizeFailureState(JSON.parse(readFileSync(DECODE_FAILURES_PATH, 'utf8')), console.log);
+  } catch {
+    return null;
+  }
+})();
+const parkedByNightly = (slug, version) => (decodeFailureState ? isFailureParked(decodeFailureState, slug, version) : false);
 console.log(`${items.length} headlines fetched, ${newItems.length} new (not previously seen)`);
 
 // data/floor-signals.json, written by the sibling step (scripts/floor-signals.mjs)
@@ -1172,6 +1189,7 @@ for (const slug of fired) {
     : pressDecodesThisRun < NEWSDESK_DECODE_CAP && cache.dailyDecodes.count < NEWSDESK_DAILY_DECODE_CAP);
   const result = await syncOneBill({ type, number }, {
     allowDecode, forceSlugs, bills, es, bySlug, anthropic, maxTextChars: NEWSDESK_MAX_BILL_TEXT_CHARS,
+    isFailureParked: parkedByNightly,
   });
   outcomes.push(result.outcome);
   if (result.fetchedTitle) servedTitles.set(slug, result.fetchedTitle);
@@ -1202,7 +1220,8 @@ for (const slug of fired) {
     // slot is just no longer the whole day.
     // 'skipped_too_long' too: the bill is the nightly's to decode, and
     // re-firing it every hour would re-fetch a very long document for nothing.
-    if (result.outcome === 'refreshed' || result.outcome === 'added' || result.outcome === 'skipped_too_long') {
+    // And 'failure_parked': the nightly parked it after repeated paid failures.
+    if (result.outcome === 'refreshed' || result.outcome === 'added' || result.outcome === 'skipped_too_long' || result.outcome === 'failure_parked') {
       cache.seen.add(tier0Key(slug));
     }
   }
@@ -1285,6 +1304,7 @@ for (const cand of candidates) {
   }
   const result = await redecodeBill(cand.slug, {
     anthropic, es, bySlug, title: verdict.reason === 'vehicle-swap' ? fetchedTitle : null, maxTextChars: NEWSDESK_MAX_BILL_TEXT_CHARS,
+    isFailureParked: parkedByNightly,
   });
   outcomes.push(result.outcome);
   if (chargeableDecode(result)) {
@@ -1465,6 +1485,7 @@ for (const slug of redecodeQueue) {
     bySlug,
     title: verdict.reason === 'vehicle-swap' ? fetchedTitle : null,
     maxTextChars: NEWSDESK_MAX_BILL_TEXT_CHARS,
+    isFailureParked: parkedByNightly,
   });
   outcomes.push(result.outcome);
   if (chargeableDecode(result)) {

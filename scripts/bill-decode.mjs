@@ -38,7 +38,7 @@ import { cleanBillMarkup, clipAtWordBoundary, preferredTextUrl, prepareBillForDe
 import { checkDivisionCoverage } from '../lib/decode-quality-gate.mjs';
 import { DECODE_CHARS_PER_TOKEN, MODEL_PRICE_PER_MTOK, SEARCH_INPUTS_ESTIMATE } from '../lib/decode-spend.mjs';
 import { formattedTextUrl, pickTextVersion, textVersionStamp, versionCount } from './text-version.mjs';
-import { classifyApiError } from './api-billing.mjs';
+import { classifyApiError, countsTowardFailureLimit } from './api-billing.mjs';
 import { bumpCounter, recordApiError } from './run-counters.mjs';
 import { decodeLockLine, decodeLockVerdict, decodeLocks } from './decode-locks.mjs';
 import { PRESIDENT_STYLE_RULE, presidentStyle } from '../lib/president-style.mjs';
@@ -488,7 +488,10 @@ export const LONG_BILL_CHARS = 60_000;
  * (converted at DECODE_CHARS_PER_TOKEN), the output is every call's
  * max_tokens cap, and nothing is discounted — not the Batches half price,
  * not a reply shorter than its cap. It is what the nightly spend ceiling
- * (lib/decode-spend.mjs) is charged with, so it errs high on purpose.
+ * (lib/decode-spend.mjs) is charged with, so it errs high on purpose —
+ * except that the characters-per-token figure is not yet measured on bill
+ * text, and may count too few tokens on dense numeric tables (see
+ * DECODE_CHARS_PER_TOKEN).
  *
  *   call 1     single pass: the summary prompt + its cap (900, or 1,800 long)
  *              split bill:  every chunk prompt + 900 each, then the synthesis
@@ -549,46 +552,66 @@ export async function decodeBill(anthropic, bill, text) {
   const plan = prepareDecodePlan(bill, text);
   const { prepared, maxTokens, summaryPrompt } = plan;
 
-  let summaryText;
-  if (prepared.mode === 'chunked') {
-    // Every chunk call runs before anything is assembled, and a throw from
-    // any of them leaves this function: no half decode can reach a caller.
-    const chunkSummaries = [];
-    for (const chunk of prepared.chunks) {
-      const part = await anthropic.messages.create({
+  // PAID CALLS BEFORE A FAILURE (2026-11-28, check 2 of PR #581, defect 5).
+  // A split decode makes one call per chunk, then the synthesis, then call 2;
+  // a single-pass decode makes call 1, then call 2. When a LATER call is
+  // refused (a 429, a 400, a 5xx — "unbilled" by scripts/api-billing.mjs),
+  // the earlier calls were still paid for. The error is marked
+  // `partialBilled` so the callers book it as a billed failure toward the
+  // per-bill failure limit, instead of re-paying the bill every night.
+  let returned = 0;
+  const create = async (params) => {
+    const reply = await anthropic.messages.create(params);
+    returned++;
+    return reply;
+  };
+  try {
+    let summaryText;
+    if (prepared.mode === 'chunked') {
+      // Every chunk call runs before anything is assembled, and a throw from
+      // any of them leaves this function: no half decode can reach a caller.
+      const chunkSummaries = [];
+      for (const chunk of prepared.chunks) {
+        const part = await create({
+          model: DECODE_MODEL,
+          max_tokens: DECODE_SUMMARY_MAX_TOKENS,
+          thinking: { type: 'between_tools' },
+          messages: [{ role: 'user', content: buildDivisionSummaryPrompt(bill, chunk, { toc: prepared.toc }) }],
+        });
+        chunkSummaries.push({ label: chunk.label, summary: part.content[0].text.trim() });
+      }
+      const synth = await create({
         model: DECODE_MODEL,
-        max_tokens: DECODE_SUMMARY_MAX_TOKENS,
+        max_tokens: DECODE_LONG_SUMMARY_MAX_TOKENS,
         thinking: { type: 'between_tools' },
-        messages: [{ role: 'user', content: buildDivisionSummaryPrompt(bill, chunk, { toc: prepared.toc }) }],
+        messages: [{ role: 'user', content: buildSynthesisPrompt(bill, chunkSummaries) }],
       });
-      chunkSummaries.push({ label: chunk.label, summary: part.content[0].text.trim() });
+      summaryText = synth.content[0].text.trim();
+    } else {
+      const sum = await create({
+        model: DECODE_MODEL,
+        max_tokens: maxTokens,
+        thinking: { type: 'between_tools' },
+        messages: [{ role: 'user', content: summaryPrompt }],
+      });
+      summaryText = sum.content[0].text.trim();
     }
-    const synth = await anthropic.messages.create({
-      model: DECODE_MODEL,
-      max_tokens: DECODE_LONG_SUMMARY_MAX_TOKENS,
-      thinking: { type: 'between_tools' },
-      messages: [{ role: 'user', content: buildSynthesisPrompt(bill, chunkSummaries) }],
-    });
-    summaryText = synth.content[0].text.trim();
-  } else {
-    const sum = await anthropic.messages.create({
-      model: DECODE_MODEL,
-      max_tokens: maxTokens,
-      thinking: { type: 'between_tools' },
-      messages: [{ role: 'user', content: summaryPrompt }],
-    });
-    summaryText = sum.content[0].text.trim();
-  }
 
-  if (prepared.isMultiDivision) {
-    const divCheck = checkDivisionCoverage(summaryText, prepared.divisions);
-    if (!divCheck.ok) {
-      console.warn(
-        `::warning::decode coverage: ${bill.bill_type}-${bill.bill_number} summary missed division(s): ${divCheck.missing.join(', ')}`
-      );
+    if (prepared.isMultiDivision) {
+      const divCheck = checkDivisionCoverage(summaryText, prepared.divisions);
+      if (!divCheck.ok) {
+        console.warn(
+          `::warning::decode coverage: ${bill.bill_type}-${bill.bill_number} summary missed division(s): ${divCheck.missing.join(', ')}`
+        );
+      }
     }
+    return await decodeStructureFrom({ messages: { create } }, bill, summaryText);
+  } catch (e) {
+    if (returned > 0 && e && typeof e === 'object') {
+      try { e.partialBilled = true; } catch { /* a frozen error object: leave it */ }
+    }
+    throw e;
   }
-  return decodeStructureFrom(anthropic, bill, summaryText);
 }
 
 /**
@@ -676,15 +699,22 @@ export async function completeDecode({ slug, bill, text, version = null, count =
  * that could carry request content into a counter file.
  */
 function failureBilling(err, decodeAttempted) {
-  if (!decodeAttempted) return { unbilledApiError: true, apiErrorKind: 'before_first_call' };
+  if (!decodeAttempted) return { unbilledApiError: true, apiErrorKind: 'before_first_call', countsTowardFailureLimit: false };
   const v = classifyApiError(err);
   recordApiError(v);
+  // An earlier call of this same decode returned, so it was paid for even
+  // though the call that failed was refused (decodeBill's `partialBilled`).
+  const partialBilled = Boolean(err?.partialBilled);
   if (v.unbilled) {
     console.error(
-      `  ^ the API refused that request before generating (${v.kind}${v.status === null ? '' : `, HTTP ${v.status}`}) - NOT billed, so it is not charged to any decode cap${v.creditBalance ? '. THIS IS THE CREDIT-BALANCE REFUSAL: top up the Anthropic account' : ''}`
+      `  ^ the API refused that request before generating (${v.kind}${v.status === null ? '' : `, HTTP ${v.status}`}) - that call was NOT billed${partialBilled ? ', but earlier calls of this decode were, so the failure counts toward the bill\'s failure limit' : ', so it is not charged to any decode cap'}${v.creditBalance ? '. THIS IS THE CREDIT-BALANCE REFUSAL: top up the Anthropic account' : ''}`
     );
   }
-  return { unbilledApiError: v.unbilled, apiErrorKind: v.kind };
+  return {
+    unbilledApiError: v.unbilled && !partialBilled,
+    apiErrorKind: v.kind,
+    countsTowardFailureLimit: countsTowardFailureLimit(v, { partialBilled, err }),
+  };
 }
 
 /**
@@ -752,6 +782,14 @@ function failureBilling(err, decodeAttempted) {
  *                 nothing written, nothing spent, NOT a failure — the caller
  *                 counts it, prints the alarm, and lets the cursor move on. A
  *                 forced slug is never held back.
+ *   'over_decode_limit' — (2026-11-28, check 2 of #581) `ctx.budget` refused
+ *                 this decode as one no night can pay for: its estimate alone
+ *                 is over the single-decode limit (lib/decode-spend.mjs
+ *                 MAX_SINGLE_DECODE_USD), or over the owner's one-off amount.
+ *                 Nothing written, nothing spent, NOT a failure, and NOT a
+ *                 deferral: the caller records it (the nightly alarm repeats
+ *                 until a one-off run decodes it) and lets the cursor move on.
+ *                 Carries `estUsd`.
  *   'failed'    — the fetch or decode threw (including a text version that
  *                 exists but whose document couldn't be fetched — retryable,
  *                 unlike 'skipped_no_text'); `isNew` tells the caller
@@ -773,7 +811,14 @@ function failureBilling(err, decodeAttempted) {
  * scripts/api-billing.mjs). `decodeAttempted` is set before the request, so it
  * is true for those too, and on 2026-09-09/10 that let a credit outage spend
  * a whole day of decode caps on requests nobody was invoiced for. A caller
- * charging a budget must exempt them; chargeableDecode does.
+ * charging a budget must exempt them; chargeableDecode does. It is false when
+ * an earlier call of the same decode returned (decodeBill's `partialBilled`):
+ * that decode was paid for in part.
+ *
+ * And `countsTowardFailureLimit` on a 'failed' result (check 2 of #581): book
+ * it against the bill's failure limit (scripts/api-billing.mjs
+ * countsTowardFailureLimit — billed, partly billed, or a prompt-too-long
+ * refusal that recurs on the same text).
  */
 export async function syncOneBill(u, ctx) {
   const {
@@ -995,10 +1040,13 @@ export async function syncOneBill(u, ctx) {
     // THE SPEND CEILING (2026-11-28; lib/decode-spend.mjs). Charged with the
     // list-price estimate BEFORE the first call; a decode that does not fit is
     // the same 'budget' deferral MAX_NEW_DECODES already produces — the bill
-    // still needs work, so the caller's cursor waits for it.
+    // still needs work, so the caller's cursor waits for it. A decode no night
+    // can pay for (over the single-decode limit on its own) is the other
+    // refusal: 'over_decode_limit', which stops nothing and holds no cursor.
     if (budget) {
       const est = estimateDecodeUsd(bill, text);
       if (!budget.tryCharge({ slug, usd: est.usd, long: est.long, chunked: est.chunked, what: 'new decode' })) {
+        if (budget.lastRefusal === 'never_fits') return { outcome: 'over_decode_limit', slug, decodeAttempted, estUsd: est.usd, version: readVersion };
         return { outcome: 'budget', slug, decodeAttempted, overCeiling: true };
       }
     }
@@ -1017,6 +1065,7 @@ export async function syncOneBill(u, ctx) {
       decodeAttempted,
       unbilledApiError: billing.unbilledApiError,
       apiErrorKind: billing.apiErrorKind,
+      countsTowardFailureLimit: billing.countsTowardFailureLimit,
       version: readVersion,
     };
   }
@@ -1138,6 +1187,11 @@ export async function syncOneBill(u, ctx) {
  *   'failure_parked'  — (2026-11-28) `ctx.isFailureParked(slug, version)` says
  *                 this re-decode has failed, billed, on too many nights for this
  *                 same text; free, nothing mutated. `forced` overrides it.
+ *   'over_decode_limit' — (check 2 of #581) `ctx.budget` refused it as a
+ *                 decode no night can pay for (over the single-decode limit
+ *                 on its own, or over the one-off amount); free, nothing
+ *                 mutated, the old decode stands, and nothing behind it in
+ *                 the night is stopped. Carries `estUsd`.
  *   'failed'          — the fetch or the decode threw; the old decode stands
  *
  * `ctx.locks` (a Map from scripts/decode-locks.mjs) is for tests; callers
@@ -1234,6 +1288,7 @@ export async function redecodeBill(slug, ctx) {
     if (budget) {
       const est = estimateDecodeUsd(subject, text, { searchInputs: Boolean(title) });
       if (!budget.tryCharge({ slug, usd: est.usd, long: est.long, chunked: est.chunked, what: 're-decode' })) {
+        if (budget.lastRefusal === 'never_fits') return { outcome: 'over_decode_limit', slug, decodeAttempted, estUsd: est.usd, version: readVersion };
         return { outcome: 'over_ceiling', slug, decodeAttempted };
       }
     }
@@ -1280,6 +1335,7 @@ export async function redecodeBill(slug, ctx) {
       decodeAttempted,
       unbilledApiError: billing.unbilledApiError,
       apiErrorKind: billing.apiErrorKind,
+      countsTowardFailureLimit: billing.countsTowardFailureLimit,
       version: readVersion,
     };
   }
