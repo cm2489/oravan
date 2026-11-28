@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "conversation/v2",
-    "fetched_at": "2026-11-28T03:52:38.235Z",
+    "fetched_at": "2026-11-28T12:55:15.827Z",
     "window_days": 7,
     "links_since": "2026-09-26",
     "bias_table": "97:91cd1536",
@@ -10,14 +10,14 @@
         "status": "ok",
         "feeds_total": 11,
         "feeds_silent": 0,
-        "checked_at": "2026-11-28T03:52:38.235Z"
+        "checked_at": "2026-11-28T12:55:15.827Z"
       },
       "most_viewed": {
         "status": "error",
         "week": "2026-11-22",
         "week_label": null,
         "entries": 0,
-        "checked_at": "2026-11-28T03:52:38.235Z"
+        "checked_at": "2026-11-28T12:55:15.827Z"
       },
       "leans": {
         "center": {
@@ -401,6 +401,18 @@
       ],
       "mostViewed": null
     },
+    "hr-2913-119": {
+      "outlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "newsukraine.rbc.ua",
+          "firstSeen": "2026-11-28",
+          "lastSeen": "2026-11-28",
+          "url": "https://news.google.com/rss/articles/CBMilAFBVV95cUxOZDV0MWljVmRNLU9BOEdHV2pfQkl2SzB5UzZPbTBOcFZqdGVZcDJrVFN5ZXZYN0dseGthMEZCTDVjdjBJUGs0aW1Sa2NZbmtrNHpjbjl6X0p3WmJhZTlMN2VJLWVWMnBYSjl0Y2h6YXY2eVF5YVhEYXh2Z2dVNk1OeWF2NUpwQms2WkgtQ29NRGU4YkxY?oc=5"
+        }
+      ],
+      "mostViewed": null
+    },
     "hr-35-119": {
       "outlets7d": [],
       "unratedOutlets7d": [],
@@ -630,7 +642,14 @@
           "url": "https://thehill.com/policy/energy-environment/6243540-house-permitting-reform-bill-energy-infrastructure/"
         }
       ],
-      "unratedOutlets7d": [],
+      "unratedOutlets7d": [
+        {
+          "domain": "ajc.com",
+          "firstSeen": "2026-11-28",
+          "lastSeen": "2026-11-28",
+          "url": "https://news.google.com/rss/articles/CBMif0FVX3lxTE9FR0VxT3JsWEVDVkxIWXRuYU9lUXdpNUdoTmE3azVwdXVmQ1VWWGZjQXhlYTBfbmZxSVM3TlhqR2laVHozRTJrRWxZVkRyZWRJOE1DU1E3eUN0ZDVnLVFmWFkzZHduSTlHeTRyMWRPT3p0RmQ2Ymt0ZHlGRTJQbUk?oc=5"
+        }
+      ],
       "mostViewed": null
     },
     "hr-6500-119": {
@@ -1250,6 +1269,12 @@
       "outlets7d": [],
       "unratedOutlets7d": [
         {
+          "domain": "nacionale.com",
+          "firstSeen": "2026-11-28",
+          "lastSeen": "2026-11-28",
+          "url": "https://news.google.com/rss/articles/CBMirgFBVV95cUxOVW5IVjV2RW5ISV9TX2lyQi1xZ280SWtQVm9LMmZZeHJhWHVrbnVSUGtnOHhGS1dINHBxZk10Nl9XaFdKYkdWOGZBckZ4eUVoMFU4dG4xM1BJbkxjR2lvdG9ZU1otd0Z0N1BLWEhTR1RWRWRIWWQ0UGRGUnQwR1lnMW1QSE9pUkpTdWROOUlBLWZwQmVMbXB5bmhMQm5BV0h3TUNHYXd3VmpLazZaQ3c?oc=5"
+        },
+        {
           "domain": "immigration-analytics.com",
           "firstSeen": "2026-11-27",
           "lastSeen": "2026-11-27",
@@ -1528,6 +1553,12 @@
     "sjres-185-119": {
       "outlets7d": [],
       "unratedOutlets7d": [
+        {
+          "domain": "realclearworld.com",
+          "firstSeen": "2026-11-28",
+          "lastSeen": "2026-11-28",
+          "url": "https://news.google.com/rss/articles/CBMivgFBVV95cUxNQk94OVpKOHlJS1lVamwxMlo0S3RaUlh3ZTViQnE5ZG13UVBCa0o1c2p4LV94cEcySVMzR016TTBFMTRud1JHSlpOUkZSUmJqOV9aUWJFM3VrMEJRRV9MYzFSdjhsQzBhUzZJMVF5TVFnazU3dWtWZWJ1X0dKU2FxUVF6U0lCM2NnN3l1cFpmbEZOT3hibDJicjRnanpmS3hJMjZCZHBsbHA0SUc4bG5ILTVON21pb3dDQWVZNU1R?oc=5"
+        },
         {
           "domain": "aroundprague.cz",
           "firstSeen": "2026-11-26",

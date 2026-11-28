@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": 1,
-    "generated_at": "2026-11-27T22:55:23.465Z"
+    "generated_at": "2026-11-28T12:55:17.346Z"
   },
   "government-funding-deadline": {
     "updates": [
@@ -1377,273 +1377,6 @@
         },
         "record": null,
         "ai": true
-      },
-      {
-        "id": "u_eda56d8f",
-        "class": "vote",
-        "vehicle": "s-4668-119",
-        "day": "2026-09-28",
-        "occurred_at": "2026-09-28",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-29T01:53:07.841Z",
-        "text": {
-          "en": "The Senate agreed to S.Amdt. 6828 to S.Amdt. 6776 to S. 4668 on September 28, 2026, by roll call vote 245: 96 yeas, 1 nay, 3 not voting.",
-          "es": "El Senado aprobó la enmienda S.Amdt. 6828 a S.Amdt. 6776 a S. 4668 el 28 de septiembre de 2026, por votación 245: 96 a favor, 1 en contra, 3 sin votar."
-        },
-        "source": {
-          "kind": "roll_call",
-          "refs": [
-            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00245.xml",
-            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
-          ]
-        },
-        "record": {
-          "action_text": "On the Amendment S.Amdt. 6828 to S.Amdt. 6776 to S. 4668 (No short title on file): Amendment Agreed to. Yeas 96, Nays 1, Not Voting 3. Senate roll call vote 245.",
-          "action_code": null,
-          "action_type": "roll_call_vote",
-          "source_system": "senate.gov roll call vote record",
-          "roll_call": {
-            "chamber": "senate",
-            "number": 245
-          },
-          "question": "On the Amendment S.Amdt. 6828 to S.Amdt. 6776 to S. 4668 (No short title on file)",
-          "result": "Amendment Agreed to",
-          "totals": {
-            "yea": 96,
-            "nay": 1,
-            "present": 0,
-            "notVoting": 3
-          }
-        },
-        "ai": true
-      },
-      {
-        "id": "u_eea56f22",
-        "class": "vote",
-        "vehicle": "s-4668-119",
-        "day": "2026-09-28",
-        "occurred_at": "2026-09-28",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-29T01:53:07.841Z",
-        "text": {
-          "en": "The Senate rejected S.Amdt. 6758 to S.Amdt. 6776 to S. 4668 on September 28, 2026, by roll call vote 246: 1 yea, 94 nays, 5 not voting.",
-          "es": "El Senado rechazó la enmienda S.Amdt. 6758 a S.Amdt. 6776 a S. 4668 el 28 de septiembre de 2026, por votación 246: 1 a favor, 94 en contra, 5 sin votar."
-        },
-        "source": {
-          "kind": "roll_call",
-          "refs": [
-            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00246.xml",
-            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
-          ]
-        },
-        "record": {
-          "action_text": "On the Amendment S.Amdt. 6758 to S.Amdt. 6776 to S. 4668 (No short title on file): Amendment Rejected. Yeas 1, Nays 94, Not Voting 5. Senate roll call vote 246.",
-          "action_code": null,
-          "action_type": "roll_call_vote",
-          "source_system": "senate.gov roll call vote record",
-          "roll_call": {
-            "chamber": "senate",
-            "number": 246
-          },
-          "question": "On the Amendment S.Amdt. 6758 to S.Amdt. 6776 to S. 4668 (No short title on file)",
-          "result": "Amendment Rejected",
-          "totals": {
-            "yea": 1,
-            "nay": 94,
-            "present": 0,
-            "notVoting": 5
-          }
-        },
-        "ai": true
-      },
-      {
-        "id": "u_eea7adb9",
-        "class": "vote",
-        "vehicle": "s-4668-119",
-        "day": "2026-09-28",
-        "occurred_at": "2026-09-28",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-29T08:23:31.304Z",
-        "text": {
-          "en": "The Senate passed S. 4668 on September 28, 2026, by Senate roll call vote 250: Yeas 77, Nays 22, Not Voting 1.",
-          "es": "El Senado aprobó S. 4668 el 28 de septiembre de 2026, por votación 250: Síes 77, Noes 22, Sin votar 1."
-        },
-        "source": {
-          "kind": "roll_call",
-          "refs": [
-            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00250.xml",
-            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
-          ]
-        },
-        "record": {
-          "action_text": "On Passage of the Bill S. 4668: Bill Passed. Yeas 77, Nays 22, Not Voting 1. Senate roll call vote 250.",
-          "action_code": null,
-          "action_type": "roll_call_vote",
-          "source_system": "senate.gov roll call vote record",
-          "roll_call": {
-            "chamber": "senate",
-            "number": 250
-          },
-          "question": "On Passage of the Bill S. 4668",
-          "result": "Bill Passed",
-          "totals": {
-            "yea": 77,
-            "nay": 22,
-            "present": 0,
-            "notVoting": 1
-          }
-        },
-        "ai": true
-      },
-      {
-        "id": "u_efa570b5",
-        "class": "vote",
-        "vehicle": "s-4668-119",
-        "day": "2026-09-28",
-        "occurred_at": "2026-09-28",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-29T01:53:07.841Z",
-        "text": {
-          "en": "The Senate rejected S.Amdt. 6760 to S.Amdt. 6776 to S. 4668 on September 28, 2026, by roll call vote 247: 42 yeas, 54 nays, 4 not voting.",
-          "es": "El Senado rechazó la enmienda S.Amdt. 6760 a S.Amdt. 6776 a S. 4668 el 28 de septiembre de 2026, por votación 247: 42 a favor, 54 en contra, 4 sin votar."
-        },
-        "source": {
-          "kind": "roll_call",
-          "refs": [
-            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00247.xml",
-            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
-          ]
-        },
-        "record": {
-          "action_text": "On the Amendment S.Amdt. 6760 to S.Amdt. 6776 to S. 4668 (No short title on file): Amendment Rejected. Yeas 42, Nays 54, Not Voting 4. Senate roll call vote 247.",
-          "action_code": null,
-          "action_type": "roll_call_vote",
-          "source_system": "senate.gov roll call vote record",
-          "roll_call": {
-            "chamber": "senate",
-            "number": 247
-          },
-          "question": "On the Amendment S.Amdt. 6760 to S.Amdt. 6776 to S. 4668 (No short title on file)",
-          "result": "Amendment Rejected",
-          "totals": {
-            "yea": 42,
-            "nay": 54,
-            "present": 0,
-            "notVoting": 4
-          }
-        },
-        "ai": true
-      },
-      {
-        "id": "u_f0a57248",
-        "class": "vote",
-        "vehicle": "s-4668-119",
-        "day": "2026-09-28",
-        "occurred_at": "2026-09-28",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-29T01:53:07.841Z",
-        "text": {
-          "en": "The Senate rejected S.Amdt. 6805 to S.Amdt. 6776 to S. 4668 on September 28, 2026, by roll call vote 248: 49 yeas, 50 nays, 1 not voting.",
-          "es": "El Senado rechazó la enmienda S.Amdt. 6805 a S.Amdt. 6776 a S. 4668 el 28 de septiembre de 2026, por votación 248: 49 a favor, 50 en contra, 1 sin votar."
-        },
-        "source": {
-          "kind": "roll_call",
-          "refs": [
-            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00248.xml",
-            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
-          ]
-        },
-        "record": {
-          "action_text": "On the Amendment S.Amdt. 6805 to S.Amdt. 6776 to S. 4668 (No short title on file): Amendment Rejected. Yeas 49, Nays 50, Not Voting 1. Senate roll call vote 248.",
-          "action_code": null,
-          "action_type": "roll_call_vote",
-          "source_system": "senate.gov roll call vote record",
-          "roll_call": {
-            "chamber": "senate",
-            "number": 248
-          },
-          "question": "On the Amendment S.Amdt. 6805 to S.Amdt. 6776 to S. 4668 (No short title on file)",
-          "result": "Amendment Rejected",
-          "totals": {
-            "yea": 49,
-            "nay": 50,
-            "present": 0,
-            "notVoting": 1
-          }
-        },
-        "ai": true
-      },
-      {
-        "id": "u_f1a573db",
-        "class": "vote",
-        "vehicle": "s-4668-119",
-        "day": "2026-09-28",
-        "occurred_at": "2026-09-28",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-29T08:23:31.304Z",
-        "text": {
-          "en": "The Senate rejected S.Amdt. 6835 to S.Amdt. 6776 to S. 4668 on September 28, 2026, by Senate roll call vote 249: Yeas 47, Nays 52, Not Voting 1.",
-          "es": "El Senado rechazó S.Amdt. 6835 a S.Amdt. 6776 a S. 4668 el 28 de septiembre de 2026, por votación 249: Síes 47, Noes 52, Sin votar 1."
-        },
-        "source": {
-          "kind": "roll_call",
-          "refs": [
-            "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1192/vote_119_2_00249.xml",
-            "https://www.congress.gov/bill/119th-congress/senate-bill/4668"
-          ]
-        },
-        "record": {
-          "action_text": "On the Amendment S.Amdt. 6835 to S.Amdt. 6776 to S. 4668 (No short title on file): Amendment Rejected. Yeas 47, Nays 52, Not Voting 1. Senate roll call vote 249.",
-          "action_code": null,
-          "action_type": "roll_call_vote",
-          "source_system": "senate.gov roll call vote record",
-          "roll_call": {
-            "chamber": "senate",
-            "number": 249
-          },
-          "question": "On the Amendment S.Amdt. 6835 to S.Amdt. 6776 to S. 4668 (No short title on file)",
-          "result": "Amendment Rejected",
-          "totals": {
-            "yea": 47,
-            "nay": 52,
-            "present": 0,
-            "notVoting": 1
-          }
-        },
-        "ai": true
-      },
-      {
-        "id": "u_5f348c7a",
-        "class": "press_cluster",
-        "vehicle": "s-4668-119",
-        "day": "2026-09-28",
-        "occurred_at": "2026-09-28",
-        "occurred_precision": "day",
-        "recorded_at": "2026-09-28T21:05:00.291Z",
-        "text": {
-          "en": "CNBC and PBS published coverage of S. 4668.",
-          "es": "CNBC y PBS publicaron reportajes sobre el S. 4668."
-        },
-        "source": {
-          "kind": "press",
-          "refs": [
-            "https://www.cnbc.com/2026/09/28/college-sports-bill-senate-nil.html",
-            "https://www.pbs.org/newshour/politics/watch-live-senate-expected-to-consider-the-protect-college-sports-act"
-          ],
-          "outlets": [
-            "cnbc.com",
-            "pbs.org"
-          ],
-          "outlet_names": [
-            "CNBC",
-            "PBS"
-          ],
-          "lean_set": [
-            "center"
-          ]
-        },
-        "record": null,
-        "ai": true
       }
     ],
     "summary_revisions": [
@@ -1940,9 +1673,7 @@
           "vehicle_statuses": {
             "s-4668-119": "floor_vote"
           },
-          "update_ids": [
-            "u_5f348c7a"
-          ],
+          "update_ids": [],
           "roll_calls": [
             "s-119-2-243",
             "s-119-2-242",
@@ -1978,13 +1709,7 @@
           "vehicle_statuses": {
             "s-4668-119": "floor_vote"
           },
-          "update_ids": [
-            "u_eda56d8f",
-            "u_eea56f22",
-            "u_efa570b5",
-            "u_f0a57248",
-            "u_5f348c7a"
-          ],
+          "update_ids": [],
           "roll_calls": [
             "s-119-2-248",
             "s-119-2-247",
@@ -2028,15 +1753,7 @@
           "vehicle_statuses": {
             "s-4668-119": "floor_vote"
           },
-          "update_ids": [
-            "u_eda56d8f",
-            "u_eea56f22",
-            "u_eea7adb9",
-            "u_efa570b5",
-            "u_f0a57248",
-            "u_f1a573db",
-            "u_5f348c7a"
-          ],
+          "update_ids": [],
           "roll_calls": [
             "s-119-2-250",
             "s-119-2-249",
@@ -2088,14 +1805,7 @@
             "s-4668-119": "passed_chamber"
           },
           "update_ids": [
-            "u_c9918aa9",
-            "u_eda56d8f",
-            "u_eea56f22",
-            "u_eea7adb9",
-            "u_efa570b5",
-            "u_f0a57248",
-            "u_f1a573db",
-            "u_5f348c7a"
+            "u_c9918aa9"
           ],
           "roll_calls": [
             "s-119-2-250",
@@ -2151,14 +1861,7 @@
           "update_ids": [
             "u_9f7caf03",
             "u_c46f6482",
-            "u_c9918aa9",
-            "u_eda56d8f",
-            "u_eea56f22",
-            "u_eea7adb9",
-            "u_efa570b5",
-            "u_f0a57248",
-            "u_f1a573db",
-            "u_5f348c7a"
+            "u_c9918aa9"
           ],
           "roll_calls": [
             "s-119-2-250",
@@ -2529,87 +2232,6 @@
           "day_position": 0
         },
         "ai": false
-      },
-      {
-        "id": "u_605fe693",
-        "class": "floor_action",
-        "vehicle": "hr-7008-119",
-        "day": "2026-09-28",
-        "occurred_at": "2026-09-28",
-        "occurred_precision": "day",
-        "recorded_at": "2026-11-24T21:08:47.838Z",
-        "text": {
-          "en": "On September 28, 2026, the Senate presented a cloture motion on the motion to proceed to H.R. 7008.",
-          "es": "El 28 de septiembre de 2026, el Senado presentó una moción de clótura sobre la moción para proceder a H.R. 7008."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/house-bill/7008"
-          ]
-        },
-        "record": {
-          "action_text": "Cloture motion on the motion to proceed to the measure presented in Senate. (CR S5065)",
-          "action_code": null,
-          "action_type": "Floor",
-          "source_system": "Senate",
-          "day_position": 1
-        },
-        "ai": true
-      },
-      {
-        "id": "u_aa281756",
-        "class": "floor_action",
-        "vehicle": "hr-7008-119",
-        "day": "2026-09-28",
-        "occurred_at": "2026-09-28",
-        "occurred_precision": "day",
-        "recorded_at": "2026-11-24T21:08:47.838Z",
-        "text": {
-          "en": "On September 28, 2026, the Senate made a motion to proceed to consideration of H.R. 7008.",
-          "es": "El 28 de septiembre de 2026, el Senado presentó una moción para proceder a la consideración de H.R. 7008."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/house-bill/7008"
-          ]
-        },
-        "record": {
-          "action_text": "Motion to proceed to consideration of measure made in Senate. (CR S5065)",
-          "action_code": null,
-          "action_type": "Floor",
-          "source_system": "Senate",
-          "day_position": 0
-        },
-        "ai": true
-      },
-      {
-        "id": "u_cf438d82",
-        "class": "floor_action",
-        "vehicle": "hr-7008-119",
-        "day": "2026-09-28",
-        "occurred_at": "2026-09-28",
-        "occurred_precision": "day",
-        "recorded_at": "2026-11-24T21:08:47.838Z",
-        "text": {
-          "en": "On September 28, 2026, the Senate withdrew the motion to proceed to consideration of H.R. 7008.",
-          "es": "El 28 de septiembre de 2026, el Senado retiró la moción para proceder a la consideración de H.R. 7008."
-        },
-        "source": {
-          "kind": "congress_actions",
-          "refs": [
-            "https://www.congress.gov/bill/119th-congress/house-bill/7008"
-          ]
-        },
-        "record": {
-          "action_text": "Motion to proceed to consideration of measure withdrawn in Senate.",
-          "action_code": null,
-          "action_type": "Floor",
-          "source_system": "Senate",
-          "day_position": 2
-        },
-        "ai": true
       }
     ],
     "summary_revisions": [
