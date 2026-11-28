@@ -486,6 +486,10 @@ import {
   shouldWrite as shouldWriteConversation,
 } from '../lib/conversation.mjs';
 import { loadJSON, redecodeBill, syncOneBill } from './bill-decode.mjs';
+// The newsdesk never decodes a bill longer than this (2026-11-28, PR #581;
+// owner approval pending): a split, multi-call decode of a very long bill is
+// left to the nightly, which runs under the spend ceiling in lib/decode-spend.mjs.
+import { NEWSDESK_MAX_BILL_TEXT_CHARS } from '../lib/decode-spend.mjs';
 // Ended Congresses (2026-11-12): empty until the January switch. Import-free.
 import { isEndedBill } from '../lib/congress.mjs';
 import { fetchRecentlyUpdated, slugOf } from './congress-fetch.mjs';
@@ -1166,7 +1170,9 @@ for (const slug of fired) {
   const allowDecode = !decodeFailedToday && (isTier0
     ? tier0DecodesThisRun < TIER0_DECODE_CAP && cache.dailyDecodes.tier0Count < TIER0_DAILY_DECODE_CAP
     : pressDecodesThisRun < NEWSDESK_DECODE_CAP && cache.dailyDecodes.count < NEWSDESK_DAILY_DECODE_CAP);
-  const result = await syncOneBill({ type, number }, { allowDecode, forceSlugs, bills, es, bySlug, anthropic });
+  const result = await syncOneBill({ type, number }, {
+    allowDecode, forceSlugs, bills, es, bySlug, anthropic, maxTextChars: NEWSDESK_MAX_BILL_TEXT_CHARS,
+  });
   outcomes.push(result.outcome);
   if (result.fetchedTitle) servedTitles.set(slug, result.fetchedTitle);
   // Charged on the ATTEMPT, not the success: a decode that reached the model
@@ -1194,7 +1200,9 @@ for (const slug of fired) {
     // run retries, while a handled bill won't re-fire from the same feeds
     // until the next floor window opens. Unchanged behavior per slot - the
     // slot is just no longer the whole day.
-    if (result.outcome === 'refreshed' || result.outcome === 'added') {
+    // 'skipped_too_long' too: the bill is the nightly's to decode, and
+    // re-firing it every hour would re-fetch a very long document for nothing.
+    if (result.outcome === 'refreshed' || result.outcome === 'added' || result.outcome === 'skipped_too_long') {
       cache.seen.add(tier0Key(slug));
     }
   }
@@ -1275,7 +1283,9 @@ for (const cand of candidates) {
     console.log(`  ${cand.slug}: re-decode deferred (${verdict.reason}) - tier-0 decode budget spent for this ${tier0DecodesThisRun >= TIER0_DECODE_CAP ? 'run' : 'day'}`);
     continue;
   }
-  const result = await redecodeBill(cand.slug, { anthropic, es, bySlug, title: verdict.reason === 'vehicle-swap' ? fetchedTitle : null });
+  const result = await redecodeBill(cand.slug, {
+    anthropic, es, bySlug, title: verdict.reason === 'vehicle-swap' ? fetchedTitle : null, maxTextChars: NEWSDESK_MAX_BILL_TEXT_CHARS,
+  });
   outcomes.push(result.outcome);
   if (chargeableDecode(result)) {
     tier0DecodesThisRun++;
@@ -1454,6 +1464,7 @@ for (const slug of redecodeQueue) {
     es,
     bySlug,
     title: verdict.reason === 'vehicle-swap' ? fetchedTitle : null,
+    maxTextChars: NEWSDESK_MAX_BILL_TEXT_CHARS,
   });
   outcomes.push(result.outcome);
   if (chargeableDecode(result)) {

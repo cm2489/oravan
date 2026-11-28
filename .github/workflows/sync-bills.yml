@@ -99,11 +99,15 @@ on:
         description: 'Comma-separated slugs already in the corpus to re-decode from their current text (e.g. hr-5634-119); locked bills in data/decode-locks.json are skipped'
         default: ''
       redecode_max_per_night:
-        # The ONLY knob for re-decode spend. Blank = the script default of 10,
-        # which at the measured ~$0.065 per decode is ~$0.65 a night worst
-        # case. Raising it raises the bill linearly: 50 is ~$3.25, which is
-        # over the owner's standing $3 approval line, so anything above ~45
-        # is his call, not a dispatcher's.
+        # The COUNT knob for re-decode spend. Blank = the script default of 10.
+        # ~$0.065 is the measured price of a decode of a bill under 60,000
+        # characters; since PR #581 a longer bill is read whole and costs more
+        # (~$0.15 at 150,000 characters, ~$1 for a ~1.4M-character bill split
+        # into chunks), so the count alone no longer bounds the night. The
+        # dollar bound is NIGHTLY_DECODE_USD_CEILING in lib/decode-spend.mjs
+        # ($3.00 at list price across new decodes AND re-decodes, owner
+        # approval pending): raising this input can never raise a night past
+        # it, only fill it sooner.
         description: 'One-off REDECODE_MAX_PER_NIGHT override (blank = 10 ≈ $0.65/night; each unit is ~$0.065)'
         default: ''
       coverage_top_n:
