@@ -271,7 +271,11 @@ async function record(page: Page, info: TestInfo, name: string, url: string) {
 
   const m = await page.evaluate(measure);
   await page.screenshot({ path: `${base}-first.png`, animations: 'disabled' });
-  const fullHeight = Math.min(m.scrollHeight, MAX_FULL_HEIGHT);
+  // The browser refuses a picture taller than 32,767 device pixels, and the
+  // phone project draws 3 device pixels per CSS pixel: cap by that too.
+  const dpr = await page.evaluate(() => window.devicePixelRatio || 1);
+  const maxFull = Math.min(MAX_FULL_HEIGHT, Math.floor(32_000 / dpr));
+  const fullHeight = Math.min(m.scrollHeight, maxFull);
   await page.screenshot({
     path: `${base}-full.png`,
     fullPage: true,
@@ -281,7 +285,7 @@ async function record(page: Page, info: TestInfo, name: string, url: string) {
   writeFileSync(
     `${base}.json`,
     JSON.stringify(
-      { page: url, project: info.project.name, ...m, fullPicture: { height: fullHeight, cut: m.scrollHeight > MAX_FULL_HEIGHT } },
+      { page: url, project: info.project.name, ...m, fullPicture: { height: fullHeight, cut: m.scrollHeight > maxFull } },
       null,
       2
     ) + '\n'
